@@ -1,4 +1,4 @@
-# IPscanner
+# IPscanner no server, one file, index.html, js, ready to run
  IP address scanner online
 
 <img width="679" height="854" alt="image" src="https://github.com/user-attachments/assets/49b4cbb6-e8f2-4baa-b8d4-1b4d0fc725c2" />
