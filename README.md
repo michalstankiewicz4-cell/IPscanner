@@ -1,5 +1,8 @@
 # IPscanner no server, one file, index.html, js, ready to run
  IP address scanner online
+ Now you can add other ports to scan
+ <img width="936" height="723" alt="image" src="https://github.com/user-attachments/assets/aefaafa1-88b2-47ff-88cc-008cac2d5980" />
+.
 <img width="937" height="483" alt="image" src="https://github.com/user-attachments/assets/a30b508c-aa71-4747-a5e0-c3daa8f0c68d" />
 .
 <img width="991" height="585" alt="image" src="https://github.com/user-attachments/assets/a8395034-6a53-4e8d-a775-f9cf2f8f77ea" />
