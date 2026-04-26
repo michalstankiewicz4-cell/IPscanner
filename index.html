@@ -377,6 +377,88 @@ body {
 }
 .ctx-item:hover { background: #000080; color: #fff; }
 .ctx-sep { height: 1px; background: #808080; margin: 2px 0; box-shadow: 0 1px 0 #fff; }
+
+/* ── Menu bar ── */
+.menubar {
+  background: #c0c0c0;
+  border-bottom: 1px solid #808080;
+  padding: 1px 2px;
+  display: flex;
+  position: relative;
+  z-index: 200;
+}
+.menu-item {
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: default;
+  position: relative;
+  user-select: none;
+}
+.menu-item:hover, .menu-item.open { background: #000080; color: #fff; }
+.menu-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%; left: 0;
+  background: #c0c0c0;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  box-shadow: 2px 2px 0 #000;
+  z-index: 300;
+  min-width: 150px;
+}
+.menu-item.open .menu-dropdown { display: block; }
+.menu-dd-item {
+  padding: 4px 24px 4px 28px;
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: default;
+}
+.menu-dd-item:hover { background: #000080; color: #fff; }
+.menu-dd-sep { height: 1px; background: #808080; margin: 2px 4px; box-shadow: 0 1px 0 #fff; }
+
+/* ── Settings dialog ── */
+.dlg-overlay {
+  display: none;
+  position: fixed; top:0;left:0;right:0;bottom:0;
+  z-index: 400;
+}
+.dlg-overlay.open { display: block; }
+.dlg95 {
+  position: fixed; top:50%;left:50%;
+  transform: translate(-50%,-50%);
+  background: #c0c0c0;
+  border-top: 2px solid #fff; border-left: 2px solid #fff;
+  border-right: 2px solid #808080; border-bottom: 2px solid #808080;
+  box-shadow: 1px 1px 0 #000;
+  min-width: 260px;
+  font-size: 11px;
+  z-index: 500;
+}
+.dlg-title {
+  background: linear-gradient(to right,#000080,#1084d0);
+  color:#fff; font-size:11px; font-weight:bold;
+  padding:3px 4px 3px 6px;
+  display:flex; align-items:center; gap:4px;
+}
+.dlg-title span { flex:1; }
+.dlg-body { padding: 14px 16px 8px; }
+.dlg-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.dlg-footer { display:flex; justify-content:flex-end; gap:6px; padding:6px 8px; border-top:1px solid #808080; }
+.dlg-footer button { min-width:64px; }
+.dlg-groupbox {
+  border:1px solid #808080;
+  box-shadow: 1px 1px 0 #fff, inset 1px 1px 0 #808080;
+  padding: 10px 12px 8px;
+  position:relative; margin-bottom:10px;
+}
+.dlg-groupbox-legend {
+  position:absolute; top:-6px; left:8px;
+  background:#c0c0c0; padding:0 3px; font-size:11px;
+}
+.dlg-radio-row { display:flex; flex-direction:column; gap:5px; }
+.dlg-radio { display:flex; align-items:center; gap:6px; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -393,35 +475,50 @@ body {
     </div>
   </div>
 
+  <!-- Menu bar -->
+  <div class="menubar" id="menubar">
+    <div class="menu-item" id="menuFile"><span data-i18n="menuFile">File</span></div>
+    <div class="menu-item" id="menuOptions"><span data-i18n="menuOptions">Options</span>
+      <div class="menu-dropdown">
+        <div class="menu-dd-item" id="menuLang" data-i18n="menuLanguage">Language...</div>
+      </div>
+    </div>
+    <div class="menu-item" id="menuHelp"><span data-i18n="menuHelp">Help</span>
+      <div class="menu-dropdown">
+        <div class="menu-dd-item" id="menuAbout" data-i18n="menuAbout">About</div>
+      </div>
+    </div>
+  </div>
+
   <div class="win-body">
 
     <!-- Toolbar -->
     <div class="toolbar">
-      <button class="btn95" id="btnGo">▶ Start</button>
-      <button class="btn95" id="btnStop" disabled>■ Stop</button>
-      <button class="btn95" id="btnClear">✕ Wyczyść</button>
+      <button class="btn95" id="btnGo" data-i18n="btnStart">▶ Start</button>
+      <button class="btn95" id="btnStop" disabled data-i18n="btnStop">■ Stop</button>
+      <button class="btn95" id="btnClear" data-i18n="btnClear">✕ Clear</button>
       <div style="flex:1"></div>
       <span id="statTime" style="font-size:10px;color:#000080;font-weight:bold">0.0s</span>
     </div>
 
     <!-- Mode + IP Range -->
     <div class="groupbox">
-      <span class="groupbox-legend">Ustawienia skanowania</span>
+      <span class="groupbox-legend" data-i18n="scanSettings">Scan Settings</span>
 
       <!-- Modes -->
       <div class="mode-row" id="modeRow"></div>
 
       <!-- External IP -->
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
-        <button class="btn95" id="btnMyIp">🌐 Moje zewnętrzne IP</button>
+        <button class="btn95" id="btnMyIp" data-i18n="btnMyIp">🌐 My External IP</button>
         <span id="myIpResult" style="font-family:inherit;font-size:11px;color:#000080;font-weight:bold"></span>
-        <button class="btn95" id="btnCopyMyIp" style="display:none;padding:2px 8px;font-size:10px">📋 Kopiuj</button>
-        <button class="btn95" id="btnUseMyIp"  style="display:none;padding:2px 8px;font-size:10px">➤ Użyj</button>
+        <button class="btn95" id="btnCopyMyIp" style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnCopy">📋 Copy</button>
+        <button class="btn95" id="btnUseMyIp"  style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">➤ Use</button>
       </div>
 
       <!-- IP Range -->
       <div class="range-row">
-        <span class="range-label">IP Range:</span>
+        <span class="range-label" data-i18n="ipRange">IP Range:</span>
         <!-- FROM -->
         <div class="ip-box" id="boxFrom">
           <input class="oct" id="f0" maxlength="3" placeholder="192"/>
@@ -443,7 +540,7 @@ body {
           <span class="oct-dot">.</span>
           <input class="oct" id="t3" maxlength="3" placeholder="254"/>
         </div>
-        <span style="margin-left:8px">Wątki:</span>
+        <span style="margin-left:8px" data-i18n="threads">Threads:</span>
         <input type="number" min="2" max="64" value="20" id="concNum"
           style="width:38px;font-family:inherit;font-size:11px;
                  border-top:1px solid #808080;border-left:1px solid #808080;
@@ -460,9 +557,9 @@ body {
         <div class="progress-pct" id="progPct">0%</div>
       </div>
       <div class="stats-row">
-        <div class="stat-item">Sprawdzono: <span class="stat-val" id="statChecked">0</span></div>
-        <div class="stat-item">Znaleziono: <span class="stat-val" id="statFound">0</span></div>
-        <div class="stat-item">Portów: <span class="stat-val" id="statPorts">0</span></div>
+        <div class="stat-item"><span data-i18n="labelChecked">Checked:</span> <span class="stat-val" id="statChecked">0</span></div>
+        <div class="stat-item"><span data-i18n="labelFound">Found:</span> <span class="stat-val" id="statFound">0</span></div>
+        <div class="stat-item"><span data-i18n="labelPorts">Ports:</span> <span class="stat-val" id="statPorts">0</span></div>
       </div>
     </div>
 
@@ -470,12 +567,12 @@ body {
     <div class="listview-wrap">
       <div class="listview-header">
         <div class="lv-col" style="font-size:9px">●</div>
-        <div class="lv-col">Adres IP</div>
-        <div class="lv-col">Porty</div>
-        <div class="lv-col">Ścieżki / Linki</div>
+        <div class="lv-col" data-i18n="colIp">IP Address</div>
+        <div class="lv-col" data-i18n="colPorts">Ports</div>
+        <div class="lv-col" data-i18n="colLinks">Paths / Links</div>
       </div>
       <div class="listview-body" id="listBody">
-        <div class="empty-row" id="emptyRow">Brak wyników. Skonfiguruj zakres IP i kliknij Start.</div>
+        <div class="empty-row" id="emptyRow" data-i18n="emptyRow">No results. Configure IP range and click Start.</div>
       </div>
     </div>
 
@@ -484,8 +581,8 @@ body {
       <div class="preview-titlebar">
         <span>🖥</span>
         <span class="preview-url-label" id="previewUrl">—</span>
-        <button class="btn95" id="btnPreviewOpen" style="padding:1px 8px;font-size:10px">↗ Otwórz</button>
-        <button class="btn95" id="btnPreviewClose" style="padding:1px 8px;font-size:10px">✕</button>
+        <button class="btn95" id="btnPreviewOpen" style="padding:1px 8px;font-size:10px" data-i18n="previewOpen">↗ Open</button>
+        <button class="btn95" id="btnPreviewClose" style="padding:1px 8px;font-size:10px" data-i18n="previewClose">✕</button>
       </div>
       <iframe id="previewFrame" class="preview-iframe"
         sandbox="allow-forms allow-scripts allow-same-origin allow-popups"
@@ -499,8 +596,8 @@ body {
 
     <!-- Status bar -->
     <div class="statusbar">
-      <div class="status-panel" id="statusMsg">Gotowy.</div>
-      <div class="status-panel" style="flex:0 0 auto;min-width:80px" id="statusCount">0 hostów</div>
+      <div class="status-panel" id="statusMsg" data-i18n="statusReady">Ready.</div>
+      <div class="status-panel" style="flex:0 0 auto;min-width:80px" id="statusCount">0 hosts</div>
     </div>
 
   </div><!-- /win-body -->
@@ -640,16 +737,225 @@ function closeNotepad() {
 }
 </script>
 
+<!-- Settings dialog -->
+<div class="dlg-overlay" id="dlgOverlay">
+  <div class="dlg95">
+    <div class="dlg-title">
+      <span>⚙</span>
+      <span data-i18n="dlgTitle">Options</span>
+      <div class="title-btn" onclick="closeDlg()">✕</div>
+    </div>
+    <div class="dlg-body">
+      <div class="dlg-groupbox">
+        <span class="dlg-groupbox-legend" data-i18n="dlgLang">Language:</span>
+        <div class="dlg-radio-row">
+          <label class="dlg-radio">
+            <input type="radio" name="dlgLang" value="en" id="radioEn" checked/>
+            <span data-i18n="dlgLangEn">English</span>
+          </label>
+          <label class="dlg-radio">
+            <input type="radio" name="dlgLang" value="pl" id="radioPl"/>
+            <span data-i18n="dlgLangPl">Polski</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="dlgOk" data-i18n="dlgOk">OK</button>
+      <button class="btn95" id="dlgCancel" data-i18n="dlgCancel" onclick="closeDlg()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Context menu -->
 <div class="ctxmenu" id="ctxMenu">
-  <div class="ctx-item" id="ctxCopyIp">Copy IP Address</div>
-  <div class="ctx-item" id="ctxCopyPorts">Copy Ports</div>
+  <div class="ctx-item" id="ctxCopyIp" data-i18n="ctxCopyIp">Copy IP Address</div>
+  <div class="ctx-item" id="ctxCopyPorts" data-i18n="ctxCopyPorts">Copy Ports</div>
   <div class="ctx-sep"></div>
-  <div class="ctx-item" id="ctxOpenBrowser">Open in Browser</div>
-  <div class="ctx-item" id="ctxPreview">Preview here</div>
+  <div class="ctx-item" id="ctxOpenBrowser" data-i18n="ctxOpenBrowser">Open in Browser</div>
+  <div class="ctx-item" id="ctxPreview" data-i18n="ctxPreview">Preview here</div>
 </div>
 
 <script>
+// ══════════════════════════════════════════════════
+//  i18n
+// ══════════════════════════════════════════════════
+let lang = localStorage.getItem('netrecon_lang') || 'en';
+
+const STRINGS = {
+  en: {
+    menuFile:'File', menuOptions:'Options', menuHelp:'Help',
+    menuLanguage:'Language...', menuAbout:'About',
+    btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Clear',
+    btnMyIp:'🌐 My External IP', btnCopy:'📋 Copy', btnUse:'➤ Use',
+    scanSettings:'Scan Settings', ipRange:'IP Range:', threads:'Threads:',
+    modeCam:'📹 Cameras', modePrint:'🖨️ Printers',
+    modeFolder:'📁 Folders / HTTP', modeRouter:'🌐 Routers',
+    modeNas:'💾 NAS', modeAll:'🔍 All',
+    hintCam:'Ports: 80, 8080, 8081, 443, 554(RTSP), 9000, 37777(Dahua), 34567(DVR)',
+    hintPrint:'Ports: 80, 443, 631(IPP), 9100(RAW), 8080',
+    hintFolder:'Ports: 80, 8080, 8888, 21(FTP), 3000, 8000 — folder listing, FTP',
+    hintRouter:'Ports: 80, 443, 8080, 8443, 10000(Webmin)',
+    hintNas:'Synology 5000/5001, QNAP 8080, Proxmox 8006, TrueNAS 80/443',
+    hintAll:'All known ports at once — slower, most thorough',
+    labelChecked:'Checked:', labelFound:'Found:', labelPorts:'Ports:',
+    colIp:'IP Address', colPorts:'Ports', colLinks:'Paths / Links',
+    emptyRow:'No results. Configure IP range and click Start.',
+    emptyScanning:'Scanning…', emptyNone:'No active hosts found.',
+    detailGeo:'🌍 Geolocation / ISP', detailDevice:'🖥 Device Identification',
+    detailTitle:'📄 HTTP Page Title', detailAccess:'🔑 Access',
+    geoLocal:'Local address — geolocation unavailable',
+    geoError:'Failed to fetch data',
+    geoCountry:'Country:', geoIsp:'ISP:', geoAs:'AS:',
+    deviceFavicon:'Favicon:', deviceFaviconYes:'✔ Yes (web panel)', deviceFaviconNo:'✘ None',
+    deviceType:'Type:', deviceSuggestion:'Hint:', deviceUnknown:'Unknown device type',
+    titleExtOnly:'Title: external IPs only', titleUnavailable:'Title: unavailable',
+    titleLabel:'Page title:', accessLabel:'Snapshot:',
+    accessOpen:'🔓 Accessible without password',
+    accessClosed:'Requires authorization or unavailable',
+    loading:'Loading…', analyzing:'Analyzing…', checking:'Checking…',
+    previewOpen:'↗ Open', previewClose:'✕',
+    statusReady:'Ready.', statusCleared:'Cleared.',
+    statusScanning:(n,p)=>`Scanning ${n} addresses × ${p} ports…`,
+    statusLarge:(n,p,t)=>`Large range: ${n} addresses × ${p} ports. Est. ${t}…`,
+    statusStopped:(n)=>`Stopped after ${n} addresses.`,
+    statusDone:(h,p)=>`Done. Found ${h} hosts (${p} ports).`,
+    statusNone:'Scan complete — no active hosts.',
+    statusHosts:(n)=>`${n} hosts`,
+    ctxCopyIp:'Copy IP Address', ctxCopyPorts:'Copy Ports',
+    ctxOpenBrowser:'Open in Browser', ctxPreview:'Preview here',
+    dlgTitle:'Options', dlgLang:'Language:',
+    dlgLangEn:'English', dlgLangPl:'Polski',
+    dlgOk:'OK', dlgCancel:'Cancel',
+    portRtsp:'RTSP stream likely available',
+    portIpp:'Printer (IPP)', portRaw:'Printer (RAW)',
+    portSyn:'Synology NAS?', portProx:'Proxmox VE?',
+    tagVpn:'VPN/Proxy', tagDc:'Datacenter', tagRecognized:'IDENTIFIED',
+    notepadDesktop:'Notepad',
+    notepadWinTitle:'Notepad – About',
+    previewBlocked:'Device blocks embedding (X-Frame-Options).',
+    previewBlockedLink:'Open directly in new tab →',
+  },
+  pl: {
+    menuFile:'Plik', menuOptions:'Opcje', menuHelp:'Pomoc',
+    menuLanguage:'Język...', menuAbout:'O programie',
+    btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Wyczyść',
+    btnMyIp:'🌐 Moje zewnętrzne IP', btnCopy:'📋 Kopiuj', btnUse:'➤ Użyj',
+    scanSettings:'Ustawienia skanowania', ipRange:'IP Range:', threads:'Wątki:',
+    modeCam:'📹 Kamery', modePrint:'🖨️ Drukarki',
+    modeFolder:'📁 Foldery / HTTP', modeRouter:'🌐 Routery',
+    modeNas:'💾 NAS', modeAll:'🔍 Wszystko',
+    hintCam:'Porty: 80, 8080, 8081, 443, 554(RTSP), 9000, 37777(Dahua), 34567(DVR)',
+    hintPrint:'Porty: 80, 443, 631(IPP), 9100(RAW), 8080',
+    hintFolder:'Porty: 80, 8080, 8888, 21(FTP), 3000, 8000 — listing folderów, FTP',
+    hintRouter:'Porty: 80, 443, 8080, 8443, 10000(Webmin)',
+    hintNas:'Synology 5000/5001, QNAP 8080, Proxmox 8006, TrueNAS 80/443',
+    hintAll:'Wszystkie znane porty jednocześnie — wolniejszy, najdokładniejszy',
+    labelChecked:'Sprawdzono:', labelFound:'Znaleziono:', labelPorts:'Portów:',
+    colIp:'Adres IP', colPorts:'Porty', colLinks:'Ścieżki / Linki',
+    emptyRow:'Brak wyników. Skonfiguruj zakres IP i kliknij Start.',
+    emptyScanning:'Skanowanie…', emptyNone:'Nie znaleziono aktywnych hostów.',
+    detailGeo:'🌍 Geolokalizacja / ISP', detailDevice:'🖥 Identyfikacja urządzenia',
+    detailTitle:'📄 Tytuł strony HTTP', detailAccess:'🔑 Dostęp',
+    geoLocal:'Adres lokalny — geolokalizacja niedostępna',
+    geoError:'Błąd pobierania danych',
+    geoCountry:'Kraj:', geoIsp:'ISP:', geoAs:'AS:',
+    deviceFavicon:'Favicon:', deviceFaviconYes:'✔ Tak (panel webowy)', deviceFaviconNo:'✘ Brak',
+    deviceType:'Typ:', deviceSuggestion:'Sugestia:', deviceUnknown:'Nieznany typ urządzenia',
+    titleExtOnly:'Tytuł: tylko dla zewnętrznych IP', titleUnavailable:'Tytuł: niedostępny',
+    titleLabel:'Tytuł strony:', accessLabel:'Snapshot:',
+    accessOpen:'🔓 Dostępny bez hasła',
+    accessClosed:'Wymaga autoryzacji lub brak',
+    loading:'Pobieranie…', analyzing:'Analiza…', checking:'Sprawdzanie…',
+    previewOpen:'↗ Otwórz', previewClose:'✕',
+    statusReady:'Gotowy.', statusCleared:'Wyczyszczono.',
+    statusScanning:(n,p)=>`Skanuję ${n} adresów × ${p} portów…`,
+    statusLarge:(n,p,t)=>`Duży zakres: ${n} adresów × ${p} portów. Est. ${t}…`,
+    statusStopped:(n)=>`Zatrzymano po ${n} adresach.`,
+    statusDone:(h,p)=>`Zakończono. Znaleziono ${h} hostów (${p} portów).`,
+    statusNone:'Skan zakończony — brak aktywnych hostów.',
+    statusHosts:(n)=>`${n} hostów`,
+    ctxCopyIp:'Kopiuj adres IP', ctxCopyPorts:'Kopiuj porty',
+    ctxOpenBrowser:'Otwórz w przeglądarce', ctxPreview:'Podgląd tutaj',
+    dlgTitle:'Opcje', dlgLang:'Język:',
+    dlgLangEn:'English', dlgLangPl:'Polski',
+    dlgOk:'OK', dlgCancel:'Anuluj',
+    portRtsp:'RTSP stream prawdopodobnie dostępny',
+    portIpp:'Drukarka (IPP)', portRaw:'Drukarka (RAW)',
+    portSyn:'Synology NAS?', portProx:'Proxmox VE?',
+    tagVpn:'VPN/Proxy', tagDc:'Datacenter', tagRecognized:'ROZPOZNANY',
+    notepadDesktop:'Notatnik',
+    notepadWinTitle:'Notatnik – O autorze',
+    previewBlocked:'Urządzenie blokuje osadzanie (X-Frame-Options).',
+    previewBlockedLink:'Otwórz w nowej karcie →',
+  }
+};
+
+function t(key, ...args) {
+  const s = STRINGS[lang];
+  const v = s[key] ?? STRINGS['en'][key] ?? key;
+  return typeof v === 'function' ? v(...args) : v;
+}
+
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    const v = t(key);
+    if (typeof v === 'string') el.textContent = v;
+  });
+  // Rebuild mode radios with new labels
+  buildModeRow();
+  // Update port hint
+  document.getElementById('portHint').textContent = t('hint' + currentMode.charAt(0).toUpperCase() + currentMode.slice(1));
+  // Update preview blocked text
+  const pb = document.getElementById('previewBlocked');
+  if (pb) {
+    pb.querySelector('div:nth-child(2)').textContent = t('previewBlocked');
+    pb.querySelector('a').textContent = t('previewBlockedLink');
+  }
+  // Update notepad desktop icon
+  document.getElementById('iconLabel').textContent = t('notepadDesktop');
+  // Persist
+  localStorage.setItem('netrecon_lang', lang);
+}
+
+// ── Settings dialog ──
+function openDlg() {
+  document.getElementById('radioEn').checked = (lang === 'en');
+  document.getElementById('radioPl').checked = (lang === 'pl');
+  document.getElementById('dlgOverlay').classList.add('open');
+}
+function closeDlg() {
+  document.getElementById('dlgOverlay').classList.remove('open');
+}
+document.getElementById('dlgOk').addEventListener('click', () => {
+  lang = document.querySelector('input[name=dlgLang]:checked').value;
+  applyLang();
+  closeDlg();
+});
+document.getElementById('dlgCancel').addEventListener('click', closeDlg);
+
+// ── Menu bar ──
+document.querySelectorAll('.menu-item').forEach(item => {
+  item.addEventListener('click', e => {
+    e.stopPropagation();
+    const wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+    if (!wasOpen) item.classList.add('open');
+  });
+});
+document.addEventListener('click', () => {
+  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+});
+document.getElementById('menuLang').addEventListener('click', () => {
+  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+  openDlg();
+});
+document.getElementById('menuAbout').addEventListener('click', () => {
+  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+  openNotepad();
+});
+
 // ══════════════════════════════════════════════════
 //  MODE DEFINITIONS
 // ══════════════════════════════════════════════════
@@ -735,21 +1041,27 @@ const MODES = {
 // ══════════════════════════════════════════════════
 let currentMode = 'cam';
 const modeRow = document.getElementById('modeRow');
-Object.keys(MODES).forEach(key => {
-  const label = document.createElement('label');
-  label.className = 'mode-radio';
-  const inp = document.createElement('input');
-  inp.type = 'radio'; inp.name = 'mode'; inp.value = key;
-  if (key === 'cam') inp.checked = true;
-  inp.addEventListener('change', () => {
-    currentMode = key;
-    document.getElementById('portHint').textContent = MODES[key].hint;
+const MODE_KEYS = ['cam','print','folder','router','nas','all'];
+
+function buildModeRow() {
+  modeRow.innerHTML = '';
+  MODE_KEYS.forEach(key => {
+    const label = document.createElement('label');
+    label.className = 'mode-radio';
+    const inp = document.createElement('input');
+    inp.type = 'radio'; inp.name = 'mode'; inp.value = key;
+    if (key === currentMode) inp.checked = true;
+    inp.addEventListener('change', () => {
+      currentMode = key;
+      document.getElementById('portHint').textContent = t('hint' + key.charAt(0).toUpperCase() + key.slice(1));
+    });
+    label.appendChild(inp);
+    label.appendChild(document.createTextNode(' ' + t('mode' + key.charAt(0).toUpperCase() + key.slice(1))));
+    modeRow.appendChild(label);
   });
-  label.appendChild(inp);
-  label.appendChild(document.createTextNode(' ' + MODES[key].label));
-  modeRow.appendChild(label);
-});
-document.getElementById('portHint').textContent = MODES['cam'].hint;
+}
+buildModeRow();
+document.getElementById('portHint').textContent = t('hintCam');
 
 // ══════════════════════════════════════════════════
 //  IP INPUT — auto-jump between octets
@@ -843,7 +1155,7 @@ function updateProgress(checked, total, fh, op) {
   statChecked.textContent = checked;
   statFound.textContent   = fh;
   statPorts.textContent   = op;
-  statusCount.textContent = `${fh} hostów`;
+  statusCount.textContent = t('statusHosts', fh);
 }
 function setScanState(on) {
   scanning=on; btnGo.disabled=on; btnStop.disabled=!on;
@@ -977,46 +1289,45 @@ async function enrichRow(ip, ports, cells) {
 
   // Geo
   if (geo) {
-    const vpnTag  = geo.proxy   ? '<span class="detail-tag tag-vpn">VPN/Proxy</span>'  : '';
-    const dcTag   = geo.hosting ? '<span class="detail-tag tag-dc">Datacenter</span>'   : '';
+    const vpnTag = geo.proxy   ? `<span class="detail-tag tag-vpn">${t('tagVpn')}</span>` : '';
+    const dcTag  = geo.hosting ? `<span class="detail-tag tag-dc">${t('tagDc')}</span>`   : '';
     cGeo.innerHTML =
-      `<div class="detail-line"><b>Kraj:</b> ${geo.country || '?'} — ${geo.city || '?'}${vpnTag}${dcTag}</div>`+
-      `<div class="detail-line"><b>ISP:</b> ${geo.isp || '?'}</div>`+
-      `<div class="detail-line"><b>AS:</b> ${geo.as || '?'}</div>`;
+      `<div class="detail-line"><b>${t('geoCountry')}</b> ${geo.country||'?'} — ${geo.city||'?'}${vpnTag}${dcTag}</div>`+
+      `<div class="detail-line"><b>${t('geoIsp')}</b> ${geo.isp||'?'}</div>`+
+      `<div class="detail-line"><b>${t('geoAs')}</b> ${geo.as||'?'}</div>`;
   } else {
     cGeo.innerHTML = isPrivateIP(ip)
-      ? '<div class="detail-line" style="color:#808080">Adres lokalny — geolokalizacja niedostępna</div>'
-      : '<div class="detail-line" style="color:#c00">Błąd pobierania danych</div>';
+      ? `<div class="detail-line" style="color:#808080">${t('geoLocal')}</div>`
+      : `<div class="detail-line" style="color:#c00">${t('geoError')}</div>`;
   }
 
   // Device
   let deviceHtml = '';
   if (deviceLabel) {
-    deviceHtml += `<div class="detail-line"><b>Typ:</b> ${deviceLabel} <span class="detail-tag tag-device">ROZPOZNANY</span></div>`;
+    deviceHtml += `<div class="detail-line"><b>${t('deviceType')}</b> ${deviceLabel} <span class="detail-tag tag-device">${t('tagRecognized')}</span></div>`;
   }
-  deviceHtml += `<div class="detail-line"><b>Favicon:</b> ${hasFavicon ? '✔ Tak (panel webowy)' : '✘ Brak'}</div>`;
-  // Guess by ports
-  const portGuess = ports.includes(554) ? 'RTSP stream prawdopodobnie dostępny' :
-                    ports.includes(631) ? 'Drukarka (IPP)' :
-                    ports.includes(9100)? 'Drukarka (RAW)' :
-                    ports.includes(5000)||ports.includes(5001) ? 'Synology NAS?' :
-                    ports.includes(8006)? 'Proxmox VE?' : null;
-  if (portGuess) deviceHtml += `<div class="detail-line"><b>Sugestia:</b> ${portGuess}</div>`;
-  cDevice.innerHTML = deviceHtml || '<div class="detail-line" style="color:#808080">Nieznany typ urządzenia</div>';
+  deviceHtml += `<div class="detail-line"><b>${t('deviceFavicon')}</b> ${hasFavicon ? t('deviceFaviconYes') : t('deviceFaviconNo')}</div>`;
+  const portGuess = ports.includes(554)  ? t('portRtsp') :
+                    ports.includes(631)  ? t('portIpp')  :
+                    ports.includes(9100) ? t('portRaw')  :
+                    ports.includes(5000)||ports.includes(5001) ? t('portSyn') :
+                    ports.includes(8006) ? t('portProx') : null;
+  if (portGuess) deviceHtml += `<div class="detail-line"><b>${t('deviceSuggestion')}</b> ${portGuess}</div>`;
+  cDevice.innerHTML = deviceHtml || `<div class="detail-line" style="color:#808080">${t('deviceUnknown')}</div>`;
 
   // Title
   if (title) {
-    cTitle.innerHTML = `<div class="detail-line"><b>Tytuł strony:</b> "${title}"</div>`;
+    cTitle.innerHTML = `<div class="detail-line"><b>${t('titleLabel')}</b> "${title}"</div>`;
   } else if (isPrivateIP(ip)) {
-    cTitle.innerHTML = `<div class="detail-line" style="color:#808080">Tytuł: tylko dla zewnętrznych IP</div>`;
+    cTitle.innerHTML = `<div class="detail-line" style="color:#808080">${t('titleExtOnly')}</div>`;
   } else {
-    cTitle.innerHTML = `<div class="detail-line" style="color:#808080">Tytuł: niedostępny</div>`;
+    cTitle.innerHTML = `<div class="detail-line" style="color:#808080">${t('titleUnavailable')}</div>`;
   }
 
   // Access
   cAccess.innerHTML = isOpen
-    ? `<div class="detail-line"><b>Snapshot:</b> <span style="color:green">🔓 Dostępny bez hasła</span></div>`
-    : `<div class="detail-line"><b>Snapshot:</b> Wymaga autoryzacji lub brak</div>`;
+    ? `<div class="detail-line"><b>${t('accessLabel')}</b> <span style="color:green">${t('accessOpen')}</span></div>`
+    : `<div class="detail-line"><b>${t('accessLabel')}</b> ${t('accessClosed')}</div>`;
 }
 
 // ══════════════════════════════════════════════════
@@ -1076,33 +1387,33 @@ function addResultRow(ip, openPorts) {
   // Geo section
   const secGeo = document.createElement('div');
   secGeo.className = 'detail-section';
-  secGeo.innerHTML = '<div class="detail-section-title">🌍 Geolokalizacja / ISP</div>';
+  secGeo.innerHTML = `<div class="detail-section-title">${t('detailGeo')}</div>`;
   const cGeo = document.createElement('div');
-  cGeo.innerHTML = '<div class="detail-loading">Pobieranie…</div>';
+  cGeo.innerHTML = `<div class="detail-loading">${t('loading')}</div>`;
   secGeo.appendChild(cGeo);
 
   // Device section
   const secDevice = document.createElement('div');
   secDevice.className = 'detail-section';
-  secDevice.innerHTML = '<div class="detail-section-title">🖥 Identyfikacja urządzenia</div>';
+  secDevice.innerHTML = `<div class="detail-section-title">${t('detailDevice')}</div>`;
   const cDevice = document.createElement('div');
-  cDevice.innerHTML = '<div class="detail-loading">Analiza…</div>';
+  cDevice.innerHTML = `<div class="detail-loading">${t('analyzing')}</div>`;
   secDevice.appendChild(cDevice);
 
   // Title section
   const secTitle = document.createElement('div');
   secTitle.className = 'detail-section';
-  secTitle.innerHTML = '<div class="detail-section-title">📄 Tytuł strony HTTP</div>';
+  secTitle.innerHTML = `<div class="detail-section-title">${t('detailTitle')}</div>`;
   const cTitle = document.createElement('div');
-  cTitle.innerHTML = '<div class="detail-loading">Pobieranie…</div>';
+  cTitle.innerHTML = `<div class="detail-loading">${t('loading')}</div>`;
   secTitle.appendChild(cTitle);
 
   // Access section
   const secAccess = document.createElement('div');
   secAccess.className = 'detail-section';
-  secAccess.innerHTML = '<div class="detail-section-title">🔑 Dostęp</div>';
+  secAccess.innerHTML = `<div class="detail-section-title">${t('detailAccess')}</div>`;
   const cAccess = document.createElement('div');
-  cAccess.innerHTML = '<div class="detail-loading">Sprawdzanie…</div>';
+  cAccess.innerHTML = `<div class="detail-loading">${t('checking')}</div>`;
   secAccess.appendChild(cAccess);
 
   grid.append(secGeo, secDevice, secTitle, secAccess);
@@ -1201,7 +1512,7 @@ const btnUseMyIp   = document.getElementById('btnUseMyIp');
 
 btnMyIp.addEventListener('click', async () => {
   myIpResult.style.color = '#808000';
-  myIpResult.textContent = 'Pobieranie…';
+  myIpResult.textContent = t('loading');
   btnCopyMyIp.style.display = 'none';
   btnUseMyIp.style.display  = 'none';
   btnMyIp.disabled = true;
@@ -1213,8 +1524,8 @@ btnMyIp.addEventListener('click', async () => {
     btnCopyMyIp.style.display = '';
     btnCopyMyIp.onclick = () => {
       navigator.clipboard?.writeText(data.ip);
-      btnCopyMyIp.textContent = '✔ Skopiowano';
-      setTimeout(() => btnCopyMyIp.textContent = '📋 Kopiuj', 1500);
+      btnCopyMyIp.textContent = '✔ OK';
+      setTimeout(() => { btnCopyMyIp.textContent = t('btnCopy'); }, 1500);
     };
     btnUseMyIp.style.display = '';
     btnUseMyIp.onclick = () => {
@@ -1225,7 +1536,7 @@ btnMyIp.addEventListener('click', async () => {
     };
   } catch {
     myIpResult.style.color = '#c00';
-    myIpResult.textContent = 'Błąd — brak połączenia';
+    myIpResult.textContent = t('geoError');
   } finally {
     btnMyIp.disabled = false;
   }
@@ -1250,16 +1561,16 @@ async function startScan() {
   // Clear list
   listBody.innerHTML='';
   listBody.appendChild(emptyRow);
-  emptyRow.textContent='Skanowanie…';
+  emptyRow.textContent = t('emptyScanning');
 
   const concurrency = Math.min(+document.getElementById('concNum').value || 20, 64);
 
   if (total>500) {
     const estSec=Math.round(total*(1500/concurrency)/1000);
     const estStr=estSec>=60?`~${Math.ceil(estSec/60)} min`:`~${estSec}s`;
-    setStatus(`Skanowanie ${total} adresów… szacowany czas: ${estStr}`,'warn');
+    setStatus(t('statusLarge', total, selectedPorts.length, estStr),'warn');
   } else {
-    setStatus(`Skanowanie ${total} adresów × ${selectedPorts.length} portów…`,'warn');
+    setStatus(t('statusScanning', total, selectedPorts.length),'warn');
   }
 
   let nextIdx=0, checked=0;
@@ -1284,14 +1595,14 @@ async function startScan() {
   setScanState(false);
   updateProgress(total,total,totalFound,totalOpenPorts);
 
-  if (totalFound===0 && emptyRow.parentNode) emptyRow.textContent='Nie znaleziono aktywnych hostów.';
-  if (stopRequested) setStatus(`Zatrzymano po ${statChecked.textContent} adresach.`,'warn');
-  else if (totalFound>0) setStatus(`Zakończono. Znaleziono ${totalFound} hostów (${totalOpenPorts} portów).`,'ok');
-  else setStatus('Skan zakończony — brak aktywnych hostów.','err');
+  if (totalFound===0 && emptyRow.parentNode) emptyRow.textContent = t('emptyNone');
+  if (stopRequested) setStatus(t('statusStopped', statChecked.textContent),'warn');
+  else if (totalFound>0) setStatus(t('statusDone', totalFound, totalOpenPorts),'ok');
+  else setStatus(t('statusNone'),'err');
 }
 
 btnGo.addEventListener('click',()=>{
-  if(!scanning) startScan().catch(e=>{setStatus(`Błąd: ${e.message}`,'err');setScanState(false);});
+  if(!scanning) startScan().catch(e=>{setStatus(`Error: ${e.message}`,'err');setScanState(false);});
 });
 btnStop.addEventListener('click',()=>{
   stopRequested=true; activeControllers.forEach(c=>c.abort());
@@ -1299,12 +1610,15 @@ btnStop.addEventListener('click',()=>{
 btnClear.addEventListener('click',()=>{
   foundHostsMap={}; totalFound=0; totalOpenPorts=0;
   listBody.innerHTML=''; listBody.appendChild(emptyRow);
-  emptyRow.textContent='Brak wyników. Skonfiguruj zakres IP i kliknij Start.';
+  emptyRow.textContent = t('emptyRow');
   updateProgress(0,0,0,0); statTime.textContent='0.0s';
-  setStatus('Wyczyszczono.');
+  setStatus(t('statusCleared'));
   previewWrap.classList.remove('open');
   previewFrame.src='about:blank'; selectedRowEl=null;
 });
+
+// ── Init language ──
+applyLang();
 </script>
 </body>
 </html>
