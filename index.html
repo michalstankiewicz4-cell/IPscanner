@@ -182,9 +182,10 @@ body {
 }
 .listview-header {
   display: grid;
-  grid-template-columns: 24px 1fr 70px 1fr;
+  grid-template-columns: 20px 110px 56px 130px 80px 1fr;
   background: #c0c0c0;
   border-bottom: 1px solid #808080;
+  min-width: 500px;
 }
 .lv-col {
   padding: 2px 4px;
@@ -217,10 +218,11 @@ body {
 
 .lv-row {
   display: grid;
-  grid-template-columns: 24px 1fr 70px 1fr;
+  grid-template-columns: 20px 110px 56px 130px 80px 1fr;
   cursor: default;
   border-bottom: 1px solid #f0f0f0;
   animation: rowIn 200ms ease-out;
+  min-width: 500px;
 }
 @keyframes rowIn { from{opacity:0;background:#000080;color:#fff} to{opacity:1} }
 .lv-row:hover   { background: #000080; color: #fff; }
@@ -480,6 +482,8 @@ body {
     <div class="menu-item" id="menuFile"><span data-i18n="menuFile">File</span></div>
     <div class="menu-item" id="menuOptions"><span data-i18n="menuOptions">Options</span>
       <div class="menu-dropdown">
+        <div class="menu-dd-item" id="menuPresets" data-i18n="menuPresets">Port Presets...</div>
+        <div class="menu-dd-sep"></div>
         <div class="menu-dd-item" id="menuLang" data-i18n="menuLanguage">Language...</div>
       </div>
     </div>
@@ -505,8 +509,23 @@ body {
     <div class="groupbox">
       <span class="groupbox-legend" data-i18n="scanSettings">Scan Settings</span>
 
-      <!-- Modes -->
-      <div class="mode-row" id="modeRow"></div>
+      <!-- Preset selector -->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+        <span style="white-space:nowrap" data-i18n="labelPreset">Preset:</span>
+        <select id="presetSelect" style="
+          font-family:inherit;font-size:11px;
+          border-top:1px solid #808080;border-left:1px solid #808080;
+          border-right:1px solid #fff;border-bottom:1px solid #fff;
+          background:#fff;padding:1px 4px;min-width:120px;
+        "></select>
+        <span style="font-size:10px;color:#808080" data-i18n="labelPorts2">Ports:</span>
+        <span id="activePorts" style="
+          font-family:'Courier New',monospace;font-size:10px;color:#000080;
+          border-top:1px solid #808080;border-left:1px solid #808080;
+          border-right:1px solid #fff;border-bottom:1px solid #fff;
+          background:#fff;padding:1px 6px;flex:1;min-width:80px;
+        "></span>
+      </div>
 
       <!-- External IP -->
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
@@ -568,6 +587,8 @@ body {
       <div class="listview-header">
         <div class="lv-col" style="font-size:9px">●</div>
         <div class="lv-col" data-i18n="colIp">IP Address</div>
+        <div class="lv-col" data-i18n="colPing">Ping</div>
+        <div class="lv-col" data-i18n="colHostname">Hostname</div>
         <div class="lv-col" data-i18n="colPorts">Ports</div>
         <div class="lv-col" data-i18n="colLinks">Paths / Links</div>
       </div>
@@ -737,6 +758,65 @@ function closeNotepad() {
 }
 </script>
 
+<!-- Presets dialog -->
+<div class="dlg-overlay" id="dlgPresetsOverlay">
+  <div class="dlg95" style="min-width:380px">
+    <div class="dlg-title">
+      <span>⚙</span>
+      <span data-i18n="menuPresets">Port Presets</span>
+      <div class="title-btn" onclick="closePresetsDlg()">✕</div>
+    </div>
+    <div class="dlg-body" style="padding:10px 12px 4px">
+      <!-- Preset list -->
+      <div style="margin-bottom:8px">
+        <div style="
+          border-top:1px solid #808080;border-left:1px solid #808080;
+          border-right:1px solid #fff;border-bottom:1px solid #fff;
+          background:#fff;height:140px;overflow-y:auto;
+        " id="presetListBox"></div>
+        <div style="display:flex;gap:4px;margin-top:5px">
+          <button class="btn95" id="btnPresetAdd" data-i18n="presetAdd" style="font-size:10px;padding:2px 10px">+ Add</button>
+          <button class="btn95" id="btnPresetDel" data-i18n="presetDel" style="font-size:10px;padding:2px 10px">✕ Delete</button>
+          <button class="btn95" id="btnPresetUp"  style="font-size:10px;padding:2px 8px">▲</button>
+          <button class="btn95" id="btnPresetDown" style="font-size:10px;padding:2px 8px">▼</button>
+        </div>
+      </div>
+      <!-- Edit selected preset -->
+      <div class="dlg-groupbox" id="presetEditBox" style="opacity:0.4;pointer-events:none">
+        <span class="dlg-groupbox-legend" data-i18n="presetEdit">Edit preset</span>
+        <div class="dlg-row" style="margin-bottom:6px">
+          <label style="width:40px;flex-shrink:0" data-i18n="presetName">Name:</label>
+          <input id="presetNameInput" type="text" style="
+            flex:1;font-family:inherit;font-size:11px;
+            border-top:1px solid #808080;border-left:1px solid #808080;
+            border-right:1px solid #fff;border-bottom:1px solid #fff;
+            padding:1px 4px;background:#fff;
+          "/>
+        </div>
+        <div class="dlg-row">
+          <label style="width:40px;flex-shrink:0" data-i18n="presetPorts">Ports:</label>
+          <input id="presetPortsInput" type="text" placeholder="80, 8080, 443, 554"
+            style="
+              flex:1;font-family:'Courier New',monospace;font-size:11px;
+              border-top:1px solid #808080;border-left:1px solid #808080;
+              border-right:1px solid #fff;border-bottom:1px solid #fff;
+              padding:1px 4px;background:#fff;
+            "/>
+        </div>
+        <div style="font-size:10px;color:#808080;margin-top:4px" data-i18n="presetHint">
+          Enter port numbers separated by commas, e.g.: 80, 443, 8080, 554
+        </div>
+        <button class="btn95" id="btnPresetSave" data-i18n="presetSave"
+          style="margin-top:6px;font-size:10px;padding:2px 12px">💾 Save</button>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="dlgPresetsOk" data-i18n="dlgOk">OK</button>
+      <button class="btn95" onclick="closePresetsDlg()" data-i18n="dlgCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Settings dialog -->
 <div class="dlg-overlay" id="dlgOverlay">
   <div class="dlg95">
@@ -785,7 +865,7 @@ let lang = localStorage.getItem('netrecon_lang') || 'en';
 const STRINGS = {
   en: {
     menuFile:'File', menuOptions:'Options', menuHelp:'Help',
-    menuLanguage:'Language...', menuAbout:'About',
+    menuLanguage:'Language...', menuAbout:'About', menuPresets:'Port Presets...',
     btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Clear',
     btnMyIp:'🌐 My External IP', btnCopy:'📋 Copy', btnUse:'➤ Use',
     scanSettings:'Scan Settings', ipRange:'IP Range:', threads:'Threads:',
@@ -799,7 +879,7 @@ const STRINGS = {
     hintNas:'Synology 5000/5001, QNAP 8080, Proxmox 8006, TrueNAS 80/443',
     hintAll:'All known ports at once — slower, most thorough',
     labelChecked:'Checked:', labelFound:'Found:', labelPorts:'Ports:',
-    colIp:'IP Address', colPorts:'Ports', colLinks:'Paths / Links',
+    colIp:'IP Address', colPing:'Ping', colHostname:'Hostname', colPorts:'Ports', colLinks:'Paths / Links',
     emptyRow:'No results. Configure IP range and click Start.',
     emptyScanning:'Scanning…', emptyNone:'No active hosts found.',
     detailGeo:'🌍 Geolocation / ISP', detailDevice:'🖥 Device Identification',
@@ -824,6 +904,11 @@ const STRINGS = {
     statusHosts:(n)=>`${n} hosts`,
     ctxCopyIp:'Copy IP Address', ctxCopyPorts:'Copy Ports',
     ctxOpenBrowser:'Open in Browser', ctxPreview:'Preview here',
+    labelPreset:'Preset:', labelPorts2:'Ports:',
+    presetAdd:'+ Add', presetDel:'✕ Delete',
+    presetEdit:'Edit preset', presetName:'Name:',
+    presetPorts:'Ports:', presetSave:'💾 Save',
+    presetHint:'Enter port numbers separated by commas, e.g.: 80, 443, 8080, 554',
     dlgTitle:'Options', dlgLang:'Language:',
     dlgLangEn:'English', dlgLangPl:'Polski',
     dlgOk:'OK', dlgCancel:'Cancel',
@@ -838,7 +923,7 @@ const STRINGS = {
   },
   pl: {
     menuFile:'Plik', menuOptions:'Opcje', menuHelp:'Pomoc',
-    menuLanguage:'Język...', menuAbout:'O programie',
+    menuLanguage:'Język...', menuAbout:'O programie', menuPresets:'Presety portów...',
     btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Wyczyść',
     btnMyIp:'🌐 Moje zewnętrzne IP', btnCopy:'📋 Kopiuj', btnUse:'➤ Użyj',
     scanSettings:'Ustawienia skanowania', ipRange:'IP Range:', threads:'Wątki:',
@@ -852,7 +937,7 @@ const STRINGS = {
     hintNas:'Synology 5000/5001, QNAP 8080, Proxmox 8006, TrueNAS 80/443',
     hintAll:'Wszystkie znane porty jednocześnie — wolniejszy, najdokładniejszy',
     labelChecked:'Sprawdzono:', labelFound:'Znaleziono:', labelPorts:'Portów:',
-    colIp:'Adres IP', colPorts:'Porty', colLinks:'Ścieżki / Linki',
+    colIp:'Adres IP', colPing:'Ping', colHostname:'Hostname', colPorts:'Porty', colLinks:'Ścieżki / Linki',
     emptyRow:'Brak wyników. Skonfiguruj zakres IP i kliknij Start.',
     emptyScanning:'Skanowanie…', emptyNone:'Nie znaleziono aktywnych hostów.',
     detailGeo:'🌍 Geolokalizacja / ISP', detailDevice:'🖥 Identyfikacja urządzenia',
@@ -877,6 +962,11 @@ const STRINGS = {
     statusHosts:(n)=>`${n} hostów`,
     ctxCopyIp:'Kopiuj adres IP', ctxCopyPorts:'Kopiuj porty',
     ctxOpenBrowser:'Otwórz w przeglądarce', ctxPreview:'Podgląd tutaj',
+    labelPreset:'Preset:', labelPorts2:'Porty:',
+    presetAdd:'+ Dodaj', presetDel:'✕ Usuń',
+    presetEdit:'Edytuj preset', presetName:'Nazwa:',
+    presetPorts:'Porty:', presetSave:'💾 Zapisz',
+    presetHint:'Wpisz numery portów po przecinku, np.: 80, 443, 8080, 554',
     dlgTitle:'Opcje', dlgLang:'Język:',
     dlgLangEn:'English', dlgLangPl:'Polski',
     dlgOk:'OK', dlgCancel:'Anuluj',
@@ -903,18 +993,6 @@ function applyLang() {
     const v = t(key);
     if (typeof v === 'string') el.textContent = v;
   });
-  // Rebuild mode radios with new labels
-  buildModeRow();
-  // Update port hint
-  document.getElementById('portHint').textContent = t('hint' + currentMode.charAt(0).toUpperCase() + currentMode.slice(1));
-  // Update preview blocked text
-  const pb = document.getElementById('previewBlocked');
-  if (pb) {
-    pb.querySelector('div:nth-child(2)').textContent = t('previewBlocked');
-    pb.querySelector('a').textContent = t('previewBlockedLink');
-  }
-  // Update notepad desktop icon
-  document.getElementById('iconLabel').textContent = t('notepadDesktop');
   // Persist
   localStorage.setItem('netrecon_lang', lang);
 }
@@ -1037,31 +1115,166 @@ const MODES = {
 };
 
 // ══════════════════════════════════════════════════
-//  BUILD MODE RADIO BUTTONS
+//  PORT PRESETS
 // ══════════════════════════════════════════════════
-let currentMode = 'cam';
-const modeRow = document.getElementById('modeRow');
-const MODE_KEYS = ['cam','print','folder','router','nas','all'];
+const DEFAULT_PRESETS = [
+  { name: '📹 Cameras',         ports: '80, 8080, 8081, 443, 554, 9000, 37777, 34567' },
+  { name: '🖨️ Printers',        ports: '80, 443, 631, 9100, 8080' },
+  { name: '📁 Folders / HTTP',  ports: '80, 8080, 8888, 21, 3000, 8000, 5000' },
+  { name: '🌐 Routers',         ports: '80, 443, 8080, 8443, 10000' },
+  { name: '💾 NAS / Servers',   ports: '80, 443, 5000, 5001, 8080, 8006, 9090' },
+  { name: '🔍 All ports',       ports: '80, 443, 8080, 8443, 8081, 554, 9000, 37777, 34567, 631, 9100, 5000, 5001, 8006, 21, 3000, 8000, 8888, 9090, 10000' },
+];
 
-function buildModeRow() {
-  modeRow.innerHTML = '';
-  MODE_KEYS.forEach(key => {
-    const label = document.createElement('label');
-    label.className = 'mode-radio';
-    const inp = document.createElement('input');
-    inp.type = 'radio'; inp.name = 'mode'; inp.value = key;
-    if (key === currentMode) inp.checked = true;
-    inp.addEventListener('change', () => {
-      currentMode = key;
-      document.getElementById('portHint').textContent = t('hint' + key.charAt(0).toUpperCase() + key.slice(1));
-    });
-    label.appendChild(inp);
-    label.appendChild(document.createTextNode(' ' + t('mode' + key.charAt(0).toUpperCase() + key.slice(1))));
-    modeRow.appendChild(label);
-  });
+function loadPresets() {
+  try {
+    const saved = localStorage.getItem('netrecon_presets');
+    return saved ? JSON.parse(saved) : DEFAULT_PRESETS.map(p => ({...p}));
+  } catch { return DEFAULT_PRESETS.map(p => ({...p})); }
 }
-buildModeRow();
-document.getElementById('portHint').textContent = t('hintCam');
+function savePresetsStorage(arr) {
+  localStorage.setItem('netrecon_presets', JSON.stringify(arr));
+}
+
+let presets = loadPresets();
+let activePresetIdx = +( localStorage.getItem('netrecon_active_preset') || 0 );
+if (activePresetIdx >= presets.length) activePresetIdx = 0;
+
+function getActivePorts() {
+  const preset = presets[activePresetIdx];
+  if (!preset) return [];
+  return preset.ports.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n > 0 && n <= 65535);
+}
+
+function buildPresetSelect() {
+  const sel = document.getElementById('presetSelect');
+  sel.innerHTML = '';
+  presets.forEach((p, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = p.name;
+    if (i === activePresetIdx) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  updatePortsDisplay();
+}
+
+function updatePortsDisplay() {
+  const ports = getActivePorts();
+  document.getElementById('activePorts').textContent = ports.join(', ');
+  document.getElementById('portHint').textContent = presets[activePresetIdx]?.ports || '';
+}
+
+document.getElementById('presetSelect').addEventListener('change', function() {
+  activePresetIdx = +this.value;
+  localStorage.setItem('netrecon_active_preset', activePresetIdx);
+  updatePortsDisplay();
+});
+
+buildPresetSelect();
+
+// ── Presets Dialog ──
+let dlgSelectedPreset = -1;
+
+function openPresetsDlg() {
+  dlgSelectedPreset = activePresetIdx;
+  renderPresetListBox();
+  document.getElementById('dlgPresetsOverlay').classList.add('open');
+}
+function closePresetsDlg() {
+  document.getElementById('dlgPresetsOverlay').classList.remove('open');
+}
+
+function renderPresetListBox() {
+  const box = document.getElementById('presetListBox');
+  box.innerHTML = '';
+  presets.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = `padding:3px 8px;font-size:11px;cursor:default;
+      background:${i===dlgSelectedPreset?'#000080':'#fff'};
+      color:${i===dlgSelectedPreset?'#fff':'#000'};`;
+    row.textContent = p.name;
+    row.addEventListener('click', () => {
+      dlgSelectedPreset = i;
+      renderPresetListBox();
+      loadPresetIntoEditor(i);
+    });
+    box.appendChild(row);
+  });
+  const editBox = document.getElementById('presetEditBox');
+  editBox.style.opacity    = dlgSelectedPreset >= 0 ? '1' : '0.4';
+  editBox.style.pointerEvents = dlgSelectedPreset >= 0 ? '' : 'none';
+}
+
+function loadPresetIntoEditor(i) {
+  const p = presets[i];
+  document.getElementById('presetNameInput').value  = p.name;
+  document.getElementById('presetPortsInput').value = p.ports;
+  document.getElementById('presetEditBox').style.opacity = '1';
+  document.getElementById('presetEditBox').style.pointerEvents = '';
+}
+
+document.getElementById('btnPresetAdd').addEventListener('click', () => {
+  presets.push({ name: 'New Preset', ports: '80, 443, 8080' });
+  dlgSelectedPreset = presets.length - 1;
+  renderPresetListBox();
+  loadPresetIntoEditor(dlgSelectedPreset);
+  document.getElementById('presetNameInput').focus();
+  document.getElementById('presetNameInput').select();
+});
+
+document.getElementById('btnPresetDel').addEventListener('click', () => {
+  if (dlgSelectedPreset < 0 || presets.length <= 1) return;
+  presets.splice(dlgSelectedPreset, 1);
+  dlgSelectedPreset = Math.min(dlgSelectedPreset, presets.length - 1);
+  renderPresetListBox();
+  if (dlgSelectedPreset >= 0) loadPresetIntoEditor(dlgSelectedPreset);
+});
+
+document.getElementById('btnPresetUp').addEventListener('click', () => {
+  if (dlgSelectedPreset <= 0) return;
+  [presets[dlgSelectedPreset-1], presets[dlgSelectedPreset]] =
+  [presets[dlgSelectedPreset], presets[dlgSelectedPreset-1]];
+  dlgSelectedPreset--;
+  renderPresetListBox();
+  loadPresetIntoEditor(dlgSelectedPreset);
+});
+
+document.getElementById('btnPresetDown').addEventListener('click', () => {
+  if (dlgSelectedPreset < 0 || dlgSelectedPreset >= presets.length - 1) return;
+  [presets[dlgSelectedPreset+1], presets[dlgSelectedPreset]] =
+  [presets[dlgSelectedPreset], presets[dlgSelectedPreset+1]];
+  dlgSelectedPreset++;
+  renderPresetListBox();
+  loadPresetIntoEditor(dlgSelectedPreset);
+});
+
+document.getElementById('btnPresetSave').addEventListener('click', () => {
+  if (dlgSelectedPreset < 0) return;
+  const name  = document.getElementById('presetNameInput').value.trim();
+  const ports = document.getElementById('presetPortsInput').value.trim();
+  if (!name) return;
+  presets[dlgSelectedPreset] = { name, ports };
+  renderPresetListBox();
+});
+
+document.getElementById('dlgPresetsOk').addEventListener('click', () => {
+  // Auto-save any unsaved edits
+  if (dlgSelectedPreset >= 0) {
+    const name  = document.getElementById('presetNameInput').value.trim();
+    const ports = document.getElementById('presetPortsInput').value.trim();
+    if (name) presets[dlgSelectedPreset] = { name, ports };
+  }
+  savePresetsStorage(presets);
+  if (activePresetIdx >= presets.length) activePresetIdx = 0;
+  buildPresetSelect();
+  closePresetsDlg();
+});
+
+document.getElementById('menuPresets').addEventListener('click', () => {
+  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+  openPresetsDlg();
+});
 
 // ══════════════════════════════════════════════════
 //  IP INPUT — auto-jump between octets
@@ -1178,11 +1391,12 @@ async function probePort(ip, port, ms=1500) {
   const ctrl = new AbortController();
   activeControllers.add(ctrl);
   const tid = setTimeout(()=>ctrl.abort(), ms);
+  const t0 = Date.now();
   try {
     const proto = (port===443||port===8443)?'https':'http';
     await fetch(`${proto}://${ip}:${port}/`,{mode:'no-cors',cache:'no-store',signal:ctrl.signal});
-    return true;
-  } catch { return false; }
+    return { ok: true, ms: Date.now() - t0 };
+  } catch { return { ok: false, ms: null }; }
   finally { clearTimeout(tid); activeControllers.delete(ctrl); }
 }
 
@@ -1330,34 +1544,75 @@ async function enrichRow(ip, ports, cells) {
     : `<div class="detail-line"><b>${t('accessLabel')}</b> ${t('accessClosed')}</div>`;
 }
 
+// ── Hostname lookup via ip-api (already used for geo, reuse) ──
+const hostnameCache = {};
+async function lookupHostname(ip) {
+  if (hostnameCache[ip] !== undefined) return hostnameCache[ip];
+  try {
+    const r = await fetch(
+      `http://ip-api.com/json/${ip}?fields=status,reverse`,
+      { signal: AbortSignal.timeout(4000) }
+    );
+    const d = await r.json();
+    const result = (d.status === 'success' && d.reverse) ? d.reverse : null;
+    hostnameCache[ip] = result;
+    return result;
+  } catch { hostnameCache[ip] = null; return null; }
+}
+
 // ══════════════════════════════════════════════════
 //  ADD ROW
 // ══════════════════════════════════════════════════
-function addResultRow(ip, openPorts) {
+function addResultRow(ip, openPorts, pingMs) {
   if (emptyRow.parentNode) emptyRow.remove();
 
   const def = MODES[currentMode];
-
-  // ── Main row ──
   const row = document.createElement('div');
   row.className = 'lv-row';
   row.dataset.ip = ip;
-  row.style.display = 'grid'; // keep grid layout
+  row.style.display = 'grid';
 
+  // Icon
   const cIcon = document.createElement('div');
   cIcon.className='lv-cell lv-icon';
   cIcon.innerHTML='<span class="icon-ok">✔</span>';
   row.appendChild(cIcon);
 
+  // IP
   const cIp = document.createElement('div');
   cIp.className='lv-cell';
   cIp.innerHTML = `${ip} <span id="acc_${ip.replace(/\./g,'_')}" style="font-size:9px"></span>`;
   row.appendChild(cIp);
 
+  // Ping
+  const cPing = document.createElement('div');
+  cPing.className='lv-cell';
+  if (pingMs !== null && pingMs !== undefined) {
+    const color = pingMs < 100 ? 'green' : pingMs < 500 ? '#808000' : '#c00';
+    cPing.innerHTML = `<span style="color:${color};font-weight:bold">${pingMs} ms</span>`;
+  } else {
+    cPing.innerHTML = '<span style="color:#808080">-</span>';
+  }
+  row.appendChild(cPing);
+
+  // Hostname (async)
+  const cHost = document.createElement('div');
+  cHost.className='lv-cell';
+  cHost.style.cssText = 'color:#808080;font-size:10px;font-style:italic';
+  cHost.textContent = '…';
+  row.appendChild(cHost);
+  lookupHostname(ip).then(name => {
+    cHost.style.cssText = 'font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    cHost.textContent = name || '-';
+    cHost.title = name || '';
+  });
+
+  // Ports
   const cPorts = document.createElement('div');
   cPorts.className='lv-cell'; cPorts.textContent=openPorts.join(', ');
   row.appendChild(cPorts);
 
+  // Links
   const cLinks = document.createElement('div');
   cLinks.className='lv-cell';
   const frag = document.createDocumentFragment();
@@ -1549,9 +1804,8 @@ async function startScan() {
   const startNum=ipToNum(startIp), endNum=ipToNum(endIp);
   if (startNum>endNum) { setStatus('Adres OD musi być ≤ DO.','err'); return; }
 
-  const def = MODES[currentMode];
-  const selectedPorts = def.ports; // use all ports for current mode
-  if (!selectedPorts.length) return;
+  const selectedPorts = getActivePorts();
+  if (!selectedPorts.length) { setStatus('No ports selected in preset.','err'); return; }
 
   const total=endNum-startNum+1;
   foundHostsMap={}; totalFound=0; totalOpenPorts=0;
@@ -1579,12 +1833,13 @@ async function startScan() {
       const idx=nextIdx++; if(idx>=total) return;
       const ip=numToIp(startNum+idx);
       const res=await Promise.all(
-        selectedPorts.map(port=>probePort(ip,port,1400).then(ok=>({port,ok})))
+        selectedPorts.map(port=>probePort(ip,port,1400).then(r=>({port, ok:r.ok, ms:r.ms})))
       );
       const openPorts=res.filter(r=>r.ok).map(r=>r.port);
+      const bestMs = res.filter(r=>r.ok).reduce((a,r)=>r.ms<a?r.ms:a, Infinity);
       if (openPorts.length) {
         foundHostsMap[ip]=openPorts; totalFound++; totalOpenPorts+=openPorts.length;
-        addResultRow(ip,openPorts);
+        addResultRow(ip, openPorts, bestMs === Infinity ? null : bestMs);
       }
       checked++;
       if (checked%4===0||checked===total) updateProgress(checked,total,totalFound,totalOpenPorts);
