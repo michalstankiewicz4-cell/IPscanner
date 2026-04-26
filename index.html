@@ -1,0 +1,1310 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>NetRecon IP Scanner</title>
+<style>
+/* ── Win95 Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #008080; /* classic teal desktop */
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 12px;
+  font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif;
+  font-size: 11px;
+}
+
+/* ── Window frame ── */
+.win95 {
+  width: min(640px, 100%);
+  background: #c0c0c0;
+  border-top:    2px solid #ffffff;
+  border-left:   2px solid #ffffff;
+  border-right:  2px solid #808080;
+  border-bottom: 2px solid #808080;
+  box-shadow: 1px 1px 0 #000, inset 1px 1px 0 #dfdfdf;
+  user-select: none;
+}
+
+/* ── Title bar ── */
+.titlebar {
+  background: linear-gradient(to right, #000080, #1084d0);
+  color: #fff;
+  font-weight: bold;
+  font-size: 11px;
+  padding: 3px 4px 3px 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
+}
+.titlebar .icon { font-size: 12px; }
+.titlebar .title { flex: 1; }
+.titlebar-btns { display: flex; gap: 2px; }
+.title-btn {
+  width: 16px; height: 14px;
+  background: #c0c0c0;
+  border-top:   1px solid #fff;
+  border-left:  1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom:1px solid #808080;
+  font-size: 9px; font-weight: bold;
+  display: flex; align-items: center; justify-content: center;
+  cursor: default; color: #000; line-height: 1;
+}
+.title-btn:active { border-top:1px solid #808080; border-left:1px solid #808080; border-right:1px solid #fff; border-bottom:1px solid #fff; }
+
+/* ── Content area ── */
+.win-body { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+
+/* ── Toolbar row ── */
+.toolbar {
+  display: flex; gap: 4px; align-items: center;
+  border-bottom: 1px solid #808080;
+  padding-bottom: 6px;
+  margin-bottom: 2px;
+}
+.btn95 {
+  background: #c0c0c0;
+  border-top:   1px solid #fff;
+  border-left:  1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom:1px solid #808080;
+  box-shadow: inset 1px 1px 0 #dfdfdf;
+  font-family: inherit; font-size: 11px;
+  padding: 3px 10px;
+  cursor: pointer; color: #000;
+  white-space: nowrap;
+}
+.btn95:active, .btn95.pressed {
+  border-top:   1px solid #808080;
+  border-left:  1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom:1px solid #fff;
+  box-shadow: none;
+  padding: 4px 9px 2px 11px;
+}
+.btn95:disabled { color: #808080; cursor: default; }
+.btn95:disabled .btn-shadow { color: #fff; }
+.btn-stop95 { background: #c0c0c0; }
+
+/* ── Mode selector ── */
+.groupbox {
+  border: 1px solid #808080;
+  border-top: 1px solid #808080;
+  box-shadow: 1px 1px 0 #fff, inset 1px 1px 0 #808080;
+  padding: 10px 8px 8px 8px;
+  position: relative;
+}
+.groupbox-legend {
+  position: absolute; top: -6px; left: 8px;
+  background: #c0c0c0; padding: 0 3px;
+  font-size: 11px;
+}
+
+/* ── Mode tabs (styled as radio buttons) ── */
+.mode-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.mode-radio { display: flex; align-items: center; gap: 3px; cursor: pointer; }
+.mode-radio input[type=radio] { cursor: pointer; }
+
+/* ── IP Range row ── */
+.range-row {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap;
+}
+.range-label { white-space: nowrap; }
+
+/* Segmented IP input — sunken box */
+.ip-box {
+  display: inline-flex; align-items: center;
+  background: #fff;
+  border-top:   1px solid #808080;
+  border-left:  1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom:1px solid #fff;
+  box-shadow: inset 1px 1px 0 #404040;
+  padding: 1px 3px;
+  gap: 1px;
+}
+.oct {
+  width: 28px; border: none; outline: none;
+  font-family: inherit; font-size: 11px;
+  background: transparent; color: #000;
+  text-align: center; padding: 1px 0;
+}
+.oct-dot { font-size: 13px; color: #000; line-height: 1; }
+
+/* ── Port hint ── */
+.port-hint { font-size: 10px; color: #000080; margin-top: 3px; }
+
+/* ── Progress ── */
+.progress-wrap { display: flex; flex-direction: column; gap: 3px; }
+.progress-bar-bg {
+  height: 14px;
+  border-top:   1px solid #808080;
+  border-left:  1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom:1px solid #fff;
+  background: #c0c0c0;
+  overflow: hidden;
+  position: relative;
+}
+.progress-bar-fill {
+  height: 100%; width: 0%;
+  background: #000080;
+  transition: width 180ms;
+  display: flex; align-items: center; padding-left: 4px;
+}
+.progress-pct {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: #000; mix-blend-mode: difference;
+  filter: invert(1);
+}
+.stats-row { display: flex; gap: 14px; font-size: 10px; color: #000; }
+.stat-item { display: flex; gap: 3px; align-items: center; }
+.stat-val { font-weight: bold; color: #000080; }
+
+/* ── Results list ── */
+.listview-wrap {
+  border-top:   1px solid #808080;
+  border-left:  1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom:1px solid #fff;
+  box-shadow: inset 1px 1px 0 #404040;
+  background: #fff;
+  overflow: hidden;
+}
+.listview-header {
+  display: grid;
+  grid-template-columns: 24px 1fr 70px 1fr;
+  background: #c0c0c0;
+  border-bottom: 1px solid #808080;
+}
+.lv-col {
+  padding: 2px 4px;
+  font-size: 11px; font-weight: bold;
+  border-right: 1px solid #808080;
+  border-top:   1px solid #fff;
+  border-left:  1px solid #fff;
+  cursor: default;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.lv-col:first-child { border-left: none; }
+.lv-col:last-child  { border-right: none; }
+
+.listview-body {
+  max-height: 260px;
+  overflow-y: scroll;
+  overflow-x: auto;
+}
+/* Classic Win95 scrollbar approximation */
+.listview-body::-webkit-scrollbar { width: 16px; }
+.listview-body::-webkit-scrollbar-track { background: #c0c0c0; }
+.listview-body::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border-top:   1px solid #fff;
+  border-left:  1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom:1px solid #808080;
+}
+
+.lv-row {
+  display: grid;
+  grid-template-columns: 24px 1fr 70px 1fr;
+  cursor: default;
+  border-bottom: 1px solid #f0f0f0;
+  animation: rowIn 200ms ease-out;
+}
+@keyframes rowIn { from{opacity:0;background:#000080;color:#fff} to{opacity:1} }
+.lv-row:hover   { background: #000080; color: #fff; }
+.lv-row.selected { background: #000080; color: #fff; }
+.lv-row.selected .lv-cell { color: #fff; }
+.lv-row:hover .lv-cell { color: #fff; }
+.lv-cell {
+  padding: 2px 4px;
+  font-size: 11px; color: #000;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lv-icon { text-align: center; font-size: 10px; }
+.icon-ok  { color: green; font-weight: bold; }
+.icon-err { color: #c00; font-weight: bold; }
+.empty-row { padding: 8px; font-size: 11px; color: #808080; }
+
+/* ── Paths popup ── */
+.paths-row {
+  display: none;
+  grid-column: 1 / -1;
+  background: #fffff0;
+  border-top: 1px solid #c0c0c0;
+  padding: 4px 28px;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.paths-row.open { display: flex; }
+.path-link {
+  font-size: 10px; color: #000080;
+  text-decoration: underline; cursor: pointer;
+  white-space: nowrap;
+}
+.path-link:hover { color: #c00; }
+
+/* ── Preview frame ── */
+.preview-wrap {
+  display: none;
+}
+.preview-wrap.open { display: block; }
+.preview-titlebar {
+  background: #000080; color: #fff;
+  font-size: 10px; padding: 2px 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.preview-url-label { flex: 1; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preview-iframe {
+  width: 100%; height: 300px; border: none;
+  border-top:   1px solid #808080;
+  border-left:  1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom:1px solid #fff;
+  background: #fff;
+  display: block;
+}
+.preview-blocked {
+  height: 300px;
+  background: #fff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+  color: #808080;
+}
+.preview-blocked a { color: #000080; font-size: 11px; }
+
+/* ── Status bar ── */
+.statusbar {
+  border-top: 1px solid #808080;
+  padding: 3px 6px;
+  font-size: 10px;
+  color: #000;
+  display: flex;
+  gap: 10px;
+}
+.status-panel {
+  border-top:   1px solid #808080;
+  border-left:  1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom:1px solid #fff;
+  padding: 1px 6px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.status-panel.ok  { color: green; }
+.status-panel.err { color: #c00; }
+.status-panel.warn{ color: #808000; }
+
+/* ── Detail panel (expandable under row) ── */
+.detail-row {
+  display: none;
+  grid-column: 1 / -1;
+  background: #fffff0;
+  border-top: 1px solid #c0c0c0;
+  padding: 6px 10px 8px 28px;
+  font-size: 10px;
+  color: #000;
+  gap: 0;
+}
+.detail-row.open { display: block; }
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+}
+.detail-section {
+  border: 1px solid #c0c0c0;
+  box-shadow: inset 1px 1px 0 #808080, 1px 1px 0 #fff;
+  background: #fff;
+  padding: 4px 8px 5px;
+  margin-top: 4px;
+}
+.detail-section-title {
+  font-weight: bold; font-size: 10px;
+  color: #000080; margin-bottom: 3px;
+  border-bottom: 1px solid #c0c0c0;
+  padding-bottom: 2px;
+}
+.detail-line { line-height: 1.7; }
+.detail-line b { color: #000080; }
+.detail-tag {
+  display: inline-block;
+  font-size: 9px; font-weight: bold;
+  padding: 0 4px;
+  border: 1px solid;
+  border-radius: 2px;
+  margin-left: 4px;
+}
+.tag-vpn    { color: #c00; border-color: #c00; background: #fff0f0; }
+.tag-dc     { color: #808000; border-color: #808000; background: #fffff0; }
+.tag-open   { color: green; border-color: green; background: #f0fff0; }
+.tag-device { color: #000080; border-color: #000080; background: #f0f0ff; }
+.detail-loading { color: #808080; font-style: italic; }
+
+/* ── Context menu ── */
+.ctxmenu {
+  position: fixed; display: none;
+  background: #c0c0c0;
+  border-top:   1px solid #fff;
+  border-left:  1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom:1px solid #808080;
+  box-shadow: 2px 2px 0 #000;
+  z-index: 9999;
+  min-width: 150px;
+}
+.ctxmenu.open { display: block; }
+.ctx-item {
+  padding: 4px 20px 4px 24px;
+  font-size: 11px; cursor: default;
+}
+.ctx-item:hover { background: #000080; color: #fff; }
+.ctx-sep { height: 1px; background: #808080; margin: 2px 0; box-shadow: 0 1px 0 #fff; }
+</style>
+</head>
+<body>
+
+<div class="win95" id="mainWin">
+  <!-- Title bar -->
+  <div class="titlebar">
+    <span class="icon">📡</span>
+    <span class="title">NetRecon IP Scanner</span>
+    <div class="titlebar-btns">
+      <div class="title-btn">_</div>
+      <div class="title-btn">□</div>
+      <div class="title-btn" style="font-weight:900">✕</div>
+    </div>
+  </div>
+
+  <div class="win-body">
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <button class="btn95" id="btnGo">▶ Start</button>
+      <button class="btn95" id="btnStop" disabled>■ Stop</button>
+      <button class="btn95" id="btnClear">✕ Wyczyść</button>
+      <div style="flex:1"></div>
+      <span id="statTime" style="font-size:10px;color:#000080;font-weight:bold">0.0s</span>
+    </div>
+
+    <!-- Mode + IP Range -->
+    <div class="groupbox">
+      <span class="groupbox-legend">Ustawienia skanowania</span>
+
+      <!-- Modes -->
+      <div class="mode-row" id="modeRow"></div>
+
+      <!-- External IP -->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
+        <button class="btn95" id="btnMyIp">🌐 Moje zewnętrzne IP</button>
+        <span id="myIpResult" style="font-family:inherit;font-size:11px;color:#000080;font-weight:bold"></span>
+        <button class="btn95" id="btnCopyMyIp" style="display:none;padding:2px 8px;font-size:10px">📋 Kopiuj</button>
+        <button class="btn95" id="btnUseMyIp"  style="display:none;padding:2px 8px;font-size:10px">➤ Użyj</button>
+      </div>
+
+      <!-- IP Range -->
+      <div class="range-row">
+        <span class="range-label">IP Range:</span>
+        <!-- FROM -->
+        <div class="ip-box" id="boxFrom">
+          <input class="oct" id="f0" maxlength="3" placeholder="192"/>
+          <span class="oct-dot">.</span>
+          <input class="oct" id="f1" maxlength="3" placeholder="168"/>
+          <span class="oct-dot">.</span>
+          <input class="oct" id="f2" maxlength="3" placeholder="1"/>
+          <span class="oct-dot">.</span>
+          <input class="oct" id="f3" maxlength="3" placeholder="1"/>
+        </div>
+        <span>to</span>
+        <!-- TO -->
+        <div class="ip-box" id="boxTo">
+          <input class="oct" id="t0" maxlength="3" placeholder="192"/>
+          <span class="oct-dot">.</span>
+          <input class="oct" id="t1" maxlength="3" placeholder="168"/>
+          <span class="oct-dot">.</span>
+          <input class="oct" id="t2" maxlength="3" placeholder="1"/>
+          <span class="oct-dot">.</span>
+          <input class="oct" id="t3" maxlength="3" placeholder="254"/>
+        </div>
+        <span style="margin-left:8px">Wątki:</span>
+        <input type="number" min="2" max="64" value="20" id="concNum"
+          style="width:38px;font-family:inherit;font-size:11px;
+                 border-top:1px solid #808080;border-left:1px solid #808080;
+                 border-right:1px solid #fff;border-bottom:1px solid #fff;
+                 padding:1px 3px;background:#fff"/>
+      </div>
+      <div class="port-hint" id="portHint"></div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-wrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progFill"></div>
+        <div class="progress-pct" id="progPct">0%</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-item">Sprawdzono: <span class="stat-val" id="statChecked">0</span></div>
+        <div class="stat-item">Znaleziono: <span class="stat-val" id="statFound">0</span></div>
+        <div class="stat-item">Portów: <span class="stat-val" id="statPorts">0</span></div>
+      </div>
+    </div>
+
+    <!-- List view -->
+    <div class="listview-wrap">
+      <div class="listview-header">
+        <div class="lv-col" style="font-size:9px">●</div>
+        <div class="lv-col">Adres IP</div>
+        <div class="lv-col">Porty</div>
+        <div class="lv-col">Ścieżki / Linki</div>
+      </div>
+      <div class="listview-body" id="listBody">
+        <div class="empty-row" id="emptyRow">Brak wyników. Skonfiguruj zakres IP i kliknij Start.</div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-wrap" id="previewWrap">
+      <div class="preview-titlebar">
+        <span>🖥</span>
+        <span class="preview-url-label" id="previewUrl">—</span>
+        <button class="btn95" id="btnPreviewOpen" style="padding:1px 8px;font-size:10px">↗ Otwórz</button>
+        <button class="btn95" id="btnPreviewClose" style="padding:1px 8px;font-size:10px">✕</button>
+      </div>
+      <iframe id="previewFrame" class="preview-iframe"
+        sandbox="allow-forms allow-scripts allow-same-origin allow-popups"
+        title="Podgląd"></iframe>
+      <div class="preview-blocked" id="previewBlocked">
+        <div style="font-size:24px">🔒</div>
+        <div>Urządzenie blokuje osadzanie (X-Frame-Options).</div>
+        <a id="previewExtLink" href="#" target="_blank" rel="noopener">Otwórz w nowej karcie →</a>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="statusbar">
+      <div class="status-panel" id="statusMsg">Gotowy.</div>
+      <div class="status-panel" style="flex:0 0 auto;min-width:80px" id="statusCount">0 hostów</div>
+    </div>
+
+  </div><!-- /win-body -->
+</div><!-- /win95 -->
+
+<!-- Desktop icon -->
+<div id="desktopIcon" style="
+  position:fixed; bottom:28px; right:28px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:pointer; user-select:none;
+" onclick="openNotepad()">
+  <div id="iconImg" style="
+    font-size:32px; line-height:1;
+    padding:2px;
+  ">📝</div>
+  <div id="iconLabel" style="
+    font-family:'MS Sans Serif',Tahoma,sans-serif;
+    font-size:11px; color:#fff;
+    background:transparent;
+    padding:1px 3px;
+    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    white-space:nowrap;
+  ">Notatnik</div>
+</div>
+
+<!-- Notepad window -->
+<div id="notepadWin" style="
+  display:none;
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:min(480px,95vw);
+  background:#c0c0c0;
+  border-top:2px solid #ffffff; border-left:2px solid #ffffff;
+  border-right:2px solid #808080; border-bottom:2px solid #808080;
+  box-shadow:1px 1px 0 #000, inset 1px 1px 0 #dfdfdf;
+  font-family:'MS Sans Serif',Tahoma,sans-serif;
+  z-index:1000;
+">
+  <!-- Title bar -->
+  <div style="
+    background:linear-gradient(to right,#000080,#1084d0);
+    color:#fff; font-size:11px; font-weight:bold;
+    padding:3px 4px 3px 6px;
+    display:flex; align-items:center; gap:4px;
+  ">
+    <span>📝</span>
+    <span style="flex:1">Notatnik – O autorze</span>
+    <div style="display:flex;gap:2px">
+      <div class="title-btn" onclick="closeNotepad()">✕</div>
+    </div>
+  </div>
+
+  <!-- Menu bar -->
+  <div style="
+    background:#c0c0c0; font-size:11px;
+    padding:2px 4px;
+    border-bottom:1px solid #808080;
+    display:flex; gap:2px;
+  ">
+    <span style="padding:1px 6px;cursor:default" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Plik</span>
+    <span style="padding:1px 6px;cursor:default" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Edycja</span>
+    <span style="padding:1px 6px;cursor:default" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Pomoc</span>
+  </div>
+
+  <!-- Text area -->
+  <textarea id="notepadText" readonly style="
+    width:100%; height:320px;
+    font-family:'Courier New',monospace; font-size:12px;
+    background:#fff; color:#000;
+    border:none;
+    border-top:1px solid #808080; border-left:1px solid #808080;
+    border-right:1px solid #fff;  border-bottom:1px solid #fff;
+    padding:8px 10px;
+    resize:none; outline:none;
+    line-height:1.6;
+  "></textarea>
+
+  <!-- Status bar -->
+  <div style="
+    border-top:1px solid #808080;
+    padding:2px 6px; font-size:10px; color:#000;
+    display:flex; gap:6px;
+  ">
+    <div style="
+      border-top:1px solid #808080; border-left:1px solid #808080;
+      border-right:1px solid #fff; border-bottom:1px solid #fff;
+      padding:1px 8px; flex:1;
+    ">NetRecon IP Scanner · Licencja: Free to use</div>
+  </div>
+</div>
+
+<script>
+function selectIcon(el) {
+  const lbl = document.getElementById('iconLabel');
+  const img = document.getElementById('iconImg');
+  lbl.style.background = '#000080';
+  img.style.filter = 'invert(1) sepia(1) saturate(5) hue-rotate(180deg)';
+  setTimeout(()=>{ lbl.style.background='transparent'; img.style.filter=''; }, 1200);
+}
+function openNotepad() {
+  document.getElementById('notepadWin').style.display = '';
+  document.getElementById('notepadText').value =
+`================================================================
+  NetRecon IP Scanner
+  Skaner kamer IP, drukarek, folderów, NAS i routerów
+================================================================
+
+  Autor : Michał Stankiewicz
+  Tel.  : 797 486 355
+
+
+  ──────────────────────────────────────────────────
+  Wspierasz projekt? Rzuć grosz przez BLIK :)
+
+        BLIK →  797 486 355
+
+  Każda złotówka motywuje do kolejnych ficzerów!
+  ──────────────────────────────────────────────────
+
+
+  Licencja
+  ────────
+  Free to use — darmowa, do użytku prywatnego
+  i komercyjnego bez ograniczeń.
+
+  Możesz kopiować, modyfikować i rozpowszechniać
+  ten projekt w dowolnym celu.
+
+  Jedna prośba: jeśli wprowadzasz zmiany i
+  publikujesz projekt dalej — zostaw krótką
+  wzmiankę o oryginalnym autorze. Dzięki! 🙏
+
+
+================================================================`;
+}
+function closeNotepad() {
+  document.getElementById('notepadWin').style.display = 'none';
+}
+</script>
+
+<!-- Context menu -->
+<div class="ctxmenu" id="ctxMenu">
+  <div class="ctx-item" id="ctxCopyIp">Copy IP Address</div>
+  <div class="ctx-item" id="ctxCopyPorts">Copy Ports</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" id="ctxOpenBrowser">Open in Browser</div>
+  <div class="ctx-item" id="ctxPreview">Preview here</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  MODE DEFINITIONS
+// ══════════════════════════════════════════════════
+const MODES = {
+  cam: {
+    label: '📹 Kamery',
+    hint: 'Porty: 80, 8080, 8081, 443, 554(RTSP), 9000, 37777(Dahua), 34567(DVR)',
+    ports: [80,8080,8081,443,554,9000,37777,34567],
+    defaultPorts: new Set([80,8080,443,554]),
+    paths: [
+      {p:'/',l:'/'}, {p:'/video',l:'/video'}, {p:'/mjpeg',l:'/mjpeg'},
+      {p:'/stream',l:'/stream'}, {p:'/snapshot.jpg',l:'/snapshot'},
+      {p:'/live',l:'/live'}, {p:'/videostream.cgi',l:'/videostream'},
+      {p:'/cgi-bin/mjpeg.cgi',l:'/mjpeg.cgi'},
+    ],
+    snapshotPaths: ['/snapshot.jpg','/image.jpg','/jpg/image.jpg',
+      '/cgi-bin/snapshot.cgi','/webcapture.jpg','/live/0/mjpeg.jpg'],
+  },
+  print: {
+    label: '🖨️ Drukarki',
+    hint: 'Porty: 80, 443, 631(IPP), 9100(RAW), 8080',
+    ports: [80,443,631,9100,8080,8443],
+    defaultPorts: new Set([80,631,9100]),
+    paths: [
+      {p:'/',l:'/'}, {p:'/hp/device',l:'/hp'}, {p:'/web',l:'/web'},
+      {p:'/printer',l:'/printer'}, {p:'/status',l:'/status'},
+      {p:'/general/status.html',l:'/general'},
+    ],
+    snapshotPaths: [],
+  },
+  folder: {
+    label: '📁 Foldery',
+    hint: 'Porty: 80, 8080, 8888, 21(FTP), 3000, 8000 — listing folderów, FTP',
+    ports: [80,8080,8888,21,3000,3001,5000,8000,443,2121],
+    defaultPorts: new Set([80,8080,8888,21,3000,8000]),
+    paths: [
+      {p:'/',l:'/'}, {p:'/files',l:'/files'}, {p:'/data',l:'/data'},
+      {p:'/public',l:'/public'}, {p:'/share',l:'/share'},
+      {p:'/uploads',l:'/uploads'}, {p:'/backup',l:'/backup'},
+      {p:'/downloads',l:'/downloads'},
+    ],
+    snapshotPaths: [],
+  },
+  router: {
+    label: '🌐 Routery',
+    hint: 'Porty: 80, 443, 8080, 8443, 10000(Webmin)',
+    ports: [80,443,8080,8443,8888,10000],
+    defaultPorts: new Set([80,443,8080]),
+    paths: [
+      {p:'/',l:'/'}, {p:'/admin',l:'/admin'}, {p:'/setup.cgi',l:'/setup'},
+      {p:'/cgi-bin/luci',l:'/luci'}, {p:'/web/login.html',l:'/login'},
+      {p:'/ui/login',l:'/ui'},
+    ],
+    snapshotPaths: [],
+  },
+  nas: {
+    label: '💾 NAS',
+    hint: 'Synology 5000/5001, QNAP 8080, Proxmox 8006, TrueNAS 80/443',
+    ports: [5000,5001,8080,443,80,8006,9090,10000],
+    defaultPorts: new Set([5000,5001,8080,80,443,8006]),
+    paths: [
+      {p:'/',l:'/'}, {p:'/webman/index.cgi',l:'/Synology'},
+      {p:'/cgi-bin/login.cgi',l:'/QNAP'}, {p:'/ui/',l:'/TrueNAS'},
+      {p:'/pve2/index.html',l:'/Proxmox'}, {p:'/cockpit/',l:'/cockpit'},
+    ],
+    snapshotPaths: [],
+  },
+  all: {
+    label: '🔍 Wszystko',
+    hint: 'Wszystkie znane porty jednocześnie',
+    ports: [80,8080,443,8443,8081,554,9000,37777,34567,631,9100,5000,5001,8006,21,3000,8000,8888,9090,10000],
+    defaultPorts: new Set([80,8080,443,554,631,9100,5000,8006,21]),
+    paths: [
+      {p:'/',l:'/'}, {p:'/admin',l:'/admin'}, {p:'/video',l:'/video'},
+      {p:'/files',l:'/files'}, {p:'/status',l:'/status'},
+    ],
+    snapshotPaths: ['/snapshot.jpg','/image.jpg','/jpg/image.jpg'],
+  },
+};
+
+// ══════════════════════════════════════════════════
+//  BUILD MODE RADIO BUTTONS
+// ══════════════════════════════════════════════════
+let currentMode = 'cam';
+const modeRow = document.getElementById('modeRow');
+Object.keys(MODES).forEach(key => {
+  const label = document.createElement('label');
+  label.className = 'mode-radio';
+  const inp = document.createElement('input');
+  inp.type = 'radio'; inp.name = 'mode'; inp.value = key;
+  if (key === 'cam') inp.checked = true;
+  inp.addEventListener('change', () => {
+    currentMode = key;
+    document.getElementById('portHint').textContent = MODES[key].hint;
+  });
+  label.appendChild(inp);
+  label.appendChild(document.createTextNode(' ' + MODES[key].label));
+  modeRow.appendChild(label);
+});
+document.getElementById('portHint').textContent = MODES['cam'].hint;
+
+// ══════════════════════════════════════════════════
+//  IP INPUT — auto-jump between octets
+// ══════════════════════════════════════════════════
+['f0','f1','f2','f3','t0','t1','t2','t3'].forEach((id, idx) => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => {
+    el.value = el.value.replace(/[^0-9]/g,'');
+    if (+el.value > 255) el.value = '255';
+    if (el.value.length === 3) {
+      const ids = ['f0','f1','f2','f3','t0','t1','t2','t3'];
+      const next = document.getElementById(ids[idx+1]);
+      if (next) next.focus();
+    }
+  });
+  el.addEventListener('keydown', e => {
+    if (e.key === '.' || e.key === 'Tab') {
+      e.preventDefault();
+      const ids = ['f0','f1','f2','f3','t0','t1','t2','t3'];
+      const next = document.getElementById(ids[idx+1]);
+      if (next) next.focus();
+    }
+    if (e.key === 'Backspace' && el.value === '') {
+      const ids = ['f0','f1','f2','f3','t0','t1','t2','t3'];
+      const prev = document.getElementById(ids[idx-1]);
+      if (prev) prev.focus();
+    }
+  });
+});
+
+function getIP(prefix) {
+  return [0,1,2,3].map(i => document.getElementById(prefix+i).value || '0').join('.');
+}
+function setIP(prefix, ip) {
+  const parts = ip.split('.');
+  [0,1,2,3].forEach(i => { document.getElementById(prefix+i).value = parts[i]||''; });
+}
+
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+let scanning=false, stopRequested=false;
+const activeControllers = new Set();
+let foundHostsMap={}, totalFound=0, totalOpenPorts=0;
+let timerInterval=null, scanStart=0;
+let selectedRowEl=null, ctxTargetIp='', ctxTargetPorts=[];
+
+// ══════════════════════════════════════════════════
+//  DOM
+// ══════════════════════════════════════════════════
+const btnGo       = document.getElementById('btnGo');
+const btnStop     = document.getElementById('btnStop');
+const btnClear    = document.getElementById('btnClear');
+const progFill    = document.getElementById('progFill');
+const progPct     = document.getElementById('progPct');
+const statChecked = document.getElementById('statChecked');
+const statFound   = document.getElementById('statFound');
+const statPorts   = document.getElementById('statPorts');
+const statTime    = document.getElementById('statTime');
+const statusMsg   = document.getElementById('statusMsg');
+const statusCount = document.getElementById('statusCount');
+const listBody    = document.getElementById('listBody');
+const emptyRow    = document.getElementById('emptyRow');
+const previewWrap = document.getElementById('previewWrap');
+const previewFrame= document.getElementById('previewFrame');
+const previewBlocked=document.getElementById('previewBlocked');
+const previewUrl  = document.getElementById('previewUrl');
+const btnPreviewOpen = document.getElementById('btnPreviewOpen');
+const btnPreviewClose= document.getElementById('btnPreviewClose');
+const previewExtLink = document.getElementById('previewExtLink');
+const ctxMenu     = document.getElementById('ctxMenu');
+
+// ══════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════
+function isIPv4(v) {
+  if (!v.match(/^(\d{1,3}\.){3}\d{1,3}$/)) return false;
+  return v.split('.').every(p => { const n=+p; return n>=0&&n<=255; });
+}
+function ipToNum(ip) { return ip.split('.').reduce((a,p)=>((a<<8)+ +p)>>>0,0); }
+function numToIp(n)  { return [24,16,8,0].map(s=>(n>>>s)&255).join('.'); }
+
+function setStatus(text, type='') {
+  statusMsg.textContent = text;
+  statusMsg.className = 'status-panel'+(type?' '+type:'');
+}
+function updateProgress(checked, total, fh, op) {
+  const pct = total ? Math.round(checked/total*100) : 0;
+  progFill.style.width = pct+'%';
+  progPct.textContent = pct+'%';
+  statChecked.textContent = checked;
+  statFound.textContent   = fh;
+  statPorts.textContent   = op;
+  statusCount.textContent = `${fh} hostów`;
+}
+function setScanState(on) {
+  scanning=on; btnGo.disabled=on; btnStop.disabled=!on;
+  if (on) {
+    btnGo.classList.add('pressed');
+    scanStart=Date.now();
+    timerInterval=setInterval(()=>{
+      statTime.textContent = ((Date.now()-scanStart)/1000).toFixed(1)+'s';
+    },200);
+  } else {
+    btnGo.classList.remove('pressed');
+    clearInterval(timerInterval);
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  PROBE
+// ══════════════════════════════════════════════════
+async function probePort(ip, port, ms=1500) {
+  const ctrl = new AbortController();
+  activeControllers.add(ctrl);
+  const tid = setTimeout(()=>ctrl.abort(), ms);
+  try {
+    const proto = (port===443||port===8443)?'https':'http';
+    await fetch(`${proto}://${ip}:${port}/`,{mode:'no-cors',cache:'no-store',signal:ctrl.signal});
+    return true;
+  } catch { return false; }
+  finally { clearTimeout(tid); activeControllers.delete(ctrl); }
+}
+
+function tryImageLoad(url, ms=2000) {
+  return new Promise(res => {
+    const img=new Image();
+    const tid=setTimeout(()=>{img.src='';res(false);},ms);
+    img.onload =()=>{clearTimeout(tid);res(true); };
+    img.onerror=()=>{clearTimeout(tid);res(false);};
+    img.src=url;
+  });
+}
+
+function isPrivateIP(ip) {
+  const p = ip.split('.').map(Number);
+  return p[0]===10 ||
+    (p[0]===172 && p[1]>=16 && p[1]<=31) ||
+    (p[0]===192 && p[1]===168) ||
+    p[0]===127;
+}
+
+// ── Geolocation via ip-api.com ──
+async function geoLookup(ip) {
+  try {
+    const r = await fetch(
+      `http://ip-api.com/json/${ip}?fields=status,country,city,isp,org,proxy,hosting,as`,
+      { signal: AbortSignal.timeout(4000) }
+    );
+    const d = await r.json();
+    return d.status === 'success' ? d : null;
+  } catch { return null; }
+}
+
+// ── Page title via CORS proxy (external IPs only) ──
+async function fetchTitle(ip, port) {
+  const proto = (port===443||port===8443)?'https':'http';
+  const target = encodeURIComponent(`${proto}://${ip}:${port}/`);
+  try {
+    const r = await fetch(`https://corsproxy.io/?${target}`,
+      { signal: AbortSignal.timeout(5000) });
+    const html = await r.text();
+    const m = html.match(/<title[^>]*>([^<]{1,100})<\/title>/i);
+    return m ? m[1].trim().replace(/\s+/g,' ') : null;
+  } catch { return null; }
+}
+
+// ── Favicon probe ──
+function checkFavicon(ip, port) {
+  const proto = (port===443||port===8443)?'https':'http';
+  return tryImageLoad(`${proto}://${ip}:${port}/favicon.ico`, 2000);
+}
+
+// ── Snapshot / open auth ──
+async function checkAuth(ip, ports) {
+  const snaps = [
+    '/snapshot.jpg','/image.jpg','/jpg/image.jpg',
+    '/cgi-bin/snapshot.cgi','/webcapture.jpg',
+    '/live/0/mjpeg.jpg','/tmpfs/auto.jpg',
+    '/ISAPI/Streaming/channels/101/picture',
+    '/onvif/snapshot',
+  ];
+  for (const port of ports) {
+    const proto=(port===443||port===8443)?'https':'http';
+    for (const path of snaps)
+      if (await tryImageLoad(`${proto}://${ip}:${port}${path}`, 1800)) return true;
+  }
+  return false;
+}
+
+// ── Device fingerprint by known image paths ──
+const FP_IMAGES = [
+  { path: '/ISAPI/Streaming/channels/101/picture', label: 'Hikvision' },
+  { path: '/cgi-bin/snapshot.cgi',                 label: 'Dahua / kamera' },
+  { path: '/jpg/image.jpg',                         label: 'Kamera IP' },
+  { path: '/webcapture.jpg',                        label: 'Kamera IP' },
+  { path: '/onvif/snapshot',                        label: 'ONVIF Camera' },
+  { path: '/tmpfs/auto.jpg',                        label: 'Kamera IP (wbudowana)' },
+  { path: '/axis-cgi/jpg/image.cgi',                label: 'Axis Camera' },
+];
+
+async function fingerprintByImage(ip, ports) {
+  for (const port of ports.slice(0, 3)) {
+    const proto=(port===443||port===8443)?'https':'http';
+    for (const fp of FP_IMAGES) {
+      if (await tryImageLoad(`${proto}://${ip}:${port}${fp.path}`, 1400))
+        return fp.label;
+    }
+  }
+  return null;
+}
+
+// ── Full enrichment (runs async after row is added) ──
+async function enrichRow(ip, ports, cells) {
+  const { cGeo, cDevice, cTitle, cAccess } = cells;
+
+  // Run geo + fingerprint + favicon + title in parallel
+  const [ geo, deviceLabel, hasFavicon, isOpen, title ] = await Promise.all([
+    geoLookup(ip),
+    fingerprintByImage(ip, ports),
+    checkFavicon(ip, ports[0]),
+    checkAuth(ip, ports),
+    isPrivateIP(ip) ? Promise.resolve(null) : fetchTitle(ip, ports[0]),
+  ]);
+
+  // Geo
+  if (geo) {
+    const vpnTag  = geo.proxy   ? '<span class="detail-tag tag-vpn">VPN/Proxy</span>'  : '';
+    const dcTag   = geo.hosting ? '<span class="detail-tag tag-dc">Datacenter</span>'   : '';
+    cGeo.innerHTML =
+      `<div class="detail-line"><b>Kraj:</b> ${geo.country || '?'} — ${geo.city || '?'}${vpnTag}${dcTag}</div>`+
+      `<div class="detail-line"><b>ISP:</b> ${geo.isp || '?'}</div>`+
+      `<div class="detail-line"><b>AS:</b> ${geo.as || '?'}</div>`;
+  } else {
+    cGeo.innerHTML = isPrivateIP(ip)
+      ? '<div class="detail-line" style="color:#808080">Adres lokalny — geolokalizacja niedostępna</div>'
+      : '<div class="detail-line" style="color:#c00">Błąd pobierania danych</div>';
+  }
+
+  // Device
+  let deviceHtml = '';
+  if (deviceLabel) {
+    deviceHtml += `<div class="detail-line"><b>Typ:</b> ${deviceLabel} <span class="detail-tag tag-device">ROZPOZNANY</span></div>`;
+  }
+  deviceHtml += `<div class="detail-line"><b>Favicon:</b> ${hasFavicon ? '✔ Tak (panel webowy)' : '✘ Brak'}</div>`;
+  // Guess by ports
+  const portGuess = ports.includes(554) ? 'RTSP stream prawdopodobnie dostępny' :
+                    ports.includes(631) ? 'Drukarka (IPP)' :
+                    ports.includes(9100)? 'Drukarka (RAW)' :
+                    ports.includes(5000)||ports.includes(5001) ? 'Synology NAS?' :
+                    ports.includes(8006)? 'Proxmox VE?' : null;
+  if (portGuess) deviceHtml += `<div class="detail-line"><b>Sugestia:</b> ${portGuess}</div>`;
+  cDevice.innerHTML = deviceHtml || '<div class="detail-line" style="color:#808080">Nieznany typ urządzenia</div>';
+
+  // Title
+  if (title) {
+    cTitle.innerHTML = `<div class="detail-line"><b>Tytuł strony:</b> "${title}"</div>`;
+  } else if (isPrivateIP(ip)) {
+    cTitle.innerHTML = `<div class="detail-line" style="color:#808080">Tytuł: tylko dla zewnętrznych IP</div>`;
+  } else {
+    cTitle.innerHTML = `<div class="detail-line" style="color:#808080">Tytuł: niedostępny</div>`;
+  }
+
+  // Access
+  cAccess.innerHTML = isOpen
+    ? `<div class="detail-line"><b>Snapshot:</b> <span style="color:green">🔓 Dostępny bez hasła</span></div>`
+    : `<div class="detail-line"><b>Snapshot:</b> Wymaga autoryzacji lub brak</div>`;
+}
+
+// ══════════════════════════════════════════════════
+//  ADD ROW
+// ══════════════════════════════════════════════════
+function addResultRow(ip, openPorts) {
+  if (emptyRow.parentNode) emptyRow.remove();
+
+  const def = MODES[currentMode];
+
+  // ── Main row ──
+  const row = document.createElement('div');
+  row.className = 'lv-row';
+  row.dataset.ip = ip;
+  row.style.display = 'grid'; // keep grid layout
+
+  const cIcon = document.createElement('div');
+  cIcon.className='lv-cell lv-icon';
+  cIcon.innerHTML='<span class="icon-ok">✔</span>';
+  row.appendChild(cIcon);
+
+  const cIp = document.createElement('div');
+  cIp.className='lv-cell';
+  cIp.innerHTML = `${ip} <span id="acc_${ip.replace(/\./g,'_')}" style="font-size:9px"></span>`;
+  row.appendChild(cIp);
+
+  const cPorts = document.createElement('div');
+  cPorts.className='lv-cell'; cPorts.textContent=openPorts.join(', ');
+  row.appendChild(cPorts);
+
+  const cLinks = document.createElement('div');
+  cLinks.className='lv-cell';
+  const frag = document.createDocumentFragment();
+  openPorts.forEach((port, pi) => {
+    const proto=(port===443||port===8443)?'https':'http';
+    def.paths.forEach(({p,l}, li) => {
+      if (pi>0||li>0) frag.appendChild(document.createTextNode(' '));
+      const a=document.createElement('span'); a.className='path-link';
+      const url=`${proto}://${ip}:${port}${p}`;
+      a.textContent=`:${port}${l}`; a.title=url;
+      a.addEventListener('click', e=>{ e.stopPropagation(); openPreview(url); });
+      frag.appendChild(a);
+    });
+  });
+  cLinks.appendChild(frag);
+  row.appendChild(cLinks);
+
+  // ── Detail row (accordion) ──
+  const detail = document.createElement('div');
+  detail.className = 'detail-row';
+  detail.style.gridColumn = '1 / -1';
+
+  // Build detail grid
+  const grid = document.createElement('div');
+  grid.className = 'detail-grid';
+
+  // Geo section
+  const secGeo = document.createElement('div');
+  secGeo.className = 'detail-section';
+  secGeo.innerHTML = '<div class="detail-section-title">🌍 Geolokalizacja / ISP</div>';
+  const cGeo = document.createElement('div');
+  cGeo.innerHTML = '<div class="detail-loading">Pobieranie…</div>';
+  secGeo.appendChild(cGeo);
+
+  // Device section
+  const secDevice = document.createElement('div');
+  secDevice.className = 'detail-section';
+  secDevice.innerHTML = '<div class="detail-section-title">🖥 Identyfikacja urządzenia</div>';
+  const cDevice = document.createElement('div');
+  cDevice.innerHTML = '<div class="detail-loading">Analiza…</div>';
+  secDevice.appendChild(cDevice);
+
+  // Title section
+  const secTitle = document.createElement('div');
+  secTitle.className = 'detail-section';
+  secTitle.innerHTML = '<div class="detail-section-title">📄 Tytuł strony HTTP</div>';
+  const cTitle = document.createElement('div');
+  cTitle.innerHTML = '<div class="detail-loading">Pobieranie…</div>';
+  secTitle.appendChild(cTitle);
+
+  // Access section
+  const secAccess = document.createElement('div');
+  secAccess.className = 'detail-section';
+  secAccess.innerHTML = '<div class="detail-section-title">🔑 Dostęp</div>';
+  const cAccess = document.createElement('div');
+  cAccess.innerHTML = '<div class="detail-loading">Sprawdzanie…</div>';
+  secAccess.appendChild(cAccess);
+
+  grid.append(secGeo, secDevice, secTitle, secAccess);
+  detail.appendChild(grid);
+
+  // ── Row click toggles detail + shows preview ──
+  let detailLoaded = false;
+  row.addEventListener('click', () => {
+    const wasOpen = detail.classList.contains('open');
+    // close all other details
+    document.querySelectorAll('.detail-row.open').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.lv-row.selected').forEach(r => r.classList.remove('selected'));
+
+    if (!wasOpen) {
+      detail.classList.add('open');
+      row.classList.add('selected');
+      selectedRowEl = row;
+      // lazy load enrichment
+      if (!detailLoaded) {
+        detailLoaded = true;
+        enrichRow(ip, openPorts, { cGeo, cDevice, cTitle, cAccess });
+      }
+      const proto=(openPorts[0]===443||openPorts[0]===8443)?'https':'http';
+      openPreview(`${proto}://${ip}:${openPorts[0]}/`);
+    } else {
+      selectedRowEl = null;
+    }
+  });
+
+  // Right click → context menu
+  row.addEventListener('contextmenu', e=>{
+    e.preventDefault();
+    ctxTargetIp=ip; ctxTargetPorts=openPorts;
+    ctxMenu.style.left=e.clientX+'px'; ctxMenu.style.top=e.clientY+'px';
+    ctxMenu.classList.add('open');
+  });
+
+  listBody.appendChild(row);
+  listBody.appendChild(detail);
+}
+
+// ══════════════════════════════════════════════════
+//  PREVIEW
+// ══════════════════════════════════════════════════
+function openPreview(url) {
+  previewUrl.textContent = url;
+  previewFrame.style.display = 'block';
+  previewBlocked.style.display = 'none';
+  previewFrame.src = url;
+  previewExtLink.href = url;
+  btnPreviewOpen.onclick = ()=>window.open(url,'_blank','noopener');
+  previewWrap.classList.add('open');
+  previewFrame.onload = () => {
+    try { void previewFrame.contentDocument; }
+    catch { previewFrame.style.display='none'; previewBlocked.style.display='flex'; }
+  };
+  setTimeout(()=>previewWrap.scrollIntoView({behavior:'smooth',block:'start'}),60);
+}
+btnPreviewClose.addEventListener('click',()=>{
+  previewWrap.classList.remove('open');
+  previewFrame.src='about:blank';
+  if(selectedRowEl){selectedRowEl.classList.remove('selected');selectedRowEl=null;}
+});
+
+// ══════════════════════════════════════════════════
+//  CONTEXT MENU
+// ══════════════════════════════════════════════════
+document.getElementById('ctxCopyIp').addEventListener('click',()=>{
+  navigator.clipboard?.writeText(ctxTargetIp);
+  ctxMenu.classList.remove('open');
+});
+document.getElementById('ctxCopyPorts').addEventListener('click',()=>{
+  navigator.clipboard?.writeText(ctxTargetPorts.join(', '));
+  ctxMenu.classList.remove('open');
+});
+document.getElementById('ctxOpenBrowser').addEventListener('click',()=>{
+  const proto=(ctxTargetPorts[0]===443||ctxTargetPorts[0]===8443)?'https':'http';
+  window.open(`${proto}://${ctxTargetIp}:${ctxTargetPorts[0]}/`,'_blank','noopener');
+  ctxMenu.classList.remove('open');
+});
+document.getElementById('ctxPreview').addEventListener('click',()=>{
+  const proto=(ctxTargetPorts[0]===443||ctxTargetPorts[0]===8443)?'https':'http';
+  openPreview(`${proto}://${ctxTargetIp}:${ctxTargetPorts[0]}/`);
+  ctxMenu.classList.remove('open');
+});
+document.addEventListener('click',()=>ctxMenu.classList.remove('open'));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') ctxMenu.classList.remove('open'); });
+
+// ══════════════════════════════════════════════════
+//  EXTERNAL IP
+// ══════════════════════════════════════════════════
+const btnMyIp      = document.getElementById('btnMyIp');
+const myIpResult   = document.getElementById('myIpResult');
+const btnCopyMyIp  = document.getElementById('btnCopyMyIp');
+const btnUseMyIp   = document.getElementById('btnUseMyIp');
+
+btnMyIp.addEventListener('click', async () => {
+  myIpResult.style.color = '#808000';
+  myIpResult.textContent = 'Pobieranie…';
+  btnCopyMyIp.style.display = 'none';
+  btnUseMyIp.style.display  = 'none';
+  btnMyIp.disabled = true;
+  try {
+    const res  = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    myIpResult.style.color = '#000080';
+    myIpResult.textContent = data.ip;
+    btnCopyMyIp.style.display = '';
+    btnCopyMyIp.onclick = () => {
+      navigator.clipboard?.writeText(data.ip);
+      btnCopyMyIp.textContent = '✔ Skopiowano';
+      setTimeout(() => btnCopyMyIp.textContent = '📋 Kopiuj', 1500);
+    };
+    btnUseMyIp.style.display = '';
+    btnUseMyIp.onclick = () => {
+      const parts = data.ip.split('.').map(Number);
+      const b = parts[1];
+      setIP('f', `${parts[0]}.${Math.max(0,   b-1)}.${parts[2]}.1`);
+      setIP('t', `${parts[0]}.${Math.min(255, b+1)}.${parts[2]}.254`);
+    };
+  } catch {
+    myIpResult.style.color = '#c00';
+    myIpResult.textContent = 'Błąd — brak połączenia';
+  } finally {
+    btnMyIp.disabled = false;
+  }
+});
+
+// ══════════════════════════════════════════════════
+async function startScan() {
+  const startIp=getIP('f'), endIp=getIP('t');
+  if (!isIPv4(startIp)||!isIPv4(endIp)) { setStatus('Podaj poprawne adresy IPv4!','err'); return; }
+  const startNum=ipToNum(startIp), endNum=ipToNum(endIp);
+  if (startNum>endNum) { setStatus('Adres OD musi być ≤ DO.','err'); return; }
+
+  const def = MODES[currentMode];
+  const selectedPorts = def.ports; // use all ports for current mode
+  if (!selectedPorts.length) return;
+
+  const total=endNum-startNum+1;
+  foundHostsMap={}; totalFound=0; totalOpenPorts=0;
+  stopRequested=false; statTime.textContent='0.0s';
+  updateProgress(0,total,0,0); setScanState(true);
+
+  // Clear list
+  listBody.innerHTML='';
+  listBody.appendChild(emptyRow);
+  emptyRow.textContent='Skanowanie…';
+
+  const concurrency = Math.min(+document.getElementById('concNum').value || 20, 64);
+
+  if (total>500) {
+    const estSec=Math.round(total*(1500/concurrency)/1000);
+    const estStr=estSec>=60?`~${Math.ceil(estSec/60)} min`:`~${estSec}s`;
+    setStatus(`Skanowanie ${total} adresów… szacowany czas: ${estStr}`,'warn');
+  } else {
+    setStatus(`Skanowanie ${total} adresów × ${selectedPorts.length} portów…`,'warn');
+  }
+
+  let nextIdx=0, checked=0;
+  const worker = async () => {
+    while (!stopRequested) {
+      const idx=nextIdx++; if(idx>=total) return;
+      const ip=numToIp(startNum+idx);
+      const res=await Promise.all(
+        selectedPorts.map(port=>probePort(ip,port,1400).then(ok=>({port,ok})))
+      );
+      const openPorts=res.filter(r=>r.ok).map(r=>r.port);
+      if (openPorts.length) {
+        foundHostsMap[ip]=openPorts; totalFound++; totalOpenPorts+=openPorts.length;
+        addResultRow(ip,openPorts);
+      }
+      checked++;
+      if (checked%4===0||checked===total) updateProgress(checked,total,totalFound,totalOpenPorts);
+    }
+  };
+
+  await Promise.all(Array.from({length:concurrency},worker));
+  setScanState(false);
+  updateProgress(total,total,totalFound,totalOpenPorts);
+
+  if (totalFound===0 && emptyRow.parentNode) emptyRow.textContent='Nie znaleziono aktywnych hostów.';
+  if (stopRequested) setStatus(`Zatrzymano po ${statChecked.textContent} adresach.`,'warn');
+  else if (totalFound>0) setStatus(`Zakończono. Znaleziono ${totalFound} hostów (${totalOpenPorts} portów).`,'ok');
+  else setStatus('Skan zakończony — brak aktywnych hostów.','err');
+}
+
+btnGo.addEventListener('click',()=>{
+  if(!scanning) startScan().catch(e=>{setStatus(`Błąd: ${e.message}`,'err');setScanState(false);});
+});
+btnStop.addEventListener('click',()=>{
+  stopRequested=true; activeControllers.forEach(c=>c.abort());
+});
+btnClear.addEventListener('click',()=>{
+  foundHostsMap={}; totalFound=0; totalOpenPorts=0;
+  listBody.innerHTML=''; listBody.appendChild(emptyRow);
+  emptyRow.textContent='Brak wyników. Skonfiguruj zakres IP i kliknij Start.';
+  updateProgress(0,0,0,0); statTime.textContent='0.0s';
+  setStatus('Wyczyszczono.');
+  previewWrap.classList.remove('open');
+  previewFrame.src='about:blank'; selectedRowEl=null;
+});
+</script>
+</body>
+</html>
