@@ -896,6 +896,9 @@ const STRINGS = {
     loading:'Loading…', analyzing:'Analyzing…', checking:'Checking…',
     previewOpen:'↗ Open', previewClose:'✕',
     statusReady:'Ready.', statusCleared:'Cleared.',
+    errInvalidIp:'Invalid IPv4 address.',
+    errIpRange:'FROM address must be ≤ TO.',
+    errNoPorts:'No ports selected in preset.',
     statusScanning:(n,p)=>`Scanning ${n} addresses × ${p} ports…`,
     statusLarge:(n,p,t)=>`Large range: ${n} addresses × ${p} ports. Est. ${t}…`,
     statusStopped:(n)=>`Stopped after ${n} addresses.`,
@@ -954,6 +957,9 @@ const STRINGS = {
     loading:'Pobieranie…', analyzing:'Analiza…', checking:'Sprawdzanie…',
     previewOpen:'↗ Otwórz', previewClose:'✕',
     statusReady:'Gotowy.', statusCleared:'Wyczyszczono.',
+    errInvalidIp:'Podaj poprawne adresy IPv4.',
+    errIpRange:'Adres OD musi być ≤ DO.',
+    errNoPorts:'Wybierz co najmniej jeden port w presecie.',
     statusScanning:(n,p)=>`Skanuję ${n} adresów × ${p} portów…`,
     statusLarge:(n,p,t)=>`Duży zakres: ${n} adresów × ${p} portów. Est. ${t}…`,
     statusStopped:(n)=>`Zatrzymano po ${n} adresach.`,
@@ -1033,86 +1039,6 @@ document.getElementById('menuAbout').addEventListener('click', () => {
   document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
   openNotepad();
 });
-
-// ══════════════════════════════════════════════════
-//  MODE DEFINITIONS
-// ══════════════════════════════════════════════════
-const MODES = {
-  cam: {
-    label: '📹 Kamery',
-    hint: 'Porty: 80, 8080, 8081, 443, 554(RTSP), 9000, 37777(Dahua), 34567(DVR)',
-    ports: [80,8080,8081,443,554,9000,37777,34567],
-    defaultPorts: new Set([80,8080,443,554]),
-    paths: [
-      {p:'/',l:'/'}, {p:'/video',l:'/video'}, {p:'/mjpeg',l:'/mjpeg'},
-      {p:'/stream',l:'/stream'}, {p:'/snapshot.jpg',l:'/snapshot'},
-      {p:'/live',l:'/live'}, {p:'/videostream.cgi',l:'/videostream'},
-      {p:'/cgi-bin/mjpeg.cgi',l:'/mjpeg.cgi'},
-    ],
-    snapshotPaths: ['/snapshot.jpg','/image.jpg','/jpg/image.jpg',
-      '/cgi-bin/snapshot.cgi','/webcapture.jpg','/live/0/mjpeg.jpg'],
-  },
-  print: {
-    label: '🖨️ Drukarki',
-    hint: 'Porty: 80, 443, 631(IPP), 9100(RAW), 8080',
-    ports: [80,443,631,9100,8080,8443],
-    defaultPorts: new Set([80,631,9100]),
-    paths: [
-      {p:'/',l:'/'}, {p:'/hp/device',l:'/hp'}, {p:'/web',l:'/web'},
-      {p:'/printer',l:'/printer'}, {p:'/status',l:'/status'},
-      {p:'/general/status.html',l:'/general'},
-    ],
-    snapshotPaths: [],
-  },
-  folder: {
-    label: '📁 Foldery',
-    hint: 'Porty: 80, 8080, 8888, 21(FTP), 3000, 8000 — listing folderów, FTP',
-    ports: [80,8080,8888,21,3000,3001,5000,8000,443,2121],
-    defaultPorts: new Set([80,8080,8888,21,3000,8000]),
-    paths: [
-      {p:'/',l:'/'}, {p:'/files',l:'/files'}, {p:'/data',l:'/data'},
-      {p:'/public',l:'/public'}, {p:'/share',l:'/share'},
-      {p:'/uploads',l:'/uploads'}, {p:'/backup',l:'/backup'},
-      {p:'/downloads',l:'/downloads'},
-    ],
-    snapshotPaths: [],
-  },
-  router: {
-    label: '🌐 Routery',
-    hint: 'Porty: 80, 443, 8080, 8443, 10000(Webmin)',
-    ports: [80,443,8080,8443,8888,10000],
-    defaultPorts: new Set([80,443,8080]),
-    paths: [
-      {p:'/',l:'/'}, {p:'/admin',l:'/admin'}, {p:'/setup.cgi',l:'/setup'},
-      {p:'/cgi-bin/luci',l:'/luci'}, {p:'/web/login.html',l:'/login'},
-      {p:'/ui/login',l:'/ui'},
-    ],
-    snapshotPaths: [],
-  },
-  nas: {
-    label: '💾 NAS',
-    hint: 'Synology 5000/5001, QNAP 8080, Proxmox 8006, TrueNAS 80/443',
-    ports: [5000,5001,8080,443,80,8006,9090,10000],
-    defaultPorts: new Set([5000,5001,8080,80,443,8006]),
-    paths: [
-      {p:'/',l:'/'}, {p:'/webman/index.cgi',l:'/Synology'},
-      {p:'/cgi-bin/login.cgi',l:'/QNAP'}, {p:'/ui/',l:'/TrueNAS'},
-      {p:'/pve2/index.html',l:'/Proxmox'}, {p:'/cockpit/',l:'/cockpit'},
-    ],
-    snapshotPaths: [],
-  },
-  all: {
-    label: '🔍 Wszystko',
-    hint: 'Wszystkie znane porty jednocześnie',
-    ports: [80,8080,443,8443,8081,554,9000,37777,34567,631,9100,5000,5001,8006,21,3000,8000,8888,9090,10000],
-    defaultPorts: new Set([80,8080,443,554,631,9100,5000,8006,21]),
-    paths: [
-      {p:'/',l:'/'}, {p:'/admin',l:'/admin'}, {p:'/video',l:'/video'},
-      {p:'/files',l:'/files'}, {p:'/status',l:'/status'},
-    ],
-    snapshotPaths: ['/snapshot.jpg','/image.jpg','/jpg/image.jpg'],
-  },
-};
 
 // ══════════════════════════════════════════════════
 //  PORT PRESETS
@@ -1850,12 +1776,12 @@ btnMyIp.addEventListener('click', async () => {
 // ══════════════════════════════════════════════════
 async function startScan() {
   const startIp=getIP('f'), endIp=getIP('t');
-  if (!isIPv4(startIp)||!isIPv4(endIp)) { setStatus('Podaj poprawne adresy IPv4!','err'); return; }
+  if (!isIPv4(startIp)||!isIPv4(endIp)) { setStatus(t('errInvalidIp'),'err'); return; }
   const startNum=ipToNum(startIp), endNum=ipToNum(endIp);
-  if (startNum>endNum) { setStatus('Adres OD musi być ≤ DO.','err'); return; }
+  if (startNum>endNum) { setStatus(t('errIpRange'),'err'); return; }
 
   const selectedPorts = getActivePorts();
-  if (!selectedPorts.length) { setStatus('No ports selected in preset.','err'); return; }
+  if (!selectedPorts.length) { setStatus(t('errNoPorts'),'err'); return; }
 
   const total=endNum-startNum+1;
   foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
