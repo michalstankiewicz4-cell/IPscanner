@@ -1,5 +1,3 @@
-An error occurred. Please try the previous version. I will fix it soon.
-Wystąpił błąd. Spróbuj poprzedniej wersji. Wkrótce go naprawię.
 # IPscanner no server, one file, index.html, js, ready to run
  IP address scanner online
  
