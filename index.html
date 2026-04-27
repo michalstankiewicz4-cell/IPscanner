@@ -1318,7 +1318,7 @@ function setIP(prefix, ip) {
 // ══════════════════════════════════════════════════
 let scanning=false, stopRequested=false;
 const activeControllers = new Set();
-let foundHostsMap={}, totalFound=0, totalOpenPorts=0;
+let foundHostsMap={}, foundPingMap={}, totalFound=0, totalOpenPorts=0;
 let timerInterval=null, scanStart=0;
 let selectedRowEl=null, ctxTargetIp='', ctxTargetPorts=[];
 
@@ -1566,7 +1566,14 @@ async function lookupHostname(ip) {
 function addResultRow(ip, openPorts, pingMs) {
   if (emptyRow.parentNode) emptyRow.remove();
 
-  const def = MODES[currentMode];
+  // Generic paths — work for any device type
+  const paths = [
+    {p:'/',l:'/'}, {p:'/admin',l:'/admin'}, {p:'/video',l:'/video'},
+    {p:'/snapshot.jpg',l:'/snapshot'}, {p:'/files',l:'/files'},
+    {p:'/status',l:'/status'}, {p:'/stream',l:'/stream'},
+    {p:'/mjpeg',l:'/mjpeg'},
+  ];
+
   const row = document.createElement('div');
   row.className = 'lv-row';
   row.dataset.ip = ip;
@@ -1618,7 +1625,7 @@ function addResultRow(ip, openPorts, pingMs) {
   const frag = document.createDocumentFragment();
   openPorts.forEach((port, pi) => {
     const proto=(port===443||port===8443)?'https':'http';
-    def.paths.forEach(({p,l}, li) => {
+    paths.forEach(({p,l}, li) => {
       if (pi>0||li>0) frag.appendChild(document.createTextNode(' '));
       const a=document.createElement('span'); a.className='path-link';
       const url=`${proto}://${ip}:${port}${p}`;
@@ -1708,7 +1715,50 @@ function addResultRow(ip, openPorts, pingMs) {
 
   listBody.appendChild(row);
   listBody.appendChild(detail);
+  saveResults();
 }
+
+// ══════════════════════════════════════════════════
+//  RESULTS PERSISTENCE
+// ══════════════════════════════════════════════════
+function saveResults() {
+  try {
+    const data = Object.entries(foundHostsMap).map(([ip, ports]) => ({
+      ip, ports,
+      ping: foundPingMap[ip] ?? null,
+      hostname: hostnameCache[ip] ?? null,
+    }));
+    localStorage.setItem('netrecon_results', JSON.stringify(data));
+    localStorage.setItem('netrecon_results_ts', Date.now());
+  } catch {}
+}
+
+function restoreResults() {
+  try {
+    const raw = localStorage.getItem('netrecon_results');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (!data.length) return;
+    const ts = +localStorage.getItem('netrecon_results_ts');
+    const age = ts ? Math.round((Date.now() - ts) / 60000) : null;
+
+    data.forEach(({ ip, ports, ping, hostname }) => {
+      foundHostsMap[ip] = ports;
+      totalFound++;
+      totalOpenPorts += ports.length;
+      if (ping !== null) foundPingMap[ip] = ping;
+      if (hostname !== null) hostnameCache[ip] = hostname;
+      addResultRow(ip, ports, ping);
+    });
+    updateProgress(0, 0, totalFound, totalOpenPorts);
+    const ageStr = age !== null ? ` (${age} min ago)` : '';
+    setStatus(`Restored ${totalFound} results from last scan${ageStr}.`, 'ok');
+    statusCount.textContent = t('statusHosts', totalFound);
+  } catch {}
+}
+
+// ── Restore on load ──
+restoreResults();
 
 // ══════════════════════════════════════════════════
 //  PREVIEW
@@ -1808,7 +1858,7 @@ async function startScan() {
   if (!selectedPorts.length) { setStatus('No ports selected in preset.','err'); return; }
 
   const total=endNum-startNum+1;
-  foundHostsMap={}; totalFound=0; totalOpenPorts=0;
+  foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
   stopRequested=false; statTime.textContent='0.0s';
   updateProgress(0,total,0,0); setScanState(true);
 
@@ -1837,9 +1887,11 @@ async function startScan() {
       );
       const openPorts=res.filter(r=>r.ok).map(r=>r.port);
       const bestMs = res.filter(r=>r.ok).reduce((a,r)=>r.ms<a?r.ms:a, Infinity);
+      const pingMs = bestMs === Infinity ? null : bestMs;
       if (openPorts.length) {
         foundHostsMap[ip]=openPorts; totalFound++; totalOpenPorts+=openPorts.length;
-        addResultRow(ip, openPorts, bestMs === Infinity ? null : bestMs);
+        if (pingMs !== null) foundPingMap[ip] = pingMs;
+        addResultRow(ip, openPorts, pingMs);
       }
       checked++;
       if (checked%4===0||checked===total) updateProgress(checked,total,totalFound,totalOpenPorts);
@@ -1863,13 +1915,15 @@ btnStop.addEventListener('click',()=>{
   stopRequested=true; activeControllers.forEach(c=>c.abort());
 });
 btnClear.addEventListener('click',()=>{
-  foundHostsMap={}; totalFound=0; totalOpenPorts=0;
+  foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
   listBody.innerHTML=''; listBody.appendChild(emptyRow);
   emptyRow.textContent = t('emptyRow');
   updateProgress(0,0,0,0); statTime.textContent='0.0s';
   setStatus(t('statusCleared'));
   previewWrap.classList.remove('open');
   previewFrame.src='about:blank'; selectedRowEl=null;
+  localStorage.removeItem('netrecon_results');
+  localStorage.removeItem('netrecon_results_ts');
 });
 
 // ── Init language ──
