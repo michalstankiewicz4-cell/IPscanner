@@ -1,4 +1,5 @@
 Projekt amatorski w celach naukowych.
+Uwaga! Program nie zastąpi "profesjonalnych skanerów"
 # IPscanner no server, one file, index.html, js, ready to run
  IP address scanner online
  
