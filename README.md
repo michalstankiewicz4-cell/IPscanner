@@ -1,3 +1,4 @@
+Projekt amatorski w celach naukowych.
 # IPscanner no server, one file, index.html, js, ready to run
  IP address scanner online
  
