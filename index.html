@@ -559,6 +559,19 @@ body {
         <button class="btn95" id="btnUseMyLocalIp"  style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">➤ Use</button>
       </div>
 
+      <!-- Local Subnets -->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;flex-wrap:wrap">
+        <button class="btn95" id="btnLocalSubnets" data-i18n="btnLocalSubnets" style="width:132px">🧭 Local Subnets</button>
+        <span id="localSubnetsResult" style="font-family:inherit;font-size:11px;color:#000080;font-weight:bold"></span>
+        <select id="localSubnetSelect" style="
+          display:none;font-family:inherit;font-size:11px;
+          border-top:1px solid #808080;border-left:1px solid #808080;
+          border-right:1px solid #fff;border-bottom:1px solid #fff;
+          background:#fff;padding:1px 4px;min-width:180px;
+        "></select>
+        <button class="btn95" id="btnUseLocalSubnet" style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">➤ Use</button>
+      </div>
+
       <!-- IP Range -->
       <div class="range-row">
         <span class="range-label" data-i18n="ipRange">IP Range:</span>
@@ -1007,6 +1020,8 @@ function closeNotepad() {
   <div class="ctx-item" id="ctxCopyIp" data-i18n="ctxCopyIp">Copy IP Address</div>
   <div class="ctx-item" id="ctxCopyPorts" data-i18n="ctxCopyPorts">Copy Ports</div>
   <div class="ctx-sep"></div>
+  <div class="ctx-item" id="ctxScanAllPorts" data-i18n="ctxScanAllPorts">Scan this IP (all ports)</div>
+  <div class="ctx-sep"></div>
   <div class="ctx-item" id="ctxOpenBrowser" data-i18n="ctxOpenBrowser">Open in Browser</div>
   <div class="ctx-item" id="ctxPreview" data-i18n="ctxPreview">Preview here</div>
 </div>
@@ -1022,7 +1037,7 @@ const STRINGS = {
     menuFile:'File', menuOptions:'Options', menuHelp:'Help',
     menuLanguage:'Language...', menuAbout:'About', menuPresets:'Port Presets...', menuCountries:'Country IP Library...', menuDefaults:'Default Scan Values...',
     btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Clear',
-    btnMyIp:'🌐 My External IP', btnMyLocalIp:'🏠 My Local IP', btnCopy:'📋 Copy', btnUse:'➤ Use',
+    btnMyIp:'🌐 My External IP', btnMyLocalIp:'🏠 My Local IP', btnLocalSubnets:'🧭 Local Subnets', btnCopy:'📋 Copy', btnUse:'➤ Use',
     scanSettings:'Scan Settings', ipRange:'IP Range:', threads:'Threads:', delayMs:'Delay (ms):',
     modeCam:'📹 Cameras', modePrint:'🖨️ Printers',
     modeFolder:'📁 Folders / HTTP', modeRouter:'🌐 Routers',
@@ -1049,6 +1064,9 @@ const STRINGS = {
     accessOpen:'🔓 Accessible without password',
     accessClosed:'Requires authorization or unavailable',
     loading:'Loading…', analyzing:'Analyzing…', checking:'Checking…',
+    localSubnetsFound:(n)=>`${n} subnet(s) detected`, localSubnetsNone:'No local subnet found',
+    localDetectUnsupported:'Local network detection is not supported in this browser/context',
+    localIpDetectError:'Local IP detection failed (WebRTC blocked or unavailable)',
     previewOpen:'↗ Open', previewClose:'✕',
     statusReady:'Ready.', statusCleared:'Cleared.',
     errInvalidIp:'Invalid IPv4 address.',
@@ -1060,7 +1078,7 @@ const STRINGS = {
     statusDone:(h,p)=>`Done. Found ${h} hosts (${p} ports).`,
     statusNone:'Scan complete — no active hosts.',
     statusHosts:(n)=>`${n} hosts`,
-    ctxCopyIp:'Copy IP Address', ctxCopyPorts:'Copy Ports',
+    ctxCopyIp:'Copy IP Address', ctxCopyPorts:'Copy Ports', ctxScanAllPorts:'Scan this IP (all ports)',
     ctxOpenBrowser:'Open in Browser', ctxPreview:'Preview here',
     labelPreset:'Preset:', labelPorts2:'Ports:',
     presetAdd:'+ Add', presetDel:'✕ Delete',
@@ -1084,7 +1102,7 @@ const STRINGS = {
     menuFile:'Plik', menuOptions:'Opcje', menuHelp:'Pomoc',
     menuLanguage:'Język...', menuAbout:'O programie', menuPresets:'Presety portów...', menuCountries:'Biblioteka krajów IP...', menuDefaults:'Domyślne wartości skanowania...',
     btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Wyczyść',
-    btnMyIp:'🌐 Moje zewnętrzne IP', btnMyLocalIp:'🏠 Moje lokalne IP', btnCopy:'📋 Kopiuj', btnUse:'➤ Użyj',
+    btnMyIp:'🌐 Moje zewnętrzne IP', btnMyLocalIp:'🏠 Moje lokalne IP', btnLocalSubnets:'🧭 Lokalne podsieci', btnCopy:'📋 Kopiuj', btnUse:'➤ Użyj',
     scanSettings:'Ustawienia skanowania', ipRange:'IP Range:', threads:'Wątki:', delayMs:'Opóźnienie (ms):',
     modeCam:'📹 Kamery', modePrint:'🖨️ Drukarki',
     modeFolder:'📁 Foldery / HTTP', modeRouter:'🌐 Routery',
@@ -1111,6 +1129,9 @@ const STRINGS = {
     accessOpen:'🔓 Dostępny bez hasła',
     accessClosed:'Wymaga autoryzacji lub brak',
     loading:'Pobieranie…', analyzing:'Analiza…', checking:'Sprawdzanie…',
+    localSubnetsFound:(n)=>`Wykryto podsieci: ${n}`, localSubnetsNone:'Nie wykryto lokalnej podsieci',
+    localDetectUnsupported:'Wykrywanie lokalnej sieci nie jest wspierane w tej przeglądarce/kontekście',
+    localIpDetectError:'Nie udało się wykryć lokalnego IP (WebRTC zablokowane lub niedostępne)',
     previewOpen:'↗ Otwórz', previewClose:'✕',
     statusReady:'Gotowy.', statusCleared:'Wyczyszczono.',
     errInvalidIp:'Podaj poprawne adresy IPv4.',
@@ -1122,7 +1143,7 @@ const STRINGS = {
     statusDone:(h,p)=>`Zakończono. Znaleziono ${h} hostów (${p} portów).`,
     statusNone:'Skan zakończony — brak aktywnych hostów.',
     statusHosts:(n)=>`${n} hostów`,
-    ctxCopyIp:'Kopiuj adres IP', ctxCopyPorts:'Kopiuj porty',
+    ctxCopyIp:'Kopiuj adres IP', ctxCopyPorts:'Kopiuj porty', ctxScanAllPorts:'Skanuj to IP (wszystkie porty)',
     ctxOpenBrowser:'Otwórz w przeglądarce', ctxPreview:'Podgląd tutaj',
     labelPreset:'Preset:', labelPorts2:'Porty:',
     presetAdd:'+ Dodaj', presetDel:'✕ Usuń',
@@ -1298,6 +1319,32 @@ function getActivePorts() {
   const preset = presets[activePresetIdx];
   if (!preset) return [];
   return preset.ports.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n > 0 && n <= 65535);
+}
+
+function findAllPortsPresetIndex() {
+  if (!presets.length) return -1;
+  let bestIdx = 0;
+  let bestCount = -1;
+  presets.forEach((p, i) => {
+    const ports = (p?.ports || '').split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n > 0 && n <= 65535);
+    const name = (p?.name || '').toLowerCase();
+    const scoreBonus = (name.includes('all') || name.includes('wszyst')) ? 1000 : 0;
+    const score = ports.length + scoreBonus;
+    if (score > bestCount) {
+      bestCount = score;
+      bestIdx = i;
+    }
+  });
+  return bestIdx;
+}
+
+function activatePresetByIndex(idx) {
+  if (idx < 0 || idx >= presets.length) return;
+  activePresetIdx = idx;
+  localStorage.setItem('netrecon_active_preset', activePresetIdx);
+  const sel = document.getElementById('presetSelect');
+  if (sel) sel.value = String(activePresetIdx);
+  updatePortsDisplay();
 }
 
 function buildPresetSelect() {
@@ -1978,6 +2025,18 @@ document.getElementById('ctxPreview').addEventListener('click',()=>{
   openPreview(`${proto}://${ctxTargetIp}:${ctxTargetPorts[0]}/`);
   ctxMenu.classList.remove('open');
 });
+document.getElementById('ctxScanAllPorts').addEventListener('click',()=>{
+  if (!ctxTargetIp || scanning) {
+    ctxMenu.classList.remove('open');
+    return;
+  }
+  const allIdx = findAllPortsPresetIndex();
+  if (allIdx >= 0) activatePresetByIndex(allIdx);
+  setIP('f', ctxTargetIp);
+  setIP('t', ctxTargetIp);
+  ctxMenu.classList.remove('open');
+  startScan().catch(e=>{setStatus(`Error: ${e.message}`,'err');setScanState(false);});
+});
 document.addEventListener('click',()=>ctxMenu.classList.remove('open'));
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') ctxMenu.classList.remove('open'); });
 
@@ -2027,9 +2086,17 @@ const btnMyLocalIp      = document.getElementById('btnMyLocalIp');
 const myLocalIpResult   = document.getElementById('myLocalIpResult');
 const btnCopyMyLocalIp  = document.getElementById('btnCopyMyLocalIp');
 const btnUseMyLocalIp   = document.getElementById('btnUseMyLocalIp');
+const btnLocalSubnets   = document.getElementById('btnLocalSubnets');
+const localSubnetsResult= document.getElementById('localSubnetsResult');
+const localSubnetSelect = document.getElementById('localSubnetSelect');
+const btnUseLocalSubnet = document.getElementById('btnUseLocalSubnet');
 
 async function detectLocalIP() {
   return new Promise((resolve, reject) => {
+    if (!window.RTCPeerConnection) {
+      reject(new Error('RTCPeerConnection unavailable'));
+      return;
+    }
     let pc;
     try {
       pc = new RTCPeerConnection({ iceServers: [] });
@@ -2105,6 +2172,97 @@ async function detectLocalIP() {
   });
 }
 
+function isPrivateIpv4(ip) {
+  return /^10\./.test(ip) ||
+         /^192\.168\./.test(ip) ||
+         /^172\.(1[6-9]|2[0-9]|3[01])\./.test(ip);
+}
+
+function extractIpv4(text) {
+  if (!text) return null;
+  const m = text.match(/\b(\d{1,3}(?:\.\d{1,3}){3})\b/);
+  return m ? m[1] : null;
+}
+
+function ipToSubnetBase(ip) {
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some(n => Number.isNaN(n) || n < 0 || n > 255)) return null;
+  return `${parts[0]}.${parts[1]}.${parts[2]}`;
+}
+
+async function detectLocalSubnets() {
+  return new Promise((resolve, reject) => {
+    if (!window.RTCPeerConnection) {
+      reject(new Error('RTCPeerConnection unavailable'));
+      return;
+    }
+    let pc;
+    try {
+      pc = new RTCPeerConnection({ iceServers: [] });
+    } catch (err) {
+      reject(err);
+      return;
+    }
+
+    const ips = new Set();
+    let done = false;
+
+    const addIp = (ip) => {
+      if (ip && isPrivateIpv4(ip)) ips.add(ip);
+    };
+
+    const addFromText = (text) => {
+      const ip = extractIpv4(text);
+      addIp(ip);
+    };
+
+    const finish = async () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timeoutId);
+      try {
+        const stats = await pc.getStats();
+        for (const report of stats.values()) {
+          if (report.type === 'local-candidate' || report.type === 'candidate-pair') {
+            addIp(report.address || report.ip || null);
+          }
+        }
+      } catch {}
+      try { pc.close(); } catch {}
+
+      const subnets = [...new Set([...ips]
+        .map(ipToSubnetBase)
+        .filter(Boolean))]
+        .sort((a, b) => ipToNum(a + '.0') - ipToNum(b + '.0'));
+
+      resolve(subnets);
+    };
+
+    pc.onicecandidate = (evt) => {
+      if (evt && evt.candidate) {
+        addFromText(evt.candidate.candidate);
+        addFromText(evt.candidate.address);
+      }
+    };
+
+    pc.onicegatheringstatechange = () => {
+      if (pc.iceGatheringState === 'complete') {
+        finish();
+      }
+    };
+
+    pc.onicecandidateerror = () => {
+      // Ignore ICE transient errors.
+    };
+
+    const timeoutId = setTimeout(finish, 4500);
+    pc.createDataChannel('local-subnet-probe');
+    pc.createOffer()
+      .then((offer) => pc.setLocalDescription(offer))
+      .catch(() => finish());
+  });
+}
+
 btnMyLocalIp.addEventListener('click', async () => {
   myLocalIpResult.style.color = '#808000';
   myLocalIpResult.textContent = t('loading');
@@ -2133,9 +2291,54 @@ btnMyLocalIp.addEventListener('click', async () => {
     };
   } catch (error) {
     myLocalIpResult.style.color = '#c00';
-    myLocalIpResult.textContent = t('geoError');
+    myLocalIpResult.textContent = /RTCPeerConnection unavailable/i.test(String(error && error.message || ''))
+      ? t('localDetectUnsupported')
+      : t('localIpDetectError');
   } finally {
     btnMyLocalIp.disabled = false;
+  }
+});
+
+btnLocalSubnets.addEventListener('click', async () => {
+  localSubnetsResult.style.color = '#808000';
+  localSubnetsResult.textContent = t('loading');
+  localSubnetSelect.style.display = 'none';
+  btnUseLocalSubnet.style.display = 'none';
+  btnLocalSubnets.disabled = true;
+
+  try {
+    const subnets = await detectLocalSubnets();
+    if (!subnets.length) {
+      localSubnetsResult.style.color = '#c00';
+      localSubnetsResult.textContent = t('localSubnetsNone');
+      return;
+    }
+
+    localSubnetSelect.innerHTML = '';
+    subnets.forEach((base) => {
+      const opt = document.createElement('option');
+      opt.value = base;
+      opt.textContent = `${base}.0/24`;
+      localSubnetSelect.appendChild(opt);
+    });
+
+    localSubnetsResult.style.color = '#000080';
+    localSubnetsResult.textContent = t('localSubnetsFound', subnets.length);
+    localSubnetSelect.style.display = 'inline-block';
+    btnUseLocalSubnet.style.display = 'inline-block';
+
+    btnUseLocalSubnet.onclick = () => {
+      const base = localSubnetSelect.value;
+      if (!base) return;
+      setIP('f', `${base}.1`);
+      setIP('t', `${base}.254`);
+      setStatus(`Range set: ${base}.1 - ${base}.254`, 'ok');
+    };
+  } catch {
+    localSubnetsResult.style.color = '#c00';
+    localSubnetsResult.textContent = t('localIpDetectError');
+  } finally {
+    btnLocalSubnets.disabled = false;
   }
 });
 
