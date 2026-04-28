@@ -1,4 +1,5 @@
 # Projekt amatorski wykonany wyłącznie przy użyciu vibe-codingu w celach naukowych.
+# An amateur project made solely using vibe-coding for scientific purposes.
 Uwaga! Program nie zastąpi "profesjonalnych skanerów"
 # IPscanner no server, one file, index.html, js, ready to run
  IP address scanner online
