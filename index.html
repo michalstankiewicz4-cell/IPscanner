@@ -515,6 +515,7 @@ body {
       <button class="btn95" id="btnGo" data-i18n="btnStart">▶ Start</button>
       <button class="btn95" id="btnStop" disabled data-i18n="btnStop">■ Stop</button>
       <button class="btn95" id="btnClear" data-i18n="btnClear">✕ Clear</button>
+      <button class="btn95" id="btnGlobe" title="World Map">🌍</button>
       <div style="flex:1"></div>
       <span id="statTime" style="font-size:10px;color:#000080;font-weight:bold">0.0s</span>
     </div>
@@ -732,38 +733,77 @@ function selectIcon(el) {
   setTimeout(()=>{ lbl.style.background='transparent'; img.style.filter=''; }, 1200);
 }
 function openNotepad() {
-  document.getElementById('notepadWin').style.display = '';
+  document.getElementById('notepadWin').style.display = 'block';
   document.getElementById('notepadText').value =
 `================================================================
-  NetRecon IP Scanner
-  Skaner kamer IP, drukarek, folderów, NAS i routerów
+  NetRecon IP Scanner v2
+  by Michał Stankiewicz
 ================================================================
 
-  Autor : Michał Stankiewicz
-  Tel.  : 797 486 355
+  Tel. / BLIK:  797 486 355
 
+  Jeżeli podoba Ci się to co robię i chcesz wesprzeć
+  projekt — każda złotówka motywuje do kolejnych ficzerów!
 
-  ──────────────────────────────────────────────────
-  Wspierasz projekt? Rzuć grosz przez BLIK :)
+  BLIK → 797 486 355   💙  Dziękuję!
 
-        BLIK →  797 486 355
+----------------------------------------------------------------
+  LICENCJA (MIT) — Polski
+----------------------------------------------------------------
 
-  Każda złotówka motywuje do kolejnych ficzerów!
-  ──────────────────────────────────────────────────
+  Niniejszym udziela się bezpłatnie każdemu, kto uzyska
+  kopię tego oprogramowania i powiązanych plików dokumentacji
+  (dalej „Oprogramowanie"), pozwolenia na korzystanie
+  z Oprogramowania bez ograniczeń, w tym bez ograniczeń
+  prawa do używania, kopiowania, modyfikowania, łączenia,
+  publikowania, dystrybuowania, udzielania podlicencji
+  i/lub sprzedaży kopii Oprogramowania, a także zezwalania
+  na to osobom, którym Oprogramowanie jest dostarczane,
+  pod następującymi warunkami:
 
+  Powyższa nota autorska oraz niniejsze zezwolenie muszą
+  zostać dołączone do wszystkich kopii lub istotnych części
+  Oprogramowania.
 
-  Licencja
-  ────────
-  Free to use — darmowa, do użytku prywatnego
-  i komercyjnego bez ograniczeń.
+  OPROGRAMOWANIE JEST DOSTARCZANE „TAKIM, JAKIE JEST",
+  BEZ JAKIEJKOLWIEK GWARANCJI, WYRAŹNEJ LUB DOROZUMIANEJ,
+  W TYM MIĘDZY INNYMI GWARANCJI PRZYDATNOŚCI HANDLOWEJ,
+  PRZYDATNOŚCI DO OKREŚLONEGO CELU I NIENARUSZALNOŚCI.
+  W ŻADNYM WYPADKU AUTORZY LUB WŁAŚCICIELE PRAW AUTORSKICH
+  NIE PONOSZĄ ODPOWIEDZIALNOŚCI ZA JAKIEKOLWIEK ROSZCZENIA,
+  SZKODY LUB INNĄ ODPOWIEDZIALNOŚĆ, CZY TO W RAMACH UMOWY,
+  DELIKTU CZY W INNY SPOSÓB, WYNIKAJĄCĄ Z OPROGRAMOWANIA
+  LUB KORZYSTANIA Z NIEGO.
 
-  Możesz kopiować, modyfikować i rozpowszechniać
-  ten projekt w dowolnym celu.
+----------------------------------------------------------------
+  LICENSE (MIT) — English
+----------------------------------------------------------------
 
-  Jedna prośba: jeśli wprowadzasz zmiany i
-  publikujesz projekt dalej — zostaw krótką
-  wzmiankę o oryginalnym autorze. Dzięki! 🙏
+  Permission is hereby granted, free of charge, to any
+  person obtaining a copy of this software and associated
+  documentation files (the "Software"), to deal in the
+  Software without restriction, including without limitation
+  the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the
+  Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
 
+  The above copyright notice and this permission notice
+  shall be included in all copies or substantial portions
+  of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+  ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+  TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+  PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+  SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+  IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+  DEALINGS IN THE SOFTWARE.
+
+  If you enjoy what I'm building — BLIK is welcome! 🙏
+  797 486 355
 
 ================================================================`;
 }
@@ -1410,11 +1450,18 @@ function isPrivateIP(ip) {
 async function geoLookup(ip) {
   try {
     const r = await fetch(
-      `http://ip-api.com/json/${ip}?fields=status,country,city,isp,org,proxy,hosting,as`,
+      `http://ip-api.com/json/${ip}?fields=status,country,city,isp,org,proxy,hosting,as,lat,lon`,
       { signal: AbortSignal.timeout(4000) }
     );
     const d = await r.json();
-    return d.status === 'success' ? d : null;
+    if (d.status === 'success') {
+      if (d.lat && d.lon) {
+        ipGeoCoords[ip] = { lat: d.lat, lon: d.lon, country: d.country };
+        updateGlobeDots();
+      }
+      return d;
+    }
+    return null;
   } catch { return null; }
 }
 
@@ -1703,6 +1750,17 @@ function addResultRow(ip, openPorts, pingMs) {
 
   listBody.appendChild(row);
   listBody.appendChild(detail);
+
+  // ── Auto geo-locate for globe dots ──
+  if (!ipGeoCoords[ip]) {
+    geoLookup(ip).then(d => {
+      // geoLookup already stores in ipGeoCoords and calls updateGlobeDots
+      // Also update the IP cell with 🔓 flag if auth check was done separately
+    });
+  } else {
+    updateGlobeDots();
+  }
+
   saveResults();
 }
 
@@ -1715,6 +1773,7 @@ function saveResults() {
       ip, ports,
       ping: foundPingMap[ip] ?? null,
       hostname: hostnameCache[ip] ?? null,
+      geo: ipGeoCoords[ip] ?? null,
     }));
     localStorage.setItem('netrecon_results', JSON.stringify(data));
     localStorage.setItem('netrecon_results_ts', Date.now());
@@ -1730,12 +1789,13 @@ function restoreResults() {
     const ts = +localStorage.getItem('netrecon_results_ts');
     const age = ts ? Math.round((Date.now() - ts) / 60000) : null;
 
-    data.forEach(({ ip, ports, ping, hostname }) => {
+    data.forEach(({ ip, ports, ping, hostname, geo }) => {
       foundHostsMap[ip] = ports;
       totalFound++;
       totalOpenPorts += ports.length;
       if (ping !== null) foundPingMap[ip] = ping;
       if (hostname !== null) hostnameCache[ip] = hostname;
+      if (geo) ipGeoCoords[ip] = geo;
       addResultRow(ip, ports, ping);
     });
     updateProgress(0, 0, totalFound, totalOpenPorts);
@@ -1814,13 +1874,13 @@ btnMyIp.addEventListener('click', async () => {
     const data = await res.json();
     myIpResult.style.color = '#000080';
     myIpResult.textContent = data.ip;
-    btnCopyMyIp.style.display = '';
+    btnCopyMyIp.style.display = 'inline-block';
     btnCopyMyIp.onclick = () => {
       navigator.clipboard?.writeText(data.ip);
       btnCopyMyIp.textContent = '✔ OK';
       setTimeout(() => { btnCopyMyIp.textContent = t('btnCopy'); }, 1500);
     };
-    btnUseMyIp.style.display = '';
+    btnUseMyIp.style.display = 'inline-block';
     btnUseMyIp.onclick = () => {
       const parts = data.ip.split('.').map(Number);
       const b = parts[1];
@@ -2044,5 +2104,464 @@ document.getElementById('menuCountries').addEventListener('click', () => {
 
 applyLang();
 </script>
-</body>
-</html>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+
+<style>
+/* ── Globe window ── */
+#globeWin {
+  display:none; position:fixed;
+  top:40px; left:50%; transform:translateX(-50%);
+  width:min(680px, 96vw);
+  background:#c0c0c0;
+  border-top:2px solid #fff; border-left:2px solid #fff;
+  border-right:2px solid #808080; border-bottom:2px solid #808080;
+  box-shadow:2px 2px 4px rgba(0,0,0,.5);
+  z-index:700;
+}
+#globeCanvas { display:block; width:100%; background:#0a1628; cursor:grab; }
+#globeCanvas:active { cursor:grabbing; }
+.globe-statusbar {
+  border-top:1px solid #808080; padding:3px 8px;
+  font-size:10px; color:#000;
+  display:flex; align-items:center; gap:8px;
+  font-family:'MS Sans Serif',Tahoma,sans-serif;
+}
+.globe-panel {
+  border-top:1px solid #808080;border-left:1px solid #808080;
+  border-right:1px solid #fff;border-bottom:1px solid #fff;
+  padding:1px 8px; flex:1;
+}
+#globeTooltip {
+  position:fixed; display:none;
+  background:#000080; color:#fff;
+  font-family:'MS Sans Serif',Tahoma,sans-serif;
+  font-size:10px; padding:3px 8px;
+  border-top:1px solid #fff; border-left:1px solid #fff;
+  border-right:1px solid #808080; border-bottom:1px solid #808080;
+  pointer-events:none; z-index:800; white-space:nowrap;
+  box-shadow:1px 1px 0 #000;
+}
+/* Scan country confirm */
+#dlgScanCountry {
+  display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+  background:#c0c0c0; z-index:900;
+  border-top:2px solid #fff; border-left:2px solid #fff;
+  border-right:2px solid #808080; border-bottom:2px solid #808080;
+  box-shadow:1px 1px 0 #000; min-width:280px;
+  font-family:'MS Sans Serif',Tahoma,sans-serif; font-size:11px;
+}
+</style>
+
+<!-- Globe window -->
+<div id="globeWin">
+  <div class="titlebar" id="globeTitlebar" style="cursor:move">
+    <span>🌍</span>
+    <span style="flex:1">World Map – IP Scan Results</span>
+    <div style="display:flex;gap:2px">
+      <div class="title-btn" onclick="closeGlobe()">✕</div>
+    </div>
+  </div>
+  <canvas id="globeCanvas" width="680" height="440"></canvas>
+  <div class="globe-statusbar">
+    <div class="globe-panel" id="globeStatusText">Drag to rotate · Click country to scan · Click dot to preview</div>
+    <label style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+      <input type="checkbox" id="globeAutoRotate" checked/> Auto-rotate
+    </label>
+  </div>
+</div>
+
+<!-- Scan country confirm dialog -->
+<div id="dlgScanCountry">
+  <div class="titlebar">
+    <span>❓</span>
+    <span style="flex:1">Scan Country</span>
+    <div class="title-btn" onclick="closeScanCountryDlg()">✕</div>
+  </div>
+  <div style="padding:16px 18px 8px;display:flex;align-items:flex-start;gap:12px">
+    <div style="font-size:32px" id="scDlgIcon">🌍</div>
+    <div>
+      <div style="font-weight:bold;margin-bottom:6px" id="scDlgTitle">Scan country?</div>
+      <div style="font-size:10px;color:#000080" id="scDlgInfo"></div>
+    </div>
+  </div>
+  <div style="padding:0 18px 8px;font-size:10px;color:#808080" id="scDlgRanges"></div>
+  <div style="border-top:1px solid #808080;padding:6px 8px;display:flex;gap:6px;justify-content:flex-end">
+    <button class="btn95" id="scDlgYes" style="min-width:60px">Yes</button>
+    <button class="btn95" onclick="closeScanCountryDlg()" style="min-width:60px">No</button>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div id="globeTooltip"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  GLOBE
+// ══════════════════════════════════════════════════
+const ipGeoCoords = {}; // ip → { lat, lon, country }
+let globeReady = false;
+let globeCtx, globeProjection, globePath;
+let globeCountries = null, globeBorders = null, globeLand = null;
+let globeWidth = 680, globeHeight = 440;
+let autoRotateOn = true;
+let rafId = null;
+let isDragging = false, lastDragX = 0, lastDragY = 0;
+let currentLambda = 20, currentPhi = -15; // rotation angles
+let hoveredCountryName = null;
+let clickedDotIp = null;
+
+// ISO numeric → country name
+const ISO_NAMES = {
+  4:'Afghanistan',8:'Albania',12:'Algeria',24:'Angola',32:'Argentina',36:'Australia',
+  40:'Austria',50:'Bangladesh',56:'Belgium',68:'Bolivia',76:'Brazil',100:'Bulgaria',
+  116:'Cambodia',120:'Cameroon',124:'Canada',144:'Sri Lanka',152:'Chile',156:'China',
+  170:'Colombia',203:'Czech Republic',208:'Denmark',218:'Ecuador',818:'Egypt',
+  231:'Ethiopia',246:'Finland',250:'France',276:'Germany',288:'Ghana',300:'Greece',
+  348:'Hungary',356:'India',360:'Indonesia',364:'Iran',368:'Iraq',372:'Ireland',
+  376:'Israel',380:'Italy',392:'Japan',398:'Kazakhstan',404:'Kenya',410:'South Korea',
+  422:'Lebanon',434:'Libya',484:'Mexico',504:'Morocco',508:'Mozambique',524:'Nepal',
+  528:'Netherlands',554:'New Zealand',566:'Nigeria',578:'Norway',586:'Pakistan',
+  604:'Peru',608:'Philippines',616:'Poland',620:'Portugal',634:'Qatar',642:'Romania',
+  643:'Russia',682:'Saudi Arabia',703:'Slovakia',706:'Somalia',710:'South Africa',
+  724:'Spain',752:'Sweden',756:'Switzerland',760:'Syria',764:'Thailand',792:'Turkey',
+  800:'Uganda',804:'Ukraine',784:'United Arab Emirates',826:'United Kingdom',
+  840:'United States',858:'Uruguay',704:'Vietnam',887:'Yemen',716:'Zimbabwe',
+  566:'Nigeria',196:'Cyprus',188:'Costa Rica',191:'Croatia',414:'Kuwait',
+  788:'Tunisia',862:'Venezuela',170:'Colombia',320:'Guatemala',340:'Honduras',
+  388:'Jamaica',591:'Panama',630:'Puerto Rico',686:'Senegal',729:'Sudan',
+  860:'Uzbekistan',894:'Zambia',266:'Gabon',24:'Angola',694:'Sierra Leone'
+};
+
+function openGlobe() {
+  const win = document.getElementById('globeWin');
+  win.style.display = 'block';
+  if (!globeReady) initGlobe();
+  else { drawGlobe(); startRotation(); }
+}
+
+function closeGlobe() {
+  document.getElementById('globeWin').style.display = 'none';
+  stopRotation();
+}
+
+function stopRotation() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+}
+function startRotation() {
+  stopRotation();
+  function frame() {
+    if (autoRotateOn && !isDragging) {
+      currentLambda += 0.15;
+      if (currentLambda > 180) currentLambda -= 360;
+    }
+    drawGlobe();
+    rafId = requestAnimationFrame(frame);
+  }
+  rafId = requestAnimationFrame(frame);
+}
+
+async function initGlobe() {
+  const canvas = document.getElementById('globeCanvas');
+  globeCtx = canvas.getContext('2d');
+  globeWidth  = canvas.width;
+  globeHeight = canvas.height;
+
+  document.getElementById('globeStatusText').textContent = 'Loading map data…';
+
+  try {
+    const world = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r=>r.json());
+    globeCountries = topojson.feature(world, world.objects.countries);
+    globeBorders   = topojson.mesh(world, world.objects.countries, (a,b)=>a!==b);
+    globeLand      = topojson.feature(world, world.objects.land);
+    globeReady = true;
+    document.getElementById('globeStatusText').textContent = 'Drag to rotate · Click country to scan · Click dot to preview';
+    setupGlobeEvents(canvas);
+    startRotation();
+  } catch(e) {
+    document.getElementById('globeStatusText').textContent = `Map load error: ${e.message}`;
+  }
+}
+
+function getProjection() {
+  return d3.geoOrthographic()
+    .scale(Math.min(globeWidth, globeHeight) * 0.46)
+    .translate([globeWidth/2, globeHeight/2])
+    .rotate([currentLambda, currentPhi, 0])
+    .clipAngle(90);
+}
+
+function drawGlobe() {
+  if (!globeReady || !globeCtx) return;
+  const proj = getProjection();
+  const path = d3.geoPath(proj, globeCtx);
+  const ctx  = globeCtx;
+
+  ctx.clearRect(0, 0, globeWidth, globeHeight);
+
+  // Ocean
+  ctx.beginPath();
+  path({type:'Sphere'});
+  const grad = ctx.createRadialGradient(globeWidth*0.42, globeHeight*0.38, 0, globeWidth/2, globeHeight/2, Math.min(globeWidth,globeHeight)*0.46);
+  grad.addColorStop(0,'#1a3a6b');
+  grad.addColorStop(1,'#0a1628');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Land
+  if (globeLand) {
+    ctx.beginPath();
+    path(globeLand);
+    ctx.fillStyle = '#2d5a27';
+    ctx.fill();
+  }
+
+  // Countries — highlight hovered
+  if (globeCountries) {
+    globeCountries.features.forEach(f => {
+      const name = ISO_NAMES[+f.id];
+      if (name === hoveredCountryName) {
+        ctx.beginPath(); path(f);
+        ctx.fillStyle = 'rgba(255,220,50,0.5)';
+        ctx.fill();
+      }
+    });
+  }
+
+  // Borders
+  if (globeBorders) {
+    ctx.beginPath();
+    path(globeBorders);
+    ctx.strokeStyle = 'rgba(100,180,100,0.5)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  // Graticule
+  ctx.beginPath();
+  path(d3.geoGraticule()());
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+
+  // Globe outline
+  ctx.beginPath();
+  path({type:'Sphere'});
+  ctx.strokeStyle = 'rgba(100,160,255,0.4)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // IP dots
+  const proj2 = proj;
+  Object.entries(ipGeoCoords).forEach(([ip, geo]) => {
+    const [x, y] = proj2([geo.lon, geo.lat]);
+    if (x === undefined || isNaN(x)) return;
+    // Check if point is on visible hemisphere
+    const angle = d3.geoDistance([geo.lon, geo.lat], proj2.invert([globeWidth/2, globeHeight/2]));
+    if (angle > Math.PI/2) return; // behind globe
+
+    // Glow
+    const glow = ctx.createRadialGradient(x,y,0,x,y,10);
+    glow.addColorStop(0,'rgba(255,80,80,0.8)');
+    glow.addColorStop(1,'rgba(255,80,80,0)');
+    ctx.beginPath(); ctx.arc(x,y,10,0,2*Math.PI);
+    ctx.fillStyle = glow; ctx.fill();
+
+    // Dot
+    ctx.beginPath(); ctx.arc(x,y,4,0,2*Math.PI);
+    ctx.fillStyle   = '#ff5050';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth   = 1;
+    ctx.fill(); ctx.stroke();
+  });
+}
+
+function setupGlobeEvents(canvas) {
+  const tooltip = document.getElementById('globeTooltip');
+
+  // Drag rotation
+  canvas.addEventListener('mousedown', e => {
+    isDragging = true;
+    lastDragX = e.clientX;
+    lastDragY = e.clientY;
+    canvas.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mousemove', e => {
+    if (isDragging) {
+      const dx = e.clientX - lastDragX;
+      const dy = e.clientY - lastDragY;
+      currentLambda += dx * 0.4;
+      currentPhi     = Math.max(-90, Math.min(90, currentPhi - dy * 0.4));
+      lastDragX = e.clientX;
+      lastDragY = e.clientY;
+    } else {
+      // Hover: check country
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (globeWidth  / rect.width);
+      const my = (e.clientY - rect.top)  * (globeHeight / rect.height);
+      const proj = getProjection();
+      const path = d3.geoPath(proj);
+      let found = null;
+      if (globeCountries) {
+        globeCountries.features.forEach(f => {
+          if (path.bounds && path(f) && globeCtx) {
+            // Use geoContains
+          }
+          try {
+            const inverted = proj.invert([mx, my]);
+            if (inverted && d3.geoContains(f, inverted)) found = ISO_NAMES[+f.id] || `ID:${f.id}`;
+          } catch{}
+        });
+      }
+      // Check IP dots
+      let foundIp = null;
+      Object.entries(ipGeoCoords).forEach(([ip, geo]) => {
+        const [x,y] = proj([geo.lon, geo.lat]);
+        if (Math.hypot(mx-x, my-y) < 8) foundIp = ip;
+      });
+
+      if (foundIp) {
+        tooltip.style.display = 'block';
+        tooltip.style.left = e.clientX + 14 + 'px';
+        tooltip.style.top  = e.clientY - 4  + 'px';
+        const ports = foundHostsMap[foundIp]?.join(', ') || '';
+        tooltip.textContent = `${foundIp}${ports ? ' ['+ports+']' : ''}`;
+        canvas.style.cursor = 'pointer';
+        hoveredCountryName = null;
+      } else if (found) {
+        tooltip.style.display = 'block';
+        tooltip.style.left = e.clientX + 14 + 'px';
+        tooltip.style.top  = e.clientY - 4  + 'px';
+        const inDb = COUNTRY_DB.find(c=>c.name===found);
+        tooltip.textContent = found + (inDb ? ' — click to scan' : '');
+        canvas.style.cursor = 'pointer';
+        hoveredCountryName = found;
+      } else {
+        tooltip.style.display = 'none';
+        hoveredCountryName = null;
+        canvas.style.cursor = isDragging ? 'grabbing' : 'grab';
+      }
+    }
+  });
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+    canvas.style.cursor = 'grab';
+  });
+  canvas.addEventListener('mouseleave', () => {
+    tooltip.style.display = 'none';
+    hoveredCountryName = null;
+  });
+
+  // Click
+  canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (globeWidth  / rect.width);
+    const my = (e.clientY - rect.top)  * (globeHeight / rect.height);
+    const proj = getProjection();
+
+    // Check IP dots first
+    let clickedIp = null;
+    Object.entries(ipGeoCoords).forEach(([ip, geo]) => {
+      const [x,y] = proj([geo.lon, geo.lat]);
+      if (Math.hypot(mx-x, my-y) < 8) clickedIp = ip;
+    });
+    if (clickedIp) {
+      const ports = foundHostsMap[clickedIp] || [80];
+      const proto = (ports[0]===443||ports[0]===8443)?'https':'http';
+      openPreview(`${proto}://${clickedIp}:${ports[0]}/`);
+      document.getElementById('globeWin').style.zIndex = 699;
+      return;
+    }
+
+    // Check country
+    const inverted = proj.invert([mx, my]);
+    if (!inverted) return;
+    let clickedCountry = null;
+    globeCountries.features.forEach(f => {
+      try { if (d3.geoContains(f, inverted)) clickedCountry = ISO_NAMES[+f.id] || null; } catch{}
+    });
+    if (clickedCountry) openScanCountryDlg(clickedCountry);
+  });
+
+  // Touch support
+  canvas.addEventListener('touchstart', e => {
+    isDragging = true;
+    lastDragX = e.touches[0].clientX;
+    lastDragY = e.touches[0].clientY;
+  }, {passive:true});
+  canvas.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    const dx = e.touches[0].clientX - lastDragX;
+    const dy = e.touches[0].clientY - lastDragY;
+    currentLambda += dx * 0.4;
+    currentPhi     = Math.max(-90, Math.min(90, currentPhi - dy * 0.4));
+    lastDragX = e.touches[0].clientX;
+    lastDragY = e.touches[0].clientY;
+  }, {passive:true});
+  canvas.addEventListener('touchend', () => { isDragging = false; }, {passive:true});
+
+  // Auto-rotate checkbox
+  document.getElementById('globeAutoRotate').addEventListener('change', function() {
+    autoRotateOn = this.checked;
+  });
+}
+
+// ── Scan Country Dialog ──
+let scanCountryTarget = null;
+function openScanCountryDlg(countryName) {
+  scanCountryTarget = countryName;
+  const entry = COUNTRY_DB.find(c => c.name === countryName);
+  document.getElementById('scDlgTitle').textContent = `Scan ${countryName}?`;
+  document.getElementById('scDlgIcon').textContent = entry?.flag || '🌍';
+  if (entry) {
+    document.getElementById('scDlgInfo').textContent = `${entry.ranges.length} IP ranges found in database.`;
+    document.getElementById('scDlgRanges').textContent = 'First range: ' + entry.ranges[0];
+  } else {
+    document.getElementById('scDlgInfo').textContent = 'Country not in preset database — cannot auto-scan.';
+    document.getElementById('scDlgRanges').textContent = '';
+  }
+  document.getElementById('scDlgYes').disabled = !entry;
+  document.getElementById('dlgScanCountry').style.display = 'block';
+}
+function closeScanCountryDlg() {
+  document.getElementById('dlgScanCountry').style.display = 'none';
+}
+document.getElementById('scDlgYes').addEventListener('click', () => {
+  const entry = COUNTRY_DB.find(c => c.name === scanCountryTarget);
+  if (!entry) return;
+  const from = entry.ranges[0].split('–')[0];
+  const to   = entry.ranges[entry.ranges.length-1].split('–')[1];
+  setIP('f', from); setIP('t', to);
+  closeScanCountryDlg(); closeGlobe();
+  setStatus(`Range set: ${entry.flag} ${entry.name} — ${entry.ranges.length} ranges.`, 'ok');
+});
+
+// ── Update dots when new IP found ──
+function updateGlobeDots() {
+  if (document.getElementById('globeWin').style.display !== 'none' && globeReady) drawGlobe();
+}
+
+// ── Globe button ──
+document.getElementById('btnGlobe').addEventListener('click', openGlobe);
+(function() {
+  const win = document.getElementById('globeWin');
+  const bar = document.getElementById('globeTitlebar');
+  let ox=0, oy=0, dragging=false;
+  bar.addEventListener('mousedown', e => {
+    dragging = true;
+    const r = win.getBoundingClientRect();
+    ox = e.clientX - r.left; oy = e.clientY - r.top;
+    win.style.transform = 'none';
+    win.style.left = r.left+'px'; win.style.top = r.top+'px';
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    win.style.left = (e.clientX - ox)+'px';
+    win.style.top  = (e.clientY - oy)+'px';
+  });
+  window.addEventListener('mouseup', () => { dragging = false; });
+})();
+</script>
+
