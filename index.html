@@ -497,6 +497,7 @@ body {
       <div class="menu-dropdown">
         <div class="menu-dd-item" id="menuCountries" data-i18n="menuCountries">Country IP Library...</div>
         <div class="menu-dd-item" id="menuPresets" data-i18n="menuPresets">Port Presets...</div>
+        <div class="menu-dd-item" id="menuDefaults" data-i18n="menuDefaults">Default Scan Values...</div>
         <div class="menu-dd-sep"></div>
         <div class="menu-dd-item" id="menuLang" data-i18n="menuLanguage">Language...</div>
       </div>
@@ -544,10 +545,18 @@ body {
 
       <!-- External IP -->
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
-        <button class="btn95" id="btnMyIp" data-i18n="btnMyIp">🌐 My External IP</button>
+        <button class="btn95" id="btnMyIp" data-i18n="btnMyIp" style="width:132px">🌐 My External IP</button>
         <span id="myIpResult" style="font-family:inherit;font-size:11px;color:#000080;font-weight:bold"></span>
         <button class="btn95" id="btnCopyMyIp" style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnCopy">📋 Copy</button>
         <button class="btn95" id="btnUseMyIp"  style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">➤ Use</button>
+      </div>
+
+      <!-- Local IP -->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
+        <button class="btn95" id="btnMyLocalIp" data-i18n="btnMyLocalIp" style="width:132px">🏠 My Local IP</button>
+        <span id="myLocalIpResult" style="font-family:inherit;font-size:11px;color:#000080;font-weight:bold"></span>
+        <button class="btn95" id="btnCopyMyLocalIp" style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnCopy">📋 Copy</button>
+        <button class="btn95" id="btnUseMyLocalIp"  style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">➤ Use</button>
       </div>
 
       <!-- IP Range -->
@@ -576,6 +585,12 @@ body {
         </div>
         <span style="margin-left:8px" data-i18n="threads">Threads:</span>
         <input type="number" min="2" max="64" value="20" id="concNum"
+          style="width:38px;font-family:inherit;font-size:11px;
+                 border-top:1px solid #808080;border-left:1px solid #808080;
+                 border-right:1px solid #fff;border-bottom:1px solid #fff;
+                 padding:1px 3px;background:#fff"/>
+        <span style="margin-left:8px" data-i18n="delayMs">Delay (ms):</span>
+        <input type="number" min="0" max="5000" value="0" id="delayMs"
           style="width:38px;font-family:inherit;font-size:11px;
                  border-top:1px solid #808080;border-left:1px solid #808080;
                  border-right:1px solid #fff;border-bottom:1px solid #fff;
@@ -925,7 +940,7 @@ function closeNotepad() {
     <div class="dlg-title">
       <span>⚙</span>
       <span data-i18n="dlgTitle">Options</span>
-      <div class="title-btn" onclick="closeDlg()">✕</div>
+      <div class="title-btn" onclick="closeLangDlg()">✕</div>
     </div>
     <div class="dlg-body">
       <div class="dlg-groupbox">
@@ -944,7 +959,45 @@ function closeNotepad() {
     </div>
     <div class="dlg-footer">
       <button class="btn95" id="dlgOk" data-i18n="dlgOk">OK</button>
-      <button class="btn95" id="dlgCancel" data-i18n="dlgCancel" onclick="closeDlg()">Cancel</button>
+      <button class="btn95" id="dlgCancel" data-i18n="dlgCancel" onclick="closeLangDlg()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Default scan values dialog -->
+<div class="dlg-overlay" id="dlgDefaultsOverlay">
+  <div class="dlg95" style="min-width:290px">
+    <div class="dlg-title">
+      <span>⚙</span>
+      <span data-i18n="menuDefaults">Default Scan Values...</span>
+      <div class="title-btn" onclick="closeDefaultsDlg()">✕</div>
+    </div>
+    <div class="dlg-body">
+      <div class="dlg-groupbox">
+        <span class="dlg-groupbox-legend" data-i18n="dlgDefaults">Default Scan Values:</span>
+        <div class="dlg-row" style="margin-bottom:6px">
+          <label style="width:98px;flex-shrink:0" data-i18n="dlgDefaultThreads">Threads:</label>
+          <input id="dlgDefaultThreads" type="number" min="2" max="64" value="20" style="
+            width:58px;font-family:inherit;font-size:11px;
+            border-top:1px solid #808080;border-left:1px solid #808080;
+            border-right:1px solid #fff;border-bottom:1px solid #fff;
+            padding:1px 3px;background:#fff;
+          "/>
+        </div>
+        <div class="dlg-row" style="margin-bottom:0">
+          <label style="width:98px;flex-shrink:0" data-i18n="dlgDefaultDelay">Delay (ms):</label>
+          <input id="dlgDefaultDelay" type="number" min="0" max="5000" value="0" style="
+            width:58px;font-family:inherit;font-size:11px;
+            border-top:1px solid #808080;border-left:1px solid #808080;
+            border-right:1px solid #fff;border-bottom:1px solid #fff;
+            padding:1px 3px;background:#fff;
+          "/>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="dlgDefaultsOk" data-i18n="dlgOk">OK</button>
+      <button class="btn95" id="dlgDefaultsCancel" data-i18n="dlgCancel" onclick="closeDefaultsDlg()">Cancel</button>
     </div>
   </div>
 </div>
@@ -967,10 +1020,10 @@ let lang = localStorage.getItem('netrecon_lang') || 'en';
 const STRINGS = {
   en: {
     menuFile:'File', menuOptions:'Options', menuHelp:'Help',
-    menuLanguage:'Language...', menuAbout:'About', menuPresets:'Port Presets...', menuCountries:'Country IP Library...',
+    menuLanguage:'Language...', menuAbout:'About', menuPresets:'Port Presets...', menuCountries:'Country IP Library...', menuDefaults:'Default Scan Values...',
     btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Clear',
-    btnMyIp:'🌐 My External IP', btnCopy:'📋 Copy', btnUse:'➤ Use',
-    scanSettings:'Scan Settings', ipRange:'IP Range:', threads:'Threads:',
+    btnMyIp:'🌐 My External IP', btnMyLocalIp:'🏠 My Local IP', btnCopy:'📋 Copy', btnUse:'➤ Use',
+    scanSettings:'Scan Settings', ipRange:'IP Range:', threads:'Threads:', delayMs:'Delay (ms):',
     modeCam:'📹 Cameras', modePrint:'🖨️ Printers',
     modeFolder:'📁 Folders / HTTP', modeRouter:'🌐 Routers',
     modeNas:'💾 NAS', modeAll:'🔍 All',
@@ -1015,6 +1068,7 @@ const STRINGS = {
     presetPorts:'Ports:', presetSave:'💾 Save',
     presetHint:'Enter port numbers separated by commas, e.g.: 80, 443, 8080, 554',
     dlgTitle:'Options', dlgLang:'Language:',
+    dlgDefaults:'Default Scan Values:', dlgDefaultThreads:'Threads:', dlgDefaultDelay:'Delay (ms):',
     dlgLangEn:'English', dlgLangPl:'Polski',
     dlgOk:'OK', dlgCancel:'Cancel',
     portRtsp:'RTSP stream likely available',
@@ -1028,10 +1082,10 @@ const STRINGS = {
   },
   pl: {
     menuFile:'Plik', menuOptions:'Opcje', menuHelp:'Pomoc',
-    menuLanguage:'Język...', menuAbout:'O programie', menuPresets:'Presety portów...', menuCountries:'Biblioteka krajów IP...',
+    menuLanguage:'Język...', menuAbout:'O programie', menuPresets:'Presety portów...', menuCountries:'Biblioteka krajów IP...', menuDefaults:'Domyślne wartości skanowania...',
     btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Wyczyść',
-    btnMyIp:'🌐 Moje zewnętrzne IP', btnCopy:'📋 Kopiuj', btnUse:'➤ Użyj',
-    scanSettings:'Ustawienia skanowania', ipRange:'IP Range:', threads:'Wątki:',
+    btnMyIp:'🌐 Moje zewnętrzne IP', btnMyLocalIp:'🏠 Moje lokalne IP', btnCopy:'📋 Kopiuj', btnUse:'➤ Użyj',
+    scanSettings:'Ustawienia skanowania', ipRange:'IP Range:', threads:'Wątki:', delayMs:'Opóźnienie (ms):',
     modeCam:'📹 Kamery', modePrint:'🖨️ Drukarki',
     modeFolder:'📁 Foldery / HTTP', modeRouter:'🌐 Routery',
     modeNas:'💾 NAS', modeAll:'🔍 Wszystko',
@@ -1076,6 +1130,7 @@ const STRINGS = {
     presetPorts:'Porty:', presetSave:'💾 Zapisz',
     presetHint:'Wpisz numery portów po przecinku, np.: 80, 443, 8080, 554',
     dlgTitle:'Opcje', dlgLang:'Język:',
+    dlgDefaults:'Domyślne wartości skanowania:', dlgDefaultThreads:'Wątki:', dlgDefaultDelay:'Opóźnienie (ms):',
     dlgLangEn:'English', dlgLangPl:'Polski',
     dlgOk:'OK', dlgCancel:'Anuluj',
     portRtsp:'RTSP stream prawdopodobnie dostępny',
@@ -1105,21 +1160,88 @@ function applyLang() {
   localStorage.setItem('netrecon_lang', lang);
 }
 
-// ── Settings dialog ──
-function openDlg() {
+function clampInt(v, min, max, fallback) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.round(n)));
+}
+
+function loadScanDefaults() {
+  try {
+    const raw = localStorage.getItem('netrecon_scan_defaults');
+    if (!raw) return { threads: 20, delayMs: 0 };
+    const obj = JSON.parse(raw);
+    return {
+      threads: clampInt(obj.threads, 2, 64, 20),
+      delayMs: clampInt(obj.delayMs, 0, 5000, 0)
+    };
+  } catch {
+    return { threads: 20, delayMs: 0 };
+  }
+}
+
+function saveScanDefaults(threads, delayMs) {
+  const safe = {
+    threads: clampInt(threads, 2, 64, 20),
+    delayMs: clampInt(delayMs, 0, 5000, 0)
+  };
+  localStorage.setItem('netrecon_scan_defaults', JSON.stringify(safe));
+  return safe;
+}
+
+function applyScanDefaultsToMainInputs(cfg) {
+  const threadsInput = document.getElementById('concNum');
+  const delayInput = document.getElementById('delayMs');
+  threadsInput.value = String(clampInt(cfg.threads, 2, 64, 20));
+  delayInput.value = String(clampInt(cfg.delayMs, 0, 5000, 0));
+}
+
+// ── Language dialog ──
+function openLangDlg() {
   document.getElementById('radioEn').checked = (lang === 'en');
   document.getElementById('radioPl').checked = (lang === 'pl');
   document.getElementById('dlgOverlay').classList.add('open');
 }
-function closeDlg() {
+function closeLangDlg() {
   document.getElementById('dlgOverlay').classList.remove('open');
 }
+document.querySelectorAll('input[name=dlgLang]').forEach(el => {
+  el.addEventListener('change', () => {
+    lang = document.querySelector('input[name=dlgLang]:checked').value;
+    applyLang();
+  });
+});
 document.getElementById('dlgOk').addEventListener('click', () => {
   lang = document.querySelector('input[name=dlgLang]:checked').value;
   applyLang();
-  closeDlg();
+  closeLangDlg();
 });
-document.getElementById('dlgCancel').addEventListener('click', closeDlg);
+document.getElementById('dlgCancel').addEventListener('click', closeLangDlg);
+
+// ── Defaults dialog ──
+function openDefaultsDlg() {
+  const cfg = loadScanDefaults();
+  document.getElementById('dlgDefaultThreads').value = String(cfg.threads);
+  document.getElementById('dlgDefaultDelay').value = String(cfg.delayMs);
+  document.getElementById('dlgDefaultsOverlay').classList.add('open');
+}
+function closeDefaultsDlg() {
+  document.getElementById('dlgDefaultsOverlay').classList.remove('open');
+}
+function persistDefaultsFromDialog() {
+  const cfg = saveScanDefaults(
+    document.getElementById('dlgDefaultThreads').value,
+    document.getElementById('dlgDefaultDelay').value
+  );
+  applyScanDefaultsToMainInputs(cfg);
+}
+document.getElementById('dlgDefaultThreads').addEventListener('input', persistDefaultsFromDialog);
+document.getElementById('dlgDefaultDelay').addEventListener('input', persistDefaultsFromDialog);
+document.getElementById('dlgDefaultsOk').addEventListener('click', () => {
+  persistDefaultsFromDialog();
+  closeDefaultsDlg();
+});
+document.getElementById('dlgDefaultsCancel').addEventListener('click', closeDefaultsDlg);
 
 // ── Menu bar ──
 document.querySelectorAll('.menu-item').forEach(item => {
@@ -1135,7 +1257,11 @@ document.addEventListener('click', () => {
 });
 document.getElementById('menuLang').addEventListener('click', () => {
   document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
-  openDlg();
+  openLangDlg();
+});
+document.getElementById('menuDefaults').addEventListener('click', () => {
+  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+  openDefaultsDlg();
 });
 document.getElementById('menuAbout').addEventListener('click', () => {
   document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
@@ -1896,6 +2022,124 @@ btnMyIp.addEventListener('click', async () => {
 });
 
 // ══════════════════════════════════════════════════
+// Local IP Detection
+const btnMyLocalIp      = document.getElementById('btnMyLocalIp');
+const myLocalIpResult   = document.getElementById('myLocalIpResult');
+const btnCopyMyLocalIp  = document.getElementById('btnCopyMyLocalIp');
+const btnUseMyLocalIp   = document.getElementById('btnUseMyLocalIp');
+
+async function detectLocalIP() {
+  return new Promise((resolve, reject) => {
+    let pc;
+    try {
+      pc = new RTCPeerConnection({ iceServers: [] });
+    } catch (err) {
+      reject(err);
+      return;
+    }
+
+    const isPrivateIpv4 = (ip) =>
+      /^10\./.test(ip) ||
+      /^192\.168\./.test(ip) ||
+      /^172\.(1[6-9]|2[0-9]|3[01])\./.test(ip);
+
+    const extractIpv4 = (text) => {
+      if (!text) return null;
+      const m = text.match(/\b(\d{1,3}(?:\.\d{1,3}){3})\b/);
+      return m ? m[1] : null;
+    };
+
+    let done = false;
+    const finish = (ip) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timeoutId);
+      try { pc.close(); } catch {}
+      resolve(ip);
+    };
+
+    const fail = (err) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timeoutId);
+      try { pc.close(); } catch {}
+      reject(err || new Error('Local IP not found'));
+    };
+
+    const checkCandidateText = (text) => {
+      const ip = extractIpv4(text);
+      if (ip && isPrivateIpv4(ip)) finish(ip);
+    };
+
+    pc.onicecandidate = (evt) => {
+      if (!evt || !evt.candidate) return;
+      checkCandidateText(evt.candidate.candidate);
+      if (evt.candidate.address) checkCandidateText(evt.candidate.address);
+    };
+
+    pc.onicecandidateerror = () => {
+      // Ignore transient ICE errors; timeout/fallback will handle final state.
+    };
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        // Fallback for browsers that hide IP in candidate strings.
+        const stats = await pc.getStats();
+        for (const report of stats.values()) {
+          if (report.type === 'local-candidate' || report.type === 'candidate-pair') {
+            const ip = report.address || report.ip || extractIpv4(report.candidateType || '');
+            if (ip && isPrivateIpv4(ip)) {
+              finish(ip);
+              return;
+            }
+          }
+        }
+      } catch {}
+      fail(new Error('Timeout'));
+    }, 5000);
+
+    pc.createDataChannel('local-ip-probe');
+    pc.createOffer()
+      .then((offer) => pc.setLocalDescription(offer))
+      .catch((err) => fail(err));
+  });
+}
+
+btnMyLocalIp.addEventListener('click', async () => {
+  myLocalIpResult.style.color = '#808000';
+  myLocalIpResult.textContent = t('loading');
+  btnCopyMyLocalIp.style.display = 'none';
+  btnUseMyLocalIp.style.display  = 'none';
+  btnMyLocalIp.disabled = true;
+  
+  try {
+    const localIP = await detectLocalIP();
+    myLocalIpResult.style.color = '#000080';
+    myLocalIpResult.textContent = localIP;
+    
+    btnCopyMyLocalIp.style.display = 'inline-block';
+    btnCopyMyLocalIp.onclick = () => {
+      navigator.clipboard?.writeText(localIP);
+      btnCopyMyLocalIp.textContent = '✔ OK';
+      setTimeout(() => { btnCopyMyLocalIp.textContent = t('btnCopy'); }, 1500);
+    };
+    
+    btnUseMyLocalIp.style.display = 'inline-block';
+    btnUseMyLocalIp.onclick = () => {
+      const parts = localIP.split('.').map(Number);
+      // Set range to scan local network
+      setIP('f', `${parts[0]}.${parts[1]}.${parts[2]}.1`);
+      setIP('t', `${parts[0]}.${parts[1]}.${parts[2]}.254`);
+    };
+  } catch (error) {
+    myLocalIpResult.style.color = '#c00';
+    myLocalIpResult.textContent = t('geoError');
+  } finally {
+    btnMyLocalIp.disabled = false;
+  }
+});
+
+// ══════════════════════════════════════════════════
 async function startScan() {
   const startIp=getIP('f'), endIp=getIP('t');
   if (!isIPv4(startIp)||!isIPv4(endIp)) { setStatus(t('errInvalidIp'),'err'); return; }
@@ -1916,6 +2160,7 @@ async function startScan() {
   emptyRow.textContent = t('emptyScanning');
 
   const concurrency = Math.min(+document.getElementById('concNum').value || 20, 64);
+  const delayMs = Math.max(0, Math.min(5000, +document.getElementById('delayMs').value || 0));
 
   if (total>500) {
     const estSec=Math.round(total*(1500/concurrency)/1000);
@@ -1943,6 +2188,9 @@ async function startScan() {
       }
       checked++;
       if (checked%4===0||checked===total) updateProgress(checked,total,totalFound,totalOpenPorts);
+      if (delayMs > 0 && !stopRequested && nextIdx < total) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
     }
   };
 
@@ -2103,6 +2351,7 @@ document.getElementById('menuCountries').addEventListener('click', () => {
 });
 
 applyLang();
+applyScanDefaultsToMainInputs(loadScanDefaults());
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
