@@ -1097,6 +1097,15 @@ const STRINGS = {
     notepadWinTitle:'Notepad – About',
     previewBlocked:'Device blocks embedding (X-Frame-Options).',
     previewBlockedLink:'Open directly in new tab →',
+    btnImportTrace:'Import Trace', btnClearTopoFilters:'Clear Filters', topoFiltersLabel:'Filters:', mapLiveLabel:'Live scan visualization',
+    filterAllPorts:'All ports', filterPortLabel:'port', filterSubnetLabel:'subnet', filterPingLabel:'ping', filterPingPlaceholder:'Max ms',
+    topologyStatus:(n)=>`Topology view · ${n} visible hosts`,
+    topologyFilteredStatus:(n)=>`Topology view · ${n} filtered hosts`,
+    traceRoutesLabel:'trace routes',
+    traceDlgTitle:'Import traceroute', traceTargetLabel:'Target IP:', traceHint:'Paste output from tracert or traceroute.', traceDlgHint:'Import a real traceroute path for the selected host.',
+    traceErrTarget:'Enter a valid target IPv4 address.', traceErrParse:'Could not parse any hops from the pasted output.',
+    traceImported:(n, ip)=>`Imported ${n} hops for ${ip}.`, traceImportedStatus:(ip, n)=>`Trace route imported for ${ip} (${n} hops).`, traceHopCopied:(ip)=>`Hop IP copied: ${ip}`,
+    btnTraceSave:'Import',
   },
   pl: {
     menuFile:'Plik', menuOptions:'Opcje', menuHelp:'Pomoc',
@@ -1162,6 +1171,15 @@ const STRINGS = {
     notepadWinTitle:'Notatnik – O autorze',
     previewBlocked:'Urządzenie blokuje osadzanie (X-Frame-Options).',
     previewBlockedLink:'Otwórz w nowej karcie →',
+    btnImportTrace:'Importuj Trace', btnClearTopoFilters:'Wyczyść filtry', topoFiltersLabel:'Filtry:', mapLiveLabel:'Wizualizacja na żywo',
+    filterAllPorts:'Wszystkie porty', filterPortLabel:'port', filterSubnetLabel:'podsieć', filterPingLabel:'ping', filterPingPlaceholder:'Maks ms',
+    topologyStatus:(n)=>`Widok topologii · ${n} widocznych hostów`,
+    topologyFilteredStatus:(n)=>`Widok topologii · ${n} hostów po filtrach`,
+    traceRoutesLabel:'tras trace',
+    traceDlgTitle:'Import traceroute', traceTargetLabel:'Docelowe IP:', traceHint:'Wklej wynik z tracert albo traceroute.', traceDlgHint:'Zaimportuj prawdziwą trasę hop-by-hop dla wybranego hosta.',
+    traceErrTarget:'Podaj poprawny docelowy adres IPv4.', traceErrParse:'Nie udało się odczytać hopów z wklejonego wyniku.',
+    traceImported:(n, ip)=>`Zaimportowano ${n} hopów dla ${ip}.`, traceImportedStatus:(ip, n)=>`Zaimportowano trasę dla ${ip} (${n} hopów).`, traceHopCopied:(ip)=>`Skopiowano IP hopa: ${ip}`,
+    btnTraceSave:'Importuj',
   }
 };
 
@@ -1177,6 +1195,11 @@ function applyLang() {
     const v = t(key);
     if (typeof v === 'string') el.textContent = v;
   });
+  const subnetInput = document.getElementById('topoSubnetFilter');
+  const pingInput = document.getElementById('topoPingMax');
+  if (subnetInput) subnetInput.placeholder = t('filterSubnetLabel');
+  if (pingInput) pingInput.placeholder = t('filterPingPlaceholder');
+  if (typeof refreshTopologyFilterOptions === 'function') refreshTopologyFilterOptions();
   // Persist
   localStorage.setItem('netrecon_lang', lang);
 }
@@ -2354,6 +2377,7 @@ async function startScan() {
 
   const total=endNum-startNum+1;
   foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
+  refreshTopologyFilterOptions();
   stopRequested=false; statTime.textContent='0.0s';
   updateProgress(0,total,0,0); setScanState(true);
 
@@ -2415,6 +2439,7 @@ btnStop.addEventListener('click',()=>{
 });
 btnClear.addEventListener('click',()=>{
   foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
+  traceRoutes = {};
   listBody.innerHTML=''; listBody.appendChild(emptyRow);
   emptyRow.textContent = t('emptyRow');
   updateProgress(0,0,0,0); statTime.textContent='0.0s';
@@ -2423,6 +2448,9 @@ btnClear.addEventListener('click',()=>{
   previewFrame.src='about:blank'; selectedRowEl=null;
   localStorage.removeItem('netrecon_results');
   localStorage.removeItem('netrecon_results_ts');
+  localStorage.removeItem('netrecon_trace_routes');
+  refreshTopologyFilterOptions();
+  updateGlobeDots();
 });
 
 // ══════════════════════════════════════════════════
@@ -2580,6 +2608,32 @@ applyScanDefaultsToMainInputs(loadScanDefaults());
   display:flex; align-items:center; gap:8px;
   font-family:'MS Sans Serif',Tahoma,sans-serif;
 }
+.globe-toolbar {
+  display:flex;
+  align-items:center;
+  gap:4px;
+  flex-wrap:wrap;
+  padding:5px 8px 4px;
+  border-top:1px solid #fff;
+  border-bottom:1px solid #808080;
+  background:#c0c0c0;
+}
+.globe-toolbar .btn95 { padding:2px 10px; font-size:10px; }
+.globe-toolbar .toolbar-label { font-size:10px; color:#000; white-space:nowrap; }
+.globe-toolbar .toolbar-input,
+.globe-toolbar .toolbar-select {
+  height:20px;
+  font-family:inherit;
+  font-size:10px;
+  border-top:1px solid #808080;
+  border-left:1px solid #808080;
+  border-right:1px solid #fff;
+  border-bottom:1px solid #fff;
+  background:#fff;
+  padding:1px 4px;
+}
+.globe-toolbar .toolbar-input { width:88px; }
+.globe-toolbar .toolbar-select { width:120px; }
 .globe-panel {
   border-top:1px solid #808080;border-left:1px solid #808080;
   border-right:1px solid #fff;border-bottom:1px solid #fff;
@@ -2604,21 +2658,67 @@ applyScanDefaultsToMainInputs(loadScanDefaults());
   box-shadow:1px 1px 0 #000; min-width:280px;
   font-family:'MS Sans Serif',Tahoma,sans-serif; font-size:11px;
 }
+#dlgTraceOverlay {
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:950;
+}
+#dlgTraceOverlay.open { display:block; }
+#dlgTrace {
+  position:fixed;
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  width:min(640px, 96vw);
+  background:#c0c0c0;
+  border-top:2px solid #fff; border-left:2px solid #fff;
+  border-right:2px solid #808080; border-bottom:2px solid #808080;
+  box-shadow:1px 1px 0 #000;
+  z-index:951;
+  font-family:'MS Sans Serif',Tahoma,sans-serif;
+  font-size:11px;
+}
+#traceInput {
+  width:100%;
+  min-height:220px;
+  resize:vertical;
+  font-family:'Courier New',monospace;
+  font-size:11px;
+  border-top:1px solid #808080;
+  border-left:1px solid #808080;
+  border-right:1px solid #fff;
+  border-bottom:1px solid #fff;
+  background:#fff;
+  padding:8px;
+}
 </style>
 
 <!-- Globe window -->
 <div id="globeWin">
   <div class="titlebar" id="globeTitlebar" style="cursor:move">
     <span>🌍</span>
-    <span style="flex:1">World Map – IP Scan Results</span>
+    <span style="flex:1">Network Map – IP Scan Results</span>
     <div style="display:flex;gap:2px">
       <div class="title-btn" onclick="closeGlobe()">✕</div>
     </div>
   </div>
+  <div class="globe-toolbar">
+    <button class="btn95 pressed" id="btnMapGlobe">Globe</button>
+    <button class="btn95" id="btnMapTopology">Topology</button>
+    <button class="btn95" id="btnImportTrace" data-i18n="btnImportTrace">Import Trace</button>
+    <span class="toolbar-label" id="topoFiltersLabel" data-i18n="topoFiltersLabel">Filters:</span>
+    <select class="toolbar-select" id="topoPortFilter">
+      <option value="">All ports</option>
+    </select>
+    <input class="toolbar-input" id="topoSubnetFilter" placeholder="Subnet" />
+    <input class="toolbar-input" id="topoPingMax" type="number" min="0" step="1" placeholder="Max ms" />
+    <button class="btn95" id="btnClearTopoFilters" data-i18n="btnClearTopoFilters">Clear Filters</button>
+    <div style="flex:1"></div>
+    <span style="font-size:10px;color:#000080" id="mapLiveLabel" data-i18n="mapLiveLabel">Live scan visualization</span>
+  </div>
   <canvas id="globeCanvas" width="680" height="440"></canvas>
   <div class="globe-statusbar">
     <div class="globe-panel" id="globeStatusText">Drag to rotate · Click country to scan · Click dot to preview</div>
-    <label style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+    <label style="display:flex;align-items:center;gap:4px;flex-shrink:0" id="globeAutoRotateWrap">
       <input type="checkbox" id="globeAutoRotate" checked/> Auto-rotate
     </label>
   </div>
@@ -2645,6 +2745,30 @@ applyScanDefaultsToMainInputs(loadScanDefaults());
   </div>
 </div>
 
+<!-- Trace import dialog -->
+<div id="dlgTraceOverlay">
+  <div id="dlgTrace">
+    <div class="titlebar">
+      <span>🧭</span>
+      <span style="flex:1" id="traceDlgTitle" data-i18n="traceDlgTitle">Import traceroute</span>
+      <div class="title-btn" onclick="closeTraceDlg()">✕</div>
+    </div>
+    <div style="padding:12px 14px 8px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <label for="traceTargetIp" id="traceTargetLabel" data-i18n="traceTargetLabel">Target IP:</label>
+        <input id="traceTargetIp" type="text" style="width:160px;font-family:'Courier New',monospace;font-size:11px;border-top:1px solid #808080;border-left:1px solid #808080;border-right:1px solid #fff;border-bottom:1px solid #fff;padding:2px 4px;background:#fff" />
+        <span style="font-size:10px;color:#808080" id="traceHint" data-i18n="traceHint">Paste output from tracert or traceroute.</span>
+      </div>
+      <textarea id="traceInput" spellcheck="false"></textarea>
+      <div id="traceParseStatus" style="font-size:10px;color:#000080;min-height:14px"></div>
+    </div>
+    <div style="border-top:1px solid #808080;padding:6px 8px;display:flex;gap:6px;justify-content:flex-end">
+      <button class="btn95" id="btnTraceSave" data-i18n="btnTraceSave">Import</button>
+      <button class="btn95" onclick="closeTraceDlg()" id="btnTraceCancel" data-i18n="dlgCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Tooltip -->
 <div id="globeTooltip"></div>
 
@@ -2657,12 +2781,17 @@ let globeReady = false;
 let globeCtx, globeProjection, globePath;
 let globeCountries = null, globeBorders = null, globeLand = null;
 let globeWidth = 680, globeHeight = 440;
+let globeMapDataReady = false;
 let autoRotateOn = true;
 let rafId = null;
 let isDragging = false, lastDragX = 0, lastDragY = 0;
 let currentLambda = 20, currentPhi = -15; // rotation angles
 let hoveredCountryName = null;
 let clickedDotIp = null;
+let mapMode = 'globe';
+let topologyHitTargets = [];
+let traceRoutes = {};
+const topologyFilters = { port: '', subnet: '', pingMax: '' };
 
 // ISO numeric → country name
 const ISO_NAMES = {
@@ -2690,7 +2819,11 @@ function openGlobe() {
   const win = document.getElementById('globeWin');
   win.style.display = 'block';
   if (!globeReady) initGlobe();
-  else { drawGlobe(); startRotation(); }
+  else {
+    syncMapModeUI();
+    drawCurrentMap();
+    startRotation();
+  }
 }
 
 function closeGlobe() {
@@ -2704,11 +2837,11 @@ function stopRotation() {
 function startRotation() {
   stopRotation();
   function frame() {
-    if (autoRotateOn && !isDragging) {
+    if (mapMode === 'globe' && autoRotateOn && !isDragging) {
       currentLambda += 0.15;
       if (currentLambda > 180) currentLambda -= 360;
     }
-    drawGlobe();
+    drawCurrentMap();
     rafId = requestAnimationFrame(frame);
   }
   rafId = requestAnimationFrame(frame);
@@ -2719,21 +2852,108 @@ async function initGlobe() {
   globeCtx = canvas.getContext('2d');
   globeWidth  = canvas.width;
   globeHeight = canvas.height;
+  globeReady = true;
+  syncMapModeUI();
+  setupGlobeEvents(canvas);
+  drawCurrentMap();
+  startRotation();
 
-  document.getElementById('globeStatusText').textContent = 'Loading map data…';
+  if (globeMapDataReady) return;
+
+  document.getElementById('globeStatusText').textContent = mapMode === 'globe'
+    ? 'Loading map data…'
+    : 'Topology view · Click host to preview · Rings show subnet depth';
 
   try {
     const world = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r=>r.json());
     globeCountries = topojson.feature(world, world.objects.countries);
     globeBorders   = topojson.mesh(world, world.objects.countries, (a,b)=>a!==b);
     globeLand      = topojson.feature(world, world.objects.land);
-    globeReady = true;
-    document.getElementById('globeStatusText').textContent = 'Drag to rotate · Click country to scan · Click dot to preview';
-    setupGlobeEvents(canvas);
-    startRotation();
+    globeMapDataReady = true;
+    syncMapModeUI();
+    drawCurrentMap();
   } catch(e) {
-    document.getElementById('globeStatusText').textContent = `Map load error: ${e.message}`;
+    if (mapMode === 'globe') {
+      document.getElementById('globeStatusText').textContent = `Map load error: ${e.message}`;
+    }
   }
+}
+
+function syncMapModeUI() {
+  const globeBtn = document.getElementById('btnMapGlobe');
+  const topoBtn = document.getElementById('btnMapTopology');
+  const autoRotateWrap = document.getElementById('globeAutoRotateWrap');
+  const statusText = document.getElementById('globeStatusText');
+  globeBtn.classList.toggle('pressed', mapMode === 'globe');
+  topoBtn.classList.toggle('pressed', mapMode === 'topology');
+  autoRotateWrap.style.display = mapMode === 'globe' ? 'flex' : 'none';
+  statusText.textContent = mapMode === 'globe'
+    ? 'Drag to rotate · Click country to scan · Click dot to preview'
+    : 'Topology view · Click host to preview · Rings show subnet depth';
+}
+
+function setMapMode(mode) {
+  mapMode = mode;
+  hoveredCountryName = null;
+  const tooltip = document.getElementById('globeTooltip');
+  if (tooltip) tooltip.style.display = 'none';
+  const canvas = document.getElementById('globeCanvas');
+  if (canvas) canvas.style.cursor = mode === 'globe' ? 'grab' : 'default';
+  syncMapModeUI();
+  drawCurrentMap();
+}
+
+function drawCurrentMap() {
+  if (mapMode === 'topology') drawTopology();
+  else drawGlobe();
+}
+
+function getFilteredHosts() {
+  const subnetNeedle = topologyFilters.subnet.trim();
+  const pingLimit = topologyFilters.pingMax === '' ? null : Number(topologyFilters.pingMax);
+
+  return Object.entries(foundHostsMap)
+    .map(([ip, ports]) => {
+      const parts = ip.split('.');
+      return {
+        ip,
+        ports,
+        portCount: ports.length,
+        ping: foundPingMap[ip] ?? null,
+        subnet: parts.slice(0, 3).join('.') + '.0/24',
+        hostOctet: Number(parts[3]) || 0
+      };
+    })
+    .filter(host => {
+      if (topologyFilters.port && !host.ports.includes(Number(topologyFilters.port))) return false;
+      if (subnetNeedle && !host.subnet.includes(subnetNeedle) && !host.ip.includes(subnetNeedle)) return false;
+      if (pingLimit !== null && Number.isFinite(pingLimit)) {
+        if (host.ping === null || host.ping > pingLimit) return false;
+      }
+      return true;
+    });
+}
+
+function refreshTopologyFilterOptions() {
+  const select = document.getElementById('topoPortFilter');
+  if (!select) return;
+  const current = topologyFilters.port;
+  const ports = Array.from(new Set(Object.values(foundHostsMap).flat())).sort((a, b) => a - b);
+  select.innerHTML = `<option value="">${t('filterAllPorts')}</option>` + ports.map(port => `<option value="${port}">${port}</option>`).join('');
+  select.value = current;
+}
+
+function updateTopologyStatus(hosts, traceCount) {
+  if (mapMode !== 'topology') return;
+  const statusText = document.getElementById('globeStatusText');
+  const filterSummary = [];
+  if (topologyFilters.port) filterSummary.push(`${t('filterPortLabel')} ${topologyFilters.port}`);
+  if (topologyFilters.subnet.trim()) filterSummary.push(`${t('filterSubnetLabel')} ${topologyFilters.subnet.trim()}`);
+  if (topologyFilters.pingMax !== '') filterSummary.push(`${t('filterPingLabel')} ≤ ${topologyFilters.pingMax}ms`);
+  const traceLabel = traceCount ? ` · ${traceCount} ${t('traceRoutesLabel')}` : '';
+  statusText.textContent = filterSummary.length
+    ? `${t('topologyFilteredStatus', hosts.length)} · ${filterSummary.join(' · ')}${traceLabel}`
+    : `${t('topologyStatus', hosts.length)}${traceLabel}`;
 }
 
 function getProjection() {
@@ -2746,6 +2966,21 @@ function getProjection() {
 
 function drawGlobe() {
   if (!globeReady || !globeCtx) return;
+  topologyHitTargets = [];
+  if (!globeMapDataReady) {
+    const ctx = globeCtx;
+    ctx.clearRect(0, 0, globeWidth, globeHeight);
+    ctx.fillStyle = '#0a1628';
+    ctx.fillRect(0, 0, globeWidth, globeHeight);
+    ctx.fillStyle = '#d8e7ff';
+    ctx.textAlign = 'center';
+    ctx.font = '12px MS Sans Serif';
+    ctx.fillText('Loading world atlas...', globeWidth / 2, globeHeight / 2 - 6);
+    ctx.font = '10px MS Sans Serif';
+    ctx.fillStyle = '#8fb3ff';
+    ctx.fillText('Topology view is already available.', globeWidth / 2, globeHeight / 2 + 14);
+    return;
+  }
   const proj = getProjection();
   const path = d3.geoPath(proj, globeCtx);
   const ctx  = globeCtx;
@@ -2829,6 +3064,327 @@ function drawGlobe() {
   });
 }
 
+function buildTopologyModel() {
+  const hosts = getFilteredHosts();
+
+  const subnetMap = new Map();
+  hosts.forEach(host => {
+    if (!subnetMap.has(host.subnet)) subnetMap.set(host.subnet, []);
+    subnetMap.get(host.subnet).push(host);
+  });
+
+  const subnets = Array.from(subnetMap.entries())
+    .map(([subnet, subnetHosts]) => ({
+      subnet,
+      hosts: subnetHosts.sort((a, b) => a.hostOctet - b.hostOctet)
+    }))
+    .sort((a, b) => b.hosts.length - a.hosts.length || a.subnet.localeCompare(b.subnet));
+
+  return { hosts, subnets };
+}
+
+function topologyHostColor(host) {
+  if (host.ports.some(p => [443, 8443, 9443].includes(p))) return '#66ffb3';
+  if (host.ports.some(p => [554, 8080, 8000, 37777].includes(p))) return '#ffd166';
+  if (host.ports.some(p => [22, 23, 3389, 5900].includes(p))) return '#ff8a80';
+  return '#8ec5ff';
+}
+
+function hexToRgba(hex, alpha) {
+  const raw = hex.replace('#', '');
+  const normalized = raw.length === 3 ? raw.split('').map(ch => ch + ch).join('') : raw;
+  const value = parseInt(normalized, 16);
+  const r = (value >> 16) & 255;
+  const g = (value >> 8) & 255;
+  const b = value & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function drawTopology() {
+  if (!globeCtx) return;
+  const ctx = globeCtx;
+  const { hosts, subnets } = buildTopologyModel();
+  const visibleHostSet = new Set(hosts.map(host => host.ip));
+  const visibleTraceTargets = Object.keys(traceRoutes).filter(ip => visibleHostSet.has(ip));
+  topologyHitTargets = [];
+
+  ctx.clearRect(0, 0, globeWidth, globeHeight);
+
+  const bg = ctx.createLinearGradient(0, 0, globeWidth, globeHeight);
+  bg.addColorStop(0, '#faf7ef');
+  bg.addColorStop(1, '#ddd6c4');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, globeWidth, globeHeight);
+
+  const centerX = globeWidth / 2;
+  const centerY = globeHeight / 2;
+  const maxRadius = Math.min(globeWidth, globeHeight) * 0.43;
+
+  for (let ring = 1; ring <= 7; ring++) {
+    const radius = (maxRadius / 7) * ring;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = ring % 2 ? 'rgba(90,90,90,0.12)' : 'rgba(120,120,120,0.18)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  const centerGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 48);
+  centerGlow.addColorStop(0, 'rgba(255,80,80,0.75)');
+  centerGlow.addColorStop(1, 'rgba(255,80,80,0)');
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 48, 0, Math.PI * 2);
+  ctx.fillStyle = centerGlow;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 11, 0, Math.PI * 2);
+  ctx.fillStyle = '#ff3b30';
+  ctx.strokeStyle = '#4a120f';
+  ctx.lineWidth = 2;
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#1b1b1b';
+  ctx.font = 'bold 11px MS Sans Serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('LOCAL SCANNER', centerX, centerY + 28);
+  ctx.font = '10px MS Sans Serif';
+  ctx.fillStyle = '#4a4a4a';
+  ctx.fillText(`${hosts.length} active hosts`, centerX, centerY + 42);
+
+  if (!hosts.length) {
+    ctx.fillStyle = '#5a5a5a';
+    ctx.font = '12px MS Sans Serif';
+    ctx.fillText('No scan data yet. Run a scan to populate topology.', centerX, centerY - 70);
+    return;
+  }
+
+  subnets.forEach((subnetEntry, subnetIndex) => {
+    const baseAngle = (-Math.PI / 2) + (subnetIndex / Math.max(subnets.length, 1)) * Math.PI * 2;
+    const subnetRadius = maxRadius * 0.45;
+    const subnetX = centerX + Math.cos(baseAngle) * subnetRadius;
+    const subnetY = centerY + Math.sin(baseAngle) * subnetRadius;
+
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(subnetX, subnetY);
+    ctx.strokeStyle = 'rgba(80,120,210,0.45)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(subnetX, subnetY, 7, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#5674c9';
+    ctx.lineWidth = 2;
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#24325a';
+    ctx.font = '10px MS Sans Serif';
+    ctx.textAlign = subnetX < centerX ? 'right' : 'left';
+    ctx.fillText(subnetEntry.subnet, subnetX + (subnetX < centerX ? -12 : 12), subnetY + 3);
+
+    const spread = Math.min(Math.PI / 2.3, 0.24 * Math.max(subnetEntry.hosts.length - 1, 1));
+    subnetEntry.hosts.forEach((host, hostIndex) => {
+      const t = subnetEntry.hosts.length === 1 ? 0.5 : hostIndex / (subnetEntry.hosts.length - 1);
+      const angle = baseAngle - spread / 2 + spread * t;
+      const hostRadius = maxRadius * (0.7 + Math.min(hostIndex * 0.015, 0.16));
+      const hostX = centerX + Math.cos(angle) * hostRadius;
+      const hostY = centerY + Math.sin(angle) * hostRadius;
+      const color = topologyHostColor(host);
+      const nodeRadius = Math.max(4, Math.min(8, 4 + host.portCount * 0.65));
+
+      ctx.beginPath();
+      ctx.moveTo(subnetX, subnetY);
+      ctx.lineTo(hostX, hostY);
+      ctx.strokeStyle = 'rgba(120,120,120,0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      const glow = ctx.createRadialGradient(hostX, hostY, 0, hostX, hostY, nodeRadius * 3.2);
+      glow.addColorStop(0, hexToRgba(color, 0.72));
+      glow.addColorStop(1, 'rgba(255,255,255,0)');
+
+      ctx.beginPath();
+      ctx.arc(hostX, hostY, nodeRadius * 2.8, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(hostX, hostY, nodeRadius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.strokeStyle = '#1f1f1f';
+      ctx.lineWidth = 1.5;
+      ctx.fill();
+      ctx.stroke();
+
+      if (host.portCount >= 2 || subnetEntry.hosts.length <= 4) {
+        ctx.fillStyle = '#1f1f1f';
+        ctx.font = '10px MS Sans Serif';
+        ctx.textAlign = hostX < centerX ? 'right' : 'left';
+        ctx.fillText(host.ip, hostX + (hostX < centerX ? -10 : 10), hostY + 3);
+      }
+
+      topologyHitTargets.push({
+        type: 'host',
+        x: hostX,
+        y: hostY,
+        radius: Math.max(10, nodeRadius + 5),
+        data: host
+      });
+    });
+
+    topologyHitTargets.push({
+      type: 'subnet',
+      x: subnetX,
+      y: subnetY,
+      radius: 12,
+      data: subnetEntry
+    });
+  });
+
+  visibleTraceTargets.forEach(targetIp => {
+    const target = topologyHitTargets.find(item => item.type === 'host' && item.data.ip === targetIp);
+    if (!target) return;
+    drawTraceRoute(ctx, centerX, centerY, target, traceRoutes[targetIp]);
+  });
+
+  updateTopologyStatus(hosts, visibleTraceTargets.length);
+}
+
+function drawTraceRoute(ctx, centerX, centerY, target, route) {
+  if (!Array.isArray(route) || !route.length) return;
+  const dx = target.x - centerX;
+  const dy = target.y - centerY;
+  const totalLength = Math.hypot(dx, dy) || 1;
+  let prevX = centerX;
+  let prevY = centerY;
+
+  route.forEach((hop, index) => {
+    const factor = (index + 1) / (route.length + 1);
+    const jitter = ((index % 2 === 0 ? 1 : -1) * 10) + (hop.hop % 3) * 2;
+    const normalX = -dy / totalLength;
+    const normalY = dx / totalLength;
+    const hopX = centerX + dx * factor + normalX * jitter;
+    const hopY = centerY + dy * factor + normalY * jitter;
+
+    ctx.beginPath();
+    ctx.moveTo(prevX, prevY);
+    ctx.lineTo(hopX, hopY);
+    ctx.strokeStyle = 'rgba(255,128,0,0.8)';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(hopX, hopY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = hop.star ? '#c0c0c0' : '#ff9f1a';
+    ctx.strokeStyle = '#5d3b00';
+    ctx.lineWidth = 1;
+    ctx.fill();
+    ctx.stroke();
+
+    topologyHitTargets.push({
+      type: 'trace-hop',
+      x: hopX,
+      y: hopY,
+      radius: 9,
+      data: { ...hop, targetIp: target.data.ip }
+    });
+
+    prevX = hopX;
+    prevY = hopY;
+  });
+
+  ctx.beginPath();
+  ctx.moveTo(prevX, prevY);
+  ctx.lineTo(target.x, target.y);
+  ctx.strokeStyle = 'rgba(255,128,0,0.8)';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+}
+
+function parseTraceOutput(text) {
+  const hops = [];
+  const lines = text.split(/\r?\n/);
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const hopMatch = trimmed.match(/^(\d+)\s+/);
+    if (!hopMatch) return;
+    const hop = Number(hopMatch[1]);
+    const ipMatches = [...trimmed.matchAll(/(?:\d{1,3}\.){3}\d{1,3}/g)].map(match => match[0]);
+    const msMatches = [...trimmed.matchAll(/(<?\d+)\s*ms/gi)].map(match => match[1]);
+    const star = !ipMatches.length;
+    const ip = ipMatches[ipMatches.length - 1] || null;
+    const latency = msMatches.length
+      ? Math.max(...msMatches.map(value => Number(String(value).replace('<', '')) || 0))
+      : null;
+    const labelSource = trimmed.replace(/^\d+\s+/, '').replace(/\s+/g, ' ').trim();
+    hops.push({
+      hop,
+      ip,
+      ms: latency,
+      star,
+      label: star ? '*' : labelSource
+    });
+  });
+
+  return hops;
+}
+
+function saveTraceRoutes() {
+  try {
+    localStorage.setItem('netrecon_trace_routes', JSON.stringify(traceRoutes));
+  } catch {}
+}
+
+function restoreTraceRoutes() {
+  try {
+    const raw = localStorage.getItem('netrecon_trace_routes');
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') traceRoutes = parsed;
+  } catch {}
+}
+
+function openTraceDlg(defaultIp = '') {
+  document.getElementById('traceTargetIp').value = defaultIp;
+  document.getElementById('traceInput').value = '';
+  document.getElementById('traceParseStatus').textContent = t('traceDlgHint');
+  document.getElementById('dlgTraceOverlay').classList.add('open');
+}
+
+function closeTraceDlg() {
+  document.getElementById('dlgTraceOverlay').classList.remove('open');
+}
+
+function importTraceRoute() {
+  const targetIp = document.getElementById('traceTargetIp').value.trim();
+  const text = document.getElementById('traceInput').value;
+  const status = document.getElementById('traceParseStatus');
+  if (!isIPv4(targetIp)) {
+    status.textContent = t('traceErrTarget');
+    status.style.color = '#c00';
+    return;
+  }
+  const hops = parseTraceOutput(text);
+  if (!hops.length) {
+    status.textContent = t('traceErrParse');
+    status.style.color = '#c00';
+    return;
+  }
+  traceRoutes[targetIp] = hops;
+  saveTraceRoutes();
+  status.textContent = t('traceImported', hops.length, targetIp);
+  status.style.color = 'green';
+  drawCurrentMap();
+  setStatus(t('traceImportedStatus', targetIp, hops.length), 'ok');
+  setTimeout(closeTraceDlg, 350);
+}
+
 function setupGlobeEvents(canvas) {
   const tooltip = document.getElementById('globeTooltip');
 
@@ -2852,6 +3408,26 @@ function setupGlobeEvents(canvas) {
       const rect = canvas.getBoundingClientRect();
       const mx = (e.clientX - rect.left) * (globeWidth  / rect.width);
       const my = (e.clientY - rect.top)  * (globeHeight / rect.height);
+
+      if (mapMode === 'topology') {
+        const target = topologyHitTargets.find(item => Math.hypot(mx - item.x, my - item.y) <= item.radius);
+        if (target) {
+          tooltip.style.display = 'block';
+          tooltip.style.left = e.clientX + 14 + 'px';
+          tooltip.style.top  = e.clientY - 4  + 'px';
+          tooltip.textContent = target.type === 'host'
+            ? `${target.data.ip} [${target.data.ports.join(', ')}]${target.data.ping ? ` · ${target.data.ping}ms` : ''}`
+            : target.type === 'trace-hop'
+              ? `Hop ${target.data.hop}${target.data.ip ? ` · ${target.data.ip}` : ''}${target.data.ms ? ` · ${target.data.ms}ms` : ''}`
+              : `${target.data.subnet} · ${target.data.hosts.length} hosts`;
+          canvas.style.cursor = 'pointer';
+        } else {
+          tooltip.style.display = 'none';
+          canvas.style.cursor = 'default';
+        }
+        return;
+      }
+
       const proj = getProjection();
       const path = d3.geoPath(proj);
       let found = null;
@@ -2910,6 +3486,24 @@ function setupGlobeEvents(canvas) {
     const rect = canvas.getBoundingClientRect();
     const mx = (e.clientX - rect.left) * (globeWidth  / rect.width);
     const my = (e.clientY - rect.top)  * (globeHeight / rect.height);
+
+    if (mapMode === 'topology') {
+      const target = topologyHitTargets.find(item => item.type === 'host' && Math.hypot(mx - item.x, my - item.y) <= item.radius);
+      if (target) {
+        const ports = target.data.ports || [80];
+        const proto = (ports[0]===443||ports[0]===8443)?'https':'http';
+        openPreview(`${proto}://${target.data.ip}:${ports[0]}/`);
+        document.getElementById('globeWin').style.zIndex = 699;
+        return;
+      }
+      const hopTarget = topologyHitTargets.find(item => item.type === 'trace-hop' && Math.hypot(mx - item.x, my - item.y) <= item.radius);
+      if (hopTarget?.data?.ip) {
+        navigator.clipboard?.writeText(hopTarget.data.ip);
+        setStatus(t('traceHopCopied', hopTarget.data.ip), 'ok');
+      }
+      return;
+    }
+
     const proj = getProjection();
 
     // Check IP dots first
@@ -2991,11 +3585,40 @@ document.getElementById('scDlgYes').addEventListener('click', () => {
 
 // ── Update dots when new IP found ──
 function updateGlobeDots() {
-  if (document.getElementById('globeWin').style.display !== 'none' && globeReady) drawGlobe();
+  refreshTopologyFilterOptions();
+  if (document.getElementById('globeWin').style.display !== 'none' && globeReady) drawCurrentMap();
 }
 
 // ── Globe button ──
 document.getElementById('btnGlobe').addEventListener('click', openGlobe);
+document.getElementById('btnMapGlobe').addEventListener('click', () => setMapMode('globe'));
+document.getElementById('btnMapTopology').addEventListener('click', () => setMapMode('topology'));
+document.getElementById('btnImportTrace').addEventListener('click', () => {
+  const defaultIp = selectedRowEl?.dataset?.ip || Object.keys(foundHostsMap)[0] || '';
+  openTraceDlg(defaultIp);
+});
+document.getElementById('btnTraceSave').addEventListener('click', importTraceRoute);
+document.getElementById('topoPortFilter').addEventListener('change', e => {
+  topologyFilters.port = e.target.value;
+  drawCurrentMap();
+});
+document.getElementById('topoSubnetFilter').addEventListener('input', e => {
+  topologyFilters.subnet = e.target.value;
+  drawCurrentMap();
+});
+document.getElementById('topoPingMax').addEventListener('input', e => {
+  topologyFilters.pingMax = e.target.value;
+  drawCurrentMap();
+});
+document.getElementById('btnClearTopoFilters').addEventListener('click', () => {
+  topologyFilters.port = '';
+  topologyFilters.subnet = '';
+  topologyFilters.pingMax = '';
+  document.getElementById('topoPortFilter').value = '';
+  document.getElementById('topoSubnetFilter').value = '';
+  document.getElementById('topoPingMax').value = '';
+  drawCurrentMap();
+});
 (function() {
   const win = document.getElementById('globeWin');
   const bar = document.getElementById('globeTitlebar');
@@ -3015,5 +3638,9 @@ document.getElementById('btnGlobe').addEventListener('click', openGlobe);
   });
   window.addEventListener('mouseup', () => { dragging = false; });
 })();
+
+restoreTraceRoutes();
+refreshTopologyFilterOptions();
+applyLang();
 </script>
 
