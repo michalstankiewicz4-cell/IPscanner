@@ -7,9 +7,7 @@ IP address scanner online
 
 W przygotowaniu/soon:
 
-
-Skaner IP – (Asset Management)
-
+1. Skaner IP – (Asset Management)
 
 Wykrywanie urządzeń (Live Host Discovery): Szybkie skanowanie zakresów adresów IP (np. 192.168.1.1-254) w celu znalezienia wszystkich podłączonych urządzeń (przewodowych i Wi-Fi).
 
@@ -25,9 +23,7 @@ Zdalne zarządzanie: Możliwość zdalnego włączania/wyłączania komputerów 
 
 Eksport danych: Generowanie raportów (CSV, XML) z inwentaryzacji.
 
-
-Sniffer LAN – Możliwości Bezpieczeństwa (Security & Monitoring)
-
+2. Sniffer LAN – Możliwości Bezpieczeństwa (Security & Monitoring)
 
 Sniffer LAN przechwytuje i analizuje pakiety w czasie rzeczywistym, działając w trybie "promiscuous mode".
 
