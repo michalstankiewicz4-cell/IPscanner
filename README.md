@@ -5,27 +5,28 @@
 IP address scanner online
 <img width="936" height="723" alt="image" src="https://github.com/user-attachments/assets/aefaafa1-88b2-47ff-88cc-008cac2d5980" />
 
-W przygotowaniu
-1. Skaner IP – (Asset Management)
-Skaner IP służy do pasywnego i aktywnego odkrywania zasobów oraz tworzenia mapy sieci. 
+W przygotowaniu/soon:
 
-Wykrywanie urządzeń (Live Host Discovery): Szybkie skanowanie zakresów adresów IP (np. 192.168.1.1-254) w celu znalezienia wszystkich podłączonych urządzeń (przewodowych i Wi-Fi). 
+Skaner IP – (Asset Management)
+Wykrywanie urządzeń (Live Host Discovery): Szybkie skanowanie zakresów adresów IP (np. 192.168.1.1-254) w celu znalezienia wszystkich podłączonych urządzeń (przewodowych i Wi-Fi).
 
-Identyfikacja zasobów: Pobieranie nazwy hosta (hostname), adresu IP, adresu MAC oraz producenta karty sieciowej. 
+Identyfikacja zasobów: Pobieranie nazwy hosta (hostname), adresu IP, adresu MAC oraz producenta karty sieciowej.
 
-Skanowanie portów: Wykrywanie otwartych portów (TCP/UDP) na urządzeniach, co pozwala zidentyfikować uruchomione usługi. 
+Skanowanie portów: Wykrywanie otwartych portów (TCP/UDP) na urządzeniach, co pozwala zidentyfikować uruchomione usługi.
 
-Analiza usług i systemu: Identyfikacja wersji systemu operacyjnego (OS Fingerprinting) oraz działających usług (np. serwery WWW, bazy danych). 
+Analiza usług i systemu: Identyfikacja wersji systemu operacyjnego (OS Fingerprinting) oraz działających usług (np. serwery WWW, bazy danych).
 
-Inwentaryzacja zasobów współdzielonych: Wykrywanie udostępnionych folderów, drukarek i zasobów sieciowych. 
-Zdalne zarządzanie: Możliwość zdalnego włączania/wyłączania komputerów (Wake-on-LAN) oraz łączenia się przez RDP/Radmin. 
+Inwentaryzacja zasobów współdzielonych: Wykrywanie udostępnionych folderów, drukarek i zasobów sieciowych.
 
-Eksport danych: Generowanie raportów (CSV, XML) z inwentaryzacji. 
+Zdalne zarządzanie: Możliwość zdalnego włączania/wyłączania komputerów (Wake-on-LAN) oraz łączenia się przez RDP/Radmin.
 
-2. Sniffer LAN – Możliwości Bezpieczeństwa (Security & Monitoring)
-Sniffer LAN przechwytuje i analizuje pakiety w czasie rzeczywistym, działając w trybie "promiscuous mode". 
+Eksport danych: Generowanie raportów (CSV, XML) z inwentaryzacji.
+
+Sniffer LAN – Możliwości Bezpieczeństwa (Security & Monitoring)
+Sniffer LAN przechwytuje i analizuje pakiety w czasie rzeczywistym, działając w trybie "promiscuous mode".
 
 Monitorowanie ruchu w czasie rzeczywistym: Analiza przepływu danych pomiędzy hostami w sieci.
+
 Wykrywanie zagrożeń (IDS): Identyfikacja podejrzanych działań, takich jak ataki typu Man-in-the-Middle (MITM), ARP spoofing, czy skanowanie portów przez intruzów.
 
 Analiza protokołów: Szczegółowa dekodowanie pakietów (HTTP, DNS, DHCP, FTP, TCP/IP), co pozwala zrozumieć, jakie dane są przesyłane.
