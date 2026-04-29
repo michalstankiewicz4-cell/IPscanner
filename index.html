@@ -61,7 +61,7 @@ body {
   top: 24px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 2;
+  z-index: 20;
 }
 
 /* ── Title bar ── */
@@ -539,7 +539,7 @@ body {
     <div class="titlebar-btns">
       <div class="title-btn">_</div>
       <div class="title-btn">□</div>
-      <div class="title-btn" style="font-weight:900">✕</div>
+      <div class="title-btn" id="mainCloseBtn" style="font-weight:900;cursor:pointer">✕</div>
     </div>
   </div>
 
@@ -570,6 +570,7 @@ body {
       <button class="btn95" id="btnStop" disabled data-i18n="btnStop">■ Stop</button>
       <button class="btn95" id="btnClear" data-i18n="btnClear">✕ Clear</button>
       <button class="btn95" id="btnGlobe" title="World Map">🌍</button>
+      <button class="btn95" id="btnCmdConsole" title="Command Console">⌨ Console</button>
       <div style="flex:1"></div>
       <span id="statTime" style="font-size:10px;color:#000080;font-weight:bold">0.0s</span>
     </div>
@@ -726,6 +727,42 @@ body {
   </div><!-- /win-body -->
 </div><!-- /win95 -->
 
+<!-- Scanner desktop icon -->
+<div id="scannerDesktopIcon" style="
+  position:fixed; top:10px; left:10px;
+  width:72px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:pointer; user-select:none; z-index:8;
+" onclick="openMainWindow()">
+  <div style="font-size:28px;line-height:1;padding:2px">📡</div>
+  <div style="
+    font-family:'MS Sans Serif',Tahoma,sans-serif;
+    font-size:11px; color:#fff;
+    background:transparent;
+    padding:1px 3px;
+    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    white-space:nowrap;
+  ">IP Scanner</div>
+</div>
+
+<!-- Macro folder desktop icon -->
+<div id="macroFolderIcon" style="
+  position:fixed; top:72px; left:10px;
+  width:72px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:pointer; user-select:none; z-index:8;
+" onclick="openMacroFolder()">
+  <div style="font-size:28px;line-height:1;padding:2px">📁</div>
+  <div style="
+    font-family:'MS Sans Serif',Tahoma,sans-serif;
+    font-size:11px; color:#fff;
+    background:transparent;
+    padding:1px 3px;
+    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    white-space:nowrap;
+  ">Makra</div>
+</div>
+
 <!-- Desktop icon -->
 <div id="desktopIcon" style="
   position:fixed; bottom:28px; right:28px;
@@ -808,6 +845,128 @@ body {
       border-right:1px solid #fff; border-bottom:1px solid #fff;
       padding:1px 8px; flex:1;
     ">NetRecon IP Scanner · Licencja: Free to use</div>
+  </div>
+</div>
+
+<!-- Command console window -->
+<div id="cmdWin" style="
+  display:none;
+  position:fixed; top:72px; left:76px;
+  width:min(560px, 96vw);
+  background:#c0c0c0;
+  border-top:2px solid #ffffff; border-left:2px solid #ffffff;
+  border-right:2px solid #808080; border-bottom:2px solid #808080;
+  box-shadow:1px 1px 0 #000, inset 1px 1px 0 #dfdfdf;
+  font-family:'MS Sans Serif',Tahoma,sans-serif;
+  z-index:1050;
+">
+  <div class="titlebar" id="cmdTitlebar" style="cursor:move">
+    <span class="icon">⌨</span>
+    <span class="title">Scanner Console</span>
+    <div class="titlebar-btns">
+      <button class="title-btn" id="btnCmdRun" title="Run">▶</button>
+      <button class="title-btn" id="btnCmdClose" title="Close" style="font-weight:900">✕</button>
+    </div>
+  </div>
+
+  <div style="
+    background:#c0c0c0; font-size:11px;
+    padding:1px 2px; border-bottom:1px solid #808080;
+    display:flex; position:relative;
+  ">
+    <div id="cmdMenuMacro" style="padding:2px 8px;cursor:default;user-select:none;position:relative">Makro
+      <div id="cmdMenuMacroDrop" style="
+        display:none; position:absolute; top:100%; left:0;
+        background:#c0c0c0;
+        border-top:1px solid #fff; border-left:1px solid #fff;
+        border-right:1px solid #808080; border-bottom:1px solid #808080;
+        box-shadow:2px 2px 0 #000; min-width:220px; z-index:3;
+      ">
+        <div id="btnCmdSaveMacro" style="padding:4px 24px 4px 28px;white-space:nowrap;cursor:default">Zapisz makro</div>
+        <div style="height:1px;background:#808080;margin:2px 4px;box-shadow:0 1px 0 #fff"></div>
+        <div style="padding:3px 8px;font-size:10px;color:#444">Wczytaj makro:</div>
+        <div id="cmdMacroList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:8px;display:flex;flex-direction:column;gap:6px">
+    <textarea id="cmdOutput" readonly style="
+      width:100%; height:160px; resize:none;
+      font-family:'Courier New',monospace; font-size:11px;
+      border-top:1px solid #808080; border-left:1px solid #808080;
+      border-right:1px solid #fff; border-bottom:1px solid #fff;
+      background:#fff; color:#000; padding:6px;
+    "></textarea>
+    <textarea id="cmdInput" placeholder="focus 192.168.1.10\nscan\nscan 192.168.1.10\nscan 192.168.1" style="
+      width:100%; height:88px; resize:vertical;
+      font-family:'Courier New',monospace; font-size:11px;
+      border-top:1px solid #808080; border-left:1px solid #808080;
+      border-right:1px solid #fff; border-bottom:1px solid #fff;
+      background:#fff; color:#000; padding:6px;
+      line-height:1.45;
+    "></textarea>
+  </div>
+</div>
+
+<!-- Macro folder window -->
+<div id="macroFolderWin" style="
+  display:none;
+  position:fixed; top:120px; left:96px;
+  width:min(360px, 92vw);
+  background:#c0c0c0;
+  border-top:2px solid #ffffff; border-left:2px solid #ffffff;
+  border-right:2px solid #808080; border-bottom:2px solid #808080;
+  box-shadow:1px 1px 0 #000, inset 1px 1px 0 #dfdfdf;
+  font-family:'MS Sans Serif',Tahoma,sans-serif;
+  z-index:1030;
+">
+  <div class="titlebar" id="macroFolderTitlebar" style="cursor:move">
+    <span class="icon">📁</span>
+    <span class="title">Makra</span>
+    <div class="titlebar-btns">
+      <button class="title-btn" id="btnMacroFolderClose" style="font-weight:900">✕</button>
+    </div>
+  </div>
+
+  <div style="padding:8px 8px 6px">
+    <div id="macroFolderList" style="
+      height:220px; overflow:auto; background:#fff;
+      border-top:1px solid #808080; border-left:1px solid #808080;
+      border-right:1px solid #fff; border-bottom:1px solid #fff;
+      padding:2px;
+      font-family:'MS Sans Serif',Tahoma,sans-serif; font-size:11px;
+    "></div>
+    <div id="macroCtxMenu" style="
+      display:none;
+      position:fixed;
+      min-width:140px;
+      background:#c0c0c0;
+      border-top:1px solid #fff; border-left:1px solid #fff;
+      border-right:1px solid #808080; border-bottom:1px solid #808080;
+      box-shadow:1px 1px 0 #000;
+      z-index:2000;
+      font-family:'MS Sans Serif',Tahoma,sans-serif; font-size:11px;
+      padding:2px;
+    ">
+      <div id="macroCtxDelete" style="
+        padding:4px 8px;
+        cursor:default;
+        white-space:nowrap;
+      ">🗑 Skasuj makro</div>
+    </div>
+  </div>
+
+  <div style="
+    border-top:1px solid #808080;
+    padding:2px 6px; font-size:10px; color:#000;
+    display:flex; gap:6px;
+  ">
+    <div id="macroFolderCount" style="
+      border-top:1px solid #808080; border-left:1px solid #808080;
+      border-right:1px solid #fff; border-bottom:1px solid #fff;
+      padding:1px 8px; flex:1;
+    ">0 plikow</div>
   </div>
 </div>
 
@@ -897,6 +1056,199 @@ function openNotepad() {
 function closeNotepad() {
   document.getElementById('notepadWin').style.display = 'none';
 }
+
+function closeMainWindow() {
+  const win = document.getElementById('mainWin');
+  if (win) win.style.display = 'none';
+}
+
+function openMainWindow() {
+  const win = document.getElementById('mainWin');
+  if (!win) return;
+  win.style.display = 'block';
+  win.style.zIndex = '20';
+}
+
+function readMacroStorageList() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem('netrecon_console_macros') || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function renderMacroFiles() {
+  const listEl = document.getElementById('macroFolderList');
+  const countEl = document.getElementById('macroFolderCount');
+  if (!listEl || !countEl) return;
+
+  const macros = readMacroStorageList();
+  listEl.innerHTML = '';
+
+  if (!macros.length) {
+    const empty = document.createElement('div');
+    empty.style.padding = '8px';
+    empty.style.color = '#666';
+    empty.textContent = 'Folder jest pusty.';
+    listEl.appendChild(empty);
+    countEl.textContent = '0 plikow';
+    return;
+  }
+
+  macros.slice().reverse().forEach((m, idx) => {
+    const originalIndex = macros.length - 1 - idx;
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.alignItems = 'center';
+    row.style.gap = '8px';
+    row.style.padding = '3px 6px';
+    row.style.cursor = 'default';
+    row.style.borderBottom = '1px solid #f0f0f0';
+
+    const fileName = (m.name || `makro_${idx + 1}`).replace(/\s+/g, '_') + '.macro';
+    const ts = m.savedAt ? new Date(m.savedAt).toLocaleString() : '-';
+
+    row.innerHTML = `<span style="font-size:12px">📄</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fileName}</span><span style="font-size:9px;color:#666">${ts}</span>`;
+    row.addEventListener('mouseenter', () => {
+      row.style.background = '#000080';
+      row.style.color = '#fff';
+    });
+    row.addEventListener('mouseleave', () => {
+      row.style.background = '';
+      row.style.color = '';
+    });
+    row.addEventListener('dblclick', () => {
+      if (typeof openCmdConsole === 'function') openCmdConsole();
+      const input = document.getElementById('cmdInput');
+      if (input) input.value = (m.body || '').trim();
+      const out = document.getElementById('cmdOutput');
+      if (out) {
+        const stamp = new Date().toLocaleTimeString();
+        out.value += `[${stamp}] Wczytano plik makra: ${fileName}\n`;
+        out.scrollTop = out.scrollHeight;
+      }
+    });
+
+    row.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      openMacroContextMenu(e.clientX, e.clientY, originalIndex);
+    });
+
+    listEl.appendChild(row);
+  });
+
+  countEl.textContent = `${macros.length} plikow`;
+}
+
+let macroCtxIndex = -1;
+
+function closeMacroContextMenu() {
+  const menu = document.getElementById('macroCtxMenu');
+  if (menu) menu.style.display = 'none';
+  macroCtxIndex = -1;
+}
+
+function openMacroContextMenu(x, y, originalIndex) {
+  const menu = document.getElementById('macroCtxMenu');
+  if (!menu) return;
+  macroCtxIndex = originalIndex;
+  menu.style.display = 'block';
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const mw = menu.offsetWidth || 150;
+  const mh = menu.offsetHeight || 30;
+
+  const left = Math.max(0, Math.min(x, vw - mw - 2));
+  const top = Math.max(0, Math.min(y, vh - mh - 2));
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+}
+
+function deleteMacroByIndex(originalIndex) {
+  const current = getCommandMacros();
+  if (originalIndex < 0 || originalIndex >= current.length) return;
+  const removed = current[originalIndex];
+  current.splice(originalIndex, 1);
+  localStorage.setItem('netrecon_console_macros', JSON.stringify(current));
+  if (typeof appendCmdLog === 'function') {
+    appendCmdLog(`Usunieto makro: ${(removed && removed.name) || '(bez nazwy)'}`);
+  }
+  if (typeof renderCommandMacros === 'function') renderCommandMacros();
+  renderMacroFiles();
+}
+
+function openMacroFolder() {
+  const win = document.getElementById('macroFolderWin');
+  if (!win) return;
+  renderMacroFiles();
+  win.style.display = 'block';
+}
+
+function closeMacroFolder() {
+  const win = document.getElementById('macroFolderWin');
+  if (win) win.style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const closeBtn = document.getElementById('mainCloseBtn');
+  if (closeBtn) closeBtn.addEventListener('click', closeMainWindow);
+
+  const macroCloseBtn = document.getElementById('btnMacroFolderClose');
+  if (macroCloseBtn) macroCloseBtn.addEventListener('click', closeMacroFolder);
+
+  const macroWin = document.getElementById('macroFolderWin');
+  const macroBar = document.getElementById('macroFolderTitlebar');
+  const macroCtxMenu = document.getElementById('macroCtxMenu');
+  const macroCtxDelete = document.getElementById('macroCtxDelete');
+  if (macroWin && macroBar) {
+    let dragging = false;
+    let ox = 0;
+    let oy = 0;
+    macroBar.addEventListener('mousedown', e => {
+      if (e.target.closest('.titlebar-btns')) return;
+      const r = macroWin.getBoundingClientRect();
+      dragging = true;
+      ox = e.clientX - r.left;
+      oy = e.clientY - r.top;
+      macroWin.style.transform = 'none';
+      macroWin.style.left = r.left + 'px';
+      macroWin.style.top = r.top + 'px';
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      macroWin.style.left = Math.max(0, Math.min(e.clientX - ox, window.innerWidth - macroWin.offsetWidth)) + 'px';
+      macroWin.style.top = Math.max(0, Math.min(e.clientY - oy, window.innerHeight - 44)) + 'px';
+    });
+    window.addEventListener('mouseup', () => { dragging = false; });
+  }
+
+  if (macroCtxDelete) {
+    macroCtxDelete.addEventListener('mouseenter', () => {
+      macroCtxDelete.style.background = '#000080';
+      macroCtxDelete.style.color = '#fff';
+    });
+    macroCtxDelete.addEventListener('mouseleave', () => {
+      macroCtxDelete.style.background = '';
+      macroCtxDelete.style.color = '';
+    });
+    macroCtxDelete.addEventListener('click', () => {
+      if (macroCtxIndex >= 0) deleteMacroByIndex(macroCtxIndex);
+      closeMacroContextMenu();
+    });
+  }
+
+  document.addEventListener('click', e => {
+    if (!macroCtxMenu) return;
+    if (macroCtxMenu.style.display !== 'block') return;
+    if (e.target && macroCtxMenu.contains(e.target)) return;
+    closeMacroContextMenu();
+  });
+
+  window.addEventListener('blur', closeMacroContextMenu);
+});
 </script>
 
 <!-- Country IP Library dialog -->
@@ -1606,6 +1958,7 @@ const activeControllers = new Set();
 let foundHostsMap={}, foundPingMap={}, totalFound=0, totalOpenPorts=0;
 let timerInterval=null, scanStart=0;
 let selectedRowEl=null, ctxTargetIp='', ctxTargetPorts=[];
+let focusedIp = localStorage.getItem('netrecon_focus_ip') || '';
 
 // ══════════════════════════════════════════════════
 //  DOM
@@ -1613,6 +1966,7 @@ let selectedRowEl=null, ctxTargetIp='', ctxTargetPorts=[];
 const btnGo       = document.getElementById('btnGo');
 const btnStop     = document.getElementById('btnStop');
 const btnClear    = document.getElementById('btnClear');
+const btnConsole  = document.getElementById('btnCmdConsole');
 const progFill    = document.getElementById('progFill');
 const progPct     = document.getElementById('progPct');
 const statChecked = document.getElementById('statChecked');
@@ -2544,6 +2898,314 @@ btnClear.addEventListener('click',()=>{
   refreshTopologyFilterOptions();
   updateGlobeDots();
 });
+
+// ══════════════════════════════════════════════════
+//  COMMAND CONSOLE
+// ══════════════════════════════════════════════════
+const cmdWin = document.getElementById('cmdWin');
+const cmdTitlebar = document.getElementById('cmdTitlebar');
+const cmdInput = document.getElementById('cmdInput');
+const cmdOutput = document.getElementById('cmdOutput');
+const btnCmdRun = document.getElementById('btnCmdRun');
+const btnCmdClose = document.getElementById('btnCmdClose');
+const cmdMenuMacro = document.getElementById('cmdMenuMacro');
+const cmdMenuMacroDrop = document.getElementById('cmdMenuMacroDrop');
+const btnCmdSaveMacro = document.getElementById('btnCmdSaveMacro');
+const cmdMacroList = document.getElementById('cmdMacroList');
+const cmdHistory = [];
+let cmdHistoryIndex = 0;
+
+function appendCmdLog(text) {
+  const stamp = new Date().toLocaleTimeString();
+  cmdOutput.value += `[${stamp}] ${text}\n`;
+  cmdOutput.scrollTop = cmdOutput.scrollHeight;
+}
+
+function openCmdConsole() {
+  cmdWin.style.display = 'block';
+  if (!cmdOutput.value.trim()) {
+    appendCmdLog('Scanner Console gotowa. Uzyj: focus, scan, help.');
+    appendCmdLog(`Focus: ${focusedIp || '(brak)'}`);
+  }
+  cmdInput.focus();
+}
+
+function closeCmdConsole() {
+  cmdWin.style.display = 'none';
+  cmdMenuMacroDrop.style.display = 'none';
+}
+
+function setFocusedIp(ip) {
+  focusedIp = ip;
+  localStorage.setItem('netrecon_focus_ip', ip);
+}
+
+function getCommandMacros() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem('netrecon_console_macros') || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function renderCommandMacros() {
+  const macros = getCommandMacros();
+  cmdMacroList.innerHTML = '';
+
+  if (!macros.length) {
+    const empty = document.createElement('div');
+    empty.style.padding = '4px 24px 4px 28px';
+    empty.style.whiteSpace = 'nowrap';
+    empty.style.color = '#666';
+    empty.textContent = '(brak zapisanych makr)';
+    cmdMacroList.appendChild(empty);
+    return;
+  }
+
+  macros.slice().reverse().forEach((m, idx) => {
+    const originalIndex = macros.length - 1 - idx;
+    const row = document.createElement('div');
+    row.style.padding = '4px 8px 4px 10px';
+    row.style.cursor = 'default';
+    row.style.display = 'flex';
+    row.style.alignItems = 'center';
+    row.style.gap = '8px';
+
+    const nameEl = document.createElement('span');
+    nameEl.style.flex = '1';
+    nameEl.style.whiteSpace = 'nowrap';
+    nameEl.style.overflow = 'hidden';
+    nameEl.style.textOverflow = 'ellipsis';
+    nameEl.textContent = m.name || `makro_${idx + 1}`;
+
+    const delEl = document.createElement('span');
+    delEl.textContent = '✕ Usun';
+    delEl.style.fontSize = '10px';
+    delEl.style.padding = '1px 4px';
+    delEl.style.border = '1px solid #808080';
+    delEl.style.background = '#c0c0c0';
+    delEl.style.color = '#400';
+    delEl.style.whiteSpace = 'nowrap';
+    delEl.style.cursor = 'pointer';
+    delEl.title = 'Usun makro';
+
+    row.appendChild(nameEl);
+    row.appendChild(delEl);
+
+    row.addEventListener('mouseenter', () => {
+      row.style.background = '#000080';
+      row.style.color = '#fff';
+      delEl.style.color = '#fff';
+      delEl.style.borderColor = '#fff';
+    });
+    row.addEventListener('mouseleave', () => {
+      row.style.background = '';
+      row.style.color = '';
+      delEl.style.color = '#400';
+      delEl.style.borderColor = '#808080';
+    });
+    row.addEventListener('click', () => {
+      cmdInput.value = (m.body || '').trim();
+      appendCmdLog(`Wczytano makro: ${m.name || '(bez nazwy)'}`);
+      cmdMenuMacroDrop.style.display = 'none';
+      cmdInput.focus();
+    });
+
+    delEl.addEventListener('click', e => {
+      e.stopPropagation();
+      const current = getCommandMacros();
+      if (originalIndex < 0 || originalIndex >= current.length) return;
+      const removed = current[originalIndex];
+      current.splice(originalIndex, 1);
+      localStorage.setItem('netrecon_console_macros', JSON.stringify(current));
+      appendCmdLog(`Usunieto makro: ${(removed && removed.name) || '(bez nazwy)'}`);
+      renderCommandMacros();
+      if (typeof renderMacroFiles === 'function') renderMacroFiles();
+    });
+
+    cmdMacroList.appendChild(row);
+  });
+}
+
+function parseSubnet3(v) {
+  if (!/^(\d{1,3}\.){2}\d{1,3}$/.test(v)) return null;
+  const p = v.split('.').map(Number);
+  if (p.some(n => n < 0 || n > 255)) return null;
+  return `${p[0]}.${p[1]}.${p[2]}`;
+}
+
+async function runConsoleCommand(raw) {
+  const line = raw.trim();
+  if (!line) {
+    appendCmdLog('Brak polecenia.');
+    return;
+  }
+
+  if (!cmdHistory.length || cmdHistory[cmdHistory.length - 1] !== line) {
+    cmdHistory.push(line);
+  }
+  cmdHistoryIndex = cmdHistory.length;
+
+  appendCmdLog(`> ${line}`);
+
+  const parts = line.split(/\s+/);
+  const cmd = (parts[0] || '').toLowerCase();
+  const arg = parts.slice(1).join(' ').trim();
+
+  if (cmd === 'help') {
+    appendCmdLog('focus x.x.x.x    -> ustawia focus IP');
+    appendCmdLog('focus            -> pokazuje focus IP');
+    appendCmdLog('scan             -> skanuje focus IP');
+    appendCmdLog('scan x.x.x.x     -> skanuje pojedyncze IP');
+    appendCmdLog('scan x.x.x       -> skanuje x.x.x.0 - x.x.x.255');
+    appendCmdLog('Enter nie uruchamia polecenia, uzyj przycisku Run.');
+    return;
+  }
+
+  if (cmd === 'focus') {
+    if (!arg) {
+      appendCmdLog(`Focus: ${focusedIp || '(brak ustawionego IP)'}`);
+      return;
+    }
+    if (!isIPv4(arg)) {
+      appendCmdLog('Bledny adres IP. Uzyj formatu x.x.x.x');
+      return;
+    }
+    setFocusedIp(arg);
+    appendCmdLog(`Ustawiono focus na ${arg}`);
+    return;
+  }
+
+  if (cmd === 'scan') {
+    if (scanning) {
+      appendCmdLog('Skanowanie juz trwa.');
+      return;
+    }
+
+    let fromIp = '';
+    let toIp = '';
+
+    if (!arg) {
+      if (!focusedIp) {
+        appendCmdLog('Brak focus IP. Uzyj: focus x.x.x.x');
+        return;
+      }
+      fromIp = focusedIp;
+      toIp = focusedIp;
+    } else if (isIPv4(arg)) {
+      fromIp = arg;
+      toIp = arg;
+    } else {
+      const subnet = parseSubnet3(arg);
+      if (!subnet) {
+        appendCmdLog('Niepoprawne polecenie scan. Uzyj scan x.x.x.x lub scan x.x.x');
+        return;
+      }
+      fromIp = `${subnet}.0`;
+      toIp = `${subnet}.255`;
+    }
+
+    setIP('f', fromIp);
+    setIP('t', toIp);
+    appendCmdLog(`Zakres skanu: ${fromIp} - ${toIp}`);
+    try {
+      await startScan();
+      appendCmdLog(`Skan zakonczony. Hosty: ${totalFound}, porty: ${totalOpenPorts}`);
+    } catch (e) {
+      appendCmdLog(`Blad skanowania: ${e.message}`);
+      setScanState(false);
+    }
+    return;
+  }
+
+  appendCmdLog(`Nieznane polecenie: ${cmd}. Uzyj help.`);
+}
+
+function saveCommandMacro() {
+  const text = cmdInput.value.trim();
+  if (!text) {
+    appendCmdLog('Brak tresci do zapisania jako makro.');
+    return;
+  }
+
+  const defaultName = `macro_${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}`;
+  const name = prompt('Nazwa makra:', defaultName);
+  if (!name) return;
+
+  let macros = getCommandMacros();
+
+  macros.push({ name: name.trim() || defaultName, body: text, savedAt: Date.now() });
+  localStorage.setItem('netrecon_console_macros', JSON.stringify(macros.slice(-40)));
+  appendCmdLog(`Makro zapisane: ${name}`);
+  renderCommandMacros();
+  if (typeof renderMacroFiles === 'function') renderMacroFiles();
+}
+
+btnConsole.addEventListener('click', openCmdConsole);
+btnCmdClose.addEventListener('click', closeCmdConsole);
+btnCmdRun.addEventListener('click', () => runConsoleCommand(cmdInput.value));
+btnCmdSaveMacro.addEventListener('click', () => {
+  saveCommandMacro();
+  cmdMenuMacroDrop.style.display = 'none';
+});
+
+cmdMenuMacro.addEventListener('click', e => {
+  e.stopPropagation();
+  renderCommandMacros();
+  cmdMenuMacroDrop.style.display = cmdMenuMacroDrop.style.display === 'block' ? 'none' : 'block';
+});
+document.addEventListener('click', () => {
+  cmdMenuMacroDrop.style.display = 'none';
+});
+
+cmdInput.addEventListener('keydown', e => {
+  if (e.key === 'ArrowUp') {
+    if (!cmdHistory.length) return;
+    e.preventDefault();
+    if (cmdHistoryIndex > 0) cmdHistoryIndex -= 1;
+    cmdInput.value = cmdHistory[cmdHistoryIndex] || '';
+    const pos = cmdInput.value.length;
+    cmdInput.setSelectionRange(pos, pos);
+  }
+  if (e.key === 'ArrowDown') {
+    if (!cmdHistory.length) return;
+    e.preventDefault();
+    if (cmdHistoryIndex < cmdHistory.length - 1) {
+      cmdHistoryIndex += 1;
+      cmdInput.value = cmdHistory[cmdHistoryIndex] || '';
+    } else {
+      cmdHistoryIndex = cmdHistory.length;
+      cmdInput.value = '';
+    }
+    const pos = cmdInput.value.length;
+    cmdInput.setSelectionRange(pos, pos);
+  }
+});
+
+// Keep title buttons functional and draggable without interfering with button clicks.
+(function() {
+  let ox = 0;
+  let oy = 0;
+  let dragging = false;
+  cmdTitlebar.addEventListener('mousedown', e => {
+    if (e.target.closest('.titlebar-btns')) return;
+    const r = cmdWin.getBoundingClientRect();
+    dragging = true;
+    ox = e.clientX - r.left;
+    oy = e.clientY - r.top;
+    cmdWin.style.transform = 'none';
+    cmdWin.style.left = r.left + 'px';
+    cmdWin.style.top = r.top + 'px';
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    cmdWin.style.left = Math.max(0, Math.min(e.clientX - ox, window.innerWidth - cmdWin.offsetWidth)) + 'px';
+    cmdWin.style.top = Math.max(0, Math.min(e.clientY - oy, window.innerHeight - 42)) + 'px';
+  });
+  window.addEventListener('mouseup', () => { dragging = false; });
+})();
 
 // ══════════════════════════════════════════════════
 //  COUNTRY IP LIBRARY
