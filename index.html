@@ -535,7 +535,7 @@ body {
   <!-- Title bar -->
   <div class="titlebar">
     <span class="icon">📡</span>
-    <span class="title">NetRecon IP Scanner v1.1</span>
+    <span class="title">NetRecon IP Scanner v1.2</span>
     <div class="titlebar-btns">
       <div class="title-btn">_</div>
       <div class="title-btn">□</div>
@@ -763,6 +763,24 @@ body {
   ">Makra</div>
 </div>
 
+<!-- Inventory desktop icon -->
+<div id="inventoryDesktopIcon" style="
+  position:fixed; top:134px; left:10px;
+  width:72px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:default; user-select:none; z-index:8;
+">
+  <div style="font-size:28px;line-height:1;padding:2px">🗂️</div>
+  <div style="
+    font-family:'MS Sans Serif',Tahoma,sans-serif;
+    font-size:11px; color:#fff;
+    background:transparent;
+    padding:1px 3px;
+    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    white-space:nowrap;
+  ">inventory</div>
+</div>
+
 <!-- Desktop icon -->
 <div id="desktopIcon" style="
   position:fixed; bottom:28px; right:28px;
@@ -982,7 +1000,7 @@ function openNotepad() {
   document.getElementById('notepadWin').style.display = 'block';
   document.getElementById('notepadText').value =
 `================================================================
-  NetRecon IP Scanner v2
+  NetRecon IP Scanner v1.2
   by Michał Stankiewicz
 ================================================================
 
