@@ -168,6 +168,17 @@ body {
 }
 .stats-row { display: flex; gap: 14px; font-size: 10px; color: #000; }
 .stat-item { display: flex; gap: 3px; align-items: center; }
+/* Port progress bar (all-ports mode) */
+.port-progress-wrap { display: none; flex-direction: column; gap: 1px; margin-top: 2px; }
+.port-progress-wrap.active { display: flex; }
+.port-progress-label { font-size: 9px; color: #444; }
+.port-progress-bg {
+  height: 10px;
+  border-top: 1px solid #808080; border-left: 1px solid #808080;
+  border-right: 1px solid #fff;  border-bottom: 1px solid #fff;
+  background: #c0c0c0; overflow: hidden; position: relative;
+}
+.port-progress-fill { height: 100%; width: 0%; background: #008080; transition: width 80ms; }
 .stat-val { font-weight: bold; color: #000080; }
 
 /* ── Results list ── */
@@ -617,6 +628,12 @@ body {
       <div class="progress-bar-bg">
         <div class="progress-bar-fill" id="progFill"></div>
         <div class="progress-pct" id="progPct">0%</div>
+      </div>
+      <div class="port-progress-wrap" id="portProgWrap">
+        <div class="port-progress-label" id="portProgLabel">Ports: 0 / 0</div>
+        <div class="port-progress-bg">
+          <div class="port-progress-fill" id="portProgFill"></div>
+        </div>
       </div>
       <div class="stats-row">
         <div class="stat-item"><span data-i18n="labelChecked">Checked:</span> <span class="stat-val" id="statChecked">0</span></div>
@@ -1337,8 +1354,10 @@ function savePresetsStorage(arr) {
 let presets = loadPresets();
 let activePresetIdx = +( localStorage.getItem('netrecon_active_preset') || 0 );
 if (activePresetIdx >= presets.length) activePresetIdx = 0;
+let portsOverride = null;
 
 function getActivePorts() {
+  if (portsOverride !== null) return portsOverride;
   const preset = presets[activePresetIdx];
   if (!preset) return [];
   return preset.ports.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n > 0 && n <= 65535);
@@ -2053,12 +2072,13 @@ document.getElementById('ctxScanAllPorts').addEventListener('click',()=>{
     ctxMenu.classList.remove('open');
     return;
   }
-  const allIdx = findAllPortsPresetIndex();
-  if (allIdx >= 0) activatePresetByIndex(allIdx);
+  portsOverride = Array.from({length: 65535}, (_, i) => i + 1);
   setIP('f', ctxTargetIp);
   setIP('t', ctxTargetIp);
   ctxMenu.classList.remove('open');
-  startScan().catch(e=>{setStatus(`Error: ${e.message}`,'err');setScanState(false);});
+  startScan()
+    .catch(e => { setStatus(`Error: ${e.message}`, 'err'); setScanState(false); })
+    .finally(() => { portsOverride = null; });
 });
 document.addEventListener('click',()=>ctxMenu.classList.remove('open'));
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') ctxMenu.classList.remove('open'); });
@@ -2091,9 +2111,8 @@ btnMyIp.addEventListener('click', async () => {
     btnUseMyIp.style.display = 'inline-block';
     btnUseMyIp.onclick = () => {
       const parts = data.ip.split('.').map(Number);
-      const b = parts[1];
-      setIP('f', `${parts[0]}.${Math.max(0,   b-1)}.${parts[2]}.1`);
-      setIP('t', `${parts[0]}.${Math.min(255, b+1)}.${parts[2]}.254`);
+      setIP('f', `${parts[0]}.${parts[1]}.${parts[2]}.1`);
+      setIP('t', `${parts[0]}.${parts[1]}.${parts[2]}.254`);
     };
   } catch {
     myIpResult.style.color = '#c00';
@@ -2397,14 +2416,45 @@ async function startScan() {
     setStatus(t('statusScanning', total, selectedPorts.length),'warn');
   }
 
+  // Show/hide port progress bar
+  const portProgWrap  = document.getElementById('portProgWrap');
+  const portProgFill  = document.getElementById('portProgFill');
+  const portProgLabel = document.getElementById('portProgLabel');
+  function showPortProgress(current, total, ip) {
+    portProgWrap.classList.add('active');
+    const pct = total ? Math.round(current / total * 100) : 0;
+    portProgFill.style.width = pct + '%';
+    portProgLabel.textContent = `Porty: ${current + 1}–${Math.min(current + 100, total)} / ${total}  (${ip})`;
+  }
+  function hidePortProgress() {
+    portProgWrap.classList.remove('active');
+    portProgFill.style.width = '0%';
+  }
+
+  // Probe all ports for one IP — chunked to avoid freezing browser
+  async function probeAllPorts(ip, ports) {
+    const CHUNK = 100;
+    const results = [];
+    for (let i = 0; i < ports.length && !stopRequested; i += CHUNK) {
+      showPortProgress(i, ports.length, ip);
+      const batch = ports.slice(i, i + CHUNK);
+      const batchRes = await Promise.all(
+        batch.map(port => probePort(ip, port, 1400).then(r => ({ port, ok: r.ok, ms: r.ms })))
+      );
+      results.push(...batchRes);
+    }
+    hidePortProgress();
+    return results;
+  }
+
   let nextIdx=0, checked=0;
   const worker = async () => {
     while (!stopRequested) {
       const idx=nextIdx++; if(idx>=total) return;
       const ip=numToIp(startNum+idx);
-      const res=await Promise.all(
-        selectedPorts.map(port=>probePort(ip,port,1400).then(r=>({port, ok:r.ok, ms:r.ms})))
-      );
+      const res = selectedPorts.length > 200
+        ? await probeAllPorts(ip, selectedPorts)
+        : await Promise.all(selectedPorts.map(port=>probePort(ip,port,1400).then(r=>({port, ok:r.ok, ms:r.ms}))));
       const openPorts=res.filter(r=>r.ok).map(r=>r.port);
       const bestMs = res.filter(r=>r.ok).reduce((a,r)=>r.ms<a?r.ms:a, Infinity);
       const pingMs = bestMs === Infinity ? null : bestMs;
