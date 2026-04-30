@@ -535,7 +535,7 @@ body {
   <!-- Title bar -->
   <div class="titlebar">
     <span class="icon">📡</span>
-    <span class="title">NetRecon IP Scanner v1.3</span>
+    <span class="title">NetRecon IP Scanner v1.3p</span>
     <div class="titlebar-btns">
       <div class="title-btn">_</div>
       <div class="title-btn">□</div>
@@ -762,6 +762,24 @@ body {
     text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
     white-space:nowrap;
   ">Speed Test</div>
+</div>
+
+<!-- Visual language prototype desktop icon -->
+<div id="protoDesktopIcon" style="
+  position:fixed; top:10px; left:174px;
+  width:72px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:pointer; user-select:none; z-index:8;
+" onclick="openProtoWindow()">
+  <div style="font-size:28px;line-height:1;padding:2px">🧩</div>
+  <div style="
+    font-family:'MS Sans Serif',Tahoma,sans-serif;
+    font-size:11px; color:#fff;
+    background:transparent;
+    padding:1px 3px;
+    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    white-space:nowrap;
+  ">Prototype</div>
 </div>
 
 <!-- Macro folder desktop icon -->
@@ -1015,6 +1033,180 @@ body {
   </div>
 </div>
 
+<!-- Visual programming prototype window -->
+<div id="protoWin" style="
+  display:none;
+  position:fixed; top:88px; left:220px;
+  width:min(920px, 97vw);
+  height:min(640px, 82vh);
+  background:#c0c0c0;
+  border-top:2px solid #ffffff; border-left:2px solid #ffffff;
+  border-right:2px solid #808080; border-bottom:2px solid #808080;
+  box-shadow:1px 1px 0 #000, inset 1px 1px 0 #dfdfdf;
+  font-family:'MS Sans Serif',Tahoma,sans-serif;
+  z-index:1045;
+  overflow:hidden;
+  min-width:760px;
+  min-height:500px;
+">
+  <div class="titlebar" id="protoTitlebar" style="cursor:move">
+    <span class="icon">🧩</span>
+    <span class="title">Prototyp Visual Programming</span>
+    <div class="titlebar-btns">
+      <button class="title-btn" id="btnProtoToggle" title="Maximize">□</button>
+      <button class="title-btn" id="btnProtoClose" style="font-weight:900">✕</button>
+    </div>
+  </div>
+
+  <div id="protoLayout" style="
+    padding:8px;
+    display:grid;
+    grid-template-columns:200px 1fr 290px;
+    gap:8px;
+    align-items:stretch;
+    height:calc(100% - 42px);
+    box-sizing:border-box;
+  ">
+    <div style="
+      background:#fff;
+      border-top:1px solid #808080; border-left:1px solid #808080;
+      border-right:1px solid #fff; border-bottom:1px solid #fff;
+      padding:8px;
+      overflow:auto;
+    ">
+      <div style="font-size:10px;color:#666;margin-bottom:6px">NODE TOOLBOX</div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:11px">
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">🕒 Trigger: Time</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">🎯 Target: Single Host</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">🌐 Target: IP Range</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #99c8a1;border-radius:4px">🔎 Action: Scan Host</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #99c8a1;border-radius:4px">🧭 Action: Scan Subnet</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #d2b280;border-radius:4px">📄 Report: Summary</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #d2b280;border-radius:4px">💾 Save File: Desktop</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#fcf7ff,#f2e9ff);border:1px solid #b499d8;border-radius:4px">📨 Notify: Email/Webhook</div>
+      </div>
+      <div style="font-size:10px;color:#666;margin-top:8px">
+        Prototype only: drag/drop and execution engine are not implemented yet.
+      </div>
+    </div>
+
+    <div id="protoCanvas" style="
+      background:#fff;
+      border-top:1px solid #808080; border-left:1px solid #808080;
+      border-right:1px solid #fff; border-bottom:1px solid #fff;
+      padding:8px;
+      min-height:390px;
+      position:relative;
+      overflow:auto;
+    ">
+      <div style="font-size:10px;color:#666;margin-bottom:8px">FLOW CANVAS (mockup)</div>
+
+      <svg id="protoLinks" width="100%" height="100%" style="position:absolute;left:0;top:0;pointer-events:none"></svg>
+
+      <div class="proto-node" data-node="n1" style="position:absolute;left:18px;top:42px;width:176px;background:linear-gradient(180deg,#f6fbff,#e7f2ff);border:1px solid #7ea2d1;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
+        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TRIGGER</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">🕒 At 22:30 daily</div>
+        <div class="proto-anchor proto-anchor-out" data-node="n1" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      </div>
+
+      <div class="proto-node" data-node="n2" style="position:absolute;left:242px;top:42px;width:188px;background:linear-gradient(180deg,#f6fbff,#e7f2ff);border:1px solid #7ea2d1;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
+        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TARGET</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">🎯 Host: 192.168.1.25</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n2" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+        <div class="proto-anchor proto-anchor-out" data-node="n2" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      </div>
+
+      <div class="proto-node" data-node="n3" style="position:absolute;left:474px;top:42px;width:176px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #7fb186;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
+        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">ACTION</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">🔎 Deep scan preset</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n3" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+        <div class="proto-anchor proto-anchor-out" data-node="n3" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      </div>
+
+      <div class="proto-node" data-node="n4" style="position:absolute;left:698px;top:42px;width:196px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #c59c66;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
+        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">OUTPUT</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">💾 Save: Desktop/report_192.168.1.25.txt</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n4" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      </div>
+
+      <div class="proto-node" data-node="n5" style="position:absolute;left:18px;top:210px;width:196px;background:linear-gradient(180deg,#f6fbff,#e7f2ff);border:1px solid #7ea2d1;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
+        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TRIGGER</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">🕒 At 01:00 every Sunday</div>
+        <div class="proto-anchor proto-anchor-out" data-node="n5" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      </div>
+
+      <div class="proto-node" data-node="n6" style="position:absolute;left:256px;top:210px;width:220px;background:linear-gradient(180deg,#f6fbff,#e7f2ff);border:1px solid #7ea2d1;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
+        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TARGET</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">🌐 Range: 10.0.0.1 - 10.0.0.254</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n6" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+        <div class="proto-anchor proto-anchor-out" data-node="n6" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      </div>
+
+      <div class="proto-node" data-node="n7" style="position:absolute;left:522px;top:210px;width:172px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #7fb186;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
+        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">ACTION</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">📊 Topology + services</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n7" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+        <div class="proto-anchor proto-anchor-out" data-node="n7" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      </div>
+
+      <div class="proto-node" data-node="n8" style="position:absolute;left:738px;top:210px;width:168px;background:linear-gradient(180deg,#fcf7ff,#f2e9ff);border:1px solid #9e7ec7;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
+        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">NOTIFY</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">📨 Send weekly summary</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n8" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      </div>
+    </div>
+
+    <div style="
+      background:#fff;
+      border-top:1px solid #808080; border-left:1px solid #808080;
+      border-right:1px solid #fff; border-bottom:1px solid #fff;
+      padding:8px;
+    ">
+      <div style="font-size:10px;color:#666;margin-bottom:6px">EXAMPLE BLUEPRINTS</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:11px;line-height:1.35">
+        <div style="border:1px solid #b0b0b0;padding:6px">
+          <div style="font-weight:bold;color:#000080">1) Timed single PC scan</div>
+          <div>At 22:30 scan 192.168.1.25 and save a TXT report on Desktop.</div>
+        </div>
+        <div style="border:1px solid #b0b0b0;padding:6px">
+          <div style="font-weight:bold;color:#000080">2) Nightly IP range audit</div>
+          <div>Every night scan 192.168.0.1-192.168.0.254, include open ports and response time trend.</div>
+        </div>
+        <div style="border:1px solid #b0b0b0;padding:6px">
+          <div style="font-weight:bold;color:#000080">3) Multi-site inventory sync</div>
+          <div>Scan three subnets, merge results, export CSV + JSON and generate a diff versus previous day.</div>
+        </div>
+        <div style="border:1px solid #b0b0b0;padding:6px">
+          <div style="font-weight:bold;color:#000080">4) Incident response chain</div>
+          <div>If new host appears on secure VLAN, run deep scan, snapshot HTTP title/fingerprint, send webhook alert.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="
+    border-top:1px solid #808080;
+    padding:2px 6px; font-size:10px; color:#000;
+    display:flex; gap:6px;
+  ">
+    <div id="protoStatus" style="
+      border-top:1px solid #808080; border-left:1px solid #808080;
+      border-right:1px solid #fff; border-bottom:1px solid #fff;
+      padding:1px 8px; flex:1;
+    ">Status: Prototype mode (UI concept only). Link mode: click OUT anchor, then click IN anchor.</div>
+  </div>
+
+  <div id="protoResizeHandle" style="
+    position:absolute;
+    width:12px;
+    height:12px;
+    right:2px;
+    bottom:2px;
+    cursor:nwse-resize;
+    background:linear-gradient(135deg, transparent 0 40%, #888 40% 55%, transparent 55% 70%, #888 70% 85%, transparent 85% 100%);
+  "></div>
+</div>
+
 <!-- Macro folder window -->
 <div id="macroFolderWin" style="
   display:none;
@@ -1088,7 +1280,7 @@ function openNotepad() {
   document.getElementById('notepadWin').style.display = 'block';
   document.getElementById('notepadText').value =
 `================================================================
-  NetRecon IP Scanner v1.3
+  NetRecon IP Scanner v1.3p
   by Michał Stankiewicz
 ================================================================
 
@@ -1185,6 +1377,229 @@ function openSpeedWindow() {
 function closeSpeedWindow() {
   const win = document.getElementById('speedWin');
   if (win) win.style.display = 'none';
+}
+
+function openProtoWindow() {
+  const win = document.getElementById('protoWin');
+  if (!win) return;
+  if (typeof initProtoCanvas === 'function') initProtoCanvas();
+  win.style.display = 'block';
+  win.style.zIndex = '1045';
+  if (typeof protoRenderLinks === 'function') protoRenderLinks();
+}
+
+function closeProtoWindow() {
+  const win = document.getElementById('protoWin');
+  if (win) win.style.display = 'none';
+}
+
+function toggleProtoWindowSize() {
+  const win = document.getElementById('protoWin');
+  const btn = document.getElementById('btnProtoToggle');
+  if (!win || !btn) return;
+
+  const maximized = win.dataset.maximized === '1';
+  if (!maximized) {
+    const rect = win.getBoundingClientRect();
+    win.dataset.prevLeft = String(rect.left);
+    win.dataset.prevTop = String(rect.top);
+    win.dataset.prevWidth = String(rect.width);
+    win.dataset.prevHeight = String(rect.height);
+
+    win.style.left = '8px';
+    win.style.top = '36px';
+    win.style.width = 'calc(100vw - 16px)';
+    win.style.height = 'calc(100vh - 44px)';
+    win.dataset.maximized = '1';
+    btn.textContent = '❐';
+    btn.title = 'Restore';
+  } else {
+    win.style.left = `${win.dataset.prevLeft || 220}px`;
+    win.style.top = `${win.dataset.prevTop || 88}px`;
+    win.style.width = `${win.dataset.prevWidth || 920}px`;
+    win.style.height = `${win.dataset.prevHeight || 640}px`;
+    win.dataset.maximized = '0';
+    btn.textContent = '□';
+    btn.title = 'Maximize';
+  }
+
+  if (typeof protoRenderLinks === 'function') protoRenderLinks();
+}
+
+let protoRenderLinks = null;
+
+function initProtoCanvas() {
+  const canvas = document.getElementById('protoCanvas');
+  const links = document.getElementById('protoLinks');
+  const status = document.getElementById('protoStatus');
+  if (!canvas || !links || canvas.dataset.ready === '1') return;
+
+  canvas.dataset.ready = '1';
+
+  const connections = [
+    { from: 'n1', to: 'n2' },
+    { from: 'n2', to: 'n3' },
+    { from: 'n3', to: 'n4' },
+    { from: 'n5', to: 'n6' },
+    { from: 'n6', to: 'n7' },
+    { from: 'n7', to: 'n8' }
+  ];
+  let pendingFrom = null;
+
+  function setProtoStatus(text) {
+    if (status) status.textContent = text;
+  }
+
+  function refreshAnchorStyles() {
+    const anchors = canvas.querySelectorAll('.proto-anchor');
+    anchors.forEach(a => {
+      a.style.boxShadow = '';
+      a.style.transform = 'translateY(-50%)';
+    });
+    if (!pendingFrom) return;
+    pendingFrom.style.boxShadow = '0 0 0 2px rgba(255,210,80,.9), 0 0 8px rgba(0,0,0,.3)';
+    pendingFrom.style.transform = 'translateY(-50%) scale(1.12)';
+  }
+
+  function anchorPoint(nodeId, type) {
+    const anchor = canvas.querySelector(`.proto-anchor-${type}[data-node="${nodeId}"]`);
+    if (!anchor) return null;
+    const a = anchor.getBoundingClientRect();
+    const c = canvas.getBoundingClientRect();
+    return {
+      x: a.left - c.left + a.width / 2,
+      y: a.top - c.top + a.height / 2
+    };
+  }
+
+  protoRenderLinks = () => {
+    const w = Math.max(canvas.scrollWidth, canvas.clientWidth);
+    const h = Math.max(canvas.scrollHeight, canvas.clientHeight);
+    links.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    links.setAttribute('width', String(w));
+    links.setAttribute('height', String(h));
+    links.innerHTML = '';
+
+    connections.forEach(c => {
+      const from = anchorPoint(c.from, 'out');
+      const to = anchorPoint(c.to, 'in');
+      if (!from || !to) return;
+      const dx = Math.max(36, Math.abs(to.x - from.x) * 0.45);
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M ${from.x} ${from.y} C ${from.x + dx} ${from.y}, ${to.x - dx} ${to.y}, ${to.x} ${to.y}`);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', '#2f4f7f');
+      path.setAttribute('stroke-width', '2.2');
+      path.setAttribute('stroke-linecap', 'round');
+      links.appendChild(path);
+    });
+  };
+
+  function hasConnection(fromId, toId) {
+    return connections.some(c => c.from === fromId && c.to === toId);
+  }
+
+  canvas.querySelectorAll('.proto-anchor-out').forEach(anchor => {
+    anchor.style.cursor = 'crosshair';
+    anchor.addEventListener('click', e => {
+      e.stopPropagation();
+      pendingFrom = anchor;
+      refreshAnchorStyles();
+      const fromNode = anchor.dataset.node || '?';
+      setProtoStatus(`Link mode: selected OUT from ${fromNode}. Click an IN anchor to create a line.`);
+    });
+  });
+
+  canvas.querySelectorAll('.proto-anchor-in').forEach(anchor => {
+    anchor.style.cursor = 'pointer';
+    anchor.addEventListener('click', e => {
+      e.stopPropagation();
+      if (!pendingFrom) {
+        setProtoStatus('Link mode: first click an OUT anchor, then click an IN anchor.');
+        return;
+      }
+      const fromId = pendingFrom.dataset.node;
+      const toId = anchor.dataset.node;
+      if (!fromId || !toId) {
+        pendingFrom = null;
+        refreshAnchorStyles();
+        setProtoStatus('Status: prototype mode (connection canceled).');
+        return;
+      }
+      if (fromId === toId) {
+        pendingFrom = null;
+        refreshAnchorStyles();
+        setProtoStatus('Connection canceled: source and target cannot be the same node.');
+        return;
+      }
+      if (hasConnection(fromId, toId)) {
+        pendingFrom = null;
+        refreshAnchorStyles();
+        setProtoStatus(`Connection already exists: ${fromId} -> ${toId}`);
+        return;
+      }
+
+      connections.push({ from: fromId, to: toId });
+      pendingFrom = null;
+      refreshAnchorStyles();
+      if (protoRenderLinks) protoRenderLinks();
+      setProtoStatus(`Added connection: ${fromId} -> ${toId}`);
+    });
+  });
+
+  canvas.addEventListener('click', () => {
+    if (!pendingFrom) return;
+    pendingFrom = null;
+    refreshAnchorStyles();
+    setProtoStatus('Link mode canceled.');
+  });
+
+  const nodes = canvas.querySelectorAll('.proto-node');
+  nodes.forEach(node => {
+    const handle = node.querySelector('.proto-node-head') || node;
+    let dragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    handle.addEventListener('mousedown', e => {
+      if (e.target.classList.contains('proto-anchor')) return;
+      const nr = node.getBoundingClientRect();
+      const cr = canvas.getBoundingClientRect();
+      dragging = true;
+      offsetX = e.clientX - nr.left;
+      offsetY = e.clientY - nr.top;
+      node.style.zIndex = '4';
+
+      const onMove = ev => {
+        if (!dragging) return;
+        const maxLeft = Math.max(0, canvas.scrollWidth - node.offsetWidth);
+        const maxTop = Math.max(0, canvas.scrollHeight - node.offsetHeight);
+        const left = Math.max(0, Math.min(ev.clientX - cr.left - offsetX, maxLeft));
+        const top = Math.max(24, Math.min(ev.clientY - cr.top - offsetY, maxTop));
+        node.style.left = `${left}px`;
+        node.style.top = `${top}px`;
+        if (protoRenderLinks) protoRenderLinks();
+      };
+
+      const onUp = () => {
+        dragging = false;
+        node.style.zIndex = '2';
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+      };
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+      e.preventDefault();
+    });
+  });
+
+  window.addEventListener('resize', () => {
+    if (protoRenderLinks) protoRenderLinks();
+  });
+
+  protoRenderLinks();
+  setProtoStatus('Status: Prototype mode (UI concept only). Link mode: click OUT anchor, then click IN anchor.');
 }
 
 function readMacroStorageList() {
@@ -1312,6 +1727,68 @@ function closeMacroFolder() {
 document.addEventListener('DOMContentLoaded', () => {
   const closeBtn = document.getElementById('mainCloseBtn');
   if (closeBtn) closeBtn.addEventListener('click', closeMainWindow);
+
+  const protoCloseBtn = document.getElementById('btnProtoClose');
+  if (protoCloseBtn) protoCloseBtn.addEventListener('click', closeProtoWindow);
+
+  const protoToggleBtn = document.getElementById('btnProtoToggle');
+  if (protoToggleBtn) protoToggleBtn.addEventListener('click', toggleProtoWindowSize);
+
+  const protoWin = document.getElementById('protoWin');
+  const protoBar = document.getElementById('protoTitlebar');
+  const protoResizeHandle = document.getElementById('protoResizeHandle');
+  if (protoWin && protoBar) {
+    let dragging = false;
+    let ox = 0;
+    let oy = 0;
+    protoBar.addEventListener('mousedown', e => {
+      if (e.target.closest('.titlebar-btns')) return;
+      const r = protoWin.getBoundingClientRect();
+      dragging = true;
+      ox = e.clientX - r.left;
+      oy = e.clientY - r.top;
+      protoWin.style.transform = 'none';
+      protoWin.style.left = r.left + 'px';
+      protoWin.style.top = r.top + 'px';
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      protoWin.style.left = Math.max(0, Math.min(e.clientX - ox, window.innerWidth - protoWin.offsetWidth)) + 'px';
+      protoWin.style.top = Math.max(0, Math.min(e.clientY - oy, window.innerHeight - 44)) + 'px';
+    });
+    window.addEventListener('mouseup', () => { dragging = false; });
+  }
+
+  if (protoWin && protoResizeHandle) {
+    let resizing = false;
+    let startW = 0;
+    let startH = 0;
+    let startX = 0;
+    let startY = 0;
+
+    protoResizeHandle.addEventListener('mousedown', e => {
+      resizing = true;
+      startW = protoWin.offsetWidth;
+      startH = protoWin.offsetHeight;
+      startX = e.clientX;
+      startY = e.clientY;
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', e => {
+      if (!resizing || protoWin.dataset.maximized === '1') return;
+      const nextW = Math.max(760, Math.min(window.innerWidth - protoWin.offsetLeft - 8, startW + (e.clientX - startX)));
+      const nextH = Math.max(500, Math.min(window.innerHeight - protoWin.offsetTop - 8, startH + (e.clientY - startY)));
+      protoWin.style.width = `${nextW}px`;
+      protoWin.style.height = `${nextH}px`;
+      if (typeof protoRenderLinks === 'function') protoRenderLinks();
+    });
+
+    window.addEventListener('mouseup', () => {
+      resizing = false;
+    });
+  }
 
   const speedCloseBtn = document.getElementById('btnSpeedClose');
   if (speedCloseBtn) speedCloseBtn.addEventListener('click', closeSpeedWindow);
@@ -1587,6 +2064,10 @@ document.addEventListener('DOMContentLoaded', () => {
         border-right:1px solid #fff;border-bottom:1px solid #fff;
         padding:8px 10px;font-size:11px;line-height:1.45;
       ">
+        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.3p</div>
+        <div style="margin-bottom:8px">
+          Added a visual programming prototype window with draggable nodes, anchor points, and click-click line linking mode.
+        </div>
         <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.3</div>
         <div style="margin-bottom:8px">
           Added internet speed checking (download/upload) in a dedicated Speed Test window.
