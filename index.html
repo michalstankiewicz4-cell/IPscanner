@@ -557,6 +557,7 @@ body {
     </div>
     <div class="menu-item" id="menuHelp"><span data-i18n="menuHelp">Help</span>
       <div class="menu-dropdown">
+        <div class="menu-dd-item" id="menuVersions" data-i18n="menuVersions">Versions</div>
         <div class="menu-dd-item" id="menuAbout" data-i18n="menuAbout">About</div>
       </div>
     </div>
@@ -1571,6 +1572,36 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 
+<!-- Versions dialog -->
+<div class="dlg-overlay" id="dlgVersionsOverlay">
+  <div class="dlg95" style="min-width:470px;max-width:94vw">
+    <div class="dlg-title">
+      <span>📘</span>
+      <span data-i18n="dlgVersionsTitle">Versions</span>
+      <div class="title-btn" onclick="closeVersionsDlg()">✕</div>
+    </div>
+    <div class="dlg-body" style="max-height:58vh;overflow:auto;padding:10px 12px 8px">
+      <div style="
+        background:#fff;
+        border-top:1px solid #808080;border-left:1px solid #808080;
+        border-right:1px solid #fff;border-bottom:1px solid #fff;
+        padding:8px 10px;font-size:11px;line-height:1.45;
+      ">
+        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.3</div>
+        <div style="margin-bottom:8px">
+          Added internet speed checking (download/upload) in a dedicated Speed Test window.
+        </div>
+        <div style="color:#444">
+          This section is reserved for bigger release notes.
+        </div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="dlgVersionsCloseBtn" data-i18n="dlgClose">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Context menu -->
 <div class="ctxmenu" id="ctxMenu">
   <div class="ctx-item" id="ctxCopyIp" data-i18n="ctxCopyIp">Copy IP Address</div>
@@ -1591,7 +1622,7 @@ let lang = localStorage.getItem('netrecon_lang') || 'en';
 const STRINGS = {
   en: {
     menuFile:'File', menuOptions:'Options', menuHelp:'Help',
-    menuLanguage:'Language...', menuAbout:'About', menuPresets:'Port Presets...', menuCountries:'Country IP Library...', menuDefaults:'Default Scan Values...',
+    menuLanguage:'Language...', menuAbout:'About', menuVersions:'Versions', menuPresets:'Port Presets...', menuCountries:'Country IP Library...', menuDefaults:'Default Scan Values...',
     btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Clear',
     btnMyIp:'🌐 My External IP', btnMyLocalIp:'🏠 My Local IP', btnLocalSubnets:'🧭 Local Subnets', btnCopy:'📋 Copy', btnUse:'➤ Use',
     scanSettings:'Scan Settings', ipRange:'IP Range:', threads:'Threads:', delayMs:'Delay (ms):',
@@ -1644,7 +1675,7 @@ const STRINGS = {
     dlgTitle:'Options', dlgLang:'Language:',
     dlgDefaults:'Default Scan Values:', dlgDefaultThreads:'Threads:', dlgDefaultDelay:'Delay (ms):',
     dlgLangEn:'English', dlgLangPl:'Polski',
-    dlgOk:'OK', dlgCancel:'Cancel',
+    dlgOk:'OK', dlgCancel:'Cancel', dlgClose:'Close', dlgVersionsTitle:'Versions',
     portRtsp:'RTSP stream likely available',
     portIpp:'Printer (IPP)', portRaw:'Printer (RAW)',
     portSyn:'Synology NAS?', portProx:'Proxmox VE?',
@@ -1665,7 +1696,7 @@ const STRINGS = {
   },
   pl: {
     menuFile:'Plik', menuOptions:'Opcje', menuHelp:'Pomoc',
-    menuLanguage:'Język...', menuAbout:'O programie', menuPresets:'Presety portów...', menuCountries:'Biblioteka krajów IP...', menuDefaults:'Domyślne wartości skanowania...',
+    menuLanguage:'Język...', menuAbout:'O programie', menuVersions:'Wersje', menuPresets:'Presety portów...', menuCountries:'Biblioteka krajów IP...', menuDefaults:'Domyślne wartości skanowania...',
     btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Wyczyść',
     btnMyIp:'🌐 Moje zewnętrzne IP', btnMyLocalIp:'🏠 Moje lokalne IP', btnLocalSubnets:'🧭 Lokalne podsieci', btnCopy:'📋 Kopiuj', btnUse:'➤ Użyj',
     scanSettings:'Ustawienia skanowania', ipRange:'IP Range:', threads:'Wątki:', delayMs:'Opóźnienie (ms):',
@@ -1718,7 +1749,7 @@ const STRINGS = {
     dlgTitle:'Opcje', dlgLang:'Język:',
     dlgDefaults:'Domyślne wartości skanowania:', dlgDefaultThreads:'Wątki:', dlgDefaultDelay:'Opóźnienie (ms):',
     dlgLangEn:'English', dlgLangPl:'Polski',
-    dlgOk:'OK', dlgCancel:'Anuluj',
+    dlgOk:'OK', dlgCancel:'Anuluj', dlgClose:'Zamknij', dlgVersionsTitle:'Wersje',
     portRtsp:'RTSP stream prawdopodobnie dostępny',
     portIpp:'Drukarka (IPP)', portRaw:'Drukarka (RAW)',
     portSyn:'Synology NAS?', portProx:'Proxmox VE?',
@@ -1828,6 +1859,14 @@ function openDefaultsDlg() {
 function closeDefaultsDlg() {
   document.getElementById('dlgDefaultsOverlay').classList.remove('open');
 }
+
+// ── Versions dialog ──
+function openVersionsDlg() {
+  document.getElementById('dlgVersionsOverlay').classList.add('open');
+}
+function closeVersionsDlg() {
+  document.getElementById('dlgVersionsOverlay').classList.remove('open');
+}
 function persistDefaultsFromDialog() {
   const cfg = saveScanDefaults(
     document.getElementById('dlgDefaultThreads').value,
@@ -1863,10 +1902,15 @@ document.getElementById('menuDefaults').addEventListener('click', () => {
   document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
   openDefaultsDlg();
 });
+document.getElementById('menuVersions').addEventListener('click', () => {
+  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+  openVersionsDlg();
+});
 document.getElementById('menuAbout').addEventListener('click', () => {
   document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
   openNotepad();
 });
+document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
 
 // ══════════════════════════════════════════════════
 //  PORT PRESETS
