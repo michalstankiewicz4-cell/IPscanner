@@ -1084,8 +1084,11 @@ body {
         <div style="padding:5px 7px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #d2b280;border-radius:4px">📄 Report: Summary</div>
         <div style="padding:5px 7px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #d2b280;border-radius:4px">💾 Save File: Desktop</div>
         <div style="padding:5px 7px;background:linear-gradient(180deg,#fcf7ff,#f2e9ff);border:1px solid #b499d8;border-radius:4px">📨 Notify: Email/Webhook</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:4px">🔀 Condition: IF</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:4px">⚠️ Filter: Port Match</div>
       </div>
       <div style="font-size:10px;color:#666;margin-top:8px">
+        Condition nodes have two outputs: <span style="color:#267026;font-weight:bold">TRUE</span> and <span style="color:#9a2020;font-weight:bold">FALSE</span>.<br>
         Prototype only: drag/drop and execution engine are not implemented yet.
       </div>
     </div>
@@ -1154,6 +1157,39 @@ body {
         <div style="padding:6px;font-size:11px;line-height:1.35">📨 Send weekly summary</div>
         <div class="proto-anchor proto-anchor-in" data-node="n8" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
       </div>
+
+      <!-- === IF condition example row === -->
+      <div class="proto-node" data-node="n9" style="position:absolute;left:18px;top:390px;width:214px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
+        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TRIGGER</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">🕒 On scan complete</div>
+        <div class="proto-anchor proto-anchor-out" data-node="n9" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      </div>
+
+      <div class="proto-node" data-node="n10" style="position:absolute;left:278px;top:390px;width:214px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
+        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">CONDITION</div>
+        <div style="padding:6px 6px 18px;font-size:11px;line-height:1.35">🔀 IF open port 8554 found</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n10" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+        <!-- TRUE output (upper right) -->
+        <div class="proto-anchor proto-anchor-out" data-node="n10" data-anchor="out-true" style="position:absolute;right:-6px;top:33%;width:10px;height:10px;border-radius:999px;background:#3a8a3a;border:1px solid #fff;transform:translateY(-50%)">
+          <span style="position:absolute;right:13px;top:-4px;font-size:8px;font-weight:bold;color:#1a6a1a;white-space:nowrap;pointer-events:none">TRUE</span>
+        </div>
+        <!-- FALSE output (lower right) -->
+        <div class="proto-anchor proto-anchor-out" data-node="n10" data-anchor="out-false" style="position:absolute;right:-6px;top:67%;width:10px;height:10px;border-radius:999px;background:#b04040;border:1px solid #fff;transform:translateY(-50%)">
+          <span style="position:absolute;right:13px;top:-4px;font-size:8px;font-weight:bold;color:#8a1a1a;white-space:nowrap;pointer-events:none">FALSE</span>
+        </div>
+      </div>
+
+      <div class="proto-node" data-node="n11" style="position:absolute;left:546px;top:345px;width:196px;background:linear-gradient(180deg,#fcf7ff,#f2e9ff);border:1px solid #9e7ec7;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
+        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">NOTIFY</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">📨 Alert: camera stream found!</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n11" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      </div>
+
+      <div class="proto-node" data-node="n12" style="position:absolute;left:546px;top:435px;width:196px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #c59c66;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
+        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">OUTPUT</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">📄 Log: no camera, port closed</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n12" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      </div>
     </div>
 
     <div style="
@@ -1179,6 +1215,10 @@ body {
         <div style="border:1px solid #b0b0b0;padding:6px">
           <div style="font-weight:bold;color:#000080">4) Incident response chain</div>
           <div>If new host appears on secure VLAN, run deep scan, snapshot HTTP title/fingerprint, send webhook alert.</div>
+        </div>
+        <div style="border:1px solid #d4904a;padding:6px;background:#fffaf5">
+          <div style="font-weight:bold;color:#b05000">5) IF condition: detect camera stream</div>
+          <div>After scan completes, <b>IF</b> port 8554 is open → <span style="color:#267026">TRUE path</span>: send instant alert. <span style="color:#9a2020">FALSE path</span>: write a "port closed" log entry.</div>
         </div>
       </div>
     </div>
@@ -1442,9 +1482,13 @@ function initProtoCanvas() {
     { from: 'n3', to: 'n4' },
     { from: 'n5', to: 'n6' },
     { from: 'n6', to: 'n7' },
-    { from: 'n7', to: 'n8' }
+    { from: 'n7', to: 'n8' },
+    { from: 'n9', to: 'n10' },
+    { from: 'n10', to: 'n11', fromAnchor: 'out-true' },
+    { from: 'n10', to: 'n12', fromAnchor: 'out-false' }
   ];
   let pendingFrom = null;
+  let pendingFromAnchor = 'out';
 
   function setProtoStatus(text) {
     if (status) status.textContent = text;
@@ -1462,7 +1506,16 @@ function initProtoCanvas() {
   }
 
   function anchorPoint(nodeId, type) {
-    const anchor = canvas.querySelector(`.proto-anchor-${type}[data-node="${nodeId}"]`);
+    let anchor;
+    if (type === 'out-true' || type === 'out-false') {
+      anchor = canvas.querySelector(`.proto-anchor-out[data-node="${nodeId}"][data-anchor="${type}"]`);
+    } else if (type === 'out') {
+      // prefer anchor without data-anchor (regular single-output node)
+      anchor = canvas.querySelector(`.proto-anchor-out[data-node="${nodeId}"]:not([data-anchor])`)
+             || canvas.querySelector(`.proto-anchor-out[data-node="${nodeId}"]`);
+    } else {
+      anchor = canvas.querySelector(`.proto-anchor-${type}[data-node="${nodeId}"]`);
+    }
     if (!anchor) return null;
     const a = anchor.getBoundingClientRect();
     const c = canvas.getBoundingClientRect();
@@ -1481,22 +1534,30 @@ function initProtoCanvas() {
     links.innerHTML = '';
 
     connections.forEach(c => {
-      const from = anchorPoint(c.from, 'out');
+      const fromAnchorType = c.fromAnchor || 'out';
+      const from = anchorPoint(c.from, fromAnchorType);
       const to = anchorPoint(c.to, 'in');
       if (!from || !to) return;
       const dx = Math.max(36, Math.abs(to.x - from.x) * 0.45);
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', `M ${from.x} ${from.y} C ${from.x + dx} ${from.y}, ${to.x - dx} ${to.y}, ${to.x} ${to.y}`);
       path.setAttribute('fill', 'none');
-      path.setAttribute('stroke', '#2f4f7f');
+      const strokeColor = fromAnchorType === 'out-true' ? '#2a7a2a'
+                        : fromAnchorType === 'out-false' ? '#b03030'
+                        : '#2f4f7f';
+      path.setAttribute('stroke', strokeColor);
       path.setAttribute('stroke-width', '2.2');
       path.setAttribute('stroke-linecap', 'round');
+      if (fromAnchorType === 'out-false') {
+        path.setAttribute('stroke-dasharray', '6 3');
+      }
       links.appendChild(path);
     });
   };
 
-  function hasConnection(fromId, toId) {
-    return connections.some(c => c.from === fromId && c.to === toId);
+  function hasConnection(fromId, toId, fromAnchorType) {
+    const fa = fromAnchorType || 'out';
+    return connections.some(c => c.from === fromId && c.to === toId && (c.fromAnchor || 'out') === fa);
   }
 
   canvas.querySelectorAll('.proto-anchor-out').forEach(anchor => {
@@ -1504,9 +1565,12 @@ function initProtoCanvas() {
     anchor.addEventListener('click', e => {
       e.stopPropagation();
       pendingFrom = anchor;
+      pendingFromAnchor = anchor.dataset.anchor || 'out';
       refreshAnchorStyles();
       const fromNode = anchor.dataset.node || '?';
-      setProtoStatus(`Link mode: selected OUT from ${fromNode}. Click an IN anchor to create a line.`);
+      const anchorLabel = pendingFromAnchor === 'out-true' ? ' [TRUE]'
+                        : pendingFromAnchor === 'out-false' ? ' [FALSE]' : '';
+      setProtoStatus(`Link mode: selected OUT${anchorLabel} from ${fromNode}. Click an IN anchor to create a line.`);
     });
   });
 
@@ -1522,25 +1586,31 @@ function initProtoCanvas() {
       const toId = anchor.dataset.node;
       if (!fromId || !toId) {
         pendingFrom = null;
+        pendingFromAnchor = 'out';
         refreshAnchorStyles();
         setProtoStatus('Status: prototype mode (connection canceled).');
         return;
       }
       if (fromId === toId) {
         pendingFrom = null;
+        pendingFromAnchor = 'out';
         refreshAnchorStyles();
         setProtoStatus('Connection canceled: source and target cannot be the same node.');
         return;
       }
-      if (hasConnection(fromId, toId)) {
+      if (hasConnection(fromId, toId, pendingFromAnchor)) {
         pendingFrom = null;
+        pendingFromAnchor = 'out';
         refreshAnchorStyles();
         setProtoStatus(`Connection already exists: ${fromId} -> ${toId}`);
         return;
       }
 
-      connections.push({ from: fromId, to: toId });
+      const newConn = { from: fromId, to: toId };
+      if (pendingFromAnchor !== 'out') newConn.fromAnchor = pendingFromAnchor;
+      connections.push(newConn);
       pendingFrom = null;
+      pendingFromAnchor = 'out';
       refreshAnchorStyles();
       if (protoRenderLinks) protoRenderLinks();
       setProtoStatus(`Added connection: ${fromId} -> ${toId}`);
@@ -1550,6 +1620,7 @@ function initProtoCanvas() {
   canvas.addEventListener('click', () => {
     if (!pendingFrom) return;
     pendingFrom = null;
+    pendingFromAnchor = 'out';
     refreshAnchorStyles();
     setProtoStatus('Link mode canceled.');
   });
