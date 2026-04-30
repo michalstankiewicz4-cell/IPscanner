@@ -535,7 +535,7 @@ body {
   <!-- Title bar -->
   <div class="titlebar">
     <span class="icon">📡</span>
-    <span class="title">NetRecon IP Scanner v1.2</span>
+    <span class="title">NetRecon IP Scanner v1.3</span>
     <div class="titlebar-btns">
       <div class="title-btn">_</div>
       <div class="title-btn">□</div>
@@ -745,6 +745,24 @@ body {
   ">IP Scanner</div>
 </div>
 
+<!-- Speed test desktop icon -->
+<div id="speedDesktopIcon" style="
+  position:fixed; top:10px; left:92px;
+  width:72px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:pointer; user-select:none; z-index:8;
+" onclick="openSpeedWindow()">
+  <div style="font-size:28px;line-height:1;padding:2px">📶</div>
+  <div style="
+    font-family:'MS Sans Serif',Tahoma,sans-serif;
+    font-size:11px; color:#fff;
+    background:transparent;
+    padding:1px 3px;
+    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    white-space:nowrap;
+  ">Speed Test</div>
+</div>
+
 <!-- Macro folder desktop icon -->
 <div id="macroFolderIcon" style="
   position:fixed; top:72px; left:10px;
@@ -927,6 +945,75 @@ body {
   </div>
 </div>
 
+<!-- Speed test window -->
+<div id="speedWin" style="
+  display:none;
+  position:fixed; top:92px; left:180px;
+  width:min(360px, 94vw);
+  background:#c0c0c0;
+  border-top:2px solid #ffffff; border-left:2px solid #ffffff;
+  border-right:2px solid #808080; border-bottom:2px solid #808080;
+  box-shadow:1px 1px 0 #000, inset 1px 1px 0 #dfdfdf;
+  font-family:'MS Sans Serif',Tahoma,sans-serif;
+  z-index:1040;
+">
+  <div class="titlebar" id="speedTitlebar" style="cursor:move">
+    <span class="icon">📶</span>
+    <span class="title">Internet Speed Test</span>
+    <div class="titlebar-btns">
+      <button class="title-btn" id="btnSpeedClose" style="font-weight:900">✕</button>
+    </div>
+  </div>
+
+  <div style="padding:10px 10px 8px;display:flex;flex-direction:column;gap:8px">
+    <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:8px">
+      <div style="
+        background:#fff;
+        border-top:1px solid #808080; border-left:1px solid #808080;
+        border-right:1px solid #fff; border-bottom:1px solid #fff;
+        padding:8px;
+      ">
+        <div style="font-size:10px;color:#555;margin-bottom:4px">Download</div>
+        <div id="speedDownloadValue" style="font-size:22px;font-weight:bold;color:#000080">--</div>
+        <div style="font-size:10px;color:#555">Mbps</div>
+      </div>
+      <div style="
+        background:#fff;
+        border-top:1px solid #808080; border-left:1px solid #808080;
+        border-right:1px solid #fff; border-bottom:1px solid #fff;
+        padding:8px;
+      ">
+        <div style="font-size:10px;color:#555;margin-bottom:4px">Ping</div>
+        <div id="speedPingValue" style="font-size:22px;font-weight:bold;color:#800000">--</div>
+        <div style="font-size:10px;color:#555">ms</div>
+      </div>
+      <div style="
+        background:#fff;
+        border-top:1px solid #808080; border-left:1px solid #808080;
+        border-right:1px solid #fff; border-bottom:1px solid #fff;
+        padding:8px;
+      ">
+        <div style="font-size:10px;color:#555;margin-bottom:4px">Upload</div>
+        <div id="speedUploadValue" style="font-size:22px;font-weight:bold;color:#006400">--</div>
+        <div style="font-size:10px;color:#555">Mbps</div>
+      </div>
+    </div>
+
+    <div id="speedStatus" style="
+      min-height:18px;
+      background:#fff;
+      border-top:1px solid #808080; border-left:1px solid #808080;
+      border-right:1px solid #fff; border-bottom:1px solid #fff;
+      padding:6px 8px;
+      font-size:11px;
+    ">Kliknij Start, aby zmierzyc ping, download i upload.</div>
+
+    <div style="display:flex;justify-content:flex-start;gap:6px">
+      <button class="btn95" id="btnSpeedStart">▶ Start test</button>
+    </div>
+  </div>
+</div>
+
 <!-- Macro folder window -->
 <div id="macroFolderWin" style="
   display:none;
@@ -1000,7 +1087,7 @@ function openNotepad() {
   document.getElementById('notepadWin').style.display = 'block';
   document.getElementById('notepadText').value =
 `================================================================
-  NetRecon IP Scanner v1.2
+  NetRecon IP Scanner v1.3
   by Michał Stankiewicz
 ================================================================
 
@@ -1085,6 +1172,18 @@ function openMainWindow() {
   if (!win) return;
   win.style.display = 'block';
   win.style.zIndex = '20';
+}
+
+function openSpeedWindow() {
+  const win = document.getElementById('speedWin');
+  if (!win) return;
+  win.style.display = 'block';
+  win.style.zIndex = '1040';
+}
+
+function closeSpeedWindow() {
+  const win = document.getElementById('speedWin');
+  if (win) win.style.display = 'none';
 }
 
 function readMacroStorageList() {
@@ -1212,6 +1311,34 @@ function closeMacroFolder() {
 document.addEventListener('DOMContentLoaded', () => {
   const closeBtn = document.getElementById('mainCloseBtn');
   if (closeBtn) closeBtn.addEventListener('click', closeMainWindow);
+
+  const speedCloseBtn = document.getElementById('btnSpeedClose');
+  if (speedCloseBtn) speedCloseBtn.addEventListener('click', closeSpeedWindow);
+
+  const speedWin = document.getElementById('speedWin');
+  const speedBar = document.getElementById('speedTitlebar');
+  if (speedWin && speedBar) {
+    let dragging = false;
+    let ox = 0;
+    let oy = 0;
+    speedBar.addEventListener('mousedown', e => {
+      if (e.target.closest('.titlebar-btns')) return;
+      const r = speedWin.getBoundingClientRect();
+      dragging = true;
+      ox = e.clientX - r.left;
+      oy = e.clientY - r.top;
+      speedWin.style.transform = 'none';
+      speedWin.style.left = r.left + 'px';
+      speedWin.style.top = r.top + 'px';
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      speedWin.style.left = Math.max(0, Math.min(e.clientX - ox, window.innerWidth - speedWin.offsetWidth)) + 'px';
+      speedWin.style.top = Math.max(0, Math.min(e.clientY - oy, window.innerHeight - 44)) + 'px';
+    });
+    window.addEventListener('mouseup', () => { dragging = false; });
+  }
 
   const macroCloseBtn = document.getElementById('btnMacroFolderClose');
   if (macroCloseBtn) macroCloseBtn.addEventListener('click', closeMacroFolder);
@@ -2932,6 +3059,14 @@ const btnCmdSaveMacro = document.getElementById('btnCmdSaveMacro');
 const cmdMacroList = document.getElementById('cmdMacroList');
 const cmdHistory = [];
 let cmdHistoryIndex = 0;
+const speedWin = document.getElementById('speedWin');
+const speedTitlebar = document.getElementById('speedTitlebar');
+const btnSpeedStart = document.getElementById('btnSpeedStart');
+const speedDownloadValue = document.getElementById('speedDownloadValue');
+const speedPingValue = document.getElementById('speedPingValue');
+const speedUploadValue = document.getElementById('speedUploadValue');
+const speedStatus = document.getElementById('speedStatus');
+let speedTestRunning = false;
 
 function appendCmdLog(text) {
   const stamp = new Date().toLocaleTimeString();
@@ -3160,9 +3295,123 @@ function saveCommandMacro() {
   if (typeof renderMacroFiles === 'function') renderMacroFiles();
 }
 
+function setSpeedStatus(text) {
+  if (speedStatus) speedStatus.textContent = text;
+}
+
+function setSpeedValues(downloadMbps, pingMs, uploadMbps) {
+  if (speedDownloadValue) speedDownloadValue.textContent = downloadMbps;
+  if (speedPingValue) speedPingValue.textContent = pingMs;
+  if (speedUploadValue) speedUploadValue.textContent = uploadMbps;
+}
+
+function formatMbps(value) {
+  if (!Number.isFinite(value) || value <= 0) return '--';
+  return value >= 100 ? value.toFixed(0) : value.toFixed(1);
+}
+
+function formatPingMs(value) {
+  if (!Number.isFinite(value) || value <= 0) return '--';
+  return value < 10 ? value.toFixed(1) : value.toFixed(0);
+}
+
+async function measurePingMs() {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+  const started = performance.now();
+  try {
+    const response = await fetch(`https://speed.cloudflare.com/cdn-cgi/trace?seed=${Date.now()}`, {
+      method: 'GET',
+      cache: 'no-store',
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    await response.text();
+    return performance.now() - started;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+async function measureTransferMbps({ url, method, bytes, body }) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 20000);
+  const started = performance.now();
+  try {
+    const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}seed=${Date.now()}`, {
+      method,
+      cache: 'no-store',
+      headers: body ? { 'content-type': 'application/octet-stream' } : undefined,
+      body,
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    let transferredBytes = bytes;
+    if (method === 'GET') {
+      const buffer = await response.arrayBuffer();
+      transferredBytes = buffer.byteLength;
+    } else {
+      await response.text();
+    }
+
+    const seconds = Math.max((performance.now() - started) / 1000, 0.001);
+    return (transferredBytes * 8) / seconds / 1000000;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+async function runSpeedTest() {
+  if (speedTestRunning) return;
+
+  speedTestRunning = true;
+  if (btnSpeedStart) btnSpeedStart.disabled = true;
+  setSpeedValues('--', '--', '--');
+
+  try {
+    setSpeedStatus('Pomiar ping...');
+    const pingMs = await measurePingMs();
+    if (speedPingValue) speedPingValue.textContent = formatPingMs(pingMs);
+
+    setSpeedStatus('Pomiar download...');
+    const downloadMbps = await measureTransferMbps({
+      url: 'https://speed.cloudflare.com/__down?bytes=6000000',
+      method: 'GET',
+      bytes: 6000000
+    });
+    if (speedDownloadValue) speedDownloadValue.textContent = formatMbps(downloadMbps);
+
+    setSpeedStatus('Pomiar upload...');
+    const uploadBytes = 1500000;
+    const uploadPayload = new Uint8Array(uploadBytes);
+    uploadPayload.fill(97);
+    const uploadMbps = await measureTransferMbps({
+      url: 'https://speed.cloudflare.com/__up',
+      method: 'POST',
+      bytes: uploadBytes,
+      body: uploadPayload
+    });
+    if (speedUploadValue) speedUploadValue.textContent = formatMbps(uploadMbps);
+
+    setSpeedStatus(`Gotowe. Ping: ${formatPingMs(pingMs)} ms, Download: ${formatMbps(downloadMbps)} Mbps, Upload: ${formatMbps(uploadMbps)} Mbps`);
+  } catch (error) {
+    setSpeedStatus(`Test nieudany: ${error && error.message ? error.message : error}`);
+  } finally {
+    speedTestRunning = false;
+    if (btnSpeedStart) btnSpeedStart.disabled = false;
+  }
+}
+
 btnConsole.addEventListener('click', openCmdConsole);
 btnCmdClose.addEventListener('click', closeCmdConsole);
 btnCmdRun.addEventListener('click', () => runConsoleCommand(cmdInput.value));
+if (btnSpeedStart) btnSpeedStart.addEventListener('click', runSpeedTest);
 btnCmdSaveMacro.addEventListener('click', () => {
   saveCommandMacro();
   cmdMenuMacroDrop.style.display = 'none';
@@ -3206,6 +3455,7 @@ cmdInput.addEventListener('keydown', e => {
   let ox = 0;
   let oy = 0;
   let dragging = false;
+  if (!cmdWin || !cmdTitlebar) return;
   cmdTitlebar.addEventListener('mousedown', e => {
     if (e.target.closest('.titlebar-btns')) return;
     const r = cmdWin.getBoundingClientRect();
