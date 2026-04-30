@@ -14,6 +14,8 @@ IP address scanner online
 
 W przygotowaniu/soon: (in windows application)
 
+Security alerts, powiadamianie o skanowaniu
+
 1. Skaner IP – (Asset Management)
 
 Wykrywanie urządzeń (Live Host Discovery): Szybkie skanowanie zakresów adresów IP (np. 192.168.1.1-254) w celu znalezienia wszystkich podłączonych urządzeń (przewodowych i Wi-Fi).
