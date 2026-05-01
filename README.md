@@ -1,4 +1,8 @@
-"main" - JS, HTML // "files" - JS, HTML, CSS // "Tauri" - Tauri/Rust
+"Tauri" - Tauri/Rust - the latest development version
+
+"main" - JS, HTML - end of development 
+
+"files" - JS, HTML, CSS - old end of development
 # Projekt amatorski wykonany wyłącznie przy użyciu vibe-codingu w celach naukowych.
 # An amateur project made solely using vibe-coding for scientific purposes.
 
