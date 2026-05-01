@@ -1,3 +1,4 @@
+"main" - JS, HTML // "files" - JS, HTML, CSS // "Tauri" - Tauri/Rust
 # Projekt amatorski wykonany wyłącznie przy użyciu vibe-codingu w celach naukowych.
 # An amateur project made solely using vibe-coding for scientific purposes.
 
