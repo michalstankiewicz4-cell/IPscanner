@@ -17,6 +17,8 @@ IP address scanner online
 <img width="886" height="530" alt="image" src="https://github.com/user-attachments/assets/55e608d6-f24a-4443-82a7-9a6cdfa253ac" />
 .
 <img width="1072" height="838" alt="image" src="https://github.com/user-attachments/assets/94146e40-5993-4cbd-9333-e0390b89f56d" />
+.
+<img width="1919" height="1123" alt="image" src="https://github.com/user-attachments/assets/8fb27d15-d021-4be7-8478-7d1a359e215b" />
 
 W przygotowaniu/soon: (in windows application)
 
