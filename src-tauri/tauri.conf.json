@@ -14,8 +14,9 @@
     "windows": [
       {
         "title": "NetRecon IP Scanner",
-        "width": 1200,
-        "height": 820,
+        "width": 900,
+        "height": 620,
+        "center": true,
         "resizable": true
       }
     ],
