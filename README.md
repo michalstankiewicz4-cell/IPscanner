@@ -1,6 +1,41 @@
 # Projekt amatorski wykonany wyłącznie przy użyciu vibe-codingu w celach naukowych.
 # An amateur project made solely using vibe-coding for scientific purposes.
 
+# NetRecon IP Scanner — aplikacja desktopowa (Tauri)
+
+## Uruchomienie / Installation
+
+### Gotowy installer (zalecane) / Ready-to-use installer (recommended)
+
+1. Pobierz najnowszy plik instalacyjny z zakładki [Releases](../../releases):
+   - `NetRecon IP Scanner_x.x.x_x64_en-US.msi` — instalator MSI (Windows)
+   - `NetRecon IP Scanner_x.x.x_x64-setup.exe` — instalator NSIS (Windows)
+2. Uruchom pobrany plik i postępuj zgodnie z instrukcjami instalatora.
+3. Po instalacji uruchom **NetRecon IP Scanner** ze Start Menu lub skrótu na pulpicie.
+
+---
+
+### Budowanie ze źródeł / Build from source
+
+**Wymagania / Requirements:**
+- [Node.js](https://nodejs.org/) v18+
+- [Rust](https://rustup.rs/) (stable)
+- [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (komponenty C++)
+
+**Kroki / Steps:**
+```bash
+git clone https://github.com/michalstankiewicz4-cell/IPscanner.git
+cd IPscanner
+git checkout tauri
+npm install
+npm run tauri:build
+```
+
+Gotowy plik EXE oraz instalatory pojawią się w:
+`src-tauri/target/release/bundle/`
+
+---
+
 # IPscanner no server, one file, index.html, js, ready to run
 IP address scanner online
 
