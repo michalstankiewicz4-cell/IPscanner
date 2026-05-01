@@ -1,7 +1,7 @@
 "Tauri" - Tauri/Rust - the latest development version https://github.com/michalstankiewicz4-cell/IPscanner/tree/tauri
 
 "main" - JS, HTML - end of development https://github.com/michalstankiewicz4-cell/IPscanner
-or here https://www.programiściszukajcieinnejpracy.pl/
+or here https://www.ipscanner.pl
 
 "files" - JS, HTML, CSS - old end of development https://github.com/michalstankiewicz4-cell/IPscanner/tree/files
 # Projekt amatorski wykonany wyłącznie przy użyciu vibe-codingu w celach naukowych.
