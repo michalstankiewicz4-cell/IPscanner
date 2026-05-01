@@ -10,6 +10,7 @@
     "frontendDist": "../app"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "NetRecon IP Scanner",

@@ -2780,6 +2780,7 @@ function setScanState(on) {
 
 // Tauri invoke helper — falls back to null when running in a plain browser
 const _tauriInvoke = (window.__TAURI_INTERNALS__?.invoke)
+  ?? (window.__TAURI__?.invoke)
   ?? (window.__TAURI__?.core?.invoke)
   ?? null;
 
