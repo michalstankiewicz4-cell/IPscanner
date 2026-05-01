@@ -9,59 +9,32 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background: #008080; /* classic teal desktop */
+  background: #c0c0c0;
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 24px 12px;
+  padding: 0;
   font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif;
   font-size: 11px;
 }
 
-#desktopArt {
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 0;
-}
-
-#desktopArt.ready {
-  display: flex;
-}
-
-#desktopZebra {
-  width: min(58vw, 760px);
-  max-width: 78vw;
-  height: auto;
-  object-fit: contain;
-  opacity: 0.96;
-  transform: translateY(18px);
-  filter: drop-shadow(0 22px 28px rgba(0, 0, 0, 0.28));
-}
-
 /* ── Window frame ── */
 .win95 {
-  width: min(640px, 100%);
+  width: 100%;
   background: #c0c0c0;
-  border-top:    2px solid #ffffff;
-  border-left:   2px solid #ffffff;
-  border-right:  2px solid #808080;
-  border-bottom: 2px solid #808080;
-  box-shadow: 1px 1px 0 #000, inset 1px 1px 0 #dfdfdf;
+  border: none;
+  box-shadow: none;
   user-select: none;
 }
 
 #mainWin {
-  position: fixed;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
   z-index: 20;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Title bar ── */
@@ -527,10 +500,6 @@ body {
 </head>
 <body>
 
-<div id="desktopArt" aria-hidden="true">
-  <img id="desktopZebra" src="./zebrus.png" alt="" onload="this.parentElement.classList.add('ready')" onerror="this.parentElement.remove()"/>
-</div>
-
 <div class="win95" id="mainWin">
   <!-- Title bar -->
   <div class="titlebar">
@@ -734,23 +703,7 @@ body {
   </div><!-- /win-body -->
 </div><!-- /win95 -->
 
-<!-- Scanner desktop icon -->
-<div id="scannerDesktopIcon" style="
-  position:fixed; top:10px; left:10px;
-  width:72px;
-  display:flex; flex-direction:column; align-items:center; gap:3px;
-  cursor:pointer; user-select:none; z-index:8;
-" onclick="openMainWindow()">
-  <div style="font-size:28px;line-height:1;padding:2px">📡</div>
-  <div style="
-    font-family:'MS Sans Serif',Tahoma,sans-serif;
-    font-size:11px; color:#fff;
-    background:transparent;
-    padding:1px 3px;
-    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-    white-space:nowrap;
-  ">IP Scanner</div>
-</div>
+
 
 <!-- Notepad window -->
 <div id="notepadWin" style="
@@ -1310,8 +1263,13 @@ function closeNotepad() {
 }
 
 function closeMainWindow() {
-  const win = document.getElementById('mainWin');
-  if (win) win.style.display = 'none';
+  if (window.__TAURI_INTERNALS__?.invoke || window.__TAURI__?.invoke || window.__TAURI__?.core?.invoke) {
+    const { getCurrentWindow } = window.__TAURI__?.window ?? {};
+    if (getCurrentWindow) { getCurrentWindow().close(); return; }
+    const invoke = window.__TAURI_INTERNALS__?.invoke ?? window.__TAURI__?.core?.invoke ?? window.__TAURI__?.invoke;
+    if (invoke) { invoke('plugin:window|close', { label: 'main' }).catch(() => {}); return; }
+  }
+  window.close();
 }
 
 function openMainWindow() {
