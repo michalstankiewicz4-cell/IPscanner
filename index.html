@@ -455,6 +455,27 @@ body {
 .menu-dd-item:hover { background: #000080; color: #fff; }
 .menu-dd-sep { height: 1px; background: #808080; margin: 2px 4px; box-shadow: 0 1px 0 #fff; }
 
+/* Use the native Tauri window menu on desktop. */
+body.tauri-native-menu .menubar { display: none; }
+body.tauri-native-menu #mainWin > .titlebar { display: none; }
+body.tauri-native-menu #btnGlobe,
+body.tauri-native-menu #btnCmdConsole,
+body.tauri-native-menu #btnMacroToolbar,
+body.tauri-native-menu #btnSpeedToolbar,
+body.tauri-native-menu #btnProtoToolbar,
+body.tauri-native-menu #btnTopologyToolbar {
+  display: inline-flex !important;
+}
+
+/* Tool windows render only their panel and use native titlebar/chrome. */
+body.tool-window-mode {
+  padding: 0;
+  overflow: hidden;
+}
+body.tool-window-mode #mainWin {
+  display: none !important;
+}
+
 /* ── Settings dialog ── */
 .dlg-overlay {
   display: none;
@@ -1280,6 +1301,7 @@ function openMainWindow() {
 }
 
 function openSpeedWindow() {
+  if (openToolNativeWindow('speed')) return;
   const win = document.getElementById('speedWin');
   if (!win) return;
   win.style.display = 'block';
@@ -1287,11 +1309,16 @@ function openSpeedWindow() {
 }
 
 function closeSpeedWindow() {
+  if (_toolMode === 'speed') {
+    closeMainWindow();
+    return;
+  }
   const win = document.getElementById('speedWin');
   if (win) win.style.display = 'none';
 }
 
 function openProtoWindow() {
+  if (openToolNativeWindow('proto')) return;
   const win = document.getElementById('protoWin');
   if (!win) return;
   if (typeof initProtoCanvas === 'function') initProtoCanvas();
@@ -1301,6 +1328,10 @@ function openProtoWindow() {
 }
 
 function closeProtoWindow() {
+  if (_toolMode === 'proto') {
+    closeMainWindow();
+    return;
+  }
   const win = document.getElementById('protoWin');
   if (win) win.style.display = 'none';
 }
@@ -1656,6 +1687,7 @@ function deleteMacroByIndex(originalIndex) {
 }
 
 function openMacroFolder() {
+  if (openToolNativeWindow('macro')) return;
   const win = document.getElementById('macroFolderWin');
   if (!win) return;
   renderMacroFiles();
@@ -1663,6 +1695,10 @@ function openMacroFolder() {
 }
 
 function closeMacroFolder() {
+  if (_toolMode === 'macro') {
+    closeMainWindow();
+    return;
+  }
   const win = document.getElementById('macroFolderWin');
   if (win) win.style.display = 'none';
 }
@@ -2742,6 +2778,136 @@ const _tauriInvoke = (window.__TAURI_INTERNALS__?.invoke)
   ?? (window.__TAURI__?.core?.invoke)
   ?? null;
 
+const _tauriListen = window.__TAURI__?.event?.listen ?? null;
+const _toolMode = (new URLSearchParams((window.location.hash || '').replace(/^#/, ''))).get('tool');
+
+function openToolNativeWindow(tool) {
+  if (!_tauriInvoke || _toolMode) return false;
+  _tauriInvoke('open_tool_window', { tool }).catch(() => {});
+  return true;
+}
+
+function applyToolWindowMode() {
+  if (!_toolMode) return;
+  document.body.classList.add('tool-window-mode');
+
+  const toolToWindow = {
+    console: 'cmdWin',
+    macro: 'macroFolderWin',
+    speed: 'speedWin',
+    proto: 'protoWin',
+    globe: 'globeWin',
+    topology: 'globeWin',
+  };
+
+  const targetId = toolToWindow[_toolMode];
+  const target = targetId ? document.getElementById(targetId) : null;
+  if (!target) return;
+
+  target.style.display = 'block';
+  target.style.position = 'fixed';
+  target.style.top = '0';
+  target.style.left = '0';
+  target.style.width = '100vw';
+  target.style.height = '100vh';
+  target.style.maxWidth = '100vw';
+  target.style.maxHeight = '100vh';
+  target.style.transform = 'none';
+  target.style.zIndex = '1';
+
+  const bar = target.querySelector('.titlebar');
+  if (bar) bar.style.display = 'none';
+
+  if (_toolMode === 'macro' && typeof renderMacroFiles === 'function') {
+    renderMacroFiles();
+  }
+  if (_toolMode === 'console') {
+    if (typeof openCmdConsole === 'function') openCmdConsole();
+  }
+  if (_toolMode === 'proto' && typeof initProtoCanvas === 'function') {
+    initProtoCanvas();
+    if (typeof protoRenderLinks === 'function') protoRenderLinks();
+  }
+  if ((_toolMode === 'globe' || _toolMode === 'topology') && typeof initGlobe === 'function') {
+    if (!globeReady) initGlobe();
+    if (_toolMode === 'topology' && typeof setMapMode === 'function') setMapMode('topology');
+    if (_toolMode === 'globe' && typeof setMapMode === 'function') setMapMode('globe');
+    if (typeof syncMapModeUI === 'function') syncMapModeUI();
+    if (typeof drawCurrentMap === 'function') drawCurrentMap();
+    if (_toolMode === 'globe' && typeof startRotation === 'function') startRotation();
+  }
+}
+
+if (_tauriInvoke) {
+  document.body.classList.add('tauri-native-menu');
+}
+
+window.addEventListener('DOMContentLoaded', applyToolWindowMode);
+
+function handleNativeMenuAction(actionId) {
+  switch (actionId) {
+    case 'scan_start':
+      document.getElementById('btnGo')?.click();
+      break;
+    case 'scan_stop':
+      document.getElementById('btnStop')?.click();
+      break;
+    case 'scan_clear':
+      document.getElementById('btnClear')?.click();
+      break;
+    case 'app_exit':
+      closeMainWindow();
+      break;
+    case 'open_countries':
+      document.getElementById('menuCountries')?.click();
+      break;
+    case 'open_presets':
+      document.getElementById('menuPresets')?.click();
+      break;
+    case 'open_defaults':
+      document.getElementById('menuDefaults')?.click();
+      break;
+    case 'open_lang':
+      document.getElementById('menuLang')?.click();
+      break;
+    case 'open_customize':
+      document.getElementById('menuCustomize')?.click();
+      break;
+    case 'open_globe':
+      document.getElementById('btnGlobe')?.click();
+      break;
+    case 'open_console':
+      document.getElementById('btnCmdConsole')?.click();
+      break;
+    case 'open_macro':
+      document.getElementById('btnMacroToolbar')?.click();
+      break;
+    case 'open_speed':
+      document.getElementById('btnSpeedToolbar')?.click();
+      break;
+    case 'open_proto':
+      document.getElementById('btnProtoToolbar')?.click();
+      break;
+    case 'open_topology':
+      document.getElementById('btnTopologyToolbar')?.click();
+      break;
+    case 'help_versions':
+      document.getElementById('menuVersions')?.click();
+      break;
+    case 'help_about':
+      document.getElementById('menuAbout')?.click();
+      break;
+  }
+}
+
+if (_tauriListen) {
+  _tauriListen('native-menu', event => {
+    if (typeof event?.payload === 'string') {
+      handleNativeMenuAction(event.payload);
+    }
+  }).catch(() => {});
+}
+
 async function probePort(ip, port, ms=1500) {
   if (_tauriInvoke) {
     // Native Rust TCP probe — no CORS restrictions
@@ -3689,6 +3855,7 @@ function appendCmdLog(text) {
 }
 
 function openCmdConsole() {
+  if (openToolNativeWindow('console')) return;
   cmdWin.style.display = 'block';
   if (!cmdOutput.value.trim()) {
     appendCmdLog('Scanner Console gotowa. Uzyj: focus, scan, help.');
@@ -3698,6 +3865,10 @@ function openCmdConsole() {
 }
 
 function closeCmdConsole() {
+  if (_toolMode === 'console') {
+    closeMainWindow();
+    return;
+  }
   cmdWin.style.display = 'none';
   cmdMenuMacroDrop.style.display = 'none';
 }
@@ -4452,6 +4623,7 @@ const ISO_NAMES = {
 };
 
 function openGlobe() {
+  if (openToolNativeWindow('globe')) return;
   const win = document.getElementById('globeWin');
   win.style.display = 'block';
   if (!globeReady) initGlobe();
@@ -4463,6 +4635,7 @@ function openGlobe() {
 }
 
 function openTopology() {
+  if (openToolNativeWindow('topology')) return;
   const win = document.getElementById('globeWin');
   win.style.display = 'block';
   if (!globeReady) initGlobe();
@@ -4470,6 +4643,10 @@ function openTopology() {
 }
 
 function closeGlobe() {
+  if (_toolMode === 'globe' || _toolMode === 'topology') {
+    closeMainWindow();
+    return;
+  }
   document.getElementById('globeWin').style.display = 'none';
   stopRotation();
 }

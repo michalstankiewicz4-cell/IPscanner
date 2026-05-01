@@ -10,7 +10,8 @@ use std::sync::{
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::menu::{Menu, MenuBuilder, SubmenuBuilder};
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
@@ -219,6 +220,38 @@ fn get_local_subnets() -> Vec<String> {
     out
 }
 
+#[tauri::command]
+async fn open_tool_window(app: AppHandle, tool: String) -> Result<(), String> {
+    let tool = tool.trim().to_lowercase();
+    let (label, title, width, height) = match tool.as_str() {
+        "console" => ("tool-console", "NetRecon - Command Console", 760.0, 440.0),
+        "macro" => ("tool-macro", "NetRecon - Macro Folder", 620.0, 420.0),
+        "speed" => ("tool-speed", "NetRecon - Speed Test", 560.0, 340.0),
+        "proto" => ("tool-proto", "NetRecon - Prototype", 980.0, 680.0),
+        "globe" => ("tool-globe", "NetRecon - World Map", 1060.0, 740.0),
+        "topology" => ("tool-topology", "NetRecon - Topology", 1060.0, 740.0),
+        _ => return Err(format!("Unsupported tool window: {tool}")),
+    };
+
+    if let Some(win) = app.get_webview_window(label) {
+        let _ = win.show();
+        let _ = win.unminimize();
+        let _ = win.set_focus();
+        return Ok(());
+    }
+
+    let url = WebviewUrl::App(format!("index.html#tool={tool}").into());
+    let builder = WebviewWindowBuilder::new(&app, label, url)
+        .title(title)
+        .inner_size(width, height)
+        .min_inner_size(480.0, 320.0)
+        .resizable(true);
+
+    let win = builder.build().map_err(|e| e.to_string())?;
+    let _ = win.set_focus();
+    Ok(())
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 fn ip_to_u32(ip: &str) -> Result<u32, String> {
@@ -233,11 +266,83 @@ fn u32_to_ip(n: u32) -> String {
     format!("{}.{}.{}.{}", a, b, c, d)
 }
 
+const NATIVE_MENU_IDS: &[&str] = &[
+    "scan_start",
+    "scan_stop",
+    "scan_clear",
+    "app_exit",
+    "open_countries",
+    "open_presets",
+    "open_defaults",
+    "open_lang",
+    "open_customize",
+    "open_globe",
+    "open_console",
+    "open_macro",
+    "open_speed",
+    "open_proto",
+    "open_topology",
+    "help_versions",
+    "help_about",
+];
+
+fn build_native_menu<R: tauri::Runtime, M: Manager<R>>(manager: &M) -> tauri::Result<Menu<R>> {
+    let scan_menu = SubmenuBuilder::new(manager, "Scan")
+        .text("scan_start", "Start")
+        .text("scan_stop", "Stop")
+        .text("scan_clear", "Clear")
+        .separator()
+        .text("app_exit", "Exit")
+        .build()?;
+
+    let options_menu = SubmenuBuilder::new(manager, "Options")
+        .text("open_countries", "Country IP Library...")
+        .text("open_presets", "Port Presets...")
+        .text("open_defaults", "Default Scan Values...")
+        .separator()
+        .text("open_lang", "Language...")
+        .separator()
+        .text("open_customize", "Customization...")
+        .build()?;
+
+    let tools_menu = SubmenuBuilder::new(manager, "Tools")
+        .text("open_globe", "World Map")
+        .text("open_console", "Command Console")
+        .text("open_macro", "Macro Folder")
+        .text("open_speed", "Speed Test")
+        .text("open_proto", "Prototype")
+        .text("open_topology", "Topology")
+        .build()?;
+
+    let help_menu = SubmenuBuilder::new(manager, "Help")
+        .text("help_versions", "Versions")
+        .text("help_about", "About")
+        .build()?;
+
+    MenuBuilder::new(manager)
+        .item(&scan_menu)
+        .item(&options_menu)
+        .item(&tools_menu)
+        .item(&help_menu)
+        .build()
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 fn main() {
     tauri::Builder::default()
         .manage(Arc::new(ScanState { stop: AtomicBool::new(false) }))
+        .setup(|app| {
+            let menu = build_native_menu(app)?;
+            app.set_menu(menu)?;
+            Ok(())
+        })
+        .on_menu_event(|app, event| {
+            let id = event.id().as_ref();
+            if NATIVE_MENU_IDS.contains(&id) {
+                let _ = app.emit("native-menu", id.to_string());
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             scan_port,
             scan_range,
@@ -245,6 +350,7 @@ fn main() {
             geo_lookup,
             get_local_ip,
             get_local_subnets,
+            open_tool_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
