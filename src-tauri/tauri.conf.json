@@ -5,9 +5,9 @@
   "identifier": "com.netrecon.ipscanner",
   "build": {
     "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "",
+    "beforeBuildCommand": "npm run prepare:app",
     "devUrl": "http://localhost:1420",
-    "frontendDist": ".."
+    "frontendDist": "../app"
   },
   "app": {
     "windows": [
@@ -25,6 +25,8 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": []
+    "icon": [
+      "icons/icon.ico"
+    ]
   }
 }
