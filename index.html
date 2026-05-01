@@ -535,7 +535,7 @@ body {
   <!-- Title bar -->
   <div class="titlebar">
     <span class="icon">📡</span>
-    <span class="title">NetRecon IP Scanner v1.3p</span>
+    <span class="title">NetRecon IP Scanner v1.4p</span>
     <div class="titlebar-btns">
       <div class="title-btn">_</div>
       <div class="title-btn">□</div>
@@ -553,6 +553,8 @@ body {
         <div class="menu-dd-item" id="menuDefaults" data-i18n="menuDefaults">Default Scan Values...</div>
         <div class="menu-dd-sep"></div>
         <div class="menu-dd-item" id="menuLang" data-i18n="menuLanguage">Language...</div>
+        <div class="menu-dd-sep"></div>
+        <div class="menu-dd-item" id="menuCustomize">🎛 Customization...</div>
       </div>
     </div>
     <div class="menu-item" id="menuHelp"><span data-i18n="menuHelp">Help</span>
@@ -572,6 +574,9 @@ body {
       <button class="btn95" id="btnClear" data-i18n="btnClear">✕ Clear</button>
       <button class="btn95" id="btnGlobe" title="World Map">🌍</button>
       <button class="btn95" id="btnCmdConsole" title="Command Console">⌨ Console</button>
+      <button class="btn95" id="btnMacroToolbar" title="Macro Folder">📁 Macro</button>
+      <button class="btn95" id="btnSpeedToolbar" title="Speed Test">📶 Speed</button>
+      <button class="btn95" id="btnProtoToolbar" title="Prototype">🧩 Prototype</button>
       <div style="flex:1"></div>
       <span id="statTime" style="font-size:10px;color:#000080;font-weight:bold">0.0s</span>
     </div>
@@ -744,98 +749,6 @@ body {
     text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
     white-space:nowrap;
   ">IP Scanner</div>
-</div>
-
-<!-- Speed test desktop icon -->
-<div id="speedDesktopIcon" style="
-  position:fixed; top:10px; left:92px;
-  width:72px;
-  display:flex; flex-direction:column; align-items:center; gap:3px;
-  cursor:pointer; user-select:none; z-index:8;
-" onclick="openSpeedWindow()">
-  <div style="font-size:28px;line-height:1;padding:2px">📶</div>
-  <div style="
-    font-family:'MS Sans Serif',Tahoma,sans-serif;
-    font-size:11px; color:#fff;
-    background:transparent;
-    padding:1px 3px;
-    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-    white-space:nowrap;
-  ">Speed Test</div>
-</div>
-
-<!-- Visual language prototype desktop icon -->
-<div id="protoDesktopIcon" style="
-  position:fixed; top:10px; left:174px;
-  width:72px;
-  display:flex; flex-direction:column; align-items:center; gap:3px;
-  cursor:pointer; user-select:none; z-index:8;
-" onclick="openProtoWindow()">
-  <div style="font-size:28px;line-height:1;padding:2px">🧩</div>
-  <div style="
-    font-family:'MS Sans Serif',Tahoma,sans-serif;
-    font-size:11px; color:#fff;
-    background:transparent;
-    padding:1px 3px;
-    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-    white-space:nowrap;
-  ">Prototype</div>
-</div>
-
-<!-- Macro folder desktop icon -->
-<div id="macroFolderIcon" style="
-  position:fixed; top:72px; left:10px;
-  width:72px;
-  display:flex; flex-direction:column; align-items:center; gap:3px;
-  cursor:pointer; user-select:none; z-index:8;
-" onclick="openMacroFolder()">
-  <div style="font-size:28px;line-height:1;padding:2px">📁</div>
-  <div style="
-    font-family:'MS Sans Serif',Tahoma,sans-serif;
-    font-size:11px; color:#fff;
-    background:transparent;
-    padding:1px 3px;
-    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-    white-space:nowrap;
-  ">Makra</div>
-</div>
-
-<!-- Inventory desktop icon -->
-<div id="inventoryDesktopIcon" style="
-  position:fixed; top:134px; left:10px;
-  width:72px;
-  display:flex; flex-direction:column; align-items:center; gap:3px;
-  cursor:default; user-select:none; z-index:8;
-">
-  <div style="font-size:28px;line-height:1;padding:2px">🗂️</div>
-  <div style="
-    font-family:'MS Sans Serif',Tahoma,sans-serif;
-    font-size:11px; color:#fff;
-    background:transparent;
-    padding:1px 3px;
-    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-    white-space:nowrap;
-  ">inventory</div>
-</div>
-
-<!-- Desktop icon -->
-<div id="desktopIcon" style="
-  position:fixed; bottom:28px; right:28px;
-  display:flex; flex-direction:column; align-items:center; gap:3px;
-  cursor:pointer; user-select:none;
-" onclick="openNotepad()">
-  <div id="iconImg" style="
-    font-size:32px; line-height:1;
-    padding:2px;
-  ">📝</div>
-  <div id="iconLabel" style="
-    font-family:'MS Sans Serif',Tahoma,sans-serif;
-    font-size:11px; color:#fff;
-    background:transparent;
-    padding:1px 3px;
-    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-    white-space:nowrap;
-  ">Notatnik</div>
 </div>
 
 <!-- Notepad window -->
@@ -1320,7 +1233,7 @@ function openNotepad() {
   document.getElementById('notepadWin').style.display = 'block';
   document.getElementById('notepadText').value =
 `================================================================
-  NetRecon IP Scanner v1.3p
+  NetRecon IP Scanner v1.4p
   by Michał Stankiewicz
 ================================================================
 
@@ -2135,6 +2048,10 @@ document.addEventListener('DOMContentLoaded', () => {
         border-right:1px solid #fff;border-bottom:1px solid #fff;
         padding:8px 10px;font-size:11px;line-height:1.45;
       ">
+        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.4p</div>
+        <div style="margin-bottom:8px">
+          Moved Speed Test and Prototype from desktop icons to toolbar buttons. Added Show/Hide toggles for both in the Customization dialog.
+        </div>
         <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.3p</div>
         <div style="margin-bottom:8px">
           Added a visual programming prototype window with draggable nodes, anchor points, and click-click line linking mode.
@@ -2150,6 +2067,47 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
     <div class="dlg-footer">
       <button class="btn95" id="dlgVersionsCloseBtn" data-i18n="dlgClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Customization dialog -->
+<div class="dlg-overlay" id="dlgCustomizeOverlay">
+  <div class="dlg95" style="min-width:300px">
+    <div class="dlg-title">
+      <span>🎛</span>
+      <span style="flex:1">Customization – Toolbar</span>
+      <div class="title-btn" onclick="closeCustomizeDlg()">✕</div>
+    </div>
+    <div class="dlg-body">
+      <div class="dlg-groupbox">
+        <span class="dlg-groupbox-legend">Toolbar buttons</span>
+        <div style="display:flex;flex-direction:column;gap:7px;margin-top:2px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="chkBtnGlobe" checked/>
+            <span>🌍 Globe (World Map)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="chkBtnConsole" checked/>
+            <span>⌨ Console</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="chkBtnMacro" checked/>
+            <span>📁 Macro</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="chkBtnSpeed" checked/>
+            <span>📶 Speed Test</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="chkBtnProto" checked/>
+            <span>🧩 Prototype</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" onclick="closeCustomizeDlg()">Close</button>
     </div>
   </div>
 </div>
@@ -2463,6 +2421,52 @@ document.getElementById('menuAbout').addEventListener('click', () => {
   openNotepad();
 });
 document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
+
+// ══════════════════════════════════════════════════
+//  CUSTOMIZATION
+// ══════════════════════════════════════════════════
+const TOOLBAR_BTNS_CFG = [
+  { chk: 'chkBtnGlobe',   id: 'btnGlobe',        key: 'tb_globe' },
+  { chk: 'chkBtnConsole', id: 'btnCmdConsole',   key: 'tb_console' },
+  { chk: 'chkBtnMacro',   id: 'btnMacroToolbar', key: 'tb_macro' },
+  { chk: 'chkBtnSpeed',   id: 'btnSpeedToolbar', key: 'tb_speed' },
+  { chk: 'chkBtnProto',   id: 'btnProtoToolbar', key: 'tb_proto' },
+];
+
+function applyToolbarCustomization() {
+  TOOLBAR_BTNS_CFG.forEach(({ id, key }) => {
+    const hidden = localStorage.getItem(key) === '0';
+    const btn = document.getElementById(id);
+    if (btn) btn.style.display = hidden ? 'none' : '';
+  });
+}
+
+function openCustomizeDlg() {
+  TOOLBAR_BTNS_CFG.forEach(({ chk, key }) => {
+    const el = document.getElementById(chk);
+    if (el) el.checked = localStorage.getItem(key) !== '0';
+  });
+  document.getElementById('dlgCustomizeOverlay').classList.add('open');
+}
+function closeCustomizeDlg() {
+  TOOLBAR_BTNS_CFG.forEach(({ chk, key }) => {
+    const el = document.getElementById(chk);
+    if (el) localStorage.setItem(key, el.checked ? '1' : '0');
+  });
+  applyToolbarCustomization();
+  document.getElementById('dlgCustomizeOverlay').classList.remove('open');
+}
+
+document.getElementById('menuCustomize').addEventListener('click', () => {
+  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+  openCustomizeDlg();
+});
+
+document.getElementById('btnMacroToolbar').addEventListener('click', openMacroFolder);
+document.getElementById('btnSpeedToolbar').addEventListener('click', openSpeedWindow);
+document.getElementById('btnProtoToolbar').addEventListener('click', openProtoWindow);
+
+applyToolbarCustomization();
 
 // ══════════════════════════════════════════════════
 //  PORT PRESETS
