@@ -2787,8 +2787,17 @@ const _tauriInvoke = (window.__TAURI_INTERNALS__?.invoke)
 async function probePort(ip, port, ms=1500) {
   if (_tauriInvoke) {
     // Native Rust TCP probe — no CORS restrictions
-    const r = await _tauriInvoke('scan_port', { ip, port, timeoutMs: ms });
-    return { ok: r.open, ms: r.ms ?? null };
+    try {
+      const r = await _tauriInvoke('scan_port', { ip, port, timeoutMs: ms });
+      return { ok: r.open, ms: r.ms ?? null };
+    } catch (e) {
+      if (!window.__scanInvokeWarned) {
+        window.__scanInvokeWarned = true;
+        const msg = (e && e.message) ? e.message : String(e);
+        setStatus(`Tauri invoke error: ${msg}`, 'err');
+      }
+      return { ok: false, ms: null };
+    }
   }
   // Browser fallback (used when opening index.html directly)
   const ctrl = new AbortController();
@@ -3552,6 +3561,7 @@ btnLocalSubnets.addEventListener('click', async () => {
 
 // ══════════════════════════════════════════════════
 async function startScan() {
+  window.__scanInvokeWarned = false;
   const startIp=getIP('f'), endIp=getIP('t');
   if (!isIPv4(startIp)||!isIPv4(endIp)) { setStatus(t('errInvalidIp'),'err'); return; }
   const startNum=ipToNum(startIp), endNum=ipToNum(endIp);
