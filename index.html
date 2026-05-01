@@ -2777,7 +2777,19 @@ function setScanState(on) {
 // ══════════════════════════════════════════════════
 //  PROBE
 // ══════════════════════════════════════════════════
+
+// Tauri invoke helper — falls back to null when running in a plain browser
+const _tauriInvoke = (window.__TAURI_INTERNALS__?.invoke)
+  ?? (window.__TAURI__?.core?.invoke)
+  ?? null;
+
 async function probePort(ip, port, ms=1500) {
+  if (_tauriInvoke) {
+    // Native Rust TCP probe — no CORS restrictions
+    const r = await _tauriInvoke('scan_port', { ip, port, timeoutMs: ms });
+    return { ok: r.open, ms: r.ms ?? null };
+  }
+  // Browser fallback (used when opening index.html directly)
   const ctrl = new AbortController();
   activeControllers.add(ctrl);
   const tid = setTimeout(()=>ctrl.abort(), ms);
@@ -2811,12 +2823,18 @@ function isPrivateIP(ip) {
 // ── Geolocation via ip-api.com ──
 async function geoLookup(ip) {
   try {
-    const r = await fetch(
-      `http://ip-api.com/json/${ip}?fields=status,country,city,isp,org,proxy,hosting,as,lat,lon`,
-      { signal: AbortSignal.timeout(4000) }
-    );
-    const d = await r.json();
-    if (d.status === 'success') {
+    let d;
+    if (_tauriInvoke) {
+      // Rust handles the HTTP request — no CORS/mixed-content issues
+      d = await _tauriInvoke('geo_lookup', { ip });
+    } else {
+      const r = await fetch(
+        `http://ip-api.com/json/${ip}?fields=status,country,city,isp,org,proxy,hosting,as,lat,lon`,
+        { signal: AbortSignal.timeout(4000) }
+      );
+      d = await r.json();
+    }
+    if (d && d.status === 'success') {
       if (d.lat && d.lon) {
         ipGeoCoords[ip] = { lat: d.lat, lon: d.lon, country: d.country };
         updateGlobeDots();
@@ -3633,6 +3651,7 @@ btnGo.addEventListener('click',()=>{
 });
 btnStop.addEventListener('click',()=>{
   stopRequested=true; activeControllers.forEach(c=>c.abort());
+  if (_tauriInvoke) _tauriInvoke('stop_scan').catch(()=>{});
 });
 btnClear.addEventListener('click',()=>{
   foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
