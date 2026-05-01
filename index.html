@@ -577,6 +577,7 @@ body {
       <button class="btn95" id="btnMacroToolbar" title="Macro Folder">📁 Macro</button>
       <button class="btn95" id="btnSpeedToolbar" title="Speed Test">📶 Speed</button>
       <button class="btn95" id="btnProtoToolbar" title="Prototype">🧩 Prototype</button>
+      <button class="btn95" id="btnTopologyToolbar" title="Topology">🕸 Topology</button>
       <div style="flex:1"></div>
       <span id="statTime" style="font-size:10px;color:#000080;font-weight:bold">0.0s</span>
     </div>
@@ -2103,6 +2104,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <input type="checkbox" id="chkBtnProto" checked/>
             <span>🧩 Prototype</span>
           </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="chkBtnTopology" checked/>
+            <span>🕸 Topology</span>
+          </label>
         </div>
       </div>
     </div>
@@ -2429,8 +2434,9 @@ const TOOLBAR_BTNS_CFG = [
   { chk: 'chkBtnGlobe',   id: 'btnGlobe',        key: 'tb_globe' },
   { chk: 'chkBtnConsole', id: 'btnCmdConsole',   key: 'tb_console' },
   { chk: 'chkBtnMacro',   id: 'btnMacroToolbar', key: 'tb_macro' },
-  { chk: 'chkBtnSpeed',   id: 'btnSpeedToolbar', key: 'tb_speed' },
-  { chk: 'chkBtnProto',   id: 'btnProtoToolbar', key: 'tb_proto' },
+  { chk: 'chkBtnSpeed',      id: 'btnSpeedToolbar',    key: 'tb_speed' },
+  { chk: 'chkBtnProto',      id: 'btnProtoToolbar',    key: 'tb_proto' },
+  { chk: 'chkBtnTopology',   id: 'btnTopologyToolbar', key: 'tb_topology' },
 ];
 
 function applyToolbarCustomization() {
@@ -2700,7 +2706,7 @@ function setIP(prefix, ip) {
 // ══════════════════════════════════════════════════
 let scanning=false, stopRequested=false;
 const activeControllers = new Set();
-let foundHostsMap={}, foundPingMap={}, totalFound=0, totalOpenPorts=0;
+var foundHostsMap={}, foundPingMap={}, totalFound=0, totalOpenPorts=0;
 let timerInterval=null, scanStart=0;
 let selectedRowEl=null, ctxTargetIp='', ctxTargetPorts=[];
 let focusedIp = localStorage.getItem('netrecon_focus_ip') || '';
@@ -4448,6 +4454,13 @@ function openGlobe() {
   }
 }
 
+function openTopology() {
+  const win = document.getElementById('globeWin');
+  win.style.display = 'block';
+  if (!globeReady) initGlobe();
+  setMapMode('topology');
+}
+
 function closeGlobe() {
   document.getElementById('globeWin').style.display = 'none';
   stopRotation();
@@ -5213,6 +5226,7 @@ function updateGlobeDots() {
 
 // ── Globe button ──
 document.getElementById('btnGlobe').addEventListener('click', openGlobe);
+document.getElementById('btnTopologyToolbar').addEventListener('click', openTopology);
 document.getElementById('btnMapGlobe').addEventListener('click', () => setMapMode('globe'));
 document.getElementById('btnMapTopology').addEventListener('click', () => setMapMode('topology'));
 document.getElementById('btnImportTrace').addEventListener('click', () => {
