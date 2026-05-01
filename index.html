@@ -3309,6 +3309,15 @@ const localSubnetSelect = document.getElementById('localSubnetSelect');
 const btnUseLocalSubnet = document.getElementById('btnUseLocalSubnet');
 
 async function detectLocalIP() {
+  if (_tauriInvoke) {
+    try {
+      const ip = await _tauriInvoke('get_local_ip');
+      if (ip && isPrivateIpv4(ip)) return ip;
+      throw new Error('No local private IPv4 found');
+    } catch (err) {
+      // Fall through to WebRTC fallback for browser mode / dev diagnostics.
+    }
+  }
   return new Promise((resolve, reject) => {
     if (!window.RTCPeerConnection) {
       reject(new Error('RTCPeerConnection unavailable'));
@@ -3408,6 +3417,17 @@ function ipToSubnetBase(ip) {
 }
 
 async function detectLocalSubnets() {
+  if (_tauriInvoke) {
+    try {
+      const subnets = await _tauriInvoke('get_local_subnets');
+      if (Array.isArray(subnets)) {
+        return [...new Set(subnets.filter(Boolean))]
+          .sort((a, b) => ipToNum(a + '.0') - ipToNum(b + '.0'));
+      }
+    } catch (err) {
+      // Fall through to WebRTC fallback for browser mode / dev diagnostics.
+    }
+  }
   return new Promise((resolve, reject) => {
     if (!window.RTCPeerConnection) {
       reject(new Error('RTCPeerConnection unavailable'));

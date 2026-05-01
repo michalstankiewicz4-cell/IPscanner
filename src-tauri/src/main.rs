@@ -173,6 +173,52 @@ async fn geo_lookup(ip: String) -> Option<GeoResult> {
     if geo.status == "success" { Some(geo) } else { None }
 }
 
+/// Returns first detected private IPv4 on active non-loopback interfaces.
+#[tauri::command]
+fn get_local_ip() -> Option<String> {
+    let ifaces = if_addrs::get_if_addrs().ok()?;
+    for iface in ifaces {
+        if iface.is_loopback() {
+            continue;
+        }
+        if let if_addrs::IfAddr::V4(v4) = iface.addr {
+            let o = v4.ip.octets();
+            let is_private = o[0] == 10
+                || (o[0] == 172 && (16..=31).contains(&o[1]))
+                || (o[0] == 192 && o[1] == 168);
+            if is_private {
+                return Some(v4.ip.to_string());
+            }
+        }
+    }
+    None
+}
+
+/// Returns unique local /24 subnet bases (e.g. 192.168.1) from active interfaces.
+#[tauri::command]
+fn get_local_subnets() -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    if let Ok(ifaces) = if_addrs::get_if_addrs() {
+        for iface in ifaces {
+            if iface.is_loopback() {
+                continue;
+            }
+            if let if_addrs::IfAddr::V4(v4) = iface.addr {
+                let o = v4.ip.octets();
+                let is_private = o[0] == 10
+                    || (o[0] == 172 && (16..=31).contains(&o[1]))
+                    || (o[0] == 192 && o[1] == 168);
+                if is_private {
+                    out.push(format!("{}.{}.{}", o[0], o[1], o[2]));
+                }
+            }
+        }
+    }
+    out.sort_by_key(|b| ip_to_u32(&format!("{}.0", b)).unwrap_or(u32::MAX));
+    out.dedup();
+    out
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 fn ip_to_u32(ip: &str) -> Result<u32, String> {
@@ -197,6 +243,8 @@ fn main() {
             scan_range,
             stop_scan,
             geo_lookup,
+            get_local_ip,
+            get_local_subnets,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
