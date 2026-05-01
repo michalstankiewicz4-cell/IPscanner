@@ -39,13 +39,8 @@ Gotowy plik EXE oraz instalatory pojawią się w:
 # IPscanner no server, one file, index.html, js, ready to run
 IP address scanner online
 
-<img width="1042" height="852" alt="image" src="https://github.com/user-attachments/assets/c7b0f7dd-f0b3-4882-aaed-b8c919045ea1" />
-.
-<img width="1917" height="898" alt="image" src="https://github.com/user-attachments/assets/e1a90638-6705-48fc-9b84-6c1a6aeb9546" />
-.
-<img width="917" height="528" alt="image" src="https://github.com/user-attachments/assets/5ade17d3-3828-41a0-b6ac-b8ebfe07274b" />
-.
-<img width="1072" height="838" alt="image" src="https://github.com/user-attachments/assets/94146e40-5993-4cbd-9333-e0390b89f56d" />
+<img width="1919" height="1123" alt="image" src="https://github.com/user-attachments/assets/da967cbe-8a51-444f-97eb-cd87cbe66657" />
+
 
 W przygotowaniu/soon: (in windows application)
 
