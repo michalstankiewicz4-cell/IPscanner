@@ -8,7 +8,7 @@ IP address scanner online
 .
 <img width="1917" height="898" alt="image" src="https://github.com/user-attachments/assets/e1a90638-6705-48fc-9b84-6c1a6aeb9546" />
 .
-<img width="1904" height="939" alt="image" src="https://github.com/user-attachments/assets/126bba66-fd0a-47dd-b6cb-07b2c10a0041" />
+<img width="917" height="528" alt="image" src="https://github.com/user-attachments/assets/5ade17d3-3828-41a0-b6ac-b8ebfe07274b" />
 .
 <img width="1072" height="838" alt="image" src="https://github.com/user-attachments/assets/94146e40-5993-4cbd-9333-e0390b89f56d" />
 
