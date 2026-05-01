@@ -1,0 +1,14 @@
+{
+  "name": "ipscanner-tauri",
+  "private": true,
+  "version": "1.4.0",
+  "scripts": {
+    "dev": "npx http-server . -p 1420 -c-1",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
+    "http-server": "^14.1.1"
+  }
+}
