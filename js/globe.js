@@ -761,12 +761,13 @@ function importTraceRoute() {
 }
 
 async function autoTraceRoute() {
-  const targetIp = document.getElementById('traceTargetIp').value.trim();
+  const targetInput = document.getElementById('traceTargetIp');
+  const target = targetInput.value.trim();
   const status = document.getElementById('traceParseStatus');
   const btn = document.getElementById('btnTraceAuto');
 
-  if (!isIPv4(targetIp)) {
-    status.textContent = t('traceErrTarget');
+  if (!target) {
+    status.textContent = t('traceErrTargetOrHost');
     status.style.color = '#c00';
     return;
   }
@@ -782,8 +783,13 @@ async function autoTraceRoute() {
   status.style.color = '#000080';
 
   try {
-    const output = await _tauriInvoke('run_traceroute', { targetIp });
-    document.getElementById('traceInput').value = output || '';
+    const result = await _tauriInvoke('run_traceroute', { target });
+    const output = (result && typeof result === 'object') ? (result.output || '') : String(result || '');
+    const resolvedIp = (result && typeof result === 'object')
+      ? (result.resolved_ip || result.resolvedIp || '')
+      : '';
+    if (resolvedIp) targetInput.value = resolvedIp;
+    document.getElementById('traceInput').value = output;
     importTraceRoute();
   } catch (err) {
     const msg = (err && err.message) ? err.message : String(err || 'unknown error');

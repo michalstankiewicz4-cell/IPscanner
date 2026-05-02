@@ -12,6 +12,7 @@ use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
+use tokio::net::lookup_host;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
@@ -57,6 +58,12 @@ pub struct GeoResult {
     pub hosting: Option<bool>,
     pub lat: Option<f64>,
     pub lon: Option<f64>,
+}
+
+#[derive(Serialize, Clone)]
+struct TraceRunResult {
+    output: String,
+    resolved_ip: String,
 }
 
 // ─── Commands ────────────────────────────────────────────────────────────────
@@ -230,26 +237,27 @@ fn get_local_subnets() -> Vec<String> {
 }
 
 #[tauri::command]
-async fn run_traceroute(target_ip: String) -> Result<String, String> {
-    let ip = target_ip.trim().to_string();
-    match IpAddr::from_str(&ip) {
-        Ok(IpAddr::V4(_)) => {}
-        Ok(IpAddr::V6(_)) => return Err("IPv6 is not supported for traceroute in this tool".into()),
-        Err(_) => return Err("Invalid target IP".into()),
+async fn run_traceroute(target: String) -> Result<TraceRunResult, String> {
+    let raw_target = target.trim();
+    if raw_target.is_empty() {
+        return Err("Target is empty".into());
     }
+
+    let ip = resolve_target_ipv4(raw_target).await?;
+    let trace_target = ip.clone();
 
     let output = tokio::task::spawn_blocking(move || {
         #[cfg(target_os = "windows")]
         {
             Command::new("tracert")
-                .args(["-d", "-h", "20", "-w", "800", ip.as_str()])
+                .args(["-d", "-h", "20", "-w", "800", trace_target.as_str()])
                 .output()
         }
 
         #[cfg(not(target_os = "windows"))]
         {
             Command::new("traceroute")
-                .args(["-n", "-m", "20", "-w", "1", ip.as_str()])
+                .args(["-n", "-m", "20", "-w", "1", trace_target.as_str()])
                 .output()
         }
     })
@@ -269,7 +277,10 @@ async fn run_traceroute(target_ip: String) -> Result<String, String> {
         return Err("Traceroute returned no output".into());
     }
 
-    Ok(combined)
+    Ok(TraceRunResult {
+        output: combined,
+        resolved_ip: ip,
+    })
 }
 
 #[tauri::command]
@@ -360,6 +371,27 @@ fn close_tool_windows(app: &AppHandle) {
             let _ = win.close();
         }
     }
+}
+
+async fn resolve_target_ipv4(target: &str) -> Result<String, String> {
+    match IpAddr::from_str(target) {
+        Ok(IpAddr::V4(v4)) => return Ok(v4.to_string()),
+        Ok(IpAddr::V6(_)) => return Err("IPv6 is not supported for traceroute in this tool".into()),
+        Err(_) => {}
+    }
+
+    let query = format!("{}:0", target);
+    let mut addrs = lookup_host(query)
+        .await
+        .map_err(|e| format!("DNS resolve failed: {}", e))?;
+
+    if let Some(addr) = addrs.find(|sa| matches!(sa.ip(), IpAddr::V4(_))) {
+        if let IpAddr::V4(v4) = addr.ip() {
+            return Ok(v4.to_string());
+        }
+    }
+
+    Err("No IPv4 address found for this hostname".into())
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
