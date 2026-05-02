@@ -68,6 +68,37 @@ body {
   filter: drop-shadow(0 22px 28px rgba(0, 0, 0, 0.28));
 }
 
+#desktopGraffiti {
+  position: absolute;
+  right: 100px;
+  bottom: 100px;
+  transform: rotate(-7deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: rgba(220, 25, 25, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: "Comic Sans MS", "Comic Sans", cursive;
+  font-weight: 700;
+  font-size: clamp(24px, 4.3vw, 62px);
+  line-height: 0.95;
+  text-shadow: none;
+  opacity: 0.86;
+  pointer-events: none;
+}
+
+#desktopGraffiti .graffiti-line {
+  display: inline-block;
+}
+
+#desktopGraffiti .line2 {
+  margin-top: 2px;
+  color: rgba(220, 25, 25, 0.88);
+  transform: rotate(-1.2deg);
+}
+
 /* ── Window frame ── */
 .win95 {
   width: min(640px, 100%);
@@ -698,6 +729,10 @@ body.skin-glass .statusbar {
 
 <div id="desktopArt" aria-hidden="true">
   <img id="desktopZebra" src="./zebrus.png" alt="" onload="this.parentElement.classList.add('ready')" onerror="this.parentElement.remove()"/>
+  <div id="desktopGraffiti">
+    <div class="graffiti-line" data-text="Programiści go">Programiści go</div>
+    <div class="graffiti-line line2" data-text="nienawidzą">nienawidzą</div>
+  </div>
 </div>
 
 <div class="win95" id="mainWin">
