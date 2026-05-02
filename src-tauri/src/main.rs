@@ -221,6 +221,14 @@ fn get_local_subnets() -> Vec<String> {
 }
 
 #[tauri::command]
+fn open_browser(url: String) {
+    // Open URL in system default browser (Windows)
+    let _ = std::process::Command::new("cmd")
+        .args(["/c", "start", "", url.as_str()])
+        .spawn();
+}
+
+#[tauri::command]
 async fn open_tool_window(app: AppHandle, tool: String) -> Result<(), String> {
     let tool = tool.trim().to_lowercase();
     let (label, title, width, height) = match tool.as_str() {
@@ -351,6 +359,7 @@ fn main() {
             get_local_ip,
             get_local_subnets,
             open_tool_window,
+            open_browser,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

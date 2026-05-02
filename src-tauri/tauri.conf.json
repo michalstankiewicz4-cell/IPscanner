@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "NetRecon IP Scanner",
+        "title": "NetRecon IP Scanner 1.5 alpha",
         "width": 900,
         "height": 620,
         "center": true,
