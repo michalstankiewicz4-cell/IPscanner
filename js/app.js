@@ -1293,6 +1293,26 @@ function setIP(prefix, ip) {
 }
 
 // ══════════════════════════════════════════════════
+//  GLOBE STATE (declared early to avoid TDZ across merged script blocks)
+// ══════════════════════════════════════════════════
+const ipGeoCoords = {}; // ip → { lat, lon, country }
+let globeReady = false;
+let globeCtx, globeProjection, globePath;
+let globeCountries = null, globeBorders = null, globeLand = null;
+let globeWidth = 680, globeHeight = 440;
+let globeMapDataReady = false;
+let autoRotateOn = true;
+let rafId = null;
+let isDragging = false, lastDragX = 0, lastDragY = 0;
+let currentLambda = 20, currentPhi = -15; // rotation angles
+let hoveredCountryName = null;
+let clickedDotIp = null;
+let mapMode = 'globe';
+let topologyHitTargets = [];
+let traceRoutes = {};
+const topologyFilters = { port: '', subnet: '', pingMax: '' };
+
+// ══════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════
 let scanning=false, stopRequested=false;
@@ -3142,22 +3162,6 @@ applyScanDefaultsToMainInputs(loadScanDefaults());
 // ══════════════════════════════════════════════════
 //  GLOBE
 // ══════════════════════════════════════════════════
-const ipGeoCoords = {}; // ip → { lat, lon, country }
-let globeReady = false;
-let globeCtx, globeProjection, globePath;
-let globeCountries = null, globeBorders = null, globeLand = null;
-let globeWidth = 680, globeHeight = 440;
-let globeMapDataReady = false;
-let autoRotateOn = true;
-let rafId = null;
-let isDragging = false, lastDragX = 0, lastDragY = 0;
-let currentLambda = 20, currentPhi = -15; // rotation angles
-let hoveredCountryName = null;
-let clickedDotIp = null;
-let mapMode = 'globe';
-let topologyHitTargets = [];
-let traceRoutes = {};
-const topologyFilters = { port: '', subnet: '', pingMax: '' };
 
 // ISO numeric → country name
 const ISO_NAMES = {
