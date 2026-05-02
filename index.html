@@ -11,12 +11,12 @@
 <div class="win95" id="mainWin">
   <!-- Title bar -->
   <div class="titlebar">
-    <span class="icon">­čôí</span>
+    <span class="icon">📡</span>
     <span class="title">NetRecon IP Scanner 1.5.1</span>
     <div class="titlebar-btns">
       <div class="title-btn" id="mainMinBtn" style="cursor:pointer">_</div>
-      <div class="title-btn" id="mainMaxBtn" style="cursor:pointer">Ôľí</div>
-      <div class="title-btn" id="mainCloseBtn" style="font-weight:900;cursor:pointer">ÔťĽ</div>
+      <div class="title-btn" id="mainMaxBtn" style="cursor:pointer">□</div>
+      <div class="title-btn" id="mainCloseBtn" style="font-weight:900;cursor:pointer">✕</div>
     </div>
   </div>
 
@@ -31,7 +31,7 @@
         <div class="menu-dd-sep"></div>
         <div class="menu-dd-item" id="menuLang" data-i18n="menuLanguage">Language...</div>
         <div class="menu-dd-sep"></div>
-        <div class="menu-dd-item" id="menuCustomize">­čÄŤ Customization...</div>
+        <div class="menu-dd-item" id="menuCustomize">🎛 Customization...</div>
       </div>
     </div>
     <div class="menu-item" id="menuHelp"><span data-i18n="menuHelp">Help</span>
@@ -46,15 +46,15 @@
 
     <!-- Toolbar -->
     <div class="toolbar">
-      <button class="btn95" id="btnGo" data-i18n="btnStart">ÔľÂ Start</button>
-      <button class="btn95" id="btnStop" disabled data-i18n="btnStop">Ôľá Stop</button>
-      <button class="btn95" id="btnClear" data-i18n="btnClear">ÔťĽ Clear</button>
-      <button class="btn95" id="btnGlobe" title="World Map">­čîŹ</button>
-      <button class="btn95" id="btnCmdConsole" title="Command Console">ÔîĘ Console</button>
-      <button class="btn95" id="btnMacroToolbar" title="Macro Folder">­čôü Macro</button>
-      <button class="btn95" id="btnSpeedToolbar" title="Speed Test">­čôÂ Speed</button>
-      <button class="btn95" id="btnProtoToolbar" title="Prototype">­čžę Prototype</button>
-      <button class="btn95" id="btnTopologyToolbar" title="Topology">­čĽŞ Topology</button>
+      <button class="btn95" id="btnGo" data-i18n="btnStart">▶ Start</button>
+      <button class="btn95" id="btnStop" disabled data-i18n="btnStop">■ Stop</button>
+      <button class="btn95" id="btnClear" data-i18n="btnClear">✕ Clear</button>
+      <button class="btn95" id="btnGlobe" title="World Map">🌍</button>
+      <button class="btn95" id="btnCmdConsole" title="Command Console">⌨ Console</button>
+      <button class="btn95" id="btnMacroToolbar" title="Macro Folder">📁 Macro</button>
+      <button class="btn95" id="btnSpeedToolbar" title="Speed Test">📶 Speed</button>
+      <button class="btn95" id="btnProtoToolbar" title="Prototype">🧩 Prototype</button>
+      <button class="btn95" id="btnTopologyToolbar" title="Topology">🕸 Topology</button>
       <div style="flex:1"></div>
       <span id="statTime" style="font-size:10px;color:#000080;font-weight:bold">0.0s</span>
     </div>
@@ -83,23 +83,23 @@
 
       <!-- External IP -->
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
-        <button class="btn95" id="btnMyIp" data-i18n="btnMyIp" style="width:132px">­čîÉ My External IP</button>
+        <button class="btn95" id="btnMyIp" data-i18n="btnMyIp" style="width:132px">🌐 My External IP</button>
         <span id="myIpResult" style="font-family:inherit;font-size:11px;color:#000080;font-weight:bold"></span>
-        <button class="btn95" id="btnCopyMyIp" style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnCopy">­čôő Copy</button>
-        <button class="btn95" id="btnUseMyIp"  style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">Ô×Ą Use</button>
+        <button class="btn95" id="btnCopyMyIp" style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnCopy">📋 Copy</button>
+        <button class="btn95" id="btnUseMyIp"  style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">➤ Use</button>
       </div>
 
       <!-- Local IP -->
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
-        <button class="btn95" id="btnMyLocalIp" data-i18n="btnMyLocalIp" style="width:132px">­čĆá My Local IP</button>
+        <button class="btn95" id="btnMyLocalIp" data-i18n="btnMyLocalIp" style="width:132px">🏠 My Local IP</button>
         <span id="myLocalIpResult" style="font-family:inherit;font-size:11px;color:#000080;font-weight:bold"></span>
-        <button class="btn95" id="btnCopyMyLocalIp" style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnCopy">­čôő Copy</button>
-        <button class="btn95" id="btnUseMyLocalIp"  style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">Ô×Ą Use</button>
+        <button class="btn95" id="btnCopyMyLocalIp" style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnCopy">📋 Copy</button>
+        <button class="btn95" id="btnUseMyLocalIp"  style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">➤ Use</button>
       </div>
 
       <!-- Local Subnets -->
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;flex-wrap:wrap">
-        <button class="btn95" id="btnLocalSubnets" data-i18n="btnLocalSubnets" style="width:132px">­čžş Local Subnets</button>
+        <button class="btn95" id="btnLocalSubnets" data-i18n="btnLocalSubnets" style="width:132px">🧭 Local Subnets</button>
         <span id="localSubnetsResult" style="font-family:inherit;font-size:11px;color:#000080;font-weight:bold"></span>
         <select id="localSubnetSelect" style="
           display:none;font-family:inherit;font-size:11px;
@@ -107,7 +107,7 @@
           border-right:1px solid #fff;border-bottom:1px solid #fff;
           background:#fff;padding:1px 4px;min-width:180px;
         "></select>
-        <button class="btn95" id="btnUseLocalSubnet" style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">Ô×Ą Use</button>
+        <button class="btn95" id="btnUseLocalSubnet" style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">➤ Use</button>
       </div>
 
       <!-- IP Range -->
@@ -172,7 +172,7 @@
     <!-- List view -->
     <div class="listview-wrap">
       <div class="listview-header">
-        <div class="lv-col" style="font-size:9px">ÔŚĆ</div>
+        <div class="lv-col" style="font-size:9px">●</div>
         <div class="lv-col" data-i18n="colIp">IP Address</div>
         <div class="lv-col" style="text-align:center">+</div>
         <div class="lv-col" data-i18n="colPing">Ping</div>
@@ -185,18 +185,18 @@
     <!-- Preview -->
     <div class="preview-wrap" id="previewWrap">
       <div class="preview-titlebar">
-        <span>­čľą</span>
-        <span class="preview-url-label" id="previewUrl">ÔÇö</span>
-        <button class="btn95" id="btnPreviewOpen" style="padding:1px 8px;font-size:10px" data-i18n="previewOpen">ÔćŚ Open</button>
-        <button class="btn95" id="btnPreviewClose" style="padding:1px 8px;font-size:10px" data-i18n="previewClose">ÔťĽ</button>
+        <span>🖥</span>
+        <span class="preview-url-label" id="previewUrl">—</span>
+        <button class="btn95" id="btnPreviewOpen" style="padding:1px 8px;font-size:10px" data-i18n="previewOpen">↗ Open</button>
+        <button class="btn95" id="btnPreviewClose" style="padding:1px 8px;font-size:10px" data-i18n="previewClose">✕</button>
       </div>
       <iframe id="previewFrame" class="preview-iframe"
         sandbox="allow-forms allow-scripts allow-same-origin allow-popups"
-        title="Podgl─ůd"></iframe>
+        title="Podgląd"></iframe>
       <div class="preview-blocked" id="previewBlocked">
-        <div style="font-size:24px">­čöĺ</div>
-        <div>Urz─ůdzenie blokuje osadzanie (X-Frame-Options).</div>
-        <a id="previewExtLink" href="#" target="_blank" rel="noopener">Otw├│rz w nowej karcie Ôćĺ</a>
+        <div style="font-size:24px">🔒</div>
+        <div>Urządzenie blokuje osadzanie (X-Frame-Options).</div>
+        <a id="previewExtLink" href="#" target="_blank" rel="noopener">Otwórz w nowej karcie →</a>
       </div>
     </div>
 
@@ -230,10 +230,10 @@
     padding:3px 4px 3px 6px;
     display:flex; align-items:center; gap:4px;
   ">
-    <span>­čôŁ</span>
-    <span style="flex:1">Notatnik ÔÇô O autorze</span>
+    <span>📝</span>
+    <span style="flex:1">Notatnik – O autorze</span>
     <div style="display:flex;gap:2px">
-      <div class="title-btn" onclick="closeNotepad()">ÔťĽ</div>
+      <div class="title-btn" onclick="closeNotepad()">✕</div>
     </div>
   </div>
 
@@ -272,7 +272,7 @@
       border-top:1px solid #808080; border-left:1px solid #808080;
       border-right:1px solid #fff; border-bottom:1px solid #fff;
       padding:1px 8px; flex:1;
-    ">NetRecon IP Scanner ┬Ě Licencja: Free to use</div>
+    ">NetRecon IP Scanner · Licencja: Free to use</div>
   </div>
 </div>
 
@@ -289,11 +289,11 @@
   z-index:1050;
 ">
   <div class="titlebar" id="cmdTitlebar" style="cursor:move">
-    <span class="icon">ÔîĘ</span>
+    <span class="icon">⌨</span>
     <span class="title">Scanner Console</span>
     <div class="titlebar-btns">
-      <button class="title-btn" id="btnCmdRun" title="Run">ÔľÂ</button>
-      <button class="title-btn" id="btnCmdClose" title="Close" style="font-weight:900">ÔťĽ</button>
+      <button class="title-btn" id="btnCmdRun" title="Run">▶</button>
+      <button class="title-btn" id="btnCmdClose" title="Close" style="font-weight:900">✕</button>
     </div>
   </div>
 
@@ -350,10 +350,10 @@
   z-index:1040;
 ">
   <div class="titlebar" id="speedTitlebar" style="cursor:move">
-    <span class="icon">­čôÂ</span>
+    <span class="icon">📶</span>
     <span class="title">Internet Speed Test</span>
     <div class="titlebar-btns">
-      <button class="title-btn" id="btnSpeedClose" style="font-weight:900">ÔťĽ</button>
+      <button class="title-btn" id="btnSpeedClose" style="font-weight:900">✕</button>
     </div>
   </div>
 
@@ -401,7 +401,7 @@
     ">Kliknij Start, aby zmierzyc ping, download i upload.</div>
 
     <div style="display:flex;justify-content:flex-start;gap:6px">
-      <button class="btn95" id="btnSpeedStart">ÔľÂ Start test</button>
+      <button class="btn95" id="btnSpeedStart">▶ Start test</button>
     </div>
   </div>
 </div>
@@ -423,11 +423,11 @@
   min-height:500px;
 ">
   <div class="titlebar" id="protoTitlebar" style="cursor:move">
-    <span class="icon">­čžę</span>
+    <span class="icon">🧩</span>
     <span class="title">Prototyp Visual Programming</span>
     <div class="titlebar-btns">
-      <button class="title-btn" id="btnProtoToggle" title="Maximize">Ôľí</button>
-      <button class="title-btn" id="btnProtoClose" style="font-weight:900">ÔťĽ</button>
+      <button class="title-btn" id="btnProtoToggle" title="Maximize">□</button>
+      <button class="title-btn" id="btnProtoClose" style="font-weight:900">✕</button>
     </div>
   </div>
 
@@ -449,16 +449,16 @@
     ">
       <div style="font-size:10px;color:#666;margin-bottom:6px">NODE TOOLBOX</div>
       <div style="display:flex;flex-direction:column;gap:6px;font-size:11px">
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">­čĽĺ Trigger: Time</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">­čÄ» Target: Single Host</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">­čîÉ Target: IP Range</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #99c8a1;border-radius:4px">­čöÄ Action: Scan Host</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #99c8a1;border-radius:4px">­čžş Action: Scan Subnet</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #d2b280;border-radius:4px">­čôä Report: Summary</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #d2b280;border-radius:4px">­čĺż Save File: Desktop</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#fcf7ff,#f2e9ff);border:1px solid #b499d8;border-radius:4px">­čôĘ Notify: Email/Webhook</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:4px">­čöÇ Condition: IF</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:4px">ÔÜá´ŞĆ Filter: Port Match</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">🕒 Trigger: Time</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">🎯 Target: Single Host</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">🌐 Target: IP Range</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #99c8a1;border-radius:4px">🔎 Action: Scan Host</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #99c8a1;border-radius:4px">🧭 Action: Scan Subnet</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #d2b280;border-radius:4px">📄 Report: Summary</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #d2b280;border-radius:4px">💾 Save File: Desktop</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#fcf7ff,#f2e9ff);border:1px solid #b499d8;border-radius:4px">📨 Notify: Email/Webhook</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:4px">🔀 Condition: IF</div>
+        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:4px">⚠️ Filter: Port Match</div>
       </div>
       <div style="font-size:10px;color:#666;margin-top:8px">
         Condition nodes have two outputs: <span style="color:#267026;font-weight:bold">TRUE</span> and <span style="color:#9a2020;font-weight:bold">FALSE</span>.<br>
@@ -481,66 +481,66 @@
 
       <div class="proto-node" data-node="n1" style="position:absolute;left:18px;top:42px;width:176px;background:linear-gradient(180deg,#f6fbff,#e7f2ff);border:1px solid #7ea2d1;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
         <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TRIGGER</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">­čĽĺ At 22:30 daily</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">🕒 At 22:30 daily</div>
         <div class="proto-anchor proto-anchor-out" data-node="n1" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
       </div>
 
       <div class="proto-node" data-node="n2" style="position:absolute;left:242px;top:42px;width:188px;background:linear-gradient(180deg,#f6fbff,#e7f2ff);border:1px solid #7ea2d1;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
         <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TARGET</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">­čÄ» Host: 192.168.1.25</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">🎯 Host: 192.168.1.25</div>
         <div class="proto-anchor proto-anchor-in" data-node="n2" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
         <div class="proto-anchor proto-anchor-out" data-node="n2" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
       </div>
 
       <div class="proto-node" data-node="n3" style="position:absolute;left:474px;top:42px;width:176px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #7fb186;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
         <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">ACTION</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">­čöÄ Deep scan preset</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">🔎 Deep scan preset</div>
         <div class="proto-anchor proto-anchor-in" data-node="n3" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
         <div class="proto-anchor proto-anchor-out" data-node="n3" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
       </div>
 
       <div class="proto-node" data-node="n4" style="position:absolute;left:698px;top:42px;width:196px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #c59c66;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
         <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">OUTPUT</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">­čĺż Save: Desktop/report_192.168.1.25.txt</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">💾 Save: Desktop/report_192.168.1.25.txt</div>
         <div class="proto-anchor proto-anchor-in" data-node="n4" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
       </div>
 
       <div class="proto-node" data-node="n5" style="position:absolute;left:18px;top:210px;width:196px;background:linear-gradient(180deg,#f6fbff,#e7f2ff);border:1px solid #7ea2d1;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
         <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TRIGGER</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">­čĽĺ At 01:00 every Sunday</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">🕒 At 01:00 every Sunday</div>
         <div class="proto-anchor proto-anchor-out" data-node="n5" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
       </div>
 
       <div class="proto-node" data-node="n6" style="position:absolute;left:256px;top:210px;width:220px;background:linear-gradient(180deg,#f6fbff,#e7f2ff);border:1px solid #7ea2d1;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
         <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TARGET</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">­čîÉ Range: 10.0.0.1 - 10.0.0.254</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">🌐 Range: 10.0.0.1 - 10.0.0.254</div>
         <div class="proto-anchor proto-anchor-in" data-node="n6" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
         <div class="proto-anchor proto-anchor-out" data-node="n6" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
       </div>
 
       <div class="proto-node" data-node="n7" style="position:absolute;left:522px;top:210px;width:172px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #7fb186;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
         <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">ACTION</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">­čôŐ Topology + services</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">📊 Topology + services</div>
         <div class="proto-anchor proto-anchor-in" data-node="n7" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
         <div class="proto-anchor proto-anchor-out" data-node="n7" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
       </div>
 
       <div class="proto-node" data-node="n8" style="position:absolute;left:738px;top:210px;width:168px;background:linear-gradient(180deg,#fcf7ff,#f2e9ff);border:1px solid #9e7ec7;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
         <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">NOTIFY</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">­čôĘ Send weekly summary</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">📨 Send weekly summary</div>
         <div class="proto-anchor proto-anchor-in" data-node="n8" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
       </div>
 
       <!-- === IF condition example row === -->
       <div class="proto-node" data-node="n9" style="position:absolute;left:18px;top:390px;width:214px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
         <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TRIGGER</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">­čĽĺ On scan complete</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">🕒 On scan complete</div>
         <div class="proto-anchor proto-anchor-out" data-node="n9" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
       </div>
 
       <div class="proto-node" data-node="n10" style="position:absolute;left:278px;top:390px;width:214px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
         <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">CONDITION</div>
-        <div style="padding:6px 6px 18px;font-size:11px;line-height:1.35">­čöÇ IF open port 8554 found</div>
+        <div style="padding:6px 6px 18px;font-size:11px;line-height:1.35">🔀 IF open port 8554 found</div>
         <div class="proto-anchor proto-anchor-in" data-node="n10" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
         <!-- TRUE output (upper right) -->
         <div class="proto-anchor proto-anchor-out" data-node="n10" data-anchor="out-true" style="position:absolute;right:-6px;top:33%;width:10px;height:10px;border-radius:999px;background:#3a8a3a;border:1px solid #fff;transform:translateY(-50%)">
@@ -554,13 +554,13 @@
 
       <div class="proto-node" data-node="n11" style="position:absolute;left:546px;top:345px;width:196px;background:linear-gradient(180deg,#fcf7ff,#f2e9ff);border:1px solid #9e7ec7;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
         <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">NOTIFY</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">­čôĘ Alert: camera stream found!</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">📨 Alert: camera stream found!</div>
         <div class="proto-anchor proto-anchor-in" data-node="n11" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
       </div>
 
       <div class="proto-node" data-node="n12" style="position:absolute;left:546px;top:435px;width:196px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #c59c66;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
         <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">OUTPUT</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">­čôä Log: no camera, port closed</div>
+        <div style="padding:6px;font-size:11px;line-height:1.35">📄 Log: no camera, port closed</div>
         <div class="proto-anchor proto-anchor-in" data-node="n12" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
       </div>
     </div>
@@ -591,7 +591,7 @@
         </div>
         <div style="border:1px solid #d4904a;padding:6px;background:#fffaf5">
           <div style="font-weight:bold;color:#b05000">5) IF condition: detect camera stream</div>
-          <div>After scan completes, <b>IF</b> port 8554 is open Ôćĺ <span style="color:#267026">TRUE path</span>: send instant alert. <span style="color:#9a2020">FALSE path</span>: write a "port closed" log entry.</div>
+          <div>After scan completes, <b>IF</b> port 8554 is open → <span style="color:#267026">TRUE path</span>: send instant alert. <span style="color:#9a2020">FALSE path</span>: write a "port closed" log entry.</div>
         </div>
       </div>
     </div>
@@ -633,10 +633,10 @@
   z-index:1030;
 ">
   <div class="titlebar" id="macroFolderTitlebar" style="cursor:move">
-    <span class="icon">­čôü</span>
+    <span class="icon">📁</span>
     <span class="title">Makra</span>
     <div class="titlebar-btns">
-      <button class="title-btn" id="btnMacroFolderClose" style="font-weight:900">ÔťĽ</button>
+      <button class="title-btn" id="btnMacroFolderClose" style="font-weight:900">✕</button>
     </div>
   </div>
 
@@ -664,7 +664,7 @@
         padding:4px 8px;
         cursor:default;
         white-space:nowrap;
-      ">­čŚĹ Skasuj makro</div>
+      ">🗑 Skasuj makro</div>
     </div>
   </div>
 
@@ -686,15 +686,15 @@
 <div class="dlg-overlay" id="dlgCountriesOverlay">
   <div class="dlg95" style="min-width:500px;max-width:96vw">
     <div class="dlg-title">
-      <span>­čîŹ</span>
+      <span>🌍</span>
       <span data-i18n="menuCountries">Country IP Library</span>
-      <div class="title-btn" onclick="closeCountriesDlg()">ÔťĽ</div>
+      <div class="title-btn" onclick="closeCountriesDlg()">✕</div>
     </div>
     <div class="dlg-body" style="padding:10px 12px 6px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
 
       <!-- Left: search + list -->
       <div style="display:flex;flex-direction:column;gap:6px">
-        <input id="countrySearch" type="text" placeholder="Search countryÔÇŽ"
+        <input id="countrySearch" type="text" placeholder="Search country…"
           style="font-family:inherit;font-size:11px;
             border-top:1px solid #808080;border-left:1px solid #808080;
             border-right:1px solid #fff;border-bottom:1px solid #fff;
@@ -708,7 +708,7 @@
 
       <!-- Right: ranges -->
       <div style="display:flex;flex-direction:column;gap:6px">
-        <div style="font-size:11px;font-weight:bold;color:#000080" id="countryName">ÔÇö</div>
+        <div style="font-size:11px;font-weight:bold;color:#000080" id="countryName">—</div>
         <div style="font-size:10px;color:#808080" id="countryMeta"></div>
         <div style="
           border-top:1px solid #808080;border-left:1px solid #808080;
@@ -719,8 +719,8 @@
         " id="countryRanges"></div>
         <div style="font-size:10px;color:#808080" id="countryRangeHint">Click a range to select it, then click Use.</div>
         <div style="display:flex;gap:4px">
-          <button class="btn95" id="btnCountryUse" style="font-size:10px;padding:2px 14px" disabled>Ô×Ą Use range</button>
-          <button class="btn95" id="btnCountryUseAll" style="font-size:10px;padding:2px 10px" disabled>Ô×Ą Use all</button>
+          <button class="btn95" id="btnCountryUse" style="font-size:10px;padding:2px 14px" disabled>➤ Use range</button>
+          <button class="btn95" id="btnCountryUseAll" style="font-size:10px;padding:2px 10px" disabled>➤ Use all</button>
         </div>
       </div>
     </div>
@@ -734,9 +734,9 @@
 <div class="dlg-overlay" id="dlgPresetsOverlay">
   <div class="dlg95" style="min-width:380px">
     <div class="dlg-title">
-      <span>ÔÜÖ</span>
+      <span>⚙</span>
       <span data-i18n="menuPresets">Port Presets</span>
-      <div class="title-btn" onclick="closePresetsDlg()">ÔťĽ</div>
+      <div class="title-btn" onclick="closePresetsDlg()">✕</div>
     </div>
     <div class="dlg-body" style="padding:10px 12px 4px">
       <!-- Preset list -->
@@ -748,9 +748,9 @@
         " id="presetListBox"></div>
         <div style="display:flex;gap:4px;margin-top:5px">
           <button class="btn95" id="btnPresetAdd" data-i18n="presetAdd" style="font-size:10px;padding:2px 10px">+ Add</button>
-          <button class="btn95" id="btnPresetDel" data-i18n="presetDel" style="font-size:10px;padding:2px 10px">ÔťĽ Delete</button>
-          <button class="btn95" id="btnPresetUp"  style="font-size:10px;padding:2px 8px">Ôľ▓</button>
-          <button class="btn95" id="btnPresetDown" style="font-size:10px;padding:2px 8px">Ôľ╝</button>
+          <button class="btn95" id="btnPresetDel" data-i18n="presetDel" style="font-size:10px;padding:2px 10px">✕ Delete</button>
+          <button class="btn95" id="btnPresetUp"  style="font-size:10px;padding:2px 8px">▲</button>
+          <button class="btn95" id="btnPresetDown" style="font-size:10px;padding:2px 8px">▼</button>
         </div>
       </div>
       <!-- Edit selected preset -->
@@ -779,7 +779,7 @@
           Enter port numbers separated by commas, e.g.: 80, 443, 8080, 554
         </div>
         <button class="btn95" id="btnPresetSave" data-i18n="presetSave"
-          style="margin-top:6px;font-size:10px;padding:2px 12px">­čĺż Save</button>
+          style="margin-top:6px;font-size:10px;padding:2px 12px">💾 Save</button>
       </div>
     </div>
     <div class="dlg-footer">
@@ -793,9 +793,9 @@
 <div class="dlg-overlay" id="dlgOverlay">
   <div class="dlg95">
     <div class="dlg-title">
-      <span>ÔÜÖ</span>
+      <span>⚙</span>
       <span data-i18n="dlgTitle">Options</span>
-      <div class="title-btn" onclick="closeLangDlg()">ÔťĽ</div>
+      <div class="title-btn" onclick="closeLangDlg()">✕</div>
     </div>
     <div class="dlg-body">
       <div class="dlg-groupbox">
@@ -823,9 +823,9 @@
 <div class="dlg-overlay" id="dlgDefaultsOverlay">
   <div class="dlg95" style="min-width:290px">
     <div class="dlg-title">
-      <span>ÔÜÖ</span>
+      <span>⚙</span>
       <span data-i18n="menuDefaults">Default Scan Values...</span>
-      <div class="title-btn" onclick="closeDefaultsDlg()">ÔťĽ</div>
+      <div class="title-btn" onclick="closeDefaultsDlg()">✕</div>
     </div>
     <div class="dlg-body">
       <div class="dlg-groupbox">
@@ -861,9 +861,9 @@
 <div class="dlg-overlay" id="dlgVersionsOverlay">
   <div class="dlg95" style="min-width:470px;max-width:94vw">
     <div class="dlg-title">
-      <span>­čôś</span>
+      <span>📘</span>
       <span data-i18n="dlgVersionsTitle">Versions</span>
-      <div class="title-btn" onclick="closeVersionsDlg()">ÔťĽ</div>
+      <div class="title-btn" onclick="closeVersionsDlg()">✕</div>
     </div>
     <div class="dlg-body" style="max-height:58vh;overflow:auto;padding:10px 12px 8px">
       <div style="
@@ -900,9 +900,9 @@
 <div class="dlg-overlay" id="dlgCustomizeOverlay">
   <div class="dlg95" style="min-width:300px">
     <div class="dlg-title">
-      <span>­čÄŤ</span>
-      <span style="flex:1">Customization ÔÇô Toolbar</span>
-      <div class="title-btn" onclick="closeCustomizeDlg()">ÔťĽ</div>
+      <span>🎛</span>
+      <span style="flex:1">Customization – Toolbar</span>
+      <div class="title-btn" onclick="closeCustomizeDlg()">✕</div>
     </div>
     <div class="dlg-body">
       <div class="dlg-groupbox">
@@ -910,27 +910,27 @@
         <div style="display:flex;flex-direction:column;gap:7px;margin-top:2px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="chkBtnGlobe" checked/>
-            <span>­čîŹ Globe (World Map)</span>
+            <span>🌍 Globe (World Map)</span>
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="chkBtnConsole" checked/>
-            <span>ÔîĘ Console</span>
+            <span>⌨ Console</span>
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="chkBtnMacro" checked/>
-            <span>­čôü Macro</span>
+            <span>📁 Macro</span>
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="chkBtnSpeed" checked/>
-            <span>­čôÂ Speed Test</span>
+            <span>📶 Speed Test</span>
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="chkBtnProto" checked/>
-            <span>­čžę Prototype</span>
+            <span>🧩 Prototype</span>
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="chkBtnTopology" checked/>
-            <span>­čĽŞ Topology</span>
+            <span>🕸 Topology</span>
           </label>
         </div>
       </div>
@@ -945,12 +945,12 @@
 <div class="ctxmenu" id="ctxMenu">
   <div class="ctx-item" id="ctxCopyIp" data-i18n="ctxCopyIp">Copy IP Address</div>
   <div class="ctx-item" id="ctxCopyPorts" data-i18n="ctxCopyPorts">Copy Ports</div>
-  <div class="ctx-item" id="ctxHostname" data-i18n="ctxHostname">­čžş Hostname (reverse DNS)</div>
+  <div class="ctx-item" id="ctxHostname" data-i18n="ctxHostname">🧭 Hostname (reverse DNS)</div>
   <div class="ctx-sep"></div>
-  <div class="ctx-item" id="ctxDetailGeo">­čîŹ Geolokalizacja / ISP</div>
-  <div class="ctx-item" id="ctxDetailDevice">­čľą Identyfikacja urz─ůdzenia</div>
-  <div class="ctx-item" id="ctxDetailTitle">­čôä Tytu┼é strony HTTP</div>
-  <div class="ctx-item" id="ctxDetailAccess">­čöĹ Dost─Öp / Snapshot</div>
+  <div class="ctx-item" id="ctxDetailGeo">🌍 Geolokalizacja / ISP</div>
+  <div class="ctx-item" id="ctxDetailDevice">🖥 Identyfikacja urządzenia</div>
+  <div class="ctx-item" id="ctxDetailTitle">📄 Tytuł strony HTTP</div>
+  <div class="ctx-item" id="ctxDetailAccess">🔑 Dostęp / Snapshot</div>
   <div class="ctx-sep"></div>
   <div class="ctx-item" id="ctxScanAllPorts" data-i18n="ctxScanAllPorts">Scan this IP (all ports)</div>
   <div class="ctx-sep"></div>
@@ -963,7 +963,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 
 <style>
-/* ÔöÇÔöÇ Globe window ÔöÇÔöÇ */
+/* ── Globe window ── */
 #globeWin {
   display:none; position:fixed;
   top:40px; left:50%; transform:translateX(-50%);
@@ -1069,10 +1069,10 @@
 <!-- Globe window -->
 <div id="globeWin">
   <div class="titlebar" id="globeTitlebar" style="cursor:move">
-    <span>­čîŹ</span>
-    <span style="flex:1">Network Map ÔÇô IP Scan Results</span>
+    <span>🌍</span>
+    <span style="flex:1">Network Map – IP Scan Results</span>
     <div style="display:flex;gap:2px">
-      <div class="title-btn" onclick="closeGlobe()">ÔťĽ</div>
+      <div class="title-btn" onclick="closeGlobe()">✕</div>
     </div>
   </div>
   <div class="globe-toolbar">
@@ -1091,7 +1091,7 @@
   </div>
   <canvas id="globeCanvas" width="680" height="440"></canvas>
   <div class="globe-statusbar">
-    <div class="globe-panel" id="globeStatusText">Drag to rotate ┬Ě Click country to scan ┬Ě Click dot to preview</div>
+    <div class="globe-panel" id="globeStatusText">Drag to rotate · Click country to scan · Click dot to preview</div>
     <label style="display:flex;align-items:center;gap:4px;flex-shrink:0" id="globeAutoRotateWrap">
       <input type="checkbox" id="globeAutoRotate" checked/> Auto-rotate
     </label>
@@ -1101,12 +1101,12 @@
 <!-- Scan country confirm dialog -->
 <div id="dlgScanCountry">
   <div class="titlebar">
-    <span>ÔŁô</span>
+    <span>❓</span>
     <span style="flex:1">Scan Country</span>
-    <div class="title-btn" onclick="closeScanCountryDlg()">ÔťĽ</div>
+    <div class="title-btn" onclick="closeScanCountryDlg()">✕</div>
   </div>
   <div style="padding:16px 18px 8px;display:flex;align-items:flex-start;gap:12px">
-    <div style="font-size:32px" id="scDlgIcon">­čîŹ</div>
+    <div style="font-size:32px" id="scDlgIcon">🌍</div>
     <div>
       <div style="font-weight:bold;margin-bottom:6px" id="scDlgTitle">Scan country?</div>
       <div style="font-size:10px;color:#000080" id="scDlgInfo"></div>
@@ -1123,9 +1123,9 @@
 <div id="dlgTraceOverlay">
   <div id="dlgTrace">
     <div class="titlebar">
-      <span>­čžş</span>
+      <span>🧭</span>
       <span style="flex:1" id="traceDlgTitle" data-i18n="traceDlgTitle">Import traceroute</span>
-      <div class="title-btn" onclick="closeTraceDlg()">ÔťĽ</div>
+      <div class="title-btn" onclick="closeTraceDlg()">✕</div>
     </div>
     <div style="padding:12px 14px 8px;display:flex;flex-direction:column;gap:8px">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
