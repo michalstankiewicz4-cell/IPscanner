@@ -2607,11 +2607,21 @@ const TOOLBAR_BTNS_CFG = [
 ];
 const UI_SKIN_KEY = 'ui_skin';
 
+function setSkinClass(skin) {
+  const normalized = skin === 'xp' ? 'xp' : 'aero';
+  document.body.classList.remove('skin-xp', 'skin-aero');
+  document.body.classList.add(`skin-${normalized}`);
+}
+
 function applySkinCustomization() {
   const savedSkin = localStorage.getItem(UI_SKIN_KEY);
   const skin = savedSkin === 'xp' ? 'xp' : 'aero';
-  document.body.classList.remove('skin-xp', 'skin-aero');
-  document.body.classList.add(`skin-${skin}`);
+  setSkinClass(skin);
+}
+
+function applySkinPreviewFromSelection() {
+  const selectedSkin = document.querySelector('input[name="uiSkin"]:checked')?.value;
+  setSkinClass(selectedSkin);
 }
 
 function applyToolbarCustomization() {
@@ -2655,6 +2665,9 @@ document.getElementById('menuCustomize').addEventListener('click', () => {
   document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
   openCustomizeDlg();
 });
+
+document.getElementById('skinXp')?.addEventListener('change', applySkinPreviewFromSelection);
+document.getElementById('skinAero')?.addEventListener('change', applySkinPreviewFromSelection);
 
 document.getElementById('btnMacroToolbar').addEventListener('click', openMacroFolder);
 document.getElementById('btnSpeedToolbar').addEventListener('click', openSpeedWindow);
