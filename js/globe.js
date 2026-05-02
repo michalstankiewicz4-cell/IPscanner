@@ -480,7 +480,8 @@ function drawTopology() {
   const ctx = globeCtx;
   const { hosts, subnets } = buildTopologyModel();
   const visibleHostSet = new Set(hosts.map(host => host.ip));
-  const visibleTraceTargets = Object.keys(traceRoutes).filter(ip => visibleHostSet.has(ip));
+  const allTraceTargets = Object.keys(traceRoutes);
+  const externalTraceTargets = allTraceTargets.filter(ip => !visibleHostSet.has(ip));
   topologyHitTargets = [];
 
   ctx.clearRect(0, 0, globeWidth, globeHeight);
@@ -528,11 +529,17 @@ function drawTopology() {
   ctx.fillStyle = '#4a4a4a';
   ctx.fillText(`${hosts.length} active hosts`, centerX, centerY + 42);
 
-  if (!hosts.length) {
+  if (!hosts.length && !externalTraceTargets.length) {
     ctx.fillStyle = '#5a5a5a';
     ctx.font = '12px MS Sans Serif';
     ctx.fillText('No scan data yet. Run a scan to populate topology.', centerX, centerY - 70);
     return;
+  }
+
+  if (!hosts.length) {
+    ctx.fillStyle = '#5a5a5a';
+    ctx.font = '12px MS Sans Serif';
+    ctx.fillText('No scan data yet. Showing trace routes only.', centerX, centerY - 70);
   }
 
   subnets.forEach((subnetEntry, subnetIndex) => {
@@ -620,13 +627,40 @@ function drawTopology() {
     });
   });
 
-  visibleTraceTargets.forEach(targetIp => {
+  // Draw traces to hosts already in scanned results
+  allTraceTargets.filter(ip => visibleHostSet.has(ip)).forEach(targetIp => {
     const target = topologyHitTargets.find(item => item.type === 'host' && item.data.ip === targetIp);
     if (!target) return;
     drawTraceRoute(ctx, centerX, centerY, target, traceRoutes[targetIp]);
   });
 
-  updateTopologyStatus(hosts, visibleTraceTargets.length);
+  // Draw traces to external targets (not in scanned hosts) as dedicated edge nodes
+  externalTraceTargets.forEach((targetIp, idx) => {
+    const angle = (-Math.PI / 2) + (idx / Math.max(externalTraceTargets.length, 1)) * Math.PI * 2;
+    const edgeRadius = maxRadius * 0.92;
+    const nodeX = centerX + Math.cos(angle) * edgeRadius;
+    const nodeY = centerY + Math.sin(angle) * edgeRadius;
+
+    // Draw edge node
+    ctx.beginPath();
+    ctx.arc(nodeX, nodeY, 9, 0, Math.PI * 2);
+    ctx.fillStyle = '#4488ff';
+    ctx.strokeStyle = '#002299';
+    ctx.lineWidth = 2;
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#002299';
+    ctx.font = 'bold 10px MS Sans Serif';
+    ctx.textAlign = nodeX < centerX ? 'right' : 'left';
+    ctx.fillText(targetIp, nodeX + (nodeX < centerX ? -13 : 13), nodeY + 3);
+
+    const fakeTarget = { x: nodeX, y: nodeY, radius: 9, data: { ip: targetIp } };
+    topologyHitTargets.push({ type: 'host', x: nodeX, y: nodeY, radius: 14, data: { ip: targetIp } });
+    drawTraceRoute(ctx, centerX, centerY, fakeTarget, traceRoutes[targetIp]);
+  });
+
+  updateTopologyStatus(hosts, allTraceTargets.length);
 }
 
 function drawTraceRoute(ctx, centerX, centerY, target, route) {
@@ -736,7 +770,7 @@ function closeTraceDlg() {
   document.getElementById('dlgTraceOverlay').classList.remove('open');
 }
 
-function importTraceRoute() {
+function importTraceRoute(closeAfter = true) {
   const targetIp = document.getElementById('traceTargetIp').value.trim();
   const text = document.getElementById('traceInput').value;
   const status = document.getElementById('traceParseStatus');
@@ -755,9 +789,10 @@ function importTraceRoute() {
   saveTraceRoutes();
   status.textContent = t('traceImported', hops.length, targetIp);
   status.style.color = 'green';
+  if (mapMode !== 'topology') setMapMode('topology');
   drawCurrentMap();
   setStatus(t('traceImportedStatus', targetIp, hops.length), 'ok');
-  setTimeout(closeTraceDlg, 350);
+  if (closeAfter) setTimeout(closeTraceDlg, 350);
 }
 
 async function autoTraceRoute() {
@@ -790,7 +825,7 @@ async function autoTraceRoute() {
       : '';
     if (resolvedIp) targetInput.value = resolvedIp;
     document.getElementById('traceInput').value = output;
-    importTraceRoute();
+    importTraceRoute(false);
   } catch (err) {
     const msg = (err && err.message) ? err.message : String(err || 'unknown error');
     status.textContent = t('traceAutoFailed', msg);
@@ -1017,6 +1052,12 @@ document.getElementById('btnAutoTraceTopology').addEventListener('click', () => 
   const defaultIp = selectedRowEl?.dataset?.ip || Object.keys(foundHostsMap)[0] || '';
   openTraceDlg(defaultIp);
   autoTraceRoute();
+});
+document.getElementById('btnClearGraph').addEventListener('click', () => {
+  traceRoutes = {};
+  saveTraceRoutes();
+  drawCurrentMap();
+  setStatus(t('graphCleared'), 'ok');
 });
 document.getElementById('btnTraceAuto').addEventListener('click', autoTraceRoute);
 document.getElementById('btnTraceSave').addEventListener('click', importTraceRoute);

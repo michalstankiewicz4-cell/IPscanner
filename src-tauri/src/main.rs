@@ -16,6 +16,9 @@ use tokio::net::lookup_host;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 // ─── Shared scan-stop flag ───────────────────────────────────────────────────
 struct ScanState {
     stop: AtomicBool,
@@ -249,8 +252,11 @@ async fn run_traceroute(target: String) -> Result<TraceRunResult, String> {
     let output = tokio::task::spawn_blocking(move || {
         #[cfg(target_os = "windows")]
         {
+            // Run tracert without spawning a visible cmd window.
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
             Command::new("tracert")
-                .args(["-d", "-h", "20", "-w", "800", trace_target.as_str()])
+                .creation_flags(CREATE_NO_WINDOW)
+                .args(["-4", "-d", "-h", "20", "-w", "800", trace_target.as_str()])
                 .output()
         }
 
