@@ -2661,14 +2661,14 @@ const TOOLBAR_BTNS_CFG = [
 const UI_SKIN_KEY = 'ui_skin';
 
 function setSkinClass(skin) {
-  const normalized = skin === 'xp' ? 'xp' : 'aero';
+  const normalized = skin === 'glass' ? 'glass' : 'classic';
   document.body.classList.remove('skin-classic', 'skin-glass');
   document.body.classList.add(`skin-${normalized}`);
 }
 
 function applySkinCustomization() {
   const savedSkin = localStorage.getItem(UI_SKIN_KEY);
-  const skin = savedSkin === 'xp' ? 'xp' : 'aero';
+  const skin = savedSkin === 'glass' ? 'glass' : 'classic';
   setSkinClass(skin);
 }
 
@@ -2692,7 +2692,7 @@ function openCustomizeDlg() {
   });
 
   const savedSkin = localStorage.getItem(UI_SKIN_KEY);
-  const activeSkin = savedSkin === 'xp' ? 'xp' : 'aero';
+  const activeSkin = savedSkin === 'glass' ? 'glass' : 'classic';
   const skinClassic = document.getElementById('skinClassic');
   const skinGlass = document.getElementById('skinGlass');
   if (skinClassic) skinClassic.checked = activeSkin === 'classic';
@@ -2707,7 +2707,7 @@ function closeCustomizeDlg() {
   });
 
   const selectedSkin = document.querySelector('input[name="uiSkin"]:checked')?.value;
-  localStorage.setItem(UI_SKIN_KEY, selectedSkin === 'xp' ? 'xp' : 'aero');
+  localStorage.setItem(UI_SKIN_KEY, selectedSkin === 'glass' ? 'glass' : 'classic');
 
   applyToolbarCustomization();
   applySkinCustomization();
