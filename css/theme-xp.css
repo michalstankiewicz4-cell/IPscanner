@@ -647,6 +647,11 @@ body.skin-aero .menubar {
   border-bottom: 1px solid #6d8db1;
 }
 
+body.skin-aero .menu-item,
+body.skin-aero .menu-dd-item {
+  color: #163a5d;
+}
+
 body.skin-aero .menu-item:hover,
 body.skin-aero .menu-item.open,
 body.skin-aero .menu-dd-item:hover,
@@ -658,7 +663,7 @@ body.skin-aero .range-item.active,
 body.skin-aero .lv-row:hover,
 body.skin-aero .lv-row.selected {
   background: #2b73b8;
-  color: #fff;
+  color: #eef5ff;
 }
 
 body.skin-aero .progress-bar-fill {
