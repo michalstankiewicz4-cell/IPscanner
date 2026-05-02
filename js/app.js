@@ -484,6 +484,14 @@ const TOOLBAR_BTNS_CFG = [
   { chk: 'chkBtnProto',      id: 'btnProtoToolbar',    key: 'tb_proto' },
   { chk: 'chkBtnTopology',   id: 'btnTopologyToolbar', key: 'tb_topology' },
 ];
+const UI_SKIN_KEY = 'ui_skin';
+
+function applySkinCustomization() {
+  const savedSkin = localStorage.getItem(UI_SKIN_KEY);
+  const skin = savedSkin === 'aero' ? 'aero' : 'xp';
+  document.body.classList.remove('skin-xp', 'skin-aero');
+  document.body.classList.add(`skin-${skin}`);
+}
 
 function applyToolbarCustomization() {
   TOOLBAR_BTNS_CFG.forEach(({ id, key }) => {
@@ -498,6 +506,14 @@ function openCustomizeDlg() {
     const el = document.getElementById(chk);
     if (el) el.checked = localStorage.getItem(key) !== '0';
   });
+
+  const savedSkin = localStorage.getItem(UI_SKIN_KEY);
+  const activeSkin = savedSkin === 'aero' ? 'aero' : 'xp';
+  const skinXp = document.getElementById('skinXp');
+  const skinAero = document.getElementById('skinAero');
+  if (skinXp) skinXp.checked = activeSkin === 'xp';
+  if (skinAero) skinAero.checked = activeSkin === 'aero';
+
   document.getElementById('dlgCustomizeOverlay').classList.add('open');
 }
 function closeCustomizeDlg() {
@@ -505,7 +521,12 @@ function closeCustomizeDlg() {
     const el = document.getElementById(chk);
     if (el) localStorage.setItem(key, el.checked ? '1' : '0');
   });
+
+  const selectedSkin = document.querySelector('input[name="uiSkin"]:checked')?.value;
+  localStorage.setItem(UI_SKIN_KEY, selectedSkin === 'aero' ? 'aero' : 'xp');
+
   applyToolbarCustomization();
+  applySkinCustomization();
   document.getElementById('dlgCustomizeOverlay').classList.remove('open');
 }
 
@@ -519,6 +540,7 @@ document.getElementById('btnSpeedToolbar').addEventListener('click', openSpeedWi
 document.getElementById('btnProtoToolbar').addEventListener('click', openProtoWindow);
 
 applyToolbarCustomization();
+applySkinCustomization();
 
 // ══════════════════════════════════════════════════
 //  PORT PRESETS
