@@ -535,6 +535,14 @@ document.getElementById('menuCustomize').addEventListener('click', () => {
   openCustomizeDlg();
 });
 
+document.querySelectorAll('input[name="uiSkin"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const skin = document.querySelector('input[name="uiSkin"]:checked')?.value;
+    document.body.classList.remove('skin-classic', 'skin-glass');
+    document.body.classList.add(`skin-${skin === 'glass' ? 'glass' : 'classic'}`);
+  });
+});
+
 document.getElementById('btnMacroToolbar').addEventListener('click', openMacroFolder);
 document.getElementById('btnSpeedToolbar').addEventListener('click', openSpeedWindow);
 document.getElementById('btnProtoToolbar').addEventListener('click', openProtoWindow);
