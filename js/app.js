@@ -10,46 +10,46 @@ function openNotepad() {
   document.getElementById('notepadText').value =
 `================================================================
   NetRecon IP Scanner 1.5.1
-  by Michał Stankiewicz
+  by Micha┼é Stankiewicz
 ================================================================
 
   Tel. / BLIK:  797 486 355
 
-  Jeżeli podoba Ci się to co robię i chcesz wesprzeć
-  projekt — każda złotówka motywuje do kolejnych ficzerów!
+  Je┼╝eli podoba Ci si─Ö to co robi─Ö i chcesz wesprze─ç
+  projekt ÔÇö ka┼╝da z┼éot├│wka motywuje do kolejnych ficzer├│w!
 
-  BLIK → 797 486 355   💙  Dziękuję!
+  BLIK Ôćĺ 797 486 355   ­čĺÖ  Dzi─Ökuj─Ö!
 
 ----------------------------------------------------------------
-  LICENCJA (MIT) — Polski
+  LICENCJA (MIT) ÔÇö Polski
 ----------------------------------------------------------------
 
-  Niniejszym udziela się bezpłatnie każdemu, kto uzyska
-  kopię tego oprogramowania i powiązanych plików dokumentacji
-  (dalej „Oprogramowanie"), pozwolenia na korzystanie
-  z Oprogramowania bez ograniczeń, w tym bez ograniczeń
-  prawa do używania, kopiowania, modyfikowania, łączenia,
+  Niniejszym udziela si─Ö bezp┼éatnie ka┼╝demu, kto uzyska
+  kopi─Ö tego oprogramowania i powi─ůzanych plik├│w dokumentacji
+  (dalej ÔÇ×Oprogramowanie"), pozwolenia na korzystanie
+  z Oprogramowania bez ogranicze┼ä, w tym bez ogranicze┼ä
+  prawa do u┼╝ywania, kopiowania, modyfikowania, ┼é─ůczenia,
   publikowania, dystrybuowania, udzielania podlicencji
-  i/lub sprzedaży kopii Oprogramowania, a także zezwalania
-  na to osobom, którym Oprogramowanie jest dostarczane,
-  pod następującymi warunkami:
+  i/lub sprzeda┼╝y kopii Oprogramowania, a tak┼╝e zezwalania
+  na to osobom, kt├│rym Oprogramowanie jest dostarczane,
+  pod nast─Öpuj─ůcymi warunkami:
 
-  Powyższa nota autorska oraz niniejsze zezwolenie muszą
-  zostać dołączone do wszystkich kopii lub istotnych części
+  Powy┼╝sza nota autorska oraz niniejsze zezwolenie musz─ů
+  zosta─ç do┼é─ůczone do wszystkich kopii lub istotnych cz─Ö┼Ťci
   Oprogramowania.
 
-  OPROGRAMOWANIE JEST DOSTARCZANE „TAKIM, JAKIE JEST",
-  BEZ JAKIEJKOLWIEK GWARANCJI, WYRAŹNEJ LUB DOROZUMIANEJ,
-  W TYM MIĘDZY INNYMI GWARANCJI PRZYDATNOŚCI HANDLOWEJ,
-  PRZYDATNOŚCI DO OKREŚLONEGO CELU I NIENARUSZALNOŚCI.
-  W ŻADNYM WYPADKU AUTORZY LUB WŁAŚCICIELE PRAW AUTORSKICH
-  NIE PONOSZĄ ODPOWIEDZIALNOŚCI ZA JAKIEKOLWIEK ROSZCZENIA,
-  SZKODY LUB INNĄ ODPOWIEDZIALNOŚĆ, CZY TO W RAMACH UMOWY,
-  DELIKTU CZY W INNY SPOSÓB, WYNIKAJĄCĄ Z OPROGRAMOWANIA
+  OPROGRAMOWANIE JEST DOSTARCZANE ÔÇ×TAKIM, JAKIE JEST",
+  BEZ JAKIEJKOLWIEK GWARANCJI, WYRA┼╣NEJ LUB DOROZUMIANEJ,
+  W TYM MI─śDZY INNYMI GWARANCJI PRZYDATNO┼ÜCI HANDLOWEJ,
+  PRZYDATNO┼ÜCI DO OKRE┼ÜLONEGO CELU I NIENARUSZALNO┼ÜCI.
+  W ┼╗ADNYM WYPADKU AUTORZY LUB W┼üA┼ÜCICIELE PRAW AUTORSKICH
+  NIE PONOSZ─ä ODPOWIEDZIALNO┼ÜCI ZA JAKIEKOLWIEK ROSZCZENIA,
+  SZKODY LUB INN─ä ODPOWIEDZIALNO┼Ü─ć, CZY TO W RAMACH UMOWY,
+  DELIKTU CZY W INNY SPOS├ôB, WYNIKAJ─äC─ä Z OPROGRAMOWANIA
   LUB KORZYSTANIA Z NIEGO.
 
 ----------------------------------------------------------------
-  LICENSE (MIT) — English
+  LICENSE (MIT) ÔÇö English
 ----------------------------------------------------------------
 
   Permission is hereby granted, free of charge, to any
@@ -75,7 +75,7 @@ function openNotepad() {
   IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
   DEALINGS IN THE SOFTWARE.
 
-  If you enjoy what I'm building — BLIK is welcome! 🙏
+  If you enjoy what I'm building ÔÇö BLIK is welcome! ­čÖĆ
   797 486 355
 
 ================================================================`;
@@ -207,7 +207,7 @@ function toggleProtoWindowSize() {
     win.style.width = 'calc(100vw - 16px)';
     win.style.height = 'calc(100vh - 44px)';
     win.dataset.maximized = '1';
-    btn.textContent = '❐';
+    btn.textContent = 'ÔŁÉ';
     btn.title = 'Restore';
   } else {
     win.style.left = `${win.dataset.prevLeft || 220}px`;
@@ -215,7 +215,7 @@ function toggleProtoWindowSize() {
     win.style.width = `${win.dataset.prevWidth || 920}px`;
     win.style.height = `${win.dataset.prevHeight || 640}px`;
     win.dataset.maximized = '0';
-    btn.textContent = '□';
+    btn.textContent = 'Ôľí';
     btn.title = 'Maximize';
   }
 
@@ -469,7 +469,7 @@ function renderMacroFiles() {
     const fileName = (m.name || `makro_${idx + 1}`).replace(/\s+/g, '_') + '.macro';
     const ts = m.savedAt ? new Date(m.savedAt).toLocaleString() : '-';
 
-    row.innerHTML = `<span style="font-size:12px">📄</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fileName}</span><span style="font-size:9px;color:#666">${ts}</span>`;
+    row.innerHTML = `<span style="font-size:12px">­čôä</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fileName}</span><span style="font-size:9px;color:#666">${ts}</span>`;
     row.addEventListener('mouseenter', () => {
       row.style.background = '#000080';
       row.style.color = '#fff';
@@ -720,342 +720,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('blur', closeMacroContextMenu);
 });
-</script>
-
-<!-- Country IP Library dialog -->
-<div class="dlg-overlay" id="dlgCountriesOverlay">
-  <div class="dlg95" style="min-width:500px;max-width:96vw">
-    <div class="dlg-title">
-      <span>🌍</span>
-      <span data-i18n="menuCountries">Country IP Library</span>
-      <div class="title-btn" onclick="closeCountriesDlg()">✕</div>
-    </div>
-    <div class="dlg-body" style="padding:10px 12px 6px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-
-      <!-- Left: search + list -->
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <input id="countrySearch" type="text" placeholder="Search country…"
-          style="font-family:inherit;font-size:11px;
-            border-top:1px solid #808080;border-left:1px solid #808080;
-            border-right:1px solid #fff;border-bottom:1px solid #fff;
-            padding:2px 6px;background:#fff;"/>
-        <div style="
-          border-top:1px solid #808080;border-left:1px solid #808080;
-          border-right:1px solid #fff;border-bottom:1px solid #fff;
-          background:#fff;height:280px;overflow-y:auto;
-        " id="countryListBox"></div>
-      </div>
-
-      <!-- Right: ranges -->
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <div style="font-size:11px;font-weight:bold;color:#000080" id="countryName">—</div>
-        <div style="font-size:10px;color:#808080" id="countryMeta"></div>
-        <div style="
-          border-top:1px solid #808080;border-left:1px solid #808080;
-          border-right:1px solid #fff;border-bottom:1px solid #fff;
-          background:#fff;flex:1;overflow-y:auto;
-          font-family:'Courier New',monospace;font-size:10px;
-          padding:4px 6px;
-        " id="countryRanges"></div>
-        <div style="font-size:10px;color:#808080" id="countryRangeHint">Click a range to select it, then click Use.</div>
-        <div style="display:flex;gap:4px">
-          <button class="btn95" id="btnCountryUse" style="font-size:10px;padding:2px 14px" disabled>➤ Use range</button>
-          <button class="btn95" id="btnCountryUseAll" style="font-size:10px;padding:2px 10px" disabled>➤ Use all</button>
-        </div>
-      </div>
-    </div>
-    <div class="dlg-footer">
-      <button class="btn95" onclick="closeCountriesDlg()" data-i18n="dlgCancel">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Presets dialog -->
-<div class="dlg-overlay" id="dlgPresetsOverlay">
-  <div class="dlg95" style="min-width:380px">
-    <div class="dlg-title">
-      <span>⚙</span>
-      <span data-i18n="menuPresets">Port Presets</span>
-      <div class="title-btn" onclick="closePresetsDlg()">✕</div>
-    </div>
-    <div class="dlg-body" style="padding:10px 12px 4px">
-      <!-- Preset list -->
-      <div style="margin-bottom:8px">
-        <div style="
-          border-top:1px solid #808080;border-left:1px solid #808080;
-          border-right:1px solid #fff;border-bottom:1px solid #fff;
-          background:#fff;height:140px;overflow-y:auto;
-        " id="presetListBox"></div>
-        <div style="display:flex;gap:4px;margin-top:5px">
-          <button class="btn95" id="btnPresetAdd" data-i18n="presetAdd" style="font-size:10px;padding:2px 10px">+ Add</button>
-          <button class="btn95" id="btnPresetDel" data-i18n="presetDel" style="font-size:10px;padding:2px 10px">✕ Delete</button>
-          <button class="btn95" id="btnPresetUp"  style="font-size:10px;padding:2px 8px">▲</button>
-          <button class="btn95" id="btnPresetDown" style="font-size:10px;padding:2px 8px">▼</button>
-        </div>
-      </div>
-      <!-- Edit selected preset -->
-      <div class="dlg-groupbox" id="presetEditBox" style="opacity:0.4;pointer-events:none">
-        <span class="dlg-groupbox-legend" data-i18n="presetEdit">Edit preset</span>
-        <div class="dlg-row" style="margin-bottom:6px">
-          <label style="width:40px;flex-shrink:0" data-i18n="presetName">Name:</label>
-          <input id="presetNameInput" type="text" style="
-            flex:1;font-family:inherit;font-size:11px;
-            border-top:1px solid #808080;border-left:1px solid #808080;
-            border-right:1px solid #fff;border-bottom:1px solid #fff;
-            padding:1px 4px;background:#fff;
-          "/>
-        </div>
-        <div class="dlg-row">
-          <label style="width:40px;flex-shrink:0" data-i18n="presetPorts">Ports:</label>
-          <input id="presetPortsInput" type="text" placeholder="80, 8080, 443, 554"
-            style="
-              flex:1;font-family:'Courier New',monospace;font-size:11px;
-              border-top:1px solid #808080;border-left:1px solid #808080;
-              border-right:1px solid #fff;border-bottom:1px solid #fff;
-              padding:1px 4px;background:#fff;
-            "/>
-        </div>
-        <div style="font-size:10px;color:#808080;margin-top:4px" data-i18n="presetHint">
-          Enter port numbers separated by commas, e.g.: 80, 443, 8080, 554
-        </div>
-        <button class="btn95" id="btnPresetSave" data-i18n="presetSave"
-          style="margin-top:6px;font-size:10px;padding:2px 12px">💾 Save</button>
-      </div>
-    </div>
-    <div class="dlg-footer">
-      <button class="btn95" id="dlgPresetsOk" data-i18n="dlgOk">OK</button>
-      <button class="btn95" onclick="closePresetsDlg()" data-i18n="dlgCancel">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Settings dialog -->
-<div class="dlg-overlay" id="dlgOverlay">
-  <div class="dlg95">
-    <div class="dlg-title">
-      <span>⚙</span>
-      <span data-i18n="dlgTitle">Options</span>
-      <div class="title-btn" onclick="closeLangDlg()">✕</div>
-    </div>
-    <div class="dlg-body">
-      <div class="dlg-groupbox">
-        <span class="dlg-groupbox-legend" data-i18n="dlgLang">Language:</span>
-        <div class="dlg-radio-row">
-          <label class="dlg-radio">
-            <input type="radio" name="dlgLang" value="en" id="radioEn" checked/>
-            <span data-i18n="dlgLangEn">English</span>
-          </label>
-          <label class="dlg-radio">
-            <input type="radio" name="dlgLang" value="pl" id="radioPl"/>
-            <span data-i18n="dlgLangPl">Polski</span>
-          </label>
-        </div>
-      </div>
-    </div>
-    <div class="dlg-footer">
-      <button class="btn95" id="dlgOk" data-i18n="dlgOk">OK</button>
-      <button class="btn95" id="dlgCancel" data-i18n="dlgCancel" onclick="closeLangDlg()">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Default scan values dialog -->
-<div class="dlg-overlay" id="dlgDefaultsOverlay">
-  <div class="dlg95" style="min-width:290px">
-    <div class="dlg-title">
-      <span>⚙</span>
-      <span data-i18n="menuDefaults">Default Scan Values...</span>
-      <div class="title-btn" onclick="closeDefaultsDlg()">✕</div>
-    </div>
-    <div class="dlg-body">
-      <div class="dlg-groupbox">
-        <span class="dlg-groupbox-legend" data-i18n="dlgDefaults">Default Scan Values:</span>
-        <div class="dlg-row" style="margin-bottom:6px">
-          <label style="width:98px;flex-shrink:0" data-i18n="dlgDefaultThreads">Threads:</label>
-          <input id="dlgDefaultThreads" type="number" min="2" max="64" value="20" style="
-            width:58px;font-family:inherit;font-size:11px;
-            border-top:1px solid #808080;border-left:1px solid #808080;
-            border-right:1px solid #fff;border-bottom:1px solid #fff;
-            padding:1px 3px;background:#fff;
-          "/>
-        </div>
-        <div class="dlg-row" style="margin-bottom:0">
-          <label style="width:98px;flex-shrink:0" data-i18n="dlgDefaultDelay">Delay (ms):</label>
-          <input id="dlgDefaultDelay" type="number" min="0" max="5000" value="0" style="
-            width:58px;font-family:inherit;font-size:11px;
-            border-top:1px solid #808080;border-left:1px solid #808080;
-            border-right:1px solid #fff;border-bottom:1px solid #fff;
-            padding:1px 3px;background:#fff;
-          "/>
-        </div>
-      </div>
-    </div>
-    <div class="dlg-footer">
-      <button class="btn95" id="dlgDefaultsOk" data-i18n="dlgOk">OK</button>
-      <button class="btn95" id="dlgDefaultsCancel" data-i18n="dlgCancel" onclick="closeDefaultsDlg()">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Versions dialog -->
-<div class="dlg-overlay" id="dlgVersionsOverlay">
-  <div class="dlg95" style="min-width:470px;max-width:94vw">
-    <div class="dlg-title">
-      <span>📘</span>
-      <span data-i18n="dlgVersionsTitle">Versions</span>
-      <div class="title-btn" onclick="closeVersionsDlg()">✕</div>
-    </div>
-    <div class="dlg-body" style="max-height:58vh;overflow:auto;padding:10px 12px 8px">
-      <div style="
-        background:#fff;
-        border-top:1px solid #808080;border-left:1px solid #808080;
-        border-right:1px solid #fff;border-bottom:1px solid #fff;
-        padding:8px 10px;font-size:11px;line-height:1.45;
-      ">
-        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.5</div>
-        <div style="margin-bottom:8px">
-          Refined results list UX: plus moved to dedicated column, hostname moved to context menu, and improved row expansion details by port.
-        </div>
-        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.4p pre-alpha</div>
-        <div style="margin-bottom:8px">
-          Moved Speed Test and Prototype from desktop icons to toolbar buttons. Added Show/Hide toggles for both in the Customization dialog.
-        </div>
-        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.3p</div>
-        <div style="margin-bottom:8px">
-          Added a visual programming prototype window with draggable nodes, anchor points, and click-click line linking mode.
-        </div>
-        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.3</div>
-        <div style="margin-bottom:8px">
-          Added internet speed checking (download/upload) in a dedicated Speed Test window.
-        </div>
-      </div>
-    </div>
-    <div class="dlg-footer">
-      <button class="btn95" id="dlgVersionsCloseBtn" data-i18n="dlgClose">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- Customization dialog -->
-<div class="dlg-overlay" id="dlgCustomizeOverlay">
-  <div class="dlg95" style="min-width:300px">
-    <div class="dlg-title">
-      <span>🎛</span>
-      <span style="flex:1">Customization – Toolbar</span>
-      <div class="title-btn" onclick="closeCustomizeDlg()">✕</div>
-    </div>
-    <div class="dlg-body">
-      <div class="dlg-groupbox">
-        <span class="dlg-groupbox-legend">Toolbar buttons</span>
-        <div style="display:flex;flex-direction:column;gap:7px;margin-top:2px">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <input type="checkbox" id="chkBtnGlobe" checked/>
-            <span>🌍 Globe (World Map)</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <input type="checkbox" id="chkBtnConsole" checked/>
-            <span>⌨ Console</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <input type="checkbox" id="chkBtnMacro" checked/>
-            <span>📁 Macro</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <input type="checkbox" id="chkBtnSpeed" checked/>
-            <span>📶 Speed Test</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <input type="checkbox" id="chkBtnProto" checked/>
-            <span>🧩 Prototype</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <input type="checkbox" id="chkBtnTopology" checked/>
-            <span>🕸 Topology</span>
-          </label>
-        </div>
-      </div>
-    </div>
-    <div class="dlg-footer">
-      <button class="btn95" onclick="closeCustomizeDlg()">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- Context menu -->
-<div class="ctxmenu" id="ctxMenu">
-  <div class="ctx-item" id="ctxCopyIp" data-i18n="ctxCopyIp">Copy IP Address</div>
-  <div class="ctx-item" id="ctxCopyPorts" data-i18n="ctxCopyPorts">Copy Ports</div>
-  <div class="ctx-item" id="ctxHostname" data-i18n="ctxHostname">🧭 Hostname (reverse DNS)</div>
-  <div class="ctx-sep"></div>
-  <div class="ctx-item" id="ctxDetailGeo">🌍 Geolokalizacja / ISP</div>
-  <div class="ctx-item" id="ctxDetailDevice">🖥 Identyfikacja urządzenia</div>
-  <div class="ctx-item" id="ctxDetailTitle">📄 Tytuł strony HTTP</div>
-  <div class="ctx-item" id="ctxDetailAccess">🔑 Dostęp / Snapshot</div>
-  <div class="ctx-sep"></div>
-  <div class="ctx-item" id="ctxScanAllPorts" data-i18n="ctxScanAllPorts">Scan this IP (all ports)</div>
-  <div class="ctx-sep"></div>
-  <div class="ctx-item" id="ctxOpenBrowser" data-i18n="ctxOpenBrowser">Open in Browser</div>
-  <div class="ctx-item" id="ctxPreview" data-i18n="ctxPreview">Preview here</div>
-</div>
-
-<script>
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  i18n
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 let lang = localStorage.getItem('netrecon_lang') || 'en';
 
 const STRINGS = {
   en: {
     menuFile:'File', menuOptions:'Options', menuHelp:'Help',
     menuLanguage:'Language...', menuAbout:'About', menuVersions:'Versions', menuPresets:'Port Presets...', menuCountries:'Country IP Library...', menuDefaults:'Default Scan Values...',
-    btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Clear',
-    btnMyIp:'🌐 My External IP', btnMyLocalIp:'🏠 My Local IP', btnLocalSubnets:'🧭 Local Subnets', btnCopy:'📋 Copy', btnUse:'➤ Use',
+    btnStart:'ÔľÂ Start', btnStop:'Ôľá Stop', btnClear:'ÔťĽ Clear',
+    btnMyIp:'­čîÉ My External IP', btnMyLocalIp:'­čĆá My Local IP', btnLocalSubnets:'­čžş Local Subnets', btnCopy:'­čôő Copy', btnUse:'Ô×Ą Use',
     scanSettings:'Scan Settings', ipRange:'IP Range:', threads:'Threads:', delayMs:'Delay (ms):',
-    modeCam:'📹 Cameras', modePrint:'🖨️ Printers',
-    modeFolder:'📁 Folders / HTTP', modeRouter:'🌐 Routers',
-    modeNas:'💾 NAS', modeAll:'🔍 All',
+    modeCam:'­čô╣ Cameras', modePrint:'­čľĘ´ŞĆ Printers',
+    modeFolder:'­čôü Folders / HTTP', modeRouter:'­čîÉ Routers',
+    modeNas:'­čĺż NAS', modeAll:'­čöŹ All',
     hintCam:'Ports: 80, 8080, 8081, 443, 554(RTSP), 9000, 37777(Dahua), 34567(DVR)',
     hintPrint:'Ports: 80, 443, 631(IPP), 9100(RAW), 8080',
-    hintFolder:'Ports: 80, 8080, 8888, 21(FTP), 3000, 8000 — folder listing, FTP',
+    hintFolder:'Ports: 80, 8080, 8888, 21(FTP), 3000, 8000 ÔÇö folder listing, FTP',
     hintRouter:'Ports: 80, 443, 8080, 8443, 10000(Webmin)',
     hintNas:'Synology 5000/5001, QNAP 8080, Proxmox 8006, TrueNAS 80/443',
-    hintAll:'All known ports at once — slower, most thorough',
+    hintAll:'All known ports at once ÔÇö slower, most thorough',
     labelChecked:'Checked:', labelFound:'Found:', labelPorts:'Ports:',
     colIp:'IP Address', colPing:'Ping', colHostname:'Hostname', colPorts:'Ports', colLinks:'Paths / Links',
     emptyRow:'No results. Configure IP range and click Start.',
-    emptyScanning:'Scanning…', emptyNone:'No active hosts found.',
-    detailGeo:'🌍 Geolocation / ISP', detailDevice:'🖥 Device Identification',
-    detailTitle:'📄 HTTP Page Title', detailAccess:'🔑 Access',
-    geoLocal:'Local address — geolocation unavailable',
+    emptyScanning:'ScanningÔÇŽ', emptyNone:'No active hosts found.',
+    detailGeo:'­čîŹ Geolocation / ISP', detailDevice:'­čľą Device Identification',
+    detailTitle:'­čôä HTTP Page Title', detailAccess:'­čöĹ Access',
+    geoLocal:'Local address ÔÇö geolocation unavailable',
     geoError:'Failed to fetch data',
     geoCountry:'Country:', geoIsp:'ISP:', geoAs:'AS:',
-    deviceFavicon:'Favicon:', deviceFaviconYes:'✔ Yes (web panel)', deviceFaviconNo:'✘ None',
+    deviceFavicon:'Favicon:', deviceFaviconYes:'Ôťö Yes (web panel)', deviceFaviconNo:'Ôťś None',
     deviceType:'Type:', deviceSuggestion:'Hint:', deviceUnknown:'Unknown device type',
     titleExtOnly:'Title: external IPs only', titleUnavailable:'Title: unavailable',
     titleLabel:'Page title:', accessLabel:'Snapshot:',
-    accessOpen:'🔓 Accessible without password',
+    accessOpen:'­čöô Accessible without password',
     accessClosed:'Requires authorization or unavailable',
-    loading:'Loading…', analyzing:'Analyzing…', checking:'Checking…',
+    loading:'LoadingÔÇŽ', analyzing:'AnalyzingÔÇŽ', checking:'CheckingÔÇŽ',
     localSubnetsFound:(n)=>`${n} subnet(s) detected`, localSubnetsNone:'No local subnet found',
     localDetectUnsupported:'Local network detection is not supported in this browser/context',
     localIpDetectError:'Local IP detection failed (WebRTC blocked or unavailable)',
-    previewOpen:'↗ Open', previewClose:'✕',
+    previewOpen:'ÔćŚ Open', previewClose:'ÔťĽ',
     statusReady:'Ready.', statusCleared:'Cleared.',
     errInvalidIp:'Invalid IPv4 address.',
-    errIpRange:'FROM address must be ≤ TO.',
+    errIpRange:'FROM address must be ÔëĄ TO.',
     errNoPorts:'No ports selected in preset.',
-    statusScanning:(n,p)=>`Scanning ${n} addresses × ${p} ports…`,
-    statusLarge:(n,p,t)=>`Large range: ${n} addresses × ${p} ports. Est. ${t}…`,
+    statusScanning:(n,p)=>`Scanning ${n} addresses ├Ś ${p} portsÔÇŽ`,
+    statusLarge:(n,p,t)=>`Large range: ${n} addresses ├Ś ${p} ports. Est. ${t}ÔÇŽ`,
     statusStopped:(n)=>`Stopped after ${n} addresses.`,
     statusDone:(h,p)=>`Done. Found ${h} hosts (${p} ports).`,
-    statusNone:'Scan complete — no active hosts.',
+    statusNone:'Scan complete ÔÇö no active hosts.',
     statusHosts:(n)=>`${n} hosts`,
     ctxCopyIp:'Copy IP Address', ctxCopyPorts:'Copy Ports', ctxHostname:'Hostname (reverse DNS)', ctxScanAllPorts:'Scan this IP (all ports)',
     ctxOpenBrowser:'Open in Browser', ctxPreview:'Preview here',
     labelPreset:'Preset:', labelPorts2:'Ports:',
-    presetAdd:'+ Add', presetDel:'✕ Delete',
+    presetAdd:'+ Add', presetDel:'ÔťĽ Delete',
     presetEdit:'Edit preset', presetName:'Name:',
-    presetPorts:'Ports:', presetSave:'💾 Save',
+    presetPorts:'Ports:', presetSave:'­čĺż Save',
     presetHint:'Enter port numbers separated by commas, e.g.: 80, 443, 8080, 554',
     dlgTitle:'Options', dlgLang:'Language:',
     dlgDefaults:'Default Scan Values:', dlgDefaultThreads:'Threads:', dlgDefaultDelay:'Delay (ms):',
@@ -1066,13 +787,13 @@ const STRINGS = {
     portSyn:'Synology NAS?', portProx:'Proxmox VE?',
     tagVpn:'VPN/Proxy', tagDc:'Datacenter', tagRecognized:'IDENTIFIED',
     notepadDesktop:'Notepad',
-    notepadWinTitle:'Notepad – About',
+    notepadWinTitle:'Notepad ÔÇô About',
     previewBlocked:'Device blocks embedding (X-Frame-Options).',
-    previewBlockedLink:'Open directly in new tab →',
+    previewBlockedLink:'Open directly in new tab Ôćĺ',
     btnImportTrace:'Import Trace', btnClearTopoFilters:'Clear Filters', topoFiltersLabel:'Filters:', mapLiveLabel:'Live scan visualization',
     filterAllPorts:'All ports', filterPortLabel:'port', filterSubnetLabel:'subnet', filterPingLabel:'ping', filterPingPlaceholder:'Max ms',
-    topologyStatus:(n)=>`Topology view · ${n} visible hosts`,
-    topologyFilteredStatus:(n)=>`Topology view · ${n} filtered hosts`,
+    topologyStatus:(n)=>`Topology view ┬Ě ${n} visible hosts`,
+    topologyFilteredStatus:(n)=>`Topology view ┬Ě ${n} filtered hosts`,
     traceRoutesLabel:'trace routes',
     traceDlgTitle:'Import traceroute', traceTargetLabel:'Target IP:', traceHint:'Paste output from tracert or traceroute.', traceDlgHint:'Import a real traceroute path for the selected host.',
     traceErrTarget:'Enter a valid target IPv4 address.', traceErrParse:'Could not parse any hops from the pasted output.',
@@ -1081,76 +802,76 @@ const STRINGS = {
   },
   pl: {
     menuFile:'Plik', menuOptions:'Opcje', menuHelp:'Pomoc',
-    menuLanguage:'Język...', menuAbout:'O programie', menuVersions:'Wersje', menuPresets:'Presety portów...', menuCountries:'Biblioteka krajów IP...', menuDefaults:'Domyślne wartości skanowania...',
-    btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Wyczyść',
-    btnMyIp:'🌐 Moje zewnętrzne IP', btnMyLocalIp:'🏠 Moje lokalne IP', btnLocalSubnets:'🧭 Lokalne podsieci', btnCopy:'📋 Kopiuj', btnUse:'➤ Użyj',
-    scanSettings:'Ustawienia skanowania', ipRange:'IP Range:', threads:'Wątki:', delayMs:'Opóźnienie (ms):',
-    modeCam:'📹 Kamery', modePrint:'🖨️ Drukarki',
-    modeFolder:'📁 Foldery / HTTP', modeRouter:'🌐 Routery',
-    modeNas:'💾 NAS', modeAll:'🔍 Wszystko',
+    menuLanguage:'J─Özyk...', menuAbout:'O programie', menuVersions:'Wersje', menuPresets:'Presety port├│w...', menuCountries:'Biblioteka kraj├│w IP...', menuDefaults:'Domy┼Ťlne warto┼Ťci skanowania...',
+    btnStart:'ÔľÂ Start', btnStop:'Ôľá Stop', btnClear:'ÔťĽ Wyczy┼Ť─ç',
+    btnMyIp:'­čîÉ Moje zewn─Ötrzne IP', btnMyLocalIp:'­čĆá Moje lokalne IP', btnLocalSubnets:'­čžş Lokalne podsieci', btnCopy:'­čôő Kopiuj', btnUse:'Ô×Ą U┼╝yj',
+    scanSettings:'Ustawienia skanowania', ipRange:'IP Range:', threads:'W─ůtki:', delayMs:'Op├│┼║nienie (ms):',
+    modeCam:'­čô╣ Kamery', modePrint:'­čľĘ´ŞĆ Drukarki',
+    modeFolder:'­čôü Foldery / HTTP', modeRouter:'­čîÉ Routery',
+    modeNas:'­čĺż NAS', modeAll:'­čöŹ Wszystko',
     hintCam:'Porty: 80, 8080, 8081, 443, 554(RTSP), 9000, 37777(Dahua), 34567(DVR)',
     hintPrint:'Porty: 80, 443, 631(IPP), 9100(RAW), 8080',
-    hintFolder:'Porty: 80, 8080, 8888, 21(FTP), 3000, 8000 — listing folderów, FTP',
+    hintFolder:'Porty: 80, 8080, 8888, 21(FTP), 3000, 8000 ÔÇö listing folder├│w, FTP',
     hintRouter:'Porty: 80, 443, 8080, 8443, 10000(Webmin)',
     hintNas:'Synology 5000/5001, QNAP 8080, Proxmox 8006, TrueNAS 80/443',
-    hintAll:'Wszystkie znane porty jednocześnie — wolniejszy, najdokładniejszy',
-    labelChecked:'Sprawdzono:', labelFound:'Znaleziono:', labelPorts:'Portów:',
-    colIp:'Adres IP', colPing:'Ping', colHostname:'Hostname', colPorts:'Porty', colLinks:'Ścieżki / Linki',
-    emptyRow:'Brak wyników. Skonfiguruj zakres IP i kliknij Start.',
-    emptyScanning:'Skanowanie…', emptyNone:'Nie znaleziono aktywnych hostów.',
-    detailGeo:'🌍 Geolokalizacja / ISP', detailDevice:'🖥 Identyfikacja urządzenia',
-    detailTitle:'📄 Tytuł strony HTTP', detailAccess:'🔑 Dostęp',
-    geoLocal:'Adres lokalny — geolokalizacja niedostępna',
-    geoError:'Błąd pobierania danych',
+    hintAll:'Wszystkie znane porty jednocze┼Ťnie ÔÇö wolniejszy, najdok┼éadniejszy',
+    labelChecked:'Sprawdzono:', labelFound:'Znaleziono:', labelPorts:'Port├│w:',
+    colIp:'Adres IP', colPing:'Ping', colHostname:'Hostname', colPorts:'Porty', colLinks:'┼Ücie┼╝ki / Linki',
+    emptyRow:'Brak wynik├│w. Skonfiguruj zakres IP i kliknij Start.',
+    emptyScanning:'SkanowanieÔÇŽ', emptyNone:'Nie znaleziono aktywnych host├│w.',
+    detailGeo:'­čîŹ Geolokalizacja / ISP', detailDevice:'­čľą Identyfikacja urz─ůdzenia',
+    detailTitle:'­čôä Tytu┼é strony HTTP', detailAccess:'­čöĹ Dost─Öp',
+    geoLocal:'Adres lokalny ÔÇö geolokalizacja niedost─Öpna',
+    geoError:'B┼é─ůd pobierania danych',
     geoCountry:'Kraj:', geoIsp:'ISP:', geoAs:'AS:',
-    deviceFavicon:'Favicon:', deviceFaviconYes:'✔ Tak (panel webowy)', deviceFaviconNo:'✘ Brak',
-    deviceType:'Typ:', deviceSuggestion:'Sugestia:', deviceUnknown:'Nieznany typ urządzenia',
-    titleExtOnly:'Tytuł: tylko dla zewnętrznych IP', titleUnavailable:'Tytuł: niedostępny',
-    titleLabel:'Tytuł strony:', accessLabel:'Snapshot:',
-    accessOpen:'🔓 Dostępny bez hasła',
+    deviceFavicon:'Favicon:', deviceFaviconYes:'Ôťö Tak (panel webowy)', deviceFaviconNo:'Ôťś Brak',
+    deviceType:'Typ:', deviceSuggestion:'Sugestia:', deviceUnknown:'Nieznany typ urz─ůdzenia',
+    titleExtOnly:'Tytu┼é: tylko dla zewn─Ötrznych IP', titleUnavailable:'Tytu┼é: niedost─Öpny',
+    titleLabel:'Tytu┼é strony:', accessLabel:'Snapshot:',
+    accessOpen:'­čöô Dost─Öpny bez has┼éa',
     accessClosed:'Wymaga autoryzacji lub brak',
-    loading:'Pobieranie…', analyzing:'Analiza…', checking:'Sprawdzanie…',
+    loading:'PobieranieÔÇŽ', analyzing:'AnalizaÔÇŽ', checking:'SprawdzanieÔÇŽ',
     localSubnetsFound:(n)=>`Wykryto podsieci: ${n}`, localSubnetsNone:'Nie wykryto lokalnej podsieci',
-    localDetectUnsupported:'Wykrywanie lokalnej sieci nie jest wspierane w tej przeglądarce/kontekście',
-    localIpDetectError:'Nie udało się wykryć lokalnego IP (WebRTC zablokowane lub niedostępne)',
-    previewOpen:'↗ Otwórz', previewClose:'✕',
+    localDetectUnsupported:'Wykrywanie lokalnej sieci nie jest wspierane w tej przegl─ůdarce/kontek┼Ťcie',
+    localIpDetectError:'Nie uda┼éo si─Ö wykry─ç lokalnego IP (WebRTC zablokowane lub niedost─Öpne)',
+    previewOpen:'ÔćŚ Otw├│rz', previewClose:'ÔťĽ',
     statusReady:'Gotowy.', statusCleared:'Wyczyszczono.',
     errInvalidIp:'Podaj poprawne adresy IPv4.',
-    errIpRange:'Adres OD musi być ≤ DO.',
+    errIpRange:'Adres OD musi by─ç ÔëĄ DO.',
     errNoPorts:'Wybierz co najmniej jeden port w presecie.',
-    statusScanning:(n,p)=>`Skanuję ${n} adresów × ${p} portów…`,
-    statusLarge:(n,p,t)=>`Duży zakres: ${n} adresów × ${p} portów. Est. ${t}…`,
+    statusScanning:(n,p)=>`Skanuj─Ö ${n} adres├│w ├Ś ${p} port├│wÔÇŽ`,
+    statusLarge:(n,p,t)=>`Du┼╝y zakres: ${n} adres├│w ├Ś ${p} port├│w. Est. ${t}ÔÇŽ`,
     statusStopped:(n)=>`Zatrzymano po ${n} adresach.`,
-    statusDone:(h,p)=>`Zakończono. Znaleziono ${h} hostów (${p} portów).`,
-    statusNone:'Skan zakończony — brak aktywnych hostów.',
-    statusHosts:(n)=>`${n} hostów`,
+    statusDone:(h,p)=>`Zako┼äczono. Znaleziono ${h} host├│w (${p} port├│w).`,
+    statusNone:'Skan zako┼äczony ÔÇö brak aktywnych host├│w.',
+    statusHosts:(n)=>`${n} host├│w`,
     ctxCopyIp:'Kopiuj adres IP', ctxCopyPorts:'Kopiuj porty', ctxHostname:'Hostname (reverse DNS)', ctxScanAllPorts:'Skanuj to IP (wszystkie porty)',
-    ctxOpenBrowser:'Otwórz w przeglądarce', ctxPreview:'Podgląd tutaj',
+    ctxOpenBrowser:'Otw├│rz w przegl─ůdarce', ctxPreview:'Podgl─ůd tutaj',
     labelPreset:'Preset:', labelPorts2:'Porty:',
-    presetAdd:'+ Dodaj', presetDel:'✕ Usuń',
+    presetAdd:'+ Dodaj', presetDel:'ÔťĽ Usu┼ä',
     presetEdit:'Edytuj preset', presetName:'Nazwa:',
-    presetPorts:'Porty:', presetSave:'💾 Zapisz',
-    presetHint:'Wpisz numery portów po przecinku, np.: 80, 443, 8080, 554',
-    dlgTitle:'Opcje', dlgLang:'Język:',
-    dlgDefaults:'Domyślne wartości skanowania:', dlgDefaultThreads:'Wątki:', dlgDefaultDelay:'Opóźnienie (ms):',
+    presetPorts:'Porty:', presetSave:'­čĺż Zapisz',
+    presetHint:'Wpisz numery port├│w po przecinku, np.: 80, 443, 8080, 554',
+    dlgTitle:'Opcje', dlgLang:'J─Özyk:',
+    dlgDefaults:'Domy┼Ťlne warto┼Ťci skanowania:', dlgDefaultThreads:'W─ůtki:', dlgDefaultDelay:'Op├│┼║nienie (ms):',
     dlgLangEn:'English', dlgLangPl:'Polski',
     dlgOk:'OK', dlgCancel:'Anuluj', dlgClose:'Zamknij', dlgVersionsTitle:'Wersje',
-    portRtsp:'RTSP stream prawdopodobnie dostępny',
+    portRtsp:'RTSP stream prawdopodobnie dost─Öpny',
     portIpp:'Drukarka (IPP)', portRaw:'Drukarka (RAW)',
     portSyn:'Synology NAS?', portProx:'Proxmox VE?',
     tagVpn:'VPN/Proxy', tagDc:'Datacenter', tagRecognized:'ROZPOZNANY',
     notepadDesktop:'Notatnik',
-    notepadWinTitle:'Notatnik – O autorze',
-    previewBlocked:'Urządzenie blokuje osadzanie (X-Frame-Options).',
-    previewBlockedLink:'Otwórz w nowej karcie →',
-    btnImportTrace:'Importuj Trace', btnClearTopoFilters:'Wyczyść filtry', topoFiltersLabel:'Filtry:', mapLiveLabel:'Wizualizacja na żywo',
-    filterAllPorts:'Wszystkie porty', filterPortLabel:'port', filterSubnetLabel:'podsieć', filterPingLabel:'ping', filterPingPlaceholder:'Maks ms',
-    topologyStatus:(n)=>`Widok topologii · ${n} widocznych hostów`,
-    topologyFilteredStatus:(n)=>`Widok topologii · ${n} hostów po filtrach`,
+    notepadWinTitle:'Notatnik ÔÇô O autorze',
+    previewBlocked:'Urz─ůdzenie blokuje osadzanie (X-Frame-Options).',
+    previewBlockedLink:'Otw├│rz w nowej karcie Ôćĺ',
+    btnImportTrace:'Importuj Trace', btnClearTopoFilters:'Wyczy┼Ť─ç filtry', topoFiltersLabel:'Filtry:', mapLiveLabel:'Wizualizacja na ┼╝ywo',
+    filterAllPorts:'Wszystkie porty', filterPortLabel:'port', filterSubnetLabel:'podsie─ç', filterPingLabel:'ping', filterPingPlaceholder:'Maks ms',
+    topologyStatus:(n)=>`Widok topologii ┬Ě ${n} widocznych host├│w`,
+    topologyFilteredStatus:(n)=>`Widok topologii ┬Ě ${n} host├│w po filtrach`,
     traceRoutesLabel:'tras trace',
-    traceDlgTitle:'Import traceroute', traceTargetLabel:'Docelowe IP:', traceHint:'Wklej wynik z tracert albo traceroute.', traceDlgHint:'Zaimportuj prawdziwą trasę hop-by-hop dla wybranego hosta.',
-    traceErrTarget:'Podaj poprawny docelowy adres IPv4.', traceErrParse:'Nie udało się odczytać hopów z wklejonego wyniku.',
-    traceImported:(n, ip)=>`Zaimportowano ${n} hopów dla ${ip}.`, traceImportedStatus:(ip, n)=>`Zaimportowano trasę dla ${ip} (${n} hopów).`, traceHopCopied:(ip)=>`Skopiowano IP hopa: ${ip}`,
+    traceDlgTitle:'Import traceroute', traceTargetLabel:'Docelowe IP:', traceHint:'Wklej wynik z tracert albo traceroute.', traceDlgHint:'Zaimportuj prawdziw─ů tras─Ö hop-by-hop dla wybranego hosta.',
+    traceErrTarget:'Podaj poprawny docelowy adres IPv4.', traceErrParse:'Nie uda┼éo si─Ö odczyta─ç hop├│w z wklejonego wyniku.',
+    traceImported:(n, ip)=>`Zaimportowano ${n} hop├│w dla ${ip}.`, traceImportedStatus:(ip, n)=>`Zaimportowano tras─Ö dla ${ip} (${n} hop├│w).`, traceHopCopied:(ip)=>`Skopiowano IP hopa: ${ip}`,
     btnTraceSave:'Importuj',
   }
 };
@@ -1212,7 +933,7 @@ function applyScanDefaultsToMainInputs(cfg) {
   delayInput.value = String(clampInt(cfg.delayMs, 0, 5000, 0));
 }
 
-// ── Language dialog ──
+// ÔöÇÔöÇ Language dialog ÔöÇÔöÇ
 function openLangDlg() {
   document.getElementById('radioEn').checked = (lang === 'en');
   document.getElementById('radioPl').checked = (lang === 'pl');
@@ -1234,7 +955,7 @@ document.getElementById('dlgOk').addEventListener('click', () => {
 });
 document.getElementById('dlgCancel').addEventListener('click', closeLangDlg);
 
-// ── Defaults dialog ──
+// ÔöÇÔöÇ Defaults dialog ÔöÇÔöÇ
 function openDefaultsDlg() {
   const cfg = loadScanDefaults();
   document.getElementById('dlgDefaultThreads').value = String(cfg.threads);
@@ -1245,7 +966,7 @@ function closeDefaultsDlg() {
   document.getElementById('dlgDefaultsOverlay').classList.remove('open');
 }
 
-// ── Versions dialog ──
+// ÔöÇÔöÇ Versions dialog ÔöÇÔöÇ
 function openVersionsDlg() {
   document.getElementById('dlgVersionsOverlay').classList.add('open');
 }
@@ -1267,7 +988,7 @@ document.getElementById('dlgDefaultsOk').addEventListener('click', () => {
 });
 document.getElementById('dlgDefaultsCancel').addEventListener('click', closeDefaultsDlg);
 
-// ── Menu bar ──
+// ÔöÇÔöÇ Menu bar ÔöÇÔöÇ
 document.querySelectorAll('.menu-item').forEach(item => {
   item.addEventListener('click', e => {
     e.stopPropagation();
@@ -1297,9 +1018,9 @@ document.getElementById('menuAbout').addEventListener('click', () => {
 });
 document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  CUSTOMIZATION
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 const TOOLBAR_BTNS_CFG = [
   { chk: 'chkBtnGlobe',   id: 'btnGlobe',        key: 'tb_globe' },
   { chk: 'chkBtnConsole', id: 'btnCmdConsole',   key: 'tb_console' },
@@ -1344,16 +1065,16 @@ document.getElementById('btnProtoToolbar').addEventListener('click', openProtoWi
 
 applyToolbarCustomization();
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  PORT PRESETS
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 const DEFAULT_PRESETS = [
-  { name: '📹 Cameras',         ports: '80, 8080, 8081, 443, 554, 9000, 37777, 34567' },
-  { name: '🖨️ Printers',        ports: '80, 443, 631, 9100, 8080' },
-  { name: '📁 Folders / HTTP',  ports: '80, 8080, 8888, 21, 3000, 8000, 5000' },
-  { name: '🌐 Routers',         ports: '80, 443, 8080, 8443, 10000' },
-  { name: '💾 NAS / Servers',   ports: '80, 443, 5000, 5001, 8080, 8006, 9090' },
-  { name: '🔍 All ports',       ports: '80, 443, 8080, 8443, 8081, 554, 9000, 37777, 34567, 631, 9100, 5000, 5001, 8006, 21, 3000, 8000, 8888, 9090, 10000' },
+  { name: '­čô╣ Cameras',         ports: '80, 8080, 8081, 443, 554, 9000, 37777, 34567' },
+  { name: '­čľĘ´ŞĆ Printers',        ports: '80, 443, 631, 9100, 8080' },
+  { name: '­čôü Folders / HTTP',  ports: '80, 8080, 8888, 21, 3000, 8000, 5000' },
+  { name: '­čîÉ Routers',         ports: '80, 443, 8080, 8443, 10000' },
+  { name: '­čĺż NAS / Servers',   ports: '80, 443, 5000, 5001, 8080, 8006, 9090' },
+  { name: '­čöŹ All ports',       ports: '80, 443, 8080, 8443, 8081, 554, 9000, 37777, 34567, 631, 9100, 5000, 5001, 8006, 21, 3000, 8000, 8888, 9090, 10000' },
 ];
 
 function loadPresets() {
@@ -1431,7 +1152,7 @@ document.getElementById('presetSelect').addEventListener('change', function() {
 
 buildPresetSelect();
 
-// ── Presets Dialog ──
+// ÔöÇÔöÇ Presets Dialog ÔöÇÔöÇ
 let dlgSelectedPreset = -1;
 
 function openPresetsDlg() {
@@ -1534,9 +1255,9 @@ document.getElementById('menuPresets').addEventListener('click', () => {
   openPresetsDlg();
 });
 
-// ══════════════════════════════════════════════════
-//  IP INPUT — auto-jump between octets
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
+//  IP INPUT ÔÇö auto-jump between octets
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 ['f0','f1','f2','f3','t0','t1','t2','t3'].forEach((id, idx) => {
   const el = document.getElementById(id);
   el.addEventListener('input', () => {
@@ -1571,9 +1292,9 @@ function setIP(prefix, ip) {
   [0,1,2,3].forEach(i => { document.getElementById(prefix+i).value = parts[i]||''; });
 }
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  STATE
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 let scanning=false, stopRequested=false;
 const activeControllers = new Set();
 var foundHostsMap={}, foundPingMap={}, totalFound=0, totalOpenPorts=0;
@@ -1581,9 +1302,9 @@ let timerInterval=null, scanStart=0;
 let selectedRowEl=null, ctxTargetIp='', ctxTargetPorts=[];
 let focusedIp = localStorage.getItem('netrecon_focus_ip') || '';
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  DOM
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 const btnGo       = document.getElementById('btnGo');
 const btnStop     = document.getElementById('btnStop');
 const btnClear    = document.getElementById('btnClear');
@@ -1607,9 +1328,9 @@ const btnPreviewClose= document.getElementById('btnPreviewClose');
 const previewExtLink = document.getElementById('previewExtLink');
 const ctxMenu     = document.getElementById('ctxMenu');
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  HELPERS
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 function isIPv4(v) {
   if (!v.match(/^(\d{1,3}\.){3}\d{1,3}$/)) return false;
   return v.split('.').every(p => { const n=+p; return n>=0&&n<=255; });
@@ -1644,11 +1365,11 @@ function setScanState(on) {
   }
 }
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  PROBE
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 
-// Tauri invoke helper — falls back to null when running in a plain browser
+// Tauri invoke helper ÔÇö falls back to null when running in a plain browser
 const _tauriInvoke = (window.__TAURI_INTERNALS__?.invoke)
   ?? (window.__TAURI__?.invoke)
   ?? (window.__TAURI__?.core?.invoke)
@@ -1686,7 +1407,7 @@ function makeToolChromeCloseOnly(target) {
   let closeBtn = allBtns.find(btn => {
     const id = (btn.id || '').toLowerCase();
     const txt = (btn.textContent || '').trim();
-    return id.includes('close') || txt.includes('✕') || txt.toLowerCase() === 'x';
+    return id.includes('close') || txt.includes('ÔťĽ') || txt.toLowerCase() === 'x';
   });
 
   allBtns.forEach(btn => {
@@ -1696,7 +1417,7 @@ function makeToolChromeCloseOnly(target) {
   if (!closeBtn) {
     closeBtn = document.createElement('button');
     closeBtn.className = 'title-btn';
-    closeBtn.textContent = '✕';
+    closeBtn.textContent = 'ÔťĽ';
     closeBtn.style.fontWeight = '900';
     btns.appendChild(closeBtn);
   }
@@ -1858,7 +1579,7 @@ if (_tauriListen) {
 
 async function probePort(ip, port, ms=1500) {
   if (_tauriInvoke) {
-    // Native Rust TCP probe — no CORS restrictions
+    // Native Rust TCP probe ÔÇö no CORS restrictions
     try {
       const r = await _tauriInvoke('scan_port', { ip, port, timeoutMs: ms });
       return { ok: r.open, ms: r.ms ?? null };
@@ -1902,12 +1623,12 @@ function isPrivateIP(ip) {
     p[0]===127;
 }
 
-// ── Geolocation via ip-api.com ──
+// ÔöÇÔöÇ Geolocation via ip-api.com ÔöÇÔöÇ
 async function geoLookup(ip) {
   try {
     let d;
     if (_tauriInvoke) {
-      // Rust handles the HTTP request — no CORS/mixed-content issues
+      // Rust handles the HTTP request ÔÇö no CORS/mixed-content issues
       d = await _tauriInvoke('geo_lookup', { ip });
     } else {
       const r = await fetch(
@@ -1927,7 +1648,7 @@ async function geoLookup(ip) {
   } catch { return null; }
 }
 
-// ── Page title via CORS proxy (external IPs only) ──
+// ÔöÇÔöÇ Page title via CORS proxy (external IPs only) ÔöÇÔöÇ
 async function fetchTitle(ip, port) {
   const proto = (port===443||port===8443)?'https':'http';
   const target = encodeURIComponent(`${proto}://${ip}:${port}/`);
@@ -1940,13 +1661,13 @@ async function fetchTitle(ip, port) {
   } catch { return null; }
 }
 
-// ── Favicon probe ──
+// ÔöÇÔöÇ Favicon probe ÔöÇÔöÇ
 function checkFavicon(ip, port) {
   const proto = (port===443||port===8443)?'https':'http';
   return tryImageLoad(`${proto}://${ip}:${port}/favicon.ico`, 2000);
 }
 
-// ── Snapshot / open auth ──
+// ÔöÇÔöÇ Snapshot / open auth ÔöÇÔöÇ
 async function checkAuth(ip, ports) {
   const snaps = [
     '/snapshot.jpg','/image.jpg','/jpg/image.jpg',
@@ -1963,7 +1684,7 @@ async function checkAuth(ip, ports) {
   return false;
 }
 
-// ── Device fingerprint by known image paths ──
+// ÔöÇÔöÇ Device fingerprint by known image paths ÔöÇÔöÇ
 const FP_IMAGES = [
   { path: '/ISAPI/Streaming/channels/101/picture', label: 'Hikvision' },
   { path: '/cgi-bin/snapshot.cgi',                 label: 'Dahua / kamera' },
@@ -1985,7 +1706,7 @@ async function fingerprintByImage(ip, ports) {
   return null;
 }
 
-// ── Full enrichment (runs async after row is added) ──
+// ÔöÇÔöÇ Full enrichment (runs async after row is added) ÔöÇÔöÇ
 async function enrichRow(ip, ports, cells) {
   const { cGeo, cDevice, cTitle, cAccess } = cells;
 
@@ -2003,7 +1724,7 @@ async function enrichRow(ip, ports, cells) {
     const vpnTag = geo.proxy   ? `<span class="detail-tag tag-vpn">${t('tagVpn')}</span>` : '';
     const dcTag  = geo.hosting ? `<span class="detail-tag tag-dc">${t('tagDc')}</span>`   : '';
     cGeo.innerHTML =
-      `<div class="detail-line"><b>${t('geoCountry')}</b> ${geo.country||'?'} — ${geo.city||'?'}${vpnTag}${dcTag}</div>`+
+      `<div class="detail-line"><b>${t('geoCountry')}</b> ${geo.country||'?'} ÔÇö ${geo.city||'?'}${vpnTag}${dcTag}</div>`+
       `<div class="detail-line"><b>${t('geoIsp')}</b> ${geo.isp||'?'}</div>`+
       `<div class="detail-line"><b>${t('geoAs')}</b> ${geo.as||'?'}</div>`;
   } else {
@@ -2041,7 +1762,7 @@ async function enrichRow(ip, ports, cells) {
     : `<div class="detail-line"><b>${t('accessLabel')}</b> ${t('accessClosed')}</div>`;
 }
 
-// ── Hostname lookup via ip-api (already used for geo, reuse) ──
+// ÔöÇÔöÇ Hostname lookup via ip-api (already used for geo, reuse) ÔöÇÔöÇ
 const hostnameCache = {};
 async function lookupHostname(ip) {
   if (hostnameCache[ip] !== undefined) return hostnameCache[ip];
@@ -2057,13 +1778,13 @@ async function lookupHostname(ip) {
   } catch { hostnameCache[ip] = null; return null; }
 }
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  ADD ROW
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 function addResultRow(ip, openPorts, pingMs) {
   if (emptyRow.parentNode) emptyRow.remove();
 
-  // Generic paths — work for any device type
+  // Generic paths ÔÇö work for any device type
   const paths = [
     {p:'/',l:'/'}, {p:'/admin',l:'/admin'}, {p:'/video',l:'/video'},
     {p:'/snapshot.jpg',l:'/snapshot'}, {p:'/files',l:'/files'},
@@ -2079,7 +1800,7 @@ function addResultRow(ip, openPorts, pingMs) {
   // Icon
   const cIcon = document.createElement('div');
   cIcon.className='lv-cell lv-icon';
-  cIcon.innerHTML='<span class="icon-ok">✔</span>';
+  cIcon.innerHTML='<span class="icon-ok">Ôťö</span>';
   row.appendChild(cIcon);
 
   // IP
@@ -2094,7 +1815,7 @@ function addResultRow(ip, openPorts, pingMs) {
   const expandBtn = document.createElement('span');
   expandBtn.className = 'row-expand-btn';
   expandBtn.textContent = '+';
-  expandBtn.title = 'Pokaż udostępnione zasoby';
+  expandBtn.title = 'Poka┼╝ udost─Öpnione zasoby';
   cExpand.appendChild(expandBtn);
   row.appendChild(cExpand);
 
@@ -2110,7 +1831,7 @@ function addResultRow(ip, openPorts, pingMs) {
   }
   row.appendChild(cPing);
 
-  // ── Paths sub-row (expandable below the row) ──
+  // ÔöÇÔöÇ Paths sub-row (expandable below the row) ÔöÇÔöÇ
   const pathsRow = document.createElement('div');
   pathsRow.className = 'paths-row';
   const pFrag = document.createDocumentFragment();
@@ -2139,11 +1860,11 @@ function addResultRow(ip, openPorts, pingMs) {
   expandBtn.addEventListener('click', e => {
     e.stopPropagation();
     const open = pathsRow.classList.toggle('open');
-    expandBtn.textContent = open ? '−' : '+';
+    expandBtn.textContent = open ? 'Ôłĺ' : '+';
     expandBtn.style.color = open ? '#c00' : '';
   });
 
-  // ── Left click → select only (no detail, no preview) ──
+  // ÔöÇÔöÇ Left click Ôćĺ select only (no detail, no preview) ÔöÇÔöÇ
   row.addEventListener('click', () => {
     const wasSelected = row.classList.contains('selected');
     document.querySelectorAll('.lv-row.selected').forEach(r => r.classList.remove('selected'));
@@ -2155,7 +1876,7 @@ function addResultRow(ip, openPorts, pingMs) {
     }
   });
 
-  // Right click → context menu
+  // Right click Ôćĺ context menu
   row.addEventListener('contextmenu', e=>{
     e.preventDefault();
     ctxTargetIp=ip; ctxTargetPorts=openPorts;
@@ -2168,11 +1889,11 @@ function addResultRow(ip, openPorts, pingMs) {
   listBody.appendChild(row);
   listBody.appendChild(pathsRow);
 
-  // ── Auto geo-locate for globe dots ──
+  // ÔöÇÔöÇ Auto geo-locate for globe dots ÔöÇÔöÇ
   if (!ipGeoCoords[ip]) {
     geoLookup(ip).then(d => {
       // geoLookup already stores in ipGeoCoords and calls updateGlobeDots
-      // Also update the IP cell with 🔓 flag if auth check was done separately
+      // Also update the IP cell with ­čöô flag if auth check was done separately
     });
   } else {
     updateGlobeDots();
@@ -2181,9 +1902,9 @@ function addResultRow(ip, openPorts, pingMs) {
   saveResults();
 }
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  RESULTS PERSISTENCE
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 function saveResults() {
   try {
     const data = Object.entries(foundHostsMap).map(([ip, ports]) => ({
@@ -2222,12 +1943,12 @@ function restoreResults() {
   } catch {}
 }
 
-// ── Restore on load ──
+// ÔöÇÔöÇ Restore on load ÔöÇÔöÇ
 restoreResults();
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  PREVIEW
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 function openInBrowser(url) {
   if (window.__TAURI__) {
     window.__TAURI__.core.invoke('open_browser', { url });
@@ -2256,9 +1977,9 @@ btnPreviewClose.addEventListener('click',()=>{
   if(selectedRowEl){selectedRowEl.classList.remove('selected');selectedRowEl=null;}
 });
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  ENRICH POPUP (draggable Win95-style info window)
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 function showEnrichPopup(popupId, label, asyncFn) {
   // Toggle: clicking the same menu item again closes the popup
   const existing = document.getElementById(popupId);
@@ -2274,12 +1995,12 @@ function showEnrichPopup(popupId, label, asyncFn) {
   const bar = document.createElement('div');
   bar.className = 'enrich-popup-bar';
   bar.innerHTML = `<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span>` +
-    `<span class="title-btn" style="cursor:pointer;font-size:10px;padding:0 5px;margin-left:4px">✕</span>`;
+    `<span class="title-btn" style="cursor:pointer;font-size:10px;padding:0 5px;margin-left:4px">ÔťĽ</span>`;
   bar.querySelector('.title-btn').addEventListener('click', () => win.remove());
 
   const body = document.createElement('div');
   body.className = 'enrich-popup-body';
-  body.innerHTML = '<span style="color:#808080;font-style:italic">Ładowanie…</span>';
+  body.innerHTML = '<span style="color:#808080;font-style:italic">┼üadowanieÔÇŽ</span>';
 
   win.append(bar, body);
   document.body.appendChild(win);
@@ -2302,12 +2023,12 @@ function showEnrichPopup(popupId, label, asyncFn) {
 
   asyncFn()
     .then(html  => { body.innerHTML = html || '<span style="color:#808080">Brak danych</span>'; })
-    .catch(() => { body.innerHTML = '<span style="color:#c00">Błąd ładowania danych</span>'; });
+    .catch(() => { body.innerHTML = '<span style="color:#c00">B┼é─ůd ┼éadowania danych</span>'; });
 }
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  CONTEXT MENU
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 document.getElementById('ctxCopyIp').addEventListener('click',()=>{
   navigator.clipboard?.writeText(ctxTargetIp);
   ctxMenu.classList.remove('open');
@@ -2319,7 +2040,7 @@ document.getElementById('ctxCopyPorts').addEventListener('click',()=>{
 document.getElementById('ctxHostname').addEventListener('click',()=>{
   const ip = ctxTargetIp;
   ctxMenu.classList.remove('open');
-  showEnrichPopup(`enrich-host-${ip}`, `🧭 Hostname — ${ip}`, async () => {
+  showEnrichPopup(`enrich-host-${ip}`, `­čžş Hostname ÔÇö ${ip}`, async () => {
     const name = await lookupHostname(ip);
     return name
       ? `<div><b>Hostname:</b> ${name}</div>`
@@ -2352,11 +2073,11 @@ document.getElementById('ctxScanAllPorts').addEventListener('click',()=>{
 document.addEventListener('click',()=>ctxMenu.classList.remove('open'));
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') ctxMenu.classList.remove('open'); });
 
-// ── Detail enrichment handlers (right-click popup windows) ──
+// ÔöÇÔöÇ Detail enrichment handlers (right-click popup windows) ÔöÇÔöÇ
 document.getElementById('ctxDetailGeo').addEventListener('click', () => {
   const ip = ctxTargetIp;
   ctxMenu.classList.remove('open');
-  showEnrichPopup(`enrich-geo-${ip}`, `🌍 Geolokalizacja — ${ip}`, async () => {
+  showEnrichPopup(`enrich-geo-${ip}`, `­čîŹ Geolokalizacja ÔÇö ${ip}`, async () => {
     const geo = await geoLookup(ip);
     if (!geo) return isPrivateIP(ip)
       ? `<span style="color:#808080">${t('geoLocal')}</span>`
@@ -2364,7 +2085,7 @@ document.getElementById('ctxDetailGeo').addEventListener('click', () => {
     const vpn = geo.proxy   ? `<span style="background:#800080;color:#fff;padding:0 3px;font-size:9px;margin-left:3px">VPN/Proxy</span>` : '';
     const dc  = geo.hosting ? `<span style="background:#808080;color:#fff;padding:0 3px;font-size:9px;margin-left:3px">DC</span>` : '';
     return `<div style="line-height:1.9">` +
-      `<b>${t('geoCountry')}</b> ${geo.country||'?'} — ${geo.city||'?'}${vpn}${dc}<br>` +
+      `<b>${t('geoCountry')}</b> ${geo.country||'?'} ÔÇö ${geo.city||'?'}${vpn}${dc}<br>` +
       `<b>${t('geoIsp')}</b> ${geo.isp||'?'}<br>` +
       `<b>${t('geoAs')}</b> ${geo.as||'?'}</div>`;
   });
@@ -2373,7 +2094,7 @@ document.getElementById('ctxDetailGeo').addEventListener('click', () => {
 document.getElementById('ctxDetailDevice').addEventListener('click', () => {
   const ip = ctxTargetIp, ports = ctxTargetPorts.slice();
   ctxMenu.classList.remove('open');
-  showEnrichPopup(`enrich-dev-${ip}`, `🖥 Urządzenie — ${ip}`, async () => {
+  showEnrichPopup(`enrich-dev-${ip}`, `­čľą Urz─ůdzenie ÔÇö ${ip}`, async () => {
     const [deviceLabel, hasFavicon] = await Promise.all([
       fingerprintByImage(ip, ports),
       checkFavicon(ip, ports[0]),
@@ -2390,7 +2111,7 @@ document.getElementById('ctxDetailDevice').addEventListener('click', () => {
 document.getElementById('ctxDetailTitle').addEventListener('click', () => {
   const ip = ctxTargetIp, ports = ctxTargetPorts.slice();
   ctxMenu.classList.remove('open');
-  showEnrichPopup(`enrich-title-${ip}`, `📄 Tytuł HTTP — ${ip}`, async () => {
+  showEnrichPopup(`enrich-title-${ip}`, `­čôä Tytu┼é HTTP ÔÇö ${ip}`, async () => {
     if (isPrivateIP(ip)) return `<span style="color:#808080">${t('titleExtOnly')}</span>`;
     const title = await fetchTitle(ip, ports[0]);
     return title
@@ -2402,7 +2123,7 @@ document.getElementById('ctxDetailTitle').addEventListener('click', () => {
 document.getElementById('ctxDetailAccess').addEventListener('click', () => {
   const ip = ctxTargetIp, ports = ctxTargetPorts.slice();
   ctxMenu.classList.remove('open');
-  showEnrichPopup(`enrich-acc-${ip}`, `🔑 Dostęp — ${ip}`, async () => {
+  showEnrichPopup(`enrich-acc-${ip}`, `­čöĹ Dost─Öp ÔÇö ${ip}`, async () => {
     const isOpen = await checkAuth(ip, ports);
     return isOpen
       ? `<b>${t('accessLabel')}</b> <span style="color:green">${t('accessOpen')}</span>`
@@ -2410,9 +2131,9 @@ document.getElementById('ctxDetailAccess').addEventListener('click', () => {
   });
 });
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  EXTERNAL IP
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 const btnMyIp      = document.getElementById('btnMyIp');
 const myIpResult   = document.getElementById('myIpResult');
 const btnCopyMyIp  = document.getElementById('btnCopyMyIp');
@@ -2432,7 +2153,7 @@ btnMyIp.addEventListener('click', async () => {
     btnCopyMyIp.style.display = 'inline-block';
     btnCopyMyIp.onclick = () => {
       navigator.clipboard?.writeText(data.ip);
-      btnCopyMyIp.textContent = '✔ OK';
+      btnCopyMyIp.textContent = 'Ôťö OK';
       setTimeout(() => { btnCopyMyIp.textContent = t('btnCopy'); }, 1500);
     };
     btnUseMyIp.style.display = 'inline-block';
@@ -2449,7 +2170,7 @@ btnMyIp.addEventListener('click', async () => {
   }
 });
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 // Local IP Detection
 const btnMyLocalIp      = document.getElementById('btnMyLocalIp');
 const myLocalIpResult   = document.getElementById('myLocalIpResult');
@@ -2667,7 +2388,7 @@ btnMyLocalIp.addEventListener('click', async () => {
     btnCopyMyLocalIp.style.display = 'inline-block';
     btnCopyMyLocalIp.onclick = () => {
       navigator.clipboard?.writeText(localIP);
-      btnCopyMyLocalIp.textContent = '✔ OK';
+      btnCopyMyLocalIp.textContent = 'Ôťö OK';
       setTimeout(() => { btnCopyMyLocalIp.textContent = t('btnCopy'); }, 1500);
     };
     
@@ -2731,7 +2452,7 @@ btnLocalSubnets.addEventListener('click', async () => {
   }
 });
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 async function startScan() {
   window.__scanInvokeWarned = false;
   const startIp=getIP('f'), endIp=getIP('t');
@@ -2772,14 +2493,14 @@ async function startScan() {
     portProgWrap.classList.add('active');
     const pct = total ? Math.round(current / total * 100) : 0;
     portProgFill.style.width = pct + '%';
-    portProgLabel.textContent = `Porty: ${current + 1}–${Math.min(current + 100, total)} / ${total}  (${ip})`;
+    portProgLabel.textContent = `Porty: ${current + 1}ÔÇô${Math.min(current + 100, total)} / ${total}  (${ip})`;
   }
   function hidePortProgress() {
     portProgWrap.classList.remove('active');
     portProgFill.style.width = '0%';
   }
 
-  // Probe all ports for one IP — chunked to avoid freezing browser
+  // Probe all ports for one IP ÔÇö chunked to avoid freezing browser
   async function probeAllPorts(ip, ports) {
     const CHUNK = 100;
     const results = [];
@@ -2852,9 +2573,9 @@ btnClear.addEventListener('click',()=>{
   updateGlobeDots();
 });
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  COMMAND CONSOLE
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 const cmdWin = document.getElementById('cmdWin');
 const cmdTitlebar = document.getElementById('cmdTitlebar');
 const cmdInput = document.getElementById('cmdInput');
@@ -2946,7 +2667,7 @@ function renderCommandMacros() {
     nameEl.textContent = m.name || `makro_${idx + 1}`;
 
     const delEl = document.createElement('span');
-    delEl.textContent = '✕ Usun';
+    delEl.textContent = 'ÔťĽ Usun';
     delEl.style.fontSize = '10px';
     delEl.style.padding = '1px 4px';
     delEl.style.border = '1px solid #808080';
@@ -3288,40 +3009,40 @@ cmdInput.addEventListener('keydown', e => {
   window.addEventListener('mouseup', () => { dragging = false; });
 })();
 
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  COUNTRY IP LIBRARY
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 const COUNTRY_DB = [
-  { flag:'🇵🇱', name:'Poland',         meta:'PL · Europe',      ranges:['31.0.0.0–31.15.255.255','46.0.0.0–46.31.255.255','83.0.0.0–83.31.255.255','89.64.0.0–89.79.255.255','91.192.0.0–91.207.255.255','5.172.0.0–5.175.255.255','195.114.0.0–195.115.255.255','212.0.0.0–212.15.255.255'] },
-  { flag:'🇨🇳', name:'China',          meta:'CN · Asia',        ranges:['1.0.0.0–1.255.255.255','27.0.0.0–27.255.255.255','36.0.0.0–36.255.255.255','42.0.0.0–42.255.255.255','58.0.0.0–58.255.255.255','59.0.0.0–59.255.255.255','60.0.0.0–60.255.255.255','61.0.0.0–61.255.255.255','101.0.0.0–101.255.255.255','106.0.0.0–106.255.255.255','110.0.0.0–110.255.255.255','111.0.0.0–111.255.255.255','112.0.0.0–112.255.255.255','113.0.0.0–113.255.255.255','114.0.0.0–114.255.255.255','115.0.0.0–115.255.255.255','116.0.0.0–116.255.255.255','117.0.0.0–117.255.255.255','118.0.0.0–118.255.255.255','119.0.0.0–119.255.255.255','120.0.0.0–120.255.255.255','121.0.0.0–121.255.255.255','122.0.0.0–122.255.255.255','123.0.0.0–123.255.255.255','124.0.0.0–124.255.255.255','125.0.0.0–125.255.255.255','163.0.0.0–163.255.255.255','175.0.0.0–175.255.255.255','180.0.0.0–180.255.255.255','182.0.0.0–182.255.255.255','183.0.0.0–183.255.255.255','202.0.0.0–202.255.255.255','203.0.0.0–203.255.255.255','210.0.0.0–210.255.255.255','211.0.0.0–211.255.255.255','218.0.0.0–218.255.255.255','219.0.0.0–219.255.255.255','220.0.0.0–220.255.255.255','221.0.0.0–221.255.255.255','222.0.0.0–222.255.255.255','223.0.0.0–223.255.255.255'] },
-  { flag:'🇷🇺', name:'Russia',         meta:'RU · Europe/Asia', ranges:['5.8.0.0–5.15.255.255','31.128.0.0–31.135.255.255','37.0.0.0–37.31.255.255','46.32.0.0–46.63.255.255','77.0.0.0–77.31.255.255','78.0.0.0–78.63.255.255','79.0.0.0–79.63.255.255','80.0.0.0–80.95.255.255','85.0.0.0–85.31.255.255','87.224.0.0–87.255.255.255','91.0.0.0–91.63.255.255','92.0.0.0–92.63.255.255','93.0.0.0–93.63.255.255','94.0.0.0–94.127.255.255','109.0.0.0–109.63.255.255','176.0.0.0–176.63.255.255','178.0.0.0–178.63.255.255','185.0.0.0–185.63.255.255','194.0.0.0–194.63.255.255','195.0.0.0–195.63.255.255','213.0.0.0–213.63.255.255','217.0.0.0–217.63.255.255'] },
-  { flag:'🇺🇸', name:'United States',  meta:'US · Americas',    ranges:['3.0.0.0–3.255.255.255','4.0.0.0–4.255.255.255','8.0.0.0–8.255.255.255','12.0.0.0–12.255.255.255','13.0.0.0–13.255.255.255','15.0.0.0–15.255.255.255','16.0.0.0–16.255.255.255','18.0.0.0–18.255.255.255','20.0.0.0–20.255.255.255','23.0.0.0–23.255.255.255','34.0.0.0–34.255.255.255','35.0.0.0–35.255.255.255','40.0.0.0–40.255.255.255','44.0.0.0–44.255.255.255','45.0.0.0–45.255.255.255','50.0.0.0–50.255.255.255','52.0.0.0–52.255.255.255','54.0.0.0–54.255.255.255','64.0.0.0–64.255.255.255','65.0.0.0–65.255.255.255','66.0.0.0–66.255.255.255','67.0.0.0–67.255.255.255','68.0.0.0–68.255.255.255','69.0.0.0–69.255.255.255','70.0.0.0–70.255.255.255','71.0.0.0–71.255.255.255','72.0.0.0–72.255.255.255','73.0.0.0–73.255.255.255','74.0.0.0–74.255.255.255','75.0.0.0–75.255.255.255','98.0.0.0–98.255.255.255','99.0.0.0–99.255.255.255','100.0.0.0–100.255.255.255','104.0.0.0–104.255.255.255','107.0.0.0–107.255.255.255','108.0.0.0–108.255.255.255','173.0.0.0–173.255.255.255'] },
-  { flag:'🇩🇪', name:'Germany',        meta:'DE · Europe',      ranges:['5.0.0.0–5.7.255.255','46.64.0.0–46.127.255.255','77.0.0.0–77.15.255.255','78.32.0.0–78.63.255.255','79.192.0.0–79.255.255.255','80.64.0.0–80.95.255.255','81.0.0.0–81.31.255.255','82.0.0.0–82.31.255.255','83.128.0.0–83.159.255.255','84.128.0.0–84.175.255.255','85.128.0.0–85.159.255.255','87.128.0.0–87.223.255.255','88.64.0.0–88.79.255.255','89.0.0.0–89.63.255.255','91.64.0.0–91.127.255.255','217.0.0.0–217.31.255.255'] },
-  { flag:'🇫🇷', name:'France',         meta:'FR · Europe',      ranges:['5.48.0.0–5.63.255.255','37.0.0.0–37.15.255.255','78.192.0.0–78.255.255.255','80.8.0.0–80.15.255.255','81.64.0.0–81.95.255.255','82.224.0.0–82.255.255.255','86.192.0.0–86.255.255.255','88.160.0.0–88.191.255.255','90.0.0.0–90.63.255.255','92.128.0.0–92.191.255.255','176.128.0.0–176.159.255.255','193.0.0.0–193.15.255.255','194.0.0.0–194.15.255.255'] },
-  { flag:'🇬🇧', name:'United Kingdom', meta:'GB · Europe',      ranges:['5.64.0.0–5.79.255.255','31.32.0.0–31.63.255.255','51.0.0.0–51.255.255.255','80.0.0.0–80.7.255.255','81.96.0.0–81.127.255.255','82.0.0.0–82.31.255.255','86.0.0.0–86.63.255.255','87.64.0.0–87.127.255.255','92.0.0.0–92.63.255.255','109.144.0.0–109.159.255.255','176.16.0.0–176.31.255.255','185.0.0.0–185.15.255.255','193.0.0.0–193.15.255.255'] },
-  { flag:'🇯🇵', name:'Japan',          meta:'JP · Asia',        ranges:['1.0.0.0–1.7.255.255','14.0.0.0–14.127.255.255','27.0.0.0–27.63.255.255','49.0.0.0–49.63.255.255','60.32.0.0–60.63.255.255','101.0.0.0–101.127.255.255','110.0.0.0–110.127.255.255','111.64.0.0–111.127.255.255','112.64.0.0–112.127.255.255','114.144.0.0–114.175.255.255','118.0.0.0–118.63.255.255','119.0.0.0–119.63.255.255','122.0.0.0–122.63.255.255','123.0.0.0–123.63.255.255','124.0.0.0–124.63.255.255','125.0.0.0–125.63.255.255','126.0.0.0–126.255.255.255','150.0.0.0–150.127.255.255','153.0.0.0–153.127.255.255','163.0.0.0–163.127.255.255','180.0.0.0–180.127.255.255','182.0.0.0–182.63.255.255','183.0.0.0–183.63.255.255','202.0.0.0–202.63.255.255','203.0.0.0–203.63.255.255','210.128.0.0–210.191.255.255','211.0.0.0–211.63.255.255','218.32.0.0–218.63.255.255','219.96.0.0–219.127.255.255','220.96.0.0–220.127.255.255','221.0.0.0–221.63.255.255'] },
-  { flag:'🇰🇷', name:'South Korea',    meta:'KR · Asia',        ranges:['1.208.0.0–1.255.255.255','14.32.0.0–14.63.255.255','27.96.0.0–27.127.255.255','39.0.0.0–39.63.255.255','49.0.0.0–49.63.255.255','58.0.0.0–58.63.255.255','59.0.0.0–59.63.255.255','61.32.0.0–61.63.255.255','110.0.0.0–110.63.255.255','111.0.0.0–111.63.255.255','112.160.0.0–112.191.255.255','113.192.0.0–113.255.255.255','114.0.0.0–114.63.255.255','115.128.0.0–115.191.255.255','116.32.0.0–116.63.255.255','117.0.0.0–117.63.255.255','118.0.0.0–118.63.255.255','119.192.0.0–119.255.255.255','121.0.0.0–121.63.255.255','122.32.0.0–122.63.255.255','123.192.0.0–123.255.255.255','124.0.0.0–124.63.255.255','125.128.0.0–125.191.255.255','175.192.0.0–175.255.255.255','180.64.0.0–180.127.255.255','182.192.0.0–182.255.255.255','183.96.0.0–183.127.255.255','203.224.0.0–203.255.255.255','210.192.0.0–210.255.255.255','211.192.0.0–211.255.255.255','219.240.0.0–219.255.255.255','220.64.0.0–220.95.255.255','221.128.0.0–221.191.255.255','222.96.0.0–222.127.255.255','223.192.0.0–223.255.255.255'] },
-  { flag:'🇧🇷', name:'Brazil',         meta:'BR · Americas',    ranges:['18.128.0.0–18.191.255.255','45.160.0.0–45.191.255.255','138.0.0.0–138.63.255.255','143.0.0.0–143.63.255.255','177.0.0.0–177.255.255.255','179.32.0.0–179.63.255.255','179.192.0.0–179.255.255.255','186.192.0.0–186.255.255.255','187.0.0.0–187.255.255.255','189.0.0.0–189.127.255.255','191.0.0.0–191.255.255.255','200.128.0.0–200.191.255.255','201.0.0.0–201.63.255.255'] },
-  { flag:'🇮🇳', name:'India',          meta:'IN · Asia',        ranges:['1.0.0.0–1.63.255.255','14.96.0.0–14.127.255.255','27.48.0.0–27.63.255.255','27.96.0.0–27.127.255.255','43.224.0.0–43.255.255.255','45.64.0.0–45.127.255.255','49.0.0.0–49.63.255.255','59.144.0.0–59.175.255.255','101.0.0.0–101.63.255.255','103.0.0.0–103.255.255.255','106.0.0.0–106.63.255.255','111.92.0.0–111.127.255.255','115.240.0.0–115.255.255.255','116.192.0.0–116.255.255.255','117.192.0.0–117.255.255.255','119.224.0.0–119.255.255.255','120.56.0.0–120.63.255.255','121.240.0.0–121.255.255.255','122.160.0.0–122.191.255.255','123.0.0.0–123.63.255.255','124.0.0.0–124.63.255.255','125.0.0.0–125.63.255.255','152.0.0.0–152.63.255.255','180.192.0.0–180.255.255.255','182.64.0.0–182.127.255.255','183.0.0.0–183.63.255.255','202.0.0.0–202.63.255.255','203.0.0.0–203.63.255.255','210.0.0.0–210.63.255.255','220.224.0.0–220.255.255.255','223.0.0.0–223.63.255.255'] },
-  { flag:'🇦🇺', name:'Australia',      meta:'AU · Oceania',     ranges:['1.120.0.0–1.159.255.255','14.192.0.0–14.207.255.255','27.32.0.0–27.63.255.255','36.0.0.0–36.63.255.255','43.224.0.0–43.239.255.255','49.128.0.0–49.191.255.255','58.96.0.0–58.111.255.255','59.96.0.0–59.127.255.255','60.224.0.0–60.255.255.255','101.160.0.0–101.191.255.255','103.0.0.0–103.63.255.255','110.32.0.0–110.63.255.255','110.144.0.0–110.175.255.255','115.64.0.0–115.95.255.255','116.0.0.0–116.31.255.255','121.0.0.0–121.63.255.255','122.96.0.0–122.127.255.255','123.96.0.0–123.127.255.255','124.64.0.0–124.127.255.255','125.224.0.0–125.255.255.255','139.0.0.0–139.63.255.255','144.0.0.0–144.63.255.255','150.0.0.0–150.63.255.255','175.0.0.0–175.63.255.255','180.0.0.0–180.63.255.255','202.0.0.0–202.63.255.255','203.0.0.0–203.63.255.255','210.0.0.0–210.63.255.255','220.192.0.0–220.223.255.255','221.0.0.0–221.63.255.255'] },
-  { flag:'🇳🇱', name:'Netherlands',    meta:'NL · Europe',      ranges:['37.32.0.0–37.47.255.255','46.16.0.0–46.31.255.255','77.160.0.0–77.175.255.255','80.96.0.0–80.127.255.255','82.160.0.0–82.175.255.255','84.80.0.0–84.95.255.255','85.144.0.0–85.159.255.255','87.208.0.0–87.223.255.255','89.160.0.0–89.175.255.255','92.64.0.0–92.79.255.255','94.0.0.0–94.15.255.255','145.0.0.0–145.63.255.255','188.0.0.0–188.15.255.255','194.0.0.0–194.15.255.255','195.0.0.0–195.15.255.255','212.0.0.0–212.15.255.255','213.0.0.0–213.15.255.255'] },
-  { flag:'🇺🇦', name:'Ukraine',        meta:'UA · Europe',      ranges:['5.58.0.0–5.63.255.255','31.28.0.0–31.31.255.255','37.0.0.0–37.15.255.255','46.0.0.0–46.15.255.255','77.88.0.0–77.95.255.255','78.24.0.0–78.31.255.255','79.0.0.0–79.31.255.255','80.92.0.0–80.95.255.255','87.240.0.0–87.255.255.255','91.196.0.0–91.207.255.255','92.0.0.0–92.31.255.255','93.0.0.0–93.31.255.255','94.184.0.0–94.191.255.255','109.86.0.0–109.95.255.255','176.96.0.0–176.127.255.255','178.0.0.0–178.31.255.255','185.0.0.0–185.31.255.255','193.0.0.0–193.15.255.255','194.0.0.0–194.15.255.255','213.0.0.0–213.15.255.255'] },
-  { flag:'🇨🇿', name:'Czech Republic', meta:'CZ · Europe',      ranges:['37.48.0.0–37.63.255.255','46.16.0.0–46.23.255.255','77.68.0.0–77.71.255.255','78.96.0.0–78.111.255.255','79.96.0.0–79.127.255.255','80.232.0.0–80.239.255.255','81.0.0.0–81.31.255.255','82.208.0.0–82.223.255.255','83.208.0.0–83.223.255.255','84.16.0.0–84.47.255.255','85.160.0.0–85.175.255.255','87.64.0.0–87.79.255.255','88.100.0.0–88.103.255.255','89.24.0.0–89.31.255.255','90.176.0.0–90.191.255.255','91.0.0.0–91.15.255.255','217.192.0.0–217.207.255.255'] },
-  { flag:'🇸🇪', name:'Sweden',         meta:'SE · Europe',      ranges:['37.0.0.0–37.7.255.255','46.0.0.0–46.7.255.255','77.40.0.0–77.47.255.255','78.64.0.0–78.95.255.255','81.208.0.0–81.223.255.255','82.96.0.0–82.127.255.255','83.160.0.0–83.175.255.255','84.0.0.0–84.15.255.255','85.0.0.0–85.31.255.255','87.96.0.0–87.127.255.255','88.128.0.0–88.159.255.255','90.224.0.0–90.255.255.255','91.208.0.0–91.223.255.255','130.0.0.0–130.63.255.255','192.36.0.0–192.51.255.255','194.0.0.0–194.15.255.255','195.0.0.0–195.15.255.255','217.0.0.0–217.15.255.255'] },
-  { flag:'🇳🇴', name:'Norway',         meta:'NO · Europe',      ranges:['37.24.0.0–37.31.255.255','46.8.0.0–46.15.255.255','77.8.0.0–77.23.255.255','78.160.0.0–78.175.255.255','80.160.0.0–80.175.255.255','81.160.0.0–81.175.255.255','84.208.0.0–84.223.255.255','85.96.0.0–85.111.255.255','88.85.0.0–88.95.255.255','91.148.0.0–91.163.255.255','109.160.0.0–109.175.255.255','176.16.0.0–176.31.255.255','185.0.0.0–185.15.255.255','193.0.0.0–193.15.255.255','217.0.0.0–217.15.255.255'] },
-  { flag:'🇫🇮', name:'Finland',        meta:'FI · Europe',      ranges:['37.0.0.0–37.15.255.255','46.8.0.0–46.15.255.255','77.64.0.0–77.79.255.255','78.64.0.0–78.79.255.255','80.186.0.0–80.191.255.255','81.175.0.0–81.191.255.255','82.128.0.0–82.159.255.255','84.252.0.0–84.255.255.255','85.76.0.0–85.79.255.255','87.92.0.0–87.95.255.255','88.112.0.0–88.119.255.255','91.152.0.0–91.159.255.255','130.231.0.0–130.232.255.255','193.0.0.0–193.15.255.255','194.100.0.0–194.111.255.255','195.0.0.0–195.15.255.255','212.0.0.0–212.15.255.255'] },
-  { flag:'🇹🇷', name:'Turkey',         meta:'TR · Europe/Asia', ranges:['5.24.0.0–5.31.255.255','31.0.0.0–31.15.255.255','37.0.0.0–37.15.255.255','46.0.0.0–46.15.255.255','78.160.0.0–78.175.255.255','79.0.0.0–79.63.255.255','80.0.0.0–80.31.255.255','81.192.0.0–81.207.255.255','82.0.0.0–82.63.255.255','84.0.0.0–84.31.255.255','85.0.0.0–85.63.255.255','86.0.0.0–86.63.255.255','87.0.0.0–87.63.255.255','88.0.0.0–88.63.255.255','88.224.0.0–88.255.255.255','89.0.0.0–89.63.255.255','90.0.0.0–90.63.255.255','91.0.0.0–91.63.255.255','176.0.0.0–176.63.255.255','178.0.0.0–178.63.255.255','193.0.0.0–193.63.255.255','195.0.0.0–195.63.255.255','212.0.0.0–212.63.255.255','213.0.0.0–213.63.255.255'] },
-  { flag:'🇮🇷', name:'Iran',           meta:'IR · Asia',        ranges:['2.144.0.0–2.191.255.255','5.0.0.0–5.63.255.255','31.0.0.0–31.63.255.255','37.0.0.0–37.63.255.255','46.0.0.0–46.63.255.255','78.0.0.0–78.63.255.255','79.0.0.0–79.63.255.255','80.0.0.0–80.63.255.255','81.0.0.0–81.63.255.255','82.0.0.0–82.63.255.255','83.0.0.0–83.63.255.255','84.0.0.0–84.63.255.255','85.0.0.0–85.63.255.255','86.0.0.0–86.63.255.255','91.0.0.0–91.63.255.255','92.0.0.0–92.63.255.255','93.0.0.0–93.63.255.255','94.0.0.0–94.63.255.255','95.0.0.0–95.63.255.255','185.0.0.0–185.63.255.255'] },
-  { flag:'🇸🇦', name:'Saudi Arabia',   meta:'SA · Asia',        ranges:['37.0.0.0–37.15.255.255','46.0.0.0–46.15.255.255','78.0.0.0–78.63.255.255','82.0.0.0–82.63.255.255','87.0.0.0–87.63.255.255','91.0.0.0–91.63.255.255','92.0.0.0–92.63.255.255','94.0.0.0–94.63.255.255','176.0.0.0–176.63.255.255','178.0.0.0–178.63.255.255','185.0.0.0–185.63.255.255','188.0.0.0–188.63.255.255','212.0.0.0–212.63.255.255'] },
-  { flag:'🇿🇦', name:'South Africa',   meta:'ZA · Africa',      ranges:['41.0.0.0–41.255.255.255','102.0.0.0–102.63.255.255','105.0.0.0–105.63.255.255','154.0.0.0–154.63.255.255','197.0.0.0–197.63.255.255'] },
-  { flag:'🇦🇷', name:'Argentina',      meta:'AR · Americas',    ranges:['45.64.0.0–45.95.255.255','138.0.0.0–138.63.255.255','170.0.0.0–170.63.255.255','181.0.0.0–181.63.255.255','186.0.0.0–186.63.255.255','190.0.0.0–190.127.255.255','191.0.0.0–191.63.255.255','200.0.0.0–200.63.255.255'] },
-  { flag:'🇲🇽', name:'Mexico',         meta:'MX · Americas',    ranges:['5.0.0.0–5.63.255.255','45.64.0.0–45.95.255.255','131.0.0.0–131.63.255.255','148.0.0.0–148.63.255.255','177.0.0.0–177.63.255.255','179.0.0.0–179.63.255.255','187.0.0.0–187.63.255.255','189.128.0.0–189.191.255.255','200.0.0.0–200.63.255.255','201.0.0.0–201.63.255.255'] },
-  { flag:'🇨🇦', name:'Canada',         meta:'CA · Americas',    ranges:['24.0.0.0–24.255.255.255','47.0.0.0–47.255.255.255','99.0.0.0–99.255.255.255','142.0.0.0–142.63.255.255','162.0.0.0–162.63.255.255','174.0.0.0–174.127.255.255','184.0.0.0–184.63.255.255','192.0.0.0–192.63.255.255','199.0.0.0–199.63.255.255','205.0.0.0–205.63.255.255','206.0.0.0–206.63.255.255','207.0.0.0–207.63.255.255','209.0.0.0–209.63.255.255'] },
-  { flag:'🇮🇹', name:'Italy',          meta:'IT · Europe',      ranges:['2.32.0.0–2.63.255.255','5.0.0.0–5.63.255.255','37.0.0.0–37.15.255.255','46.0.0.0–46.63.255.255','78.0.0.0–78.63.255.255','79.0.0.0–79.63.255.255','80.0.0.0–80.63.255.255','81.0.0.0–81.63.255.255','82.0.0.0–82.63.255.255','83.0.0.0–83.63.255.255','84.0.0.0–84.63.255.255','85.0.0.0–85.63.255.255','87.0.0.0–87.63.255.255','88.0.0.0–88.63.255.255','89.0.0.0–89.63.255.255','90.0.0.0–90.63.255.255','91.0.0.0–91.63.255.255','93.0.0.0–93.63.255.255','94.0.0.0–94.63.255.255','95.0.0.0–95.63.255.255','151.0.0.0–151.63.255.255','176.0.0.0–176.63.255.255','188.0.0.0–188.63.255.255','193.0.0.0–193.63.255.255','212.0.0.0–212.63.255.255','217.0.0.0–217.63.255.255'] },
-  { flag:'🇪🇸', name:'Spain',          meta:'ES · Europe',      ranges:['2.0.0.0–2.31.255.255','37.0.0.0–37.15.255.255','46.0.0.0–46.63.255.255','77.0.0.0–77.63.255.255','80.0.0.0–80.63.255.255','81.0.0.0–81.63.255.255','83.0.0.0–83.63.255.255','84.0.0.0–84.63.255.255','85.0.0.0–85.63.255.255','87.0.0.0–87.63.255.255','88.0.0.0–88.63.255.255','89.0.0.0–89.63.255.255','90.0.0.0–90.63.255.255','91.0.0.0–91.63.255.255','94.0.0.0–94.63.255.255','176.0.0.0–176.63.255.255','195.0.0.0–195.63.255.255','212.0.0.0–212.63.255.255'] },
+  { flag:'­čçÁ­čç▒', name:'Poland',         meta:'PL ┬Ě Europe',      ranges:['31.0.0.0ÔÇô31.15.255.255','46.0.0.0ÔÇô46.31.255.255','83.0.0.0ÔÇô83.31.255.255','89.64.0.0ÔÇô89.79.255.255','91.192.0.0ÔÇô91.207.255.255','5.172.0.0ÔÇô5.175.255.255','195.114.0.0ÔÇô195.115.255.255','212.0.0.0ÔÇô212.15.255.255'] },
+  { flag:'­čçĘ­čç│', name:'China',          meta:'CN ┬Ě Asia',        ranges:['1.0.0.0ÔÇô1.255.255.255','27.0.0.0ÔÇô27.255.255.255','36.0.0.0ÔÇô36.255.255.255','42.0.0.0ÔÇô42.255.255.255','58.0.0.0ÔÇô58.255.255.255','59.0.0.0ÔÇô59.255.255.255','60.0.0.0ÔÇô60.255.255.255','61.0.0.0ÔÇô61.255.255.255','101.0.0.0ÔÇô101.255.255.255','106.0.0.0ÔÇô106.255.255.255','110.0.0.0ÔÇô110.255.255.255','111.0.0.0ÔÇô111.255.255.255','112.0.0.0ÔÇô112.255.255.255','113.0.0.0ÔÇô113.255.255.255','114.0.0.0ÔÇô114.255.255.255','115.0.0.0ÔÇô115.255.255.255','116.0.0.0ÔÇô116.255.255.255','117.0.0.0ÔÇô117.255.255.255','118.0.0.0ÔÇô118.255.255.255','119.0.0.0ÔÇô119.255.255.255','120.0.0.0ÔÇô120.255.255.255','121.0.0.0ÔÇô121.255.255.255','122.0.0.0ÔÇô122.255.255.255','123.0.0.0ÔÇô123.255.255.255','124.0.0.0ÔÇô124.255.255.255','125.0.0.0ÔÇô125.255.255.255','163.0.0.0ÔÇô163.255.255.255','175.0.0.0ÔÇô175.255.255.255','180.0.0.0ÔÇô180.255.255.255','182.0.0.0ÔÇô182.255.255.255','183.0.0.0ÔÇô183.255.255.255','202.0.0.0ÔÇô202.255.255.255','203.0.0.0ÔÇô203.255.255.255','210.0.0.0ÔÇô210.255.255.255','211.0.0.0ÔÇô211.255.255.255','218.0.0.0ÔÇô218.255.255.255','219.0.0.0ÔÇô219.255.255.255','220.0.0.0ÔÇô220.255.255.255','221.0.0.0ÔÇô221.255.255.255','222.0.0.0ÔÇô222.255.255.255','223.0.0.0ÔÇô223.255.255.255'] },
+  { flag:'­čçĚ­čç║', name:'Russia',         meta:'RU ┬Ě Europe/Asia', ranges:['5.8.0.0ÔÇô5.15.255.255','31.128.0.0ÔÇô31.135.255.255','37.0.0.0ÔÇô37.31.255.255','46.32.0.0ÔÇô46.63.255.255','77.0.0.0ÔÇô77.31.255.255','78.0.0.0ÔÇô78.63.255.255','79.0.0.0ÔÇô79.63.255.255','80.0.0.0ÔÇô80.95.255.255','85.0.0.0ÔÇô85.31.255.255','87.224.0.0ÔÇô87.255.255.255','91.0.0.0ÔÇô91.63.255.255','92.0.0.0ÔÇô92.63.255.255','93.0.0.0ÔÇô93.63.255.255','94.0.0.0ÔÇô94.127.255.255','109.0.0.0ÔÇô109.63.255.255','176.0.0.0ÔÇô176.63.255.255','178.0.0.0ÔÇô178.63.255.255','185.0.0.0ÔÇô185.63.255.255','194.0.0.0ÔÇô194.63.255.255','195.0.0.0ÔÇô195.63.255.255','213.0.0.0ÔÇô213.63.255.255','217.0.0.0ÔÇô217.63.255.255'] },
+  { flag:'­čç║­čçŞ', name:'United States',  meta:'US ┬Ě Americas',    ranges:['3.0.0.0ÔÇô3.255.255.255','4.0.0.0ÔÇô4.255.255.255','8.0.0.0ÔÇô8.255.255.255','12.0.0.0ÔÇô12.255.255.255','13.0.0.0ÔÇô13.255.255.255','15.0.0.0ÔÇô15.255.255.255','16.0.0.0ÔÇô16.255.255.255','18.0.0.0ÔÇô18.255.255.255','20.0.0.0ÔÇô20.255.255.255','23.0.0.0ÔÇô23.255.255.255','34.0.0.0ÔÇô34.255.255.255','35.0.0.0ÔÇô35.255.255.255','40.0.0.0ÔÇô40.255.255.255','44.0.0.0ÔÇô44.255.255.255','45.0.0.0ÔÇô45.255.255.255','50.0.0.0ÔÇô50.255.255.255','52.0.0.0ÔÇô52.255.255.255','54.0.0.0ÔÇô54.255.255.255','64.0.0.0ÔÇô64.255.255.255','65.0.0.0ÔÇô65.255.255.255','66.0.0.0ÔÇô66.255.255.255','67.0.0.0ÔÇô67.255.255.255','68.0.0.0ÔÇô68.255.255.255','69.0.0.0ÔÇô69.255.255.255','70.0.0.0ÔÇô70.255.255.255','71.0.0.0ÔÇô71.255.255.255','72.0.0.0ÔÇô72.255.255.255','73.0.0.0ÔÇô73.255.255.255','74.0.0.0ÔÇô74.255.255.255','75.0.0.0ÔÇô75.255.255.255','98.0.0.0ÔÇô98.255.255.255','99.0.0.0ÔÇô99.255.255.255','100.0.0.0ÔÇô100.255.255.255','104.0.0.0ÔÇô104.255.255.255','107.0.0.0ÔÇô107.255.255.255','108.0.0.0ÔÇô108.255.255.255','173.0.0.0ÔÇô173.255.255.255'] },
+  { flag:'­čçę­čç¬', name:'Germany',        meta:'DE ┬Ě Europe',      ranges:['5.0.0.0ÔÇô5.7.255.255','46.64.0.0ÔÇô46.127.255.255','77.0.0.0ÔÇô77.15.255.255','78.32.0.0ÔÇô78.63.255.255','79.192.0.0ÔÇô79.255.255.255','80.64.0.0ÔÇô80.95.255.255','81.0.0.0ÔÇô81.31.255.255','82.0.0.0ÔÇô82.31.255.255','83.128.0.0ÔÇô83.159.255.255','84.128.0.0ÔÇô84.175.255.255','85.128.0.0ÔÇô85.159.255.255','87.128.0.0ÔÇô87.223.255.255','88.64.0.0ÔÇô88.79.255.255','89.0.0.0ÔÇô89.63.255.255','91.64.0.0ÔÇô91.127.255.255','217.0.0.0ÔÇô217.31.255.255'] },
+  { flag:'­čçź­čçĚ', name:'France',         meta:'FR ┬Ě Europe',      ranges:['5.48.0.0ÔÇô5.63.255.255','37.0.0.0ÔÇô37.15.255.255','78.192.0.0ÔÇô78.255.255.255','80.8.0.0ÔÇô80.15.255.255','81.64.0.0ÔÇô81.95.255.255','82.224.0.0ÔÇô82.255.255.255','86.192.0.0ÔÇô86.255.255.255','88.160.0.0ÔÇô88.191.255.255','90.0.0.0ÔÇô90.63.255.255','92.128.0.0ÔÇô92.191.255.255','176.128.0.0ÔÇô176.159.255.255','193.0.0.0ÔÇô193.15.255.255','194.0.0.0ÔÇô194.15.255.255'] },
+  { flag:'­čçČ­čçž', name:'United Kingdom', meta:'GB ┬Ě Europe',      ranges:['5.64.0.0ÔÇô5.79.255.255','31.32.0.0ÔÇô31.63.255.255','51.0.0.0ÔÇô51.255.255.255','80.0.0.0ÔÇô80.7.255.255','81.96.0.0ÔÇô81.127.255.255','82.0.0.0ÔÇô82.31.255.255','86.0.0.0ÔÇô86.63.255.255','87.64.0.0ÔÇô87.127.255.255','92.0.0.0ÔÇô92.63.255.255','109.144.0.0ÔÇô109.159.255.255','176.16.0.0ÔÇô176.31.255.255','185.0.0.0ÔÇô185.15.255.255','193.0.0.0ÔÇô193.15.255.255'] },
+  { flag:'­čç»­čçÁ', name:'Japan',          meta:'JP ┬Ě Asia',        ranges:['1.0.0.0ÔÇô1.7.255.255','14.0.0.0ÔÇô14.127.255.255','27.0.0.0ÔÇô27.63.255.255','49.0.0.0ÔÇô49.63.255.255','60.32.0.0ÔÇô60.63.255.255','101.0.0.0ÔÇô101.127.255.255','110.0.0.0ÔÇô110.127.255.255','111.64.0.0ÔÇô111.127.255.255','112.64.0.0ÔÇô112.127.255.255','114.144.0.0ÔÇô114.175.255.255','118.0.0.0ÔÇô118.63.255.255','119.0.0.0ÔÇô119.63.255.255','122.0.0.0ÔÇô122.63.255.255','123.0.0.0ÔÇô123.63.255.255','124.0.0.0ÔÇô124.63.255.255','125.0.0.0ÔÇô125.63.255.255','126.0.0.0ÔÇô126.255.255.255','150.0.0.0ÔÇô150.127.255.255','153.0.0.0ÔÇô153.127.255.255','163.0.0.0ÔÇô163.127.255.255','180.0.0.0ÔÇô180.127.255.255','182.0.0.0ÔÇô182.63.255.255','183.0.0.0ÔÇô183.63.255.255','202.0.0.0ÔÇô202.63.255.255','203.0.0.0ÔÇô203.63.255.255','210.128.0.0ÔÇô210.191.255.255','211.0.0.0ÔÇô211.63.255.255','218.32.0.0ÔÇô218.63.255.255','219.96.0.0ÔÇô219.127.255.255','220.96.0.0ÔÇô220.127.255.255','221.0.0.0ÔÇô221.63.255.255'] },
+  { flag:'­čç░­čçĚ', name:'South Korea',    meta:'KR ┬Ě Asia',        ranges:['1.208.0.0ÔÇô1.255.255.255','14.32.0.0ÔÇô14.63.255.255','27.96.0.0ÔÇô27.127.255.255','39.0.0.0ÔÇô39.63.255.255','49.0.0.0ÔÇô49.63.255.255','58.0.0.0ÔÇô58.63.255.255','59.0.0.0ÔÇô59.63.255.255','61.32.0.0ÔÇô61.63.255.255','110.0.0.0ÔÇô110.63.255.255','111.0.0.0ÔÇô111.63.255.255','112.160.0.0ÔÇô112.191.255.255','113.192.0.0ÔÇô113.255.255.255','114.0.0.0ÔÇô114.63.255.255','115.128.0.0ÔÇô115.191.255.255','116.32.0.0ÔÇô116.63.255.255','117.0.0.0ÔÇô117.63.255.255','118.0.0.0ÔÇô118.63.255.255','119.192.0.0ÔÇô119.255.255.255','121.0.0.0ÔÇô121.63.255.255','122.32.0.0ÔÇô122.63.255.255','123.192.0.0ÔÇô123.255.255.255','124.0.0.0ÔÇô124.63.255.255','125.128.0.0ÔÇô125.191.255.255','175.192.0.0ÔÇô175.255.255.255','180.64.0.0ÔÇô180.127.255.255','182.192.0.0ÔÇô182.255.255.255','183.96.0.0ÔÇô183.127.255.255','203.224.0.0ÔÇô203.255.255.255','210.192.0.0ÔÇô210.255.255.255','211.192.0.0ÔÇô211.255.255.255','219.240.0.0ÔÇô219.255.255.255','220.64.0.0ÔÇô220.95.255.255','221.128.0.0ÔÇô221.191.255.255','222.96.0.0ÔÇô222.127.255.255','223.192.0.0ÔÇô223.255.255.255'] },
+  { flag:'­čçž­čçĚ', name:'Brazil',         meta:'BR ┬Ě Americas',    ranges:['18.128.0.0ÔÇô18.191.255.255','45.160.0.0ÔÇô45.191.255.255','138.0.0.0ÔÇô138.63.255.255','143.0.0.0ÔÇô143.63.255.255','177.0.0.0ÔÇô177.255.255.255','179.32.0.0ÔÇô179.63.255.255','179.192.0.0ÔÇô179.255.255.255','186.192.0.0ÔÇô186.255.255.255','187.0.0.0ÔÇô187.255.255.255','189.0.0.0ÔÇô189.127.255.255','191.0.0.0ÔÇô191.255.255.255','200.128.0.0ÔÇô200.191.255.255','201.0.0.0ÔÇô201.63.255.255'] },
+  { flag:'­čç«­čç│', name:'India',          meta:'IN ┬Ě Asia',        ranges:['1.0.0.0ÔÇô1.63.255.255','14.96.0.0ÔÇô14.127.255.255','27.48.0.0ÔÇô27.63.255.255','27.96.0.0ÔÇô27.127.255.255','43.224.0.0ÔÇô43.255.255.255','45.64.0.0ÔÇô45.127.255.255','49.0.0.0ÔÇô49.63.255.255','59.144.0.0ÔÇô59.175.255.255','101.0.0.0ÔÇô101.63.255.255','103.0.0.0ÔÇô103.255.255.255','106.0.0.0ÔÇô106.63.255.255','111.92.0.0ÔÇô111.127.255.255','115.240.0.0ÔÇô115.255.255.255','116.192.0.0ÔÇô116.255.255.255','117.192.0.0ÔÇô117.255.255.255','119.224.0.0ÔÇô119.255.255.255','120.56.0.0ÔÇô120.63.255.255','121.240.0.0ÔÇô121.255.255.255','122.160.0.0ÔÇô122.191.255.255','123.0.0.0ÔÇô123.63.255.255','124.0.0.0ÔÇô124.63.255.255','125.0.0.0ÔÇô125.63.255.255','152.0.0.0ÔÇô152.63.255.255','180.192.0.0ÔÇô180.255.255.255','182.64.0.0ÔÇô182.127.255.255','183.0.0.0ÔÇô183.63.255.255','202.0.0.0ÔÇô202.63.255.255','203.0.0.0ÔÇô203.63.255.255','210.0.0.0ÔÇô210.63.255.255','220.224.0.0ÔÇô220.255.255.255','223.0.0.0ÔÇô223.63.255.255'] },
+  { flag:'­čçŽ­čç║', name:'Australia',      meta:'AU ┬Ě Oceania',     ranges:['1.120.0.0ÔÇô1.159.255.255','14.192.0.0ÔÇô14.207.255.255','27.32.0.0ÔÇô27.63.255.255','36.0.0.0ÔÇô36.63.255.255','43.224.0.0ÔÇô43.239.255.255','49.128.0.0ÔÇô49.191.255.255','58.96.0.0ÔÇô58.111.255.255','59.96.0.0ÔÇô59.127.255.255','60.224.0.0ÔÇô60.255.255.255','101.160.0.0ÔÇô101.191.255.255','103.0.0.0ÔÇô103.63.255.255','110.32.0.0ÔÇô110.63.255.255','110.144.0.0ÔÇô110.175.255.255','115.64.0.0ÔÇô115.95.255.255','116.0.0.0ÔÇô116.31.255.255','121.0.0.0ÔÇô121.63.255.255','122.96.0.0ÔÇô122.127.255.255','123.96.0.0ÔÇô123.127.255.255','124.64.0.0ÔÇô124.127.255.255','125.224.0.0ÔÇô125.255.255.255','139.0.0.0ÔÇô139.63.255.255','144.0.0.0ÔÇô144.63.255.255','150.0.0.0ÔÇô150.63.255.255','175.0.0.0ÔÇô175.63.255.255','180.0.0.0ÔÇô180.63.255.255','202.0.0.0ÔÇô202.63.255.255','203.0.0.0ÔÇô203.63.255.255','210.0.0.0ÔÇô210.63.255.255','220.192.0.0ÔÇô220.223.255.255','221.0.0.0ÔÇô221.63.255.255'] },
+  { flag:'­čç│­čç▒', name:'Netherlands',    meta:'NL ┬Ě Europe',      ranges:['37.32.0.0ÔÇô37.47.255.255','46.16.0.0ÔÇô46.31.255.255','77.160.0.0ÔÇô77.175.255.255','80.96.0.0ÔÇô80.127.255.255','82.160.0.0ÔÇô82.175.255.255','84.80.0.0ÔÇô84.95.255.255','85.144.0.0ÔÇô85.159.255.255','87.208.0.0ÔÇô87.223.255.255','89.160.0.0ÔÇô89.175.255.255','92.64.0.0ÔÇô92.79.255.255','94.0.0.0ÔÇô94.15.255.255','145.0.0.0ÔÇô145.63.255.255','188.0.0.0ÔÇô188.15.255.255','194.0.0.0ÔÇô194.15.255.255','195.0.0.0ÔÇô195.15.255.255','212.0.0.0ÔÇô212.15.255.255','213.0.0.0ÔÇô213.15.255.255'] },
+  { flag:'­čç║­čçŽ', name:'Ukraine',        meta:'UA ┬Ě Europe',      ranges:['5.58.0.0ÔÇô5.63.255.255','31.28.0.0ÔÇô31.31.255.255','37.0.0.0ÔÇô37.15.255.255','46.0.0.0ÔÇô46.15.255.255','77.88.0.0ÔÇô77.95.255.255','78.24.0.0ÔÇô78.31.255.255','79.0.0.0ÔÇô79.31.255.255','80.92.0.0ÔÇô80.95.255.255','87.240.0.0ÔÇô87.255.255.255','91.196.0.0ÔÇô91.207.255.255','92.0.0.0ÔÇô92.31.255.255','93.0.0.0ÔÇô93.31.255.255','94.184.0.0ÔÇô94.191.255.255','109.86.0.0ÔÇô109.95.255.255','176.96.0.0ÔÇô176.127.255.255','178.0.0.0ÔÇô178.31.255.255','185.0.0.0ÔÇô185.31.255.255','193.0.0.0ÔÇô193.15.255.255','194.0.0.0ÔÇô194.15.255.255','213.0.0.0ÔÇô213.15.255.255'] },
+  { flag:'­čçĘ­čç┐', name:'Czech Republic', meta:'CZ ┬Ě Europe',      ranges:['37.48.0.0ÔÇô37.63.255.255','46.16.0.0ÔÇô46.23.255.255','77.68.0.0ÔÇô77.71.255.255','78.96.0.0ÔÇô78.111.255.255','79.96.0.0ÔÇô79.127.255.255','80.232.0.0ÔÇô80.239.255.255','81.0.0.0ÔÇô81.31.255.255','82.208.0.0ÔÇô82.223.255.255','83.208.0.0ÔÇô83.223.255.255','84.16.0.0ÔÇô84.47.255.255','85.160.0.0ÔÇô85.175.255.255','87.64.0.0ÔÇô87.79.255.255','88.100.0.0ÔÇô88.103.255.255','89.24.0.0ÔÇô89.31.255.255','90.176.0.0ÔÇô90.191.255.255','91.0.0.0ÔÇô91.15.255.255','217.192.0.0ÔÇô217.207.255.255'] },
+  { flag:'­čçŞ­čç¬', name:'Sweden',         meta:'SE ┬Ě Europe',      ranges:['37.0.0.0ÔÇô37.7.255.255','46.0.0.0ÔÇô46.7.255.255','77.40.0.0ÔÇô77.47.255.255','78.64.0.0ÔÇô78.95.255.255','81.208.0.0ÔÇô81.223.255.255','82.96.0.0ÔÇô82.127.255.255','83.160.0.0ÔÇô83.175.255.255','84.0.0.0ÔÇô84.15.255.255','85.0.0.0ÔÇô85.31.255.255','87.96.0.0ÔÇô87.127.255.255','88.128.0.0ÔÇô88.159.255.255','90.224.0.0ÔÇô90.255.255.255','91.208.0.0ÔÇô91.223.255.255','130.0.0.0ÔÇô130.63.255.255','192.36.0.0ÔÇô192.51.255.255','194.0.0.0ÔÇô194.15.255.255','195.0.0.0ÔÇô195.15.255.255','217.0.0.0ÔÇô217.15.255.255'] },
+  { flag:'­čç│­čç┤', name:'Norway',         meta:'NO ┬Ě Europe',      ranges:['37.24.0.0ÔÇô37.31.255.255','46.8.0.0ÔÇô46.15.255.255','77.8.0.0ÔÇô77.23.255.255','78.160.0.0ÔÇô78.175.255.255','80.160.0.0ÔÇô80.175.255.255','81.160.0.0ÔÇô81.175.255.255','84.208.0.0ÔÇô84.223.255.255','85.96.0.0ÔÇô85.111.255.255','88.85.0.0ÔÇô88.95.255.255','91.148.0.0ÔÇô91.163.255.255','109.160.0.0ÔÇô109.175.255.255','176.16.0.0ÔÇô176.31.255.255','185.0.0.0ÔÇô185.15.255.255','193.0.0.0ÔÇô193.15.255.255','217.0.0.0ÔÇô217.15.255.255'] },
+  { flag:'­čçź­čç«', name:'Finland',        meta:'FI ┬Ě Europe',      ranges:['37.0.0.0ÔÇô37.15.255.255','46.8.0.0ÔÇô46.15.255.255','77.64.0.0ÔÇô77.79.255.255','78.64.0.0ÔÇô78.79.255.255','80.186.0.0ÔÇô80.191.255.255','81.175.0.0ÔÇô81.191.255.255','82.128.0.0ÔÇô82.159.255.255','84.252.0.0ÔÇô84.255.255.255','85.76.0.0ÔÇô85.79.255.255','87.92.0.0ÔÇô87.95.255.255','88.112.0.0ÔÇô88.119.255.255','91.152.0.0ÔÇô91.159.255.255','130.231.0.0ÔÇô130.232.255.255','193.0.0.0ÔÇô193.15.255.255','194.100.0.0ÔÇô194.111.255.255','195.0.0.0ÔÇô195.15.255.255','212.0.0.0ÔÇô212.15.255.255'] },
+  { flag:'­čç╣­čçĚ', name:'Turkey',         meta:'TR ┬Ě Europe/Asia', ranges:['5.24.0.0ÔÇô5.31.255.255','31.0.0.0ÔÇô31.15.255.255','37.0.0.0ÔÇô37.15.255.255','46.0.0.0ÔÇô46.15.255.255','78.160.0.0ÔÇô78.175.255.255','79.0.0.0ÔÇô79.63.255.255','80.0.0.0ÔÇô80.31.255.255','81.192.0.0ÔÇô81.207.255.255','82.0.0.0ÔÇô82.63.255.255','84.0.0.0ÔÇô84.31.255.255','85.0.0.0ÔÇô85.63.255.255','86.0.0.0ÔÇô86.63.255.255','87.0.0.0ÔÇô87.63.255.255','88.0.0.0ÔÇô88.63.255.255','88.224.0.0ÔÇô88.255.255.255','89.0.0.0ÔÇô89.63.255.255','90.0.0.0ÔÇô90.63.255.255','91.0.0.0ÔÇô91.63.255.255','176.0.0.0ÔÇô176.63.255.255','178.0.0.0ÔÇô178.63.255.255','193.0.0.0ÔÇô193.63.255.255','195.0.0.0ÔÇô195.63.255.255','212.0.0.0ÔÇô212.63.255.255','213.0.0.0ÔÇô213.63.255.255'] },
+  { flag:'­čç«­čçĚ', name:'Iran',           meta:'IR ┬Ě Asia',        ranges:['2.144.0.0ÔÇô2.191.255.255','5.0.0.0ÔÇô5.63.255.255','31.0.0.0ÔÇô31.63.255.255','37.0.0.0ÔÇô37.63.255.255','46.0.0.0ÔÇô46.63.255.255','78.0.0.0ÔÇô78.63.255.255','79.0.0.0ÔÇô79.63.255.255','80.0.0.0ÔÇô80.63.255.255','81.0.0.0ÔÇô81.63.255.255','82.0.0.0ÔÇô82.63.255.255','83.0.0.0ÔÇô83.63.255.255','84.0.0.0ÔÇô84.63.255.255','85.0.0.0ÔÇô85.63.255.255','86.0.0.0ÔÇô86.63.255.255','91.0.0.0ÔÇô91.63.255.255','92.0.0.0ÔÇô92.63.255.255','93.0.0.0ÔÇô93.63.255.255','94.0.0.0ÔÇô94.63.255.255','95.0.0.0ÔÇô95.63.255.255','185.0.0.0ÔÇô185.63.255.255'] },
+  { flag:'­čçŞ­čçŽ', name:'Saudi Arabia',   meta:'SA ┬Ě Asia',        ranges:['37.0.0.0ÔÇô37.15.255.255','46.0.0.0ÔÇô46.15.255.255','78.0.0.0ÔÇô78.63.255.255','82.0.0.0ÔÇô82.63.255.255','87.0.0.0ÔÇô87.63.255.255','91.0.0.0ÔÇô91.63.255.255','92.0.0.0ÔÇô92.63.255.255','94.0.0.0ÔÇô94.63.255.255','176.0.0.0ÔÇô176.63.255.255','178.0.0.0ÔÇô178.63.255.255','185.0.0.0ÔÇô185.63.255.255','188.0.0.0ÔÇô188.63.255.255','212.0.0.0ÔÇô212.63.255.255'] },
+  { flag:'­čç┐­čçŽ', name:'South Africa',   meta:'ZA ┬Ě Africa',      ranges:['41.0.0.0ÔÇô41.255.255.255','102.0.0.0ÔÇô102.63.255.255','105.0.0.0ÔÇô105.63.255.255','154.0.0.0ÔÇô154.63.255.255','197.0.0.0ÔÇô197.63.255.255'] },
+  { flag:'­čçŽ­čçĚ', name:'Argentina',      meta:'AR ┬Ě Americas',    ranges:['45.64.0.0ÔÇô45.95.255.255','138.0.0.0ÔÇô138.63.255.255','170.0.0.0ÔÇô170.63.255.255','181.0.0.0ÔÇô181.63.255.255','186.0.0.0ÔÇô186.63.255.255','190.0.0.0ÔÇô190.127.255.255','191.0.0.0ÔÇô191.63.255.255','200.0.0.0ÔÇô200.63.255.255'] },
+  { flag:'­čç▓­čçŻ', name:'Mexico',         meta:'MX ┬Ě Americas',    ranges:['5.0.0.0ÔÇô5.63.255.255','45.64.0.0ÔÇô45.95.255.255','131.0.0.0ÔÇô131.63.255.255','148.0.0.0ÔÇô148.63.255.255','177.0.0.0ÔÇô177.63.255.255','179.0.0.0ÔÇô179.63.255.255','187.0.0.0ÔÇô187.63.255.255','189.128.0.0ÔÇô189.191.255.255','200.0.0.0ÔÇô200.63.255.255','201.0.0.0ÔÇô201.63.255.255'] },
+  { flag:'­čçĘ­čçŽ', name:'Canada',         meta:'CA ┬Ě Americas',    ranges:['24.0.0.0ÔÇô24.255.255.255','47.0.0.0ÔÇô47.255.255.255','99.0.0.0ÔÇô99.255.255.255','142.0.0.0ÔÇô142.63.255.255','162.0.0.0ÔÇô162.63.255.255','174.0.0.0ÔÇô174.127.255.255','184.0.0.0ÔÇô184.63.255.255','192.0.0.0ÔÇô192.63.255.255','199.0.0.0ÔÇô199.63.255.255','205.0.0.0ÔÇô205.63.255.255','206.0.0.0ÔÇô206.63.255.255','207.0.0.0ÔÇô207.63.255.255','209.0.0.0ÔÇô209.63.255.255'] },
+  { flag:'­čç«­čç╣', name:'Italy',          meta:'IT ┬Ě Europe',      ranges:['2.32.0.0ÔÇô2.63.255.255','5.0.0.0ÔÇô5.63.255.255','37.0.0.0ÔÇô37.15.255.255','46.0.0.0ÔÇô46.63.255.255','78.0.0.0ÔÇô78.63.255.255','79.0.0.0ÔÇô79.63.255.255','80.0.0.0ÔÇô80.63.255.255','81.0.0.0ÔÇô81.63.255.255','82.0.0.0ÔÇô82.63.255.255','83.0.0.0ÔÇô83.63.255.255','84.0.0.0ÔÇô84.63.255.255','85.0.0.0ÔÇô85.63.255.255','87.0.0.0ÔÇô87.63.255.255','88.0.0.0ÔÇô88.63.255.255','89.0.0.0ÔÇô89.63.255.255','90.0.0.0ÔÇô90.63.255.255','91.0.0.0ÔÇô91.63.255.255','93.0.0.0ÔÇô93.63.255.255','94.0.0.0ÔÇô94.63.255.255','95.0.0.0ÔÇô95.63.255.255','151.0.0.0ÔÇô151.63.255.255','176.0.0.0ÔÇô176.63.255.255','188.0.0.0ÔÇô188.63.255.255','193.0.0.0ÔÇô193.63.255.255','212.0.0.0ÔÇô212.63.255.255','217.0.0.0ÔÇô217.63.255.255'] },
+  { flag:'­čç¬­čçŞ', name:'Spain',          meta:'ES ┬Ě Europe',      ranges:['2.0.0.0ÔÇô2.31.255.255','37.0.0.0ÔÇô37.15.255.255','46.0.0.0ÔÇô46.63.255.255','77.0.0.0ÔÇô77.63.255.255','80.0.0.0ÔÇô80.63.255.255','81.0.0.0ÔÇô81.63.255.255','83.0.0.0ÔÇô83.63.255.255','84.0.0.0ÔÇô84.63.255.255','85.0.0.0ÔÇô85.63.255.255','87.0.0.0ÔÇô87.63.255.255','88.0.0.0ÔÇô88.63.255.255','89.0.0.0ÔÇô89.63.255.255','90.0.0.0ÔÇô90.63.255.255','91.0.0.0ÔÇô91.63.255.255','94.0.0.0ÔÇô94.63.255.255','176.0.0.0ÔÇô176.63.255.255','195.0.0.0ÔÇô195.63.255.255','212.0.0.0ÔÇô212.63.255.255'] },
 ];
 
-// ── Country dialog state ──
+// ÔöÇÔöÇ Country dialog state ÔöÇÔöÇ
 let selectedCountryIdx = -1;
 let selectedRangeIdx   = -1;
 
@@ -3331,7 +3052,7 @@ function openCountriesDlg() {
   document.getElementById('countrySearch').value = '';
   document.getElementById('btnCountryUse').disabled    = true;
   document.getElementById('btnCountryUseAll').disabled = true;
-  document.getElementById('countryName').textContent   = '—';
+  document.getElementById('countryName').textContent   = 'ÔÇö';
   document.getElementById('countryMeta').textContent   = '';
   document.getElementById('countryRanges').innerHTML   = '';
   renderCountryList('');
@@ -3370,7 +3091,7 @@ function selectCountry(idx) {
   c.ranges.forEach((r, ri) => {
     const row = document.createElement('div');
     row.className = 'range-item';
-    const [from, to] = r.split('–');
+    const [from, to] = r.split('ÔÇô');
     const size = ipToNum(to) - ipToNum(from) + 1;
     row.innerHTML = `<span>${r}</span><span style="font-size:9px;color:inherit;opacity:0.7">${size.toLocaleString()} IPs</span>`;
     row.addEventListener('click', () => {
@@ -3393,7 +3114,7 @@ document.getElementById('countrySearch').addEventListener('input', function() {
 document.getElementById('btnCountryUse').addEventListener('click', () => {
   if (selectedCountryIdx < 0 || selectedRangeIdx < 0) return;
   const range = COUNTRY_DB[selectedCountryIdx].ranges[selectedRangeIdx];
-  const [from, to] = range.split('–');
+  const [from, to] = range.split('ÔÇô');
   setIP('f', from); setIP('t', to);
   closeCountriesDlg();
   setStatus(`Range set: ${range}`, 'ok');
@@ -3403,14 +3124,14 @@ document.getElementById('btnCountryUseAll').addEventListener('click', () => {
   if (selectedCountryIdx < 0) return;
   // Use first range as start, last as end
   const ranges = COUNTRY_DB[selectedCountryIdx].ranges;
-  const from = ranges[0].split('–')[0];
-  const to   = ranges[ranges.length - 1].split('–')[1];
+  const from = ranges[0].split('ÔÇô')[0];
+  const to   = ranges[ranges.length - 1].split('ÔÇô')[1];
   setIP('f', from); setIP('t', to);
   closeCountriesDlg();
-  setStatus(`Range set: ${from} – ${to} (${ranges.length} blocks)`, 'ok');
+  setStatus(`Range set: ${from} ÔÇô ${to} (${ranges.length} blocks)`, 'ok');
 });
 
-// ── Init language ──
+// ÔöÇÔöÇ Init language ÔöÇÔöÇ
 document.getElementById('menuCountries').addEventListener('click', () => {
   document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
   openCountriesDlg();
@@ -3418,200 +3139,10 @@ document.getElementById('menuCountries').addEventListener('click', () => {
 
 applyLang();
 applyScanDefaultsToMainInputs(loadScanDefaults());
-</script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
-
-<style>
-/* ── Globe window ── */
-#globeWin {
-  display:none; position:fixed;
-  top:40px; left:50%; transform:translateX(-50%);
-  width:min(680px, 96vw);
-  background:#c0c0c0;
-  border-top:2px solid #fff; border-left:2px solid #fff;
-  border-right:2px solid #808080; border-bottom:2px solid #808080;
-  box-shadow:2px 2px 4px rgba(0,0,0,.5);
-  z-index:700;
-}
-#globeCanvas { display:block; width:100%; background:#0a1628; cursor:grab; }
-#globeCanvas:active { cursor:grabbing; }
-.globe-statusbar {
-  border-top:1px solid #808080; padding:3px 8px;
-  font-size:10px; color:#000;
-  display:flex; align-items:center; gap:8px;
-  font-family:'MS Sans Serif',Tahoma,sans-serif;
-}
-.globe-toolbar {
-  display:flex;
-  align-items:center;
-  gap:4px;
-  flex-wrap:wrap;
-  padding:5px 8px 4px;
-  border-top:1px solid #fff;
-  border-bottom:1px solid #808080;
-  background:#c0c0c0;
-}
-.globe-toolbar .btn95 { padding:2px 10px; font-size:10px; }
-.globe-toolbar .toolbar-label { font-size:10px; color:#000; white-space:nowrap; }
-.globe-toolbar .toolbar-input,
-.globe-toolbar .toolbar-select {
-  height:20px;
-  font-family:inherit;
-  font-size:10px;
-  border-top:1px solid #808080;
-  border-left:1px solid #808080;
-  border-right:1px solid #fff;
-  border-bottom:1px solid #fff;
-  background:#fff;
-  padding:1px 4px;
-}
-.globe-toolbar .toolbar-input { width:88px; }
-.globe-toolbar .toolbar-select { width:120px; }
-.globe-panel {
-  border-top:1px solid #808080;border-left:1px solid #808080;
-  border-right:1px solid #fff;border-bottom:1px solid #fff;
-  padding:1px 8px; flex:1;
-}
-#globeTooltip {
-  position:fixed; display:none;
-  background:#000080; color:#fff;
-  font-family:'MS Sans Serif',Tahoma,sans-serif;
-  font-size:10px; padding:3px 8px;
-  border-top:1px solid #fff; border-left:1px solid #fff;
-  border-right:1px solid #808080; border-bottom:1px solid #808080;
-  pointer-events:none; z-index:800; white-space:nowrap;
-  box-shadow:1px 1px 0 #000;
-}
-/* Scan country confirm */
-#dlgScanCountry {
-  display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-  background:#c0c0c0; z-index:900;
-  border-top:2px solid #fff; border-left:2px solid #fff;
-  border-right:2px solid #808080; border-bottom:2px solid #808080;
-  box-shadow:1px 1px 0 #000; min-width:280px;
-  font-family:'MS Sans Serif',Tahoma,sans-serif; font-size:11px;
-}
-#dlgTraceOverlay {
-  display:none;
-  position:fixed;
-  inset:0;
-  z-index:950;
-}
-#dlgTraceOverlay.open { display:block; }
-#dlgTrace {
-  position:fixed;
-  top:50%; left:50%; transform:translate(-50%,-50%);
-  width:min(640px, 96vw);
-  background:#c0c0c0;
-  border-top:2px solid #fff; border-left:2px solid #fff;
-  border-right:2px solid #808080; border-bottom:2px solid #808080;
-  box-shadow:1px 1px 0 #000;
-  z-index:951;
-  font-family:'MS Sans Serif',Tahoma,sans-serif;
-  font-size:11px;
-}
-#traceInput {
-  width:100%;
-  min-height:220px;
-  resize:vertical;
-  font-family:'Courier New',monospace;
-  font-size:11px;
-  border-top:1px solid #808080;
-  border-left:1px solid #808080;
-  border-right:1px solid #fff;
-  border-bottom:1px solid #fff;
-  background:#fff;
-  padding:8px;
-}
-</style>
-
-<!-- Globe window -->
-<div id="globeWin">
-  <div class="titlebar" id="globeTitlebar" style="cursor:move">
-    <span>🌍</span>
-    <span style="flex:1">Network Map – IP Scan Results</span>
-    <div style="display:flex;gap:2px">
-      <div class="title-btn" onclick="closeGlobe()">✕</div>
-    </div>
-  </div>
-  <div class="globe-toolbar">
-    <button class="btn95 pressed" id="btnMapGlobe">Globe</button>
-    <button class="btn95" id="btnMapTopology">Topology</button>
-    <button class="btn95" id="btnImportTrace" data-i18n="btnImportTrace">Import Trace</button>
-    <span class="toolbar-label" id="topoFiltersLabel" data-i18n="topoFiltersLabel">Filters:</span>
-    <select class="toolbar-select" id="topoPortFilter">
-      <option value="">All ports</option>
-    </select>
-    <input class="toolbar-input" id="topoSubnetFilter" placeholder="Subnet" />
-    <input class="toolbar-input" id="topoPingMax" type="number" min="0" step="1" placeholder="Max ms" />
-    <button class="btn95" id="btnClearTopoFilters" data-i18n="btnClearTopoFilters">Clear Filters</button>
-    <div style="flex:1"></div>
-    <span style="font-size:10px;color:#000080" id="mapLiveLabel" data-i18n="mapLiveLabel">Live scan visualization</span>
-  </div>
-  <canvas id="globeCanvas" width="680" height="440"></canvas>
-  <div class="globe-statusbar">
-    <div class="globe-panel" id="globeStatusText">Drag to rotate · Click country to scan · Click dot to preview</div>
-    <label style="display:flex;align-items:center;gap:4px;flex-shrink:0" id="globeAutoRotateWrap">
-      <input type="checkbox" id="globeAutoRotate" checked/> Auto-rotate
-    </label>
-  </div>
-</div>
-
-<!-- Scan country confirm dialog -->
-<div id="dlgScanCountry">
-  <div class="titlebar">
-    <span>❓</span>
-    <span style="flex:1">Scan Country</span>
-    <div class="title-btn" onclick="closeScanCountryDlg()">✕</div>
-  </div>
-  <div style="padding:16px 18px 8px;display:flex;align-items:flex-start;gap:12px">
-    <div style="font-size:32px" id="scDlgIcon">🌍</div>
-    <div>
-      <div style="font-weight:bold;margin-bottom:6px" id="scDlgTitle">Scan country?</div>
-      <div style="font-size:10px;color:#000080" id="scDlgInfo"></div>
-    </div>
-  </div>
-  <div style="padding:0 18px 8px;font-size:10px;color:#808080" id="scDlgRanges"></div>
-  <div style="border-top:1px solid #808080;padding:6px 8px;display:flex;gap:6px;justify-content:flex-end">
-    <button class="btn95" id="scDlgYes" style="min-width:60px">Yes</button>
-    <button class="btn95" onclick="closeScanCountryDlg()" style="min-width:60px">No</button>
-  </div>
-</div>
-
-<!-- Trace import dialog -->
-<div id="dlgTraceOverlay">
-  <div id="dlgTrace">
-    <div class="titlebar">
-      <span>🧭</span>
-      <span style="flex:1" id="traceDlgTitle" data-i18n="traceDlgTitle">Import traceroute</span>
-      <div class="title-btn" onclick="closeTraceDlg()">✕</div>
-    </div>
-    <div style="padding:12px 14px 8px;display:flex;flex-direction:column;gap:8px">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <label for="traceTargetIp" id="traceTargetLabel" data-i18n="traceTargetLabel">Target IP:</label>
-        <input id="traceTargetIp" type="text" style="width:160px;font-family:'Courier New',monospace;font-size:11px;border-top:1px solid #808080;border-left:1px solid #808080;border-right:1px solid #fff;border-bottom:1px solid #fff;padding:2px 4px;background:#fff" />
-        <span style="font-size:10px;color:#808080" id="traceHint" data-i18n="traceHint">Paste output from tracert or traceroute.</span>
-      </div>
-      <textarea id="traceInput" spellcheck="false"></textarea>
-      <div id="traceParseStatus" style="font-size:10px;color:#000080;min-height:14px"></div>
-    </div>
-    <div style="border-top:1px solid #808080;padding:6px 8px;display:flex;gap:6px;justify-content:flex-end">
-      <button class="btn95" id="btnTraceSave" data-i18n="btnTraceSave">Import</button>
-      <button class="btn95" onclick="closeTraceDlg()" id="btnTraceCancel" data-i18n="dlgCancel">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Tooltip -->
-<div id="globeTooltip"></div>
-
-<script>
-// ══════════════════════════════════════════════════
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
 //  GLOBE
-// ══════════════════════════════════════════════════
-const ipGeoCoords = {}; // ip → { lat, lon, country }
+// ÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉÔĽÉ
+const ipGeoCoords = {}; // ip Ôćĺ { lat, lon, country }
 let globeReady = false;
 let globeCtx, globeProjection, globePath;
 let globeCountries = null, globeBorders = null, globeLand = null;
@@ -3628,7 +3159,7 @@ let topologyHitTargets = [];
 let traceRoutes = {};
 const topologyFilters = { port: '', subnet: '', pingMax: '' };
 
-// ISO numeric → country name
+// ISO numeric Ôćĺ country name
 const ISO_NAMES = {
   4:'Afghanistan',8:'Albania',12:'Algeria',24:'Angola',32:'Argentina',36:'Australia',
   40:'Austria',50:'Bangladesh',56:'Belgium',68:'Bolivia',76:'Brazil',100:'Bulgaria',
@@ -3709,8 +3240,8 @@ async function initGlobe() {
   if (globeMapDataReady) return;
 
   document.getElementById('globeStatusText').textContent = mapMode === 'globe'
-    ? 'Loading map data…'
-    : 'Topology view · Click host to preview · Rings show subnet depth';
+    ? 'Loading map dataÔÇŽ'
+    : 'Topology view ┬Ě Click host to preview ┬Ě Rings show subnet depth';
 
   try {
     const world = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r=>r.json());
@@ -3736,8 +3267,8 @@ function syncMapModeUI() {
   topoBtn.classList.toggle('pressed', mapMode === 'topology');
   autoRotateWrap.style.display = mapMode === 'globe' ? 'flex' : 'none';
   statusText.textContent = mapMode === 'globe'
-    ? 'Drag to rotate · Click country to scan · Click dot to preview'
-    : 'Topology view · Click host to preview · Rings show subnet depth';
+    ? 'Drag to rotate ┬Ě Click country to scan ┬Ě Click dot to preview'
+    : 'Topology view ┬Ě Click host to preview ┬Ě Rings show subnet depth';
 }
 
 function setMapMode(mode) {
@@ -3797,10 +3328,10 @@ function updateTopologyStatus(hosts, traceCount) {
   const filterSummary = [];
   if (topologyFilters.port) filterSummary.push(`${t('filterPortLabel')} ${topologyFilters.port}`);
   if (topologyFilters.subnet.trim()) filterSummary.push(`${t('filterSubnetLabel')} ${topologyFilters.subnet.trim()}`);
-  if (topologyFilters.pingMax !== '') filterSummary.push(`${t('filterPingLabel')} ≤ ${topologyFilters.pingMax}ms`);
-  const traceLabel = traceCount ? ` · ${traceCount} ${t('traceRoutesLabel')}` : '';
+  if (topologyFilters.pingMax !== '') filterSummary.push(`${t('filterPingLabel')} ÔëĄ ${topologyFilters.pingMax}ms`);
+  const traceLabel = traceCount ? ` ┬Ě ${traceCount} ${t('traceRoutesLabel')}` : '';
   statusText.textContent = filterSummary.length
-    ? `${t('topologyFilteredStatus', hosts.length)} · ${filterSummary.join(' · ')}${traceLabel}`
+    ? `${t('topologyFilteredStatus', hosts.length)} ┬Ě ${filterSummary.join(' ┬Ě ')}${traceLabel}`
     : `${t('topologyStatus', hosts.length)}${traceLabel}`;
 }
 
@@ -3852,7 +3383,7 @@ function drawGlobe() {
     ctx.fill();
   }
 
-  // Countries — highlight hovered
+  // Countries ÔÇö highlight hovered
   if (globeCountries) {
     globeCountries.features.forEach(f => {
       const name = ISO_NAMES[+f.id];
@@ -4264,10 +3795,10 @@ function setupGlobeEvents(canvas) {
           tooltip.style.left = e.clientX + 14 + 'px';
           tooltip.style.top  = e.clientY - 4  + 'px';
           tooltip.textContent = target.type === 'host'
-            ? `${target.data.ip} [${target.data.ports.join(', ')}]${target.data.ping ? ` · ${target.data.ping}ms` : ''}`
+            ? `${target.data.ip} [${target.data.ports.join(', ')}]${target.data.ping ? ` ┬Ě ${target.data.ping}ms` : ''}`
             : target.type === 'trace-hop'
-              ? `Hop ${target.data.hop}${target.data.ip ? ` · ${target.data.ip}` : ''}${target.data.ms ? ` · ${target.data.ms}ms` : ''}`
-              : `${target.data.subnet} · ${target.data.hosts.length} hosts`;
+              ? `Hop ${target.data.hop}${target.data.ip ? ` ┬Ě ${target.data.ip}` : ''}${target.data.ms ? ` ┬Ě ${target.data.ms}ms` : ''}`
+              : `${target.data.subnet} ┬Ě ${target.data.hosts.length} hosts`;
           canvas.style.cursor = 'pointer';
         } else {
           tooltip.style.display = 'none';
@@ -4310,7 +3841,7 @@ function setupGlobeEvents(canvas) {
         tooltip.style.left = e.clientX + 14 + 'px';
         tooltip.style.top  = e.clientY - 4  + 'px';
         const inDb = COUNTRY_DB.find(c=>c.name===found);
-        tooltip.textContent = found + (inDb ? ' — click to scan' : '');
+        tooltip.textContent = found + (inDb ? ' ÔÇö click to scan' : '');
         canvas.style.cursor = 'pointer';
         hoveredCountryName = found;
       } else {
@@ -4401,18 +3932,18 @@ function setupGlobeEvents(canvas) {
   });
 }
 
-// ── Scan Country Dialog ──
+// ÔöÇÔöÇ Scan Country Dialog ÔöÇÔöÇ
 let scanCountryTarget = null;
 function openScanCountryDlg(countryName) {
   scanCountryTarget = countryName;
   const entry = COUNTRY_DB.find(c => c.name === countryName);
   document.getElementById('scDlgTitle').textContent = `Scan ${countryName}?`;
-  document.getElementById('scDlgIcon').textContent = entry?.flag || '🌍';
+  document.getElementById('scDlgIcon').textContent = entry?.flag || '­čîŹ';
   if (entry) {
     document.getElementById('scDlgInfo').textContent = `${entry.ranges.length} IP ranges found in database.`;
     document.getElementById('scDlgRanges').textContent = 'First range: ' + entry.ranges[0];
   } else {
-    document.getElementById('scDlgInfo').textContent = 'Country not in preset database — cannot auto-scan.';
+    document.getElementById('scDlgInfo').textContent = 'Country not in preset database ÔÇö cannot auto-scan.';
     document.getElementById('scDlgRanges').textContent = '';
   }
   document.getElementById('scDlgYes').disabled = !entry;
@@ -4424,20 +3955,20 @@ function closeScanCountryDlg() {
 document.getElementById('scDlgYes').addEventListener('click', () => {
   const entry = COUNTRY_DB.find(c => c.name === scanCountryTarget);
   if (!entry) return;
-  const from = entry.ranges[0].split('–')[0];
-  const to   = entry.ranges[entry.ranges.length-1].split('–')[1];
+  const from = entry.ranges[0].split('ÔÇô')[0];
+  const to   = entry.ranges[entry.ranges.length-1].split('ÔÇô')[1];
   setIP('f', from); setIP('t', to);
   closeScanCountryDlg(); closeGlobe();
-  setStatus(`Range set: ${entry.flag} ${entry.name} — ${entry.ranges.length} ranges.`, 'ok');
+  setStatus(`Range set: ${entry.flag} ${entry.name} ÔÇö ${entry.ranges.length} ranges.`, 'ok');
 });
 
-// ── Update dots when new IP found ──
+// ÔöÇÔöÇ Update dots when new IP found ÔöÇÔöÇ
 function updateGlobeDots() {
   refreshTopologyFilterOptions();
   if (document.getElementById('globeWin').style.display !== 'none' && globeReady) drawCurrentMap();
 }
 
-// ── Globe button ──
+// ÔöÇÔöÇ Globe button ÔöÇÔöÇ
 document.getElementById('btnGlobe').addEventListener('click', openGlobe);
 document.getElementById('btnTopologyToolbar').addEventListener('click', openTopology);
 document.getElementById('btnMapGlobe').addEventListener('click', () => setMapMode('globe'));
