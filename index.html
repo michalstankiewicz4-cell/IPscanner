@@ -525,6 +525,113 @@ body {
 }
 .dlg-radio-row { display:flex; flex-direction:column; gap:5px; }
 .dlg-radio { display:flex; align-items:center; gap:6px; cursor:pointer; }
+
+/* ── Aero skin overrides (enabled via body.skin-aero) ── */
+body.skin-aero {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0) 38%),
+    radial-gradient(circle at 86% 14%, rgba(170, 210, 255, 0.35), rgba(170, 210, 255, 0) 42%),
+    linear-gradient(160deg, #9fc5f0 0%, #77a5dc 40%, #5c87bf 100%);
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+body.skin-aero .win95,
+body.skin-aero .dlg95,
+body.skin-aero .ctxmenu,
+body.skin-aero .menu-dropdown,
+body.skin-aero .enrich-popup {
+  background: linear-gradient(180deg, rgba(246, 250, 255, 0.92), rgba(217, 231, 248, 0.92));
+  border-top: 1px solid #f7fbff;
+  border-left: 1px solid #f7fbff;
+  border-right: 1px solid #6d8db1;
+  border-bottom: 1px solid #6d8db1;
+  box-shadow: 0 7px 24px rgba(14, 40, 72, 0.28);
+}
+
+body.skin-aero .titlebar,
+body.skin-aero .dlg-title,
+body.skin-aero .enrich-popup-bar,
+body.skin-aero .preview-titlebar {
+  background: linear-gradient(180deg, rgba(210, 233, 255, 0.98), rgba(72, 128, 192, 0.94));
+  color: #eff7ff;
+  text-shadow: 0 1px 0 rgba(0, 20, 45, 0.45);
+}
+
+body.skin-aero .title-btn,
+body.skin-aero .btn95 {
+  background: linear-gradient(180deg, #f6fbff, #cfe3fb);
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #6d8db1;
+  border-bottom: 1px solid #6d8db1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  color: #123a65;
+}
+
+body.skin-aero .btn95:active,
+body.skin-aero .btn95.pressed,
+body.skin-aero .title-btn:active {
+  background: linear-gradient(180deg, #bbd5f2, #e5f2ff);
+  border-top: 1px solid #6d8db1;
+  border-left: 1px solid #6d8db1;
+  border-right: 1px solid #ffffff;
+  border-bottom: 1px solid #ffffff;
+}
+
+body.skin-aero .groupbox,
+body.skin-aero .dlg-groupbox,
+body.skin-aero .status-panel,
+body.skin-aero .ip-box,
+body.skin-aero .progress-bar-bg,
+body.skin-aero .port-progress-bg,
+body.skin-aero .listview-wrap,
+body.skin-aero .preview-iframe,
+body.skin-aero .detail-section {
+  background: rgba(255, 255, 255, 0.86);
+  border-top: 1px solid #f8fbff;
+  border-left: 1px solid #f8fbff;
+  border-right: 1px solid #6d8db1;
+  border-bottom: 1px solid #6d8db1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+body.skin-aero .groupbox-legend,
+body.skin-aero .dlg-groupbox-legend {
+  background: rgba(226, 238, 251, 0.95);
+  color: #1a4572;
+}
+
+body.skin-aero .menubar {
+  background: linear-gradient(180deg, #ebf5ff, #cadcf3);
+  border-bottom: 1px solid #6d8db1;
+}
+
+body.skin-aero .menu-item:hover,
+body.skin-aero .menu-item.open,
+body.skin-aero .menu-dd-item:hover,
+body.skin-aero .ctx-item:hover,
+body.skin-aero .country-item:hover,
+body.skin-aero .country-item.active,
+body.skin-aero .range-item:hover,
+body.skin-aero .range-item.active,
+body.skin-aero .lv-row:hover,
+body.skin-aero .lv-row.selected {
+  background: #2b73b8;
+  color: #fff;
+}
+
+body.skin-aero .progress-bar-fill {
+  background: linear-gradient(90deg, #1a6ebd, #5aaef4);
+}
+
+body.skin-aero .port-progress-fill {
+  background: linear-gradient(90deg, #2e8a6d, #6fd1ab);
+}
+
+body.skin-aero .statusbar {
+  border-top: 1px solid #6d8db1;
+  color: #10385e;
+}
 </style>
 </head>
 <body>
@@ -2157,6 +2264,19 @@ document.addEventListener('DOMContentLoaded', () => {
           </label>
         </div>
       </div>
+      <div class="dlg-groupbox">
+        <span class="dlg-groupbox-legend">Skin</span>
+        <div class="dlg-radio-row" style="margin-top:2px">
+          <label class="dlg-radio">
+            <input type="radio" name="uiSkin" id="skinXp" value="xp"/>
+            <span>Windows XP Classic</span>
+          </label>
+          <label class="dlg-radio">
+            <input type="radio" name="uiSkin" id="skinAero" value="aero" checked/>
+            <span>Windows Aero</span>
+          </label>
+        </div>
+      </div>
     </div>
     <div class="dlg-footer">
       <button class="btn95" onclick="closeCustomizeDlg()">Close</button>
@@ -2485,6 +2605,14 @@ const TOOLBAR_BTNS_CFG = [
   { chk: 'chkBtnProto',      id: 'btnProtoToolbar',    key: 'tb_proto' },
   { chk: 'chkBtnTopology',   id: 'btnTopologyToolbar', key: 'tb_topology' },
 ];
+const UI_SKIN_KEY = 'ui_skin';
+
+function applySkinCustomization() {
+  const savedSkin = localStorage.getItem(UI_SKIN_KEY);
+  const skin = savedSkin === 'xp' ? 'xp' : 'aero';
+  document.body.classList.remove('skin-xp', 'skin-aero');
+  document.body.classList.add(`skin-${skin}`);
+}
 
 function applyToolbarCustomization() {
   TOOLBAR_BTNS_CFG.forEach(({ id, key }) => {
@@ -2499,6 +2627,14 @@ function openCustomizeDlg() {
     const el = document.getElementById(chk);
     if (el) el.checked = localStorage.getItem(key) !== '0';
   });
+
+  const savedSkin = localStorage.getItem(UI_SKIN_KEY);
+  const activeSkin = savedSkin === 'xp' ? 'xp' : 'aero';
+  const skinXp = document.getElementById('skinXp');
+  const skinAero = document.getElementById('skinAero');
+  if (skinXp) skinXp.checked = activeSkin === 'xp';
+  if (skinAero) skinAero.checked = activeSkin === 'aero';
+
   document.getElementById('dlgCustomizeOverlay').classList.add('open');
 }
 function closeCustomizeDlg() {
@@ -2506,7 +2642,12 @@ function closeCustomizeDlg() {
     const el = document.getElementById(chk);
     if (el) localStorage.setItem(key, el.checked ? '1' : '0');
   });
+
+  const selectedSkin = document.querySelector('input[name="uiSkin"]:checked')?.value;
+  localStorage.setItem(UI_SKIN_KEY, selectedSkin === 'xp' ? 'xp' : 'aero');
+
   applyToolbarCustomization();
+  applySkinCustomization();
   document.getElementById('dlgCustomizeOverlay').classList.remove('open');
 }
 
@@ -2520,6 +2661,7 @@ document.getElementById('btnSpeedToolbar').addEventListener('click', openSpeedWi
 document.getElementById('btnProtoToolbar').addEventListener('click', openProtoWindow);
 
 applyToolbarCustomization();
+applySkinCustomization();
 
 // ══════════════════════════════════════════════════
 //  PORT PRESETS
