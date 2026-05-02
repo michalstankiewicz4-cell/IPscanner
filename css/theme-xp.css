@@ -678,3 +678,138 @@ body.skin-glass .statusbar {
   border-top: 1px solid #6d8db1;
   color: #10385e;
 }
+
+/* ── Workbench Night skin overrides (enabled via body.skin-workbench) ── */
+body.skin-workbench {
+  background:
+    radial-gradient(circle at 14% -10%, rgba(99, 167, 255, 0.18), rgba(99, 167, 255, 0) 42%),
+    radial-gradient(circle at 90% 12%, rgba(0, 214, 201, 0.11), rgba(0, 214, 201, 0) 38%),
+    linear-gradient(165deg, #1f2430 0%, #191d27 55%, #151922 100%);
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  color: #d7dee8;
+}
+
+body.skin-workbench .win95,
+body.skin-workbench .dlg95,
+body.skin-workbench .ctxmenu,
+body.skin-workbench .menu-dropdown,
+body.skin-workbench .enrich-popup {
+  background: #252b36;
+  border-top: 1px solid #3a4353;
+  border-left: 1px solid #3a4353;
+  border-right: 1px solid #12161e;
+  border-bottom: 1px solid #12161e;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.46);
+}
+
+body.skin-workbench .titlebar,
+body.skin-workbench .dlg-title,
+body.skin-workbench .enrich-popup-bar,
+body.skin-workbench .preview-titlebar {
+  background: linear-gradient(180deg, #313a4a, #273041);
+  color: #e6edf7;
+  text-shadow: none;
+}
+
+body.skin-workbench .title-btn,
+body.skin-workbench .btn95 {
+  background: linear-gradient(180deg, #3a4456, #2e3747);
+  border-top: 1px solid #4d5a70;
+  border-left: 1px solid #4d5a70;
+  border-right: 1px solid #131923;
+  border-bottom: 1px solid #131923;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #dce6f5;
+}
+
+body.skin-workbench .btn95:active,
+body.skin-workbench .btn95.pressed,
+body.skin-workbench .title-btn:active {
+  background: linear-gradient(180deg, #2b3444, #3a4557);
+  border-top: 1px solid #131923;
+  border-left: 1px solid #131923;
+  border-right: 1px solid #4d5a70;
+  border-bottom: 1px solid #4d5a70;
+}
+
+body.skin-workbench .groupbox,
+body.skin-workbench .dlg-groupbox,
+body.skin-workbench .status-panel,
+body.skin-workbench .ip-box,
+body.skin-workbench .progress-bar-bg,
+body.skin-workbench .port-progress-bg,
+body.skin-workbench .listview-wrap,
+body.skin-workbench .preview-iframe,
+body.skin-workbench .detail-section {
+  background: #1f2530;
+  border-top: 1px solid #394354;
+  border-left: 1px solid #394354;
+  border-right: 1px solid #12161e;
+  border-bottom: 1px solid #12161e;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+body.skin-workbench .groupbox-legend,
+body.skin-workbench .dlg-groupbox-legend {
+  background: #252b36;
+  color: #b8c7de;
+}
+
+body.skin-workbench .menubar {
+  background: linear-gradient(180deg, #2d3544, #232b39);
+  border-bottom: 1px solid #111720;
+}
+
+body.skin-workbench .menu-item,
+body.skin-workbench .menu-dd-item,
+body.skin-workbench .ctx-item,
+body.skin-workbench .country-item,
+body.skin-workbench .range-item,
+body.skin-workbench .lv-cell,
+body.skin-workbench .oct,
+body.skin-workbench .oct-dot,
+body.skin-workbench .stats-row,
+body.skin-workbench .port-progress-label,
+body.skin-workbench .statusbar,
+body.skin-workbench .status-panel,
+body.skin-workbench .empty-row {
+  color: #d7dee8;
+}
+
+body.skin-workbench .menu-item:hover,
+body.skin-workbench .menu-item.open,
+body.skin-workbench .menu-dd-item:hover,
+body.skin-workbench .ctx-item:hover,
+body.skin-workbench .country-item:hover,
+body.skin-workbench .country-item.active,
+body.skin-workbench .range-item:hover,
+body.skin-workbench .range-item.active,
+body.skin-workbench .lv-row:hover,
+body.skin-workbench .lv-row.selected {
+  background: #094771;
+  color: #ffffff;
+}
+
+body.skin-workbench .lv-row.selected .lv-cell,
+body.skin-workbench .lv-row:hover .lv-cell {
+  color: #ffffff;
+}
+
+body.skin-workbench .progress-bar-fill {
+  background: linear-gradient(90deg, #0e639c, #1177bb);
+}
+
+body.skin-workbench .port-progress-fill {
+  background: linear-gradient(90deg, #2a9d8f, #38b5a3);
+}
+
+body.skin-workbench .stat-val,
+body.skin-workbench #statTime,
+body.skin-workbench #myIpResult,
+body.skin-workbench #myLocalIpResult,
+body.skin-workbench #localSubnetsResult,
+body.skin-workbench #activePorts,
+body.skin-workbench .port-hint,
+body.skin-workbench .empty-row {
+  color: #8cc7ff !important;
+}

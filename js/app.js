@@ -493,12 +493,20 @@ const TOOLBAR_BTNS_CFG = [
   { chk: 'chkBtnTopology',   id: 'btnTopologyToolbar', key: 'tb_topology' },
 ];
 const UI_SKIN_KEY = 'ui_skin';
+const UI_SKINS = ['classic', 'glass', 'workbench'];
+
+function getSavedSkin() {
+  const savedSkin = localStorage.getItem(UI_SKIN_KEY);
+  return UI_SKINS.includes(savedSkin) ? savedSkin : 'classic';
+}
+
+function setBodySkinClass(skin) {
+  document.body.classList.remove('skin-classic', 'skin-glass', 'skin-workbench');
+  document.body.classList.add(`skin-${skin}`);
+}
 
 function applySkinCustomization() {
-  const savedSkin = localStorage.getItem(UI_SKIN_KEY);
-  const skin = savedSkin === 'glass' ? 'glass' : 'classic';
-  document.body.classList.remove('skin-classic', 'skin-glass');
-  document.body.classList.add(`skin-${skin}`);
+  setBodySkinClass(getSavedSkin());
 }
 
 function applyToolbarCustomization() {
@@ -515,12 +523,13 @@ function openCustomizeDlg() {
     if (el) el.checked = localStorage.getItem(key) !== '0';
   });
 
-  const savedSkin = localStorage.getItem(UI_SKIN_KEY);
-  const activeSkin = savedSkin === 'glass' ? 'glass' : 'classic';
+  const activeSkin = getSavedSkin();
   const skinClassic = document.getElementById('skinClassic');
   const skinGlass = document.getElementById('skinGlass');
+  const skinWorkbench = document.getElementById('skinWorkbench');
   if (skinClassic) skinClassic.checked = activeSkin === 'classic';
   if (skinGlass) skinGlass.checked = activeSkin === 'glass';
+  if (skinWorkbench) skinWorkbench.checked = activeSkin === 'workbench';
 
   document.getElementById('dlgCustomizeOverlay').classList.add('open');
 }
@@ -531,7 +540,7 @@ function closeCustomizeDlg() {
   });
 
   const selectedSkin = document.querySelector('input[name="uiSkin"]:checked')?.value;
-  localStorage.setItem(UI_SKIN_KEY, selectedSkin === 'glass' ? 'glass' : 'classic');
+  localStorage.setItem(UI_SKIN_KEY, UI_SKINS.includes(selectedSkin) ? selectedSkin : 'classic');
 
   applyToolbarCustomization();
   applySkinCustomization();
@@ -546,8 +555,7 @@ document.getElementById('menuCustomize').addEventListener('click', () => {
 document.querySelectorAll('input[name="uiSkin"]').forEach(radio => {
   radio.addEventListener('change', () => {
     const skin = document.querySelector('input[name="uiSkin"]:checked')?.value;
-    document.body.classList.remove('skin-classic', 'skin-glass');
-    document.body.classList.add(`skin-${skin === 'glass' ? 'glass' : 'classic'}`);
+    setBodySkinClass(UI_SKINS.includes(skin) ? skin : 'classic');
   });
 });
 
