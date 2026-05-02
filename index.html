@@ -526,8 +526,8 @@ body {
 .dlg-radio-row { display:flex; flex-direction:column; gap:5px; }
 .dlg-radio { display:flex; align-items:center; gap:6px; cursor:pointer; }
 
-/* ── Aero skin overrides (enabled via body.skin-aero) ── */
-body.skin-aero {
+/* ── Glass skin overrides (enabled via body.skin-glass) ── */
+body.skin-glass {
   background:
     radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0) 38%),
     radial-gradient(circle at 86% 14%, rgba(170, 210, 255, 0.35), rgba(170, 210, 255, 0) 42%),
@@ -535,11 +535,11 @@ body.skin-aero {
   font-family: "Segoe UI", Tahoma, sans-serif;
 }
 
-body.skin-aero .win95,
-body.skin-aero .dlg95,
-body.skin-aero .ctxmenu,
-body.skin-aero .menu-dropdown,
-body.skin-aero .enrich-popup {
+body.skin-glass .win95,
+body.skin-glass .dlg95,
+body.skin-glass .ctxmenu,
+body.skin-glass .menu-dropdown,
+body.skin-glass .enrich-popup {
   background: linear-gradient(180deg, rgba(246, 250, 255, 0.92), rgba(217, 231, 248, 0.92));
   border-top: 1px solid #f7fbff;
   border-left: 1px solid #f7fbff;
@@ -548,17 +548,17 @@ body.skin-aero .enrich-popup {
   box-shadow: 0 7px 24px rgba(14, 40, 72, 0.28);
 }
 
-body.skin-aero .titlebar,
-body.skin-aero .dlg-title,
-body.skin-aero .enrich-popup-bar,
-body.skin-aero .preview-titlebar {
+body.skin-glass .titlebar,
+body.skin-glass .dlg-title,
+body.skin-glass .enrich-popup-bar,
+body.skin-glass .preview-titlebar {
   background: linear-gradient(180deg, rgba(210, 233, 255, 0.98), rgba(72, 128, 192, 0.94));
   color: #eff7ff;
   text-shadow: 0 1px 0 rgba(0, 20, 45, 0.45);
 }
 
-body.skin-aero .title-btn,
-body.skin-aero .btn95 {
+body.skin-glass .title-btn,
+body.skin-glass .btn95 {
   background: linear-gradient(180deg, #f6fbff, #cfe3fb);
   border-top: 1px solid #ffffff;
   border-left: 1px solid #ffffff;
@@ -568,9 +568,9 @@ body.skin-aero .btn95 {
   color: #123a65;
 }
 
-body.skin-aero .btn95:active,
-body.skin-aero .btn95.pressed,
-body.skin-aero .title-btn:active {
+body.skin-glass .btn95:active,
+body.skin-glass .btn95.pressed,
+body.skin-glass .title-btn:active {
   background: linear-gradient(180deg, #bbd5f2, #e5f2ff);
   border-top: 1px solid #6d8db1;
   border-left: 1px solid #6d8db1;
@@ -578,15 +578,15 @@ body.skin-aero .title-btn:active {
   border-bottom: 1px solid #ffffff;
 }
 
-body.skin-aero .groupbox,
-body.skin-aero .dlg-groupbox,
-body.skin-aero .status-panel,
-body.skin-aero .ip-box,
-body.skin-aero .progress-bar-bg,
-body.skin-aero .port-progress-bg,
-body.skin-aero .listview-wrap,
-body.skin-aero .preview-iframe,
-body.skin-aero .detail-section {
+body.skin-glass .groupbox,
+body.skin-glass .dlg-groupbox,
+body.skin-glass .status-panel,
+body.skin-glass .ip-box,
+body.skin-glass .progress-bar-bg,
+body.skin-glass .port-progress-bg,
+body.skin-glass .listview-wrap,
+body.skin-glass .preview-iframe,
+body.skin-glass .detail-section {
   background: rgba(255, 255, 255, 0.86);
   border-top: 1px solid #f8fbff;
   border-left: 1px solid #f8fbff;
@@ -595,45 +595,45 @@ body.skin-aero .detail-section {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
-body.skin-aero .groupbox-legend,
-body.skin-aero .dlg-groupbox-legend {
+body.skin-glass .groupbox-legend,
+body.skin-glass .dlg-groupbox-legend {
   background: rgba(226, 238, 251, 0.95);
   color: #1a4572;
 }
 
-body.skin-aero .menubar {
+body.skin-glass .menubar {
   background: linear-gradient(180deg, #ebf5ff, #cadcf3);
   border-bottom: 1px solid #6d8db1;
 }
 
-body.skin-aero .menu-item,
-body.skin-aero .menu-dd-item {
+body.skin-glass .menu-item,
+body.skin-glass .menu-dd-item {
   color: #163a5d;
 }
 
-body.skin-aero .menu-item:hover,
-body.skin-aero .menu-item.open,
-body.skin-aero .menu-dd-item:hover,
-body.skin-aero .ctx-item:hover,
-body.skin-aero .country-item:hover,
-body.skin-aero .country-item.active,
-body.skin-aero .range-item:hover,
-body.skin-aero .range-item.active,
-body.skin-aero .lv-row:hover,
-body.skin-aero .lv-row.selected {
+body.skin-glass .menu-item:hover,
+body.skin-glass .menu-item.open,
+body.skin-glass .menu-dd-item:hover,
+body.skin-glass .ctx-item:hover,
+body.skin-glass .country-item:hover,
+body.skin-glass .country-item.active,
+body.skin-glass .range-item:hover,
+body.skin-glass .range-item.active,
+body.skin-glass .lv-row:hover,
+body.skin-glass .lv-row.selected {
   background: #2b73b8;
   color: #eef5ff;
 }
 
-body.skin-aero .progress-bar-fill {
+body.skin-glass .progress-bar-fill {
   background: linear-gradient(90deg, #1a6ebd, #5aaef4);
 }
 
-body.skin-aero .port-progress-fill {
+body.skin-glass .port-progress-fill {
   background: linear-gradient(90deg, #2e8a6d, #6fd1ab);
 }
 
-body.skin-aero .statusbar {
+body.skin-glass .statusbar {
   border-top: 1px solid #6d8db1;
   color: #10385e;
 }
@@ -2273,12 +2273,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="dlg-groupbox-legend">Skin</span>
         <div class="dlg-radio-row" style="margin-top:2px">
           <label class="dlg-radio">
-            <input type="radio" name="uiSkin" id="skinXp" value="xp"/>
-            <span>Windows XP Classic</span>
+            <input type="radio" name="uiSkin" id="skinClassic" value="classic"/>
+            <span>Classic</span>
           </label>
           <label class="dlg-radio">
-            <input type="radio" name="uiSkin" id="skinAero" value="aero" checked/>
-            <span>Windows Aero</span>
+            <input type="radio" name="uiSkin" id="skinGlass" value="glass" checked/>
+            <span>Glass</span>
           </label>
         </div>
       </div>
@@ -2614,7 +2614,7 @@ const UI_SKIN_KEY = 'ui_skin';
 
 function setSkinClass(skin) {
   const normalized = skin === 'xp' ? 'xp' : 'aero';
-  document.body.classList.remove('skin-xp', 'skin-aero');
+  document.body.classList.remove('skin-classic', 'skin-glass');
   document.body.classList.add(`skin-${normalized}`);
 }
 
@@ -2645,10 +2645,10 @@ function openCustomizeDlg() {
 
   const savedSkin = localStorage.getItem(UI_SKIN_KEY);
   const activeSkin = savedSkin === 'xp' ? 'xp' : 'aero';
-  const skinXp = document.getElementById('skinXp');
-  const skinAero = document.getElementById('skinAero');
-  if (skinXp) skinXp.checked = activeSkin === 'xp';
-  if (skinAero) skinAero.checked = activeSkin === 'aero';
+  const skinClassic = document.getElementById('skinClassic');
+  const skinGlass = document.getElementById('skinGlass');
+  if (skinClassic) skinClassic.checked = activeSkin === 'classic';
+  if (skinGlass) skinGlass.checked = activeSkin === 'glass';
 
   document.getElementById('dlgCustomizeOverlay').classList.add('open');
 }
@@ -2671,8 +2671,8 @@ document.getElementById('menuCustomize').addEventListener('click', () => {
   openCustomizeDlg();
 });
 
-document.getElementById('skinXp')?.addEventListener('change', applySkinPreviewFromSelection);
-document.getElementById('skinAero')?.addEventListener('change', applySkinPreviewFromSelection);
+document.getElementById('skinClassic')?.addEventListener('change', applySkinPreviewFromSelection);
+document.getElementById('skinGlass')?.addEventListener('change', applySkinPreviewFromSelection);
 
 document.getElementById('btnMacroToolbar').addEventListener('click', openMacroFolder);
 document.getElementById('btnSpeedToolbar').addEventListener('click', openSpeedWindow);
