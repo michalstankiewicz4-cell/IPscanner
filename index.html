@@ -233,10 +233,9 @@ body {
 }
 .listview-header {
   display: grid;
-  grid-template-columns: 20px 110px 56px 130px 80px 1fr;
+  grid-template-columns: 120px 26px auto;
   background: #c0c0c0;
   border-bottom: 1px solid #808080;
-  min-width: 500px;
 }
 .lv-col {
   padding: 2px 4px;
@@ -269,11 +268,10 @@ body {
 
 .lv-row {
   display: grid;
-  grid-template-columns: 20px 110px 56px 130px 80px 1fr;
+  grid-template-columns: 120px 26px auto;
   cursor: default;
   border-bottom: 1px solid #f0f0f0;
   animation: rowIn 200ms ease-out;
-  min-width: 500px;
 }
 @keyframes rowIn { from{opacity:0;background:#000080;color:#fff} to{opacity:1} }
 .lv-row:hover   { background: #000080; color: #fff; }
@@ -289,6 +287,41 @@ body {
 .icon-ok  { color: green; font-weight: bold; }
 .icon-err { color: #c00; font-weight: bold; }
 .empty-row { padding: 8px; font-size: 11px; color: #808080; }
+
+/* ── Expand button ── */
+.lv-expand-cell { display: flex; align-items: center; justify-content: center; }
+.lv-expand-btn {
+  font-size: 11px; font-family: inherit;
+  width: 18px; height: 15px;
+  padding: 0; line-height: 1;
+  background: #c0c0c0;
+  border-top: 1px solid #fff; border-left: 1px solid #fff;
+  border-right: 1px solid #808080; border-bottom: 1px solid #808080;
+  cursor: pointer;
+}
+.lv-expand-btn:active {
+  border-top: 1px solid #808080; border-left: 1px solid #808080;
+  border-right: 1px solid #fff; border-bottom: 1px solid #fff;
+}
+/* ── Ports panel ── */
+.ports-panel {
+  display: none;
+  background: #fffff0;
+  border-top: 1px dashed #c0c0c0;
+  padding: 4px 8px;
+  flex-direction: column;
+  gap: 3px 0;
+}
+.ports-panel.open { display: flex; }
+.port-group {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px;
+  border-bottom: 1px dotted #e0e0c0;
+  padding-bottom: 2px;
+}
+.port-group:last-child { border-bottom: none; padding-bottom: 0; }
+.port-label {
+  font-size: 10px; font-weight: bold; color: #000080; min-width: 40px;
+}
 
 /* ── Paths popup ── */
 .paths-row {
@@ -808,12 +841,9 @@ body.skin-glass .statusbar {
     <!-- List view -->
     <div class="listview-wrap">
       <div class="listview-header">
-        <div class="lv-col" style="font-size:9px">●</div>
         <div class="lv-col" data-i18n="colIp">IP Address</div>
+        <div class="lv-col"></div>
         <div class="lv-col" data-i18n="colPing">Ping</div>
-        <div class="lv-col" data-i18n="colHostname">Hostname</div>
-        <div class="lv-col" data-i18n="colPorts">Ports</div>
-        <div class="lv-col" data-i18n="colLinks">Paths / Links</div>
       </div>
       <div class="listview-body" id="listBody">
         <div class="empty-row" id="emptyRow" data-i18n="emptyRow">No results. Configure IP range and click Start.</div>
@@ -2293,6 +2323,12 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="ctxmenu" id="ctxMenu">
   <div class="ctx-item" id="ctxCopyIp" data-i18n="ctxCopyIp">Copy IP Address</div>
   <div class="ctx-item" id="ctxCopyPorts" data-i18n="ctxCopyPorts">Copy Ports</div>
+  <div class="ctx-item" id="ctxHostname" data-i18n="ctxHostname">Hostname (reverse DNS)</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" id="ctxGeo" data-i18n="ctxGeo">🌍 Geolocation / ISP</div>
+  <div class="ctx-item" id="ctxDevice" data-i18n="ctxDevice">🖥 Device Identification</div>
+  <div class="ctx-item" id="ctxTitle" data-i18n="ctxTitle">📄 HTTP Page Title</div>
+  <div class="ctx-item" id="ctxAccess" data-i18n="ctxAccess">🔑 Access / Snapshot</div>
   <div class="ctx-sep"></div>
   <div class="ctx-item" id="ctxScanAllPorts" data-i18n="ctxScanAllPorts">Scan this IP (all ports)</div>
   <div class="ctx-sep"></div>
@@ -2354,6 +2390,9 @@ const STRINGS = {
     statusHosts:(n)=>`${n} hosts`,
     ctxCopyIp:'Copy IP Address', ctxCopyPorts:'Copy Ports', ctxScanAllPorts:'Scan this IP (all ports)',
     ctxOpenBrowser:'Open in Browser', ctxPreview:'Preview here',
+    ctxHostname:'Hostname (reverse DNS)',
+    ctxGeo:'🌍 Geolocation / ISP', ctxDevice:'🖥 Device Identification',
+    ctxTitle:'📄 HTTP Page Title', ctxAccess:'🔑 Access / Snapshot',
     labelPreset:'Preset:', labelPorts2:'Ports:',
     presetAdd:'+ Add', presetDel:'✕ Delete',
     presetEdit:'Edit preset', presetName:'Name:',
@@ -2428,6 +2467,9 @@ const STRINGS = {
     statusHosts:(n)=>`${n} hostów`,
     ctxCopyIp:'Kopiuj adres IP', ctxCopyPorts:'Kopiuj porty', ctxScanAllPorts:'Skanuj to IP (wszystkie porty)',
     ctxOpenBrowser:'Otwórz w przeglądarce', ctxPreview:'Podgląd tutaj',
+    ctxHostname:'Hostname (reverse DNS)',
+    ctxGeo:'🌍 Geolokalizacja / ISP', ctxDevice:'🖥 Identyfikacja urządzenia',
+    ctxTitle:'📄 Tytuł strony HTTP', ctxAccess:'🔑 Dostęp / Snapshot',
     labelPreset:'Preset:', labelPorts2:'Porty:',
     presetAdd:'+ Dodaj', presetDel:'✕ Usuń',
     presetEdit:'Edytuj preset', presetName:'Nazwa:',
@@ -2916,6 +2958,7 @@ const activeControllers = new Set();
 var foundHostsMap={}, foundPingMap={}, totalFound=0, totalOpenPorts=0;
 let timerInterval=null, scanStart=0;
 let selectedRowEl=null, ctxTargetIp='', ctxTargetPorts=[];
+const rowEnrichMap = {}; // ip → { cGeo, cDevice, cTitle, cAccess, detail, detailLoaded, row, ports }
 let focusedIp = localStorage.getItem('netrecon_focus_ip') || '';
 
 // ══════════════════════════════════════════════════
@@ -3183,21 +3226,24 @@ function addResultRow(ip, openPorts, pingMs) {
   row.dataset.ip = ip;
   row.style.display = 'grid';
 
-  // Icon
-  const cIcon = document.createElement('div');
-  cIcon.className='lv-cell lv-icon';
-  cIcon.innerHTML='<span class="icon-ok">✔</span>';
-  row.appendChild(cIcon);
-
   // IP
   const cIp = document.createElement('div');
-  cIp.className='lv-cell';
+  cIp.className = 'lv-cell';
   cIp.innerHTML = `${ip} <span id="acc_${ip.replace(/\./g,'_')}" style="font-size:9px"></span>`;
   row.appendChild(cIp);
 
+  // [+] expand button
+  const cExpand = document.createElement('div');
+  cExpand.className = 'lv-cell lv-expand-cell';
+  const btnExpand = document.createElement('button');
+  btnExpand.className = 'lv-expand-btn';
+  btnExpand.textContent = '+';
+  cExpand.appendChild(btnExpand);
+  row.appendChild(cExpand);
+
   // Ping
   const cPing = document.createElement('div');
-  cPing.className='lv-cell';
+  cPing.className = 'lv-cell';
   if (pingMs !== null && pingMs !== undefined) {
     const color = pingMs < 100 ? 'green' : pingMs < 500 ? '#808000' : '#c00';
     cPing.innerHTML = `<span style="color:${color};font-weight:bold">${pingMs} ms</span>`;
@@ -3206,40 +3252,33 @@ function addResultRow(ip, openPorts, pingMs) {
   }
   row.appendChild(cPing);
 
-  // Hostname (async)
-  const cHost = document.createElement('div');
-  cHost.className='lv-cell';
-  cHost.style.cssText = 'color:#808080;font-size:10px;font-style:italic';
-  cHost.textContent = '…';
-  row.appendChild(cHost);
-  lookupHostname(ip).then(name => {
-    cHost.style.cssText = 'font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-    cHost.textContent = name || '-';
-    cHost.title = name || '';
-  });
-
-  // Ports
-  const cPorts = document.createElement('div');
-  cPorts.className='lv-cell'; cPorts.textContent=openPorts.join(', ');
-  row.appendChild(cPorts);
-
-  // Links
-  const cLinks = document.createElement('div');
-  cLinks.className='lv-cell';
-  const frag = document.createDocumentFragment();
-  openPorts.forEach((port, pi) => {
-    const proto=(port===443||port===8443)?'https':'http';
-    paths.forEach(({p,l}, li) => {
-      if (pi>0||li>0) frag.appendChild(document.createTextNode(' '));
-      const a=document.createElement('span'); a.className='path-link';
-      const url=`${proto}://${ip}:${port}${p}`;
-      a.textContent=`:${port}${l}`; a.title=url;
-      a.addEventListener('click', e=>{ e.stopPropagation(); openPreview(url); });
-      frag.appendChild(a);
+  // ── Ports panel ──
+  const portsPanel = document.createElement('div');
+  portsPanel.className = 'ports-panel';
+  openPorts.forEach((port) => {
+    const proto = (port === 443 || port === 8443) ? 'https' : 'http';
+    const grp = document.createElement('div');
+    grp.className = 'port-group';
+    const lbl = document.createElement('span');
+    lbl.className = 'port-label';
+    lbl.textContent = `:${port}`;
+    grp.appendChild(lbl);
+    paths.forEach(({p, l}) => {
+      const a = document.createElement('span');
+      a.className = 'path-link';
+      const url = `${proto}://${ip}:${port}${p}`;
+      a.textContent = l;
+      a.title = url;
+      a.addEventListener('click', e => { e.stopPropagation(); openPreview(url); });
+      grp.appendChild(a);
     });
+    portsPanel.appendChild(grp);
   });
-  cLinks.appendChild(frag);
-  row.appendChild(cLinks);
+  btnExpand.addEventListener('click', e => {
+    e.stopPropagation();
+    const open = portsPanel.classList.toggle('open');
+    btnExpand.textContent = open ? '−' : '+';
+  });
 
   // ── Detail row (accordion) ──
   const detail = document.createElement('div');
@@ -3285,25 +3324,17 @@ function addResultRow(ip, openPorts, pingMs) {
   grid.append(secGeo, secDevice, secTitle, secAccess);
   detail.appendChild(grid);
 
-  // ── Row click toggles detail + shows preview ──
-  let detailLoaded = false;
+  // Store per-row enrich data for context menu access
+  rowEnrichMap[ip] = { cGeo, cDevice, cTitle, cAccess, detail, detailLoaded: false, row, ports: openPorts };
+
+  // ── Row click: select/deselect only ──
   row.addEventListener('click', () => {
-    const wasOpen = detail.classList.contains('open');
-    // close all other details
+    const alreadySelected = row.classList.contains('selected');
     document.querySelectorAll('.detail-row.open').forEach(d => d.classList.remove('open'));
     document.querySelectorAll('.lv-row.selected').forEach(r => r.classList.remove('selected'));
-
-    if (!wasOpen) {
-      detail.classList.add('open');
+    if (!alreadySelected) {
       row.classList.add('selected');
       selectedRowEl = row;
-      // lazy load enrichment
-      if (!detailLoaded) {
-        detailLoaded = true;
-        enrichRow(ip, openPorts, { cGeo, cDevice, cTitle, cAccess });
-      }
-      const proto=(openPorts[0]===443||openPorts[0]===8443)?'https':'http';
-      openPreview(`${proto}://${ip}:${openPorts[0]}/`);
     } else {
       selectedRowEl = null;
     }
@@ -3318,6 +3349,7 @@ function addResultRow(ip, openPorts, pingMs) {
   });
 
   listBody.appendChild(row);
+  listBody.appendChild(portsPanel);
   listBody.appendChild(detail);
 
   // ── Auto geo-locate for globe dots ──
@@ -3410,6 +3442,35 @@ document.getElementById('ctxCopyIp').addEventListener('click',()=>{
 document.getElementById('ctxCopyPorts').addEventListener('click',()=>{
   navigator.clipboard?.writeText(ctxTargetPorts.join(', '));
   ctxMenu.classList.remove('open');
+});
+document.getElementById('ctxHostname').addEventListener('click', async () => {
+  const ip = ctxTargetIp;
+  ctxMenu.classList.remove('open');
+  if (!ip) return;
+  setStatus(t('loading'), '');
+  const name = await lookupHostname(ip);
+  setStatus(`${ip} → ${name || 'brak hostname'}`, name ? 'ok' : 'warn');
+});
+function openDetailForIp(ip) {
+  const entry = rowEnrichMap[ip];
+  if (!entry) return;
+  document.querySelectorAll('.detail-row.open').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.lv-row.selected').forEach(r => r.classList.remove('selected'));
+  entry.detail.classList.add('open');
+  entry.row.classList.add('selected');
+  selectedRowEl = entry.row;
+  if (!entry.detailLoaded) {
+    entry.detailLoaded = true;
+    enrichRow(ip, entry.ports, { cGeo: entry.cGeo, cDevice: entry.cDevice, cTitle: entry.cTitle, cAccess: entry.cAccess });
+  }
+  entry.detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+['ctxGeo','ctxDevice','ctxTitle','ctxAccess'].forEach(id => {
+  document.getElementById(id).addEventListener('click', () => {
+    const ip = ctxTargetIp;
+    ctxMenu.classList.remove('open');
+    openDetailForIp(ip);
+  });
 });
 document.getElementById('ctxOpenBrowser').addEventListener('click',()=>{
   const proto=(ctxTargetPorts[0]===443||ctxTargetPorts[0]===8443)?'https':'http';
