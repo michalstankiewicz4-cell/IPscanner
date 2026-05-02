@@ -760,6 +760,40 @@ function importTraceRoute() {
   setTimeout(closeTraceDlg, 350);
 }
 
+async function autoTraceRoute() {
+  const targetIp = document.getElementById('traceTargetIp').value.trim();
+  const status = document.getElementById('traceParseStatus');
+  const btn = document.getElementById('btnTraceAuto');
+
+  if (!isIPv4(targetIp)) {
+    status.textContent = t('traceErrTarget');
+    status.style.color = '#c00';
+    return;
+  }
+
+  if (!_tauriInvoke) {
+    status.textContent = t('traceAutoDesktopOnly');
+    status.style.color = '#c00';
+    return;
+  }
+
+  btn.disabled = true;
+  status.textContent = t('traceAutoRunning');
+  status.style.color = '#000080';
+
+  try {
+    const output = await _tauriInvoke('run_traceroute', { targetIp });
+    document.getElementById('traceInput').value = output || '';
+    importTraceRoute();
+  } catch (err) {
+    const msg = (err && err.message) ? err.message : String(err || 'unknown error');
+    status.textContent = t('traceAutoFailed', msg);
+    status.style.color = '#c00';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 function setupGlobeEvents(canvas) {
   const tooltip = document.getElementById('globeTooltip');
 
@@ -973,6 +1007,7 @@ document.getElementById('btnImportTrace').addEventListener('click', () => {
   const defaultIp = selectedRowEl?.dataset?.ip || Object.keys(foundHostsMap)[0] || '';
   openTraceDlg(defaultIp);
 });
+document.getElementById('btnTraceAuto').addEventListener('click', autoTraceRoute);
 document.getElementById('btnTraceSave').addEventListener('click', importTraceRoute);
 document.getElementById('topoPortFilter').addEventListener('change', e => {
   topologyFilters.port = e.target.value;

@@ -254,6 +254,8 @@ const STRINGS = {
     traceDlgTitle:'Import traceroute', traceTargetLabel:'Target IP:', traceHint:'Paste output from tracert or traceroute.', traceDlgHint:'Import a real traceroute path for the selected host.',
     traceErrTarget:'Enter a valid target IPv4 address.', traceErrParse:'Could not parse any hops from the pasted output.',
     traceImported:(n, ip)=>`Imported ${n} hops for ${ip}.`, traceImportedStatus:(ip, n)=>`Trace route imported for ${ip} (${n} hops).`, traceHopCopied:(ip)=>`Hop IP copied: ${ip}`,
+    btnTraceAuto:'Auto Trace', traceAutoRunning:'Running traceroute...', traceAutoDesktopOnly:'Auto trace works only in Tauri desktop build.',
+    traceAutoFailed:(msg)=>`Traceroute failed: ${msg}`,
     btnTraceSave:'Import',
   },
   pl: {
@@ -329,6 +331,8 @@ const STRINGS = {
     traceDlgTitle:'Import traceroute', traceTargetLabel:'Docelowe IP:', traceHint:'Wklej wynik z tracert albo traceroute.', traceDlgHint:'Zaimportuj prawdziwą trasę hop-by-hop dla wybranego hosta.',
     traceErrTarget:'Podaj poprawny docelowy adres IPv4.', traceErrParse:'Nie udało się odczytać hopów z wklejonego wyniku.',
     traceImported:(n, ip)=>`Zaimportowano ${n} hopów dla ${ip}.`, traceImportedStatus:(ip, n)=>`Zaimportowano trasę dla ${ip} (${n} hopów).`, traceHopCopied:(ip)=>`Skopiowano IP hopa: ${ip}`,
+    btnTraceAuto:'Auto Trace', traceAutoRunning:'Uruchamiam traceroute...', traceAutoDesktopOnly:'Auto trace działa tylko w wersji desktopowej Tauri.',
+    traceAutoFailed:(msg)=>`Traceroute nie powiodło się: ${msg}`,
     btnTraceSave:'Importuj',
   }
 };

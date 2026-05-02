@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::net::{IpAddr, SocketAddr};
+use std::process::Command;
 use std::str::FromStr;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
@@ -229,6 +230,49 @@ fn get_local_subnets() -> Vec<String> {
 }
 
 #[tauri::command]
+async fn run_traceroute(target_ip: String) -> Result<String, String> {
+    let ip = target_ip.trim().to_string();
+    match IpAddr::from_str(&ip) {
+        Ok(IpAddr::V4(_)) => {}
+        Ok(IpAddr::V6(_)) => return Err("IPv6 is not supported for traceroute in this tool".into()),
+        Err(_) => return Err("Invalid target IP".into()),
+    }
+
+    let output = tokio::task::spawn_blocking(move || {
+        #[cfg(target_os = "windows")]
+        {
+            Command::new("tracert")
+                .args(["-d", "-h", "20", "-w", "800", ip.as_str()])
+                .output()
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            Command::new("traceroute")
+                .args(["-n", "-m", "20", "-w", "1", ip.as_str()])
+                .output()
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())
+    .and_then(|res| res.map_err(|e| e.to_string()))?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let combined = if stderr.trim().is_empty() {
+        stdout
+    } else {
+        format!("{}\n{}", stdout, stderr)
+    };
+
+    if combined.trim().is_empty() {
+        return Err("Traceroute returned no output".into());
+    }
+
+    Ok(combined)
+}
+
+#[tauri::command]
 fn open_browser(url: String) {
     // Open URL in system default browser (Windows)
     let _ = std::process::Command::new("cmd")
@@ -337,6 +381,7 @@ fn main() {
             geo_lookup,
             get_local_ip,
             get_local_subnets,
+            run_traceroute,
             open_tool_window,
             open_browser,
             window_minimize,
