@@ -583,8 +583,8 @@ body.tool-window-mode #mainWin {
     <span class="icon">📡</span>
     <span class="title">NetRecon IP Scanner 1.5 alpha</span>
     <div class="titlebar-btns">
-      <div class="title-btn">_</div>
-      <div class="title-btn">□</div>
+      <div class="title-btn" id="mainMinBtn" style="cursor:pointer">_</div>
+      <div class="title-btn" id="mainMaxBtn" style="cursor:pointer">□</div>
       <div class="title-btn" id="mainCloseBtn" style="font-weight:900;cursor:pointer">✕</div>
     </div>
   </div>
@@ -1338,13 +1338,39 @@ function closeNotepad() {
 }
 
 function closeMainWindow() {
-  if (window.__TAURI_INTERNALS__?.invoke || window.__TAURI__?.invoke || window.__TAURI__?.core?.invoke) {
-    const { getCurrentWindow } = window.__TAURI__?.window ?? {};
-    if (getCurrentWindow) { getCurrentWindow().close(); return; }
-    const invoke = window.__TAURI_INTERNALS__?.invoke ?? window.__TAURI__?.core?.invoke ?? window.__TAURI__?.invoke;
-    if (invoke) { invoke('plugin:window|close', { label: 'main' }).catch(() => {}); return; }
+  invokeWindowAction('window_close').then(ok => {
+    if (!ok && !_isTauriDesktop) window.close();
+  });
+}
+
+function getTauriCurrentWindow() {
+  const getCurrentWindow = window.__TAURI__?.window?.getCurrentWindow
+    ?? window.__TAURI__?.webviewWindow?.getCurrentWindow
+    ?? null;
+  if (!getCurrentWindow) return null;
+  try { return getCurrentWindow(); } catch { return null; }
+}
+
+async function invokeWindowAction(commandName) {
+  if (_tauriInvoke) {
+    try {
+      await _tauriInvoke(commandName);
+      return true;
+    } catch {}
   }
-  window.close();
+  return false;
+}
+
+async function minimizeMainWindow() {
+  await invokeWindowAction('window_minimize');
+}
+
+async function toggleMaximizeMainWindow() {
+  await invokeWindowAction('window_toggle_maximize');
+}
+
+async function startMainWindowDrag() {
+  await invokeWindowAction('window_start_dragging');
 }
 
 function openMainWindow() {
@@ -1760,6 +1786,22 @@ function closeMacroFolder() {
 document.addEventListener('DOMContentLoaded', () => {
   const closeBtn = document.getElementById('mainCloseBtn');
   if (closeBtn) closeBtn.addEventListener('click', closeMainWindow);
+
+  const minBtn = document.getElementById('mainMinBtn');
+  if (minBtn) minBtn.addEventListener('click', minimizeMainWindow);
+
+  const maxBtn = document.getElementById('mainMaxBtn');
+  if (maxBtn) maxBtn.addEventListener('click', toggleMaximizeMainWindow);
+
+  const mainTitlebar = document.querySelector('#mainWin > .titlebar');
+  if (mainTitlebar) {
+    mainTitlebar.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch' && e.button !== 0) return;
+      if (e.target.closest('.titlebar-btns')) return;
+      e.preventDefault();
+      startMainWindowDrag();
+    });
+  }
 
   const protoCloseBtn = document.getElementById('btnProtoClose');
   if (protoCloseBtn) protoCloseBtn.addEventListener('click', closeProtoWindow);
@@ -2905,9 +2947,7 @@ function applyToolWindowMode() {
 }
 
 function applyNativeChromeMode() {
-  if (_isTauriDesktop) {
-    document.body.classList.add('tauri-native-menu');
-  }
+  document.body.classList.remove('tauri-native-menu');
 }
 
 // Apply as early as possible and re-apply once DOM is fully ready.
@@ -5601,7 +5641,7 @@ document.getElementById('btnClearTopoFilters').addEventListener('click', () => {
   let dragging = false;
   let activePointerId = null;
 
-  if (!win || !bar) return;
+  if (!win || !bar || _isTauriDesktop) return;
 
   const stopDragging = () => {
     dragging = false;

@@ -10,7 +10,6 @@ use std::sync::{
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
-use tauri::menu::{Menu, MenuBuilder, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
@@ -229,6 +228,42 @@ fn open_browser(url: String) {
 }
 
 #[tauri::command]
+fn window_minimize(app: AppHandle) -> Result<(), String> {
+    let win = app
+        .get_webview_window("main")
+        .ok_or_else(|| "Main window not found".to_string())?;
+    win.minimize().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn window_toggle_maximize(app: AppHandle) -> Result<(), String> {
+    let win = app
+        .get_webview_window("main")
+        .ok_or_else(|| "Main window not found".to_string())?;
+    if win.is_maximized().map_err(|e| e.to_string())? {
+        win.unmaximize().map_err(|e| e.to_string())
+    } else {
+        win.maximize().map_err(|e| e.to_string())
+    }
+}
+
+#[tauri::command]
+fn window_start_dragging(app: AppHandle) -> Result<(), String> {
+    let win = app
+        .get_webview_window("main")
+        .ok_or_else(|| "Main window not found".to_string())?;
+    win.start_dragging().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn window_close(app: AppHandle) -> Result<(), String> {
+    let win = app
+        .get_webview_window("main")
+        .ok_or_else(|| "Main window not found".to_string())?;
+    win.close().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn open_tool_window(app: AppHandle, tool: String) -> Result<(), String> {
     let tool = tool.trim().to_lowercase();
     let (label, title, width, height) = match tool.as_str() {
@@ -274,83 +309,11 @@ fn u32_to_ip(n: u32) -> String {
     format!("{}.{}.{}.{}", a, b, c, d)
 }
 
-const NATIVE_MENU_IDS: &[&str] = &[
-    "scan_start",
-    "scan_stop",
-    "scan_clear",
-    "app_exit",
-    "open_countries",
-    "open_presets",
-    "open_defaults",
-    "open_lang",
-    "open_customize",
-    "open_globe",
-    "open_console",
-    "open_macro",
-    "open_speed",
-    "open_proto",
-    "open_topology",
-    "help_versions",
-    "help_about",
-];
-
-fn build_native_menu<R: tauri::Runtime, M: Manager<R>>(manager: &M) -> tauri::Result<Menu<R>> {
-    let scan_menu = SubmenuBuilder::new(manager, "Scan")
-        .text("scan_start", "Start")
-        .text("scan_stop", "Stop")
-        .text("scan_clear", "Clear")
-        .separator()
-        .text("app_exit", "Exit")
-        .build()?;
-
-    let options_menu = SubmenuBuilder::new(manager, "Options")
-        .text("open_countries", "Country IP Library...")
-        .text("open_presets", "Port Presets...")
-        .text("open_defaults", "Default Scan Values...")
-        .separator()
-        .text("open_lang", "Language...")
-        .separator()
-        .text("open_customize", "Customization...")
-        .build()?;
-
-    let tools_menu = SubmenuBuilder::new(manager, "Tools")
-        .text("open_globe", "World Map")
-        .text("open_console", "Command Console")
-        .text("open_macro", "Macro Folder")
-        .text("open_speed", "Speed Test")
-        .text("open_proto", "Prototype")
-        .text("open_topology", "Topology")
-        .build()?;
-
-    let help_menu = SubmenuBuilder::new(manager, "Help")
-        .text("help_versions", "Versions")
-        .text("help_about", "About")
-        .build()?;
-
-    MenuBuilder::new(manager)
-        .item(&scan_menu)
-        .item(&options_menu)
-        .item(&tools_menu)
-        .item(&help_menu)
-        .build()
-}
-
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 fn main() {
     tauri::Builder::default()
         .manage(Arc::new(ScanState { stop: AtomicBool::new(false) }))
-        .setup(|app| {
-            let menu = build_native_menu(app)?;
-            app.set_menu(menu)?;
-            Ok(())
-        })
-        .on_menu_event(|app, event| {
-            let id = event.id().as_ref();
-            if NATIVE_MENU_IDS.contains(&id) {
-                let _ = app.emit("native-menu", id.to_string());
-            }
-        })
         .invoke_handler(tauri::generate_handler![
             scan_port,
             scan_range,
@@ -360,6 +323,10 @@ fn main() {
             get_local_subnets,
             open_tool_window,
             open_browser,
+            window_minimize,
+            window_toggle_maximize,
+            window_start_dragging,
+            window_close,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
