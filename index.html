@@ -2502,7 +2502,11 @@ const STRINGS = {
     statusLarge:(n,p,t)=>`Large range: ${n} addresses × ${p} ports. Est. ${t}…`,
     statusStopped:(n)=>`Stopped after ${n} addresses.`,
     statusDone:(h,p)=>`Done. Found ${h} hosts (${p} ports).`,
+    statusSimulating:(n,p)=>`Scan ... (UI test): ${n} addresses × ${p} ports…`,
+    statusSimDone:(n)=>`Scan complete. Progress tested for ${n} addresses.`,
+    statusSimStopped:(n)=>`Scan stopped after ${n} addresses.`,
     statusNone:'Scan complete — no active hosts.',
+    emptySimDone:'Scan complete — no active hosts.',
     statusHosts:(n)=>`${n} hosts`,
     ctxCopyIp:'Copy IP Address', ctxCopyPorts:'Copy Ports', ctxScanAllPorts:'Scan this IP (all ports)',
     ctxOpenBrowser:'Open in Browser', ctxPreview:'Preview here',
@@ -2580,7 +2584,11 @@ const STRINGS = {
     statusLarge:(n,p,t)=>`Duży zakres: ${n} adresów × ${p} portów. Est. ${t}…`,
     statusStopped:(n)=>`Zatrzymano po ${n} adresach.`,
     statusDone:(h,p)=>`Zakończono. Znaleziono ${h} hostów (${p} portów).`,
+    statusSimulating:(n,p)=>`Tryb symulacji (test UI): ${n} adresów × ${p} portów…`,
+    statusSimDone:(n)=>`Symulacja zakończona. Przetestowano pasek dla ${n} adresów.`,
+    statusSimStopped:(n)=>`Symulację zatrzymano po ${n} adresach.`,
     statusNone:'Skan zakończony — brak aktywnych hostów.',
+    emptySimDone:'Symulacja zakończona. Nie wykonano realnego skanowania.',
     statusHosts:(n)=>`${n} hostów`,
     ctxCopyIp:'Kopiuj adres IP', ctxCopyPorts:'Kopiuj porty', ctxScanAllPorts:'Skanuj to IP (wszystkie porty)',
     ctxOpenBrowser:'Otwórz w przeglądarce', ctxPreview:'Podgląd tutaj',
@@ -3180,6 +3188,16 @@ function isPrivateIP(ip) {
     (p[0]===172 && p[1]>=16 && p[1]<=31) ||
     (p[0]===192 && p[1]===168) ||
     p[0]===127;
+}
+
+function isPrivateRange(startNum, endNum) {
+  const blocks = [
+    [ipToNum('10.0.0.0'), ipToNum('10.255.255.255')],
+    [ipToNum('172.16.0.0'), ipToNum('172.31.255.255')],
+    [ipToNum('192.168.0.0'), ipToNum('192.168.255.255')],
+    [ipToNum('127.0.0.0'), ipToNum('127.255.255.255')],
+  ];
+  return blocks.some(([a, b]) => startNum >= a && endNum <= b);
 }
 
 // ── Geolocation via ip-api.com ──
@@ -3946,6 +3964,33 @@ async function startScan() {
 
   const concurrency = Math.min(+document.getElementById('concNum').value || 20, 64);
   const delayMs = Math.max(0, Math.min(5000, +document.getElementById('delayMs').value || 0));
+
+  const simulationMode = !isPrivateRange(startNum, endNum);
+  if (simulationMode) {
+    setStatus(t('statusSimulating', total, selectedPorts.length), 'warn');
+    const minStepMs = 20;
+    const targetDurationMs = Math.max(2400, Math.min(10000, total * 22));
+    const steps = Math.max(60, Math.min(420, total));
+    const stepMs = Math.max(minStepMs, Math.floor(targetDurationMs / steps));
+    let checked = 0;
+
+    while (!stopRequested && checked < total) {
+      await new Promise(resolve => setTimeout(resolve, stepMs));
+      const bump = Math.max(1, Math.ceil(total / steps));
+      checked = Math.min(total, checked + bump);
+      updateProgress(checked, total, 0, 0);
+    }
+
+    setScanState(false);
+    if (stopRequested) {
+      setStatus(t('statusSimStopped', checked), 'warn');
+    } else {
+      updateProgress(total, total, 0, 0);
+      if (emptyRow.parentNode) emptyRow.textContent = t('emptySimDone');
+      setStatus(t('statusSimDone', total), 'ok');
+    }
+    return;
+  }
 
   if (total>500) {
     const estSec=Math.round(total*(1500/concurrency)/1000);
