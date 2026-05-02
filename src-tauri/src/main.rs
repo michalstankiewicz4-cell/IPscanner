@@ -10,7 +10,7 @@ use std::sync::{
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
@@ -18,6 +18,15 @@ use tokio::time::timeout;
 struct ScanState {
     stop: AtomicBool,
 }
+
+const TOOL_WINDOW_LABELS: &[&str] = &[
+    "tool-console",
+    "tool-macro",
+    "tool-speed",
+    "tool-proto",
+    "tool-globe",
+    "tool-topology",
+];
 
 // ─── DTOs ────────────────────────────────────────────────────────────────────
 #[derive(Serialize, Clone)]
@@ -228,39 +237,30 @@ fn open_browser(url: String) {
 }
 
 #[tauri::command]
-fn window_minimize(app: AppHandle) -> Result<(), String> {
-    let win = app
-        .get_webview_window("main")
-        .ok_or_else(|| "Main window not found".to_string())?;
-    win.minimize().map_err(|e| e.to_string())
+fn window_minimize(window: WebviewWindow) -> Result<(), String> {
+    window.minimize().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn window_toggle_maximize(app: AppHandle) -> Result<(), String> {
-    let win = app
-        .get_webview_window("main")
-        .ok_or_else(|| "Main window not found".to_string())?;
-    if win.is_maximized().map_err(|e| e.to_string())? {
-        win.unmaximize().map_err(|e| e.to_string())
+fn window_toggle_maximize(window: WebviewWindow) -> Result<(), String> {
+    if window.is_maximized().map_err(|e| e.to_string())? {
+        window.unmaximize().map_err(|e| e.to_string())
     } else {
-        win.maximize().map_err(|e| e.to_string())
+        window.maximize().map_err(|e| e.to_string())
     }
 }
 
 #[tauri::command]
-fn window_start_dragging(app: AppHandle) -> Result<(), String> {
-    let win = app
-        .get_webview_window("main")
-        .ok_or_else(|| "Main window not found".to_string())?;
-    win.start_dragging().map_err(|e| e.to_string())
+fn window_start_dragging(window: WebviewWindow) -> Result<(), String> {
+    window.start_dragging().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn window_close(app: AppHandle) -> Result<(), String> {
-    let win = app
-        .get_webview_window("main")
-        .ok_or_else(|| "Main window not found".to_string())?;
-    win.close().map_err(|e| e.to_string())
+fn window_close(window: WebviewWindow) -> Result<(), String> {
+    if window.label() == "main" {
+        close_tool_windows(&window.app_handle());
+    }
+    window.close().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -288,6 +288,7 @@ async fn open_tool_window(app: AppHandle, tool: String) -> Result<(), String> {
         .title(title)
         .inner_size(width, height)
         .min_inner_size(480.0, 320.0)
+        .decorations(false)
         .resizable(true);
 
     let win = builder.build().map_err(|e| e.to_string())?;
@@ -309,11 +310,26 @@ fn u32_to_ip(n: u32) -> String {
     format!("{}.{}.{}.{}", a, b, c, d)
 }
 
+fn close_tool_windows(app: &AppHandle) {
+    for label in TOOL_WINDOW_LABELS {
+        if let Some(win) = app.get_webview_window(label) {
+            let _ = win.close();
+        }
+    }
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 fn main() {
     tauri::Builder::default()
         .manage(Arc::new(ScanState { stop: AtomicBool::new(false) }))
+        .on_window_event(|window, event| {
+            if window.label() == "main" {
+                if matches!(event, WindowEvent::Destroyed) {
+                    close_tool_windows(&window.app_handle());
+                }
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             scan_port,
             scan_range,

@@ -581,7 +581,7 @@ body.tool-window-mode #mainWin {
   <!-- Title bar -->
   <div class="titlebar">
     <span class="icon">📡</span>
-    <span class="title">NetRecon IP Scanner 1.5 alpha</span>
+    <span class="title">NetRecon IP Scanner 1.5.1</span>
     <div class="titlebar-btns">
       <div class="title-btn" id="mainMinBtn" style="cursor:pointer">_</div>
       <div class="title-btn" id="mainMaxBtn" style="cursor:pointer">□</div>
@@ -1262,7 +1262,7 @@ function openNotepad() {
   document.getElementById('notepadWin').style.display = 'block';
   document.getElementById('notepadText').value =
 `================================================================
-  NetRecon IP Scanner 1.5 alpha
+  NetRecon IP Scanner 1.5.1
   by Michał Stankiewicz
 ================================================================
 
@@ -1338,8 +1338,34 @@ function closeNotepad() {
 }
 
 function closeMainWindow() {
-  invokeWindowAction('window_close').then(ok => {
-    if (!ok && !_isTauriDesktop) window.close();
+  if (_toolMode) {
+    closeCurrentWindowImmediate();
+    return;
+  }
+  requestAppCloseConfirmation();
+}
+
+let _closeConfirmInProgress = false;
+
+function requestAppCloseConfirmation() {
+  if (_closeConfirmInProgress) return;
+  _closeConfirmInProgress = true;
+
+  try {
+    const ok = window.confirm('Czy jestes pewien, ze chcesz zamknac skaner?');
+    if (!ok) return;
+
+    invokeWindowAction('window_close').then(success => {
+      if (!success && !_isTauriDesktop) window.close();
+    });
+  } finally {
+    _closeConfirmInProgress = false;
+  }
+}
+
+function closeCurrentWindowImmediate() {
+  invokeWindowAction('window_close').then(success => {
+    if (!success) window.close();
   });
 }
 
@@ -2895,6 +2921,68 @@ function openToolNativeWindow(tool) {
   return true;
 }
 
+function makeToolChromeCloseOnly(target) {
+  const bar = target.querySelector('.titlebar');
+  if (!bar) return;
+
+  bar.style.display = 'flex';
+  bar.style.cursor = 'move';
+
+  let btns = bar.querySelector('.titlebar-btns');
+  if (!btns) {
+    btns = document.createElement('div');
+    btns.className = 'titlebar-btns';
+    bar.appendChild(btns);
+  }
+
+  const allBtns = Array.from(bar.querySelectorAll('.title-btn, button'));
+  let closeBtn = allBtns.find(btn => {
+    const id = (btn.id || '').toLowerCase();
+    const txt = (btn.textContent || '').trim();
+    return id.includes('close') || txt.includes('✕') || txt.toLowerCase() === 'x';
+  });
+
+  allBtns.forEach(btn => {
+    if (btn !== closeBtn) btn.style.display = 'none';
+  });
+
+  if (!closeBtn) {
+    closeBtn = document.createElement('button');
+    closeBtn.className = 'title-btn';
+    closeBtn.textContent = '✕';
+    closeBtn.style.fontWeight = '900';
+    btns.appendChild(closeBtn);
+  }
+
+  closeBtn.style.display = '';
+  closeBtn.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeCurrentWindowImmediate();
+  };
+
+  if (!bar.dataset.toolDragBound) {
+    bar.dataset.toolDragBound = '1';
+    bar.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch' && e.button !== 0) return;
+      if (e.target.closest('.title-btn, button')) return;
+      e.preventDefault();
+      startMainWindowDrag();
+    });
+  }
+}
+
+function hideToolMenus(target) {
+  target.querySelectorAll('.menubar').forEach(el => {
+    el.style.display = 'none';
+  });
+
+  const cmdMacroMenu = target.querySelector('#cmdMenuMacro');
+  if (cmdMacroMenu?.parentElement) {
+    cmdMacroMenu.parentElement.style.display = 'none';
+  }
+}
+
 function applyToolWindowMode() {
   if (!_toolMode) return;
   document.body.classList.add('tool-window-mode');
@@ -2923,8 +3011,8 @@ function applyToolWindowMode() {
   target.style.transform = 'none';
   target.style.zIndex = '1';
 
-  const bar = target.querySelector('.titlebar');
-  if (bar) bar.style.display = 'none';
+  makeToolChromeCloseOnly(target);
+  hideToolMenus(target);
 
   if (_toolMode === 'macro' && typeof renderMacroFiles === 'function') {
     renderMacroFiles();
