@@ -897,13 +897,53 @@ body.skin-glass .statusbar {
   ">IP Scanner</div>
 </div>
 
-<!-- Tauri branch desktop icon -->
+<!-- Tauri branch desktop icon + red marker annotation -->
+<div style="position:fixed;top:0;left:82px;width:170px;height:120px;z-index:9;pointer-events:none;">
+  <!-- wobbly red marker circle -->
+  <svg width="170" height="120" viewBox="0 0 170 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;">
+    <!-- rough circle around icon (~36x36 icon at top:10 left:92, relative: left=10, top=10) -->
+    <path d="M52,18 C46,8 28,5 18,14 C6,24 4,42 8,56 C12,70 26,82 42,84 C58,86 76,80 84,68 C94,54 92,34 82,22 C76,14 62,12 52,18 Z"
+          stroke="#e00" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"
+          stroke-dasharray="4 2" opacity="0.92"/>
+    <!-- second pass for marker feel -->
+    <path d="M54,16 C48,7 30,6 19,16 C7,26 6,44 10,58 C14,72 28,83 44,85 C60,87 78,79 86,66 C96,51 93,32 83,20 C77,12 64,11 54,16 Z"
+          stroke="#c00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+    <!-- arrow from right side -->
+    <path d="M95,55 C110,52 130,50 145,48" stroke="#e00" stroke-width="2.8" stroke-linecap="round"/>
+    <polygon points="145,42 152,48 145,54" fill="#e00"/>
+    <!-- arrow from bottom -->
+    <path d="M46,90 C50,100 52,108 54,114" stroke="#e00" stroke-width="2.8" stroke-linecap="round"/>
+    <polygon points="48,114 54,120 60,114" fill="#e00"/>
+  </svg>
+  <!-- "APP HERE" label right of icon -->
+  <div style="
+    position:absolute; top:40px; left:96px;
+    font-family:'Comic Sans MS','Segoe Script',cursive;
+    font-size:12px; font-weight:bold;
+    color:#e00;
+    text-shadow:0 0 3px #fff,0 0 3px #fff;
+    white-space:nowrap;
+    transform:rotate(-8deg);
+    letter-spacing:0.5px;
+  ">APP HERE</div>
+  <!-- label below icon -->
+  <div style="
+    position:absolute; top:100px; left:14px;
+    font-family:'Comic Sans MS','Segoe Script',cursive;
+    font-size:11px; font-weight:bold;
+    color:#e00;
+    text-shadow:0 0 3px #fff,0 0 3px #fff;
+    white-space:nowrap;
+    transform:rotate(3deg);
+  ">⬇ download</div>
+</div>
+
 <div id="tauriDesktopIcon" style="
   position:fixed; top:10px; left:92px;
   width:72px;
   display:flex; flex-direction:column; align-items:center; gap:3px;
   cursor:pointer; user-select:none; z-index:8;
-" onclick="openLink('https://github.com/michalstankiewicz4-cell/IPscanner/tree/tauri')">
+" onclick="openLink('https://github.com/michalstankiewicz4-cell/IPscanner/releases/latest')">
   <div style="font-size:28px;line-height:1;padding:2px">🦀</div>
   <div style="
     font-family:'MS Sans Serif',Tahoma,sans-serif;
