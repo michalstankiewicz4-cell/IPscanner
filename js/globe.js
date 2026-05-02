@@ -1007,6 +1007,11 @@ document.getElementById('btnImportTrace').addEventListener('click', () => {
   const defaultIp = selectedRowEl?.dataset?.ip || Object.keys(foundHostsMap)[0] || '';
   openTraceDlg(defaultIp);
 });
+document.getElementById('btnAutoTraceTopology').addEventListener('click', () => {
+  const defaultIp = selectedRowEl?.dataset?.ip || Object.keys(foundHostsMap)[0] || '';
+  openTraceDlg(defaultIp);
+  autoTraceRoute();
+});
 document.getElementById('btnTraceAuto').addEventListener('click', autoTraceRoute);
 document.getElementById('btnTraceSave').addEventListener('click', importTraceRoute);
 document.getElementById('topoPortFilter').addEventListener('change', e => {
