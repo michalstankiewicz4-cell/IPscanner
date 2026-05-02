@@ -1,7 +1,7 @@
 {
   "name": "ipscanner-tauri",
   "private": true,
-  "version": "1.5.2",
+  "version": "1.5.3",
   "scripts": {
     "prepare:app": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Copy-Item -Path 'index.html','zebrus.png' -Destination 'app' -Force; Copy-Item -Path 'css' -Destination 'app' -Recurse -Force; Copy-Item -Path 'js' -Destination 'app' -Recurse -Force\"",
     "dev": "npm run prepare:app && npx http-server app -p 1420 -c-1",

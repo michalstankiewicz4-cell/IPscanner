@@ -236,6 +236,7 @@ const STRINGS = {
     dlgTitle:'Options', dlgLang:'Language:',
     dlgDefaults:'Default Scan Values:', dlgDefaultThreads:'Threads:', dlgDefaultDelay:'Delay (ms):',
     dlgLangEn:'English', dlgLangPl:'Polski',
+    menuClippy:'📎 Assistant',
     dlgOk:'OK', dlgCancel:'Cancel', dlgClose:'Close', dlgVersionsTitle:'Versions',
     portRtsp:'RTSP stream likely available',
     portIpp:'Printer (IPP)', portRaw:'Printer (RAW)',
@@ -310,6 +311,7 @@ const STRINGS = {
     dlgTitle:'Opcje', dlgLang:'Język:',
     dlgDefaults:'Domyślne wartości skanowania:', dlgDefaultThreads:'Wątki:', dlgDefaultDelay:'Opóźnienie (ms):',
     dlgLangEn:'English', dlgLangPl:'Polski',
+    menuClippy:'📎 Asystent',
     dlgOk:'OK', dlgCancel:'Anuluj', dlgClose:'Zamknij', dlgVersionsTitle:'Wersje',
     portRtsp:'RTSP stream prawdopodobnie dostępny',
     portIpp:'Drukarka (IPP)', portRaw:'Drukarka (RAW)',
@@ -348,6 +350,8 @@ function applyLang() {
   if (subnetInput) subnetInput.placeholder = t('filterSubnetLabel');
   if (pingInput) pingInput.placeholder = t('filterPingPlaceholder');
   if (typeof refreshTopologyFilterOptions === 'function') refreshTopologyFilterOptions();
+  // Notify clippy about lang change
+  if (typeof window.clippySetLang === 'function') window.clippySetLang(lang);
   // Persist
   localStorage.setItem('netrecon_lang', lang);
 }
@@ -470,6 +474,10 @@ document.getElementById('menuVersions').addEventListener('click', () => {
 document.getElementById('menuAbout').addEventListener('click', () => {
   document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
   openNotepad();
+});
+document.getElementById('menuClippy').addEventListener('click', () => {
+  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+  if (typeof window.clippyToggle === 'function') window.clippyToggle();
 });
 document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
 

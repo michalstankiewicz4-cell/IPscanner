@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>NetRecon IP Scanner</title>
 <link rel="stylesheet" href="css/theme-xp.css"/>
+<link rel="stylesheet" href="css/clippy.css"/>
 </head>
 <body>
 
@@ -12,7 +13,7 @@
   <!-- Title bar -->
   <div class="titlebar">
     <span class="icon">📡</span>
-    <span class="title">NetRecon IP Scanner 1.5.2</span>
+    <span class="title">NetRecon IP Scanner 1.5.3</span>
     <div class="titlebar-btns">
       <div class="title-btn" id="mainMinBtn" style="cursor:pointer">_</div>
       <div class="title-btn" id="mainMaxBtn" style="cursor:pointer">□</div>
@@ -38,6 +39,8 @@
       <div class="menu-dropdown">
         <div class="menu-dd-item" id="menuVersions" data-i18n="menuVersions">Versions</div>
         <div class="menu-dd-item" id="menuAbout" data-i18n="menuAbout">About</div>
+        <div class="menu-dd-sep"></div>
+        <div class="menu-dd-item" id="menuClippy" data-i18n="menuClippy">📎 Assistant</div>
       </div>
     </div>
   </div>
@@ -872,6 +875,10 @@
         border-right:1px solid #fff;border-bottom:1px solid #fff;
         padding:8px 10px;font-size:11px;line-height:1.45;
       ">
+        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.5.3</div>
+        <div style="margin-bottom:8px">
+          Added 📎 Clippy assistant (Help → Assistant): rotating tips in EN/PL, draggable, persistent on/off state.
+        </div>
         <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.5.2</div>
         <div style="margin-bottom:8px">
           Added Glass skin in Customization, enabled live skin switching on selection (without closing dialog),
@@ -1161,6 +1168,15 @@
 <!-- Tooltip -->
 <div id="globeTooltip"></div>
 
+<!-- Clippy assistant -->
+<div id="clippy-container" class="clippy-hidden">
+  <div id="clippy-bubble">
+    <span id="clippy-close">✕</span>
+    <span id="clippy-tip-text"></span>
+  </div>
+  <div id="clippy-char">📎</div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script src="js/globe.js"></script>
@@ -1169,5 +1185,6 @@
 <script src="js/speedtest.js"></script>
 <script src="js/console.js"></script>
 <script src="js/app.js"></script>
+<script src="js/clippy.js"></script>
 </body>
 </html>
