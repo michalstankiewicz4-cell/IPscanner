@@ -488,8 +488,8 @@ const UI_SKIN_KEY = 'ui_skin';
 
 function applySkinCustomization() {
   const savedSkin = localStorage.getItem(UI_SKIN_KEY);
-  const skin = savedSkin === 'aero' ? 'aero' : 'xp';
-  document.body.classList.remove('skin-xp', 'skin-aero');
+  const skin = savedSkin === 'glass' ? 'glass' : 'classic';
+  document.body.classList.remove('skin-classic', 'skin-glass');
   document.body.classList.add(`skin-${skin}`);
 }
 
@@ -508,11 +508,11 @@ function openCustomizeDlg() {
   });
 
   const savedSkin = localStorage.getItem(UI_SKIN_KEY);
-  const activeSkin = savedSkin === 'aero' ? 'aero' : 'xp';
-  const skinXp = document.getElementById('skinXp');
-  const skinAero = document.getElementById('skinAero');
-  if (skinXp) skinXp.checked = activeSkin === 'xp';
-  if (skinAero) skinAero.checked = activeSkin === 'aero';
+  const activeSkin = savedSkin === 'glass' ? 'glass' : 'classic';
+  const skinClassic = document.getElementById('skinClassic');
+  const skinGlass = document.getElementById('skinGlass');
+  if (skinClassic) skinClassic.checked = activeSkin === 'classic';
+  if (skinGlass) skinGlass.checked = activeSkin === 'glass';
 
   document.getElementById('dlgCustomizeOverlay').classList.add('open');
 }
@@ -523,7 +523,7 @@ function closeCustomizeDlg() {
   });
 
   const selectedSkin = document.querySelector('input[name="uiSkin"]:checked')?.value;
-  localStorage.setItem(UI_SKIN_KEY, selectedSkin === 'aero' ? 'aero' : 'xp');
+  localStorage.setItem(UI_SKIN_KEY, selectedSkin === 'glass' ? 'glass' : 'classic');
 
   applyToolbarCustomization();
   applySkinCustomization();
