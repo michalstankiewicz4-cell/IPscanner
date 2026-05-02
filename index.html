@@ -99,6 +99,13 @@ body {
   transform: rotate(-1.2deg);
 }
 
+#desktopGraffiti .graffiti-ai {
+  display: inline-block;
+  margin-left: 30px;
+  font-size: 0.5em;
+  transform: rotate(-7deg);
+}
+
 /* ── Window frame ── */
 .win95 {
   width: min(640px, 100%);
@@ -731,7 +738,7 @@ body.skin-glass .statusbar {
   <img id="desktopZebra" src="./zebrus.png" alt="" onload="this.parentElement.classList.add('ready')" onerror="this.parentElement.remove()"/>
   <div id="desktopGraffiti">
     <div class="graffiti-line" data-text="Programiści go">Programiści go</div>
-    <div class="graffiti-line line2" data-text="nienawidzą">nienawidzą</div>
+    <div class="graffiti-line line2" data-text="nienawidzą AI :)">nienawidzą<span class="graffiti-ai">AI :)</span></div>
   </div>
 </div>
 
