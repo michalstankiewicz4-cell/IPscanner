@@ -707,6 +707,8 @@ body.skin-glass .statusbar {
       <div class="menu-dropdown">
         <div class="menu-dd-item" id="menuVersions" data-i18n="menuVersions">Versions</div>
         <div class="menu-dd-item" id="menuAbout" data-i18n="menuAbout">About</div>
+        <div class="menu-dd-sep"></div>
+        <div class="menu-dd-item" id="menuClippy" data-i18n="menuClippy">📎 Assistant</div>
       </div>
     </div>
   </div>
@@ -2411,6 +2413,7 @@ const STRINGS = {
     dlgTitle:'Options', dlgLang:'Language:',
     dlgDefaults:'Default Scan Values:', dlgDefaultThreads:'Threads:', dlgDefaultDelay:'Delay (ms):',
     dlgLangEn:'English', dlgLangPl:'Polski',
+    menuClippy:'📎 Assistant',
     dlgOk:'OK', dlgCancel:'Cancel', dlgClose:'Close', dlgVersionsTitle:'Versions',
     portRtsp:'RTSP stream likely available',
     portIpp:'Printer (IPP)', portRaw:'Printer (RAW)',
@@ -2488,6 +2491,7 @@ const STRINGS = {
     dlgTitle:'Opcje', dlgLang:'Język:',
     dlgDefaults:'Domyślne wartości skanowania:', dlgDefaultThreads:'Wątki:', dlgDefaultDelay:'Opóźnienie (ms):',
     dlgLangEn:'English', dlgLangPl:'Polski',
+    menuClippy:'📎 Asystent',
     dlgOk:'OK', dlgCancel:'Anuluj', dlgClose:'Zamknij', dlgVersionsTitle:'Wersje',
     portRtsp:'RTSP stream prawdopodobnie dostępny',
     portIpp:'Drukarka (IPP)', portRaw:'Drukarka (RAW)',
@@ -2526,6 +2530,8 @@ function applyLang() {
   if (subnetInput) subnetInput.placeholder = t('filterSubnetLabel');
   if (pingInput) pingInput.placeholder = t('filterPingPlaceholder');
   if (typeof refreshTopologyFilterOptions === 'function') refreshTopologyFilterOptions();
+  // Notify clippy about lang change
+  if (typeof window.clippySetLang === 'function') window.clippySetLang(lang);
   // Persist
   localStorage.setItem('netrecon_lang', lang);
 }
@@ -2648,6 +2654,10 @@ document.getElementById('menuVersions').addEventListener('click', () => {
 document.getElementById('menuAbout').addEventListener('click', () => {
   document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
   openNotepad();
+});
+document.getElementById('menuClippy').addEventListener('click', () => {
+  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+  if (typeof window.clippyToggle === 'function') window.clippyToggle();
 });
 document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
 
@@ -5610,5 +5620,70 @@ document.getElementById('btnClearTopoFilters').addEventListener('click', () => {
 restoreTraceRoutes();
 refreshTopologyFilterOptions();
 applyLang();
+</script>
+
+<!-- ── Clippy assistant ── -->
+<style>
+#clippy-container{position:fixed;bottom:60px;right:20px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end;gap:6px;user-select:none}
+#clippy-container.clippy-hidden{display:none}
+#clippy-bubble{background:#ffffc0;border:2px solid #000080;padding:7px 22px 7px 10px;max-width:210px;min-width:120px;font-size:11px;font-family:'Tahoma','MS Sans Serif',sans-serif;line-height:1.4;position:relative;box-shadow:2px 2px 0 #808080;cursor:pointer}
+#clippy-bubble::after{content:'';position:absolute;bottom:-11px;right:22px;border:6px solid transparent;border-top-color:#000080}
+#clippy-bubble::before{content:'';position:absolute;bottom:-8px;right:23px;border:5px solid transparent;border-top-color:#ffffc0;z-index:1}
+#clippy-close{position:absolute;top:2px;right:4px;font-size:9px;font-weight:bold;line-height:1;cursor:pointer;color:#000080;padding:1px 2px}
+#clippy-close:hover{background:#c0c0c0}
+#clippy-char{font-size:52px;line-height:1;cursor:pointer;text-align:right;transition:transform .15s;filter:drop-shadow(1px 1px 1px rgba(0,0,0,.35))}
+#clippy-char:hover{transform:scale(1.12) rotate(-5deg)}
+#clippy-char:active{transform:scale(.92)}
+@keyframes clippy-wiggle{0%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(5deg)}100%{transform:rotate(0)}}
+#clippy-char.clippy-wiggle{animation:clippy-wiggle .5s ease}
+</style>
+
+<div id="clippy-container" class="clippy-hidden">
+  <div id="clippy-bubble">
+    <span id="clippy-close">✕</span>
+    <span id="clippy-tip-text"></span>
+  </div>
+  <div id="clippy-char">📎</div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY='clippy_enabled';
+  const TIP_MS=9000;
+  const TIPS={
+    en:["It looks like you're scanning a network!\nClick [+] on any row to expand open ports.","Right-click an IP address for Geo, Device, Title and Access enrichment options.","You can save Port Presets in Options → Port Presets... for quick reuse.","Use the Macro folder to automate repetitive scan tasks.","The Speed Test button measures your current internet connection speed.","The Globe 🌍 view shows discovered hosts on a world map.","Tip: increase Threads for faster scans on a reliable network.","The Console ⌨ lets you run raw ping, traceroute and nmap commands.","You can switch UI skin to Classic or Glass under Options → Customization...","Click me for another tip! 😄"],
+    pl:["Wygląda na to, że skanujesz sieć!\nKliknij [+] w wierszu, aby rozwinąć otwarte porty.","Kliknij prawym na adres IP, aby uzyskać opcje Geo, Urządzenie, Tytuł i Dostęp.","Możesz zapisać Presety Portów w Opcje → Presety portów... i szybko je ponownie używać.","Użyj folderu Makr, aby zautomatyzować powtarzalne zadania skanowania.","Przycisk Speed Test mierzy aktualną prędkość twojego łącza internetowego.","Widok Globus 🌍 pokazuje wykryte hosty na mapie świata.","Wskazówka: zwiększ liczbę wątków, aby przyspieszyć skanowanie w stabilnej sieci.","Konsola ⌨ pozwala uruchamiać ping, traceroute i polecenia nmap bezpośrednio.","Możesz zmienić wygląd aplikacji na Classic lub Glass w Opcje → Dostosowanie...","Kliknij mnie, żeby zobaczyć kolejną wskazówkę! 😄"]
+  };
+  let tipIdx=0,timer=null,curLang='en';
+  window.clippySetLang=function(l){curLang=TIPS[l]?l:'en';};
+  window.clippyShow=function(){const el=document.getElementById('clippy-container');if(el){el.classList.remove('clippy-hidden');localStorage.setItem(STORAGE_KEY,'1');_show();_start();}};
+  window.clippyHide=function(){const el=document.getElementById('clippy-container');if(el)el.classList.add('clippy-hidden');localStorage.setItem(STORAGE_KEY,'0');_stop();};
+  window.clippyToggle=function(){const el=document.getElementById('clippy-container');if(!el)return;el.classList.contains('clippy-hidden')?window.clippyShow():window.clippyHide();};
+  function _tips(){return TIPS[curLang]||TIPS.en;}
+  function _show(next){if(next)tipIdx=(tipIdx+1)%_tips().length;const t=document.getElementById('clippy-tip-text');if(t)t.textContent=_tips()[tipIdx];_wiggle();}
+  function _wiggle(){const c=document.getElementById('clippy-char');if(!c)return;c.classList.remove('clippy-wiggle');void c.offsetWidth;c.classList.add('clippy-wiggle');}
+  function _start(){_stop();timer=setInterval(()=>_show(true),TIP_MS);}
+  function _stop(){if(timer){clearInterval(timer);timer=null;}}
+  function _init(){
+    const el=document.getElementById('clippy-container');if(!el)return;
+    if(localStorage.getItem(STORAGE_KEY)==='1'){el.classList.remove('clippy-hidden');_show();_start();}else{el.classList.add('clippy-hidden');}
+    document.getElementById('clippy-char')?.addEventListener('click',()=>{_show(true);_start();});
+    document.getElementById('clippy-bubble')?.addEventListener('click',(e)=>{if(e.target.id==='clippy-close')return;_show(true);_start();});
+    document.getElementById('clippy-close')?.addEventListener('click',()=>window.clippyHide());
+    _makeDraggable(el);
+  }
+  function _makeDraggable(el){
+    const h=document.getElementById('clippy-char');if(!h)return;
+    h.addEventListener('mousedown',(e)=>{
+      if(e.button!==0)return;e.preventDefault();
+      const r=el.getBoundingClientRect(),sx=e.clientX,sy=e.clientY;
+      el.style.right='auto';el.style.bottom='auto';el.style.left=r.left+'px';el.style.top=r.top+'px';
+      function mv(ev){el.style.left=(r.left+ev.clientX-sx)+'px';el.style.top=(r.top+ev.clientY-sy)+'px';}
+      function up(){document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);}
+      document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+    });
+  }
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',_init):_init();
+})();
 </script>
 
