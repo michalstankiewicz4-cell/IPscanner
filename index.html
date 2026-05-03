@@ -25,7 +25,7 @@
   "keywords": "ipscanner, ip-scanner, ip scanner online, ipscaner js, tauri, rust, opsec, netscan, net-scan, skaner sieciowy, kaner, lan scan, free ip scanner, darmowy skaner ip"
 }
 </script>
-<title>NetRecon IP Scanner</title>
+<title>NetRecon IP Auditor v1.5.3</title>
 <link rel="icon" type="image/png" href="zebrus.png"/>
 <link rel="apple-touch-icon" href="zebrus.png"/>
 <style>
@@ -751,7 +751,7 @@ body.skin-glass .statusbar {
   <!-- Title bar -->
   <div class="titlebar">
     <span class="icon">📡</span>
-    <span class="title">NetRecon IP Scanner 1.5.3</span>
+    <span class="title">NetRecon IP Auditor v1.5.3</span>
     <div class="titlebar-btns">
       <div class="title-btn">_</div>
       <div class="title-btn">□</div>
@@ -796,7 +796,6 @@ body.skin-glass .statusbar {
       <button class="btn95" id="btnProtoToolbar" title="Prototype">🧩 Prototype</button>
       <button class="btn95" id="btnTopologyToolbar" title="Topology">🕸 Topology</button>
       <div style="flex:1"></div>
-      <span id="statTime" style="font-size:10px;color:#000080;font-weight:bold">0.0s</span>
     </div>
 
     <!-- Mode + IP Range -->
@@ -942,6 +941,7 @@ body.skin-glass .statusbar {
     <!-- Status bar -->
     <div class="statusbar">
       <div class="status-panel" id="statusMsg" data-i18n="statusReady">Ready.</div>
+      <div class="status-panel" style="flex:0 0 auto;min-width:56px;text-align:center" id="statTime">0.0s</div>
       <div class="status-panel" style="flex:0 0 auto;min-width:80px" id="statusCount">0 hosts</div>
     </div>
 
