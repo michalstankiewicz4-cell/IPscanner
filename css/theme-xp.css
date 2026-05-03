@@ -867,3 +867,203 @@ body.skin-workbench .port-hint,
 body.skin-workbench .empty-row {
   color: #8cc7ff !important;
 }
+
+body.skin-workbench .listview-header {
+  background: linear-gradient(180deg, #303a4b, #242d3d);
+  border-bottom: 1px solid #111720;
+}
+
+body.skin-workbench .lv-col {
+  color: #d7dee8;
+  border-right: 1px solid #161d28;
+  border-top: 1px solid #475267;
+  border-left: 1px solid #475267;
+}
+
+body.skin-workbench .lv-col:first-child {
+  border-left: none;
+}
+
+body.skin-workbench .lv-col:last-child {
+  border-right: none;
+}
+
+body.skin-workbench .listview-body {
+  background: #1f2530;
+}
+
+body.skin-workbench .listview-body::-webkit-scrollbar-track {
+  background: #2a3241;
+}
+
+body.skin-workbench .listview-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #455168, #333d4f);
+  border-top: 1px solid #5a6880;
+  border-left: 1px solid #5a6880;
+  border-right: 1px solid #111720;
+  border-bottom: 1px solid #111720;
+}
+
+/* ── Skin coverage for floating windows and custom dialogs ── */
+body.skin-glass #notepadWin,
+body.skin-glass #cmdWin,
+body.skin-glass #speedWin,
+body.skin-glass #protoWin,
+body.skin-glass #macroFolderWin,
+body.skin-glass #dlgScanCountry,
+body.skin-glass #dlgTrace {
+  background: linear-gradient(180deg, rgba(246, 250, 255, 0.94), rgba(217, 231, 248, 0.94)) !important;
+  border-top: 1px solid #f7fbff !important;
+  border-left: 1px solid #f7fbff !important;
+  border-right: 1px solid #6d8db1 !important;
+  border-bottom: 1px solid #6d8db1 !important;
+  box-shadow: 0 7px 24px rgba(14, 40, 72, 0.28) !important;
+}
+
+body.skin-glass #notepadWin > div:first-child,
+body.skin-glass #cmdWin > .titlebar,
+body.skin-glass #speedWin > .titlebar,
+body.skin-glass #protoWin > .titlebar,
+body.skin-glass #macroFolderWin > .titlebar,
+body.skin-glass #dlgScanCountry > .titlebar,
+body.skin-glass #dlgTrace .titlebar {
+  background: linear-gradient(180deg, rgba(210, 233, 255, 0.98), rgba(72, 128, 192, 0.94)) !important;
+  color: #eff7ff !important;
+}
+
+body.skin-glass #notepadWin textarea,
+body.skin-glass #macroFolderList,
+body.skin-glass #speedStatus,
+body.skin-glass #countryListBox,
+body.skin-glass #countryRanges,
+body.skin-glass #presetListBox,
+body.skin-glass #traceInput,
+body.skin-glass #traceTargetIp,
+body.skin-glass #cmdFilterSelect {
+  background: rgba(248, 253, 255, 0.9) !important;
+  color: #133a62 !important;
+  border-top: 1px solid #8aa8cd !important;
+  border-left: 1px solid #8aa8cd !important;
+  border-right: 1px solid #ffffff !important;
+  border-bottom: 1px solid #ffffff !important;
+}
+
+body.skin-glass #cmdMenuFileDrop,
+body.skin-glass #macroCtxMenu {
+  background: linear-gradient(180deg, rgba(246, 250, 255, 0.96), rgba(217, 231, 248, 0.96)) !important;
+  border-top: 1px solid #f7fbff !important;
+  border-left: 1px solid #f7fbff !important;
+  border-right: 1px solid #6d8db1 !important;
+  border-bottom: 1px solid #6d8db1 !important;
+}
+
+body.skin-workbench #notepadWin,
+body.skin-workbench #cmdWin,
+body.skin-workbench #speedWin,
+body.skin-workbench #protoWin,
+body.skin-workbench #macroFolderWin,
+body.skin-workbench #dlgScanCountry,
+body.skin-workbench #dlgTrace {
+  background: #252b36 !important;
+  border-top: 1px solid #3a4353 !important;
+  border-left: 1px solid #3a4353 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.46) !important;
+}
+
+body.skin-workbench #notepadWin > div:first-child,
+body.skin-workbench #cmdWin > .titlebar,
+body.skin-workbench #speedWin > .titlebar,
+body.skin-workbench #protoWin > .titlebar,
+body.skin-workbench #macroFolderWin > .titlebar,
+body.skin-workbench #dlgScanCountry > .titlebar,
+body.skin-workbench #dlgTrace .titlebar {
+  background: linear-gradient(180deg, #313a4a, #273041) !important;
+  color: #e6edf7 !important;
+}
+
+body.skin-workbench #notepadWin textarea,
+body.skin-workbench #macroFolderList,
+body.skin-workbench #speedStatus,
+body.skin-workbench #countryListBox,
+body.skin-workbench #countryRanges,
+body.skin-workbench #presetListBox,
+body.skin-workbench #traceInput,
+body.skin-workbench #traceTargetIp,
+body.skin-workbench #cmdFilterSelect {
+  background: #1f2530 !important;
+  color: #d7dee8 !important;
+  border-top: 1px solid #394354 !important;
+  border-left: 1px solid #394354 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+}
+
+body.skin-workbench #cmdMenuFileDrop,
+body.skin-workbench #macroCtxMenu {
+  background: #252b36 !important;
+  border-top: 1px solid #3a4353 !important;
+  border-left: 1px solid #3a4353 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+  color: #d7dee8 !important;
+}
+
+/* Console bars still use inline classic gray, force skin colors here. */
+body.skin-glass #cmdWin > div:not(.titlebar) {
+  background: linear-gradient(180deg, rgba(240, 248, 255, 0.96), rgba(210, 227, 246, 0.94)) !important;
+}
+
+body.skin-glass #cmdWin > div:last-child {
+  background: #000000 !important;
+}
+
+body.skin-workbench #cmdWin > div:not(.titlebar) {
+  background: #2a3241 !important;
+}
+
+body.skin-workbench #cmdWin > div:last-child {
+  background: #000000 !important;
+}
+
+/* Globe/Topology windows also had inline classic gray sections. */
+body.skin-glass #globeWin {
+  background: linear-gradient(180deg, rgba(246, 250, 255, 0.94), rgba(217, 231, 248, 0.94)) !important;
+  border-top: 1px solid #f7fbff !important;
+  border-left: 1px solid #f7fbff !important;
+  border-right: 1px solid #6d8db1 !important;
+  border-bottom: 1px solid #6d8db1 !important;
+}
+
+body.skin-glass .globe-toolbar,
+body.skin-glass .globe-statusbar,
+body.skin-glass .globe-panel {
+  background: linear-gradient(180deg, rgba(236, 247, 255, 0.96), rgba(206, 225, 245, 0.94)) !important;
+  color: #123a65 !important;
+  border-color: #6d8db1 !important;
+}
+
+body.skin-glass #mapLiveLabel {
+  color: #1e4f81 !important;
+}
+
+body.skin-workbench #globeWin {
+  background: #252b36 !important;
+  border-top: 1px solid #3a4353 !important;
+  border-left: 1px solid #3a4353 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+}
+
+body.skin-workbench .globe-toolbar,
+body.skin-workbench .globe-statusbar,
+body.skin-workbench .globe-panel {
+  background: #2a3241 !important;
+  color: #d7dee8 !important;
+  border-color: #12161e !important;
+}
+
+body.skin-workbench #mapLiveLabel {
+  color: #8cc7ff !important;
+}
