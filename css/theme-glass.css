@@ -237,6 +237,24 @@ body.skin-glass #macroCtxMenu {
   border-bottom: 1px solid #6d8db1 !important;
 }
 
+/* Macro window status bar */
+body.skin-glass #macroFolderWin > div:last-child {
+  color: #163a5d !important;
+  border-color: #6d8db1 !important;
+}
+
+body.skin-glass #macroFolderCount {
+  color: #163a5d !important;
+  border-top: 1px solid #8aa8cd !important;
+  border-left: 1px solid #8aa8cd !important;
+  border-right: 1px solid #ffffff !important;
+  border-bottom: 1px solid #ffffff !important;
+}
+
+body.skin-glass #macroCtxDelete {
+  color: #163a5d !important;
+}
+
 /* Console bars */
 body.skin-glass #cmdWin > div:not(.titlebar) {
   background: linear-gradient(180deg, rgba(240, 248, 255, 0.96), rgba(210, 227, 246, 0.94)) !important;

@@ -251,3 +251,21 @@ body.skin-workbench .globe-panel {
 body.skin-workbench #mapLiveLabel {
   color: #8cc7ff !important;
 }
+
+/* Macro window status bar (inline color:#000 and classic borders) */
+body.skin-workbench #macroFolderWin > div:last-child {
+  color: #d7dee8 !important;
+  border-color: #12161e !important;
+}
+
+body.skin-workbench #macroFolderCount {
+  color: #d7dee8 !important;
+  border-top: 1px solid #394354 !important;
+  border-left: 1px solid #394354 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+}
+
+body.skin-workbench #macroCtxDelete {
+  color: #d7dee8 !important;
+}
