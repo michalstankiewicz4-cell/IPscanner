@@ -1055,10 +1055,6 @@ document.getElementById('btnGlobe').addEventListener('click', openGlobe);
 document.getElementById('btnTopologyToolbar').addEventListener('click', openTopology);
 document.getElementById('btnMapGlobe').addEventListener('click', () => setMapMode('globe'));
 document.getElementById('btnMapTopology').addEventListener('click', () => setMapMode('topology'));
-document.getElementById('btnImportTrace').addEventListener('click', () => {
-  const defaultIp = selectedRowEl?.dataset?.ip || Object.keys(foundHostsMap)[0] || '';
-  openTraceDlg(defaultIp);
-});
 document.getElementById('btnAutoTraceTopology').addEventListener('click', () => {
   const defaultIp = selectedRowEl?.dataset?.ip || Object.keys(foundHostsMap)[0] || '';
   openTraceDlg(defaultIp);
