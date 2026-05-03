@@ -153,35 +153,35 @@ body.skin-workbench .lv-col:last-child {
 }
 
 body.skin-workbench .listview-body {
-
-  /* ── Expanded row / detail panel ── */
-  body.skin-workbench .detail-row,
-  body.skin-workbench .paths-row {
-    background: #252b36 !important;
-    color: #d7dee8;
-  }
-
-  body.skin-workbench .detail-section-title {
-    color: #8cc7ff !important;
-    border-bottom-color: #394354 !important;
-  }
-
-  body.skin-workbench .detail-line b {
-    color: #8cc7ff !important;
-  }
-
-  body.skin-workbench .path-link {
-    color: #8cc7ff !important;
-  }
-
-  body.skin-workbench .path-link:hover {
-    color: #ff8c8c !important;
-  }
-
-  body.skin-workbench .path-port-label {
-    color: #d7dee8 !important;
-  }
   background: #1f2530;
+}
+
+/* ── Expanded row / detail panel ── */
+body.skin-workbench .detail-row,
+body.skin-workbench .paths-row {
+  background: #252b36 !important;
+  color: #d7dee8;
+}
+
+body.skin-workbench .detail-section-title {
+  color: #8cc7ff !important;
+  border-bottom-color: #394354 !important;
+}
+
+body.skin-workbench .detail-line b {
+  color: #8cc7ff !important;
+}
+
+body.skin-workbench .path-link {
+  color: #8cc7ff !important;
+}
+
+body.skin-workbench .path-link:hover {
+  color: #ff8c8c !important;
+}
+
+body.skin-workbench .path-port-label {
+  color: #d7dee8 !important;
 }
 
 body.skin-workbench .listview-body::-webkit-scrollbar-track {
