@@ -52,15 +52,7 @@ function renderMacroFiles() {
       row.style.color = '';
     });
     row.addEventListener('dblclick', () => {
-      if (typeof openCmdConsole === 'function') openCmdConsole();
-      const input = document.getElementById('cmdInput');
-      if (input) input.value = (m.body || '').trim();
-      const out = document.getElementById('cmdOutput');
-      if (out) {
-        const stamp = new Date().toLocaleTimeString();
-        out.value += `[${stamp}] Wczytano plik makra: ${fileName}\n`;
-        out.scrollTop = out.scrollHeight;
-      }
+      if (typeof appendCmdLog === 'function') appendCmdLog(`Wczytano makro: ${fileName}`, 'macro');
     });
 
     row.addEventListener('contextmenu', e => {
@@ -106,7 +98,7 @@ function deleteMacroByIndex(originalIndex) {
   current.splice(originalIndex, 1);
   localStorage.setItem('netrecon_console_macros', JSON.stringify(current));
   if (typeof appendCmdLog === 'function') {
-    appendCmdLog(`Usunieto makro: ${(removed && removed.name) || '(bez nazwy)'}`);
+    appendCmdLog(`Usunieto makro: ${(removed && removed.name) || '(bez nazwy)'}`, 'macro');
   }
   if (typeof renderCommandMacros === 'function') renderCommandMacros();
   renderMacroFiles();

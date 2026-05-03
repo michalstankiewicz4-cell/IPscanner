@@ -789,6 +789,7 @@ function importTraceRoute(closeAfter = true) {
   saveTraceRoutes();
   status.textContent = t('traceImported', hops.length, targetIp);
   status.style.color = 'green';
+  if (typeof appendCmdLog === 'function') appendCmdLog(`Tracert import: ${targetIp}  hops: ${hops.length}`, 'tracert');
   if (mapMode !== 'topology') setMapMode('topology');
   drawCurrentMap();
   setStatus(t('traceImportedStatus', targetIp, hops.length), 'ok');
@@ -825,11 +826,13 @@ async function autoTraceRoute() {
       : '';
     if (resolvedIp) targetInput.value = resolvedIp;
     document.getElementById('traceInput').value = output;
+    if (typeof appendCmdLog === 'function') appendCmdLog(`Tracert auto: ${target}${resolvedIp && resolvedIp !== target ? ' -> '+resolvedIp : ''}`, 'tracert');
     importTraceRoute(false);
   } catch (err) {
     const msg = (err && err.message) ? err.message : String(err || 'unknown error');
     status.textContent = t('traceAutoFailed', msg);
     status.style.color = '#c00';
+    if (typeof appendCmdLog === 'function') appendCmdLog(`Tracert failed: ${msg}`, 'tracert');
   } finally {
     btn.disabled = false;
   }

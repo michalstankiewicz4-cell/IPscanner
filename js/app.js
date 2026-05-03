@@ -1445,6 +1445,7 @@ function restoreResults() {
     const ageStr = age !== null ? ` (${age} min ago)` : '';
     setStatus(`Restored ${totalFound} results from last scan${ageStr}.`, 'ok');
     statusCount.textContent = t('statusHosts', totalFound);
+    if (typeof appendCmdLog === 'function') appendCmdLog(`Restored ${totalFound} host${totalFound===1?'':'s'} from last scan${ageStr}.`, 'scan');
   } catch {}
 }
 
@@ -1973,6 +1974,7 @@ async function startScan() {
   refreshTopologyFilterOptions();
   stopRequested=false; statTime.textContent='0.0s';
   updateProgress(0,total,0,0); setScanState(true);
+  if (typeof appendCmdLog === 'function') appendCmdLog(`Scan start: ${startIp} — ${endIp}  [${selectedPorts.length} port${selectedPorts.length===1?'':'s'}, conc: ${concurrency}]`, 'scan');
 
   // Clear list
   listBody.innerHTML='';
@@ -2036,6 +2038,7 @@ async function startScan() {
         foundHostsMap[ip]=openPorts; totalFound++; totalOpenPorts+=openPorts.length;
         if (pingMs !== null) foundPingMap[ip] = pingMs;
         addResultRow(ip, openPorts, pingMs);
+        if (typeof appendCmdLog === 'function') appendCmdLog(`>> HOST  ${ip}  ports: [${openPorts.join(', ')}]${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
       }
       checked++;
       if (checked%4===0||checked===total) updateProgress(checked,total,totalFound,totalOpenPorts);
@@ -2053,6 +2056,12 @@ async function startScan() {
   if (stopRequested) setStatus(t('statusStopped', statChecked.textContent),'warn');
   else if (totalFound>0) setStatus(t('statusDone', totalFound, totalOpenPorts),'ok');
   else setStatus(t('statusNone'),'err');
+  if (typeof appendCmdLog === 'function') {
+    if (stopRequested) appendCmdLog(`Scan stopped. Checked: ${statChecked.textContent}, found: ${totalFound} host${totalFound===1?'':'s'}`, 'scan');
+    else if (totalFound>0) appendCmdLog(`Scan complete. Hosts: ${totalFound}, open ports: ${totalOpenPorts}`, 'scan');
+    else appendCmdLog('Scan complete. No hosts found.', 'scan');
+    appendCmdLog('─'.repeat(52), 'scan');
+  }
 }
 
 btnGo.addEventListener('click',()=>{

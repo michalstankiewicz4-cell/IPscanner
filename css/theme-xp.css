@@ -240,6 +240,7 @@ body {
   min-width: 250px;
 }
 @keyframes rowIn { from{opacity:0;background:#000080;color:#fff} to{opacity:1} }
+@keyframes cmdBlink { 0%,100%{opacity:1} 50%{opacity:0} }
 .lv-row:hover   { background: #000080; color: #fff; }
 .lv-row.selected { background: #000080; color: #fff; }
 .lv-row.selected .lv-cell { color: #fff; }
@@ -664,6 +665,59 @@ body.skin-glass .lv-row:hover,
 body.skin-glass .lv-row.selected {
   background: #2b73b8;
   color: #eef5ff;
+}
+
+body.skin-glass .lv-row {
+  border-bottom: 1px solid rgba(109, 141, 177, 0.25);
+}
+
+body.skin-glass .listview-header {
+  background: linear-gradient(180deg, rgba(234, 246, 255, 0.98), rgba(199, 221, 245, 0.96));
+  border-bottom: 1px solid #6d8db1;
+}
+
+body.skin-glass .lv-col {
+  color: #153a63;
+  border-right: 1px solid #88a8cd;
+  border-top: 1px solid rgba(255, 255, 255, 0.95);
+  border-left: 1px solid rgba(255, 255, 255, 0.95);
+}
+
+body.skin-glass .lv-col:first-child {
+  border-left: none;
+}
+
+body.skin-glass .lv-col:last-child {
+  border-right: none;
+}
+
+body.skin-glass .listview-body {
+  background: rgba(248, 253, 255, 0.88);
+}
+
+body.skin-glass .listview-body::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, rgba(230, 242, 255, 0.96), rgba(201, 222, 245, 0.96));
+}
+
+body.skin-glass .listview-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #e9f4ff, #bfd8f2);
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #6d8db1;
+  border-bottom: 1px solid #6d8db1;
+}
+
+body.skin-glass .lv-cell {
+  color: #0d2d50;
+}
+
+body.skin-glass .lv-row:hover .lv-cell,
+body.skin-glass .lv-row.selected .lv-cell {
+  color: #eef5ff;
+}
+
+body.skin-glass .icon-ok {
+  color: #0a6e28;
 }
 
 body.skin-glass .progress-bar-fill {

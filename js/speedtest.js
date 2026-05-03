@@ -134,8 +134,11 @@ async function runSpeedTest() {
     if (speedUploadValue) speedUploadValue.textContent = formatMbps(uploadMbps);
 
     setSpeedStatus(`Gotowe. Ping: ${formatPingMs(pingMs)} ms, Download: ${formatMbps(downloadMbps)} Mbps, Upload: ${formatMbps(uploadMbps)} Mbps`);
+    if (typeof appendCmdLog === 'function') appendCmdLog(`Speed test: ping ${formatPingMs(pingMs)} ms  down ${formatMbps(downloadMbps)} Mbps  up ${formatMbps(uploadMbps)} Mbps`, 'speed');
   } catch (error) {
-    setSpeedStatus(`Test nieudany: ${error && error.message ? error.message : error}`);
+    const errMsg = error && error.message ? error.message : String(error);
+    setSpeedStatus(`Test nieudany: ${errMsg}`);
+    if (typeof appendCmdLog === 'function') appendCmdLog(`Speed test failed: ${errMsg}`, 'speed');
   } finally {
     speedTestRunning = false;
     if (btnSpeedStart) btnSpeedStart.disabled = false;

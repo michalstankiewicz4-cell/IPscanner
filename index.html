@@ -283,7 +283,7 @@
 <div id="cmdWin" style="
   display:none;
   position:fixed; top:72px; left:76px;
-  width:min(560px, 96vw);
+  width:min(700px, 96vw);
   background:#c0c0c0;
   border-top:2px solid #ffffff; border-left:2px solid #ffffff;
   border-right:2px solid #808080; border-bottom:2px solid #808080;
@@ -292,50 +292,62 @@
   z-index:1050;
 ">
   <div class="titlebar" id="cmdTitlebar" style="cursor:move">
-    <span class="icon">⌨</span>
-    <span class="title">Scanner Console</span>
+    <span class="icon">🖥</span>
+    <span class="title">Console Log</span>
     <div class="titlebar-btns">
-      <button class="title-btn" id="btnCmdRun" title="Run">▶</button>
       <button class="title-btn" id="btnCmdClose" title="Close" style="font-weight:900">✕</button>
     </div>
   </div>
 
+  <!-- Menu bar -->
   <div style="
     background:#c0c0c0; font-size:11px;
     padding:1px 2px; border-bottom:1px solid #808080;
-    display:flex; position:relative;
+    display:flex; align-items:center; gap:0; position:relative;
   ">
-    <div id="cmdMenuMacro" style="padding:2px 8px;cursor:default;user-select:none;position:relative">Makro
-      <div id="cmdMenuMacroDrop" style="
+    <div id="cmdMenuFile" style="padding:2px 8px;cursor:default;user-select:none;position:relative">File
+      <div id="cmdMenuFileDrop" style="
         display:none; position:absolute; top:100%; left:0;
         background:#c0c0c0;
         border-top:1px solid #fff; border-left:1px solid #fff;
         border-right:1px solid #808080; border-bottom:1px solid #808080;
-        box-shadow:2px 2px 0 #000; min-width:220px; z-index:3;
+        box-shadow:2px 2px 0 #000; min-width:160px; z-index:10;
       ">
-        <div id="btnCmdSaveMacro" style="padding:4px 24px 4px 28px;white-space:nowrap;cursor:default">Zapisz makro</div>
-        <div style="height:1px;background:#808080;margin:2px 4px;box-shadow:0 1px 0 #fff"></div>
-        <div style="padding:3px 8px;font-size:10px;color:#444">Wczytaj makro:</div>
-        <div id="cmdMacroList"></div>
+        <div id="btnCmdSaveLogs" style="padding:4px 24px 4px 28px;white-space:nowrap;cursor:default">💾 Save logs...</div>
       </div>
     </div>
   </div>
 
-  <div style="padding:8px;display:flex;flex-direction:column;gap:6px">
+  <!-- Filter bar -->
+  <div style="
+    background:#c0c0c0; padding:3px 6px; border-bottom:1px solid #808080;
+    display:flex; align-items:center; gap:4px;
+  ">
+    <label style="font-size:11px;white-space:nowrap">Filter:</label>
+    <select id="cmdFilterSelect" style="
+      font-family:'MS Sans Serif',Tahoma,sans-serif; font-size:11px;
+      border-top:1px solid #808080; border-left:1px solid #808080;
+      border-right:1px solid #fff; border-bottom:1px solid #fff;
+      background:#fff; padding:1px 2px; height:20px;
+    ">
+      <option value="">-- All --</option>
+      <option value="scan">Scan</option>
+      <option value="tracert">Tracert</option>
+      <option value="macro">Macro</option>
+      <option value="speed">Speed</option>
+    </select>
+    <button id="btnCmdFilter" class="btn95" style="height:20px;padding:0 8px;font-size:11px">Filter</button>
+    <button id="btnCmdClearLog" class="btn95" style="height:20px;padding:0 8px;font-size:11px;margin-left:4px">Clear</button>
+  </div>
+
+  <div style="padding:3px 4px 4px 4px; background:#000000;">
     <textarea id="cmdOutput" readonly style="
-      width:100%; height:160px; resize:none;
-      font-family:'Courier New',monospace; font-size:11px;
-      border-top:1px solid #808080; border-left:1px solid #808080;
-      border-right:1px solid #fff; border-bottom:1px solid #fff;
-      background:#fff; color:#000; padding:6px;
-    "></textarea>
-    <textarea id="cmdInput" placeholder="focus 192.168.1.10\nscan\nscan 192.168.1.10\nscan 192.168.1" style="
-      width:100%; height:88px; resize:vertical;
-      font-family:'Courier New',monospace; font-size:11px;
-      border-top:1px solid #808080; border-left:1px solid #808080;
-      border-right:1px solid #fff; border-bottom:1px solid #fff;
-      background:#fff; color:#000; padding:6px;
-      line-height:1.45;
+      display:block; width:100%; height:320px;
+      font-family:'Lucida Console','Courier New',monospace; font-size:12px;
+      background:#000000; color:#c0c0c0;
+      border:none; outline:none; resize:none;
+      padding:6px; box-sizing:border-box;
+      line-height:1.55; caret-color:transparent;
     "></textarea>
   </div>
 </div>
