@@ -882,11 +882,10 @@ const _tauriInvoke = (window.__TAURI_INTERNALS__?.invoke)
 
 const _tauriListen = window.__TAURI__?.event?.listen ?? null;
 const _toolMode = (new URLSearchParams((window.location.hash || '').replace(/^#/, ''))).get('tool');
-const _isTauriDesktop = !!(
-  window.__TAURI__
-  || window.__TAURI_INTERNALS__
-  || navigator.userAgent.toLowerCase().includes('tauri')
-);
+// Declared in globe.js first (loads earlier); guard against duplicate const.
+if (typeof _isTauriDesktop === 'undefined') {
+  var _isTauriDesktop = !!(window.__TAURI__ || window.__TAURI_INTERNALS__ || navigator.userAgent.toLowerCase().includes('tauri'));
+}
 
 function openToolNativeWindow(tool) {
   if (!_tauriInvoke || _toolMode) return false;

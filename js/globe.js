@@ -6,6 +6,8 @@
 // ══════════════════════════════════════════════════
 //  GLOBE STATE (declared early to avoid TDZ across merged script blocks)
 // ══════════════════════════════════════════════════
+// Replicated from app.js — globe.js loads before app.js
+var _isTauriDesktop = !!(window.__TAURI__ || window.__TAURI_INTERNALS__ || navigator.userAgent.toLowerCase().includes('tauri'));
 const ipGeoCoords = {}; // ip → { lat, lon, country }
 let globeReady = false;
 let globeCtx, globeProjection, globePath;
