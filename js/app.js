@@ -7,6 +7,7 @@ function selectIcon(el) {
 }
 function openNotepad() {
   document.getElementById('notepadWin').style.display = 'block';
+  bringToFront(document.getElementById('notepadWin'));
   document.getElementById('notepadText').value =
 `================================================================
   NetRecon IP Scanner 1.5.1
@@ -82,6 +83,71 @@ function openNotepad() {
 }
 function closeNotepad() {
   document.getElementById('notepadWin').style.display = 'none';
+}
+
+let _windowZCounter = 1200;
+
+function bringToFront(target) {
+  if (!target) return;
+
+  const topZ = ++_windowZCounter;
+
+  const dialogPanel = target.classList?.contains('dlg95') ? target : target.closest?.('.dlg95');
+  if (dialogPanel) {
+    const overlay = dialogPanel.closest('.dlg-overlay');
+    if (overlay) {
+      overlay.style.zIndex = String(topZ);
+      dialogPanel.style.zIndex = String(topZ + 1);
+      return;
+    }
+    dialogPanel.style.zIndex = String(topZ);
+    return;
+  }
+
+  if (target.id === 'dlgTrace' || target.closest?.('#dlgTrace')) {
+    const overlay = document.getElementById('dlgTraceOverlay');
+    const dlgTrace = document.getElementById('dlgTrace');
+    if (overlay) overlay.style.zIndex = String(topZ);
+    if (dlgTrace) dlgTrace.style.zIndex = String(topZ + 1);
+    return;
+  }
+
+  if (target.classList?.contains('dlg-overlay')) {
+    target.style.zIndex = String(topZ);
+    return;
+  }
+
+  if (target.style) {
+    target.style.zIndex = String(topZ);
+  }
+}
+
+window.bringToFront = bringToFront;
+
+function initWindowZStacking() {
+  const floatingWindowIds = [
+    'notepadWin',
+    'cmdWin',
+    'speedWin',
+    'protoWin',
+    'macroFolderWin',
+    'globeWin',
+    'dlgScanCountry',
+    'dlgTrace'
+  ];
+
+  floatingWindowIds.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el || el.dataset.zstackBound === '1') return;
+    el.dataset.zstackBound = '1';
+    el.addEventListener('pointerdown', () => bringToFront(el));
+  });
+
+  document.querySelectorAll('.dlg95').forEach((dlg) => {
+    if (dlg.dataset.zstackBound === '1') return;
+    dlg.dataset.zstackBound = '1';
+    dlg.addEventListener('pointerdown', () => bringToFront(dlg));
+  });
 }
 
 function makeWindowDraggable(winEl, handleEl) {
@@ -253,6 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   initAllDialogDragging();
+  initWindowZStacking();
 });
 
 // ══════════════════════════════════════════════════
@@ -481,6 +548,7 @@ function openLangDlg() {
   document.getElementById('radioEn').checked = (lang === 'en');
   document.getElementById('radioPl').checked = (lang === 'pl');
   document.getElementById('dlgOverlay').classList.add('open');
+  bringToFront(document.querySelector('#dlgOverlay .dlg95'));
 }
 function closeLangDlg() {
   document.getElementById('dlgOverlay').classList.remove('open');
@@ -504,6 +572,7 @@ function openDefaultsDlg() {
   document.getElementById('dlgDefaultThreads').value = String(cfg.threads);
   document.getElementById('dlgDefaultDelay').value = String(cfg.delayMs);
   document.getElementById('dlgDefaultsOverlay').classList.add('open');
+  bringToFront(document.querySelector('#dlgDefaultsOverlay .dlg95'));
 }
 function closeDefaultsDlg() {
   document.getElementById('dlgDefaultsOverlay').classList.remove('open');
@@ -512,6 +581,7 @@ function closeDefaultsDlg() {
 // ── Versions dialog ──
 function openVersionsDlg() {
   document.getElementById('dlgVersionsOverlay').classList.add('open');
+  bringToFront(document.querySelector('#dlgVersionsOverlay .dlg95'));
 }
 function closeVersionsDlg() {
   document.getElementById('dlgVersionsOverlay').classList.remove('open');
@@ -616,6 +686,7 @@ function openCustomizeDlg() {
   if (skinWorkbench) skinWorkbench.checked = activeSkin === 'workbench';
 
   document.getElementById('dlgCustomizeOverlay').classList.add('open');
+  bringToFront(document.querySelector('#dlgCustomizeOverlay .dlg95'));
 }
 function closeCustomizeDlg() {
   TOOLBAR_BTNS_CFG.forEach(({ chk, key }) => {
@@ -744,6 +815,7 @@ function openPresetsDlg() {
   dlgSelectedPreset = activePresetIdx;
   renderPresetListBox();
   document.getElementById('dlgPresetsOverlay').classList.add('open');
+  bringToFront(document.querySelector('#dlgPresetsOverlay .dlg95'));
 }
 function closePresetsDlg() {
   document.getElementById('dlgPresetsOverlay').classList.remove('open');

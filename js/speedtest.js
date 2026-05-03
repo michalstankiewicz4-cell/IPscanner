@@ -7,7 +7,7 @@ function openSpeedWindow() {
   const win = document.getElementById('speedWin');
   if (!win) return;
   win.style.display = 'block';
-  win.style.zIndex = '1040';
+  if (typeof window.bringToFront === 'function') window.bringToFront(win);
 }
 
 function closeSpeedWindow() {

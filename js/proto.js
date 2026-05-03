@@ -8,7 +8,7 @@ function openProtoWindow() {
   if (!win) return;
   if (typeof initProtoCanvas === 'function') initProtoCanvas();
   win.style.display = 'block';
-  win.style.zIndex = '1045';
+  if (typeof window.bringToFront === 'function') window.bringToFront(win);
   if (typeof protoRenderLinks === 'function') protoRenderLinks();
 }
 

@@ -73,6 +73,7 @@ function openCountriesDlg() {
   document.getElementById('countryRanges').innerHTML   = '';
   renderCountryList('');
   document.getElementById('dlgCountriesOverlay').classList.add('open');
+  if (typeof window.bringToFront === 'function') window.bringToFront(document.querySelector('#dlgCountriesOverlay .dlg95'));
   setTimeout(() => document.getElementById('countrySearch').focus(), 50);
 }
 function closeCountriesDlg() {
@@ -183,6 +184,7 @@ function openGlobe() {
   if (openToolNativeWindow('globe')) return;
   const win = document.getElementById('globeWin');
   win.style.display = 'block';
+  if (typeof window.bringToFront === 'function') window.bringToFront(win);
   if (!globeReady) {
     mapMode = 'globe';
     initGlobe();
@@ -196,6 +198,7 @@ function openTopology() {
   if (openToolNativeWindow('topology')) return;
   const win = document.getElementById('globeWin');
   win.style.display = 'block';
+  if (typeof window.bringToFront === 'function') window.bringToFront(win);
   if (!globeReady) initGlobe();
   setMapMode('topology');
 }
@@ -767,6 +770,7 @@ function openTraceDlg(defaultIp = '') {
   document.getElementById('traceInput').value = '';
   document.getElementById('traceParseStatus').textContent = t('traceDlgHint');
   document.getElementById('dlgTraceOverlay').classList.add('open');
+  if (typeof window.bringToFront === 'function') window.bringToFront(document.getElementById('dlgTrace'));
 }
 
 function closeTraceDlg() {
@@ -1025,6 +1029,7 @@ function openScanCountryDlg(countryName) {
   }
   document.getElementById('scDlgYes').disabled = !entry;
   document.getElementById('dlgScanCountry').style.display = 'block';
+  if (typeof window.bringToFront === 'function') window.bringToFront(document.getElementById('dlgScanCountry'));
 }
 function closeScanCountryDlg() {
   document.getElementById('dlgScanCountry').style.display = 'none';

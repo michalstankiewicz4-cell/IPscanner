@@ -50,6 +50,7 @@ function _applyFilter() {
 function openCmdConsole() {
   if (openToolNativeWindow('console')) return;
   cmdWin.style.display = 'block';
+  if (typeof window.bringToFront === 'function') window.bringToFront(cmdWin);
   if (!_cmdLogBuffer.length) {
     appendCmdLog('NetRecon IP Auditor — konsola zdarzen');
     appendCmdLog('Tryb tylko-do-odczytu. Logi skanu i zdarzenia systemu.');

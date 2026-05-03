@@ -110,6 +110,7 @@ function openMacroFolder() {
   if (!win) return;
   renderMacroFiles();
   win.style.display = 'block';
+  if (typeof window.bringToFront === 'function') window.bringToFront(win);
 }
 
 function closeMacroFolder() {
