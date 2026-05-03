@@ -128,29 +128,3 @@ btnCmdClose.addEventListener('click', closeCmdConsole);
   });
   window.addEventListener('mouseup', () => { dragging = false; });
 })();
-
-btnConsole.addEventListener('click', openCmdConsole);
-btnCmdClose.addEventListener('click', closeCmdConsole);
-
-// Draggable
-(function() {
-  let ox = 0, oy = 0, dragging = false;
-  if (!cmdWin || !cmdTitlebar) return;
-  cmdTitlebar.addEventListener('mousedown', e => {
-    if (e.target.closest('.titlebar-btns')) return;
-    const r = cmdWin.getBoundingClientRect();
-    dragging = true;
-    ox = e.clientX - r.left;
-    oy = e.clientY - r.top;
-    cmdWin.style.transform = 'none';
-    cmdWin.style.left = r.left + 'px';
-    cmdWin.style.top  = r.top  + 'px';
-    e.preventDefault();
-  });
-  window.addEventListener('mousemove', e => {
-    if (!dragging) return;
-    cmdWin.style.left = Math.max(0, Math.min(e.clientX - ox, window.innerWidth  - cmdWin.offsetWidth))  + 'px';
-    cmdWin.style.top  = Math.max(0, Math.min(e.clientY - oy, window.innerHeight - 42)) + 'px';
-  });
-  window.addEventListener('mouseup', () => { dragging = false; });
-})();

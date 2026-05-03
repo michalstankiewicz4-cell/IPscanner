@@ -92,7 +92,7 @@ function openMacroContextMenu(x, y, originalIndex) {
 }
 
 function deleteMacroByIndex(originalIndex) {
-  const current = getCommandMacros();
+  const current = readMacroStorageList();
   if (originalIndex < 0 || originalIndex >= current.length) return;
   const removed = current[originalIndex];
   current.splice(originalIndex, 1);
