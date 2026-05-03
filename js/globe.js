@@ -183,10 +183,11 @@ function openGlobe() {
   if (openToolNativeWindow('globe')) return;
   const win = document.getElementById('globeWin');
   win.style.display = 'block';
-  if (!globeReady) initGlobe();
-  else {
-    syncMapModeUI();
-    drawCurrentMap();
+  if (!globeReady) {
+    mapMode = 'globe';
+    initGlobe();
+  } else {
+    setMapMode('globe');
     startRotation();
   }
 }

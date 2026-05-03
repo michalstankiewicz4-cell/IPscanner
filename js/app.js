@@ -84,6 +84,84 @@ function closeNotepad() {
   document.getElementById('notepadWin').style.display = 'none';
 }
 
+function makeWindowDraggable(winEl, handleEl) {
+  if (!winEl || !handleEl || handleEl.dataset.dragBound === '1') return;
+  handleEl.dataset.dragBound = '1';
+  handleEl.style.cursor = 'move';
+
+  let dragging = false;
+  let activePointerId = null;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  const stopDragging = () => {
+    dragging = false;
+    activePointerId = null;
+    document.body.style.cursor = '';
+  };
+
+  handleEl.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch' && e.button !== 0) return;
+    if (e.target.closest('.title-btn, .titlebar-btns, button, input, select, textarea, a, label')) return;
+
+    const rect = winEl.getBoundingClientRect();
+    dragging = true;
+    activePointerId = e.pointerId;
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+
+    // Centered dialogs use transform translate; convert to explicit coords before dragging.
+    winEl.style.transform = 'none';
+    winEl.style.left = rect.left + 'px';
+    winEl.style.top = rect.top + 'px';
+
+    document.body.style.cursor = 'move';
+    handleEl.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!dragging || e.pointerId !== activePointerId) return;
+
+    const maxLeft = Math.max(0, window.innerWidth - winEl.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - 28);
+    const nextLeft = Math.min(Math.max(0, e.clientX - offsetX), maxLeft);
+    const nextTop = Math.min(Math.max(0, e.clientY - offsetY), maxTop);
+
+    winEl.style.left = nextLeft + 'px';
+    winEl.style.top = nextTop + 'px';
+  });
+
+  window.addEventListener('pointerup', (e) => {
+    if (e.pointerId === activePointerId) stopDragging();
+  });
+
+  window.addEventListener('pointercancel', (e) => {
+    if (e.pointerId === activePointerId) stopDragging();
+  });
+}
+
+function initAllDialogDragging() {
+  makeWindowDraggable(
+    document.getElementById('notepadWin'),
+    document.querySelector('#notepadWin > div:first-child')
+  );
+
+  document.querySelectorAll('.dlg95').forEach((dlg) => {
+    makeWindowDraggable(dlg, dlg.querySelector('.dlg-title'));
+  });
+
+  makeWindowDraggable(
+    document.getElementById('dlgScanCountry'),
+    document.querySelector('#dlgScanCountry > .titlebar')
+  );
+
+  makeWindowDraggable(
+    document.getElementById('dlgTrace'),
+    document.querySelector('#dlgTrace > .titlebar')
+  );
+}
+
 function closeMainWindow() {
   if (_toolMode) {
     closeCurrentWindowImmediate();
@@ -173,6 +251,8 @@ document.addEventListener('DOMContentLoaded', () => {
       startMainWindowDrag();
     });
   }
+
+  initAllDialogDragging();
 });
 
 // ══════════════════════════════════════════════════
