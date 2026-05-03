@@ -280,6 +280,21 @@ body.skin-workbench #mapLiveLabel {
   color: #8cc7ff !important;
 }
 
+body.skin-workbench .globe-toolbar .toolbar-label {
+  color: #d7dee8 !important;
+}
+
+body.skin-workbench #scDlgInfo,
+body.skin-workbench #traceParseStatus,
+body.skin-workbench #countryName {
+  color: #8cc7ff !important;
+}
+
+body.skin-workbench #countryMeta,
+body.skin-workbench #countryRangeHint {
+  color: #a7b5c8 !important;
+}
+
 /* Proto window — all light-bg panels force dark text */
 body.skin-workbench #protoWin .proto-node,
 body.skin-workbench #protoWin .proto-node-head,
