@@ -1712,17 +1712,6 @@ async function detectLocalIP() {
       return;
     }
 
-    const isPrivateIpv4 = (ip) =>
-      /^10\./.test(ip) ||
-      /^192\.168\./.test(ip) ||
-      /^172\.(1[6-9]|2[0-9]|3[01])\./.test(ip);
-
-    const extractIpv4 = (text) => {
-      if (!text) return null;
-      const m = text.match(/\b(\d{1,3}(?:\.\d{1,3}){3})\b/);
-      return m ? m[1] : null;
-    };
-
     let done = false;
     const finish = (ip) => {
       if (done) return;
@@ -1972,6 +1961,8 @@ async function startScan() {
   if (!selectedPorts.length) { setStatus(t('errNoPorts'),'err'); return; }
 
   const total=endNum-startNum+1;
+  const concurrency = Math.min(+document.getElementById('concNum').value || 20, 64);
+  const delayMs = Math.max(0, Math.min(5000, +document.getElementById('delayMs').value || 0));
   foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
   refreshTopologyFilterOptions();
   stopRequested=false; statTime.textContent='0.0s';
@@ -1982,9 +1973,6 @@ async function startScan() {
   listBody.innerHTML='';
   listBody.appendChild(emptyRow);
   emptyRow.textContent = t('emptyScanning');
-
-  const concurrency = Math.min(+document.getElementById('concNum').value || 20, 64);
-  const delayMs = Math.max(0, Math.min(5000, +document.getElementById('delayMs').value || 0));
 
   if (total>500) {
     const estSec=Math.round(total*(1500/concurrency)/1000);
