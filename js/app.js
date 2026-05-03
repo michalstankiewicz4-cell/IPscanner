@@ -1698,7 +1698,7 @@ btnPreviewClose.addEventListener('click',()=>{
 });
 
 // ══════════════════════════════════════════════════
-//  ENRICH POPUP (draggable Win95-style info window)
+//  ENRICH POPUP (draggable retro-win-style info window)
 // ══════════════════════════════════════════════════
 function showEnrichPopup(popupId, label, asyncFn) {
   // Toggle: clicking the same menu item again closes the popup

@@ -1,4 +1,4 @@
-/* ── Win95 Reset ── */
+/* ── Retro-Win Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -13,7 +13,7 @@ body {
 }
 
 /* ── Window frame ── */
-.win95 {
+.retro-win {
   width: 100%;
   background: #c0c0c0;
   border: none;
@@ -220,7 +220,7 @@ body {
   overflow-y: scroll;
   overflow-x: auto;
 }
-/* Classic Win95 scrollbar approximation */
+/* Classic retro-win scrollbar approximation */
 .listview-body::-webkit-scrollbar { width: 16px; }
 .listview-body::-webkit-scrollbar-track { background: #c0c0c0; }
 .listview-body::-webkit-scrollbar-thumb {
