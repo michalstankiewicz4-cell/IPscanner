@@ -252,6 +252,26 @@ body.skin-workbench #mapLiveLabel {
   color: #8cc7ff !important;
 }
 
+/* Proto window — all light-bg panels force dark text */
+body.skin-workbench #protoWin .proto-node,
+body.skin-workbench #protoWin .proto-node-head,
+body.skin-workbench #protoWin .proto-node > div {
+  color: #1a2030 !important;
+}
+
+/* Toolbox items and blueprint items (no class, white/light bg inline) */
+body.skin-workbench #protoLayout {
+  color: #1a2030;
+}
+
+body.skin-workbench #protoStatus {
+  color: #d7dee8 !important;
+  border-top: 1px solid #394354 !important;
+  border-left: 1px solid #394354 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+}
+
 /* Macro window status bar (inline color:#000 and classic borders) */
 body.skin-workbench #macroFolderWin > div:last-child {
   color: #d7dee8 !important;
