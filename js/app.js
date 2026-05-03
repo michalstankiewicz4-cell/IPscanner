@@ -10,7 +10,7 @@ function openNotepad() {
   bringToFront(document.getElementById('notepadWin'));
   document.getElementById('notepadText').value =
 `================================================================
-  NetRecon IP Scanner 1.5.1
+  NetRecon IP Scanner 1.5.4
   by Michał Stankiewicz
 ================================================================
 
