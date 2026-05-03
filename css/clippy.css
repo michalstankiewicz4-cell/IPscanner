@@ -29,6 +29,7 @@
   position: relative;
   box-shadow: 2px 2px 0 #808080;
   cursor: pointer;
+  color: #000000;
 }
 
 /* Arrow pointing down toward character */
