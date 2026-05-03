@@ -404,6 +404,35 @@ const STRINGS = {
     btnTraceAuto:'Auto Trace', traceAutoRunning:'Running traceroute...', traceAutoDesktopOnly:'Auto trace works only in Tauri desktop build.',
     traceAutoFailed:(msg)=>`Traceroute failed: ${msg}`,
     btnTraceSave:'Import',
+    // Window / dialog labels
+    menuEdit:'Edit',
+    notepadStatus:'NetRecon IP Scanner · License: Free to use',
+    cmdWinTitle:'Console Log', cmdMenuFile:'File', cmdSaveLogs:'💾 Save logs...',
+    cmdFilter:'Filter:', cmdFilterAll:'-- All --', cmdFilterScan:'Scan',
+    cmdFilterTracert:'Tracert', cmdFilterMacro:'Macro', cmdFilterSpeed:'Speed',
+    cmdBtnFilter:'Filter', cmdBtnClearLog:'Clear',
+    speedWinTitle:'Internet Speed Test',
+    speedLabelDownload:'Download', speedLabelPing:'Ping', speedLabelUpload:'Upload',
+    speedMbps:'Mbps', speedMs:'ms',
+    speedReady:'Click Start to measure ping, download and upload.',
+    speedBtnStart:'▶ Start test',
+    protoWinTitle:'Visual Programming Prototype',
+    protoStatusText:'Status: Prototype mode (UI concept only). Link mode: click OUT anchor, then click IN anchor.',
+    macroWinTitle:'Macros', macroCtxDelete:'🗑 Delete macro',
+    countrySearchPlaceholder:'Search country…', countryRangeHint:'Click a range to select it, then click Use.',
+    btnCountryUse:'➤ Use range', btnCountryUseAll:'➤ Use all',
+    customizeTitle:'Customization – Toolbar', customizeToolbarLegend:'Toolbar buttons',
+    customizeGlobe:'🌍 Globe (World Map)', customizeConsole:'⌨ Console',
+    customizeMacro:'📁 Macro', customizeSpeed:'📶 Speed Test',
+    customizeProto:'🧩 Prototype', customizeTopology:'🕸 Topology',
+    customizeSkinLegend:'Skin', skinClassic:'Classic', skinGlass:'Glass', skinWorkbench:'Workbench Night',
+    globeWinTitle:'Network Map – IP Scan Results',
+    btnMapGlobe:'Globe', btnMapTopology:'Topology',
+    globeStatusDefault:'Drag to rotate · Click country to scan · Click dot to preview',
+    globeAutoRotate:'Auto-rotate',
+    scanCountryDlgTitle:'Scan Country', dlgYes:'Yes', dlgNo:'No',
+    ctxDetailGeo:'🌍 Geolocation / ISP', ctxDetailDevice:'🖥 Device Identification',
+    ctxDetailTitle:'📄 HTTP Page Title', ctxDetailAccess:'🔑 Access / Snapshot',
   },
   pl: {
     menuFile:'Plik', menuOptions:'Opcje', menuHelp:'Pomoc',
@@ -481,6 +510,35 @@ const STRINGS = {
     btnTraceAuto:'Auto Trace', traceAutoRunning:'Uruchamiam traceroute...', traceAutoDesktopOnly:'Auto trace działa tylko w wersji desktopowej Tauri.',
     traceAutoFailed:(msg)=>`Traceroute nie powiodło się: ${msg}`,
     btnTraceSave:'Importuj',
+    // Window / dialog labels
+    menuEdit:'Edycja',
+    notepadStatus:'NetRecon IP Scanner · Licencja: Free to use',
+    cmdWinTitle:'Log konsoli', cmdMenuFile:'Plik', cmdSaveLogs:'💾 Zapisz logi...',
+    cmdFilter:'Filtr:', cmdFilterAll:'-- Wszystko --', cmdFilterScan:'Skan',
+    cmdFilterTracert:'Tracert', cmdFilterMacro:'Makro', cmdFilterSpeed:'Szybkość',
+    cmdBtnFilter:'Filtruj', cmdBtnClearLog:'Wyczyść',
+    speedWinTitle:'Test prędkości internetu',
+    speedLabelDownload:'Pobieranie', speedLabelPing:'Ping', speedLabelUpload:'Wysyłanie',
+    speedMbps:'Mbps', speedMs:'ms',
+    speedReady:'Kliknij Start, aby zmierzyć ping, download i upload.',
+    speedBtnStart:'▶ Start test',
+    protoWinTitle:'Prototyp Visual Programming',
+    protoStatusText:'Status: Tryb prototypu (tylko koncepcja UI). Tryb łączy: kliknij kotwicę OUT, potem IN.',
+    macroWinTitle:'Makra', macroCtxDelete:'🗑 Skasuj makro',
+    countrySearchPlaceholder:'Szukaj kraju…', countryRangeHint:'Kliknij zakres, a następnie kliknij Użyj.',
+    btnCountryUse:'➤ Użyj zakresu', btnCountryUseAll:'➤ Użyj wszystkich',
+    customizeTitle:'Dostosowanie – Pasek narzędzi', customizeToolbarLegend:'Przyciski paska',
+    customizeGlobe:'🌍 Glob (Mapa świata)', customizeConsole:'⌨ Konsola',
+    customizeMacro:'📁 Makro', customizeSpeed:'📶 Test prędkości',
+    customizeProto:'🧩 Prototyp', customizeTopology:'🕸 Topologia',
+    customizeSkinLegend:'Wygląd', skinClassic:'Klasyczny', skinGlass:'Szklany', skinWorkbench:'Ciemny motyw',
+    globeWinTitle:'Mapa sieci – Wyniki skanowania',
+    btnMapGlobe:'Glob', btnMapTopology:'Topologia',
+    globeStatusDefault:'Przeciągnij aby obrócić · Kliknij kraj aby skanować · Kliknij punkt aby podejrzeć',
+    globeAutoRotate:'Auto-obrót',
+    scanCountryDlgTitle:'Skanuj kraj', dlgYes:'Tak', dlgNo:'Nie',
+    ctxDetailGeo:'🌍 Geolokalizacja / ISP', ctxDetailDevice:'🖥 Identyfikacja urządzenia',
+    ctxDetailTitle:'📄 Tytuł strony HTTP', ctxDetailAccess:'🔑 Dostęp / Snapshot',
   }
 };
 
@@ -495,6 +553,11 @@ function applyLang() {
     const key = el.dataset.i18n;
     const v = t(key);
     if (typeof v === 'string') el.textContent = v;
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.dataset.i18nPlaceholder;
+    const v = t(key);
+    if (typeof v === 'string') el.placeholder = v;
   });
   const subnetInput = document.getElementById('topoSubnetFilter');
   const pingInput = document.getElementById('topoPingMax');

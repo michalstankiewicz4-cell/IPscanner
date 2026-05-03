@@ -236,7 +236,7 @@
     display:flex; align-items:center; gap:4px;
   ">
     <span>📝</span>
-    <span style="flex:1">Notatnik – O autorze</span>
+    <span data-i18n="notepadWinTitle" style="flex:1">Notatnik – O autorze</span>
     <div style="display:flex;gap:2px">
       <div class="title-btn" onclick="closeNotepad()">✕</div>
     </div>
@@ -249,9 +249,9 @@
     border-bottom:1px solid #808080;
     display:flex; gap:2px;
   ">
-    <span style="padding:1px 6px;cursor:default" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Plik</span>
-    <span style="padding:1px 6px;cursor:default" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Edycja</span>
-    <span style="padding:1px 6px;cursor:default" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Pomoc</span>
+    <span data-i18n="menuFile" style="padding:1px 6px;cursor:default" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Plik</span>
+    <span data-i18n="menuEdit" style="padding:1px 6px;cursor:default" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Edycja</span>
+    <span data-i18n="menuHelp" style="padding:1px 6px;cursor:default" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Pomoc</span>
   </div>
 
   <!-- Text area -->
@@ -277,7 +277,7 @@
       border-top:1px solid #808080; border-left:1px solid #808080;
       border-right:1px solid #fff; border-bottom:1px solid #fff;
       padding:1px 8px; flex:1;
-    ">NetRecon IP Scanner · Licencja: Free to use</div>
+    " data-i18n="notepadStatus">NetRecon IP Scanner · Licencja: Free to use</div>
   </div>
 </div>
 
@@ -295,7 +295,7 @@
 ">
   <div class="titlebar" id="cmdTitlebar" style="cursor:move">
     <span class="icon">🖥</span>
-    <span class="title">Console Log</span>
+    <span class="title" data-i18n="cmdWinTitle">Console Log</span>
     <div class="titlebar-btns">
       <button class="title-btn" id="btnCmdClose" title="Close" style="font-weight:900">✕</button>
     </div>
@@ -307,7 +307,7 @@
     padding:1px 2px; border-bottom:1px solid #808080;
     display:flex; align-items:center; gap:0; position:relative;
   ">
-    <div id="cmdMenuFile" style="padding:2px 8px;cursor:default;user-select:none;position:relative">File
+    <div id="cmdMenuFile" style="padding:2px 8px;cursor:default;user-select:none;position:relative"><span data-i18n="cmdMenuFile">File</span>
       <div id="cmdMenuFileDrop" style="
         display:none; position:absolute; top:100%; left:0;
         background:#c0c0c0;
@@ -315,7 +315,7 @@
         border-right:1px solid #808080; border-bottom:1px solid #808080;
         box-shadow:2px 2px 0 #000; min-width:160px; z-index:10;
       ">
-        <div id="btnCmdSaveLogs" style="padding:4px 24px 4px 28px;white-space:nowrap;cursor:default">💾 Save logs...</div>
+        <div id="btnCmdSaveLogs" style="padding:4px 24px 4px 28px;white-space:nowrap;cursor:default" data-i18n="cmdSaveLogs">💾 Save logs...</div>
       </div>
     </div>
   </div>
@@ -325,21 +325,21 @@
     background:#c0c0c0; padding:3px 6px; border-bottom:1px solid #808080;
     display:flex; align-items:center; gap:4px;
   ">
-    <label style="font-size:11px;white-space:nowrap">Filter:</label>
+    <label style="font-size:11px;white-space:nowrap" data-i18n="cmdFilter">Filter:</label>
     <select id="cmdFilterSelect" style="
       font-family:'MS Sans Serif',Tahoma,sans-serif; font-size:11px;
       border-top:1px solid #808080; border-left:1px solid #808080;
       border-right:1px solid #fff; border-bottom:1px solid #fff;
       background:#fff; padding:1px 2px; height:20px;
     ">
-      <option value="">-- All --</option>
-      <option value="scan">Scan</option>
-      <option value="tracert">Tracert</option>
-      <option value="macro">Macro</option>
-      <option value="speed">Speed</option>
+      <option value="" data-i18n="cmdFilterAll">-- All --</option>
+      <option value="scan" data-i18n="cmdFilterScan">Scan</option>
+      <option value="tracert" data-i18n="cmdFilterTracert">Tracert</option>
+      <option value="macro" data-i18n="cmdFilterMacro">Macro</option>
+      <option value="speed" data-i18n="cmdFilterSpeed">Speed</option>
     </select>
-    <button id="btnCmdFilter" class="btn95" style="height:20px;padding:0 8px;font-size:11px">Filter</button>
-    <button id="btnCmdClearLog" class="btn95" style="height:20px;padding:0 8px;font-size:11px;margin-left:4px">Clear</button>
+    <button id="btnCmdFilter" class="btn95" style="height:20px;padding:0 8px;font-size:11px" data-i18n="cmdBtnFilter">Filter</button>
+    <button id="btnCmdClearLog" class="btn95" style="height:20px;padding:0 8px;font-size:11px;margin-left:4px" data-i18n="cmdBtnClearLog">Clear</button>
   </div>
 
   <div style="padding:3px 4px 4px 4px; background:#000000;">
@@ -368,7 +368,7 @@
 ">
   <div class="titlebar" id="speedTitlebar" style="cursor:move">
     <span class="icon">📶</span>
-    <span class="title">Internet Speed Test</span>
+    <span class="title" data-i18n="speedWinTitle">Internet Speed Test</span>
     <div class="titlebar-btns">
       <button class="title-btn" id="btnSpeedClose" style="font-weight:900">✕</button>
     </div>
@@ -382,9 +382,9 @@
         border-right:1px solid #fff; border-bottom:1px solid #fff;
         padding:8px;
       ">
-        <div style="font-size:10px;color:#555;margin-bottom:4px">Download</div>
+        <div style="font-size:10px;color:#555;margin-bottom:4px" data-i18n="speedLabelDownload">Download</div>
         <div id="speedDownloadValue" style="font-size:22px;font-weight:bold;color:#000080">--</div>
-        <div style="font-size:10px;color:#555">Mbps</div>
+        <div style="font-size:10px;color:#555" data-i18n="speedMbps">Mbps</div>
       </div>
       <div style="
         background:#fff;
@@ -392,9 +392,9 @@
         border-right:1px solid #fff; border-bottom:1px solid #fff;
         padding:8px;
       ">
-        <div style="font-size:10px;color:#555;margin-bottom:4px">Ping</div>
+        <div style="font-size:10px;color:#555;margin-bottom:4px" data-i18n="speedLabelPing">Ping</div>
         <div id="speedPingValue" style="font-size:22px;font-weight:bold;color:#800000">--</div>
-        <div style="font-size:10px;color:#555">ms</div>
+        <div style="font-size:10px;color:#555" data-i18n="speedMs">ms</div>
       </div>
       <div style="
         background:#fff;
@@ -402,9 +402,9 @@
         border-right:1px solid #fff; border-bottom:1px solid #fff;
         padding:8px;
       ">
-        <div style="font-size:10px;color:#555;margin-bottom:4px">Upload</div>
+        <div style="font-size:10px;color:#555;margin-bottom:4px" data-i18n="speedLabelUpload">Upload</div>
         <div id="speedUploadValue" style="font-size:22px;font-weight:bold;color:#006400">--</div>
-        <div style="font-size:10px;color:#555">Mbps</div>
+        <div style="font-size:10px;color:#555" data-i18n="speedMbps">Mbps</div>
       </div>
     </div>
 
@@ -415,10 +415,10 @@
       border-right:1px solid #fff; border-bottom:1px solid #fff;
       padding:6px 8px;
       font-size:11px;
-    ">Kliknij Start, aby zmierzyc ping, download i upload.</div>
+    " data-i18n="speedReady">Kliknij Start, aby zmierzyc ping, download i upload.</div>
 
     <div style="display:flex;justify-content:flex-start;gap:6px">
-      <button class="btn95" id="btnSpeedStart">▶ Start test</button>
+      <button class="btn95" id="btnSpeedStart" data-i18n="speedBtnStart">▶ Start test</button>
     </div>
   </div>
 </div>
@@ -441,7 +441,7 @@
 ">
   <div class="titlebar" id="protoTitlebar" style="cursor:move">
     <span class="icon">🧩</span>
-    <span class="title">Prototyp Visual Programming</span>
+    <span class="title" data-i18n="protoWinTitle">Prototyp Visual Programming</span>
     <div class="titlebar-btns">
       <button class="title-btn" id="btnProtoToggle" title="Maximize">□</button>
       <button class="title-btn" id="btnProtoClose" style="font-weight:900">✕</button>
@@ -623,7 +623,7 @@
       border-top:1px solid #808080; border-left:1px solid #808080;
       border-right:1px solid #fff; border-bottom:1px solid #fff;
       padding:1px 8px; flex:1;
-    ">Status: Prototype mode (UI concept only). Link mode: click OUT anchor, then click IN anchor.</div>
+    " data-i18n="protoStatusText">Status: Prototype mode (UI concept only). Link mode: click OUT anchor, then click IN anchor.</div>
   </div>
 
   <div id="protoResizeHandle" style="
@@ -651,7 +651,7 @@
 ">
   <div class="titlebar" id="macroFolderTitlebar" style="cursor:move">
     <span class="icon">📁</span>
-    <span class="title">Makra</span>
+    <span class="title" data-i18n="macroWinTitle">Makra</span>
     <div class="titlebar-btns">
       <button class="title-btn" id="btnMacroFolderClose" style="font-weight:900">✕</button>
     </div>
@@ -681,7 +681,7 @@
         padding:4px 8px;
         cursor:default;
         white-space:nowrap;
-      ">🗑 Skasuj makro</div>
+      " data-i18n="macroCtxDelete">🗑 Skasuj makro</div>
     </div>
   </div>
 
@@ -711,7 +711,7 @@
 
       <!-- Left: search + list -->
       <div style="display:flex;flex-direction:column;gap:6px">
-        <input id="countrySearch" type="text" placeholder="Search country…"
+        <input id="countrySearch" type="text" placeholder="Search country…" data-i18n-placeholder="countrySearchPlaceholder"
           style="font-family:inherit;font-size:11px;
             border-top:1px solid #808080;border-left:1px solid #808080;
             border-right:1px solid #fff;border-bottom:1px solid #fff;
@@ -734,10 +734,10 @@
           font-family:'Courier New',monospace;font-size:10px;
           padding:4px 6px;
         " id="countryRanges"></div>
-        <div style="font-size:10px;color:#808080" id="countryRangeHint">Click a range to select it, then click Use.</div>
+        <div style="font-size:10px;color:#808080" id="countryRangeHint" data-i18n="countryRangeHint">Click a range to select it, then click Use.</div>
         <div style="display:flex;gap:4px">
-          <button class="btn95" id="btnCountryUse" style="font-size:10px;padding:2px 14px" disabled>➤ Use range</button>
-          <button class="btn95" id="btnCountryUseAll" style="font-size:10px;padding:2px 10px" disabled>➤ Use all</button>
+          <button class="btn95" id="btnCountryUse" style="font-size:10px;padding:2px 14px" disabled data-i18n="btnCountryUse">➤ Use range</button>
+          <button class="btn95" id="btnCountryUseAll" style="font-size:10px;padding:2px 10px" disabled data-i18n="btnCountryUseAll">➤ Use all</button>
         </div>
       </div>
     </div>
@@ -927,59 +927,59 @@
   <div class="dlg95" style="min-width:300px">
     <div class="dlg-title">
       <span>🎛</span>
-      <span style="flex:1">Customization – Toolbar</span>
+      <span data-i18n="customizeTitle" style="flex:1">Customization – Toolbar</span>
       <div class="title-btn" onclick="closeCustomizeDlg()">✕</div>
     </div>
     <div class="dlg-body">
       <div class="dlg-groupbox">
-        <span class="dlg-groupbox-legend">Toolbar buttons</span>
+        <span class="dlg-groupbox-legend" data-i18n="customizeToolbarLegend">Toolbar buttons</span>
         <div style="display:flex;flex-direction:column;gap:7px;margin-top:2px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="chkBtnGlobe" checked/>
-            <span>🌍 Globe (World Map)</span>
+            <span data-i18n="customizeGlobe">🌍 Globe (World Map)</span>
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="chkBtnConsole" checked/>
-            <span>⌨ Console</span>
+            <span data-i18n="customizeConsole">⌨ Console</span>
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="chkBtnMacro" checked/>
-            <span>📁 Macro</span>
+            <span data-i18n="customizeMacro">📁 Macro</span>
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="chkBtnSpeed" checked/>
-            <span>📶 Speed Test</span>
+            <span data-i18n="customizeSpeed">📶 Speed Test</span>
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="chkBtnProto" checked/>
-            <span>🧩 Prototype</span>
+            <span data-i18n="customizeProto">🧩 Prototype</span>
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="chkBtnTopology" checked/>
-            <span>🕸 Topology</span>
+            <span data-i18n="customizeTopology">🕸 Topology</span>
           </label>
         </div>
       </div>
       <div class="dlg-groupbox">
-        <span class="dlg-groupbox-legend">Skin</span>
+        <span class="dlg-groupbox-legend" data-i18n="customizeSkinLegend">Skin</span>
         <div class="dlg-radio-row" style="margin-top:2px">
           <label class="dlg-radio">
             <input type="radio" name="uiSkin" id="skinClassic" value="classic" checked/>
-            <span>Classic</span>
+            <span data-i18n="skinClassic">Classic</span>
           </label>
           <label class="dlg-radio">
             <input type="radio" name="uiSkin" id="skinGlass" value="glass"/>
-            <span>Glass</span>
+            <span data-i18n="skinGlass">Glass</span>
           </label>
           <label class="dlg-radio">
             <input type="radio" name="uiSkin" id="skinWorkbench" value="workbench"/>
-            <span>Workbench Night</span>
+            <span data-i18n="skinWorkbench">Workbench Night</span>
           </label>
         </div>
       </div>
     </div>
     <div class="dlg-footer">
-      <button class="btn95" onclick="closeCustomizeDlg()">Close</button>
+      <button class="btn95" onclick="closeCustomizeDlg()" data-i18n="dlgClose">Close</button>
     </div>
   </div>
 </div>
@@ -990,10 +990,10 @@
   <div class="ctx-item" id="ctxCopyPorts" data-i18n="ctxCopyPorts">Copy Ports</div>
   <div class="ctx-item" id="ctxHostname" data-i18n="ctxHostname">🧭 Hostname (reverse DNS)</div>
   <div class="ctx-sep"></div>
-  <div class="ctx-item" id="ctxDetailGeo">🌍 Geolokalizacja / ISP</div>
-  <div class="ctx-item" id="ctxDetailDevice">🖥 Identyfikacja urządzenia</div>
-  <div class="ctx-item" id="ctxDetailTitle">📄 Tytuł strony HTTP</div>
-  <div class="ctx-item" id="ctxDetailAccess">🔑 Dostęp / Snapshot</div>
+  <div class="ctx-item" id="ctxDetailGeo" data-i18n="ctxDetailGeo">🌍 Geolokalizacja / ISP</div>
+  <div class="ctx-item" id="ctxDetailDevice" data-i18n="ctxDetailDevice">🖥 Identyfikacja urządzenia</div>
+  <div class="ctx-item" id="ctxDetailTitle" data-i18n="ctxDetailTitle">📄 Tytuł strony HTTP</div>
+  <div class="ctx-item" id="ctxDetailAccess" data-i18n="ctxDetailAccess">🔑 Dostęp / Snapshot</div>
   <div class="ctx-sep"></div>
   <div class="ctx-item" id="ctxScanAllPorts" data-i18n="ctxScanAllPorts">Scan this IP (all ports)</div>
   <div class="ctx-sep"></div>
@@ -1110,14 +1110,14 @@
 <div id="globeWin">
   <div class="titlebar" id="globeTitlebar" style="cursor:move">
     <span>🌍</span>
-    <span style="flex:1">Network Map – IP Scan Results</span>
+    <span data-i18n="globeWinTitle" style="flex:1">Network Map – IP Scan Results</span>
     <div style="display:flex;gap:2px">
       <div class="title-btn" onclick="closeGlobe()">✕</div>
     </div>
   </div>
   <div class="globe-toolbar">
-    <button class="btn95 pressed" id="btnMapGlobe">Globe</button>
-    <button class="btn95" id="btnMapTopology">Topology</button>
+    <button class="btn95 pressed" id="btnMapGlobe" data-i18n="btnMapGlobe">Globe</button>
+    <button class="btn95" id="btnMapTopology" data-i18n="btnMapTopology">Topology</button>
     <button class="btn95" id="btnImportTrace" data-i18n="btnImportTrace">Import Trace</button>
     <button class="btn95" id="btnAutoTraceTopology" data-i18n="btnTraceAuto">Auto Trace</button>
     <button class="btn95" id="btnClearGraph" data-i18n="btnClearGraph">Clear Graph</button>
@@ -1133,9 +1133,9 @@
   </div>
   <canvas id="globeCanvas" width="680" height="440"></canvas>
   <div class="globe-statusbar">
-    <div class="globe-panel" id="globeStatusText">Drag to rotate · Click country to scan · Click dot to preview</div>
+    <div class="globe-panel" id="globeStatusText" data-i18n="globeStatusDefault">Drag to rotate · Click country to scan · Click dot to preview</div>
     <label style="display:flex;align-items:center;gap:4px;flex-shrink:0" id="globeAutoRotateWrap">
-      <input type="checkbox" id="globeAutoRotate" checked/> Auto-rotate
+      <input type="checkbox" id="globeAutoRotate" checked/> <span data-i18n="globeAutoRotate">Auto-rotate</span>
     </label>
   </div>
 </div>
@@ -1144,7 +1144,7 @@
 <div id="dlgScanCountry">
   <div class="titlebar">
     <span>❓</span>
-    <span style="flex:1">Scan Country</span>
+    <span data-i18n="scanCountryDlgTitle" style="flex:1">Scan Country</span>
     <div class="title-btn" onclick="closeScanCountryDlg()">✕</div>
   </div>
   <div style="padding:16px 18px 8px;display:flex;align-items:flex-start;gap:12px">
@@ -1156,8 +1156,8 @@
   </div>
   <div style="padding:0 18px 8px;font-size:10px;color:#808080" id="scDlgRanges"></div>
   <div style="border-top:1px solid #808080;padding:6px 8px;display:flex;gap:6px;justify-content:flex-end">
-    <button class="btn95" id="scDlgYes" style="min-width:60px">Yes</button>
-    <button class="btn95" onclick="closeScanCountryDlg()" style="min-width:60px">No</button>
+    <button class="btn95" id="scDlgYes" style="min-width:60px" data-i18n="dlgYes">Yes</button>
+    <button class="btn95" onclick="closeScanCountryDlg()" style="min-width:60px" data-i18n="dlgNo">No</button>
   </div>
 </div>
 
