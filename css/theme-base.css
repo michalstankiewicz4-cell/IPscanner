@@ -1173,10 +1173,10 @@ body.tool-window-mode #mainWin {
 .proto-chip-orange { background: linear-gradient(180deg,#fff8f0,#ffeedd); border: 1px solid #d4904a; }
 
 /* Proto node color variants (for canvas nodes) */
-.proto-node-blue   { background: linear-gradient(180deg,#f6fbff,#e7f2ff); border: 1px solid #7ea2d1; }
-.proto-node-green  { background: linear-gradient(180deg,#f4fff6,#e6f7ea); border: 1px solid #7fb186; }
-.proto-node-yellow { background: linear-gradient(180deg,#fff9ef,#fff2dd); border: 1px solid #c59c66; }
-.proto-node-purple { background: linear-gradient(180deg,#fcf7ff,#f2e9ff); border: 1px solid #9e7ec7; }
+.proto-node-blue   { background: linear-gradient(180deg,#f6fbff,#e6f2ff); border: 1px solid #9bb5da; }
+.proto-node-green  { background: linear-gradient(180deg,#f4fff6,#e6f7ea); border: 1px solid #99c8a1; }
+.proto-node-yellow { background: linear-gradient(180deg,#fff9ef,#fff2dd); border: 1px solid #d2b280; }
+.proto-node-purple { background: linear-gradient(180deg,#fcf7ff,#f2e9ff); border: 1px solid #b499d8; }
 .proto-node-orange { background: linear-gradient(180deg,#fff8f0,#ffeedd); border: 1px solid #d4904a; }
 
 /* Proto blueprint cards */
