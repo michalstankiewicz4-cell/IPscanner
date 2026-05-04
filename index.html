@@ -92,50 +92,35 @@
       <span class="groupbox-legend" data-i18n="scanSettings">Scan Settings</span>
 
       <!-- Preset selector -->
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-        <span style="white-space:nowrap" data-i18n="labelPreset">Preset:</span>
-        <select id="presetSelect" style="
-          font-family:inherit;font-size:11px;
-          border-top:1px solid #808080;border-left:1px solid #808080;
-          border-right:1px solid #fff;border-bottom:1px solid #fff;
-          background:#fff;padding:1px 4px;min-width:120px;
-        "></select>
-        <span style="font-size:10px;color:#808080" data-i18n="labelPorts2">Ports:</span>
-        <span id="activePorts" style="
-          font-family:'Courier New',monospace;font-size:10px;color:#000080;
-          border-top:1px solid #808080;border-left:1px solid #808080;
-          border-right:1px solid #fff;border-bottom:1px solid #fff;
-          background:#fff;padding:1px 6px;flex:1;min-width:80px;
-        "></span>
+      <div class="settings-row">
+        <span class="label-nowrap" data-i18n="labelPreset">Preset:</span>
+        <select id="presetSelect" class="select95" style="min-width:120px"></select>
+        <span class="label-muted-sm" data-i18n="labelPorts2">Ports:</span>
+        <span id="activePorts" class="active-ports-display"></span>
       </div>
 
       <!-- External IP -->
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
-        <button class="btn95" id="btnMyIp" data-i18n="btnMyIp" style="width:132px">🌐 My External IP</button>
-        <span id="myIpResult" style="font-family:inherit;font-size:11px;color:#000080;font-weight:bold"></span>
-        <button class="btn95" id="btnCopyMyIp" style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnCopy">📋 Copy</button>
-        <button class="btn95" id="btnUseMyIp"  style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">➤ Use</button>
+      <div class="settings-row-sm">
+        <button class="btn95 btn-wide-132" id="btnMyIp" data-i18n="btnMyIp">🌐 My External IP</button>
+        <span id="myIpResult" class="ip-result-label"></span>
+        <button class="btn95 btn-action-sm" id="btnCopyMyIp" style="display:none" data-i18n="btnCopy">📋 Copy</button>
+        <button class="btn95 btn-action-sm" id="btnUseMyIp"  style="display:none" data-i18n="btnUse">➤ Use</button>
       </div>
 
       <!-- Local IP -->
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
-        <button class="btn95" id="btnMyLocalIp" data-i18n="btnMyLocalIp" style="width:132px">🏠 My Local IP</button>
-        <span id="myLocalIpResult" style="font-family:inherit;font-size:11px;color:#000080;font-weight:bold"></span>
-        <button class="btn95" id="btnCopyMyLocalIp" style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnCopy">📋 Copy</button>
-        <button class="btn95" id="btnUseMyLocalIp"  style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">➤ Use</button>
+      <div class="settings-row-sm">
+        <button class="btn95 btn-wide-132" id="btnMyLocalIp" data-i18n="btnMyLocalIp">🏠 My Local IP</button>
+        <span id="myLocalIpResult" class="ip-result-label"></span>
+        <button class="btn95 btn-action-sm" id="btnCopyMyLocalIp" style="display:none" data-i18n="btnCopy">📋 Copy</button>
+        <button class="btn95 btn-action-sm" id="btnUseMyLocalIp"  style="display:none" data-i18n="btnUse">➤ Use</button>
       </div>
 
       <!-- Local Subnets -->
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;flex-wrap:wrap">
-        <button class="btn95" id="btnLocalSubnets" data-i18n="btnLocalSubnets" style="width:132px">🧭 Local Subnets</button>
-        <span id="localSubnetsResult" style="font-family:inherit;font-size:11px;color:#000080;font-weight:bold"></span>
-        <select id="localSubnetSelect" style="
-          display:none;font-family:inherit;font-size:11px;
-          border-top:1px solid #808080;border-left:1px solid #808080;
-          border-right:1px solid #fff;border-bottom:1px solid #fff;
-          background:#fff;padding:1px 4px;min-width:180px;
-        "></select>
-        <button class="btn95" id="btnUseLocalSubnet" style="display:none;padding:2px 8px;font-size:10px" data-i18n="btnUse">➤ Use</button>
+      <div class="settings-row-sm-wrap">
+        <button class="btn95 btn-wide-132" id="btnLocalSubnets" data-i18n="btnLocalSubnets">🧭 Local Subnets</button>
+        <span id="localSubnetsResult" class="ip-result-label"></span>
+        <select id="localSubnetSelect" class="select95" style="display:none;min-width:180px"></select>
+        <button class="btn95 btn-action-sm" id="btnUseLocalSubnet" style="display:none" data-i18n="btnUse">➤ Use</button>
       </div>
 
       <!-- IP Range -->
@@ -162,18 +147,10 @@
           <span class="oct-dot">.</span>
           <input class="oct" id="t3" maxlength="3" placeholder="254"/>
         </div>
-        <span style="margin-left:8px" data-i18n="threads">Threads:</span>
-        <input type="number" min="2" max="64" value="20" id="concNum"
-          style="width:38px;font-family:inherit;font-size:11px;
-                 border-top:1px solid #808080;border-left:1px solid #808080;
-                 border-right:1px solid #fff;border-bottom:1px solid #fff;
-                 padding:1px 3px;background:#fff"/>
-        <span style="margin-left:8px" data-i18n="delayMs">Delay (ms):</span>
-        <input type="number" min="0" max="5000" value="0" id="delayMs"
-          style="width:38px;font-family:inherit;font-size:11px;
-                 border-top:1px solid #808080;border-left:1px solid #808080;
-                 border-right:1px solid #fff;border-bottom:1px solid #fff;
-                 padding:1px 3px;background:#fff"/>
+        <span class="label-ml" data-i18n="threads">Threads:</span>
+        <input type="number" min="2" max="64" value="20" id="concNum" class="input-num-sm"/>
+        <span class="label-ml" data-i18n="delayMs">Delay (ms):</span>
+        <input type="number" min="0" max="5000" value="0" id="delayMs" class="input-num-sm"/>
       </div>
       <div class="port-hint" id="portHint"></div>
     </div>
@@ -215,8 +192,8 @@
       <div class="preview-titlebar">
         <span>🖥</span>
         <span class="preview-url-label" id="previewUrl">—</span>
-        <button class="btn95" id="btnPreviewOpen" style="padding:1px 8px;font-size:10px" data-i18n="previewOpen">↗ Open</button>
-        <button class="btn95" id="btnPreviewClose" style="padding:1px 8px;font-size:10px" data-i18n="previewClose">✕</button>
+        <button class="btn95 preview-btn-sm" id="btnPreviewOpen" data-i18n="previewOpen">↗ Open</button>
+        <button class="btn95 preview-btn-sm" id="btnPreviewClose" data-i18n="previewClose">✕</button>
       </div>
       <iframe id="previewFrame" class="preview-iframe"
         sandbox="allow-forms allow-scripts allow-popups"
@@ -231,7 +208,7 @@
     <!-- Status bar -->
     <div class="statusbar">
       <div class="status-panel" id="statusMsg" data-i18n="statusReady">Ready.</div>
-      <div class="status-panel" style="flex:0 0 auto;min-width:80px" id="statusCount">0 hosts</div>
+      <div class="status-panel status-count-panel" id="statusCount">0 hosts</div>
     </div>
 
   </div><!-- /win-body -->
@@ -499,63 +476,24 @@
 </div>
 
 <!-- Macro folder window -->
-<div id="macroFolderWin" style="
-  display:none;
-  position:fixed; top:120px; left:96px;
-  width:min(360px, 92vw);
-  background:#c0c0c0;
-  border-top:2px solid #ffffff; border-left:2px solid #ffffff;
-  border-right:2px solid #808080; border-bottom:2px solid #808080;
-  box-shadow:1px 1px 0 #000, inset 1px 1px 0 #dfdfdf;
-  font-family:'MS Sans Serif',Tahoma,sans-serif;
-  z-index:1030;
-">
-  <div class="titlebar" id="macroFolderTitlebar" style="cursor:move">
+<div id="macroFolderWin" class="macro-win-shell" style="display:none">
+  <div class="titlebar cursor-move" id="macroFolderTitlebar">
     <span class="icon">📁</span>
     <span class="title" data-i18n="macroWinTitle">Makra</span>
     <div class="titlebar-btns">
-      <button class="title-btn" id="btnMacroFolderClose" style="font-weight:900">✕</button>
+      <button class="title-btn title-btn-close" id="btnMacroFolderClose">✕</button>
     </div>
   </div>
 
-  <div style="padding:8px 8px 6px">
-    <div id="macroFolderList" style="
-      height:220px; overflow:auto; background:#fff;
-      border-top:1px solid #808080; border-left:1px solid #808080;
-      border-right:1px solid #fff; border-bottom:1px solid #fff;
-      padding:2px;
-      font-family:'MS Sans Serif',Tahoma,sans-serif; font-size:11px;
-    "></div>
-    <div id="macroCtxMenu" style="
-      display:none;
-      position:fixed;
-      min-width:140px;
-      background:#c0c0c0;
-      border-top:1px solid #fff; border-left:1px solid #fff;
-      border-right:1px solid #808080; border-bottom:1px solid #808080;
-      box-shadow:1px 1px 0 #000;
-      z-index:2000;
-      font-family:'MS Sans Serif',Tahoma,sans-serif; font-size:11px;
-      padding:2px;
-    ">
-      <div id="macroCtxDelete" style="
-        padding:4px 8px;
-        cursor:default;
-        white-space:nowrap;
-      " data-i18n="macroCtxDelete">🗑 Skasuj makro</div>
+  <div class="macro-folder-body">
+    <div id="macroFolderList" class="macro-folder-list"></div>
+    <div id="macroCtxMenu" class="macro-ctx-menu" style="display:none">
+      <div id="macroCtxDelete" class="macro-ctx-item" data-i18n="macroCtxDelete">🗑 Skasuj makro</div>
     </div>
   </div>
 
-  <div style="
-    border-top:1px solid #808080;
-    padding:2px 6px; font-size:10px; color:#000;
-    display:flex; gap:6px;
-  ">
-    <div id="macroFolderCount" style="
-      border-top:1px solid #808080; border-left:1px solid #808080;
-      border-right:1px solid #fff; border-bottom:1px solid #fff;
-      padding:1px 8px; flex:1;
-    ">0 plikow</div>
+  <div class="macro-folder-footer">
+    <div id="macroFolderCount" class="macro-folder-count">0 plikow</div>
   </div>
 </div>
 
