@@ -37,12 +37,12 @@
 <div class="retro-win" id="mainWin">
   <!-- Title bar -->
   <div class="titlebar">
-    <img class="icon" src="zebrus.png" width="14" height="14" style="vertical-align:middle;flex-shrink:0" alt=""/>
+    <img class="icon title-icon-img" src="zebrus.png" width="14" height="14" alt=""/>
     <span class="title" id="appTitle">NetRecon IP Auditor</span>
     <div class="titlebar-btns">
-      <div class="title-btn" id="mainMinBtn" style="cursor:pointer">_</div>
-      <div class="title-btn" id="mainMaxBtn" style="cursor:pointer">□</div>
-      <div class="title-btn" id="mainCloseBtn" style="font-weight:900;cursor:pointer">✕</div>
+      <div class="title-btn title-btn-clickable" id="mainMinBtn">_</div>
+      <div class="title-btn title-btn-clickable" id="mainMaxBtn">□</div>
+      <div class="title-btn title-btn-close" id="mainCloseBtn">✕</div>
     </div>
   </div>
 
@@ -83,8 +83,8 @@
       <button class="btn95" id="btnSpeedToolbar" title="Speed Test">📶 Speed</button>
       <button class="btn95" id="btnProtoToolbar" title="Prototype">🧩 Prototype</button>
       <button class="btn95" id="btnTopologyToolbar" title="Topology">🕸 Topology</button>
-      <div style="flex:1"></div>
-      <span id="statTime" style="font-size:10px;color:#000080;font-weight:bold">0.0s</span>
+      <div class="flex-spacer"></div>
+      <span id="statTime" class="status-time">0.0s</span>
     </div>
 
     <!-- Mode + IP Range -->
@@ -730,11 +730,11 @@
       <span data-i18n="dlgExternalIpTitle">External IP Range</span>
       <div class="title-btn" id="btnExtIpCancel">✕</div>
     </div>
-    <div class="dlg-body" style="padding:14px 16px 10px;display:flex;align-items:flex-start;gap:12px">
-      <span style="font-size:28px;line-height:1">🌐</span>
+    <div class="dlg-body dlg-icon-body dlg-alert-body">
+      <span class="dlg-icon">🌐</span>
       <div>
-        <div style="font-weight:bold;margin-bottom:6px" data-i18n="dlgExternalIpDetected">External IP scan detected</div>
-        <div id="dlgExternalIpMsg" style="font-size:11px;line-height:1.6"></div>
+        <div class="dlg-headline" data-i18n="dlgExternalIpDetected">External IP scan detected</div>
+        <div class="dlg-text-11 dlg-lh-16" id="dlgExternalIpMsg"></div>
       </div>
     </div>
     <div class="dlg-footer">
@@ -752,11 +752,11 @@
       <span data-i18n="dlgLargeRangeTitle">Large Scan Range</span>
       <div class="title-btn" id="btnLargeRangeCancel">✕</div>
     </div>
-    <div class="dlg-body" style="padding:14px 16px 10px;display:flex;align-items:flex-start;gap:12px">
-      <span style="font-size:28px;line-height:1">⚠️</span>
+    <div class="dlg-body dlg-icon-body dlg-alert-body">
+      <span class="dlg-icon">⚠️</span>
       <div>
-        <div style="font-weight:bold;margin-bottom:6px" data-i18n="dlgLargeRangeHead">Are you sure?</div>
-        <div id="dlgLargeRangeMsg" style="font-size:11px;line-height:1.5"></div>
+        <div class="dlg-headline" data-i18n="dlgLargeRangeHead">Are you sure?</div>
+        <div class="dlg-text-11 dlg-lh-15" id="dlgLargeRangeMsg"></div>
       </div>
     </div>
     <div class="dlg-footer">
@@ -774,39 +774,26 @@
       <span data-i18n="menuCountries">Country IP Library</span>
       <div class="title-btn" onclick="closeCountriesDlg()">✕</div>
     </div>
-    <div class="dlg-body" style="padding:10px 12px 6px;display:flex;align-items:flex-start;gap:12px">
-      <span style="font-size:28px;line-height:1.2;flex-shrink:0">🌍</span>
-      <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="dlg-body dlg-body-compact dlg-icon-body">
+      <span class="dlg-icon dlg-icon-versions">🌍</span>
+      <div class="dlg-content-fill dlg-grid-2">
 
       <!-- Left: search + list -->
-      <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="dlg-col-stack">
         <input id="countrySearch" type="text" placeholder="Search country…" data-i18n-placeholder="countrySearchPlaceholder"
-          style="font-family:inherit;font-size:11px;
-            border-top:1px solid #808080;border-left:1px solid #808080;
-            border-right:1px solid #fff;border-bottom:1px solid #fff;
-            padding:2px 6px;background:#fff;"/>
-        <div style="
-          border-top:1px solid #808080;border-left:1px solid #808080;
-          border-right:1px solid #fff;border-bottom:1px solid #fff;
-          background:#fff;height:280px;overflow-y:auto;
-        " id="countryListBox"></div>
+          class="dlg-input95 country-search-input"/>
+        <div class="dlg-sunken-box country-list-box" id="countryListBox"></div>
       </div>
 
       <!-- Right: ranges -->
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <div style="font-size:11px;font-weight:bold;color:#000080" id="countryName">—</div>
-        <div style="font-size:10px;color:#808080" id="countryMeta"></div>
-        <div style="
-          border-top:1px solid #808080;border-left:1px solid #808080;
-          border-right:1px solid #fff;border-bottom:1px solid #fff;
-          background:#fff;flex:1;overflow-y:auto;
-          font-family:'Courier New',monospace;font-size:10px;
-          padding:4px 6px;
-        " id="countryRanges"></div>
-        <div style="font-size:10px;color:#808080" id="countryRangeHint" data-i18n="countryRangeHint">Click a range to select it, then click Use.</div>
-        <div style="display:flex;gap:4px">
-          <button class="btn95" id="btnCountryUse" style="font-size:10px;padding:2px 14px" disabled data-i18n="btnCountryUse">➤ Use range</button>
-          <button class="btn95" id="btnCountryUseAll" style="font-size:10px;padding:2px 10px" disabled data-i18n="btnCountryUseAll">➤ Use all</button>
+      <div class="dlg-col-stack">
+        <div class="country-name" id="countryName">—</div>
+        <div class="country-meta" id="countryMeta"></div>
+        <div class="dlg-sunken-box country-ranges" id="countryRanges"></div>
+        <div class="country-hint" id="countryRangeHint" data-i18n="countryRangeHint">Click a range to select it, then click Use.</div>
+        <div class="dlg-actions-row">
+          <button class="btn95 dlg-btn-use-range" id="btnCountryUse" disabled data-i18n="btnCountryUse">➤ Use range</button>
+          <button class="btn95 dlg-btn-use-all" id="btnCountryUseAll" disabled data-i18n="btnCountryUseAll">➤ Use all</button>
         </div>
       </div>
       </div>
@@ -825,46 +812,32 @@
       <span data-i18n="menuPresets">Port Presets</span>
       <div class="title-btn" onclick="closePresetsDlg()">✕</div>
     </div>
-    <div class="dlg-body" style="padding:10px 12px 4px;display:flex;align-items:flex-start;gap:12px">
-      <span style="font-size:28px;line-height:1;flex-shrink:0">⚙</span>
-      <div style="flex:1">
+    <div class="dlg-body dlg-icon-body" style="padding:10px 12px 4px">
+      <span class="dlg-icon">⚙</span>
+      <div class="dlg-content-fill">
       <!-- Preset list -->
-      <div style="margin-bottom:8px">
-        <div style="
-          border-top:1px solid #808080;border-left:1px solid #808080;
-          border-right:1px solid #fff;border-bottom:1px solid #fff;
-          background:#fff;height:140px;overflow-y:auto;
-        " id="presetListBox"></div>
-        <div style="display:flex;gap:4px;margin-top:5px">
-          <button class="btn95" id="btnPresetAdd" data-i18n="presetAdd" style="font-size:10px;padding:2px 10px">+ Add</button>
-          <button class="btn95" id="btnPresetDel" data-i18n="presetDel" style="font-size:10px;padding:2px 10px">✕ Delete</button>
-          <button class="btn95" id="btnPresetUp"  style="font-size:10px;padding:2px 8px">▲</button>
-          <button class="btn95" id="btnPresetDown" style="font-size:10px;padding:2px 8px">▼</button>
+      <div class="dlg-presets-list-wrap">
+        <div class="dlg-sunken-box dlg-presets-list" id="presetListBox"></div>
+        <div class="dlg-inline-row dlg-inline-row-top">
+          <button class="btn95 dlg-btn-xs" id="btnPresetAdd" data-i18n="presetAdd">+ Add</button>
+          <button class="btn95 dlg-btn-xs" id="btnPresetDel" data-i18n="presetDel">✕ Delete</button>
+          <button class="btn95 dlg-btn-xxs" id="btnPresetUp">▲</button>
+          <button class="btn95 dlg-btn-xxs" id="btnPresetDown">▼</button>
         </div>
       </div>
       <!-- Edit selected preset -->
       <div class="dlg-groupbox" id="presetEditBox" style="opacity:0.4;pointer-events:none">
         <span class="dlg-groupbox-legend" data-i18n="presetEdit">Edit preset</span>
         <div class="dlg-row" style="margin-bottom:6px">
-          <label style="width:40px;flex-shrink:0" data-i18n="presetName">Name:</label>
-          <input id="presetNameInput" type="text" style="
-            flex:1;font-family:inherit;font-size:11px;
-            border-top:1px solid #808080;border-left:1px solid #808080;
-            border-right:1px solid #fff;border-bottom:1px solid #fff;
-            padding:1px 4px;background:#fff;
-          "/>
+          <label class="dlg-label-40" data-i18n="presetName">Name:</label>
+          <input class="dlg-input95 dlg-content-fill" id="presetNameInput" type="text"/>
         </div>
         <div class="dlg-row">
-          <label style="width:40px;flex-shrink:0" data-i18n="presetPorts">Ports:</label>
+          <label class="dlg-label-40" data-i18n="presetPorts">Ports:</label>
           <input id="presetPortsInput" type="text" placeholder="80, 8080, 443, 554"
-            style="
-              flex:1;font-family:'Courier New',monospace;font-size:11px;
-              border-top:1px solid #808080;border-left:1px solid #808080;
-              border-right:1px solid #fff;border-bottom:1px solid #fff;
-              padding:1px 4px;background:#fff;
-            "/>
+            class="dlg-input95 dlg-input95-courier dlg-content-fill"/>
         </div>
-        <div style="font-size:10px;color:#808080;margin-top:4px" data-i18n="presetHint">
+        <div class="dlg-note-muted" data-i18n="presetHint">
           Enter port numbers separated by commas, e.g.: 80, 443, 8080, 554
         </div>
         <button class="btn95" id="btnPresetSave" data-i18n="presetSave"
@@ -887,9 +860,9 @@
       <span data-i18n="dlgTitle">Options</span>
       <div class="title-btn" onclick="closeLangDlg()">✕</div>
     </div>
-    <div class="dlg-body" style="display:flex;align-items:flex-start;gap:12px">
-      <span style="font-size:28px;line-height:1;flex-shrink:0">⚙</span>
-      <div style="flex:1">
+    <div class="dlg-body dlg-icon-body">
+      <span class="dlg-icon">⚙</span>
+      <div class="dlg-content-fill">
       <div class="dlg-groupbox">
         <span class="dlg-groupbox-legend" data-i18n="dlgLang">Language:</span>
         <div class="dlg-radio-row">
@@ -920,28 +893,18 @@
       <span data-i18n="menuDefaults">Default Scan Values...</span>
       <div class="title-btn" onclick="closeDefaultsDlg()">✕</div>
     </div>
-    <div class="dlg-body" style="display:flex;align-items:flex-start;gap:12px">
-      <span style="font-size:28px;line-height:1;flex-shrink:0">⚙</span>
-      <div style="flex:1">
+    <div class="dlg-body dlg-icon-body">
+      <span class="dlg-icon">⚙</span>
+      <div class="dlg-content-fill">
       <div class="dlg-groupbox">
         <span class="dlg-groupbox-legend" data-i18n="dlgDefaults">Default Scan Values:</span>
         <div class="dlg-row" style="margin-bottom:6px">
-          <label style="width:98px;flex-shrink:0" data-i18n="dlgDefaultThreads">Threads:</label>
-          <input id="dlgDefaultThreads" type="number" min="2" max="64" value="20" style="
-            width:58px;font-family:inherit;font-size:11px;
-            border-top:1px solid #808080;border-left:1px solid #808080;
-            border-right:1px solid #fff;border-bottom:1px solid #fff;
-            padding:1px 3px;background:#fff;
-          "/>
+          <label class="dlg-label-98" data-i18n="dlgDefaultThreads">Threads:</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultThreads" type="number" min="2" max="64" value="20"/>
         </div>
         <div class="dlg-row" style="margin-bottom:0">
-          <label style="width:98px;flex-shrink:0" data-i18n="dlgDefaultDelay">Delay (ms):</label>
-          <input id="dlgDefaultDelay" type="number" min="0" max="5000" value="0" style="
-            width:58px;font-family:inherit;font-size:11px;
-            border-top:1px solid #808080;border-left:1px solid #808080;
-            border-right:1px solid #fff;border-bottom:1px solid #fff;
-            padding:1px 3px;background:#fff;
-          "/>
+          <label class="dlg-label-98" data-i18n="dlgDefaultDelay">Delay (ms):</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultDelay" type="number" min="0" max="5000" value="0"/>
         </div>
       </div>
       </div>
@@ -961,50 +924,45 @@
       <span data-i18n="dlgVersionsTitle">Versions</span>
       <div class="title-btn" onclick="closeVersionsDlg()">✕</div>
     </div>
-    <div class="dlg-body" style="max-height:58vh;overflow:auto;padding:10px 12px 8px;display:flex;align-items:flex-start;gap:12px">
-      <span style="font-size:28px;line-height:1.2;flex-shrink:0">📘</span>
-      <div style="flex:1;min-width:0;
-        background:#fff;
-        border-top:1px solid #808080;border-left:1px solid #808080;
-        border-right:1px solid #fff;border-bottom:1px solid #fff;
-        padding:8px 10px;font-size:11px;line-height:1.45;
-      ">
-        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.5.5</div>
-        <div style="margin-bottom:8px">
+    <div class="dlg-body dlg-icon-body dlg-versions-body">
+      <span class="dlg-icon dlg-icon-versions">📘</span>
+      <div class="dlg-sunken-box dlg-versions-card">
+        <div class="version-head">v1.5.5</div>
+        <div class="version-note">
           Rebranded app name to NetRecon IP Auditor, switched favicon/title icon to zebrus.png,
           unified dialog layout with left-side icons, improved Help/Versions readability in dark skin,
           and fixed Versions dialog behavior so content wraps to window size instead of forcing panel expansion while dragging.
         </div>
-        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.5.4</div>
-        <div style="margin-bottom:8px">
+        <div class="version-head">v1.5.4</div>
+        <div class="version-note">
           Code quality fixes: moved concurrency/delayMs declarations before use (prevented ReferenceError on scan start),
           removed duplicate event listeners in console window, fixed deleteMacroByIndex crashing on undefined function,
           removed unused local copies of isPrivateIpv4/extractIpv4, removed redundant Import Trace button from topology toolbar,
           extracted EN/PL language strings into separate js/lang-en.js and js/lang-pl.js files.
         </div>
-        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.5.3</div>
-        <div style="margin-bottom:8px">
+        <div class="version-head">v1.5.3</div>
+        <div class="version-note">
           Added 📎 Clippy assistant (Help → Assistant): rotating tips in EN/PL, draggable, persistent on/off state.
         </div>
-        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.5.2</div>
-        <div style="margin-bottom:8px">
+        <div class="version-head">v1.5.2</div>
+        <div class="version-note">
           Added Glass skin in Customization, enabled live skin switching on selection (without closing dialog),
           and improved menu text contrast for better readability.
         </div>
-        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.5</div>
-        <div style="margin-bottom:8px">
+        <div class="version-head">v1.5</div>
+        <div class="version-note">
           Refined results list UX: plus moved to dedicated column, hostname moved to context menu, and improved row expansion details by port.
         </div>
-        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.4p pre-alpha</div>
-        <div style="margin-bottom:8px">
+        <div class="version-head">v1.4p pre-alpha</div>
+        <div class="version-note">
           Moved Speed Test and Prototype from desktop icons to toolbar buttons. Added Show/Hide toggles for both in the Customization dialog.
         </div>
-        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.3p</div>
-        <div style="margin-bottom:8px">
+        <div class="version-head">v1.3p</div>
+        <div class="version-note">
           Added a visual programming prototype window with draggable nodes, anchor points, and click-click line linking mode.
         </div>
-        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.3</div>
-        <div style="margin-bottom:8px">
+        <div class="version-head">v1.3</div>
+        <div class="version-note">
           Added internet speed checking (download/upload) in a dedicated Speed Test window.
         </div>
       </div>
@@ -1205,11 +1163,11 @@
 
 <!-- Globe window -->
 <div id="globeWin">
-  <div class="titlebar" id="globeTitlebar" style="cursor:move">
+  <div class="titlebar cursor-move" id="globeTitlebar">
     <span>🌍</span>
-    <span data-i18n="globeWinTitle" style="flex:1">Network Map – IP Scan Results</span>
-    <div style="display:flex;gap:2px">
-      <div class="title-btn" onclick="closeGlobe()">✕</div>
+    <span class="title-fill" data-i18n="globeWinTitle">Network Map – IP Scan Results</span>
+    <div class="titlebar-btns">
+      <div class="title-btn title-btn-clickable" onclick="closeGlobe()">✕</div>
     </div>
   </div>
   <div class="globe-toolbar">
@@ -1241,20 +1199,20 @@
 <div id="dlgScanCountry">
   <div class="titlebar">
     <span>❓</span>
-    <span data-i18n="scanCountryDlgTitle" style="flex:1">Scan Country</span>
-    <div class="title-btn" onclick="closeScanCountryDlg()">✕</div>
+    <span class="title-fill" data-i18n="scanCountryDlgTitle">Scan Country</span>
+    <div class="title-btn title-btn-clickable" onclick="closeScanCountryDlg()">✕</div>
   </div>
-  <div style="padding:16px 18px 8px;display:flex;align-items:flex-start;gap:12px">
-    <div style="font-size:32px" id="scDlgIcon">🌍</div>
+  <div class="dlg-content-pad dlg-icon-body">
+    <div class="dlg-icon-32" id="scDlgIcon">🌍</div>
     <div>
-      <div style="font-weight:bold;margin-bottom:6px" id="scDlgTitle">Scan country?</div>
-      <div style="font-size:10px;color:#000080" id="scDlgInfo"></div>
+      <div class="dlg-headline" id="scDlgTitle">Scan country?</div>
+      <div class="trace-status" id="scDlgInfo"></div>
     </div>
   </div>
-  <div style="padding:0 18px 8px;font-size:10px;color:#808080" id="scDlgRanges"></div>
-  <div style="border-top:1px solid #808080;padding:6px 8px;display:flex;gap:6px;justify-content:flex-end">
-    <button class="btn95" id="scDlgYes" style="min-width:60px" data-i18n="dlgYes">Yes</button>
-    <button class="btn95" onclick="closeScanCountryDlg()" style="min-width:60px" data-i18n="dlgNo">No</button>
+  <div class="dlg-muted-block" id="scDlgRanges"></div>
+  <div class="dlg-footer-bar">
+    <button class="btn95 btn-min-60" id="scDlgYes" data-i18n="dlgYes">Yes</button>
+    <button class="btn95 btn-min-60" onclick="closeScanCountryDlg()" data-i18n="dlgNo">No</button>
   </div>
 </div>
 
@@ -1263,19 +1221,19 @@
   <div id="dlgTrace">
     <div class="titlebar">
       <span>🧭</span>
-      <span style="flex:1" id="traceDlgTitle" data-i18n="traceDlgTitle">Import traceroute</span>
+      <span class="trace-title" id="traceDlgTitle" data-i18n="traceDlgTitle">Import traceroute</span>
       <div class="title-btn" onclick="closeTraceDlg()">✕</div>
     </div>
-    <div style="padding:12px 14px 8px;display:flex;flex-direction:column;gap:8px">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <div class="trace-body">
+      <div class="trace-row">
         <label for="traceTargetIp" id="traceTargetLabel" data-i18n="traceTargetLabel">Target IP:</label>
-        <input id="traceTargetIp" type="text" style="width:160px;font-family:'Courier New',monospace;font-size:11px;border-top:1px solid #808080;border-left:1px solid #808080;border-right:1px solid #fff;border-bottom:1px solid #fff;padding:2px 4px;background:#fff" />
-        <span style="font-size:10px;color:#808080" id="traceHint" data-i18n="traceHint">Paste output from tracert or traceroute.</span>
+        <input class="dlg-input95 dlg-input95-courier trace-target-input" id="traceTargetIp" type="text" />
+        <span class="trace-hint" id="traceHint" data-i18n="traceHint">Paste output from tracert or traceroute.</span>
       </div>
       <textarea id="traceInput" spellcheck="false"></textarea>
-      <div id="traceParseStatus" style="font-size:10px;color:#000080;min-height:14px"></div>
+      <div class="trace-status" id="traceParseStatus"></div>
     </div>
-    <div style="border-top:1px solid #808080;padding:6px 8px;display:flex;gap:6px;justify-content:flex-end">
+    <div class="dlg-footer-bar">
       <button class="btn95" id="btnTraceAuto" data-i18n="btnTraceAuto">Auto Trace</button>
       <button class="btn95" id="btnTraceSave" data-i18n="btnTraceSave">Import</button>
       <button class="btn95" onclick="closeTraceDlg()" id="btnTraceCancel" data-i18n="dlgCancel">Cancel</button>
