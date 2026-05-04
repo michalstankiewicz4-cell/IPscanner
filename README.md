@@ -1,3 +1,4 @@
+I know there is a lot of small bugs and little mess, i work on that :)
 "tauri" - Tauri/Rust - the latest development version https://github.com/michalstankiewicz4-cell/IPscanner/tree/tauri
 
 "main" - JS, HTML - end of development https://github.com/michalstankiewicz4-cell/IPscanner
