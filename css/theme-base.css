@@ -1127,6 +1127,86 @@ body.tool-window-mode #mainWin {
 .preview-btn-sm    { padding: 1px 8px; font-size: 10px; }
 .status-count-panel { flex: 0 0 auto; min-width: 80px; }
 
+/* Proto node components */
+.proto-node {
+  border-radius: 6px;
+  box-shadow: 0 2px 3px rgba(0,0,0,.12);
+}
+.proto-node-head {
+  padding: 4px 6px;
+  font-size: 10px;
+  font-weight: bold;
+  border-bottom: 1px solid rgba(0,0,0,.12);
+  cursor: move;
+}
+.proto-node-body { padding: 6px; font-size: 11px; line-height: 1.35; }
+.proto-node-body-cond { padding-bottom: 18px; }
+.proto-canvas-title { margin-bottom: 8px; }
+.proto-links-svg { position: absolute; left: 0; top: 0; pointer-events: none; }
+
+/* Proto anchor dots */
+.proto-anchor {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 999px;
+  background: #2f4f7f;
+  border: 1px solid #fff;
+}
+.proto-anchor-in  { left: -6px;  top: 50%; transform: translateY(-50%); }
+.proto-anchor-out { right: -6px; top: 50%; transform: translateY(-50%); }
+.proto-anchor-true  { background: #3a8a3a; }
+.proto-anchor-false { background: #b04040; }
+.proto-anchor-label {
+  position: absolute; right: 13px; top: -4px;
+  font-size: 8px; font-weight: bold;
+  white-space: nowrap; pointer-events: none;
+}
+.proto-anchor-label-true  { color: #1a6a1a; }
+.proto-anchor-label-false { color: #8a1a1a; }
+
+/* Proto toolbox chip variants */
+.proto-chip        { padding: 5px 7px; border-radius: 4px; }
+.proto-chip-blue   { background: linear-gradient(180deg,#f6fbff,#e6f2ff); border: 1px solid #9bb5da; }
+.proto-chip-green  { background: linear-gradient(180deg,#f4fff6,#e6f7ea); border: 1px solid #99c8a1; }
+.proto-chip-yellow { background: linear-gradient(180deg,#fff9ef,#fff2dd); border: 1px solid #d2b280; }
+.proto-chip-purple { background: linear-gradient(180deg,#fcf7ff,#f2e9ff); border: 1px solid #b499d8; }
+.proto-chip-orange { background: linear-gradient(180deg,#fff8f0,#ffeedd); border: 1px solid #d4904a; }
+
+/* Proto node color variants (for canvas nodes) */
+.proto-node-blue   { background: linear-gradient(180deg,#f6fbff,#e7f2ff); border: 1px solid #7ea2d1; }
+.proto-node-green  { background: linear-gradient(180deg,#f4fff6,#e6f7ea); border: 1px solid #7fb186; }
+.proto-node-yellow { background: linear-gradient(180deg,#fff9ef,#fff2dd); border: 1px solid #c59c66; }
+.proto-node-purple { background: linear-gradient(180deg,#fcf7ff,#f2e9ff); border: 1px solid #9e7ec7; }
+.proto-node-orange { background: linear-gradient(180deg,#fff8f0,#ffeedd); border: 1px solid #d4904a; }
+
+/* Proto blueprint cards */
+.proto-bp-card        { border: 1px solid #b0b0b0; padding: 6px; }
+.proto-bp-card-orange { border: 1px solid #d4904a; padding: 6px; background: #fffaf5; }
+.proto-bp-title        { font-weight: bold; color: #000080; }
+.proto-bp-title-orange { font-weight: bold; color: #b05000; }
+.text-true  { color: #267026; font-weight: bold; }
+.text-false { color: #9a2020; font-weight: bold; }
+
+/* ── Globe toolbar extras ── */
+.map-live-label     { font-size: 10px; color: #000080; }
+.globe-rotate-label { display: flex; align-items: center; gap: 4px; flex-shrink: 0; font-size: 10px; margin-left: 6px; }
+
+/* ── Customize dialog ── */
+.dlg-customize-body { display: flex; align-items: flex-start; gap: 12px; }
+.dlg-icon-xl        { font-size: 28px; line-height: 1; flex-shrink: 0; }
+.dlg-check-col      { display: flex; flex-direction: column; gap: 7px; margin-top: 2px; }
+.dlg-check-label    { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+
+/* ── List view header columns ── */
+.lv-col-dot    { font-size: 9px; }
+.lv-col-center { text-align: center; }
+
+/* ── Preview ── */
+.preview-blocked-icon { font-size: 24px; }
+
+/* ── Presets dialog save btn ── */
+.btn-save-sm { margin-top: 6px; font-size: 10px; padding: 2px 12px; }
+
 .dlg-btn-use-all {
   font-size: 10px;
   padding: 2px 10px;

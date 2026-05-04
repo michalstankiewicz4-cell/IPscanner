@@ -177,9 +177,9 @@
     <!-- List view -->
     <div class="listview-wrap">
       <div class="listview-header">
-        <div class="lv-col" style="font-size:9px">●</div>
+        <div class="lv-col lv-col-dot">●</div>
         <div class="lv-col" data-i18n="colIp">IP Address</div>
-        <div class="lv-col" style="text-align:center">+</div>
+        <div class="lv-col lv-col-center">+</div>
         <div class="lv-col" data-i18n="colPing">Ping</div>
       </div>
       <div class="listview-body" id="listBody">
@@ -199,7 +199,7 @@
         sandbox="allow-forms allow-scripts allow-popups"
         title="Podgląd"></iframe>
       <div class="preview-blocked" id="previewBlocked">
-        <div style="font-size:24px">🔒</div>
+        <div class="preview-blocked-icon">🔒</div>
         <div>Urządzenie blokuje osadzanie (X-Frame-Options).</div>
         <a id="previewExtLink" href="#" target="_blank" rel="noopener">Otwórz w nowej karcie →</a>
       </div>
@@ -333,136 +333,136 @@
     <div class="dlg-sunken-box proto-panel proto-panel-scroll">
       <div class="proto-section-title">NODE TOOLBOX</div>
       <div class="proto-list-wrap">
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">🕒 Trigger: Time</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">🎯 Target: Single Host</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">🌐 Target: IP Range</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #99c8a1;border-radius:4px">🔎 Action: Scan Host</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #99c8a1;border-radius:4px">🧭 Action: Scan Subnet</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #d2b280;border-radius:4px">📄 Report: Summary</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #d2b280;border-radius:4px">💾 Save File: Desktop</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#fcf7ff,#f2e9ff);border:1px solid #b499d8;border-radius:4px">📨 Notify: Email/Webhook</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:4px">🔀 Condition: IF</div>
-        <div style="padding:5px 7px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:4px">⚠️ Filter: Port Match</div>
+        <div class="proto-chip proto-chip-blue">🕒 Trigger: Time</div>
+        <div class="proto-chip proto-chip-blue">🎯 Target: Single Host</div>
+        <div class="proto-chip proto-chip-blue">🌐 Target: IP Range</div>
+        <div class="proto-chip proto-chip-green">🔎 Action: Scan Host</div>
+        <div class="proto-chip proto-chip-green">🧭 Action: Scan Subnet</div>
+        <div class="proto-chip proto-chip-yellow">📄 Report: Summary</div>
+        <div class="proto-chip proto-chip-yellow">💾 Save File: Desktop</div>
+        <div class="proto-chip proto-chip-purple">📨 Notify: Email/Webhook</div>
+        <div class="proto-chip proto-chip-orange">🔀 Condition: IF</div>
+        <div class="proto-chip proto-chip-orange">⚠️ Filter: Port Match</div>
       </div>
       <div class="proto-note">
-        Condition nodes have two outputs: <span style="color:#267026;font-weight:bold">TRUE</span> and <span style="color:#9a2020;font-weight:bold">FALSE</span>.<br>
+        Condition nodes have two outputs: <span class="text-true">TRUE</span> and <span class="text-false">FALSE</span>.<br>
         Prototype only: drag/drop and execution engine are not implemented yet.
       </div>
     </div>
 
     <div class="dlg-sunken-box proto-panel proto-canvas-panel" id="protoCanvas">
-      <div class="proto-section-title" style="margin-bottom:8px">FLOW CANVAS (mockup)</div>
+      <div class="proto-section-title proto-canvas-title">FLOW CANVAS (mockup)</div>
 
-      <svg id="protoLinks" width="100%" height="100%" style="position:absolute;left:0;top:0;pointer-events:none"></svg>
+      <svg id="protoLinks" width="100%" height="100%" class="proto-links-svg"></svg>
 
-      <div class="proto-node" data-node="n1" style="position:absolute;left:18px;top:42px;width:176px;background:linear-gradient(180deg,#f6fbff,#e7f2ff);border:1px solid #7ea2d1;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
-        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TRIGGER</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">🕒 At 22:30 daily</div>
-        <div class="proto-anchor proto-anchor-out" data-node="n1" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      <div class="proto-node" data-node="n1" class="proto-node-blue" style="position:absolute;left:18px;top:42px;width:176px">
+        <div class="proto-node-head">TRIGGER</div>
+        <div class="proto-node-body">🕒 At 22:30 daily</div>
+        <div class="proto-anchor proto-anchor-out" data-node="n1"></div>
       </div>
 
-      <div class="proto-node" data-node="n2" style="position:absolute;left:242px;top:42px;width:188px;background:linear-gradient(180deg,#f6fbff,#e7f2ff);border:1px solid #7ea2d1;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
-        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TARGET</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">🎯 Host: 192.168.1.25</div>
-        <div class="proto-anchor proto-anchor-in" data-node="n2" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
-        <div class="proto-anchor proto-anchor-out" data-node="n2" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      <div class="proto-node" data-node="n2" class="proto-node-blue" style="position:absolute;left:242px;top:42px;width:188px">
+        <div class="proto-node-head">TARGET</div>
+        <div class="proto-node-body">🎯 Host: 192.168.1.25</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n2"></div>
+        <div class="proto-anchor proto-anchor-out" data-node="n2"></div>
       </div>
 
-      <div class="proto-node" data-node="n3" style="position:absolute;left:474px;top:42px;width:176px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #7fb186;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
-        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">ACTION</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">🔎 Deep scan preset</div>
-        <div class="proto-anchor proto-anchor-in" data-node="n3" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
-        <div class="proto-anchor proto-anchor-out" data-node="n3" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      <div class="proto-node" data-node="n3" class="proto-node-green" style="position:absolute;left:474px;top:42px;width:176px">
+        <div class="proto-node-head">ACTION</div>
+        <div class="proto-node-body">🔎 Deep scan preset</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n3"></div>
+        <div class="proto-anchor proto-anchor-out" data-node="n3"></div>
       </div>
 
-      <div class="proto-node" data-node="n4" style="position:absolute;left:698px;top:42px;width:196px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #c59c66;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
-        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">OUTPUT</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">💾 Save: Desktop/report_192.168.1.25.txt</div>
-        <div class="proto-anchor proto-anchor-in" data-node="n4" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      <div class="proto-node" data-node="n4" class="proto-node-yellow" style="position:absolute;left:698px;top:42px;width:196px">
+        <div class="proto-node-head">OUTPUT</div>
+        <div class="proto-node-body">💾 Save: Desktop/report_192.168.1.25.txt</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n4"></div>
       </div>
 
-      <div class="proto-node" data-node="n5" style="position:absolute;left:18px;top:210px;width:196px;background:linear-gradient(180deg,#f6fbff,#e7f2ff);border:1px solid #7ea2d1;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
-        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TRIGGER</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">🕒 At 01:00 every Sunday</div>
-        <div class="proto-anchor proto-anchor-out" data-node="n5" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      <div class="proto-node" data-node="n5" class="proto-node-blue" style="position:absolute;left:18px;top:210px;width:196px">
+        <div class="proto-node-head">TRIGGER</div>
+        <div class="proto-node-body">🕒 At 01:00 every Sunday</div>
+        <div class="proto-anchor proto-anchor-out" data-node="n5"></div>
       </div>
 
-      <div class="proto-node" data-node="n6" style="position:absolute;left:256px;top:210px;width:220px;background:linear-gradient(180deg,#f6fbff,#e7f2ff);border:1px solid #7ea2d1;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
-        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TARGET</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">🌐 Range: 10.0.0.1 - 10.0.0.254</div>
-        <div class="proto-anchor proto-anchor-in" data-node="n6" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
-        <div class="proto-anchor proto-anchor-out" data-node="n6" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      <div class="proto-node" data-node="n6" class="proto-node-blue" style="position:absolute;left:256px;top:210px;width:220px">
+        <div class="proto-node-head">TARGET</div>
+        <div class="proto-node-body">🌐 Range: 10.0.0.1 - 10.0.0.254</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n6"></div>
+        <div class="proto-anchor proto-anchor-out" data-node="n6"></div>
       </div>
 
-      <div class="proto-node" data-node="n7" style="position:absolute;left:522px;top:210px;width:172px;background:linear-gradient(180deg,#f4fff6,#e6f7ea);border:1px solid #7fb186;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
-        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">ACTION</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">📊 Topology + services</div>
-        <div class="proto-anchor proto-anchor-in" data-node="n7" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
-        <div class="proto-anchor proto-anchor-out" data-node="n7" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      <div class="proto-node" data-node="n7" class="proto-node-green" style="position:absolute;left:522px;top:210px;width:172px">
+        <div class="proto-node-head">ACTION</div>
+        <div class="proto-node-body">📊 Topology + services</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n7"></div>
+        <div class="proto-anchor proto-anchor-out" data-node="n7"></div>
       </div>
 
-      <div class="proto-node" data-node="n8" style="position:absolute;left:738px;top:210px;width:168px;background:linear-gradient(180deg,#fcf7ff,#f2e9ff);border:1px solid #9e7ec7;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
-        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">NOTIFY</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">📨 Send weekly summary</div>
-        <div class="proto-anchor proto-anchor-in" data-node="n8" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      <div class="proto-node" data-node="n8" class="proto-node-purple" style="position:absolute;left:738px;top:210px;width:168px">
+        <div class="proto-node-head">NOTIFY</div>
+        <div class="proto-node-body">📨 Send weekly summary</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n8"></div>
       </div>
 
       <!-- === IF condition example row === -->
-      <div class="proto-node" data-node="n9" style="position:absolute;left:18px;top:390px;width:214px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
-        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">TRIGGER</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">🕒 On scan complete</div>
-        <div class="proto-anchor proto-anchor-out" data-node="n9" style="position:absolute;right:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      <div class="proto-node" data-node="n9" class="proto-node-orange" style="position:absolute;left:18px;top:390px;width:214px">
+        <div class="proto-node-head">TRIGGER</div>
+        <div class="proto-node-body">🕒 On scan complete</div>
+        <div class="proto-anchor proto-anchor-out" data-node="n9"></div>
       </div>
 
-      <div class="proto-node" data-node="n10" style="position:absolute;left:278px;top:390px;width:214px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
-        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">CONDITION</div>
-        <div style="padding:6px 6px 18px;font-size:11px;line-height:1.35">🔀 IF open port 8554 found</div>
-        <div class="proto-anchor proto-anchor-in" data-node="n10" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      <div class="proto-node" data-node="n10" class="proto-node-orange" style="position:absolute;left:278px;top:390px;width:214px">
+        <div class="proto-node-head">CONDITION</div>
+        <div class="proto-node-body proto-node-body-cond">🔀 IF open port 8554 found</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n10"></div>
         <!-- TRUE output (upper right) -->
-        <div class="proto-anchor proto-anchor-out" data-node="n10" data-anchor="out-true" style="position:absolute;right:-6px;top:33%;width:10px;height:10px;border-radius:999px;background:#3a8a3a;border:1px solid #fff;transform:translateY(-50%)">
-          <span style="position:absolute;right:13px;top:-4px;font-size:8px;font-weight:bold;color:#1a6a1a;white-space:nowrap;pointer-events:none">TRUE</span>
+        <div class="proto-anchor proto-anchor-out proto-anchor-true" data-node="n10" data-anchor="out-true" style="top:33%">
+          <span class="proto-anchor-label proto-anchor-label-true">TRUE</span>
         </div>
         <!-- FALSE output (lower right) -->
-        <div class="proto-anchor proto-anchor-out" data-node="n10" data-anchor="out-false" style="position:absolute;right:-6px;top:67%;width:10px;height:10px;border-radius:999px;background:#b04040;border:1px solid #fff;transform:translateY(-50%)">
-          <span style="position:absolute;right:13px;top:-4px;font-size:8px;font-weight:bold;color:#8a1a1a;white-space:nowrap;pointer-events:none">FALSE</span>
+        <div class="proto-anchor proto-anchor-out proto-anchor-false" data-node="n10" data-anchor="out-false" style="top:67%">
+          <span class="proto-anchor-label proto-anchor-label-false">FALSE</span>
         </div>
       </div>
 
-      <div class="proto-node" data-node="n11" style="position:absolute;left:546px;top:345px;width:196px;background:linear-gradient(180deg,#fcf7ff,#f2e9ff);border:1px solid #9e7ec7;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
-        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">NOTIFY</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">📨 Alert: camera stream found!</div>
-        <div class="proto-anchor proto-anchor-in" data-node="n11" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      <div class="proto-node" data-node="n11" class="proto-node-purple" style="position:absolute;left:546px;top:345px;width:196px">
+        <div class="proto-node-head">NOTIFY</div>
+        <div class="proto-node-body">📨 Alert: camera stream found!</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n11"></div>
       </div>
 
-      <div class="proto-node" data-node="n12" style="position:absolute;left:546px;top:435px;width:196px;background:linear-gradient(180deg,#fff9ef,#fff2dd);border:1px solid #c59c66;border-radius:6px;box-shadow:0 2px 3px rgba(0,0,0,.12)">
-        <div class="proto-node-head" style="padding:4px 6px;font-size:10px;font-weight:bold;border-bottom:1px solid rgba(0,0,0,.12);cursor:move">OUTPUT</div>
-        <div style="padding:6px;font-size:11px;line-height:1.35">📄 Log: no camera, port closed</div>
-        <div class="proto-anchor proto-anchor-in" data-node="n12" style="position:absolute;left:-6px;top:50%;width:10px;height:10px;border-radius:999px;background:#2f4f7f;border:1px solid #fff;transform:translateY(-50%)"></div>
+      <div class="proto-node" data-node="n12" class="proto-node-yellow" style="position:absolute;left:546px;top:435px;width:196px">
+        <div class="proto-node-head">OUTPUT</div>
+        <div class="proto-node-body">📄 Log: no camera, port closed</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n12"></div>
       </div>
     </div>
 
     <div class="dlg-sunken-box proto-panel">
       <div class="proto-section-title">EXAMPLE BLUEPRINTS</div>
       <div class="proto-blueprints">
-        <div style="border:1px solid #b0b0b0;padding:6px">
-          <div style="font-weight:bold;color:#000080">1) Timed single PC scan</div>
+        <div class="proto-bp-card">
+          <div class="proto-bp-title">1) Timed single PC scan</div>
           <div>At 22:30 scan 192.168.1.25 and save a TXT report on Desktop.</div>
         </div>
-        <div style="border:1px solid #b0b0b0;padding:6px">
-          <div style="font-weight:bold;color:#000080">2) Nightly IP range audit</div>
+        <div class="proto-bp-card">
+          <div class="proto-bp-title">2) Nightly IP range audit</div>
           <div>Every night scan 192.168.0.1-192.168.0.254, include open ports and response time trend.</div>
         </div>
-        <div style="border:1px solid #b0b0b0;padding:6px">
-          <div style="font-weight:bold;color:#000080">3) Multi-site inventory sync</div>
+        <div class="proto-bp-card">
+          <div class="proto-bp-title">3) Multi-site inventory sync</div>
           <div>Scan three subnets, merge results, export CSV + JSON and generate a diff versus previous day.</div>
         </div>
-        <div style="border:1px solid #b0b0b0;padding:6px">
-          <div style="font-weight:bold;color:#000080">4) Incident response chain</div>
+        <div class="proto-bp-card">
+          <div class="proto-bp-title">4) Incident response chain</div>
           <div>If new host appears on secure VLAN, run deep scan, snapshot HTTP title/fingerprint, send webhook alert.</div>
         </div>
-        <div style="border:1px solid #d4904a;padding:6px;background:#fffaf5">
-          <div style="font-weight:bold;color:#b05000">5) IF condition: detect camera stream</div>
-          <div>After scan completes, <b>IF</b> port 8554 is open → <span style="color:#267026">TRUE path</span>: send instant alert. <span style="color:#9a2020">FALSE path</span>: write a "port closed" log entry.</div>
+        <div class="proto-bp-card-orange">
+          <div class="proto-bp-title-orange">5) IF condition: detect camera stream</div>
+          <div>After scan completes, <b>IF</b> port 8554 is open → <span class="text-true">TRUE path</span>: send instant alert. <span class="text-false">FALSE path</span>: write a "port closed" log entry.</div>
         </div>
       </div>
     </div>
@@ -616,8 +616,7 @@
         <div class="dlg-note-muted" data-i18n="presetHint">
           Enter port numbers separated by commas, e.g.: 80, 443, 8080, 554
         </div>
-        <button class="btn95" id="btnPresetSave" data-i18n="presetSave"
-          style="margin-top:6px;font-size:10px;padding:2px 12px">💾 Save</button>
+        <button class="btn95 btn-save-sm" id="btnPresetSave" data-i18n="presetSave">💾 Save</button>
       </div>
       </div>
     </div>
@@ -754,36 +753,36 @@
   <div class="dlg95" style="min-width:300px">
     <div class="dlg-title">
       <span>🎛</span>
-      <span data-i18n="customizeTitle" style="flex:1">Customization – Toolbar</span>
+      <span class="title-fill" data-i18n="customizeTitle">Customization – Toolbar</span>
       <div class="title-btn" onclick="closeCustomizeDlg()">✕</div>
     </div>
-    <div class="dlg-body" style="display:flex;align-items:flex-start;gap:12px">
-      <span style="font-size:28px;line-height:1;flex-shrink:0">🎛</span>
-      <div style="flex:1">
+    <div class="dlg-body dlg-customize-body">
+      <span class="dlg-icon-xl">🎛</span>
+      <div class="dlg-content-fill">
       <div class="dlg-groupbox">
         <span class="dlg-groupbox-legend" data-i18n="customizeToolbarLegend">Toolbar buttons</span>
-        <div style="display:flex;flex-direction:column;gap:7px;margin-top:2px">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <div class="dlg-check-col">
+          <label class="dlg-check-label">
             <input type="checkbox" id="chkBtnGlobe" checked/>
             <span data-i18n="customizeGlobe">🌍 Globe (World Map)</span>
           </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <label class="dlg-check-label">
             <input type="checkbox" id="chkBtnConsole" checked/>
             <span data-i18n="customizeConsole">⌨ Console</span>
           </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <label class="dlg-check-label">
             <input type="checkbox" id="chkBtnMacro" checked/>
             <span data-i18n="customizeMacro">📁 Macro</span>
           </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <label class="dlg-check-label">
             <input type="checkbox" id="chkBtnSpeed" checked/>
             <span data-i18n="customizeSpeed">📶 Speed Test</span>
           </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <label class="dlg-check-label">
             <input type="checkbox" id="chkBtnProto" checked/>
             <span data-i18n="customizeProto">🧩 Prototype</span>
           </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <label class="dlg-check-label">
             <input type="checkbox" id="chkBtnTopology" checked/>
             <span data-i18n="customizeTopology">🕸 Topology</span>
           </label>
@@ -791,7 +790,7 @@
       </div>
       <div class="dlg-groupbox">
         <span class="dlg-groupbox-legend" data-i18n="customizeSkinLegend">Skin</span>
-        <div class="dlg-radio-row" style="margin-top:2px">
+        <div class="dlg-radio-row">
           <label class="dlg-radio">
             <input type="radio" name="uiSkin" id="skinClassic" value="classic" checked/>
             <span data-i18n="skinClassic">Classic</span>
@@ -958,9 +957,9 @@
     <input class="toolbar-input" id="topoSubnetFilter" placeholder="Subnet" />
     <input class="toolbar-input" id="topoPingMax" type="number" min="0" step="1" placeholder="Max ms" />
     <button class="btn95" id="btnClearTopoFilters" data-i18n="btnClearTopoFilters">Clear Filters</button>
-    <div style="flex:1"></div>
-    <span style="font-size:10px;color:#000080" id="mapLiveLabel" data-i18n="mapLiveLabel">Live scan visualization</span>
-    <label style="display:flex;align-items:center;gap:4px;flex-shrink:0;font-size:10px;margin-left:6px" id="globeAutoRotateWrap">
+    <div class="flex-spacer"></div>
+    <span class="map-live-label" id="mapLiveLabel" data-i18n="mapLiveLabel">Live scan visualization</span>
+    <label class="globe-rotate-label" id="globeAutoRotateWrap">
       <input type="checkbox" id="globeAutoRotate" checked/> <span data-i18n="globeAutoRotate">Auto-rotate</span>
     </label>
   </div>
