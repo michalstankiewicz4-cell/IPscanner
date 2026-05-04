@@ -305,117 +305,57 @@
 </div>
 
 <!-- Speed test window -->
-<div id="speedWin" style="
-  display:none;
-  position:fixed; top:92px; left:180px;
-  width:min(360px, 94vw);
-  background:#c0c0c0;
-  border-top:2px solid #ffffff; border-left:2px solid #ffffff;
-  border-right:2px solid #808080; border-bottom:2px solid #808080;
-  box-shadow:1px 1px 0 #000, inset 1px 1px 0 #dfdfdf;
-  font-family:'MS Sans Serif',Tahoma,sans-serif;
-  z-index:1040;
-">
-  <div class="titlebar" id="speedTitlebar" style="cursor:move">
+<div class="tool-win-shell speed-win" id="speedWin">
+  <div class="titlebar cursor-move" id="speedTitlebar">
     <span class="icon">📶</span>
     <span class="title" data-i18n="speedWinTitle">Internet Speed Test</span>
     <div class="titlebar-btns">
-      <button class="title-btn" id="btnSpeedClose" style="font-weight:900">✕</button>
+      <button class="title-btn title-btn-close" id="btnSpeedClose">✕</button>
     </div>
   </div>
 
-  <div style="padding:10px 10px 8px;display:flex;flex-direction:column;gap:8px">
-    <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:8px">
-      <div style="
-        background:#fff;
-        border-top:1px solid #808080; border-left:1px solid #808080;
-        border-right:1px solid #fff; border-bottom:1px solid #fff;
-        padding:8px;
-      ">
-        <div style="font-size:10px;color:#555;margin-bottom:4px" data-i18n="speedLabelDownload">Download</div>
-        <div id="speedDownloadValue" style="font-size:22px;font-weight:bold;color:#000080">--</div>
-        <div style="font-size:10px;color:#555" data-i18n="speedMbps">Mbps</div>
+  <div class="speed-body">
+    <div class="speed-grid">
+      <div class="dlg-sunken-box speed-card">
+        <div class="speed-label" data-i18n="speedLabelDownload">Download</div>
+        <div class="speed-value speed-value-download" id="speedDownloadValue">--</div>
+        <div class="speed-unit" data-i18n="speedMbps">Mbps</div>
       </div>
-      <div style="
-        background:#fff;
-        border-top:1px solid #808080; border-left:1px solid #808080;
-        border-right:1px solid #fff; border-bottom:1px solid #fff;
-        padding:8px;
-      ">
-        <div style="font-size:10px;color:#555;margin-bottom:4px" data-i18n="speedLabelPing">Ping</div>
-        <div id="speedPingValue" style="font-size:22px;font-weight:bold;color:#800000">--</div>
-        <div style="font-size:10px;color:#555" data-i18n="speedMs">ms</div>
+      <div class="dlg-sunken-box speed-card">
+        <div class="speed-label" data-i18n="speedLabelPing">Ping</div>
+        <div class="speed-value speed-value-ping" id="speedPingValue">--</div>
+        <div class="speed-unit" data-i18n="speedMs">ms</div>
       </div>
-      <div style="
-        background:#fff;
-        border-top:1px solid #808080; border-left:1px solid #808080;
-        border-right:1px solid #fff; border-bottom:1px solid #fff;
-        padding:8px;
-      ">
-        <div style="font-size:10px;color:#555;margin-bottom:4px" data-i18n="speedLabelUpload">Upload</div>
-        <div id="speedUploadValue" style="font-size:22px;font-weight:bold;color:#006400">--</div>
-        <div style="font-size:10px;color:#555" data-i18n="speedMbps">Mbps</div>
+      <div class="dlg-sunken-box speed-card">
+        <div class="speed-label" data-i18n="speedLabelUpload">Upload</div>
+        <div class="speed-value speed-value-upload" id="speedUploadValue">--</div>
+        <div class="speed-unit" data-i18n="speedMbps">Mbps</div>
       </div>
     </div>
 
-    <div id="speedStatus" style="
-      min-height:18px;
-      background:#fff;
-      border-top:1px solid #808080; border-left:1px solid #808080;
-      border-right:1px solid #fff; border-bottom:1px solid #fff;
-      padding:6px 8px;
-      font-size:11px;
-    " data-i18n="speedReady">Kliknij Start, aby zmierzyc ping, download i upload.</div>
+    <div class="dlg-sunken-box speed-status" id="speedStatus" data-i18n="speedReady">Kliknij Start, aby zmierzyc ping, download i upload.</div>
 
-    <div style="display:flex;justify-content:flex-start;gap:6px">
+    <div class="speed-actions">
       <button class="btn95" id="btnSpeedStart" data-i18n="speedBtnStart">▶ Start test</button>
     </div>
   </div>
 </div>
 
 <!-- Visual programming prototype window -->
-<div id="protoWin" style="
-  display:none;
-  position:fixed; top:88px; left:220px;
-  width:min(920px, 97vw);
-  height:min(640px, 82vh);
-  background:#c0c0c0;
-  border-top:2px solid #ffffff; border-left:2px solid #ffffff;
-  border-right:2px solid #808080; border-bottom:2px solid #808080;
-  box-shadow:1px 1px 0 #000, inset 1px 1px 0 #dfdfdf;
-  font-family:'MS Sans Serif',Tahoma,sans-serif;
-  z-index:1045;
-  overflow:hidden;
-  min-width:760px;
-  min-height:500px;
-">
-  <div class="titlebar" id="protoTitlebar" style="cursor:move">
+<div class="tool-win-shell proto-win" id="protoWin">
+  <div class="titlebar cursor-move" id="protoTitlebar">
     <span class="icon">🧩</span>
     <span class="title" data-i18n="protoWinTitle">Prototyp Visual Programming</span>
     <div class="titlebar-btns">
       <button class="title-btn" id="btnProtoToggle" title="Maximize">□</button>
-      <button class="title-btn" id="btnProtoClose" style="font-weight:900">✕</button>
+      <button class="title-btn title-btn-close" id="btnProtoClose">✕</button>
     </div>
   </div>
 
-  <div id="protoLayout" style="
-    padding:8px;
-    display:grid;
-    grid-template-columns:200px 1fr 290px;
-    gap:8px;
-    align-items:stretch;
-    height:calc(100% - 42px);
-    box-sizing:border-box;
-  ">
-    <div style="
-      background:#fff;
-      border-top:1px solid #808080; border-left:1px solid #808080;
-      border-right:1px solid #fff; border-bottom:1px solid #fff;
-      padding:8px;
-      overflow:auto;
-    ">
-      <div style="font-size:10px;color:#666;margin-bottom:6px">NODE TOOLBOX</div>
-      <div style="display:flex;flex-direction:column;gap:6px;font-size:11px">
+  <div class="proto-layout" id="protoLayout">
+    <div class="dlg-sunken-box proto-panel proto-panel-scroll">
+      <div class="proto-section-title">NODE TOOLBOX</div>
+      <div class="proto-list-wrap">
         <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">🕒 Trigger: Time</div>
         <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">🎯 Target: Single Host</div>
         <div style="padding:5px 7px;background:linear-gradient(180deg,#f6fbff,#e6f2ff);border:1px solid #9bb5da;border-radius:4px">🌐 Target: IP Range</div>
@@ -427,22 +367,14 @@
         <div style="padding:5px 7px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:4px">🔀 Condition: IF</div>
         <div style="padding:5px 7px;background:linear-gradient(180deg,#fff8f0,#ffeedd);border:1px solid #d4904a;border-radius:4px">⚠️ Filter: Port Match</div>
       </div>
-      <div style="font-size:10px;color:#666;margin-top:8px">
+      <div class="proto-note">
         Condition nodes have two outputs: <span style="color:#267026;font-weight:bold">TRUE</span> and <span style="color:#9a2020;font-weight:bold">FALSE</span>.<br>
         Prototype only: drag/drop and execution engine are not implemented yet.
       </div>
     </div>
 
-    <div id="protoCanvas" style="
-      background:#fff;
-      border-top:1px solid #808080; border-left:1px solid #808080;
-      border-right:1px solid #fff; border-bottom:1px solid #fff;
-      padding:8px;
-      min-height:390px;
-      position:relative;
-      overflow:auto;
-    ">
-      <div style="font-size:10px;color:#666;margin-bottom:8px">FLOW CANVAS (mockup)</div>
+    <div class="dlg-sunken-box proto-panel proto-canvas-panel" id="protoCanvas">
+      <div class="proto-section-title" style="margin-bottom:8px">FLOW CANVAS (mockup)</div>
 
       <svg id="protoLinks" width="100%" height="100%" style="position:absolute;left:0;top:0;pointer-events:none"></svg>
 
@@ -532,14 +464,9 @@
       </div>
     </div>
 
-    <div style="
-      background:#fff;
-      border-top:1px solid #808080; border-left:1px solid #808080;
-      border-right:1px solid #fff; border-bottom:1px solid #fff;
-      padding:8px;
-    ">
-      <div style="font-size:10px;color:#666;margin-bottom:6px">EXAMPLE BLUEPRINTS</div>
-      <div style="display:flex;flex-direction:column;gap:8px;font-size:11px;line-height:1.35">
+    <div class="dlg-sunken-box proto-panel">
+      <div class="proto-section-title">EXAMPLE BLUEPRINTS</div>
+      <div class="proto-blueprints">
         <div style="border:1px solid #b0b0b0;padding:6px">
           <div style="font-weight:bold;color:#000080">1) Timed single PC scan</div>
           <div>At 22:30 scan 192.168.1.25 and save a TXT report on Desktop.</div>
@@ -564,27 +491,11 @@
     </div>
   </div>
 
-  <div style="
-    border-top:1px solid #808080;
-    padding:2px 6px; font-size:10px; color:#000;
-    display:flex; gap:6px;
-  ">
-    <div id="protoStatus" style="
-      border-top:1px solid #808080; border-left:1px solid #808080;
-      border-right:1px solid #fff; border-bottom:1px solid #fff;
-      padding:1px 8px; flex:1;
-    " data-i18n="protoStatusText">Status: Prototype mode (UI concept only). Link mode: click OUT anchor, then click IN anchor.</div>
+  <div class="proto-statusbar">
+    <div class="proto-statuspanel" id="protoStatus" data-i18n="protoStatusText">Status: Prototype mode (UI concept only). Link mode: click OUT anchor, then click IN anchor.</div>
   </div>
 
-  <div id="protoResizeHandle" style="
-    position:absolute;
-    width:12px;
-    height:12px;
-    right:2px;
-    bottom:2px;
-    cursor:nwse-resize;
-    background:linear-gradient(135deg, transparent 0 40%, #888 40% 55%, transparent 55% 70%, #888 70% 85%, transparent 85% 100%);
-  "></div>
+  <div class="proto-resize-handle" id="protoResizeHandle"></div>
 </div>
 
 <!-- Macro folder window -->

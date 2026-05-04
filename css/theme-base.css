@@ -572,6 +572,153 @@ html.tool-window-boot #mainWin {
   caret-color: transparent;
 }
 
+/* ── Speed + Proto windows ── */
+.speed-win {
+  top: 92px;
+  left: 180px;
+  width: min(360px, 94vw);
+  z-index: 1040;
+}
+
+.proto-win {
+  top: 88px;
+  left: 220px;
+  width: min(920px, 97vw);
+  height: min(640px, 82vh);
+  z-index: 1045;
+  overflow: hidden;
+  min-width: 760px;
+  min-height: 500px;
+}
+
+.speed-body {
+  padding: 10px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.speed-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.speed-card {
+  padding: 8px;
+}
+
+.speed-label {
+  font-size: 10px;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.speed-value {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.speed-value-download { color: #000080; }
+.speed-value-ping { color: #800000; }
+.speed-value-upload { color: #006400; }
+
+.speed-unit {
+  font-size: 10px;
+  color: #555;
+}
+
+.speed-status {
+  min-height: 18px;
+  padding: 6px 8px;
+  font-size: 11px;
+}
+
+.speed-actions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+.proto-layout {
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 200px 1fr 290px;
+  gap: 8px;
+  align-items: stretch;
+  height: calc(100% - 42px);
+  box-sizing: border-box;
+}
+
+.proto-panel {
+  padding: 8px;
+}
+
+.proto-panel-scroll {
+  overflow: auto;
+}
+
+.proto-canvas-panel {
+  min-height: 390px;
+  position: relative;
+  overflow: auto;
+}
+
+.proto-section-title {
+  font-size: 10px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.proto-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.proto-note {
+  font-size: 10px;
+  color: #666;
+  margin-top: 8px;
+}
+
+.proto-blueprints {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.proto-statusbar {
+  border-top: 1px solid #808080;
+  padding: 2px 6px;
+  font-size: 10px;
+  color: #000;
+  display: flex;
+  gap: 6px;
+}
+
+.proto-statuspanel {
+  border-top: 1px solid #808080;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+  padding: 1px 8px;
+  flex: 1;
+}
+
+.proto-resize-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  right: 2px;
+  bottom: 2px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 0 40%, #888 40% 55%, transparent 55% 70%, #888 70% 85%, transparent 85% 100%);
+}
+
 /* ── Detail panel (expandable under row) ── */
 .detail-row {
   display: none;
