@@ -4,6 +4,14 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>NetRecon IP Auditor</title>
+<script>
+(function () {
+  try {
+    var tool = new URLSearchParams((window.location.hash || '').replace(/^#/, '')).get('tool');
+    if (tool) document.documentElement.classList.add('tool-window-boot');
+  } catch (_) {}
+})();
+</script>
 <link rel="icon" type="image/png" href="zebrus.png"/>
 <link rel="stylesheet" href="css/theme-base.css"/>
 <link rel="stylesheet" href="css/theme-glass.css"/>
@@ -11,6 +19,20 @@
 <link rel="stylesheet" href="css/clippy.css"/>
 </head>
 <body>
+<script>
+(function () {
+  try {
+    var skin = localStorage.getItem('ui_skin');
+    if (skin === 'glass' || skin === 'workbench' || skin === 'classic') {
+      document.body.classList.add('skin-' + skin);
+    } else {
+      document.body.classList.add('skin-classic');
+    }
+  } catch (_) {
+    document.body.classList.add('skin-classic');
+  }
+})();
+</script>
 
 <div class="retro-win" id="mainWin">
   <!-- Title bar -->

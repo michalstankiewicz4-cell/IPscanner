@@ -1113,6 +1113,7 @@ function hideToolMenus(target) {
 function applyToolWindowMode() {
   if (!_toolMode) return;
   document.body.classList.add('tool-window-mode');
+  document.documentElement.classList.remove('tool-window-boot');
 
   const toolToWindow = {
     console: 'cmdWin',

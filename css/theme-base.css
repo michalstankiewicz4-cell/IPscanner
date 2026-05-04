@@ -12,6 +12,11 @@ body {
   font-size: 11px;
 }
 
+/* In dedicated tool windows, suppress main scanner shell before JS switches layout. */
+html.tool-window-boot #mainWin {
+  display: none !important;
+}
+
 /* ── Window frame ── */
 .retro-win {
   width: 100%;
