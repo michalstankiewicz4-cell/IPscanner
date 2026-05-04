@@ -158,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let ox = 0;
     let oy = 0;
     speedBar.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
       if (e.target.closest('.titlebar-btns')) return;
       const r = speedWin.getBoundingClientRect();
       dragging = true;

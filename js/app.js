@@ -5,12 +5,26 @@ function selectIcon(el) {
   img.style.filter = 'invert(1) sepia(1) saturate(5) hue-rotate(180deg)';
   setTimeout(()=>{ lbl.style.background='transparent'; img.style.filter=''; }, 1200);
 }
+
+const APP_NAME = 'NetRecon IP Auditor';
+const APP_VERSION = '1.5.5';
+
+function getAppDisplayName() {
+  return `${APP_NAME} v${APP_VERSION}`;
+}
+
+function applyAppVersionLabels() {
+  const appTitle = document.getElementById('appTitle');
+  if (appTitle) appTitle.textContent = getAppDisplayName();
+  document.title = getAppDisplayName();
+}
+
 function openNotepad() {
   document.getElementById('notepadWin').style.display = 'block';
   bringToFront(document.getElementById('notepadWin'));
   document.getElementById('notepadText').value =
 `================================================================
-  NetRecon IP Scanner 1.5.4
+  ${getAppDisplayName()}
   by Michał Stankiewicz
 ================================================================
 
@@ -178,6 +192,11 @@ function makeWindowDraggable(winEl, handleEl) {
 
     // Centered dialogs use transform translate; convert to explicit coords before dragging.
     winEl.style.transform = 'none';
+    if (winEl.classList?.contains('dlg95')) {
+      // Keep dialog width stable while dragging; content should wrap instead of resizing the panel.
+      winEl.style.width = rect.width + 'px';
+      winEl.style.maxWidth = '94vw';
+    }
     winEl.style.left = rect.left + 'px';
     winEl.style.top = rect.top + 'px';
 
@@ -297,8 +316,79 @@ function openMainWindow() {
   win.style.zIndex = '20';
 }
 
+const WINDOW_CONTEXT_BLOCK_SELECTOR = [
+  '.titlebar',
+  '.dlg-title',
+  '.titlebar-btns',
+  '.title-btn',
+  '.menubar',
+  '.menu-item',
+  '.menu-dropdown',
+  '.menu-dd-item',
+  '.menu-dd-sep',
+  '.enrich-popup',
+  '.enrich-popup-bar',
+].join(', ');
+
+const WINDOW_CONTEXT_ALLOW_SELECTOR = [
+  '#resultBody .result-row',      // PPM otwiera nasze własne menu kontekstowe
+  '#macroFolderList .macro-row',  // PPM otwiera menu akcji makra
+  'input',
+  'textarea',
+  'select',
+  '[contenteditable="true"]',
+].join(', ');
+
+const WINDOW_ROOT_SELECTOR = [
+  '.retro-win',
+  '.dlg95',
+  '#notepadWin',
+  '#cmdWin',
+  '#speedWin',
+  '#protoWin',
+  '#macroFolderWin',
+  '#globeWin',
+  '#dlgScanCountry',
+  '#dlgTrace',
+  '.enrich-popup',
+].join(', ');
+
+function shouldBlockWindowRightClick(target) {
+  if (!(target instanceof Element)) return false;
+  if (target.closest(WINDOW_CONTEXT_ALLOW_SELECTOR)) return false;
+  if (target.closest(WINDOW_CONTEXT_BLOCK_SELECTOR)) return true;
+
+  const root = target.closest(WINDOW_ROOT_SELECTOR);
+  if (!root) return false;
+
+  // Block everything inside window roots except editable form controls.
+  return !target.closest('input, textarea, select, option, [contenteditable="true"]');
+}
+
+function initWindowRightClickGuards() {
+  if (document.body.dataset.rightClickGuardBound === '1') return;
+  document.body.dataset.rightClickGuardBound = '1';
+
+  const blockRightClick = (e) => {
+    if (e.button !== 2) return;
+    if (!shouldBlockWindowRightClick(e.target)) return;
+    // preventDefault stops text-selection on PPM hold; no stopPropagation
+    // so bringToFront listeners still receive the pointerdown.
+    e.preventDefault();
+  };
+
+  document.addEventListener('pointerdown', blockRightClick, true);
+  document.addEventListener('mousedown', blockRightClick, true);
+  document.addEventListener('contextmenu', (e) => {
+    if (!shouldBlockWindowRightClick(e.target)) return;
+    e.preventDefault();
+  }, true);
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
+  applyAppVersionLabels();
+
   const closeBtn = document.getElementById('mainCloseBtn');
   if (closeBtn) closeBtn.addEventListener('click', closeMainWindow);
 
@@ -318,6 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  initWindowRightClickGuards();
   initAllDialogDragging();
   initWindowZStacking();
 });
@@ -846,6 +937,67 @@ function isIPv4(v) {
 function ipToNum(ip) { return ip.split('.').reduce((a,p)=>((a<<8)+ +p)>>>0,0); }
 function numToIp(n)  { return [24,16,8,0].map(s=>(n>>>s)&255).join('.'); }
 
+function isPrivateIp(num) {
+  // 10.0.0.0/8
+  if (num >= 0x0A000000 && num <= 0x0AFFFFFF) return true;
+  // 172.16.0.0/12
+  if (num >= 0xAC100000 && num <= 0xAC1FFFFF) return true;
+  // 192.168.0.0/16
+  if (num >= 0xC0A80000 && num <= 0xC0A8FFFF) return true;
+  // 127.0.0.0/8 loopback
+  if (num >= 0x7F000000 && num <= 0x7FFFFFFF) return true;
+  // 169.254.0.0/16 link-local
+  if (num >= 0xA9FE0000 && num <= 0xA9FEFFFF) return true;
+  return false;
+}
+
+function isNonPublicIpv4(ip) {
+  if (!isIPv4(ip)) return false;
+  return isPrivateIp(ipToNum(ip));
+}
+
+function showExternalIpConfirm(startIp, endIp) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('dlgExternalIpOverlay');
+    document.getElementById('dlgExternalIpMsg').innerHTML = t('dlgExternalIpMsg', startIp, endIp);
+    overlay.classList.add('open');
+    if (typeof bringToFront === 'function') bringToFront(overlay.querySelector('.dlg95'));
+    const cleanup = (result) => {
+      overlay.classList.remove('open');
+      document.getElementById('btnExtIpOk').removeEventListener('click', onOk);
+      document.getElementById('btnExtIpCancelBtn').removeEventListener('click', onCancel);
+      document.getElementById('btnExtIpCancel').removeEventListener('click', onCancel);
+      resolve(result);
+    };
+    const onOk     = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    document.getElementById('btnExtIpOk').addEventListener('click', onOk);
+    document.getElementById('btnExtIpCancelBtn').addEventListener('click', onCancel);
+    document.getElementById('btnExtIpCancel').addEventListener('click', onCancel);
+  });
+}
+
+function showLargeRangeConfirm(count) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('dlgLargeRangeOverlay');
+    const msg = document.getElementById('dlgLargeRangeMsg');
+    msg.textContent = t('dlgLargeRangeMsg', count.toLocaleString());
+    overlay.classList.add('open');
+    if (typeof bringToFront === 'function') bringToFront(overlay.querySelector('.dlg95'));
+    const cleanup = (result) => {
+      overlay.classList.remove('open');
+      document.getElementById('btnLargeRangeOk').removeEventListener('click', onOk);
+      document.getElementById('btnLargeRangeCancelBtn').removeEventListener('click', onCancel);
+      document.getElementById('btnLargeRangeCancel').removeEventListener('click', onCancel);
+      resolve(result);
+    };
+    const onOk     = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    document.getElementById('btnLargeRangeOk').addEventListener('click', onOk);
+    document.getElementById('btnLargeRangeCancelBtn').addEventListener('click', onCancel);
+    document.getElementById('btnLargeRangeCancel').addEventListener('click', onCancel);
+  });
+}
 function setStatus(text, type='') {
   statusMsg.textContent = text;
   statusMsg.className = 'status-panel'+(type?' '+type:'');
@@ -1123,11 +1275,7 @@ function tryImageLoad(url, ms=2000) {
 }
 
 function isPrivateIP(ip) {
-  const p = ip.split('.').map(Number);
-  return p[0]===10 ||
-    (p[0]===172 && p[1]>=16 && p[1]<=31) ||
-    (p[0]===192 && p[1]===168) ||
-    p[0]===127;
+  return isNonPublicIpv4(ip);
 }
 
 // ── Geolocation via ip-api.com ──
@@ -1516,6 +1664,7 @@ function showEnrichPopup(popupId, label, asyncFn) {
   // Draggable titlebar
   let drag = false, ox = 0, oy = 0;
   bar.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
     if (e.target.classList.contains('title-btn')) return;
     drag = true;
     const r = win.getBoundingClientRect();
@@ -1769,9 +1918,7 @@ async function detectLocalIP() {
 }
 
 function isPrivateIpv4(ip) {
-  return /^10\./.test(ip) ||
-         /^192\.168\./.test(ip) ||
-         /^172\.(1[6-9]|2[0-9]|3[01])\./.test(ip);
+  return isNonPublicIpv4(ip);
 }
 
 function extractIpv4(text) {
@@ -1956,6 +2103,18 @@ async function startScan() {
   if (!isIPv4(startIp)||!isIPv4(endIp)) { setStatus(t('errInvalidIp'),'err'); return; }
   const startNum=ipToNum(startIp), endNum=ipToNum(endIp);
   if (startNum>endNum) { setStatus(t('errIpRange'),'err'); return; }
+
+  // Confirm if range > 256
+  if (endNum - startNum + 1 > 256) {
+    const confirmed = await showLargeRangeConfirm(endNum - startNum + 1);
+    if (!confirmed) return;
+  }
+
+  // Warn if any part of the range is external (public)
+  if (!isPrivateIp(startNum) || !isPrivateIp(endNum)) {
+    const confirmed = await showExternalIpConfirm(startIp, endIp);
+    if (!confirmed) return;
+  }
 
   const selectedPorts = getActivePorts();
   if (!selectedPorts.length) { setStatus(t('errNoPorts'),'err'); return; }

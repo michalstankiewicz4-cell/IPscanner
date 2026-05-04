@@ -221,6 +221,7 @@ function initProtoCanvas() {
     let offsetY = 0;
 
     handle.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
       if (e.target.classList.contains('proto-anchor')) return;
       const nr = node.getBoundingClientRect();
       const cr = canvas.getBoundingClientRect();
@@ -276,6 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let ox = 0;
     let oy = 0;
     protoBar.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
       if (e.target.closest('.titlebar-btns')) return;
       const r = protoWin.getBoundingClientRect();
       dragging = true;
@@ -302,6 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let startY = 0;
 
     protoResizeHandle.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
       resizing = true;
       startW = protoWin.offsetWidth;
       startH = protoWin.offsetHeight;

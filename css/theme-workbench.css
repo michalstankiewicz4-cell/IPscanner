@@ -332,3 +332,17 @@ body.skin-workbench #macroFolderCount {
 body.skin-workbench #macroCtxDelete {
   color: #d7dee8 !important;
 }
+
+/* Versions dialog content uses inline light background in HTML; force dark readable panel in workbench skin. */
+body.skin-workbench #dlgVersionsOverlay .dlg-body > div {
+  background: #1f2530 !important;
+  color: #d7dee8 !important;
+  border-top: 1px solid #394354 !important;
+  border-left: 1px solid #394354 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+}
+
+body.skin-workbench #dlgVersionsOverlay .dlg-body > div > div[style*="font-weight:bold"] {
+  color: #8cc7ff !important;
+}

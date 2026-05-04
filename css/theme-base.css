@@ -551,10 +551,25 @@ body.tool-window-mode #mainWin {
   display:flex; align-items:center; gap:4px;
 }
 .dlg-title span { flex:1; }
+.dlg-title span:first-child { flex: 0 0 auto; }
 .dlg-body { padding: 14px 16px 8px; }
 .dlg-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
 .dlg-footer { display:flex; justify-content:flex-end; gap:6px; padding:6px 8px; border-top:1px solid #808080; }
 .dlg-footer button { min-width:64px; }
+
+/* Versions dialog: keep panel width stable and wrap text inside content box. */
+#dlgVersionsOverlay .dlg95 {
+  width: min(720px, 94vw);
+  max-width: 94vw;
+}
+
+#dlgVersionsOverlay .dlg-body > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+
 .dlg-groupbox {
   border:1px solid #808080;
   box-shadow: 1px 1px 0 #fff, inset 1px 1px 0 #808080;

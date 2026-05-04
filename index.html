@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>NetRecon IP Scanner</title>
+<title>NetRecon IP Auditor</title>
+<link rel="icon" type="image/png" href="zebrus.png"/>
 <link rel="stylesheet" href="css/theme-base.css"/>
 <link rel="stylesheet" href="css/theme-glass.css"/>
 <link rel="stylesheet" href="css/theme-workbench.css"/>
@@ -14,8 +15,8 @@
 <div class="retro-win" id="mainWin">
   <!-- Title bar -->
   <div class="titlebar">
-    <span class="icon">📡</span>
-    <span class="title">NetRecon IP Scanner 1.5.3</span>
+    <img class="icon" src="zebrus.png" width="14" height="14" style="vertical-align:middle;flex-shrink:0" alt=""/>
+    <span class="title" id="appTitle">NetRecon IP Auditor</span>
     <div class="titlebar-btns">
       <div class="title-btn" id="mainMinBtn" style="cursor:pointer">_</div>
       <div class="title-btn" id="mainMaxBtn" style="cursor:pointer">□</div>
@@ -277,7 +278,7 @@
       border-top:1px solid #808080; border-left:1px solid #808080;
       border-right:1px solid #fff; border-bottom:1px solid #fff;
       padding:1px 8px; flex:1;
-    " data-i18n="notepadStatus">NetRecon IP Scanner · Licencja: Free to use</div>
+    " data-i18n="notepadStatus">NetRecon IP Auditor · Licencja: Free to use</div>
   </div>
 </div>
 
@@ -699,6 +700,50 @@
 </div>
 
 
+<!-- External IP warning dialog -->
+<div class="dlg-overlay" id="dlgExternalIpOverlay">
+  <div class="dlg95" style="min-width:340px;max-width:440px">
+    <div class="dlg-title">
+      <span>🌐</span>
+      <span data-i18n="dlgExternalIpTitle">External IP Range</span>
+      <div class="title-btn" id="btnExtIpCancel">✕</div>
+    </div>
+    <div class="dlg-body" style="padding:14px 16px 10px;display:flex;align-items:flex-start;gap:12px">
+      <span style="font-size:28px;line-height:1">🌐</span>
+      <div>
+        <div style="font-weight:bold;margin-bottom:6px" data-i18n="dlgExternalIpDetected">External IP scan detected</div>
+        <div id="dlgExternalIpMsg" style="font-size:11px;line-height:1.6"></div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="btnExtIpOk" data-i18n="dlgExternalIpContinue">OK - Continue</button>
+      <button class="btn95" id="btnExtIpCancelBtn" data-i18n="dlgCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Large range confirmation dialog -->
+<div class="dlg-overlay" id="dlgLargeRangeOverlay">
+  <div class="dlg95" style="min-width:320px;max-width:420px">
+    <div class="dlg-title">
+      <span>⚠️</span>
+      <span data-i18n="dlgLargeRangeTitle">Large Scan Range</span>
+      <div class="title-btn" id="btnLargeRangeCancel">✕</div>
+    </div>
+    <div class="dlg-body" style="padding:14px 16px 10px;display:flex;align-items:flex-start;gap:12px">
+      <span style="font-size:28px;line-height:1">⚠️</span>
+      <div>
+        <div style="font-weight:bold;margin-bottom:6px" data-i18n="dlgLargeRangeHead">Are you sure?</div>
+        <div id="dlgLargeRangeMsg" style="font-size:11px;line-height:1.5"></div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="btnLargeRangeOk" data-i18n="dlgOk">OK</button>
+      <button class="btn95" id="btnLargeRangeCancelBtn" data-i18n="dlgCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Country IP Library dialog -->
 <div class="dlg-overlay" id="dlgCountriesOverlay">
   <div class="dlg95" style="min-width:500px;max-width:96vw">
@@ -707,7 +752,9 @@
       <span data-i18n="menuCountries">Country IP Library</span>
       <div class="title-btn" onclick="closeCountriesDlg()">✕</div>
     </div>
-    <div class="dlg-body" style="padding:10px 12px 6px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="dlg-body" style="padding:10px 12px 6px;display:flex;align-items:flex-start;gap:12px">
+      <span style="font-size:28px;line-height:1.2;flex-shrink:0">🌍</span>
+      <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px">
 
       <!-- Left: search + list -->
       <div style="display:flex;flex-direction:column;gap:6px">
@@ -740,6 +787,7 @@
           <button class="btn95" id="btnCountryUseAll" style="font-size:10px;padding:2px 10px" disabled data-i18n="btnCountryUseAll">➤ Use all</button>
         </div>
       </div>
+      </div>
     </div>
     <div class="dlg-footer">
       <button class="btn95" onclick="closeCountriesDlg()" data-i18n="dlgCancel">Cancel</button>
@@ -755,7 +803,9 @@
       <span data-i18n="menuPresets">Port Presets</span>
       <div class="title-btn" onclick="closePresetsDlg()">✕</div>
     </div>
-    <div class="dlg-body" style="padding:10px 12px 4px">
+    <div class="dlg-body" style="padding:10px 12px 4px;display:flex;align-items:flex-start;gap:12px">
+      <span style="font-size:28px;line-height:1;flex-shrink:0">⚙</span>
+      <div style="flex:1">
       <!-- Preset list -->
       <div style="margin-bottom:8px">
         <div style="
@@ -798,6 +848,7 @@
         <button class="btn95" id="btnPresetSave" data-i18n="presetSave"
           style="margin-top:6px;font-size:10px;padding:2px 12px">💾 Save</button>
       </div>
+      </div>
     </div>
     <div class="dlg-footer">
       <button class="btn95" id="dlgPresetsOk" data-i18n="dlgOk">OK</button>
@@ -814,7 +865,9 @@
       <span data-i18n="dlgTitle">Options</span>
       <div class="title-btn" onclick="closeLangDlg()">✕</div>
     </div>
-    <div class="dlg-body">
+    <div class="dlg-body" style="display:flex;align-items:flex-start;gap:12px">
+      <span style="font-size:28px;line-height:1;flex-shrink:0">⚙</span>
+      <div style="flex:1">
       <div class="dlg-groupbox">
         <span class="dlg-groupbox-legend" data-i18n="dlgLang">Language:</span>
         <div class="dlg-radio-row">
@@ -827,6 +880,7 @@
             <span data-i18n="dlgLangPl">Polski</span>
           </label>
         </div>
+      </div>
       </div>
     </div>
     <div class="dlg-footer">
@@ -844,7 +898,9 @@
       <span data-i18n="menuDefaults">Default Scan Values...</span>
       <div class="title-btn" onclick="closeDefaultsDlg()">✕</div>
     </div>
-    <div class="dlg-body">
+    <div class="dlg-body" style="display:flex;align-items:flex-start;gap:12px">
+      <span style="font-size:28px;line-height:1;flex-shrink:0">⚙</span>
+      <div style="flex:1">
       <div class="dlg-groupbox">
         <span class="dlg-groupbox-legend" data-i18n="dlgDefaults">Default Scan Values:</span>
         <div class="dlg-row" style="margin-bottom:6px">
@@ -866,6 +922,7 @@
           "/>
         </div>
       </div>
+      </div>
     </div>
     <div class="dlg-footer">
       <button class="btn95" id="dlgDefaultsOk" data-i18n="dlgOk">OK</button>
@@ -882,13 +939,20 @@
       <span data-i18n="dlgVersionsTitle">Versions</span>
       <div class="title-btn" onclick="closeVersionsDlg()">✕</div>
     </div>
-    <div class="dlg-body" style="max-height:58vh;overflow:auto;padding:10px 12px 8px">
-      <div style="
+    <div class="dlg-body" style="max-height:58vh;overflow:auto;padding:10px 12px 8px;display:flex;align-items:flex-start;gap:12px">
+      <span style="font-size:28px;line-height:1.2;flex-shrink:0">📘</span>
+      <div style="flex:1;min-width:0;
         background:#fff;
         border-top:1px solid #808080;border-left:1px solid #808080;
         border-right:1px solid #fff;border-bottom:1px solid #fff;
         padding:8px 10px;font-size:11px;line-height:1.45;
       ">
+        <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.5.5</div>
+        <div style="margin-bottom:8px">
+          Rebranded app name to NetRecon IP Auditor, switched favicon/title icon to zebrus.png,
+          unified dialog layout with left-side icons, improved Help/Versions readability in dark skin,
+          and fixed Versions dialog behavior so content wraps to window size instead of forcing panel expansion while dragging.
+        </div>
         <div style="font-weight:bold;color:#000080;margin-bottom:6px">v1.5.4</div>
         <div style="margin-bottom:8px">
           Code quality fixes: moved concurrency/delayMs declarations before use (prevented ReferenceError on scan start),
@@ -937,7 +1001,9 @@
       <span data-i18n="customizeTitle" style="flex:1">Customization – Toolbar</span>
       <div class="title-btn" onclick="closeCustomizeDlg()">✕</div>
     </div>
-    <div class="dlg-body">
+    <div class="dlg-body" style="display:flex;align-items:flex-start;gap:12px">
+      <span style="font-size:28px;line-height:1;flex-shrink:0">🎛</span>
+      <div style="flex:1">
       <div class="dlg-groupbox">
         <span class="dlg-groupbox-legend" data-i18n="customizeToolbarLegend">Toolbar buttons</span>
         <div style="display:flex;flex-direction:column;gap:7px;margin-top:2px">
@@ -984,6 +1050,7 @@
           </label>
         </div>
       </div>
+      </div>
     </div>
     <div class="dlg-footer">
       <button class="btn95" onclick="closeCustomizeDlg()" data-i18n="dlgClose">Close</button>
@@ -1020,6 +1087,7 @@
   border-right:2px solid #808080; border-bottom:2px solid #808080;
   box-shadow:2px 2px 4px rgba(0,0,0,.5);
   z-index:700;
+  overflow:hidden;
 }
 #globeCanvas { display:block; width:100%; background:#0a1628; cursor:grab; }
 #globeCanvas:active { cursor:grabbing; }
@@ -1061,7 +1129,7 @@
   padding:1px 8px; flex:1;
 }
 #globeTooltip {
-  position:fixed; display:none;
+  position:absolute; display:none;
   background:#000080; color:#fff;
   font-family:'MS Sans Serif',Tahoma,sans-serif;
   font-size:10px; padding:3px 8px;
@@ -1136,13 +1204,14 @@
     <button class="btn95" id="btnClearTopoFilters" data-i18n="btnClearTopoFilters">Clear Filters</button>
     <div style="flex:1"></div>
     <span style="font-size:10px;color:#000080" id="mapLiveLabel" data-i18n="mapLiveLabel">Live scan visualization</span>
-  </div>
-  <canvas id="globeCanvas" width="680" height="440"></canvas>
-  <div class="globe-statusbar">
-    <div class="globe-panel" id="globeStatusText" data-i18n="globeStatusDefault">Drag to rotate · Click country to scan · Click dot to preview</div>
-    <label style="display:flex;align-items:center;gap:4px;flex-shrink:0" id="globeAutoRotateWrap">
+    <label style="display:flex;align-items:center;gap:4px;flex-shrink:0;font-size:10px;margin-left:6px" id="globeAutoRotateWrap">
       <input type="checkbox" id="globeAutoRotate" checked/> <span data-i18n="globeAutoRotate">Auto-rotate</span>
     </label>
+  </div>
+  <canvas id="globeCanvas" width="680" height="440"></canvas>
+  <div id="globeTooltip"></div>
+  <div class="globe-statusbar">
+    <div class="globe-panel" id="globeStatusText" data-i18n="globeStatusDefault">Drag to rotate · Click country to scan · Click dot to preview</div>
   </div>
 </div>
 
@@ -1191,9 +1260,6 @@
     </div>
   </div>
 </div>
-
-<!-- Tooltip -->
-<div id="globeTooltip"></div>
 
 <!-- Clippy assistant -->
 <div id="clippy-container" class="clippy-hidden">

@@ -111,6 +111,7 @@ btnCmdClose.addEventListener('click', closeCmdConsole);
   let ox = 0, oy = 0, dragging = false;
   if (!cmdWin || !cmdTitlebar) return;
   cmdTitlebar.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
     if (e.target.closest('.titlebar-btns')) return;
     const r = cmdWin.getBoundingClientRect();
     dragging = true;

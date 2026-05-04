@@ -17,7 +17,9 @@ let globeMapDataReady = false;
 let autoRotateOn = true;
 let rafId = null;
 let isDragging = false, lastDragX = 0, lastDragY = 0;
+let wasDragged = false;
 let currentLambda = 20, currentPhi = -15; // rotation angles
+let globeZoom = 1.0; // scroll zoom multiplier
 let hoveredCountryName = null;
 let clickedDotIp = null;
 let mapMode = 'globe';
@@ -204,6 +206,11 @@ function openTopology() {
 }
 
 function closeGlobe() {
+  isDragging = false;
+  wasDragged = false;
+  const tooltip = document.getElementById('globeTooltip');
+  if (tooltip) tooltip.style.display = 'none';
+  hoveredCountryName = null;
   if (_toolMode === 'globe' || _toolMode === 'topology') {
     closeMainWindow();
     return;
@@ -339,7 +346,7 @@ function updateTopologyStatus(hosts, traceCount) {
 
 function getProjection() {
   return d3.geoOrthographic()
-    .scale(Math.min(globeWidth, globeHeight) * 0.46)
+    .scale(Math.min(globeWidth, globeHeight) * 0.46 * globeZoom)
     .translate([globeWidth/2, globeHeight/2])
     .rotate([currentLambda, currentPhi, 0])
     .clipAngle(90);
@@ -847,12 +854,37 @@ async function autoTraceRoute() {
 
 function setupGlobeEvents(canvas) {
   const tooltip = document.getElementById('globeTooltip');
+  const win = document.getElementById('globeWin');
 
+  function positionTooltip(clientX, clientY) {
+    const wr = win.getBoundingClientRect();
+    tooltip.style.left = (clientX - wr.left + 14) + 'px';
+    tooltip.style.top  = (clientY - wr.top  -  4) + 'px';
+  }
+
+  // Hit-test country against the actually rendered orthographic shape,
+  // so detection works only on the visible/front hemisphere.
+  function pickCountryAt(mx, my, proj) {
+    if (!globeCountries || !globeCtx) return null;
+    const hitPath = d3.geoPath(proj, globeCtx);
+    for (const f of globeCountries.features) {
+      globeCtx.beginPath();
+      hitPath(f);
+      if (globeCtx.isPointInPath(mx, my)) {
+        return ISO_NAMES[+f.id] || `ID:${f.id}`;
+      }
+    }
+    return null;
+  }
   // Drag rotation
+  let dragStartX = 0, dragStartY = 0;
   canvas.addEventListener('mousedown', e => {
     isDragging = true;
     lastDragX = e.clientX;
     lastDragY = e.clientY;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    wasDragged = false;
     canvas.style.cursor = 'grabbing';
   });
   window.addEventListener('mousemove', e => {
@@ -863,9 +895,26 @@ function setupGlobeEvents(canvas) {
       currentPhi     = Math.max(-90, Math.min(90, currentPhi - dy * 0.4));
       lastDragX = e.clientX;
       lastDragY = e.clientY;
+      if (Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY) > 4) wasDragged = true;
     } else {
-      // Hover: check country
+      // Skip hover logic when globe window is not visible
+      if (document.getElementById('globeWin').style.display === 'none') return;
       const rect = canvas.getBoundingClientRect();
+      const insideCanvas =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+
+      // Never keep tooltip active when cursor is outside globe canvas.
+      if (!insideCanvas) {
+        tooltip.style.display = 'none';
+        hoveredCountryName = null;
+        canvas.style.cursor = isDragging ? 'grabbing' : 'grab';
+        return;
+      }
+
+      // Hover: check country
       const mx = (e.clientX - rect.left) * (globeWidth  / rect.width);
       const my = (e.clientY - rect.top)  * (globeHeight / rect.height);
 
@@ -873,8 +922,7 @@ function setupGlobeEvents(canvas) {
         const target = topologyHitTargets.find(item => Math.hypot(mx - item.x, my - item.y) <= item.radius);
         if (target) {
           tooltip.style.display = 'block';
-          tooltip.style.left = e.clientX + 14 + 'px';
-          tooltip.style.top  = e.clientY - 4  + 'px';
+          positionTooltip(e.clientX, e.clientY);
           tooltip.textContent = target.type === 'host'
             ? `${target.data.ip} [${target.data.ports.join(', ')}]${target.data.ping ? ` · ${target.data.ping}ms` : ''}`
             : target.type === 'trace-hop'
@@ -889,19 +937,7 @@ function setupGlobeEvents(canvas) {
       }
 
       const proj = getProjection();
-      const path = d3.geoPath(proj);
-      let found = null;
-      if (globeCountries) {
-        globeCountries.features.forEach(f => {
-          if (path.bounds && path(f) && globeCtx) {
-            // Use geoContains
-          }
-          try {
-            const inverted = proj.invert([mx, my]);
-            if (inverted && d3.geoContains(f, inverted)) found = ISO_NAMES[+f.id] || `ID:${f.id}`;
-          } catch{}
-        });
-      }
+      const found = pickCountryAt(mx, my, proj);
       // Check IP dots
       let foundIp = null;
       Object.entries(ipGeoCoords).forEach(([ip, geo]) => {
@@ -911,16 +947,14 @@ function setupGlobeEvents(canvas) {
 
       if (foundIp) {
         tooltip.style.display = 'block';
-        tooltip.style.left = e.clientX + 14 + 'px';
-        tooltip.style.top  = e.clientY - 4  + 'px';
+        positionTooltip(e.clientX, e.clientY);
         const ports = foundHostsMap[foundIp]?.join(', ') || '';
         tooltip.textContent = `${foundIp}${ports ? ' ['+ports+']' : ''}`;
         canvas.style.cursor = 'pointer';
         hoveredCountryName = null;
       } else if (found) {
         tooltip.style.display = 'block';
-        tooltip.style.left = e.clientX + 14 + 'px';
-        tooltip.style.top  = e.clientY - 4  + 'px';
+        positionTooltip(e.clientX, e.clientY);
         const inDb = COUNTRY_DB.find(c=>c.name===found);
         tooltip.textContent = found + (inDb ? ' — click to scan' : '');
         canvas.style.cursor = 'pointer';
@@ -941,8 +975,18 @@ function setupGlobeEvents(canvas) {
     hoveredCountryName = null;
   });
 
+  // Scroll zoom (globe mode only)
+  canvas.addEventListener('wheel', e => {
+    if (mapMode !== 'globe') return;
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    globeZoom = Math.min(5.0, Math.max(0.3, globeZoom + delta));
+    drawCurrentMap();
+  }, { passive: false });
+
   // Click
   canvas.addEventListener('click', e => {
+    if (wasDragged) { wasDragged = false; return; }
     const rect = canvas.getBoundingClientRect();
     const mx = (e.clientX - rect.left) * (globeWidth  / rect.width);
     const my = (e.clientY - rect.top)  * (globeHeight / rect.height);
@@ -980,13 +1024,8 @@ function setupGlobeEvents(canvas) {
       return;
     }
 
-    // Check country
-    const inverted = proj.invert([mx, my]);
-    if (!inverted) return;
-    let clickedCountry = null;
-    globeCountries.features.forEach(f => {
-      try { if (d3.geoContains(f, inverted)) clickedCountry = ISO_NAMES[+f.id] || null; } catch{}
-    });
+    // Check country (visible/front hemisphere only)
+    const clickedCountry = pickCountryAt(mx, my, proj);
     if (clickedCountry) openScanCountryDlg(clickedCountry);
   });
 
@@ -1147,7 +1186,10 @@ document.getElementById('btnClearTopoFilters').addEventListener('click', () => {
   const win = document.getElementById('globeWin');
   const bar = document.getElementById('globeTitlebar');
   let ox=0, oy=0, dragging=false;
+  if (!win || !bar) return;
   bar.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    if (e.target.closest('.titlebar-btns, .title-btn, button')) return;
     dragging = true;
     const r = win.getBoundingClientRect();
     ox = e.clientX - r.left; oy = e.clientY - r.top;
@@ -1157,8 +1199,10 @@ document.getElementById('btnClearTopoFilters').addEventListener('click', () => {
   });
   window.addEventListener('mousemove', e => {
     if (!dragging) return;
-    win.style.left = (e.clientX - ox)+'px';
-    win.style.top  = (e.clientY - oy)+'px';
+    const maxLeft = Math.max(0, window.innerWidth  - win.offsetWidth);
+    const maxTop  = Math.max(0, window.innerHeight - 28);
+    win.style.left = Math.min(Math.max(0, e.clientX - ox), maxLeft) + 'px';
+    win.style.top  = Math.min(Math.max(0, e.clientY - oy), maxTop)  + 'px';
   });
   window.addEventListener('mouseup', () => { dragging = false; });
 })();

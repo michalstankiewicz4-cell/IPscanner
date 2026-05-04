@@ -136,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let ox = 0;
     let oy = 0;
     macroBar.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
       if (e.target.closest('.titlebar-btns')) return;
       const r = macroWin.getBoundingClientRect();
       dragging = true;
