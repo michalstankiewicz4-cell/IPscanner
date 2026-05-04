@@ -240,140 +240,67 @@
 
 
 <!-- Notepad window -->
-<div id="notepadWin" style="
-  display:none;
-  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-  width:min(480px,95vw);
-  background:#c0c0c0;
-  border-top:2px solid #ffffff; border-left:2px solid #ffffff;
-  border-right:2px solid #808080; border-bottom:2px solid #808080;
-  box-shadow:1px 1px 0 #000, inset 1px 1px 0 #dfdfdf;
-  font-family:'MS Sans Serif',Tahoma,sans-serif;
-  z-index:1000;
-">
+<div class="tool-win-shell notepad-win" id="notepadWin">
   <!-- Title bar -->
-  <div style="
-    background:linear-gradient(to right,#000080,#1084d0);
-    color:#fff; font-size:11px; font-weight:bold;
-    padding:3px 4px 3px 6px;
-    display:flex; align-items:center; gap:4px;
-  ">
+  <div class="titlebar">
     <span>📝</span>
-    <span data-i18n="notepadWinTitle" style="flex:1">Notatnik – O autorze</span>
-    <div style="display:flex;gap:2px">
-      <div class="title-btn" onclick="closeNotepad()">✕</div>
+    <span class="title-fill" data-i18n="notepadWinTitle">Notatnik – O autorze</span>
+    <div class="titlebar-btns">
+      <div class="title-btn title-btn-clickable" onclick="closeNotepad()">✕</div>
     </div>
   </div>
 
   <!-- Menu bar -->
-  <div style="
-    background:#c0c0c0; font-size:11px;
-    padding:2px 4px;
-    border-bottom:1px solid #808080;
-    display:flex; gap:2px;
-  ">
-    <span data-i18n="menuFile" style="padding:1px 6px;cursor:default" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Plik</span>
-    <span data-i18n="menuEdit" style="padding:1px 6px;cursor:default" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Edycja</span>
-    <span data-i18n="menuHelp" style="padding:1px 6px;cursor:default" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Pomoc</span>
+  <div class="win-menubar95 notepad-menubar">
+    <span class="notepad-menu-item" data-i18n="menuFile" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Plik</span>
+    <span class="notepad-menu-item" data-i18n="menuEdit" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Edycja</span>
+    <span class="notepad-menu-item" data-i18n="menuHelp" onmouseenter="this.style.background='#000080';this.style.color='#fff'" onmouseleave="this.style.background='';this.style.color=''">Pomoc</span>
   </div>
 
   <!-- Text area -->
-  <textarea id="notepadText" readonly style="
-    width:100%; height:320px;
-    font-family:'Courier New',monospace; font-size:12px;
-    background:#fff; color:#000;
-    border:none;
-    border-top:1px solid #808080; border-left:1px solid #808080;
-    border-right:1px solid #fff;  border-bottom:1px solid #fff;
-    padding:8px 10px;
-    resize:none; outline:none;
-    line-height:1.6;
-  "></textarea>
+  <textarea class="notepad-textarea" id="notepadText" readonly></textarea>
 
   <!-- Status bar -->
-  <div style="
-    border-top:1px solid #808080;
-    padding:2px 6px; font-size:10px; color:#000;
-    display:flex; gap:6px;
-  ">
-    <div style="
-      border-top:1px solid #808080; border-left:1px solid #808080;
-      border-right:1px solid #fff; border-bottom:1px solid #fff;
-      padding:1px 8px; flex:1;
-    " data-i18n="notepadStatus">NetRecon IP Auditor · Licencja: Free to use</div>
+  <div class="mini-statusbar">
+    <div class="mini-statuspanel" data-i18n="notepadStatus">NetRecon IP Auditor · Licencja: Free to use</div>
   </div>
 </div>
 
 <!-- Command console window -->
-<div id="cmdWin" style="
-  display:none;
-  position:fixed; top:72px; left:76px;
-  width:min(700px, 96vw);
-  background:#c0c0c0;
-  border-top:2px solid #ffffff; border-left:2px solid #ffffff;
-  border-right:2px solid #808080; border-bottom:2px solid #808080;
-  box-shadow:1px 1px 0 #000, inset 1px 1px 0 #dfdfdf;
-  font-family:'MS Sans Serif',Tahoma,sans-serif;
-  z-index:1050;
-">
-  <div class="titlebar" id="cmdTitlebar" style="cursor:move">
+<div class="tool-win-shell cmd-win" id="cmdWin">
+  <div class="titlebar cursor-move" id="cmdTitlebar">
     <span class="icon">🖥</span>
     <span class="title" data-i18n="cmdWinTitle">Console Log</span>
     <div class="titlebar-btns">
-      <button class="title-btn" id="btnCmdClose" title="Close" style="font-weight:900">✕</button>
+      <button class="title-btn title-btn-close" id="btnCmdClose" title="Close">✕</button>
     </div>
   </div>
 
   <!-- Menu bar -->
-  <div style="
-    background:#c0c0c0; font-size:11px;
-    padding:1px 2px; border-bottom:1px solid #808080;
-    display:flex; align-items:center; gap:0; position:relative;
-  ">
-    <div id="cmdMenuFile" style="padding:2px 8px;cursor:default;user-select:none;position:relative"><span data-i18n="cmdMenuFile">File</span>
-      <div id="cmdMenuFileDrop" style="
-        display:none; position:absolute; top:100%; left:0;
-        background:#c0c0c0;
-        border-top:1px solid #fff; border-left:1px solid #fff;
-        border-right:1px solid #808080; border-bottom:1px solid #808080;
-        box-shadow:2px 2px 0 #000; min-width:160px; z-index:10;
-      ">
-        <div id="btnCmdSaveLogs" style="padding:4px 24px 4px 28px;white-space:nowrap;cursor:default" data-i18n="cmdSaveLogs">💾 Save logs...</div>
+  <div class="win-menubar95 cmd-menubar">
+    <div class="cmd-menu-file" id="cmdMenuFile"><span data-i18n="cmdMenuFile">File</span>
+      <div class="cmd-file-drop" id="cmdMenuFileDrop">
+        <div class="cmd-file-action" id="btnCmdSaveLogs" data-i18n="cmdSaveLogs">💾 Save logs...</div>
       </div>
     </div>
   </div>
 
   <!-- Filter bar -->
-  <div style="
-    background:#c0c0c0; padding:3px 6px; border-bottom:1px solid #808080;
-    display:flex; align-items:center; gap:4px;
-  ">
-    <label style="font-size:11px;white-space:nowrap" data-i18n="cmdFilter">Filter:</label>
-    <select id="cmdFilterSelect" style="
-      font-family:'MS Sans Serif',Tahoma,sans-serif; font-size:11px;
-      border-top:1px solid #808080; border-left:1px solid #808080;
-      border-right:1px solid #fff; border-bottom:1px solid #fff;
-      background:#fff; padding:1px 2px; height:20px;
-    ">
+  <div class="cmd-filterbar">
+    <label class="cmd-filter-label" data-i18n="cmdFilter">Filter:</label>
+    <select class="cmd-filter-select" id="cmdFilterSelect">
       <option value="" data-i18n="cmdFilterAll">-- All --</option>
       <option value="scan" data-i18n="cmdFilterScan">Scan</option>
       <option value="tracert" data-i18n="cmdFilterTracert">Tracert</option>
       <option value="macro" data-i18n="cmdFilterMacro">Macro</option>
       <option value="speed" data-i18n="cmdFilterSpeed">Speed</option>
     </select>
-    <button id="btnCmdFilter" class="btn95" style="height:20px;padding:0 8px;font-size:11px" data-i18n="cmdBtnFilter">Filter</button>
-    <button id="btnCmdClearLog" class="btn95" style="height:20px;padding:0 8px;font-size:11px;margin-left:4px" data-i18n="cmdBtnClearLog">Clear</button>
+    <button class="btn95 cmd-bar-btn" id="btnCmdFilter" data-i18n="cmdBtnFilter">Filter</button>
+    <button class="btn95 cmd-bar-btn cmd-bar-btn-gap" id="btnCmdClearLog" data-i18n="cmdBtnClearLog">Clear</button>
   </div>
 
-  <div style="padding:3px 4px 4px 4px; background:#000000;">
-    <textarea id="cmdOutput" readonly style="
-      display:block; width:100%; height:320px;
-      font-family:'Lucida Console','Courier New',monospace; font-size:12px;
-      background:#000000; color:#c0c0c0;
-      border:none; outline:none; resize:none;
-      padding:6px; box-sizing:border-box;
-      line-height:1.55; caret-color:transparent;
-    "></textarea>
+  <div class="cmd-output-wrap">
+    <textarea class="cmd-output" id="cmdOutput" readonly></textarea>
   </div>
 </div>
 
