@@ -11,7 +11,7 @@ use std::sync::{
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
+use tauri::{AppHandle, Emitter, LogicalPosition, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
 use tokio::net::lookup_host;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
@@ -331,12 +331,6 @@ async fn open_clippy_window(app: AppHandle, lang: String) -> Result<(), String> 
     const CLIPPY_HEIGHT: f64 = 185.0;
     const CLIPPY_MARGIN: i32 = 20;
 
-    if let Some(win) = app.get_webview_window("clippy") {
-        let _ = win.show();
-        let _ = win.set_focus();
-        return Ok(());
-    }
-
     let mut pos_x = 40.0;
     let mut pos_y = 40.0;
     if let Some(main) = app.get_webview_window("main") {
@@ -346,6 +340,13 @@ async fn open_clippy_window(app: AppHandle, lang: String) -> Result<(), String> 
             pos_x = target_x.max(0) as f64;
             pos_y = target_y.max(0) as f64;
         }
+    }
+
+    if let Some(win) = app.get_webview_window("clippy") {
+        let _ = win.set_position(LogicalPosition::new(pos_x, pos_y));
+        let _ = win.show();
+        let _ = win.set_focus();
+        return Ok(());
     }
 
     let url = WebviewUrl::App(format!("clippy.html#lang={}", lang).into());
