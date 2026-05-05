@@ -1169,6 +1169,7 @@ let _sortDir = 1;    // 1 = asc, -1 = desc
 function sortListView(col) {
   if (_sortCol === col) _sortDir *= -1;
   else { _sortCol = col; _sortDir = 1; }
+  try { localStorage.setItem('netrecon_sort', JSON.stringify({ col: _sortCol, dir: _sortDir })); } catch {}
 
   // Update header indicators
   const ipEl   = document.getElementById('colSortIp');
@@ -1214,6 +1215,19 @@ function sortListView(col) {
 
 document.getElementById('colSortIp')?.addEventListener('click',   () => sortListView('ip'));
 document.getElementById('colSortPing')?.addEventListener('click', () => sortListView('ping'));
+
+// Restore saved sort state
+try {
+  const savedSort = JSON.parse(localStorage.getItem('netrecon_sort') || 'null');
+  if (savedSort && (savedSort.col === 'ip' || savedSort.col === 'ping')) {
+    _sortCol = savedSort.col;
+    _sortDir = savedSort.dir === -1 ? -1 : 1;
+    const ipEl   = document.getElementById('colSortIp');
+    const pingEl = document.getElementById('colSortPing');
+    if (ipEl)   ipEl.textContent   = 'IP Address' + (_sortCol === 'ip'   ? (_sortDir === 1 ? ' ▲' : ' ▼') : '');
+    if (pingEl) pingEl.textContent = 'Ping'        + (_sortCol === 'ping' ? (_sortDir === 1 ? ' ▲' : ' ▼') : '');
+  }
+} catch {}
 
 // ══════════════════════════════════════════════════
 //  EXTRA COLUMNS (Columns panel)
@@ -2083,6 +2097,8 @@ function restoreResults() {
 
 // ── Restore on load ──
 restoreResults();
+// Re-apply saved sort (pre-flip dir so sortListView flips it back to saved value)
+if (_sortCol) { _sortDir *= -1; sortListView(_sortCol); }
 
 // ══════════════════════════════════════════════════
 //  PREVIEW
