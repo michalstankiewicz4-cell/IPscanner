@@ -420,13 +420,32 @@ let lang = localStorage.getItem('netrecon_lang') || 'en';
 // Language strings loaded from js/lang-en.js and js/lang-pl.js
 const STRINGS = { en: window.LANG_EN, pl: window.LANG_PL };
 
+// ── Cross-window sync (lang + skin) via BroadcastChannel ──
+const _syncChannel = (typeof BroadcastChannel !== 'undefined')
+  ? new BroadcastChannel('netrecon-sync')
+  : null;
+
+if (_syncChannel) {
+  _syncChannel.onmessage = (e) => {
+    const { type, value } = e.data;
+    if (type === 'lang' && STRINGS[value]) {
+      lang = value;
+      applyLang(false);
+    }
+    if (type === 'skin') {
+      setBodySkinClass(value, false);
+      localStorage.setItem(UI_SKIN_KEY, value);
+    }
+  };
+}
+
 function t(key, ...args) {
   const s = STRINGS[lang];
   const v = s[key] ?? STRINGS['en'][key] ?? key;
   return typeof v === 'function' ? v(...args) : v;
 }
 
-function applyLang() {
+function applyLang(broadcast = true) {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.dataset.i18n;
     const v = t(key);
@@ -446,6 +465,8 @@ function applyLang() {
   if (typeof window.clippySetLang === 'function') window.clippySetLang(lang);
   // Persist
   localStorage.setItem('netrecon_lang', lang);
+  // Broadcast to other windows
+  if (broadcast && _syncChannel) _syncChannel.postMessage({ type: 'lang', value: lang });
 }
 
 function clampInt(v, min, max, fallback) {
@@ -585,9 +606,11 @@ function getSavedSkin() {
   return UI_SKINS.includes(savedSkin) ? savedSkin : 'classic';
 }
 
-function setBodySkinClass(skin) {
+function setBodySkinClass(skin, broadcast = true) {
   document.body.classList.remove('skin-classic', 'skin-glass', 'skin-workbench');
   document.body.classList.add(`skin-${skin}`);
+  // Broadcast to other windows
+  if (broadcast && _syncChannel) _syncChannel.postMessage({ type: 'skin', value: skin });
 }
 
 function applySkinCustomization() {
