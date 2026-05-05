@@ -56,7 +56,7 @@ let macroCtxIndex = -1;
 
 function closeMacroContextMenu() {
   const menu = document.getElementById('macroCtxMenu');
-  if (menu) menu.style.display = 'none';
+  if (menu) menu.classList.add('initially-hidden');
   macroCtxIndex = -1;
 }
 
@@ -64,7 +64,7 @@ function openMacroContextMenu(x, y, originalIndex) {
   const menu = document.getElementById('macroCtxMenu');
   if (!menu) return;
   macroCtxIndex = originalIndex;
-  menu.style.display = 'block';
+  menu.classList.remove('initially-hidden');
 
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('click', e => {
     if (!macroCtxMenu) return;
-    if (macroCtxMenu.style.display !== 'block') return;
+    if (macroCtxMenu.classList.contains('initially-hidden')) return;
     if (e.target && macroCtxMenu.contains(e.target)) return;
     closeMacroContextMenu();
   });

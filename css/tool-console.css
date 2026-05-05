@@ -99,6 +99,7 @@
   min-width: 160px;
   z-index: 10;
 }
+.cmd-file-drop.open { display: block; }
 
 .cmd-file-action {
   padding: 4px 24px 4px 28px;

@@ -70,13 +70,13 @@ function closeCmdConsole() {
 // File menu
 cmdMenuFile.addEventListener('click', e => {
   e.stopPropagation();
-  cmdMenuFileDrop.style.display = cmdMenuFileDrop.style.display === 'block' ? 'none' : 'block';
+  cmdMenuFileDrop.classList.toggle('open');
 });
-document.addEventListener('click', () => { cmdMenuFileDrop.style.display = 'none'; });
+document.addEventListener('click', () => { cmdMenuFileDrop.classList.remove('open'); });
 
 // Save logs
 btnCmdSaveLogs.addEventListener('click', () => {
-  cmdMenuFileDrop.style.display = 'none';
+  cmdMenuFileDrop.classList.remove('open');
   const content = _cmdLogBuffer.map(e => `[${e.stamp}] ${e.text}`).join('\r\n');
   const blob = new Blob([content], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);

@@ -596,7 +596,7 @@ function applyToolbarCustomization() {
   TOOLBAR_BTNS_CFG.forEach(({ id, key }) => {
     const hidden = localStorage.getItem(key) === '0';
     const btn = document.getElementById(id);
-    if (btn) btn.style.display = hidden ? 'none' : '';
+    if (btn) btn.classList.toggle('initially-hidden', hidden);
   });
 }
 

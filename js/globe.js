@@ -1141,7 +1141,7 @@ document.getElementById('btnClearTopoFilters').addEventListener('click', () => {
   const stopDragging = () => {
     dragging = false;
     activePointerId = null;
-    document.body.style.cursor = '';
+    document.body.classList.remove('dragging');
   };
 
   bar.addEventListener('pointerdown', e => {
@@ -1157,7 +1157,7 @@ document.getElementById('btnClearTopoFilters').addEventListener('click', () => {
     win.style.transform = 'none';
     win.style.left = r.left + 'px';
     win.style.top = r.top + 'px';
-    document.body.style.cursor = 'move';
+    document.body.classList.add('dragging');
     bar.setPointerCapture?.(e.pointerId);
     e.preventDefault();
   });
