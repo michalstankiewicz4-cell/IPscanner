@@ -268,7 +268,8 @@ body.skin-workbench #cmdWin > div:last-child {
 }
 
 /* Globe/Topology windows */
-body.skin-workbench #globeWin {
+body.skin-workbench #globeWin,
+body.skin-workbench #topoWin {
   background: #252b36 !important;
   border-top: 1px solid #3a4353 !important;
   border-left: 1px solid #3a4353 !important;

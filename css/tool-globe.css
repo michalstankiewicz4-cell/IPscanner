@@ -12,6 +12,21 @@
 }
 #globeCanvas { display: block; width: 100%; background: #0a1628; cursor: grab; }
 #globeCanvas:active { cursor: grabbing; }
+
+/* ── Topology window ── */
+#topoWin {
+  display: none; position: fixed;
+  top: 40px; left: 50%; transform: translateX(-50%);
+  width: min(1060px, 96vw);
+  background: #c0c0c0;
+  border-top: 2px solid #fff; border-left: 2px solid #fff;
+  border-right: 2px solid #808080; border-bottom: 2px solid #808080;
+  box-shadow: 2px 2px 4px rgba(0,0,0,.5);
+  z-index: 700;
+  overflow: hidden;
+}
+#topoCanvas { display: block; width: 100%; background: #faf7ef; cursor: default; }
+
 .globe-statusbar {
   border-top: 1px solid #808080; padding: 3px 8px;
   font-size: 10px; color: #000;

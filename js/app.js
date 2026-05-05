@@ -146,6 +146,7 @@ function initWindowZStacking() {
     'protoWin',
     'macroFolderWin',
     'globeWin',
+    'topoWin',
     'dlgScanCountry',
     'dlgTrace'
   ];
@@ -347,6 +348,7 @@ const WINDOW_ROOT_SELECTOR = [
   '#protoWin',
   '#macroFolderWin',
   '#globeWin',
+  '#topoWin',
   '#dlgScanCountry',
   '#dlgTrace',
   '.enrich-popup',
@@ -1119,7 +1121,7 @@ function applyToolWindowMode() {
     speed: 'speedWin',
     proto: 'protoWin',
     globe: 'globeWin',
-    topology: 'globeWin',
+    topology: 'topoWin',
   };
 
   const targetId = toolToWindow[_toolMode];
@@ -1141,13 +1143,12 @@ function applyToolWindowMode() {
     initProtoCanvas();
     if (typeof protoRenderLinks === 'function') protoRenderLinks();
   }
-  if ((_toolMode === 'globe' || _toolMode === 'topology') && typeof initGlobe === 'function') {
+  if (_toolMode === 'globe' && typeof initGlobe === 'function') {
     if (!globeReady) initGlobe();
-    if (_toolMode === 'topology' && typeof setMapMode === 'function') setMapMode('topology');
-    if (_toolMode === 'globe' && typeof setMapMode === 'function') setMapMode('globe');
-    if (typeof syncMapModeUI === 'function') syncMapModeUI();
-    if (typeof drawCurrentMap === 'function') drawCurrentMap();
-    if (_toolMode === 'globe' && typeof startRotation === 'function') startRotation();
+    else { if (typeof drawGlobe === 'function') drawGlobe(); if (typeof startRotation === 'function') startRotation(); }
+  }
+  if (_toolMode === 'topology' && typeof initTopo === 'function') {
+    initTopo();
   }
 }
 

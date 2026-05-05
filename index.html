@@ -849,8 +849,28 @@
     </div>
   </div>
   <div class="globe-toolbar">
-    <button class="btn95 pressed" id="btnMapGlobe" data-i18n="btnMapGlobe">Globe</button>
-    <button class="btn95" id="btnMapTopology" data-i18n="btnMapTopology">Topology</button>
+    <div class="flex-spacer"></div>
+    <label class="globe-rotate-label" id="globeAutoRotateWrap">
+      <input type="checkbox" id="globeAutoRotate" checked/> <span data-i18n="globeAutoRotate">Auto-rotate</span>
+    </label>
+  </div>
+  <canvas id="globeCanvas" width="680" height="440"></canvas>
+  <div id="globeTooltip"></div>
+  <div class="globe-statusbar">
+    <div class="globe-panel" id="globeStatusText" data-i18n="globeStatusDefault">Drag to rotate · Click country to scan · Click dot to preview</div>
+  </div>
+</div>
+
+<!-- Topology window -->
+<div id="topoWin">
+  <div class="titlebar cursor-move" id="topoTitlebar">
+    <span>🕸</span>
+    <span class="title-fill" data-i18n="topoWinTitle">Network Topology</span>
+    <div class="titlebar-btns">
+      <div class="title-btn title-btn-clickable" onclick="closeTopo()">✕</div>
+    </div>
+  </div>
+  <div class="globe-toolbar">
     <button class="btn95" id="btnAutoTraceTopology" data-i18n="btnTraceAuto">Auto Trace</button>
     <button class="btn95" id="btnClearGraph" data-i18n="btnClearGraph">Clear Graph</button>
     <span class="toolbar-label" id="topoFiltersLabel" data-i18n="topoFiltersLabel">Filters:</span>
@@ -862,14 +882,10 @@
     <button class="btn95" id="btnClearTopoFilters" data-i18n="btnClearTopoFilters">Clear Filters</button>
     <div class="flex-spacer"></div>
     <span class="map-live-label" id="mapLiveLabel" data-i18n="mapLiveLabel">Live scan visualization</span>
-    <label class="globe-rotate-label" id="globeAutoRotateWrap">
-      <input type="checkbox" id="globeAutoRotate" checked/> <span data-i18n="globeAutoRotate">Auto-rotate</span>
-    </label>
   </div>
-  <canvas id="globeCanvas" width="680" height="440"></canvas>
-  <div id="globeTooltip"></div>
+  <canvas id="topoCanvas" width="1060" height="620"></canvas>
   <div class="globe-statusbar">
-    <div class="globe-panel" id="globeStatusText" data-i18n="globeStatusDefault">Drag to rotate · Click country to scan · Click dot to preview</div>
+    <div class="globe-panel" id="topoStatusText" data-i18n="topoStatusDefault">Topology view · Click host to preview · Rings show subnet depth</div>
   </div>
 </div>
 

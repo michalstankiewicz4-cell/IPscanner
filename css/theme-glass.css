@@ -271,7 +271,8 @@ body.skin-glass #cmdWin > div:last-child {
 }
 
 /* Globe/Topology windows */
-body.skin-glass #globeWin {
+body.skin-glass #globeWin,
+body.skin-glass #topoWin {
   background: linear-gradient(180deg, rgba(246, 250, 255, 0.94), rgba(217, 231, 248, 0.94)) !important;
   border-top: 1px solid #f7fbff !important;
   border-left: 1px solid #f7fbff !important;

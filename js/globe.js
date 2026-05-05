@@ -26,6 +26,7 @@ let mapMode = 'globe';
 let topologyHitTargets = [];
 let traceRoutes = {};
 const topologyFilters = { port: '', subnet: '', pingMax: '' };
+let topoCtx = null, topoWidth = 0, topoHeight = 0, topoReady = false;
 
 // ══════════════════════════════════════════════════
 //  COUNTRY IP LIBRARY
@@ -187,22 +188,17 @@ function openGlobe() {
   const win = document.getElementById('globeWin');
   win.style.display = 'block';
   if (typeof window.bringToFront === 'function') window.bringToFront(win);
-  if (!globeReady) {
-    mapMode = 'globe';
-    initGlobe();
-  } else {
-    setMapMode('globe');
-    startRotation();
-  }
+  if (!globeReady) initGlobe();
+  else { drawGlobe(); startRotation(); }
 }
 
 function openTopology() {
   if (openToolNativeWindow('topology')) return;
-  const win = document.getElementById('globeWin');
+  const win = document.getElementById('topoWin');
   win.style.display = 'block';
   if (typeof window.bringToFront === 'function') window.bringToFront(win);
-  if (!globeReady) initGlobe();
-  setMapMode('topology');
+  if (!topoReady) initTopo();
+  else drawTopology();
 }
 
 function closeGlobe() {
@@ -211,12 +207,20 @@ function closeGlobe() {
   const tooltip = document.getElementById('globeTooltip');
   if (tooltip) tooltip.classList.remove('visible');
   hoveredCountryName = null;
-  if (_toolMode === 'globe' || _toolMode === 'topology') {
+  if (_toolMode === 'globe') {
     closeMainWindow();
     return;
   }
   document.getElementById('globeWin').style.display = 'none';
   stopRotation();
+}
+
+function closeTopo() {
+  if (_toolMode === 'topology') {
+    closeMainWindow();
+    return;
+  }
+  document.getElementById('topoWin').style.display = 'none';
 }
 
 function stopRotation() {
@@ -229,7 +233,7 @@ function startRotation() {
       currentLambda += 0.15;
       if (currentLambda > 180) currentLambda -= 360;
     }
-    drawCurrentMap();
+    drawGlobe();
     rafId = requestAnimationFrame(frame);
   }
   rafId = requestAnimationFrame(frame);
@@ -243,14 +247,12 @@ async function initGlobe() {
   globeReady = true;
   syncMapModeUI();
   setupGlobeEvents(canvas);
-  drawCurrentMap();
+  drawGlobe();
   startRotation();
 
   if (globeMapDataReady) return;
 
-  document.getElementById('globeStatusText').textContent = mapMode === 'globe'
-    ? 'Loading map data…'
-    : 'Topology view · Click host to preview · Rings show subnet depth';
+  document.getElementById('globeStatusText').textContent = 'Loading map data…';
 
   try {
     const world = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r=>r.json());
@@ -259,25 +261,31 @@ async function initGlobe() {
     globeLand      = topojson.feature(world, world.objects.land);
     globeMapDataReady = true;
     syncMapModeUI();
-    drawCurrentMap();
+    drawGlobe();
   } catch(e) {
-    if (mapMode === 'globe') {
-      document.getElementById('globeStatusText').textContent = `Map load error: ${e.message}`;
-    }
+    document.getElementById('globeStatusText').textContent = `Map load error: ${e.message}`;
   }
 }
 
+async function initTopo() {
+  const canvas = document.getElementById('topoCanvas');
+  if (!canvas) return;
+  if (topoReady) { drawTopology(); return; }
+  topoWidth = canvas.offsetWidth || 1060;
+  topoHeight = canvas.offsetHeight || 620;
+  canvas.width = topoWidth;
+  canvas.height = topoHeight;
+  topoCtx = canvas.getContext('2d');
+  topoReady = true;
+  setupTopoEvents(canvas);
+  drawTopology();
+}
+
 function syncMapModeUI() {
-  const globeBtn = document.getElementById('btnMapGlobe');
-  const topoBtn = document.getElementById('btnMapTopology');
   const autoRotateWrap = document.getElementById('globeAutoRotateWrap');
+  if (autoRotateWrap) autoRotateWrap.classList.remove('hidden');
   const statusText = document.getElementById('globeStatusText');
-  globeBtn.classList.toggle('pressed', mapMode === 'globe');
-  topoBtn.classList.toggle('pressed', mapMode === 'topology');
-  autoRotateWrap.classList.toggle('hidden', mapMode !== 'globe');
-  statusText.textContent = mapMode === 'globe'
-    ? 'Drag to rotate · Click country to scan · Click dot to preview'
-    : 'Topology view · Click host to preview · Rings show subnet depth';
+  if (statusText) statusText.textContent = 'Drag to rotate · Click country to scan · Click dot to preview';
 }
 
 function setMapMode(mode) {
@@ -285,10 +293,6 @@ function setMapMode(mode) {
   hoveredCountryName = null;
   const tooltip = document.getElementById('globeTooltip');
   if (tooltip) tooltip.classList.remove('visible');
-  const canvas = document.getElementById('globeCanvas');
-  if (canvas) canvas.style.cursor = mode === 'globe' ? 'grab' : 'default';
-  syncMapModeUI();
-  drawCurrentMap();
 }
 
 function drawCurrentMap() {
@@ -332,8 +336,8 @@ function refreshTopologyFilterOptions() {
 }
 
 function updateTopologyStatus(hosts, traceCount) {
-  if (mapMode !== 'topology') return;
-  const statusText = document.getElementById('globeStatusText');
+  const statusText = document.getElementById('topoStatusText');
+  if (!statusText) return;
   const filterSummary = [];
   if (topologyFilters.port) filterSummary.push(`${t('filterPortLabel')} ${topologyFilters.port}`);
   if (topologyFilters.subnet.trim()) filterSummary.push(`${t('filterSubnetLabel')} ${topologyFilters.subnet.trim()}`);
@@ -489,25 +493,25 @@ function hexToRgba(hex, alpha) {
 }
 
 function drawTopology() {
-  if (!globeCtx) return;
-  const ctx = globeCtx;
+  if (!topoCtx) return;
+  const ctx = topoCtx;
   const { hosts, subnets } = buildTopologyModel();
   const visibleHostSet = new Set(hosts.map(host => host.ip));
   const allTraceTargets = Object.keys(traceRoutes);
   const externalTraceTargets = allTraceTargets.filter(ip => !visibleHostSet.has(ip));
   topologyHitTargets = [];
 
-  ctx.clearRect(0, 0, globeWidth, globeHeight);
+  ctx.clearRect(0, 0, topoWidth, topoHeight);
 
-  const bg = ctx.createLinearGradient(0, 0, globeWidth, globeHeight);
+  const bg = ctx.createLinearGradient(0, 0, topoWidth, topoHeight);
   bg.addColorStop(0, '#faf7ef');
   bg.addColorStop(1, '#ddd6c4');
   ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, globeWidth, globeHeight);
+  ctx.fillRect(0, 0, topoWidth, topoHeight);
 
-  const centerX = globeWidth / 2;
-  const centerY = globeHeight / 2;
-  const maxRadius = Math.min(globeWidth, globeHeight) * 0.43;
+  const centerX = topoWidth / 2;
+  const centerY = topoHeight / 2;
+  const maxRadius = Math.min(topoWidth, topoHeight) * 0.43;
 
   for (let ring = 1; ring <= 7; ring++) {
     const radius = (maxRadius / 7) * ring;
@@ -804,8 +808,8 @@ function importTraceRoute(closeAfter = true) {
   status.textContent = t('traceImported', hops.length, targetIp);
   status.className = 'status-success';
   if (typeof appendCmdLog === 'function') appendCmdLog(`Tracert import: ${targetIp}  hops: ${hops.length}`, 'tracert');
-  if (mapMode !== 'topology') setMapMode('topology');
-  drawCurrentMap();
+  mapMode = 'topology';
+  drawTopology();
   setStatus(t('traceImportedStatus', targetIp, hops.length), 'ok');
   if (closeAfter) setTimeout(closeTraceDlg, 350);
 }
@@ -919,20 +923,7 @@ function setupGlobeEvents(canvas) {
       const my = (e.clientY - rect.top)  * (globeHeight / rect.height);
 
       if (mapMode === 'topology') {
-        const target = topologyHitTargets.find(item => Math.hypot(mx - item.x, my - item.y) <= item.radius);
-        if (target) {
-          tooltip.classList.add('visible');
-          positionTooltip(e.clientX, e.clientY);
-          tooltip.textContent = target.type === 'host'
-            ? `${target.data.ip} [${target.data.ports.join(', ')}]${target.data.ping ? ` · ${target.data.ping}ms` : ''}`
-            : target.type === 'trace-hop'
-              ? `Hop ${target.data.hop}${target.data.ip ? ` · ${target.data.ip}` : ''}${target.data.ms ? ` · ${target.data.ms}ms` : ''}`
-              : `${target.data.subnet} · ${target.data.hosts.length} hosts`;
-          canvas.style.cursor = 'pointer';
-        } else {
-          tooltip.classList.remove('visible');
-          canvas.style.cursor = 'default';
-        }
+        // topology hover is handled by topoCanvas, not globe canvas
         return;
       }
 
@@ -975,13 +966,12 @@ function setupGlobeEvents(canvas) {
     hoveredCountryName = null;
   });
 
-  // Scroll zoom (globe mode only)
+  // Scroll zoom
   canvas.addEventListener('wheel', e => {
-    if (mapMode !== 'globe') return;
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
     globeZoom = Math.min(5.0, Math.max(0.3, globeZoom + delta));
-    drawCurrentMap();
+    drawGlobe();
   }, { passive: false });
 
   // Click
@@ -990,23 +980,6 @@ function setupGlobeEvents(canvas) {
     const rect = canvas.getBoundingClientRect();
     const mx = (e.clientX - rect.left) * (globeWidth  / rect.width);
     const my = (e.clientY - rect.top)  * (globeHeight / rect.height);
-
-    if (mapMode === 'topology') {
-      const target = topologyHitTargets.find(item => item.type === 'host' && Math.hypot(mx - item.x, my - item.y) <= item.radius);
-      if (target) {
-        const ports = target.data.ports || [80];
-        const proto = (ports[0]===443||ports[0]===8443)?'https':'http';
-        openPreview(`${proto}://${target.data.ip}:${ports[0]}/`);
-        document.getElementById('globeWin').style.zIndex = 699;
-        return;
-      }
-      const hopTarget = topologyHitTargets.find(item => item.type === 'trace-hop' && Math.hypot(mx - item.x, my - item.y) <= item.radius);
-      if (hopTarget?.data?.ip) {
-        navigator.clipboard?.writeText(hopTarget.data.ip);
-        setStatus(t('traceHopCopied', hopTarget.data.ip), 'ok');
-      }
-      return;
-    }
 
     const proj = getProjection();
 
@@ -1086,14 +1059,13 @@ document.getElementById('scDlgYes').addEventListener('click', () => {
 // ── Update dots when new IP found ──
 function updateGlobeDots() {
   refreshTopologyFilterOptions();
-  if (document.getElementById('globeWin').style.display !== 'none' && globeReady) drawCurrentMap();
+  if (document.getElementById('globeWin')?.style.display !== 'none' && globeReady) drawGlobe();
+  if (document.getElementById('topoWin')?.style.display !== 'none' && topoReady) drawTopology();
 }
 
 // ── Globe button ──
 document.getElementById('btnGlobe').addEventListener('click', openGlobe);
 document.getElementById('btnTopologyToolbar').addEventListener('click', openTopology);
-document.getElementById('btnMapGlobe').addEventListener('click', () => setMapMode('globe'));
-document.getElementById('btnMapTopology').addEventListener('click', () => setMapMode('topology'));
 document.getElementById('btnAutoTraceTopology').addEventListener('click', () => {
   const defaultIp = selectedRowEl?.dataset?.ip || Object.keys(foundHostsMap)[0] || '';
   openTraceDlg(defaultIp);
@@ -1102,22 +1074,22 @@ document.getElementById('btnAutoTraceTopology').addEventListener('click', () => 
 document.getElementById('btnClearGraph').addEventListener('click', () => {
   traceRoutes = {};
   saveTraceRoutes();
-  drawCurrentMap();
+  drawTopology();
   setStatus(t('graphCleared'), 'ok');
 });
 document.getElementById('btnTraceAuto').addEventListener('click', autoTraceRoute);
 document.getElementById('btnTraceSave').addEventListener('click', importTraceRoute);
 document.getElementById('topoPortFilter').addEventListener('change', e => {
   topologyFilters.port = e.target.value;
-  drawCurrentMap();
+  drawTopology();
 });
 document.getElementById('topoSubnetFilter').addEventListener('input', e => {
   topologyFilters.subnet = e.target.value;
-  drawCurrentMap();
+  drawTopology();
 });
 document.getElementById('topoPingMax').addEventListener('input', e => {
   topologyFilters.pingMax = e.target.value;
-  drawCurrentMap();
+  drawTopology();
 });
 document.getElementById('btnClearTopoFilters').addEventListener('click', () => {
   topologyFilters.port = '';
@@ -1126,7 +1098,7 @@ document.getElementById('btnClearTopoFilters').addEventListener('click', () => {
   document.getElementById('topoPortFilter').value = '';
   document.getElementById('topoSubnetFilter').value = '';
   document.getElementById('topoPingMax').value = '';
-  drawCurrentMap();
+  drawTopology();
 });
 (function() {
   const win = document.getElementById('mainWin');
@@ -1206,4 +1178,49 @@ document.getElementById('btnClearTopoFilters').addEventListener('click', () => {
   });
   window.addEventListener('mouseup', () => { dragging = false; });
 })();
+(function() {
+  const win = document.getElementById('topoWin');
+  const bar = document.getElementById('topoTitlebar');
+  let ox=0, oy=0, dragging=false;
+  if (!win || !bar) return;
+  bar.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    if (e.target.closest('.titlebar-btns, .title-btn, button')) return;
+    dragging = true;
+    const r = win.getBoundingClientRect();
+    ox = e.clientX - r.left; oy = e.clientY - r.top;
+    win.style.transform = 'none';
+    win.style.left = r.left+'px'; win.style.top = r.top+'px';
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const maxLeft = Math.max(0, window.innerWidth  - win.offsetWidth);
+    const maxTop  = Math.max(0, window.innerHeight - 28);
+    win.style.left = Math.min(Math.max(0, e.clientX - ox), maxLeft) + 'px';
+    win.style.top  = Math.min(Math.max(0, e.clientY - oy), maxTop)  + 'px';
+  });
+  window.addEventListener('mouseup', () => { dragging = false; });
+})();
+
+function setupTopoEvents(canvas) {
+  canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (topoWidth / rect.width);
+    const my = (e.clientY - rect.top)  * (topoHeight / rect.height);
+    const target = topologyHitTargets.find(item => item.type === 'host' && Math.hypot(mx - item.x, my - item.y) <= item.radius);
+    if (target) {
+      const ports = target.data.ports || [80];
+      const proto = (ports[0]===443||ports[0]===8443)?'https':'http';
+      openPreview(`${proto}://${target.data.ip}:${ports[0]}/`);
+      document.getElementById('topoWin').style.zIndex = 699;
+      return;
+    }
+    const hopTarget = topologyHitTargets.find(item => item.type === 'trace-hop' && Math.hypot(mx - item.x, my - item.y) <= item.radius);
+    if (hopTarget?.data?.ip) {
+      navigator.clipboard?.writeText(hopTarget.data.ip);
+      setStatus(t('traceHopCopied', hopTarget.data.ip), 'ok');
+    }
+  });
+}
 
