@@ -291,3 +291,11 @@ body.skin-glass #mapLiveLabel {
   color: #1e4f81 !important;
 }
 
+/* ── New class overrides ── */
+body.skin-glass .preset-row { background: rgba(248,253,255,0.9); color: #0d2d50; }
+body.skin-glass .preset-row.selected { background: #2b73b8; color: #eef5ff; }
+body.skin-glass .macro-list-row { border-bottom-color: rgba(109,141,177,0.25); color: #163a5d; }
+body.skin-glass .macro-list-row:hover { background: #2b73b8; color: #eef5ff; }
+body.skin-glass .macro-list-empty { color: #3a6a9a; }
+body.skin-glass .cmd-file-action:hover { background: #2b73b8; color: #eef5ff; }
+

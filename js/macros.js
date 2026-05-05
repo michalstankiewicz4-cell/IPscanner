@@ -21,8 +21,7 @@ function renderMacroFiles() {
 
   if (!macros.length) {
     const empty = document.createElement('div');
-    empty.style.padding = '8px';
-    empty.style.color = '#666';
+    empty.className = 'macro-list-empty';
     empty.textContent = 'Folder jest pusty.';
     listEl.appendChild(empty);
     countEl.textContent = '0 plikow';
@@ -32,25 +31,12 @@ function renderMacroFiles() {
   macros.slice().reverse().forEach((m, idx) => {
     const originalIndex = macros.length - 1 - idx;
     const row = document.createElement('div');
-    row.style.display = 'flex';
-    row.style.alignItems = 'center';
-    row.style.gap = '8px';
-    row.style.padding = '3px 6px';
-    row.style.cursor = 'default';
-    row.style.borderBottom = '1px solid #f0f0f0';
+    row.className = 'macro-list-row';
 
     const fileName = (m.name || `makro_${idx + 1}`).replace(/\s+/g, '_') + '.macro';
     const ts = m.savedAt ? new Date(m.savedAt).toLocaleString() : '-';
 
-    row.innerHTML = `<span style="font-size:12px">📄</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fileName}</span><span style="font-size:9px;color:#666">${ts}</span>`;
-    row.addEventListener('mouseenter', () => {
-      row.style.background = '#000080';
-      row.style.color = '#fff';
-    });
-    row.addEventListener('mouseleave', () => {
-      row.style.background = '';
-      row.style.color = '';
-    });
+    row.innerHTML = `<span class="macro-list-icon">📄</span><span class="macro-list-name">${fileName}</span><span class="macro-list-ts">${ts}</span>`;
     row.addEventListener('dblclick', () => {
       if (typeof appendCmdLog === 'function') appendCmdLog(`Wczytano makro: ${fileName}`, 'macro');
     });

@@ -815,6 +815,59 @@ body.tool-window-mode #mainWin {
   padding: 2px 10px;
 }
 
+/* ── Dialog size variants ── */
+#dlgExternalIpOverlay .dlg95  { min-width: 340px; max-width: 440px; }
+#dlgLargeRangeOverlay .dlg95  { min-width: 320px; max-width: 420px; }
+#dlgCountriesOverlay .dlg95   { min-width: 500px; max-width: 96vw; }
+#dlgPresetsOverlay .dlg95     { min-width: 380px; }
+#dlgDefaultsOverlay .dlg95    { min-width: 290px; }
+#dlgVersionsOverlay .dlg95    { min-width: 470px; max-width: 94vw; }
+#dlgCustomizeOverlay .dlg95   { min-width: 300px; }
+
+/* ── dlg-icon-body compact padding (Presets dialog) ── */
+.dlg-icon-body-compact { padding: 10px 12px 4px; }
+
+/* ── dlg-row spacing variants ── */
+.dlg-row-mb6 { margin-bottom: 6px; }
+.dlg-row-mb0 { margin-bottom: 0; }
+
+/* ── presetEditBox disabled state ── */
+#presetEditBox.disabled { opacity: 0.4; pointer-events: none; }
+
+/* ── preset list row ── */
+.preset-row {
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: default;
+  background: #fff;
+  color: #000;
+}
+.preset-row.selected { background: #000080; color: #fff; }
+
+/* ── macro folder list row ── */
+.macro-list-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  cursor: default;
+  border-bottom: 1px solid #f0f0f0;
+}
+.macro-list-row:hover { background: #000080; color: #fff; }
+.macro-list-empty { padding: 8px; color: #666; }
+
+/* ── cmd file menu item hover ── */
+.cmd-file-action:hover { background: #000080; color: #fff; }
+
+/* ── initially-hidden elements (shown by JS when needed) ── */
+.initially-hidden { display: none; }
+
+/* ── preset select min-width ── */
+#presetSelect { min-width: 120px; }
+
+/* ── local subnet select min-width ── */
+#localSubnetSelect { min-width: 180px; }
+
 .dlg-alert-body {
   padding: 14px 16px 10px;
 }

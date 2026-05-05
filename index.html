@@ -98,7 +98,7 @@
       <!-- Preset selector -->
       <div class="settings-row">
         <span class="label-nowrap" data-i18n="labelPreset">Preset:</span>
-        <select id="presetSelect" class="select95" style="min-width:120px"></select>
+        <select id="presetSelect" class="select95"></select>
         <span class="label-muted-sm" data-i18n="labelPorts2">Ports:</span>
         <span id="activePorts" class="active-ports-display"></span>
       </div>
@@ -107,24 +107,24 @@
       <div class="settings-row-sm">
         <button class="btn95 btn-wide-132" id="btnMyIp" data-i18n="btnMyIp">🌐 My External IP</button>
         <span id="myIpResult" class="ip-result-label"></span>
-        <button class="btn95 btn-action-sm" id="btnCopyMyIp" style="display:none" data-i18n="btnCopy">📋 Copy</button>
-        <button class="btn95 btn-action-sm" id="btnUseMyIp"  style="display:none" data-i18n="btnUse">➤ Use</button>
+        <button class="btn95 btn-action-sm initially-hidden" id="btnCopyMyIp" data-i18n="btnCopy">📋 Copy</button>
+        <button class="btn95 btn-action-sm initially-hidden" id="btnUseMyIp"  data-i18n="btnUse">➤ Use</button>
       </div>
 
       <!-- Local IP -->
       <div class="settings-row-sm">
         <button class="btn95 btn-wide-132" id="btnMyLocalIp" data-i18n="btnMyLocalIp">🏠 My Local IP</button>
         <span id="myLocalIpResult" class="ip-result-label"></span>
-        <button class="btn95 btn-action-sm" id="btnCopyMyLocalIp" style="display:none" data-i18n="btnCopy">📋 Copy</button>
-        <button class="btn95 btn-action-sm" id="btnUseMyLocalIp"  style="display:none" data-i18n="btnUse">➤ Use</button>
+        <button class="btn95 btn-action-sm initially-hidden" id="btnCopyMyLocalIp" data-i18n="btnCopy">📋 Copy</button>
+        <button class="btn95 btn-action-sm initially-hidden" id="btnUseMyLocalIp"  data-i18n="btnUse">➤ Use</button>
       </div>
 
       <!-- Local Subnets -->
       <div class="settings-row-sm-wrap">
         <button class="btn95 btn-wide-132" id="btnLocalSubnets" data-i18n="btnLocalSubnets">🧭 Local Subnets</button>
         <span id="localSubnetsResult" class="ip-result-label"></span>
-        <select id="localSubnetSelect" class="select95" style="display:none;min-width:180px"></select>
-        <button class="btn95 btn-action-sm" id="btnUseLocalSubnet" style="display:none" data-i18n="btnUse">➤ Use</button>
+        <select id="localSubnetSelect" class="select95 initially-hidden"></select>
+        <button class="btn95 btn-action-sm initially-hidden" id="btnUseLocalSubnet" data-i18n="btnUse">➤ Use</button>
       </div>
 
       <!-- IP Range -->
@@ -504,7 +504,7 @@
 
 <!-- External IP warning dialog -->
 <div class="dlg-overlay" id="dlgExternalIpOverlay">
-  <div class="dlg95" style="min-width:340px;max-width:440px">
+  <div class="dlg95">
     <div class="dlg-title">
       <span>🌐</span>
       <span data-i18n="dlgExternalIpTitle">External IP Range</span>
@@ -526,7 +526,7 @@
 
 <!-- Large range confirmation dialog -->
 <div class="dlg-overlay" id="dlgLargeRangeOverlay">
-  <div class="dlg95" style="min-width:320px;max-width:420px">
+  <div class="dlg95">
     <div class="dlg-title">
       <span>⚠️</span>
       <span data-i18n="dlgLargeRangeTitle">Large Scan Range</span>
@@ -548,7 +548,7 @@
 
 <!-- Country IP Library dialog -->
 <div class="dlg-overlay" id="dlgCountriesOverlay">
-  <div class="dlg95" style="min-width:500px;max-width:96vw">
+  <div class="dlg95">
     <div class="dlg-title">
       <span>🌍</span>
       <span data-i18n="menuCountries">Country IP Library</span>
@@ -586,13 +586,13 @@
 
 <!-- Presets dialog -->
 <div class="dlg-overlay" id="dlgPresetsOverlay">
-  <div class="dlg95" style="min-width:380px">
+  <div class="dlg95">
     <div class="dlg-title">
       <span>⚙</span>
       <span data-i18n="menuPresets">Port Presets</span>
       <div class="title-btn" onclick="closePresetsDlg()">✕</div>
     </div>
-    <div class="dlg-body dlg-icon-body" style="padding:10px 12px 4px">
+    <div class="dlg-body dlg-icon-body dlg-icon-body-compact">
       <span class="dlg-icon">⚙</span>
       <div class="dlg-content-fill">
       <!-- Preset list -->
@@ -606,9 +606,9 @@
         </div>
       </div>
       <!-- Edit selected preset -->
-      <div class="dlg-groupbox" id="presetEditBox" style="opacity:0.4;pointer-events:none">
+      <div class="dlg-groupbox disabled" id="presetEditBox">
         <span class="dlg-groupbox-legend" data-i18n="presetEdit">Edit preset</span>
-        <div class="dlg-row" style="margin-bottom:6px">
+        <div class="dlg-row dlg-row-mb6">
           <label class="dlg-label-40" data-i18n="presetName">Name:</label>
           <input class="dlg-input95 dlg-content-fill" id="presetNameInput" type="text"/>
         </div>
@@ -666,7 +666,7 @@
 
 <!-- Default scan values dialog -->
 <div class="dlg-overlay" id="dlgDefaultsOverlay">
-  <div class="dlg95" style="min-width:290px">
+  <div class="dlg95">
     <div class="dlg-title">
       <span>⚙</span>
       <span data-i18n="menuDefaults">Default Scan Values...</span>
@@ -677,11 +677,11 @@
       <div class="dlg-content-fill">
       <div class="dlg-groupbox">
         <span class="dlg-groupbox-legend" data-i18n="dlgDefaults">Default Scan Values:</span>
-        <div class="dlg-row" style="margin-bottom:6px">
+        <div class="dlg-row dlg-row-mb6">
           <label class="dlg-label-98" data-i18n="dlgDefaultThreads">Threads:</label>
           <input class="dlg-input95 dlg-num-input" id="dlgDefaultThreads" type="number" min="2" max="64" value="20"/>
         </div>
-        <div class="dlg-row" style="margin-bottom:0">
+        <div class="dlg-row dlg-row-mb0">
           <label class="dlg-label-98" data-i18n="dlgDefaultDelay">Delay (ms):</label>
           <input class="dlg-input95 dlg-num-input" id="dlgDefaultDelay" type="number" min="0" max="5000" value="0"/>
         </div>
@@ -697,7 +697,7 @@
 
 <!-- Versions dialog -->
 <div class="dlg-overlay" id="dlgVersionsOverlay">
-  <div class="dlg95" style="min-width:470px;max-width:94vw">
+  <div class="dlg95">
     <div class="dlg-title">
       <span>📘</span>
       <span data-i18n="dlgVersionsTitle">Versions</span>
@@ -760,7 +760,7 @@
 
 <!-- Customization dialog -->
 <div class="dlg-overlay" id="dlgCustomizeOverlay">
-  <div class="dlg95" style="min-width:300px">
+  <div class="dlg95">
     <div class="dlg-title">
       <span>🎛</span>
       <span class="title-fill" data-i18n="customizeTitle">Customization – Toolbar</span>

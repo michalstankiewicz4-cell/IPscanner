@@ -768,9 +768,7 @@ function renderPresetListBox() {
   box.innerHTML = '';
   presets.forEach((p, i) => {
     const row = document.createElement('div');
-    row.style.cssText = `padding:3px 8px;font-size:11px;cursor:default;
-      background:${i===dlgSelectedPreset?'#000080':'#fff'};
-      color:${i===dlgSelectedPreset?'#fff':'#000'};`;
+    row.className = 'preset-row' + (i === dlgSelectedPreset ? ' selected' : '');
     row.textContent = p.name;
     row.addEventListener('click', () => {
       dlgSelectedPreset = i;
@@ -780,16 +778,14 @@ function renderPresetListBox() {
     box.appendChild(row);
   });
   const editBox = document.getElementById('presetEditBox');
-  editBox.style.opacity    = dlgSelectedPreset >= 0 ? '1' : '0.4';
-  editBox.style.pointerEvents = dlgSelectedPreset >= 0 ? '' : 'none';
+  editBox.classList.toggle('disabled', dlgSelectedPreset < 0);
 }
 
 function loadPresetIntoEditor(i) {
   const p = presets[i];
   document.getElementById('presetNameInput').value  = p.name;
   document.getElementById('presetPortsInput').value = p.ports;
-  document.getElementById('presetEditBox').style.opacity = '1';
-  document.getElementById('presetEditBox').style.pointerEvents = '';
+  document.getElementById('presetEditBox').classList.remove('disabled');
 }
 
 document.getElementById('btnPresetAdd').addEventListener('click', () => {

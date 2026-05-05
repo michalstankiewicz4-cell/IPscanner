@@ -97,12 +97,6 @@ btnCmdClearLog.addEventListener('click', () => {
   cmdOutput.value = '';
 });
 
-// Hover effects for menu items
-[btnCmdSaveLogs].forEach(el => {
-  el.addEventListener('mouseenter', () => { el.style.background='#000080'; el.style.color='#fff'; });
-  el.addEventListener('mouseleave', () => { el.style.background=''; el.style.color=''; });
-});
-
 btnConsole.addEventListener('click', openCmdConsole);
 btnCmdClose.addEventListener('click', closeCmdConsole);
 
