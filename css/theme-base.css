@@ -230,7 +230,7 @@ body.dragging             { cursor: move !important; }
 }
 .listview-header {
   display: grid;
-  grid-template-columns: 20px 18px 124px 26px 80px;
+  grid-template-columns: 20px 18px 18px 124px 26px 80px;
   background: #c0c0c0;
   border-bottom: 1px solid #808080;
   min-width: 250px;
@@ -266,7 +266,7 @@ body.dragging             { cursor: move !important; }
 
 .lv-row {
   display: grid;
-  grid-template-columns: 20px 18px 124px 26px 80px;
+  grid-template-columns: 20px 18px 18px 124px 26px 80px;
   cursor: default;
   border-bottom: 1px solid #f0f0f0;
   animation: rowIn 200ms ease-out;
@@ -285,10 +285,14 @@ body.dragging             { cursor: move !important; }
   text-align: left;
 }
 .lv-icon { text-align: center; font-size: 10px; }
+.lv-star  { text-align: center; font-size: 11px; line-height: 1; cursor: pointer; }
+.star-on  { color: #f5a623; }
+.star-off { color: #888; }
 .lv-light { text-align: center; font-size: 11px; line-height: 1; }
 .light-on  { color: #22c55e; }
 .light-off { color: #ef4444; }
-.icon-ok  { color: green; font-weight: bold; }
+.icon-ok       { color: green; font-weight: bold; cursor: pointer; }
+.icon-ok-off   { color: #bbb;  font-weight: bold; cursor: pointer; }
 .icon-err { color: #c00; font-weight: bold; }
 .empty-row { padding: 8px; font-size: 11px; color: #808080; }
 
@@ -298,22 +302,39 @@ body.dragging             { cursor: move !important; }
   grid-column: 1 / -1;
   background: #fffff0;
   border-top: 1px solid #c0c0c0;
-  padding: 4px 28px;
   flex-direction: column;
-  gap: 3px;
+  gap: 0;
 }
 .paths-row.open { display: flex; }
 .path-port-line {
+  display: grid;
+  grid-template-columns: 20px 18px 18px 124px 26px 1fr;
+  align-items: center;
+  min-height: 18px;
+  border-bottom: 1px solid #f0efe0;
+}
+.path-port-line:last-child { border-bottom: none; }
+.path-col-spacer {
+  border-right: 1px solid #d8d8c8;
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 10px;
+  color: #ccc;
 }
 .path-port-label {
   font-size: 10px;
   font-weight: bold;
   color: #000;
-  min-width: 46px;
+  padding: 1px 4px;
+  white-space: nowrap;
+}
+.path-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-items: center;
+  padding: 1px 4px;
 }
 
 /* ── Row expand button ── */

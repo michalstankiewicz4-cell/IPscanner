@@ -140,6 +140,33 @@ body.skin-workbench .empty-row {
   color: #8cc7ff !important;
 }
 
+body.skin-workbench .listview-filter {
+  background: linear-gradient(180deg, #2a3344, #1f2a38);
+  border-bottom: 1px solid #111720;
+}
+body.skin-workbench .listview-filter .filter-label {
+  color: #8a9bb5;
+}
+body.skin-workbench .btn-filter {
+  background: linear-gradient(180deg, #3a4456, #2e3747);
+  border-top: 1px solid #4d5a70;
+  border-left: 1px solid #4d5a70;
+  border-right: 1px solid #131923;
+  border-bottom: 1px solid #131923;
+  color: #dce6f5;
+}
+body.skin-workbench .btn-filter:hover {
+  background: linear-gradient(180deg, #4a5668, #3a4759);
+}
+body.skin-workbench .btn-filter.active {
+  background: linear-gradient(180deg, #2b3444, #3a4557);
+  border-top: 1px solid #131923;
+  border-left: 1px solid #131923;
+  border-right: 1px solid #4d5a70;
+  border-bottom: 1px solid #4d5a70;
+  color: #ffffff;
+}
+
 body.skin-workbench .listview-header {
   background: linear-gradient(180deg, #303a4b, #242d3d);
   border-bottom: 1px solid #111720;

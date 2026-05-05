@@ -942,14 +942,17 @@ const ctxMenu     = document.getElementById('ctxMenu');
 // ══════════════════════════════════════════════════
 //  LIST FILTER
 // ══════════════════════════════════════════════════
-let _listFilter = 'all'; // 'all' | 'active' | 'dead'
+let _listFilter = 'all'; // 'all' | 'favorites' | 'active' | 'dead'
+const foundFavSet = new Set();
 
 function applyListFilter() {
   document.querySelectorAll('.lv-row').forEach(row => {
-    const isActive = row.querySelector('.light-on') !== null;
+    const isActive  = row.querySelector('.light-on') !== null;
+    const isFav     = row.querySelector('.star-on') !== null;
     let visible = true;
-    if (_listFilter === 'active') visible = isActive;
+    if (_listFilter === 'active')    visible = isActive;
     else if (_listFilter === 'dead') visible = !isActive;
+    else if (_listFilter === 'favorites') visible = isFav;
     row.style.display = visible ? '' : 'none';
     const paths = row.nextElementSibling;
     if (paths && paths.classList.contains('paths-row')) {
@@ -958,9 +961,12 @@ function applyListFilter() {
   });
 }
 
-['btnFilterAll', 'btnFilterActive', 'btnFilterDead'].forEach(id => {
+['btnFilterAll', 'btnFilterFavorites', 'btnFilterActive', 'btnFilterDead'].forEach(id => {
   document.getElementById(id)?.addEventListener('click', () => {
-    _listFilter = id === 'btnFilterAll' ? 'all' : id === 'btnFilterActive' ? 'active' : 'dead';
+    _listFilter = id === 'btnFilterAll' ? 'all'
+      : id === 'btnFilterFavorites' ? 'favorites'
+      : id === 'btnFilterActive'    ? 'active'
+      : 'dead';
     document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     applyListFilter();
@@ -1477,11 +1483,39 @@ function addResultRow(ip, openPorts, pingMs) {
   row.className = 'lv-row';
   row.dataset.ip = ip;
 
-  // Icon
+  // Icon (toggleable checkmark — off by default)
   const cIcon = document.createElement('div');
-  cIcon.className='lv-cell lv-icon';
-  cIcon.innerHTML='<span class="icon-ok">✔</span>';
+  cIcon.className = 'lv-cell lv-icon';
+  cIcon.innerHTML = '<span class="icon-ok-off" title="Mark">✔</span>';
+  cIcon.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const span = cIcon.querySelector('span');
+    const on = span.className === 'icon-ok';
+    span.className = on ? 'icon-ok-off' : 'icon-ok';
+    span.title = on ? 'Mark' : 'Marked';
+  });
   row.appendChild(cIcon);
+
+  // Star (favorites)
+  const cStar = document.createElement('div');
+  cStar.className = 'lv-cell lv-star';
+  const isFav = foundFavSet.has(ip);
+  cStar.innerHTML = `<span class="${isFav ? 'star-on' : 'star-off'}" title="${isFav ? 'Favorite' : 'Add to favorites'}">★</span>`;
+  cStar.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const span = cStar.querySelector('span');
+    if (foundFavSet.has(ip)) {
+      foundFavSet.delete(ip);
+      span.className = 'star-off';
+      span.title = 'Add to favorites';
+    } else {
+      foundFavSet.add(ip);
+      span.className = 'star-on';
+      span.title = 'Favorite';
+    }
+    if (_listFilter === 'favorites') applyListFilter();
+  });
+  row.appendChild(cStar);
 
   // Status light
   const cLight = document.createElement('div');
@@ -1524,20 +1558,39 @@ function addResultRow(ip, openPorts, pingMs) {
     const line = document.createElement('div');
     line.className = 'path-port-line';
 
-    const label = document.createElement('span');
+    // Spacers for col 1 (✔), col 2 (★), col 3 (light — empty)
+    const icons = ['✔', '★', ''];
+    for (let i = 0; i < 3; i++) {
+      const s = document.createElement('div');
+      s.className = 'path-col-spacer';
+      s.textContent = icons[i];
+      line.appendChild(s);
+    }
+
+    // Col 4: port label (under IP)
+    const label = document.createElement('div');
     label.className = 'path-port-label';
     label.textContent = `:${port}`;
     line.appendChild(label);
 
+    // Spacer for col 5 (+)
+    const s5 = document.createElement('div');
+    s5.className = 'path-col-spacer';
+    line.appendChild(s5);
+
+    // Col 6: links (under ping)
+    const linksDiv = document.createElement('div');
+    linksDiv.className = 'path-links';
     const proto=(port===443||port===8443)?'https':'http';
     paths.forEach(({p,l}, li) => {
-      if (li>0) line.appendChild(document.createTextNode(' '));
+      if (li>0) linksDiv.appendChild(document.createTextNode(' '));
       const a=document.createElement('span'); a.className='path-link';
       const url=`${proto}://${ip}:${port}${p}`;
       a.textContent=l; a.title=url;
       a.addEventListener('click', e=>{ e.stopPropagation(); openPreview(url); });
-      line.appendChild(a);
+      linksDiv.appendChild(a);
     });
+    line.appendChild(linksDiv);
     pFrag.appendChild(line);
   });
   pathsRow.appendChild(pFrag);
@@ -1545,6 +1598,7 @@ function addResultRow(ip, openPorts, pingMs) {
   expandBtn.addEventListener('click', e => {
     e.stopPropagation();
     const open = pathsRow.classList.toggle('open');
+    pathsRow.style.display = open ? 'flex' : 'none';
     expandBtn.textContent = open ? '−' : '+';
     expandBtn.classList.toggle('open', open);
   });

@@ -107,6 +107,33 @@ body.skin-glass .lv-row {
   border-bottom: 1px solid rgba(109, 141, 177, 0.25);
 }
 
+body.skin-glass .listview-filter {
+  background: linear-gradient(180deg, rgba(230, 244, 255, 0.97), rgba(205, 228, 250, 0.97));
+  border-bottom: 1px solid #6d8db1;
+}
+body.skin-glass .listview-filter .filter-label {
+  color: #153a63;
+}
+body.skin-glass .btn-filter {
+  background: linear-gradient(180deg, #f6fbff, #cfe3fb);
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #6d8db1;
+  border-bottom: 1px solid #6d8db1;
+  color: #123a65;
+}
+body.skin-glass .btn-filter:hover {
+  background: linear-gradient(180deg, #e0f0ff, #b8d6f5);
+}
+body.skin-glass .btn-filter.active {
+  background: linear-gradient(180deg, #bbd5f2, #e5f2ff);
+  border-top: 1px solid #6d8db1;
+  border-left: 1px solid #6d8db1;
+  border-right: 1px solid #ffffff;
+  border-bottom: 1px solid #ffffff;
+  color: #0a2e55;
+}
+
 body.skin-glass .listview-header {
   background: linear-gradient(180deg, rgba(234, 246, 255, 0.98), rgba(199, 221, 245, 0.96));
   border-bottom: 1px solid #6d8db1;
