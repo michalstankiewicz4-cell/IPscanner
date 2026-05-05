@@ -924,10 +924,6 @@ function isPrivateIp(num) {
   return false;
 }
 
-function isNonPublicIpv4(ip) {
-  if (!isIPv4(ip)) return false;
-  return isPrivateIp(ipToNum(ip));
-}
 
 function showExternalIpConfirm(startIp, endIp) {
   return new Promise(resolve => {
@@ -1249,7 +1245,8 @@ function tryImageLoad(url, ms=2000) {
 }
 
 function isPrivateIP(ip) {
-  return isNonPublicIpv4(ip);
+  if (!isIPv4(ip)) return false;
+  return isPrivateIp(ipToNum(ip));
 }
 
 // ── Geolocation via ip-api.com ──
@@ -1814,7 +1811,7 @@ async function detectLocalIP() {
   if (_tauriInvoke) {
     try {
       const ip = await _tauriInvoke('get_local_ip');
-      if (ip && isPrivateIpv4(ip)) return ip;
+      if (ip && isPrivateIP(ip)) return ip;
       throw new Error('No local private IPv4 found');
     } catch (err) {
       // Fall through to WebRTC fallback for browser mode / dev diagnostics.
@@ -1852,7 +1849,7 @@ async function detectLocalIP() {
 
     const checkCandidateText = (text) => {
       const ip = extractIpv4(text);
-      if (ip && isPrivateIpv4(ip)) finish(ip);
+      if (ip && isPrivateIP(ip)) finish(ip);
     };
 
     pc.onicecandidate = (evt) => {
@@ -1872,7 +1869,7 @@ async function detectLocalIP() {
         for (const report of stats.values()) {
           if (report.type === 'local-candidate' || report.type === 'candidate-pair') {
             const ip = report.address || report.ip || extractIpv4(report.candidateType || '');
-            if (ip && isPrivateIpv4(ip)) {
+            if (ip && isPrivateIP(ip)) {
               finish(ip);
               return;
             }
@@ -1887,10 +1884,6 @@ async function detectLocalIP() {
       .then((offer) => pc.setLocalDescription(offer))
       .catch((err) => fail(err));
   });
-}
-
-function isPrivateIpv4(ip) {
-  return isNonPublicIpv4(ip);
 }
 
 function extractIpv4(text) {
@@ -1934,7 +1927,7 @@ async function detectLocalSubnets() {
     let done = false;
 
     const addIp = (ip) => {
-      if (ip && isPrivateIpv4(ip)) ips.add(ip);
+      if (ip && isPrivateIP(ip)) ips.add(ip);
     };
 
     const addFromText = (text) => {
