@@ -7,7 +7,7 @@ function selectIcon(el) {
 }
 
 const APP_NAME = 'NetRecon IP Auditor';
-const APP_VERSION = '1.5.7';
+const APP_VERSION = '1.5.9';
 
 function getAppDisplayName() {
   return `${APP_NAME} v${APP_VERSION}`;
@@ -458,6 +458,11 @@ function applyLang(broadcast = true) {
     const v = t(key);
     if (typeof v === 'string') el.placeholder = v;
   });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.dataset.i18nTitle;
+    const v = t(key);
+    if (typeof v === 'string') el.title = v;
+  });
   const subnetInput = document.getElementById('topoSubnetFilter');
   const pingInput = document.getElementById('topoPingMax');
   if (subnetInput) subnetInput.placeholder = t('filterSubnetLabel');
@@ -480,31 +485,35 @@ function clampInt(v, min, max, fallback) {
 function loadScanDefaults() {
   try {
     const raw = localStorage.getItem('netrecon_scan_defaults');
-    if (!raw) return { threads: 20, delayMs: 0 };
+    if (!raw) return { threads: 32, delayMs: 0, delayMsPerPort: 0, portScanMode: 'parallel', chunkSize: 100 };
     const obj = JSON.parse(raw);
     return {
-      threads: clampInt(obj.threads, 2, 64, 20),
-      delayMs: clampInt(obj.delayMs, 0, 5000, 0)
+      threads: clampInt(obj.threads, 2, 64, 32),
+      delayMs: clampInt(obj.delayMs, 0, 5000, 0),
+      delayMsPerPort: clampInt(obj.delayMsPerPort, 0, 1000, 0),
+      portScanMode: (obj.portScanMode === 'sequential' ? 'sequential' : 'parallel'),
+      chunkSize: clampInt(obj.chunkSize, 10, 500, 100)
     };
   } catch {
-    return { threads: 20, delayMs: 0 };
+    return { threads: 32, delayMs: 0, delayMsPerPort: 0, portScanMode: 'parallel', chunkSize: 100 };
   }
 }
 
-function saveScanDefaults(threads, delayMs) {
+function saveScanDefaults(threads, delayMs, delayMsPerPort, portScanMode, chunkSize) {
   const safe = {
-    threads: clampInt(threads, 2, 64, 20),
-    delayMs: clampInt(delayMs, 0, 5000, 0)
+    threads: clampInt(threads, 2, 64, 32),
+    delayMs: clampInt(delayMs, 0, 5000, 0),
+    delayMsPerPort: clampInt(delayMsPerPort, 0, 1000, 0),
+    portScanMode: (portScanMode === 'sequential' ? 'sequential' : 'parallel'),
+    chunkSize: clampInt(chunkSize, 10, 500, 100)
   };
   localStorage.setItem('netrecon_scan_defaults', JSON.stringify(safe));
   return safe;
 }
 
 function applyScanDefaultsToMainInputs(cfg) {
-  const threadsInput = document.getElementById('concNum');
-  const delayInput = document.getElementById('delayMs');
-  threadsInput.value = String(clampInt(cfg.threads, 2, 64, 20));
-  delayInput.value = String(clampInt(cfg.delayMs, 0, 5000, 0));
+  document.getElementById('concNum').value = String(clampInt(cfg.threads, 2, 64, 32));
+  document.getElementById('delayMs').value = String(clampInt(cfg.delayMs, 0, 5000, 0));
 }
 
 // ── Dialog overlay helpers ──
@@ -547,22 +556,46 @@ function openDefaultsDlg() {
   const cfg = loadScanDefaults();
   document.getElementById('dlgDefaultThreads').value = String(cfg.threads);
   document.getElementById('dlgDefaultDelay').value = String(cfg.delayMs);
+  document.getElementById('dlgDefaultDelayPerPort').value = String(cfg.delayMsPerPort);
+  document.getElementById('dlgDefaultChunkSize').value = String(cfg.chunkSize);
+  document.getElementById('radioParallel').checked = (cfg.portScanMode === 'parallel');
+  document.getElementById('radioSequential').checked = (cfg.portScanMode === 'sequential');
+  updatePortDelayInputState();
   openOverlay('dlgDefaultsOverlay');
 }
+
+function updatePortDelayInputState() {
+  const delayInput = document.getElementById('dlgDefaultDelayPerPort');
+  delayInput.disabled = document.getElementById('radioParallel').checked;
+}
+
 function closeDefaultsDlg() { closeOverlay('dlgDefaultsOverlay'); }
 
 // ── Versions dialog ──
 function openVersionsDlg() { openOverlay('dlgVersionsOverlay'); }
 function closeVersionsDlg() { closeOverlay('dlgVersionsOverlay'); }
 function persistDefaultsFromDialog() {
+  const portScanMode = document.getElementById('radioSequential').checked ? 'sequential' : 'parallel';
   const cfg = saveScanDefaults(
     document.getElementById('dlgDefaultThreads').value,
-    document.getElementById('dlgDefaultDelay').value
+    document.getElementById('dlgDefaultDelay').value,
+    document.getElementById('dlgDefaultDelayPerPort').value,
+    portScanMode,
+    document.getElementById('dlgDefaultChunkSize').value
   );
   applyScanDefaultsToMainInputs(cfg);
 }
 document.getElementById('dlgDefaultThreads').addEventListener('input', persistDefaultsFromDialog);
 document.getElementById('dlgDefaultDelay').addEventListener('input', persistDefaultsFromDialog);
+document.getElementById('dlgDefaultDelayPerPort').addEventListener('input', persistDefaultsFromDialog);
+document.getElementById('dlgDefaultChunkSize').addEventListener('input', persistDefaultsFromDialog);
+document.getElementById('radioParallel').addEventListener('change', () => { updatePortDelayInputState(); persistDefaultsFromDialog(); });
+document.getElementById('radioSequential').addEventListener('change', () => { updatePortDelayInputState(); persistDefaultsFromDialog(); });
+document.getElementById('dlgDefaultsReset').addEventListener('click', () => {
+  const cfg = saveScanDefaults(32, 0, 0, 'parallel', 100);
+  applyScanDefaultsToMainInputs(cfg);
+  openDefaultsDlg();
+});
 document.getElementById('dlgDefaultsOk').addEventListener('click', () => {
   persistDefaultsFromDialog();
   closeDefaultsDlg();
@@ -1208,6 +1241,17 @@ document.getElementById('btnCols')?.addEventListener('click', e => {
   colsPanel.classList.toggle('open');
   btn.classList.toggle('active', colsPanel.classList.contains('open'));
 });
+
+document.getElementById('btnBlurIp')?.addEventListener('click', () => {
+  const btn = document.getElementById('btnBlurIp');
+  const listviewWrap = document.getElementById('listviewWrap');
+  const rangeRow = document.querySelector('.range-row');
+  const on = listviewWrap.classList.toggle('ip-blur-active');
+  rangeRow?.classList.toggle('ip-range-blurred', on);
+  document.body.classList.toggle('ip-detect-blurred', on);
+  btn.classList.toggle('active', on);
+  btn.title = on ? 'Click to show IPs' : 'Toggle IP blur';
+});
 document.addEventListener('click', e => {
   if (!colsPanel?.contains(e.target) && e.target.id !== 'btnCols') {
     colsPanel?.classList.remove('open');
@@ -1783,7 +1827,7 @@ function addResultRow(ip, openPorts, pingMs) {
 
   // IP
   const cIp = document.createElement('div');
-  cIp.className='lv-cell';
+  cIp.className='lv-cell lv-ip-cell';
   cIp.innerHTML = `${ip} <span id="acc_${ip.replace(/\./g,'_')}" class="lv-acc-span"></span>`;
   row.appendChild(cIp);
 
@@ -2506,13 +2550,19 @@ async function startScan() {
   if (!selectedPorts.length) { setStatus(t('errNoPorts'),'err'); return; }
 
   const total=endNum-startNum+1;
-  const concurrency = Math.min(+document.getElementById('concNum').value || 20, 64);
+  const concurrency = Math.min(+document.getElementById('concNum').value || 32, 64);
   const delayMs = Math.max(0, Math.min(5000, +document.getElementById('delayMs').value || 0));
+  const _defs = loadScanDefaults();
+  const delayMsPerPort = (_defs.portScanMode === 'sequential') ? _defs.delayMsPerPort : 0;
+  const portChunkSize = _defs.chunkSize || 100;
   foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
   refreshTopologyFilterOptions();
   stopRequested=false; statTime.textContent='0.0s';
   updateProgress(0,total,0,0); setScanState(true);
-  if (typeof appendCmdLog === 'function') appendCmdLog(`Scan start: ${startIp} — ${endIp}  [${selectedPorts.length} port${selectedPorts.length===1?'':'s'}, conc: ${concurrency}]`, 'scan');
+  if (typeof appendCmdLog === 'function') {
+    appendCmdLog(`Scan start: ${startIp} — ${endIp}  [${selectedPorts.length} port${selectedPorts.length===1?'':'s'}, conc: ${concurrency}]`, 'scan');
+    appendCmdLog(`IP delay: ${delayMs}ms  |  Port mode: ${_defs.portScanMode === 'sequential' ? `sequential, delay ${delayMsPerPort}ms/port` : 'parallel'}  |  Batch: ${portChunkSize}`, 'scan');
+  }
 
   // Clear list
   listBody.innerHTML='';
@@ -2542,17 +2592,29 @@ async function startScan() {
     portProgFill.style.width = '0%';
   }
 
-  // Probe all ports for one IP — chunked to avoid freezing browser
-  async function probeAllPorts(ip, ports) {
-    const CHUNK = 100;
+  // Probe all ports for one IP — chunked to avoid freezing browser, optionally with per-port delay
+  async function probeAllPorts(ip, ports, delayBetweenPorts = 0) {
+    const CHUNK = portChunkSize;
     const results = [];
     for (let i = 0; i < ports.length && !stopRequested; i += CHUNK) {
       showPortProgress(i, ports.length, ip);
       const batch = ports.slice(i, i + CHUNK);
-      const batchRes = await Promise.all(
-        batch.map(port => probePort(ip, port, 1400).then(r => ({ port, ok: r.ok, ms: r.ms })))
-      );
-      results.push(...batchRes);
+      if (delayBetweenPorts > 0) {
+        // Sequential with delay
+        for (const port of batch) {
+          const r = await probePort(ip, port, 1400);
+          results.push({ port, ok: r.ok, ms: r.ms });
+          if (delayBetweenPorts > 0 && !stopRequested) {
+            await new Promise(resolve => setTimeout(resolve, delayBetweenPorts));
+          }
+        }
+      } else {
+        // Parallel without delay
+        const batchRes = await Promise.all(
+          batch.map(port => probePort(ip, port, 1400).then(r => ({ port, ok: r.ok, ms: r.ms })))
+        );
+        results.push(...batchRes);
+      }
     }
     hidePortProgress();
     return results;
@@ -2564,8 +2626,10 @@ async function startScan() {
       const idx=nextIdx++; if(idx>=total) return;
       const ip=numToIp(startNum+idx);
       const res = selectedPorts.length > 200
-        ? await probeAllPorts(ip, selectedPorts)
-        : await Promise.all(selectedPorts.map(port=>probePort(ip,port,1400).then(r=>({port, ok:r.ok, ms:r.ms}))));
+        ? await probeAllPorts(ip, selectedPorts, delayMsPerPort)
+        : delayMsPerPort > 0
+          ? await probeAllPorts(ip, selectedPorts, delayMsPerPort)
+          : await Promise.all(selectedPorts.map(port=>probePort(ip,port,1400).then(r=>({port, ok:r.ok, ms:r.ms}))));
       const openPorts=res.filter(r=>r.ok).map(r=>r.port);
       const bestMs = res.filter(r=>r.ok).reduce((a,r)=>r.ms<a?r.ms:a, Infinity);
       const pingMs = bestMs === Infinity ? null : bestMs;

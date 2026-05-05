@@ -864,6 +864,37 @@ body.tool-window-mode #mainWin {
   background: #c0c0c0;
 }
 
+/* IP blur mode */
+.ip-blur-active .lv-ip-cell {
+  filter: blur(5px);
+  transition: filter 0.15s;
+  user-select: none;
+}
+.ip-blur-active .lv-ip-cell:hover {
+  filter: none;
+}
+.ip-range-blurred #boxFrom,
+.ip-range-blurred #boxTo {
+  filter: blur(5px);
+  transition: filter 0.15s;
+}
+.ip-range-blurred #boxFrom:focus-within,
+.ip-range-blurred #boxTo:focus-within {
+  filter: none;
+}
+.ip-detect-blurred #myIpResult,
+.ip-detect-blurred #myLocalIpResult,
+.ip-detect-blurred #localSubnetsResult {
+  filter: blur(5px);
+  transition: filter 0.15s;
+  user-select: none;
+}
+.ip-detect-blurred #myIpResult:hover,
+.ip-detect-blurred #myLocalIpResult:hover,
+.ip-detect-blurred #localSubnetsResult:hover {
+  filter: none;
+}
+
 /* Columns button */
 .btn-cols {
   font-size: 10px;

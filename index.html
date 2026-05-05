@@ -92,12 +92,12 @@
       <button class="btn95" id="btnGo" data-i18n="btnStart">▶ Start</button>
       <button class="btn95" id="btnStop" disabled data-i18n="btnStop">■ Stop</button>
       <button class="btn95" id="btnClear" data-i18n="btnClear">✕ Clear</button>
+      <button class="btn95" id="btnTopologyToolbar" title="Topology" data-i18n="btnTopology">🕸 Topology</button>
       <button class="btn95" id="btnGlobe" title="World Map" data-i18n="btnGlobe">🌍 Globe</button>
-      <button class="btn95" id="btnCmdConsole" title="Command Console" data-i18n="btnConsole">⌨ Console</button>
+      <button class="btn95" id="btnProtoToolbar" title="Prototype" data-i18n="btnProto">🧩 Prototype</button>
       <button class="btn95" id="btnMacroToolbar" title="Macro Folder" data-i18n="btnMacro">📁 Macro</button>
       <button class="btn95" id="btnSpeedToolbar" title="Speed Test" data-i18n="btnSpeed">📶 Speed</button>
-      <button class="btn95" id="btnProtoToolbar" title="Prototype" data-i18n="btnProto">🧩 Prototype</button>
-      <button class="btn95" id="btnTopologyToolbar" title="Topology" data-i18n="btnTopology">🕸 Topology</button>
+      <button class="btn95" id="btnCmdConsole" title="Command Console" data-i18n="btnConsole">⌨ Console</button>
       <div class="flex-spacer"></div>
       <span id="statTime" class="status-time">0.0s</span>
     </div>
@@ -162,10 +162,9 @@
           <span class="oct-dot">.</span>
           <input class="oct" id="t3" maxlength="3" placeholder="254"/>
         </div>
-        <span class="label-ml" data-i18n="threads">Threads:</span>
-        <input type="number" min="2" max="64" value="20" id="concNum" class="input-num-sm"/>
-        <span class="label-ml" data-i18n="delayMs">Delay (ms):</span>
-        <input type="number" min="0" max="5000" value="0" id="delayMs" class="input-num-sm"/>
+        <button class="btn95" id="btnScanSpeed" style="margin-left: 10px;" onclick="openDefaultsDlg()">⚙ Scan Speed</button>
+        <input type="number" min="2" max="64" value="32" id="concNum" style="display:none"/>
+        <input type="number" min="0" max="5000" value="0" id="delayMs" style="display:none"/>
       </div>
       <div class="port-hint" id="portHint"></div>
     </div>
@@ -198,6 +197,7 @@
         <button class="btn-filter" id="btnFilterActive" data-i18n="filterActive">Active</button>
         <button class="btn-filter" id="btnFilterDead" data-i18n="filterDead">Dead</button>
         <button class="btn-cols" id="btnCols">Columns ▾</button>
+        <button class="btn-cols" id="btnBlurIp" style="margin-left:auto;" title="Toggle IP blur">👁 Blur</button>
         <div class="cols-panel" id="colsPanel">
           <label class="cols-panel-item"><input type="checkbox" data-col="hostname"> 🧭 Hostname</label>
           <label class="cols-panel-item"><input type="checkbox" data-col="geo"> 🌍 Geolocation / ISP</label>
@@ -697,19 +697,44 @@
       <span class="dlg-icon">⚙</span>
       <div class="dlg-content-fill">
       <div class="dlg-groupbox">
-        <span class="dlg-groupbox-legend" data-i18n="dlgDefaults">Default Scan Values:</span>
+        <span class="dlg-groupbox-legend" title="IP address scanning settings">IP Scanning</span>
         <div class="dlg-row dlg-row-mb6">
-          <label class="dlg-label-98" data-i18n="dlgDefaultThreads">Threads:</label>
-          <input class="dlg-input95 dlg-num-input" id="dlgDefaultThreads" type="number" min="2" max="64" value="20"/>
+          <label class="dlg-label-98" data-i18n="dlgDefaultThreads" title="Number of parallel scanning threads (2–64). More = faster, but higher network load." data-i18n-title="tipThreads">Threads:</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultThreads" type="number" min="2" max="64" value="32" title="Number of parallel scanning threads (2–64). More = faster, but higher network load." data-i18n-title="tipThreads"/>
         </div>
         <div class="dlg-row dlg-row-mb0">
-          <label class="dlg-label-98" data-i18n="dlgDefaultDelay">Delay (ms):</label>
-          <input class="dlg-input95 dlg-num-input" id="dlgDefaultDelay" type="number" min="0" max="5000" value="0"/>
+          <label class="dlg-label-98" data-i18n="dlgDefaultDelay" title="Delay (ms) between consecutive IP addresses scanned by each thread. 0 = no delay." data-i18n-title="tipIpDelay">Delay (ms):</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultDelay" type="number" min="0" max="5000" value="0" title="Delay (ms) between consecutive IP addresses scanned by each thread. 0 = no delay." data-i18n-title="tipIpDelay"/>
+        </div>
+      </div>
+
+      <div class="dlg-groupbox" style="margin-top: 12px;">
+        <span class="dlg-groupbox-legend" title="Port scanning mode for each IP address">Port Scanning Mode</span>
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-98" title="Number of ports scanned simultaneously in parallel mode (10–500). Larger batch = faster, but more concurrent connections." data-i18n-title="tipBatchSize">Batch size:</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultChunkSize" type="number" min="10" max="500" value="100" title="Number of ports scanned simultaneously in parallel mode (10–500). Larger batch = faster, but more concurrent connections." data-i18n-title="tipBatchSize"/>
+        </div>
+        <div class="dlg-row dlg-row-mb6">
+          <label style="display: flex; align-items: center; margin-bottom: 6px;" title="All ports in a batch are scanned simultaneously — fastest mode." data-i18n-title="tipParallel">
+            <input type="radio" name="portScanMode" id="radioParallel" value="parallel" checked style="margin-right: 6px;"/>
+            <span style="font-size: 11px;" title="All ports in a batch are scanned simultaneously — fastest mode." data-i18n-title="tipParallel">Parallel (fast)</span>
+          </label>
+        </div>
+        <div class="dlg-row dlg-row-mb0">
+          <label style="display: flex; align-items: center; margin-bottom: 6px;" title="Ports are scanned one by one with a set delay — slower, but less visible to IDS/firewall." data-i18n-title="tipSequential">
+            <input type="radio" name="portScanMode" id="radioSequential" value="sequential" style="margin-right: 6px;"/>
+            <span style="font-size: 11px;" title="Ports are scanned one by one with a set delay — slower, but less visible to IDS/firewall." data-i18n-title="tipSequential">Sequential with delay</span>
+          </label>
+        </div>
+        <div class="dlg-row dlg-row-mb0" style="margin-left: 24px; margin-top: 6px;">
+          <label class="dlg-label-98" data-i18n="dlgDefaultDelayPerPort" title="Delay (ms) between scanning consecutive ports in sequential mode (0–1000)." data-i18n-title="tipPortDelay">Delay (ms):</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultDelayPerPort" type="number" min="0" max="1000" value="0" disabled title="Delay (ms) between scanning consecutive ports in sequential mode (0–1000)." data-i18n-title="tipPortDelay"/>
         </div>
       </div>
       </div>
     </div>
     <div class="dlg-footer">
+      <button class="btn95" id="dlgDefaultsReset" style="margin-right: auto;">↺ Reset</button>
       <button class="btn95" id="dlgDefaultsOk" data-i18n="dlgOk">OK</button>
       <button class="btn95" id="dlgDefaultsCancel" data-i18n="dlgCancel" onclick="closeDefaultsDlg()">Cancel</button>
     </div>
@@ -727,7 +752,7 @@
     <div class="dlg-body dlg-icon-body dlg-versions-body">
       <span class="dlg-icon dlg-icon-versions">📘</span>
       <div class="dlg-sunken-box dlg-versions-card">
-        <div class="version-head">v1.5.7</div>
+        <div class="version-head">v1.5.9</div>
         <div class="version-note">
           i18n: translated all toolbar buttons (Console→Konsola, Macro→Makro, Speed→Prędkość, Prototype→Prototyp, Topology→Topologia),
           fixed untranslated Polish strings (ipRange, accessLabel, traceRoutesLabel), fixed hardcoded Polish close-confirm dialog to use t().
@@ -802,12 +827,16 @@
         <span class="dlg-groupbox-legend" data-i18n="customizeToolbarLegend">Toolbar buttons</span>
         <div class="dlg-check-col">
           <label class="dlg-check-label">
+            <input type="checkbox" id="chkBtnTopology" checked/>
+            <span data-i18n="customizeTopology">🕸 Topology</span>
+          </label>
+          <label class="dlg-check-label">
             <input type="checkbox" id="chkBtnGlobe" checked/>
             <span data-i18n="customizeGlobe">🌍 Globe (World Map)</span>
           </label>
           <label class="dlg-check-label">
-            <input type="checkbox" id="chkBtnConsole" checked/>
-            <span data-i18n="customizeConsole">⌨ Console</span>
+            <input type="checkbox" id="chkBtnProto" checked/>
+            <span data-i18n="customizeProto">🧩 Prototype</span>
           </label>
           <label class="dlg-check-label">
             <input type="checkbox" id="chkBtnMacro" checked/>
@@ -818,12 +847,8 @@
             <span data-i18n="customizeSpeed">📶 Speed Test</span>
           </label>
           <label class="dlg-check-label">
-            <input type="checkbox" id="chkBtnProto" checked/>
-            <span data-i18n="customizeProto">🧩 Prototype</span>
-          </label>
-          <label class="dlg-check-label">
-            <input type="checkbox" id="chkBtnTopology" checked/>
-            <span data-i18n="customizeTopology">🕸 Topology</span>
+            <input type="checkbox" id="chkBtnConsole" checked/>
+            <span data-i18n="customizeConsole">⌨ Console</span>
           </label>
         </div>
       </div>
