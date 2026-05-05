@@ -485,16 +485,25 @@ function applyScanDefaultsToMainInputs(cfg) {
   delayInput.value = String(clampInt(cfg.delayMs, 0, 5000, 0));
 }
 
+// ── Dialog overlay helpers ──
+function openOverlay(id) {
+  document.getElementById(id).classList.add('open');
+  bringToFront(document.querySelector(`#${id} .dlg95`));
+}
+function closeOverlay(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function closeAllMenus() {
+  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+}
+
 // ── Language dialog ──
 function openLangDlg() {
   document.getElementById('radioEn').checked = (lang === 'en');
   document.getElementById('radioPl').checked = (lang === 'pl');
-  document.getElementById('dlgOverlay').classList.add('open');
-  bringToFront(document.querySelector('#dlgOverlay .dlg95'));
+  openOverlay('dlgOverlay');
 }
-function closeLangDlg() {
-  document.getElementById('dlgOverlay').classList.remove('open');
-}
+function closeLangDlg() { closeOverlay('dlgOverlay'); }
 document.querySelectorAll('input[name=dlgLang]').forEach(el => {
   el.addEventListener('change', () => {
     lang = document.querySelector('input[name=dlgLang]:checked').value;
@@ -513,21 +522,13 @@ function openDefaultsDlg() {
   const cfg = loadScanDefaults();
   document.getElementById('dlgDefaultThreads').value = String(cfg.threads);
   document.getElementById('dlgDefaultDelay').value = String(cfg.delayMs);
-  document.getElementById('dlgDefaultsOverlay').classList.add('open');
-  bringToFront(document.querySelector('#dlgDefaultsOverlay .dlg95'));
+  openOverlay('dlgDefaultsOverlay');
 }
-function closeDefaultsDlg() {
-  document.getElementById('dlgDefaultsOverlay').classList.remove('open');
-}
+function closeDefaultsDlg() { closeOverlay('dlgDefaultsOverlay'); }
 
 // ── Versions dialog ──
-function openVersionsDlg() {
-  document.getElementById('dlgVersionsOverlay').classList.add('open');
-  bringToFront(document.querySelector('#dlgVersionsOverlay .dlg95'));
-}
-function closeVersionsDlg() {
-  document.getElementById('dlgVersionsOverlay').classList.remove('open');
-}
+function openVersionsDlg() { openOverlay('dlgVersionsOverlay'); }
+function closeVersionsDlg() { closeOverlay('dlgVersionsOverlay'); }
 function persistDefaultsFromDialog() {
   const cfg = saveScanDefaults(
     document.getElementById('dlgDefaultThreads').value,
@@ -548,31 +549,17 @@ document.querySelectorAll('.menu-item').forEach(item => {
   item.addEventListener('click', e => {
     e.stopPropagation();
     const wasOpen = item.classList.contains('open');
-    document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+    closeAllMenus();
     if (!wasOpen) item.classList.add('open');
   });
 });
-document.addEventListener('click', () => {
-  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
-});
-document.getElementById('menuLang').addEventListener('click', () => {
-  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
-  openLangDlg();
-});
-document.getElementById('menuDefaults').addEventListener('click', () => {
-  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
-  openDefaultsDlg();
-});
-document.getElementById('menuVersions').addEventListener('click', () => {
-  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
-  openVersionsDlg();
-});
-document.getElementById('menuAbout').addEventListener('click', () => {
-  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
-  openNotepad();
-});
+document.addEventListener('click', closeAllMenus);
+document.getElementById('menuLang').addEventListener('click', () => { closeAllMenus(); openLangDlg(); });
+document.getElementById('menuDefaults').addEventListener('click', () => { closeAllMenus(); openDefaultsDlg(); });
+document.getElementById('menuVersions').addEventListener('click', () => { closeAllMenus(); openVersionsDlg(); });
+document.getElementById('menuAbout').addEventListener('click', () => { closeAllMenus(); openNotepad(); });
 document.getElementById('menuClippy').addEventListener('click', () => {
-  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+  closeAllMenus();
   if (typeof window.clippyToggle === 'function') window.clippyToggle();
 });
 document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
@@ -627,8 +614,7 @@ function openCustomizeDlg() {
   if (skinGlass) skinGlass.checked = activeSkin === 'glass';
   if (skinWorkbench) skinWorkbench.checked = activeSkin === 'workbench';
 
-  document.getElementById('dlgCustomizeOverlay').classList.add('open');
-  bringToFront(document.querySelector('#dlgCustomizeOverlay .dlg95'));
+  openOverlay('dlgCustomizeOverlay');
 }
 function closeCustomizeDlg() {
   TOOLBAR_BTNS_CFG.forEach(({ chk, key }) => {
@@ -641,13 +627,10 @@ function closeCustomizeDlg() {
 
   applyToolbarCustomization();
   applySkinCustomization();
-  document.getElementById('dlgCustomizeOverlay').classList.remove('open');
+  closeOverlay('dlgCustomizeOverlay');
 }
 
-document.getElementById('menuCustomize').addEventListener('click', () => {
-  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
-  openCustomizeDlg();
-});
+document.getElementById('menuCustomize').addEventListener('click', () => { closeAllMenus(); openCustomizeDlg(); });
 
 document.querySelectorAll('input[name="uiSkin"]').forEach(radio => {
   radio.addEventListener('change', () => {
@@ -756,12 +739,9 @@ let dlgSelectedPreset = -1;
 function openPresetsDlg() {
   dlgSelectedPreset = activePresetIdx;
   renderPresetListBox();
-  document.getElementById('dlgPresetsOverlay').classList.add('open');
-  bringToFront(document.querySelector('#dlgPresetsOverlay .dlg95'));
+  openOverlay('dlgPresetsOverlay');
 }
-function closePresetsDlg() {
-  document.getElementById('dlgPresetsOverlay').classList.remove('open');
-}
+function closePresetsDlg() { closeOverlay('dlgPresetsOverlay'); }
 
 function renderPresetListBox() {
   const box = document.getElementById('presetListBox');
@@ -845,10 +825,7 @@ document.getElementById('dlgPresetsOk').addEventListener('click', () => {
   closePresetsDlg();
 });
 
-document.getElementById('menuPresets').addEventListener('click', () => {
-  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
-  openPresetsDlg();
-});
+document.getElementById('menuPresets').addEventListener('click', () => { closeAllMenus(); openPresetsDlg(); });
 
 // ══════════════════════════════════════════════════
 //  IP INPUT — auto-jump between octets
