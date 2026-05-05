@@ -1,6 +1,6 @@
 /* ── Polish language strings ── */
 window.LANG_PL = {
-  menuFile:'Plik', menuOptions:'Opcje', menuHelp:'Pomoc',
+  menuFile:'Plik', menuOptions:'Opcje', menuTools:'Narzędzia', menuHelp:'Pomoc',
   menuLanguage:'Język...', menuAbout:'O programie', menuVersions:'Wersje', menuPresets:'Presety portów...', menuCountries:'Biblioteka krajów IP...', menuDefaults:'Domyślne wartości skanowania...',
   btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Wyczyść', btnGlobe:'🌍 Mapa',
   btnConsole:'⌨ Konsola', btnMacro:'📁 Makro', btnSpeed:'📶 Prędkość', btnProto:'🧩 Prototyp', btnTopology:'🕸 Topologia',

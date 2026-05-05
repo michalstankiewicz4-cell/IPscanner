@@ -587,6 +587,12 @@ document.getElementById('menuClippy').addEventListener('click', () => {
   closeAllMenus();
   if (typeof window.clippyToggle === 'function') window.clippyToggle();
 });
+document.getElementById('menuToolTopology').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnTopologyToolbar')?.click(); });
+document.getElementById('menuToolGlobe').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnGlobe')?.click(); });
+document.getElementById('menuToolProto').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnProtoToolbar')?.click(); });
+document.getElementById('menuToolMacro').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnMacroToolbar')?.click(); });
+document.getElementById('menuToolSpeed').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnSpeedToolbar')?.click(); });
+document.getElementById('menuToolConsole').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnCmdConsole')?.click(); });
 document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
 
 // ══════════════════════════════════════════════════
