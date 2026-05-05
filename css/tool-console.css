@@ -1,0 +1,162 @@
+/* ── Notepad window ── */
+.notepad-win {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(480px, 95vw);
+  z-index: 1000;
+}
+
+/* ── Console (cmd) window ── */
+.cmd-win {
+  top: 72px;
+  left: 76px;
+  width: min(700px, 96vw);
+  z-index: 1050;
+}
+
+.win-menubar95 {
+  background: #c0c0c0;
+  font-size: 11px;
+  border-bottom: 1px solid #808080;
+  display: flex;
+}
+
+.notepad-menubar {
+  padding: 2px 4px;
+  gap: 2px;
+}
+
+.notepad-menu-item {
+  padding: 1px 6px;
+  cursor: default;
+}
+
+.notepad-textarea {
+  width: 100%;
+  height: 320px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  background: #fff;
+  color: #000;
+  border: none;
+  border-top: 1px solid #808080;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+  padding: 8px 10px;
+  resize: none;
+  outline: none;
+  line-height: 1.6;
+}
+
+.mini-statusbar {
+  border-top: 1px solid #808080;
+  padding: 2px 6px;
+  font-size: 10px;
+  color: #000;
+  display: flex;
+  gap: 6px;
+}
+
+.mini-statuspanel {
+  border-top: 1px solid #808080;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+  padding: 1px 8px;
+  flex: 1;
+}
+
+.cmd-menubar {
+  padding: 1px 2px;
+  align-items: center;
+  gap: 0;
+  position: relative;
+}
+
+.cmd-menu-file {
+  padding: 2px 8px;
+  cursor: default;
+  user-select: none;
+  position: relative;
+}
+
+.cmd-file-drop {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #c0c0c0;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  box-shadow: 2px 2px 0 #000;
+  min-width: 160px;
+  z-index: 10;
+}
+
+.cmd-file-action {
+  padding: 4px 24px 4px 28px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.cmd-filterbar {
+  background: #c0c0c0;
+  padding: 3px 6px;
+  border-bottom: 1px solid #808080;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cmd-filter-label {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.cmd-filter-select {
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+  font-size: 11px;
+  border-top: 1px solid #808080;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+  background: #fff;
+  padding: 1px 2px;
+  height: 20px;
+}
+
+.cmd-bar-btn {
+  height: 20px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.cmd-bar-btn-gap {
+  margin-left: 4px;
+}
+
+.cmd-output-wrap {
+  padding: 3px 4px 4px;
+  background: #000000;
+}
+
+.cmd-output {
+  display: block;
+  width: 100%;
+  height: 320px;
+  font-family: 'Lucida Console', 'Courier New', monospace;
+  font-size: 12px;
+  background: #000000;
+  color: #c0c0c0;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 6px;
+  box-sizing: border-box;
+  line-height: 1.55;
+  caret-color: transparent;
+}
