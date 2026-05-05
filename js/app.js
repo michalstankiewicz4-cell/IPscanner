@@ -7,7 +7,7 @@ function selectIcon(el) {
 }
 
 const APP_NAME = 'NetRecon IP Auditor';
-const APP_VERSION = '1.5.6';
+const APP_VERSION = '1.5.7';
 
 function getAppDisplayName() {
   return `${APP_NAME} v${APP_VERSION}`;
@@ -262,7 +262,7 @@ function requestAppCloseConfirmation() {
   _closeConfirmInProgress = true;
 
   try {
-    const ok = window.confirm('Czy jestes pewien, ze chcesz zamknac skaner?');
+    const ok = window.confirm(t('closeConfirm'));
     if (!ok) return;
 
     invokeWindowAction('window_close').then(success => {

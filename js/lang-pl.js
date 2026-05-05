@@ -37,6 +37,7 @@ window.LANG_PL = {
   statusReady:'Gotowy.', statusCleared:'Wyczyszczono.',
   errInvalidIp:'Podaj poprawne adresy IPv4.',
   errIpRange:'Adres OD musi być ≤ DO.',
+  closeConfirm:'Czy na pewno chcesz zamknąć skaner?',
   errNoPorts:'Wybierz co najmniej jeden port w presecie.',
   statusScanning:(n,p)=>`Skanuję ${n} adresów × ${p} portów…`,
   statusLarge:(n,p,t)=>`Duży zakres: ${n} adresów × ${p} portów. Est. ${t}…`,

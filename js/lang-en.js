@@ -37,6 +37,7 @@ window.LANG_EN = {
   statusReady:'Ready.', statusCleared:'Cleared.',
   errInvalidIp:'Invalid IPv4 address.',
   errIpRange:'FROM address must be ≤ TO.',
+  closeConfirm:'Are you sure you want to close the scanner?',
   errNoPorts:'No ports selected in preset.',
   statusScanning:(n,p)=>`Scanning ${n} addresses × ${p} ports…`,
   statusLarge:(n,p,t)=>`Large range: ${n} addresses × ${p} ports. Est. ${t}…`,
