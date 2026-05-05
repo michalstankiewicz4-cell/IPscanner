@@ -395,6 +395,8 @@ body.dragging             { cursor: move !important; }
   color: #808080;
 }
 .preview-blocked a { color: #000080; font-size: 11px; }
+.preview-wrap.preview-blocked-active .preview-iframe  { display: none; }
+.preview-wrap.preview-blocked-active .preview-blocked { display: flex; }
 
 /* ── Status bar ── */
 .statusbar {

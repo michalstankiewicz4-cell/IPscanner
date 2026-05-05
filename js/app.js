@@ -313,7 +313,6 @@ function openMainWindow() {
   const win = document.getElementById('mainWin');
   if (!win) return;
   win.style.display = 'block';
-  win.style.zIndex = '20';
 }
 
 const WINDOW_CONTEXT_BLOCK_SELECTOR = [
@@ -1038,7 +1037,7 @@ function makeToolChromeCloseOnly(target) {
   });
 
   allBtns.forEach(btn => {
-    if (btn !== closeBtn) btn.style.display = 'none';
+    if (btn !== closeBtn) btn.classList.add('initially-hidden');
   });
 
   if (!closeBtn) {
@@ -1048,7 +1047,7 @@ function makeToolChromeCloseOnly(target) {
     btns.appendChild(closeBtn);
   }
 
-  closeBtn.style.display = '';
+  closeBtn.classList.remove('initially-hidden');
   closeBtn.onclick = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1573,15 +1572,14 @@ function openInBrowser(url) {
 
 function openPreview(url) {
   previewUrl.textContent = url;
-  previewFrame.style.display = 'block';
-  previewBlocked.style.display = 'none';
+  previewWrap.classList.remove('preview-blocked-active');
   previewFrame.src = url;
   previewExtLink.href = url;
   btnPreviewOpen.onclick = ()=>openInBrowser(url);
   previewWrap.classList.add('open');
   previewFrame.onload = () => {
     try { void previewFrame.contentDocument; }
-    catch { previewFrame.style.display='none'; previewBlocked.style.display='flex'; }
+    catch { previewWrap.classList.add('preview-blocked-active'); }
   };
   setTimeout(()=>previewWrap.scrollIntoView({behavior:'smooth',block:'start'}),60);
 }
