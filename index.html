@@ -648,7 +648,7 @@
     </div>
     <div class="dlg-footer">
       <button class="btn95" id="dlgOk" data-i18n="dlgOk">OK</button>
-      <button class="btn95" id="dlgCancel" data-i18n="dlgCancel" onclick="closeLangDlg()">Cancel</button>
+      <button class="btn95" id="dlgCancel" data-i18n="dlgCancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -753,7 +753,7 @@
     <div class="dlg-title">
       <span>🎛</span>
       <span class="title-fill" data-i18n="customizeTitle">Customization – Toolbar</span>
-      <div class="title-btn" onclick="closeCustomizeDlg()">✕</div>
+      <div class="title-btn" onclick="cancelCustomizeDlg()">✕</div>
     </div>
     <div class="dlg-body dlg-customize-body">
       <span class="dlg-icon-xl">🎛</span>
@@ -807,7 +807,8 @@
       </div>
     </div>
     <div class="dlg-footer">
-      <button class="btn95" onclick="closeCustomizeDlg()" data-i18n="dlgClose">Close</button>
+      <button class="btn95" onclick="closeCustomizeDlg()" data-i18n="dlgOk">OK</button>
+      <button class="btn95" onclick="cancelCustomizeDlg()" data-i18n="dlgCancel">Cancel</button>
     </div>
   </div>
 </div>

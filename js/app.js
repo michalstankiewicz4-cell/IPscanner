@@ -497,24 +497,27 @@ function closeAllMenus() {
 }
 
 // ── Language dialog ──
+let _prevLang = lang;
 function openLangDlg() {
+  _prevLang = lang;
   document.getElementById('radioEn').checked = (lang === 'en');
   document.getElementById('radioPl').checked = (lang === 'pl');
   openOverlay('dlgOverlay');
 }
 function closeLangDlg() { closeOverlay('dlgOverlay'); }
+function cancelLangDlg() {
+  lang = _prevLang;
+  applyLang();
+  closeLangDlg();
+}
 document.querySelectorAll('input[name=dlgLang]').forEach(el => {
   el.addEventListener('change', () => {
     lang = document.querySelector('input[name=dlgLang]:checked').value;
     applyLang();
   });
 });
-document.getElementById('dlgOk').addEventListener('click', () => {
-  lang = document.querySelector('input[name=dlgLang]:checked').value;
-  applyLang();
-  closeLangDlg();
-});
-document.getElementById('dlgCancel').addEventListener('click', closeLangDlg);
+document.getElementById('dlgOk').addEventListener('click', closeLangDlg);
+document.getElementById('dlgCancel').addEventListener('click', cancelLangDlg);
 
 // ── Defaults dialog ──
 function openDefaultsDlg() {
@@ -599,7 +602,9 @@ function applyToolbarCustomization() {
   });
 }
 
+let _prevSkin = getSavedSkin();
 function openCustomizeDlg() {
+  _prevSkin = getSavedSkin();
   TOOLBAR_BTNS_CFG.forEach(({ chk, key }) => {
     const el = document.getElementById(chk);
     if (el) el.checked = localStorage.getItem(key) !== '0';
@@ -614,6 +619,10 @@ function openCustomizeDlg() {
   if (skinWorkbench) skinWorkbench.checked = activeSkin === 'workbench';
 
   openOverlay('dlgCustomizeOverlay');
+}
+function cancelCustomizeDlg() {
+  setBodySkinClass(_prevSkin);
+  closeOverlay('dlgCustomizeOverlay');
 }
 function closeCustomizeDlg() {
   TOOLBAR_BTNS_CFG.forEach(({ chk, key }) => {
