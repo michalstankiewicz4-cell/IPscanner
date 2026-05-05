@@ -1,0 +1,163 @@
+/* ── Prototype window ── */
+.proto-win {
+  top: 88px;
+  left: 220px;
+  width: min(920px, 97vw);
+  height: min(640px, 82vh);
+  z-index: 1045;
+  overflow: hidden;
+  min-width: 760px;
+  min-height: 500px;
+}
+
+.proto-layout {
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 200px 1fr 290px;
+  gap: 8px;
+  align-items: stretch;
+  height: calc(100% - 42px);
+  box-sizing: border-box;
+}
+
+.proto-panel {
+  padding: 8px;
+}
+
+.proto-panel-scroll {
+  overflow: auto;
+}
+
+.proto-canvas-panel {
+  min-height: 390px;
+  position: relative;
+  overflow: auto;
+}
+
+.proto-section-title {
+  font-size: 10px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.proto-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.proto-note {
+  font-size: 10px;
+  color: #666;
+  margin-top: 8px;
+}
+
+.proto-blueprints {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.proto-statusbar {
+  border-top: 1px solid #808080;
+  padding: 2px 6px;
+  font-size: 10px;
+  color: #000;
+  display: flex;
+  gap: 6px;
+}
+
+.proto-statuspanel {
+  border-top: 1px solid #808080;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+  padding: 1px 8px;
+  flex: 1;
+}
+
+.proto-resize-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  right: 2px;
+  bottom: 2px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 0 40%, #888 40% 55%, transparent 55% 70%, #888 70% 85%, transparent 85% 100%);
+}
+
+/* Proto node components */
+.proto-node {
+  position: absolute;
+  border-radius: 6px;
+  box-shadow: 0 2px 3px rgba(0,0,0,.12);
+}
+
+/* Maximized state */
+.proto-maximized {
+  left: 8px !important;
+  top: 36px !important;
+  width: calc(100vw - 16px) !important;
+  height: calc(100vh - 44px) !important;
+}
+.proto-node-head {
+  padding: 4px 6px;
+  font-size: 10px;
+  font-weight: bold;
+  border-bottom: 1px solid rgba(0,0,0,.12);
+  cursor: move;
+}
+.proto-node-body { padding: 6px; font-size: 11px; line-height: 1.35; }
+.proto-node-body-cond { padding-bottom: 18px; }
+.proto-canvas-title { margin-bottom: 8px; }
+.proto-links-svg { position: absolute; left: 0; top: 0; pointer-events: none; }
+
+/* Proto anchor dots */
+.proto-anchor {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 999px;
+  background: #2f4f7f;
+  border: 1px solid #fff;
+}
+.proto-anchor-in  { left: -6px;  top: 50%; transform: translateY(-50%); cursor: pointer; }
+.proto-anchor-out { right: -6px; top: 50%; transform: translateY(-50%); cursor: crosshair; }
+.proto-anchor-true  { background: #3a8a3a; top: 33%; }
+.proto-anchor-false { background: #b04040; top: 67%; }
+.proto-anchor-active {
+  box-shadow: 0 0 0 2px rgba(255,210,80,.9), 0 0 8px rgba(0,0,0,.3);
+  transform: translateY(-50%) scale(1.12) !important;
+}
+.proto-anchor-label {
+  position: absolute; right: 13px; top: -4px;
+  font-size: 8px; font-weight: bold;
+  white-space: nowrap; pointer-events: none;
+}
+.proto-anchor-label-true  { color: #1a6a1a; }
+.proto-anchor-label-false { color: #8a1a1a; }
+
+/* Proto toolbox chip variants */
+.proto-chip        { padding: 5px 7px; border-radius: 4px; }
+.proto-chip-blue   { background: linear-gradient(180deg,#f6fbff,#e6f2ff); border: 1px solid #9bb5da; }
+.proto-chip-green  { background: linear-gradient(180deg,#f4fff6,#e6f7ea); border: 1px solid #99c8a1; }
+.proto-chip-yellow { background: linear-gradient(180deg,#fff9ef,#fff2dd); border: 1px solid #d2b280; }
+.proto-chip-purple { background: linear-gradient(180deg,#fcf7ff,#f2e9ff); border: 1px solid #b499d8; }
+.proto-chip-orange { background: linear-gradient(180deg,#fff8f0,#ffeedd); border: 1px solid #d4904a; }
+
+/* Proto node color variants (for canvas nodes) */
+.proto-node-blue   { background: linear-gradient(180deg,#f6fbff,#e6f2ff); border: 1px solid #9bb5da; }
+.proto-node-green  { background: linear-gradient(180deg,#f4fff6,#e6f7ea); border: 1px solid #99c8a1; }
+.proto-node-yellow { background: linear-gradient(180deg,#fff9ef,#fff2dd); border: 1px solid #d2b280; }
+.proto-node-purple { background: linear-gradient(180deg,#fcf7ff,#f2e9ff); border: 1px solid #b499d8; }
+.proto-node-orange { background: linear-gradient(180deg,#fff8f0,#ffeedd); border: 1px solid #d4904a; }
+
+/* Proto blueprint cards */
+.proto-bp-card        { border: 1px solid #b0b0b0; padding: 6px; }
+.proto-bp-card-orange { border: 1px solid #d4904a; padding: 6px; background: #fffaf5; }
+.proto-bp-title        { font-weight: bold; color: #000080; }
+.proto-bp-title-orange { font-weight: bold; color: #b05000; }
+.text-true  { color: #267026; font-weight: bold; }
+.text-false { color: #9a2020; font-weight: bold; }

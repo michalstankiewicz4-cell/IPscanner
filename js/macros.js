@@ -1,0 +1,159 @@
+// ══════════════════════════════════════════════════
+//  MACRO FOLDER
+// ══════════════════════════════════════════════════
+
+function readMacroStorageList() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem('netrecon_console_macros') || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function renderMacroFiles() {
+  const listEl = document.getElementById('macroFolderList');
+  const countEl = document.getElementById('macroFolderCount');
+  if (!listEl || !countEl) return;
+
+  const macros = readMacroStorageList();
+  listEl.innerHTML = '';
+
+  if (!macros.length) {
+    const empty = document.createElement('div');
+    empty.className = 'macro-list-empty';
+    empty.textContent = 'Folder jest pusty.';
+    listEl.appendChild(empty);
+    countEl.textContent = '0 plikow';
+    return;
+  }
+
+  macros.slice().reverse().forEach((m, idx) => {
+    const originalIndex = macros.length - 1 - idx;
+    const row = document.createElement('div');
+    row.className = 'macro-list-row';
+
+    const fileName = (m.name || `makro_${idx + 1}`).replace(/\s+/g, '_') + '.macro';
+    const ts = m.savedAt ? new Date(m.savedAt).toLocaleString() : '-';
+
+    row.innerHTML = `<span class="macro-list-icon">📄</span><span class="macro-list-name">${fileName}</span><span class="macro-list-ts">${ts}</span>`;
+    row.addEventListener('dblclick', () => {
+      if (typeof appendCmdLog === 'function') appendCmdLog(`Wczytano makro: ${fileName}`, 'macro');
+    });
+
+    row.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      openMacroContextMenu(e.clientX, e.clientY, originalIndex);
+    });
+
+    listEl.appendChild(row);
+  });
+
+  countEl.textContent = `${macros.length} plikow`;
+}
+
+let macroCtxIndex = -1;
+
+function closeMacroContextMenu() {
+  const menu = document.getElementById('macroCtxMenu');
+  if (menu) menu.classList.add('initially-hidden');
+  macroCtxIndex = -1;
+}
+
+function openMacroContextMenu(x, y, originalIndex) {
+  const menu = document.getElementById('macroCtxMenu');
+  if (!menu) return;
+  macroCtxIndex = originalIndex;
+  menu.classList.remove('initially-hidden');
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const mw = menu.offsetWidth || 150;
+  const mh = menu.offsetHeight || 30;
+
+  const left = Math.max(0, Math.min(x, vw - mw - 2));
+  const top = Math.max(0, Math.min(y, vh - mh - 2));
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+}
+
+function deleteMacroByIndex(originalIndex) {
+  const current = readMacroStorageList();
+  if (originalIndex < 0 || originalIndex >= current.length) return;
+  const removed = current[originalIndex];
+  current.splice(originalIndex, 1);
+  localStorage.setItem('netrecon_console_macros', JSON.stringify(current));
+  if (typeof appendCmdLog === 'function') {
+    appendCmdLog(`Usunieto makro: ${(removed && removed.name) || '(bez nazwy)'}`, 'macro');
+  }
+  if (typeof renderCommandMacros === 'function') renderCommandMacros();
+  renderMacroFiles();
+}
+
+function openMacroFolder() {
+  if (openToolNativeWindow('macro')) return;
+  const win = document.getElementById('macroFolderWin');
+  if (!win) return;
+  renderMacroFiles();
+  win.style.display = 'block';
+  if (typeof window.bringToFront === 'function') window.bringToFront(win);
+}
+
+function closeMacroFolder() {
+  if (_toolMode === 'macro') {
+    closeMainWindow();
+    return;
+  }
+  const win = document.getElementById('macroFolderWin');
+  if (win) win.style.display = 'none';
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const macroCloseBtn = document.getElementById('btnMacroFolderClose');
+  if (macroCloseBtn) macroCloseBtn.addEventListener('click', closeMacroFolder);
+
+  const macroWin = document.getElementById('macroFolderWin');
+  const macroBar = document.getElementById('macroFolderTitlebar');
+  const macroCtxMenu = document.getElementById('macroCtxMenu');
+  const macroCtxDelete = document.getElementById('macroCtxDelete');
+  if (macroWin && macroBar) {
+    let dragging = false;
+    let ox = 0;
+    let oy = 0;
+    macroBar.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
+      if (e.target.closest('.titlebar-btns')) return;
+      const r = macroWin.getBoundingClientRect();
+      dragging = true;
+      ox = e.clientX - r.left;
+      oy = e.clientY - r.top;
+      macroWin.style.transform = 'none';
+      macroWin.style.left = r.left + 'px';
+      macroWin.style.top = r.top + 'px';
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      macroWin.style.left = Math.max(0, Math.min(e.clientX - ox, window.innerWidth - macroWin.offsetWidth)) + 'px';
+      macroWin.style.top = Math.max(0, Math.min(e.clientY - oy, window.innerHeight - 44)) + 'px';
+    });
+    window.addEventListener('mouseup', () => { dragging = false; });
+  }
+
+  if (macroCtxDelete) {
+    macroCtxDelete.addEventListener('click', () => {
+      if (macroCtxIndex >= 0) deleteMacroByIndex(macroCtxIndex);
+      closeMacroContextMenu();
+    });
+  }
+
+  document.addEventListener('click', e => {
+    if (!macroCtxMenu) return;
+    if (macroCtxMenu.classList.contains('initially-hidden')) return;
+    if (e.target && macroCtxMenu.contains(e.target)) return;
+    closeMacroContextMenu();
+  });
+
+  window.addEventListener('blur', closeMacroContextMenu);
+});

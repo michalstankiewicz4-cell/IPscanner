@@ -1,0 +1,2630 @@
+function selectIcon(el) {
+  const lbl = document.getElementById('iconLabel');
+  const img = document.getElementById('iconImg');
+  lbl.classList.add('icon-selected');
+  img.classList.add('icon-img-selected');
+  setTimeout(()=>{ lbl.classList.remove('icon-selected'); img.classList.remove('icon-img-selected'); }, 1200);
+}
+
+const APP_NAME = 'NetRecon IP Auditor';
+const APP_VERSION = '1.5.7';
+
+function getAppDisplayName() {
+  return `${APP_NAME} v${APP_VERSION}`;
+}
+
+function applyAppVersionLabels() {
+  const appTitle = document.getElementById('appTitle');
+  if (appTitle) appTitle.textContent = getAppDisplayName();
+  document.title = getAppDisplayName();
+}
+
+function openNotepad() {
+  document.getElementById('notepadWin').style.display = 'block';
+  bringToFront(document.getElementById('notepadWin'));
+  document.getElementById('notepadText').value =
+`================================================================
+  ${getAppDisplayName()}
+  by Michał Stankiewicz
+================================================================
+
+  Tel. / BLIK:  797 486 355
+
+  Jeżeli podoba Ci się to co robię i chcesz wesprzeć
+  projekt — każda złotówka motywuje do kolejnych ficzerów!
+
+  BLIK → 797 486 355   💙  Dziękuję!
+
+----------------------------------------------------------------
+  LICENCJA (MIT) — Polski
+----------------------------------------------------------------
+
+  Niniejszym udziela się bezpłatnie każdemu, kto uzyska
+  kopię tego oprogramowania i powiązanych plików dokumentacji
+  (dalej „Oprogramowanie"), pozwolenia na korzystanie
+  z Oprogramowania bez ograniczeń, w tym bez ograniczeń
+  prawa do używania, kopiowania, modyfikowania, łączenia,
+  publikowania, dystrybuowania, udzielania podlicencji
+  i/lub sprzedaży kopii Oprogramowania, a także zezwalania
+  na to osobom, którym Oprogramowanie jest dostarczane,
+  pod następującymi warunkami:
+
+  Powyższa nota autorska oraz niniejsze zezwolenie muszą
+  zostać dołączone do wszystkich kopii lub istotnych części
+  Oprogramowania.
+
+  OPROGRAMOWANIE JEST DOSTARCZANE „TAKIM, JAKIE JEST",
+  BEZ JAKIEJKOLWIEK GWARANCJI, WYRAŹNEJ LUB DOROZUMIANEJ,
+  W TYM MIĘDZY INNYMI GWARANCJI PRZYDATNOŚCI HANDLOWEJ,
+  PRZYDATNOŚCI DO OKREŚLONEGO CELU I NIENARUSZALNOŚCI.
+  W ŻADNYM WYPADKU AUTORZY LUB WŁAŚCICIELE PRAW AUTORSKICH
+  NIE PONOSZĄ ODPOWIEDZIALNOŚCI ZA JAKIEKOLWIEK ROSZCZENIA,
+  SZKODY LUB INNĄ ODPOWIEDZIALNOŚĆ, CZY TO W RAMACH UMOWY,
+  DELIKTU CZY W INNY SPOSÓB, WYNIKAJĄCĄ Z OPROGRAMOWANIA
+  LUB KORZYSTANIA Z NIEGO.
+
+----------------------------------------------------------------
+  LICENSE (MIT) — English
+----------------------------------------------------------------
+
+  Permission is hereby granted, free of charge, to any
+  person obtaining a copy of this software and associated
+  documentation files (the "Software"), to deal in the
+  Software without restriction, including without limitation
+  the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the
+  Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice
+  shall be included in all copies or substantial portions
+  of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+  ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+  TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+  PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+  SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+  IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+  DEALINGS IN THE SOFTWARE.
+
+  If you enjoy what I'm building — BLIK is welcome! 🙏
+  797 486 355
+
+================================================================`;
+}
+function closeNotepad() {
+  document.getElementById('notepadWin').style.display = 'none';
+}
+
+let _windowZCounter = 1200;
+
+function bringToFront(target) {
+  if (!target) return;
+
+  const topZ = ++_windowZCounter;
+
+  const dialogPanel = target.classList?.contains('dlg95') ? target : target.closest?.('.dlg95');
+  if (dialogPanel) {
+    const overlay = dialogPanel.closest('.dlg-overlay');
+    if (overlay) {
+      overlay.style.zIndex = String(topZ);
+      dialogPanel.style.zIndex = String(topZ + 1);
+      return;
+    }
+    dialogPanel.style.zIndex = String(topZ);
+    return;
+  }
+
+  if (target.id === 'dlgTrace' || target.closest?.('#dlgTrace')) {
+    const overlay = document.getElementById('dlgTraceOverlay');
+    const dlgTrace = document.getElementById('dlgTrace');
+    if (overlay) overlay.style.zIndex = String(topZ);
+    if (dlgTrace) dlgTrace.style.zIndex = String(topZ + 1);
+    return;
+  }
+
+  if (target.classList?.contains('dlg-overlay')) {
+    target.style.zIndex = String(topZ);
+    return;
+  }
+
+  if (target.style) {
+    target.style.zIndex = String(topZ);
+  }
+}
+
+window.bringToFront = bringToFront;
+
+function initWindowZStacking() {
+  const floatingWindowIds = [
+    'notepadWin',
+    'cmdWin',
+    'speedWin',
+    'protoWin',
+    'macroFolderWin',
+    'globeWin',
+    'topoWin',
+    'dlgScanCountry',
+    'dlgTrace'
+  ];
+
+  floatingWindowIds.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el || el.dataset.zstackBound === '1') return;
+    el.dataset.zstackBound = '1';
+    el.addEventListener('pointerdown', () => bringToFront(el));
+  });
+
+  document.querySelectorAll('.dlg95').forEach((dlg) => {
+    if (dlg.dataset.zstackBound === '1') return;
+    dlg.dataset.zstackBound = '1';
+    dlg.addEventListener('pointerdown', () => bringToFront(dlg));
+  });
+}
+
+function makeWindowDraggable(winEl, handleEl) {
+  if (!winEl || !handleEl || handleEl.dataset.dragBound === '1') return;
+  handleEl.dataset.dragBound = '1';
+  handleEl.classList.add('cursor-move');
+
+  let dragging = false;
+  let activePointerId = null;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  const stopDragging = () => {
+    dragging = false;
+    activePointerId = null;
+    document.body.classList.remove('dragging');
+  };
+
+  handleEl.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch' && e.button !== 0) return;
+    if (e.target.closest('.title-btn, .titlebar-btns, button, input, select, textarea, a, label')) return;
+
+    const rect = winEl.getBoundingClientRect();
+    dragging = true;
+    activePointerId = e.pointerId;
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+
+    // Centered dialogs use transform translate; convert to explicit coords before dragging.
+    winEl.style.transform = 'none';
+    if (winEl.classList?.contains('dlg95')) {
+      // Keep dialog width stable while dragging; content should wrap instead of resizing the panel.
+      winEl.style.width = rect.width + 'px';
+      winEl.style.maxWidth = '94vw';
+    }
+    winEl.style.left = rect.left + 'px';
+    winEl.style.top = rect.top + 'px';
+
+    document.body.classList.add('dragging');
+    handleEl.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!dragging || e.pointerId !== activePointerId) return;
+
+    const maxLeft = Math.max(0, window.innerWidth - winEl.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - 28);
+    const nextLeft = Math.min(Math.max(0, e.clientX - offsetX), maxLeft);
+    const nextTop = Math.min(Math.max(0, e.clientY - offsetY), maxTop);
+
+    winEl.style.left = nextLeft + 'px';
+    winEl.style.top = nextTop + 'px';
+  });
+
+  window.addEventListener('pointerup', (e) => {
+    if (e.pointerId === activePointerId) stopDragging();
+  });
+
+  window.addEventListener('pointercancel', (e) => {
+    if (e.pointerId === activePointerId) stopDragging();
+  });
+}
+
+function initAllDialogDragging() {
+  makeWindowDraggable(
+    document.getElementById('notepadWin'),
+    document.querySelector('#notepadWin > div:first-child')
+  );
+
+  document.querySelectorAll('.dlg95').forEach((dlg) => {
+    makeWindowDraggable(dlg, dlg.querySelector('.dlg-title'));
+  });
+
+  makeWindowDraggable(
+    document.getElementById('dlgScanCountry'),
+    document.querySelector('#dlgScanCountry > .titlebar')
+  );
+
+  makeWindowDraggable(
+    document.getElementById('dlgTrace'),
+    document.querySelector('#dlgTrace > .titlebar')
+  );
+}
+
+function closeMainWindow() {
+  if (_toolMode) {
+    closeCurrentWindowImmediate();
+    return;
+  }
+  requestAppCloseConfirmation();
+}
+
+let _closeConfirmInProgress = false;
+
+function requestAppCloseConfirmation() {
+  if (_closeConfirmInProgress) return;
+  _closeConfirmInProgress = true;
+
+  try {
+    const ok = window.confirm(t('closeConfirm'));
+    if (!ok) return;
+
+    invokeWindowAction('window_close').then(success => {
+      if (!success && !_isTauriDesktop) window.close();
+    });
+  } finally {
+    _closeConfirmInProgress = false;
+  }
+}
+
+function closeCurrentWindowImmediate() {
+  invokeWindowAction('window_close').then(success => {
+    if (!success) window.close();
+  });
+}
+
+function getTauriCurrentWindow() {
+  const getCurrentWindow = window.__TAURI__?.window?.getCurrentWindow
+    ?? window.__TAURI__?.webviewWindow?.getCurrentWindow
+    ?? null;
+  if (!getCurrentWindow) return null;
+  try { return getCurrentWindow(); } catch { return null; }
+}
+
+async function invokeWindowAction(commandName) {
+  if (_tauriInvoke) {
+    try {
+      await _tauriInvoke(commandName);
+      return true;
+    } catch {}
+  }
+  return false;
+}
+
+async function minimizeMainWindow() {
+  await invokeWindowAction('window_minimize');
+}
+
+async function toggleMaximizeMainWindow() {
+  await invokeWindowAction('window_toggle_maximize');
+}
+
+async function startMainWindowDrag() {
+  await invokeWindowAction('window_start_dragging');
+}
+
+function openMainWindow() {
+  const win = document.getElementById('mainWin');
+  if (!win) return;
+  win.style.display = 'block';
+}
+
+const WINDOW_CONTEXT_BLOCK_SELECTOR = [
+  '.titlebar',
+  '.dlg-title',
+  '.titlebar-btns',
+  '.title-btn',
+  '.menubar',
+  '.menu-item',
+  '.menu-dropdown',
+  '.menu-dd-item',
+  '.menu-dd-sep',
+  '.enrich-popup',
+  '.enrich-popup-bar',
+].join(', ');
+
+const WINDOW_CONTEXT_ALLOW_SELECTOR = [
+  '#resultBody .result-row',      // PPM otwiera nasze własne menu kontekstowe
+  '#macroFolderList .macro-row',  // PPM otwiera menu akcji makra
+  'input',
+  'textarea',
+  'select',
+  '[contenteditable="true"]',
+].join(', ');
+
+const WINDOW_ROOT_SELECTOR = [
+  '.retro-win',
+  '.dlg95',
+  '#notepadWin',
+  '#cmdWin',
+  '#speedWin',
+  '#protoWin',
+  '#macroFolderWin',
+  '#globeWin',
+  '#topoWin',
+  '#dlgScanCountry',
+  '#dlgTrace',
+  '.enrich-popup',
+].join(', ');
+
+function shouldBlockWindowRightClick(target) {
+  if (!(target instanceof Element)) return false;
+  if (target.closest(WINDOW_CONTEXT_ALLOW_SELECTOR)) return false;
+  if (target.closest(WINDOW_CONTEXT_BLOCK_SELECTOR)) return true;
+
+  const root = target.closest(WINDOW_ROOT_SELECTOR);
+  if (!root) return false;
+
+  // Block everything inside window roots except editable form controls.
+  return !target.closest('input, textarea, select, option, [contenteditable="true"]');
+}
+
+function initWindowRightClickGuards() {
+  if (document.body.dataset.rightClickGuardBound === '1') return;
+  document.body.dataset.rightClickGuardBound = '1';
+
+  const blockRightClick = (e) => {
+    if (e.button !== 2) return;
+    if (!shouldBlockWindowRightClick(e.target)) return;
+    // preventDefault stops text-selection on PPM hold; no stopPropagation
+    // so bringToFront listeners still receive the pointerdown.
+    e.preventDefault();
+  };
+
+  document.addEventListener('pointerdown', blockRightClick, true);
+  document.addEventListener('mousedown', blockRightClick, true);
+  document.addEventListener('contextmenu', (e) => {
+    if (!shouldBlockWindowRightClick(e.target)) return;
+    e.preventDefault();
+  }, true);
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  applyAppVersionLabels();
+
+  const closeBtn = document.getElementById('mainCloseBtn');
+  if (closeBtn) closeBtn.addEventListener('click', closeMainWindow);
+
+  const minBtn = document.getElementById('mainMinBtn');
+  if (minBtn) minBtn.addEventListener('click', minimizeMainWindow);
+
+  const maxBtn = document.getElementById('mainMaxBtn');
+  if (maxBtn) maxBtn.addEventListener('click', toggleMaximizeMainWindow);
+
+  const mainTitlebar = document.querySelector('#mainWin > .titlebar');
+  if (mainTitlebar) {
+    mainTitlebar.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch' && e.button !== 0) return;
+      if (e.target.closest('.titlebar-btns')) return;
+      e.preventDefault();
+      startMainWindowDrag();
+    });
+  }
+
+  initWindowRightClickGuards();
+  initAllDialogDragging();
+  initWindowZStacking();
+});
+
+// ══════════════════════════════════════════════════
+//  i18n
+// ══════════════════════════════════════════════════
+let lang = localStorage.getItem('netrecon_lang') || 'en';
+
+// Language strings loaded from js/lang-en.js and js/lang-pl.js
+const STRINGS = { en: window.LANG_EN, pl: window.LANG_PL };
+
+// ── Cross-window sync (lang + skin) via BroadcastChannel ──
+const _syncChannel = (typeof BroadcastChannel !== 'undefined')
+  ? new BroadcastChannel('netrecon-sync')
+  : null;
+
+if (_syncChannel) {
+  _syncChannel.onmessage = (e) => {
+    const { type, value } = e.data;
+    if (type === 'lang' && STRINGS[value]) {
+      lang = value;
+      applyLang(false);
+    }
+    if (type === 'skin') {
+      setBodySkinClass(value, false);
+      localStorage.setItem(UI_SKIN_KEY, value);
+    }
+  };
+}
+
+function t(key, ...args) {
+  const s = STRINGS[lang];
+  const v = s[key] ?? STRINGS['en'][key] ?? key;
+  return typeof v === 'function' ? v(...args) : v;
+}
+
+function applyLang(broadcast = true) {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    const v = t(key);
+    if (typeof v === 'string') el.textContent = v;
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.dataset.i18nPlaceholder;
+    const v = t(key);
+    if (typeof v === 'string') el.placeholder = v;
+  });
+  const subnetInput = document.getElementById('topoSubnetFilter');
+  const pingInput = document.getElementById('topoPingMax');
+  if (subnetInput) subnetInput.placeholder = t('filterSubnetLabel');
+  if (pingInput) pingInput.placeholder = t('filterPingPlaceholder');
+  if (typeof refreshTopologyFilterOptions === 'function') refreshTopologyFilterOptions();
+  // Notify clippy about lang change
+  if (typeof window.clippySetLang === 'function') window.clippySetLang(lang);
+  // Persist
+  localStorage.setItem('netrecon_lang', lang);
+  // Broadcast to other windows
+  if (broadcast && _syncChannel) _syncChannel.postMessage({ type: 'lang', value: lang });
+}
+
+function clampInt(v, min, max, fallback) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.round(n)));
+}
+
+function loadScanDefaults() {
+  try {
+    const raw = localStorage.getItem('netrecon_scan_defaults');
+    if (!raw) return { threads: 20, delayMs: 0 };
+    const obj = JSON.parse(raw);
+    return {
+      threads: clampInt(obj.threads, 2, 64, 20),
+      delayMs: clampInt(obj.delayMs, 0, 5000, 0)
+    };
+  } catch {
+    return { threads: 20, delayMs: 0 };
+  }
+}
+
+function saveScanDefaults(threads, delayMs) {
+  const safe = {
+    threads: clampInt(threads, 2, 64, 20),
+    delayMs: clampInt(delayMs, 0, 5000, 0)
+  };
+  localStorage.setItem('netrecon_scan_defaults', JSON.stringify(safe));
+  return safe;
+}
+
+function applyScanDefaultsToMainInputs(cfg) {
+  const threadsInput = document.getElementById('concNum');
+  const delayInput = document.getElementById('delayMs');
+  threadsInput.value = String(clampInt(cfg.threads, 2, 64, 20));
+  delayInput.value = String(clampInt(cfg.delayMs, 0, 5000, 0));
+}
+
+// ── Dialog overlay helpers ──
+function openOverlay(id) {
+  document.getElementById(id).classList.add('open');
+  bringToFront(document.querySelector(`#${id} .dlg95`));
+}
+function closeOverlay(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function closeAllMenus() {
+  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('open'));
+}
+
+// ── Language dialog ──
+let _prevLang = lang;
+function openLangDlg() {
+  _prevLang = lang;
+  document.getElementById('radioEn').checked = (lang === 'en');
+  document.getElementById('radioPl').checked = (lang === 'pl');
+  openOverlay('dlgOverlay');
+}
+function closeLangDlg() { closeOverlay('dlgOverlay'); }
+function cancelLangDlg() {
+  lang = _prevLang;
+  applyLang();
+  closeLangDlg();
+}
+document.querySelectorAll('input[name=dlgLang]').forEach(el => {
+  el.addEventListener('change', () => {
+    lang = document.querySelector('input[name=dlgLang]:checked').value;
+    applyLang();
+  });
+});
+document.getElementById('dlgOk').addEventListener('click', closeLangDlg);
+document.getElementById('dlgCancel').addEventListener('click', cancelLangDlg);
+
+// ── Defaults dialog ──
+function openDefaultsDlg() {
+  const cfg = loadScanDefaults();
+  document.getElementById('dlgDefaultThreads').value = String(cfg.threads);
+  document.getElementById('dlgDefaultDelay').value = String(cfg.delayMs);
+  openOverlay('dlgDefaultsOverlay');
+}
+function closeDefaultsDlg() { closeOverlay('dlgDefaultsOverlay'); }
+
+// ── Versions dialog ──
+function openVersionsDlg() { openOverlay('dlgVersionsOverlay'); }
+function closeVersionsDlg() { closeOverlay('dlgVersionsOverlay'); }
+function persistDefaultsFromDialog() {
+  const cfg = saveScanDefaults(
+    document.getElementById('dlgDefaultThreads').value,
+    document.getElementById('dlgDefaultDelay').value
+  );
+  applyScanDefaultsToMainInputs(cfg);
+}
+document.getElementById('dlgDefaultThreads').addEventListener('input', persistDefaultsFromDialog);
+document.getElementById('dlgDefaultDelay').addEventListener('input', persistDefaultsFromDialog);
+document.getElementById('dlgDefaultsOk').addEventListener('click', () => {
+  persistDefaultsFromDialog();
+  closeDefaultsDlg();
+});
+document.getElementById('dlgDefaultsCancel').addEventListener('click', closeDefaultsDlg);
+
+// ── Menu bar ──
+document.querySelectorAll('.menu-item').forEach(item => {
+  item.addEventListener('click', e => {
+    e.stopPropagation();
+    const wasOpen = item.classList.contains('open');
+    closeAllMenus();
+    if (!wasOpen) item.classList.add('open');
+  });
+});
+document.addEventListener('click', closeAllMenus);
+document.getElementById('menuLang').addEventListener('click', () => { closeAllMenus(); openLangDlg(); });
+document.getElementById('menuDefaults').addEventListener('click', () => { closeAllMenus(); openDefaultsDlg(); });
+document.getElementById('menuVersions').addEventListener('click', () => { closeAllMenus(); openVersionsDlg(); });
+document.getElementById('menuAbout').addEventListener('click', () => { closeAllMenus(); openNotepad(); });
+document.getElementById('menuClippy').addEventListener('click', () => {
+  closeAllMenus();
+  if (typeof window.clippyToggle === 'function') window.clippyToggle();
+});
+document.getElementById('menuToolTopology').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnTopologyToolbar')?.click(); });
+document.getElementById('menuToolGlobe').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnGlobe')?.click(); });
+document.getElementById('menuToolProto').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnProtoToolbar')?.click(); });
+document.getElementById('menuToolMacro').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnMacroToolbar')?.click(); });
+document.getElementById('menuToolSpeed').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnSpeedToolbar')?.click(); });
+document.getElementById('menuToolConsole').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnCmdConsole')?.click(); });
+document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
+
+// ══════════════════════════════════════════════════
+//  CUSTOMIZATION
+// ══════════════════════════════════════════════════
+const TOOLBAR_BTNS_CFG = [
+  { chk: 'chkBtnGlobe',   id: 'btnGlobe',        key: 'tb_globe' },
+  { chk: 'chkBtnConsole', id: 'btnCmdConsole',   key: 'tb_console' },
+  { chk: 'chkBtnMacro',   id: 'btnMacroToolbar', key: 'tb_macro' },
+  { chk: 'chkBtnSpeed',      id: 'btnSpeedToolbar',    key: 'tb_speed' },
+  { chk: 'chkBtnProto',      id: 'btnProtoToolbar',    key: 'tb_proto' },
+  { chk: 'chkBtnTopology',   id: 'btnTopologyToolbar', key: 'tb_topology' },
+];
+const UI_SKIN_KEY = 'ui_skin';
+const UI_SKINS = ['classic', 'glass', 'workbench'];
+
+function getSavedSkin() {
+  const savedSkin = localStorage.getItem(UI_SKIN_KEY);
+  return UI_SKINS.includes(savedSkin) ? savedSkin : 'classic';
+}
+
+function setBodySkinClass(skin, broadcast = true) {
+  document.body.classList.remove('skin-classic', 'skin-glass', 'skin-workbench');
+  document.body.classList.add(`skin-${skin}`);
+  // Broadcast to other windows
+  if (broadcast && _syncChannel) _syncChannel.postMessage({ type: 'skin', value: skin });
+}
+
+function applySkinCustomization() {
+  setBodySkinClass(getSavedSkin());
+}
+
+function applyToolbarCustomization() {
+  TOOLBAR_BTNS_CFG.forEach(({ id, key }) => {
+    const hidden = localStorage.getItem(key) === '0';
+    const btn = document.getElementById(id);
+    if (btn) btn.classList.toggle('initially-hidden', hidden);
+  });
+}
+
+let _prevSkin = getSavedSkin();
+function openCustomizeDlg() {
+  _prevSkin = getSavedSkin();
+  TOOLBAR_BTNS_CFG.forEach(({ chk, key }) => {
+    const el = document.getElementById(chk);
+    if (el) el.checked = localStorage.getItem(key) !== '0';
+  });
+
+  const activeSkin = getSavedSkin();
+  const skinClassic = document.getElementById('skinClassic');
+  const skinGlass = document.getElementById('skinGlass');
+  const skinWorkbench = document.getElementById('skinWorkbench');
+  if (skinClassic) skinClassic.checked = activeSkin === 'classic';
+  if (skinGlass) skinGlass.checked = activeSkin === 'glass';
+  if (skinWorkbench) skinWorkbench.checked = activeSkin === 'workbench';
+
+  openOverlay('dlgCustomizeOverlay');
+}
+function cancelCustomizeDlg() {
+  setBodySkinClass(_prevSkin);
+  closeOverlay('dlgCustomizeOverlay');
+}
+function closeCustomizeDlg() {
+  TOOLBAR_BTNS_CFG.forEach(({ chk, key }) => {
+    const el = document.getElementById(chk);
+    if (el) localStorage.setItem(key, el.checked ? '1' : '0');
+  });
+
+  const selectedSkin = document.querySelector('input[name="uiSkin"]:checked')?.value;
+  localStorage.setItem(UI_SKIN_KEY, UI_SKINS.includes(selectedSkin) ? selectedSkin : 'classic');
+
+  applyToolbarCustomization();
+  applySkinCustomization();
+  closeOverlay('dlgCustomizeOverlay');
+}
+
+document.getElementById('menuCustomize').addEventListener('click', () => { closeAllMenus(); openCustomizeDlg(); });
+
+document.querySelectorAll('input[name="uiSkin"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const skin = document.querySelector('input[name="uiSkin"]:checked')?.value;
+    setBodySkinClass(UI_SKINS.includes(skin) ? skin : 'classic');
+  });
+});
+
+document.getElementById('btnMacroToolbar').addEventListener('click', openMacroFolder);
+document.getElementById('btnSpeedToolbar').addEventListener('click', openSpeedWindow);
+document.getElementById('btnProtoToolbar').addEventListener('click', openProtoWindow);
+
+applyToolbarCustomization();
+applySkinCustomization();
+
+// ══════════════════════════════════════════════════
+//  PORT PRESETS
+// ══════════════════════════════════════════════════
+const DEFAULT_PRESETS = [
+  { name: '📹 Cameras',         ports: '80, 8080, 8081, 443, 554, 9000, 37777, 34567' },
+  { name: '🖨️ Printers',        ports: '80, 443, 631, 9100, 8080' },
+  { name: '📁 Folders / HTTP',  ports: '80, 8080, 8888, 21, 3000, 8000, 5000' },
+  { name: '🌐 Routers',         ports: '80, 443, 8080, 8443, 10000' },
+  { name: '💾 NAS / Servers',   ports: '80, 443, 5000, 5001, 8080, 8006, 9090' },
+  { name: '🔍 All ports',       ports: '80, 443, 8080, 8443, 8081, 554, 9000, 37777, 34567, 631, 9100, 5000, 5001, 8006, 21, 3000, 8000, 8888, 9090, 10000' },
+];
+
+function loadPresets() {
+  try {
+    const saved = localStorage.getItem('netrecon_presets');
+    return saved ? JSON.parse(saved) : DEFAULT_PRESETS.map(p => ({...p}));
+  } catch { return DEFAULT_PRESETS.map(p => ({...p})); }
+}
+function savePresetsStorage(arr) {
+  localStorage.setItem('netrecon_presets', JSON.stringify(arr));
+}
+
+let presets = loadPresets();
+let activePresetIdx = +( localStorage.getItem('netrecon_active_preset') || 0 );
+if (activePresetIdx >= presets.length) activePresetIdx = 0;
+let portsOverride = null;
+
+function getActivePorts() {
+  if (portsOverride !== null) return portsOverride;
+  const preset = presets[activePresetIdx];
+  if (!preset) return [];
+  return preset.ports.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n > 0 && n <= 65535);
+}
+
+function findAllPortsPresetIndex() {
+  if (!presets.length) return -1;
+  let bestIdx = 0;
+  let bestCount = -1;
+  presets.forEach((p, i) => {
+    const ports = (p?.ports || '').split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n > 0 && n <= 65535);
+    const name = (p?.name || '').toLowerCase();
+    const scoreBonus = (name.includes('all') || name.includes('wszyst')) ? 1000 : 0;
+    const score = ports.length + scoreBonus;
+    if (score > bestCount) {
+      bestCount = score;
+      bestIdx = i;
+    }
+  });
+  return bestIdx;
+}
+
+function activatePresetByIndex(idx) {
+  if (idx < 0 || idx >= presets.length) return;
+  activePresetIdx = idx;
+  localStorage.setItem('netrecon_active_preset', activePresetIdx);
+  const sel = document.getElementById('presetSelect');
+  if (sel) sel.value = String(activePresetIdx);
+  updatePortsDisplay();
+}
+
+function buildPresetSelect() {
+  const sel = document.getElementById('presetSelect');
+  sel.innerHTML = '';
+  presets.forEach((p, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = p.name;
+    if (i === activePresetIdx) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  updatePortsDisplay();
+}
+
+function updatePortsDisplay() {
+  const ports = getActivePorts();
+  document.getElementById('activePorts').textContent = ports.join(', ');
+  document.getElementById('portHint').textContent = presets[activePresetIdx]?.ports || '';
+}
+
+document.getElementById('presetSelect').addEventListener('change', function() {
+  activePresetIdx = +this.value;
+  localStorage.setItem('netrecon_active_preset', activePresetIdx);
+  updatePortsDisplay();
+});
+
+buildPresetSelect();
+
+// ── Presets Dialog ──
+let dlgSelectedPreset = -1;
+
+function openPresetsDlg() {
+  dlgSelectedPreset = activePresetIdx;
+  renderPresetListBox();
+  openOverlay('dlgPresetsOverlay');
+}
+function closePresetsDlg() { closeOverlay('dlgPresetsOverlay'); }
+
+function renderPresetListBox() {
+  const box = document.getElementById('presetListBox');
+  box.innerHTML = '';
+  presets.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'preset-row' + (i === dlgSelectedPreset ? ' selected' : '');
+    row.textContent = p.name;
+    row.addEventListener('click', () => {
+      dlgSelectedPreset = i;
+      renderPresetListBox();
+      loadPresetIntoEditor(i);
+    });
+    box.appendChild(row);
+  });
+  const editBox = document.getElementById('presetEditBox');
+  editBox.classList.toggle('disabled', dlgSelectedPreset < 0);
+}
+
+function loadPresetIntoEditor(i) {
+  const p = presets[i];
+  document.getElementById('presetNameInput').value  = p.name;
+  document.getElementById('presetPortsInput').value = p.ports;
+  document.getElementById('presetEditBox').classList.remove('disabled');
+}
+
+document.getElementById('btnPresetAdd').addEventListener('click', () => {
+  presets.push({ name: 'New Preset', ports: '80, 443, 8080' });
+  dlgSelectedPreset = presets.length - 1;
+  renderPresetListBox();
+  loadPresetIntoEditor(dlgSelectedPreset);
+  document.getElementById('presetNameInput').focus();
+  document.getElementById('presetNameInput').select();
+});
+
+document.getElementById('btnPresetDel').addEventListener('click', () => {
+  if (dlgSelectedPreset < 0 || presets.length <= 1) return;
+  presets.splice(dlgSelectedPreset, 1);
+  dlgSelectedPreset = Math.min(dlgSelectedPreset, presets.length - 1);
+  renderPresetListBox();
+  if (dlgSelectedPreset >= 0) loadPresetIntoEditor(dlgSelectedPreset);
+});
+
+document.getElementById('btnPresetUp').addEventListener('click', () => {
+  if (dlgSelectedPreset <= 0) return;
+  [presets[dlgSelectedPreset-1], presets[dlgSelectedPreset]] =
+  [presets[dlgSelectedPreset], presets[dlgSelectedPreset-1]];
+  dlgSelectedPreset--;
+  renderPresetListBox();
+  loadPresetIntoEditor(dlgSelectedPreset);
+});
+
+document.getElementById('btnPresetDown').addEventListener('click', () => {
+  if (dlgSelectedPreset < 0 || dlgSelectedPreset >= presets.length - 1) return;
+  [presets[dlgSelectedPreset+1], presets[dlgSelectedPreset]] =
+  [presets[dlgSelectedPreset], presets[dlgSelectedPreset+1]];
+  dlgSelectedPreset++;
+  renderPresetListBox();
+  loadPresetIntoEditor(dlgSelectedPreset);
+});
+
+document.getElementById('btnPresetSave').addEventListener('click', () => {
+  if (dlgSelectedPreset < 0) return;
+  const name  = document.getElementById('presetNameInput').value.trim();
+  const ports = document.getElementById('presetPortsInput').value.trim();
+  if (!name) return;
+  presets[dlgSelectedPreset] = { name, ports };
+  renderPresetListBox();
+});
+
+document.getElementById('dlgPresetsOk').addEventListener('click', () => {
+  // Auto-save any unsaved edits
+  if (dlgSelectedPreset >= 0) {
+    const name  = document.getElementById('presetNameInput').value.trim();
+    const ports = document.getElementById('presetPortsInput').value.trim();
+    if (name) presets[dlgSelectedPreset] = { name, ports };
+  }
+  savePresetsStorage(presets);
+  if (activePresetIdx >= presets.length) activePresetIdx = 0;
+  buildPresetSelect();
+  closePresetsDlg();
+});
+
+document.getElementById('menuPresets').addEventListener('click', () => { closeAllMenus(); openPresetsDlg(); });
+
+// ══════════════════════════════════════════════════
+//  IP INPUT — auto-jump between octets
+// ══════════════════════════════════════════════════
+['f0','f1','f2','f3','t0','t1','t2','t3'].forEach((id, idx) => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => {
+    el.value = el.value.replace(/[^0-9]/g,'');
+    if (+el.value > 255) el.value = '255';
+    if (el.value.length === 3) {
+      const ids = ['f0','f1','f2','f3','t0','t1','t2','t3'];
+      const next = document.getElementById(ids[idx+1]);
+      if (next) next.focus();
+    }
+  });
+  el.addEventListener('keydown', e => {
+    if (e.key === '.' || e.key === 'Tab') {
+      e.preventDefault();
+      const ids = ['f0','f1','f2','f3','t0','t1','t2','t3'];
+      const next = document.getElementById(ids[idx+1]);
+      if (next) next.focus();
+    }
+    if (e.key === 'Backspace' && el.value === '') {
+      const ids = ['f0','f1','f2','f3','t0','t1','t2','t3'];
+      const prev = document.getElementById(ids[idx-1]);
+      if (prev) prev.focus();
+    }
+  });
+});
+
+function getIP(prefix) {
+  return [0,1,2,3].map(i => document.getElementById(prefix+i).value || '0').join('.');
+}
+function setIP(prefix, ip) {
+  const parts = ip.split('.');
+  [0,1,2,3].forEach(i => { document.getElementById(prefix+i).value = parts[i]||''; });
+}
+
+
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+let scanning=false, stopRequested=false;
+const activeControllers = new Set();
+var foundHostsMap={}, foundPingMap={}, totalFound=0, totalOpenPorts=0;
+let timerInterval=null, scanStart=0;
+let selectedRowEl=null, ctxTargetIp='', ctxTargetPorts=[];
+let focusedIp = localStorage.getItem('netrecon_focus_ip') || '';
+
+// ══════════════════════════════════════════════════
+//  DOM
+// ══════════════════════════════════════════════════
+const btnGo       = document.getElementById('btnGo');
+const btnStop     = document.getElementById('btnStop');
+const btnClear    = document.getElementById('btnClear');
+const progFill    = document.getElementById('progFill');
+const progPct     = document.getElementById('progPct');
+const statChecked = document.getElementById('statChecked');
+const statFound   = document.getElementById('statFound');
+const statPorts   = document.getElementById('statPorts');
+const statTime    = document.getElementById('statTime');
+const statusMsg   = document.getElementById('statusMsg');
+const statusCount = document.getElementById('statusCount');
+const listBody    = document.getElementById('listBody');
+const emptyRow    = document.getElementById('emptyRow');
+const previewWrap = document.getElementById('previewWrap');
+const previewFrame= document.getElementById('previewFrame');
+const previewBlocked=document.getElementById('previewBlocked');
+const previewUrl  = document.getElementById('previewUrl');
+const btnPreviewOpen = document.getElementById('btnPreviewOpen');
+const btnPreviewClose= document.getElementById('btnPreviewClose');
+const previewExtLink = document.getElementById('previewExtLink');
+const ctxMenu     = document.getElementById('ctxMenu');
+
+// ══════════════════════════════════════════════════
+//  LIST FILTER
+// ══════════════════════════════════════════════════
+let _listFilter = 'all'; // 'all' | 'favorites' | 'active' | 'dead'
+const foundFavSet = new Set();
+
+function applyListFilter() {
+  document.querySelectorAll('.lv-row').forEach(row => {
+    const isActive  = row.querySelector('.light-on') !== null;
+    const isRowFav  = row.querySelector('.lv-star .star-on') !== null;
+    const paths = row.nextElementSibling;
+    const hasPortFav = paths && paths.classList.contains('paths-row')
+      ? paths.querySelector('.star-on') !== null
+      : false;
+    const isFav = isRowFav || hasPortFav;
+
+    let visible = true;
+    if (_listFilter === 'active')         visible = isActive;
+    else if (_listFilter === 'dead')      visible = !isActive;
+    else if (_listFilter === 'favorites') visible = isFav;
+
+    row.style.display = visible ? '' : 'none';
+
+    if (paths && paths.classList.contains('paths-row')) {
+      if (!visible) {
+        paths.style.display = 'none';
+      } else if (_listFilter === 'favorites' && hasPortFav && !isRowFav) {
+        // host not favorited but has favorited ports — auto-expand
+        paths.classList.add('open');
+        paths.style.display = 'flex';
+      } else {
+        paths.style.display = paths.classList.contains('open') ? 'flex' : 'none';
+      }
+      // In favorites mode, hide individual port lines that aren't starred
+      paths.querySelectorAll('.path-port-line').forEach(line => {
+        if (_listFilter === 'favorites') {
+          line.style.display = line.querySelector('.star-on') !== null ? '' : 'none';
+        } else {
+          line.style.display = '';
+        }
+      });
+    }
+  });
+}
+
+['btnFilterAll', 'btnFilterFavorites', 'btnFilterActive', 'btnFilterDead'].forEach(id => {
+  document.getElementById(id)?.addEventListener('click', () => {
+    _listFilter = id === 'btnFilterAll' ? 'all'
+      : id === 'btnFilterFavorites' ? 'favorites'
+      : id === 'btnFilterActive'    ? 'active'
+      : 'dead';
+    document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    applyListFilter();
+  });
+});
+
+// Expand / collapse all rows via [+] header click
+let _allExpanded = false;
+document.getElementById('colExpandAll')?.addEventListener('click', () => {
+  _allExpanded = !_allExpanded;
+  document.getElementById('colExpandAll').textContent = _allExpanded ? '−' : '+';
+  document.querySelectorAll('.paths-row').forEach(paths => {
+    const row = paths.previousElementSibling;
+    if (row && row.style.display === 'none') return; // skip hidden rows
+    const expandBtn = row?.querySelector('.row-expand-btn');
+    if (_allExpanded) {
+      paths.classList.add('open');
+      paths.style.display = 'flex';
+      if (expandBtn) expandBtn.textContent = '−';
+    } else {
+      paths.classList.remove('open');
+      paths.style.display = 'none';
+      if (expandBtn) expandBtn.textContent = '+';
+    }
+  });
+});
+
+// Check column header — right-click context menu
+const checkCtxMenu = document.getElementById('checkCtxMenu');
+
+document.getElementById('colCheckAll')?.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  e.stopPropagation();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  checkCtxMenu.style.left = Math.min(e.clientX, vw - 180) + 'px';
+  checkCtxMenu.style.top  = Math.min(e.clientY, vh - 80)  + 'px';
+  checkCtxMenu.classList.add('open');
+});
+
+document.getElementById('checkCtxMarkVisible')?.addEventListener('click', () => {
+  checkCtxMenu.classList.remove('open');
+  document.querySelectorAll('.lv-row').forEach(row => {
+    if (row.style.display === 'none') return;
+    const span = row.querySelector('.lv-icon span');
+    if (span) { span.className = 'icon-ok'; span.title = 'Marked'; }
+  });
+});
+
+document.getElementById('checkCtxUnmarkVisible')?.addEventListener('click', () => {
+  checkCtxMenu.classList.remove('open');
+  document.querySelectorAll('.lv-row').forEach(row => {
+    if (row.style.display === 'none') return;
+    const span = row.querySelector('.lv-icon span');
+    if (span) { span.className = 'icon-ok-off'; span.title = 'Mark'; }
+  });
+});
+
+document.addEventListener('click', () => checkCtxMenu?.classList.remove('open'));
+
+// Favorites column header — right-click context menu
+const favCtxMenu = document.getElementById('favCtxMenu');
+
+document.getElementById('colFavAll')?.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  e.stopPropagation();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  favCtxMenu.style.left = Math.min(e.clientX, vw - 200) + 'px';
+  favCtxMenu.style.top  = Math.min(e.clientY, vh - 80)  + 'px';
+  favCtxMenu.classList.add('open');
+});
+
+document.getElementById('favCtxAddVisible')?.addEventListener('click', () => {
+  favCtxMenu.classList.remove('open');
+  document.querySelectorAll('.lv-row').forEach(row => {
+    if (row.style.display === 'none') return;
+    const span = row.querySelector('.lv-star span');
+    if (span) {
+      const ip = row.dataset.ip;
+      foundFavSet.add(ip);
+      span.className = 'star-on';
+      span.title = 'Favorite';
+    }
+  });
+  if (_listFilter === 'favorites') applyListFilter();
+});
+
+document.getElementById('favCtxRemoveVisible')?.addEventListener('click', () => {
+  favCtxMenu.classList.remove('open');
+  document.querySelectorAll('.lv-row').forEach(row => {
+    if (row.style.display === 'none') return;
+    const span = row.querySelector('.lv-star span');
+    if (span) {
+      const ip = row.dataset.ip;
+      foundFavSet.delete(ip);
+      span.className = 'star-off';
+      span.title = 'Add to favorites';
+    }
+  });
+  if (_listFilter === 'favorites') applyListFilter();
+});
+
+document.addEventListener('click', () => favCtxMenu?.classList.remove('open'));
+
+// ══════════════════════════════════════════════════
+//  COLUMN SORTING (IP / Ping)
+// ══════════════════════════════════════════════════
+let _sortCol = null; // 'ip' | 'ping'
+let _sortDir = 1;    // 1 = asc, -1 = desc
+
+function sortListView(col) {
+  if (_sortCol === col) _sortDir *= -1;
+  else { _sortCol = col; _sortDir = 1; }
+
+  // Update header indicators
+  const ipEl   = document.getElementById('colSortIp');
+  const pingEl = document.getElementById('colSortPing');
+  if (ipEl)   ipEl.textContent   = 'IP Address' + (col === 'ip'   ? (_sortDir === 1 ? ' ▲' : ' ▼') : '');
+  if (pingEl) pingEl.textContent = 'Ping'        + (col === 'ping' ? (_sortDir === 1 ? ' ▲' : ' ▼') : '');
+
+  // Collect row+pathsRow pairs from listBody
+  const listBody = document.getElementById('listBody');
+  const pairs = [];
+  let child = listBody.firstElementChild;
+  while (child) {
+    if (child.classList.contains('lv-row')) {
+      const next = child.nextElementSibling;
+      const pathsRow = (next && next.classList.contains('paths-row')) ? next : null;
+      pairs.push({ row: child, pathsRow });
+      child = pathsRow ? pathsRow.nextElementSibling : next;
+    } else {
+      child = child.nextElementSibling;
+    }
+  }
+
+  pairs.sort((a, b) => {
+    if (col === 'ip') {
+      return _sortDir * (ipToNum(a.row.dataset.ip) - ipToNum(b.row.dataset.ip));
+    } else {
+      const p = row => {
+        const v = row.dataset.ping;
+        return (v !== undefined && v !== '') ? parseInt(v) : Infinity;
+      };
+      return _sortDir * (p(a.row) - p(b.row));
+    }
+  });
+
+  // Re-insert in sorted order
+  const frag = document.createDocumentFragment();
+  pairs.forEach(({ row, pathsRow }) => {
+    frag.appendChild(row);
+    if (pathsRow) frag.appendChild(pathsRow);
+  });
+  listBody.appendChild(frag);
+}
+
+document.getElementById('colSortIp')?.addEventListener('click',   () => sortListView('ip'));
+document.getElementById('colSortPing')?.addEventListener('click', () => sortListView('ping'));
+
+// ══════════════════════════════════════════════════
+//  EXTRA COLUMNS (Columns panel)
+// ══════════════════════════════════════════════════
+const EXTRA_COLS = [
+  { key: 'hostname', width: '120px' },
+  { key: 'geo',      width: '170px' },
+  { key: 'device',   width: '140px' },
+  { key: 'title',    width: '200px' },
+  { key: 'access',   width: '80px'  },
+];
+const colsEnabled = { hostname: false, geo: false, device: false, title: false, access: false };
+const BASE_LV_COLS = '20px 18px 18px 124px 26px 80px';
+
+function updateColsGrid() {
+  const extras = EXTRA_COLS.filter(c => colsEnabled[c.key]).map(c => c.width).join(' ');
+  const cols = extras ? `${BASE_LV_COLS} ${extras}` : BASE_LV_COLS;
+  document.getElementById('listviewWrap')?.style.setProperty('--lv-cols', cols);
+  EXTRA_COLS.forEach(({ key }) => {
+    const show = colsEnabled[key];
+    document.querySelector(`.lv-extra-col[data-col="${key}"]`)?.style.setProperty('display', show ? '' : 'none');
+    document.querySelectorAll(`.lv-extra-cell[data-col="${key}"]`).forEach(el => {
+      el.style.display = show ? '' : 'none';
+    });
+  });
+}
+
+async function enrichRowCols(ip, ports, row) {
+  const active = EXTRA_COLS.map(c => c.key).filter(k => colsEnabled[k]);
+  if (!active.length) return;
+  const cell = key => row.querySelector(`.lv-extra-cell[data-col="${key}"]`);
+  const tasks = [];
+  if (colsEnabled.hostname) {
+    tasks.push(lookupHostname(ip).then(h => {
+      const c = cell('hostname'); if (c) c.textContent = h || '—';
+    }));
+  }
+  if (colsEnabled.geo || colsEnabled.device || colsEnabled.title || colsEnabled.access) {
+    tasks.push(enrichRow(ip, ports, {
+      cGeo:    cell('geo'),
+      cDevice: cell('device'),
+      cTitle:  cell('title'),
+      cAccess: cell('access'),
+    }));
+  }
+  await Promise.all(tasks);
+}
+
+// Columns panel toggle
+const colsPanel = document.getElementById('colsPanel');
+document.getElementById('btnCols')?.addEventListener('click', e => {
+  e.stopPropagation();
+  const btn = document.getElementById('btnCols');
+  const rect = btn.getBoundingClientRect();
+  colsPanel.style.position = 'fixed';
+  colsPanel.style.top  = rect.bottom + 2 + 'px';
+  colsPanel.style.left = rect.left + 'px';
+  colsPanel.style.right = '';
+  colsPanel.classList.toggle('open');
+  btn.classList.toggle('active', colsPanel.classList.contains('open'));
+});
+document.addEventListener('click', e => {
+  if (!colsPanel?.contains(e.target) && e.target.id !== 'btnCols') {
+    colsPanel?.classList.remove('open');
+    document.getElementById('btnCols')?.classList.remove('active');
+  }
+});
+
+// Checkbox handlers
+document.querySelectorAll('#colsPanel input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', () => {
+    colsEnabled[cb.dataset.col] = cb.checked;
+    updateColsGrid();
+    if (cb.checked) {
+      // Trigger enrichment for all existing rows
+      document.querySelectorAll('.lv-row[data-ip]').forEach(row => {
+        const ip = row.dataset.ip;
+        const ports = foundHostsMap[ip] || [];
+        enrichRowCols(ip, ports, row);
+      });
+    }
+  });
+});
+
+// ══════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════
+function isIPv4(v) {
+  if (!v.match(/^(\d{1,3}\.){3}\d{1,3}$/)) return false;
+  return v.split('.').every(p => { const n=+p; return n>=0&&n<=255; });
+}
+function ipToNum(ip) { return ip.split('.').reduce((a,p)=>((a<<8)+ +p)>>>0,0); }
+function numToIp(n)  { return [24,16,8,0].map(s=>(n>>>s)&255).join('.'); }
+
+function isPrivateIp(num) {
+  // 10.0.0.0/8
+  if (num >= 0x0A000000 && num <= 0x0AFFFFFF) return true;
+  // 172.16.0.0/12
+  if (num >= 0xAC100000 && num <= 0xAC1FFFFF) return true;
+  // 192.168.0.0/16
+  if (num >= 0xC0A80000 && num <= 0xC0A8FFFF) return true;
+  // 127.0.0.0/8 loopback
+  if (num >= 0x7F000000 && num <= 0x7FFFFFFF) return true;
+  // 169.254.0.0/16 link-local
+  if (num >= 0xA9FE0000 && num <= 0xA9FEFFFF) return true;
+  return false;
+}
+
+
+function showExternalIpConfirm(startIp, endIp) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('dlgExternalIpOverlay');
+    document.getElementById('dlgExternalIpMsg').innerHTML = t('dlgExternalIpMsg', startIp, endIp);
+    overlay.classList.add('open');
+    if (typeof bringToFront === 'function') bringToFront(overlay.querySelector('.dlg95'));
+    const cleanup = (result) => {
+      overlay.classList.remove('open');
+      document.getElementById('btnExtIpOk').removeEventListener('click', onOk);
+      document.getElementById('btnExtIpCancelBtn').removeEventListener('click', onCancel);
+      document.getElementById('btnExtIpCancel').removeEventListener('click', onCancel);
+      resolve(result);
+    };
+    const onOk     = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    document.getElementById('btnExtIpOk').addEventListener('click', onOk);
+    document.getElementById('btnExtIpCancelBtn').addEventListener('click', onCancel);
+    document.getElementById('btnExtIpCancel').addEventListener('click', onCancel);
+  });
+}
+
+function showLargeRangeConfirm(count) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('dlgLargeRangeOverlay');
+    const msg = document.getElementById('dlgLargeRangeMsg');
+    msg.textContent = t('dlgLargeRangeMsg', count.toLocaleString());
+    overlay.classList.add('open');
+    if (typeof bringToFront === 'function') bringToFront(overlay.querySelector('.dlg95'));
+    const cleanup = (result) => {
+      overlay.classList.remove('open');
+      document.getElementById('btnLargeRangeOk').removeEventListener('click', onOk);
+      document.getElementById('btnLargeRangeCancelBtn').removeEventListener('click', onCancel);
+      document.getElementById('btnLargeRangeCancel').removeEventListener('click', onCancel);
+      resolve(result);
+    };
+    const onOk     = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    document.getElementById('btnLargeRangeOk').addEventListener('click', onOk);
+    document.getElementById('btnLargeRangeCancelBtn').addEventListener('click', onCancel);
+    document.getElementById('btnLargeRangeCancel').addEventListener('click', onCancel);
+  });
+}
+function setStatus(text, type='') {
+  statusMsg.textContent = text;
+  statusMsg.className = 'status-panel'+(type?' '+type:'');
+}
+function updateProgress(checked, total, fh, op) {
+  const pct = total ? Math.round(checked/total*100) : 0;
+  progFill.style.width = pct+'%';
+  progPct.textContent = pct+'%';
+  statChecked.textContent = checked;
+  statFound.textContent   = fh;
+  statPorts.textContent   = op;
+  statusCount.textContent = t('statusHosts', fh);
+}
+function setScanState(on) {
+  scanning=on; btnGo.disabled=on; btnStop.disabled=!on;
+  if (on) {
+    btnGo.classList.add('pressed');
+    scanStart=Date.now();
+    timerInterval=setInterval(()=>{
+      statTime.textContent = ((Date.now()-scanStart)/1000).toFixed(1)+'s';
+    },200);
+  } else {
+    btnGo.classList.remove('pressed');
+    clearInterval(timerInterval);
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  PROBE
+// ══════════════════════════════════════════════════
+
+// Tauri invoke helper — falls back to null when running in a plain browser
+const _tauriInvoke = (window.__TAURI_INTERNALS__?.invoke)
+  ?? (window.__TAURI__?.invoke)
+  ?? (window.__TAURI__?.core?.invoke)
+  ?? null;
+
+const _tauriListen = window.__TAURI__?.event?.listen ?? null;
+const _toolMode = (new URLSearchParams((window.location.hash || '').replace(/^#/, ''))).get('tool');
+// Declared in globe.js first (loads earlier); guard against duplicate const.
+if (typeof _isTauriDesktop === 'undefined') {
+  var _isTauriDesktop = !!(window.__TAURI__ || window.__TAURI_INTERNALS__ || navigator.userAgent.toLowerCase().includes('tauri'));
+}
+
+function openToolNativeWindow(tool) {
+  if (!_tauriInvoke || _toolMode) return false;
+  _tauriInvoke('open_tool_window', { tool }).catch(() => {});
+  return true;
+}
+
+function makeToolChromeCloseOnly(target) {
+  const bar = target.querySelector('.titlebar');
+  if (!bar) return;
+
+  bar.classList.add('cursor-move');
+
+  let btns = bar.querySelector('.titlebar-btns');
+  if (!btns) {
+    btns = document.createElement('div');
+    btns.className = 'titlebar-btns';
+    bar.appendChild(btns);
+  }
+
+  const allBtns = Array.from(bar.querySelectorAll('.title-btn, button'));
+  let closeBtn = allBtns.find(btn => {
+    const id = (btn.id || '').toLowerCase();
+    const txt = (btn.textContent || '').trim();
+    return id.includes('close') || txt.includes('✕') || txt.toLowerCase() === 'x';
+  });
+
+  allBtns.forEach(btn => {
+    if (btn !== closeBtn) btn.classList.add('initially-hidden');
+  });
+
+  if (!closeBtn) {
+    closeBtn = document.createElement('button');
+    closeBtn.className = 'title-btn title-btn-close';
+    closeBtn.textContent = '✕';
+    btns.appendChild(closeBtn);
+  }
+
+  closeBtn.classList.remove('initially-hidden');
+  closeBtn.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeCurrentWindowImmediate();
+  };
+
+  if (!bar.dataset.toolDragBound) {
+    bar.dataset.toolDragBound = '1';
+    bar.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch' && e.button !== 0) return;
+      if (e.target.closest('.title-btn, button')) return;
+      e.preventDefault();
+      startMainWindowDrag();
+    });
+  }
+}
+
+function hideToolMenus(target) {
+  target.querySelectorAll('.menubar').forEach(el => {
+    el.classList.add('initially-hidden');
+  });
+
+  const cmdMacroMenu = target.querySelector('#cmdMenuMacro');
+  if (cmdMacroMenu?.parentElement) {
+    cmdMacroMenu.parentElement.classList.add('initially-hidden');
+  }
+}
+
+function applyToolWindowMode() {
+  if (!_toolMode) return;
+  document.body.classList.add('tool-window-mode');
+  document.documentElement.classList.remove('tool-window-boot');
+
+  const toolToWindow = {
+    console: 'cmdWin',
+    macro: 'macroFolderWin',
+    speed: 'speedWin',
+    proto: 'protoWin',
+    globe: 'globeWin',
+    topology: 'topoWin',
+  };
+
+  const targetId = toolToWindow[_toolMode];
+  const target = targetId ? document.getElementById(targetId) : null;
+  if (!target) return;
+
+  target.classList.add('tool-fullscreen');
+
+  makeToolChromeCloseOnly(target);
+  hideToolMenus(target);
+
+  if (_toolMode === 'macro' && typeof renderMacroFiles === 'function') {
+    renderMacroFiles();
+  }
+  if (_toolMode === 'console') {
+    if (typeof openCmdConsole === 'function') openCmdConsole();
+  }
+  if (_toolMode === 'proto' && typeof initProtoCanvas === 'function') {
+    initProtoCanvas();
+    if (typeof protoRenderLinks === 'function') protoRenderLinks();
+  }
+  if (_toolMode === 'globe' && typeof initGlobe === 'function') {
+    if (!globeReady) initGlobe();
+    else { if (typeof drawGlobe === 'function') drawGlobe(); if (typeof startRotation === 'function') startRotation(); }
+  }
+  if (_toolMode === 'topology' && typeof initTopo === 'function') {
+    initTopo();
+  }
+}
+
+function applyNativeChromeMode() {
+  document.body.classList.remove('tauri-native-menu');
+}
+
+// Apply as early as possible and re-apply once DOM is fully ready.
+applyNativeChromeMode();
+window.addEventListener('DOMContentLoaded', () => {
+  applyNativeChromeMode();
+  applyToolWindowMode();
+});
+
+function handleNativeMenuAction(actionId) {
+  switch (actionId) {
+    case 'scan_start':
+      document.getElementById('btnGo')?.click();
+      break;
+    case 'scan_stop':
+      document.getElementById('btnStop')?.click();
+      break;
+    case 'scan_clear':
+      document.getElementById('btnClear')?.click();
+      break;
+    case 'app_exit':
+      closeMainWindow();
+      break;
+    case 'open_countries':
+      document.getElementById('menuCountries')?.click();
+      break;
+    case 'open_presets':
+      document.getElementById('menuPresets')?.click();
+      break;
+    case 'open_defaults':
+      document.getElementById('menuDefaults')?.click();
+      break;
+    case 'open_lang':
+      document.getElementById('menuLang')?.click();
+      break;
+    case 'open_customize':
+      document.getElementById('menuCustomize')?.click();
+      break;
+    case 'open_globe':
+      document.getElementById('btnGlobe')?.click();
+      break;
+    case 'open_console':
+      document.getElementById('btnCmdConsole')?.click();
+      break;
+    case 'open_macro':
+      document.getElementById('btnMacroToolbar')?.click();
+      break;
+    case 'open_speed':
+      document.getElementById('btnSpeedToolbar')?.click();
+      break;
+    case 'open_proto':
+      document.getElementById('btnProtoToolbar')?.click();
+      break;
+    case 'open_topology':
+      document.getElementById('btnTopologyToolbar')?.click();
+      break;
+    case 'help_versions':
+      document.getElementById('menuVersions')?.click();
+      break;
+    case 'help_about':
+      document.getElementById('menuAbout')?.click();
+      break;
+  }
+}
+
+if (_tauriListen) {
+  _tauriListen('native-menu', event => {
+    if (typeof event?.payload === 'string') {
+      handleNativeMenuAction(event.payload);
+    }
+  }).catch(() => {});
+}
+
+async function probePort(ip, port, ms=1500) {
+  if (_tauriInvoke) {
+    // Native Rust TCP probe — no CORS restrictions
+    try {
+      const r = await _tauriInvoke('scan_port', { ip, port, timeoutMs: ms });
+      return { ok: r.open, ms: r.ms ?? null };
+    } catch (e) {
+      if (!window.__scanInvokeWarned) {
+        window.__scanInvokeWarned = true;
+        const msg = (e && e.message) ? e.message : String(e);
+        setStatus(`Tauri invoke error: ${msg}`, 'err');
+      }
+      return { ok: false, ms: null };
+    }
+  }
+  // Browser fallback (used when opening index.html directly)
+  const ctrl = new AbortController();
+  activeControllers.add(ctrl);
+  const tid = setTimeout(()=>ctrl.abort(), ms);
+  const t0 = Date.now();
+  try {
+    const proto = (port===443||port===8443)?'https':'http';
+    await fetch(`${proto}://${ip}:${port}/`,{mode:'no-cors',cache:'no-store',signal:ctrl.signal});
+    return { ok: true, ms: Date.now() - t0 };
+  } catch { return { ok: false, ms: null }; }
+  finally { clearTimeout(tid); activeControllers.delete(ctrl); }
+}
+
+function tryImageLoad(url, ms=2000) {
+  return new Promise(res => {
+    const img=new Image();
+    const tid=setTimeout(()=>{img.src='';res(false);},ms);
+    img.onload =()=>{clearTimeout(tid);res(true); };
+    img.onerror=()=>{clearTimeout(tid);res(false);};
+    img.src=url;
+  });
+}
+
+function isPrivateIP(ip) {
+  if (!isIPv4(ip)) return false;
+  return isPrivateIp(ipToNum(ip));
+}
+
+// ── Geolocation via ip-api.com ──
+async function geoLookup(ip) {
+  try {
+    let d;
+    if (_tauriInvoke) {
+      // Rust handles the HTTP request — no CORS/mixed-content issues
+      d = await _tauriInvoke('geo_lookup', { ip });
+    } else {
+      const r = await fetch(
+        `http://ip-api.com/json/${ip}?fields=status,country,city,isp,org,proxy,hosting,as,lat,lon`,
+        { signal: AbortSignal.timeout(4000) }
+      );
+      d = await r.json();
+    }
+    if (d && d.status === 'success') {
+      if (d.lat && d.lon) {
+        ipGeoCoords[ip] = { lat: d.lat, lon: d.lon, country: d.country };
+        updateGlobeDots();
+      }
+      return d;
+    }
+    return null;
+  } catch { return null; }
+}
+
+// ── Page title via CORS proxy (external IPs only) ──
+async function fetchTitle(ip, port) {
+  const proto = (port===443||port===8443)?'https':'http';
+  const target = encodeURIComponent(`${proto}://${ip}:${port}/`);
+  try {
+    const r = await fetch(`https://corsproxy.io/?${target}`,
+      { signal: AbortSignal.timeout(5000) });
+    const html = await r.text();
+    const m = html.match(/<title[^>]*>([^<]{1,100})<\/title>/i);
+    return m ? m[1].trim().replace(/\s+/g,' ') : null;
+  } catch { return null; }
+}
+
+// ── Favicon probe ──
+function checkFavicon(ip, port) {
+  const proto = (port===443||port===8443)?'https':'http';
+  return tryImageLoad(`${proto}://${ip}:${port}/favicon.ico`, 2000);
+}
+
+// ── Snapshot / open auth ──
+async function checkAuth(ip, ports) {
+  const snaps = [
+    '/snapshot.jpg','/image.jpg','/jpg/image.jpg',
+    '/cgi-bin/snapshot.cgi','/webcapture.jpg',
+    '/live/0/mjpeg.jpg','/tmpfs/auto.jpg',
+    '/ISAPI/Streaming/channels/101/picture',
+    '/onvif/snapshot',
+  ];
+  for (const port of ports) {
+    const proto=(port===443||port===8443)?'https':'http';
+    for (const path of snaps)
+      if (await tryImageLoad(`${proto}://${ip}:${port}${path}`, 1800)) return true;
+  }
+  return false;
+}
+
+// ── Device fingerprint by known image paths ──
+const FP_IMAGES = [
+  { path: '/ISAPI/Streaming/channels/101/picture', label: 'Hikvision' },
+  { path: '/cgi-bin/snapshot.cgi',                 label: 'Dahua / kamera' },
+  { path: '/jpg/image.jpg',                         label: 'Kamera IP' },
+  { path: '/webcapture.jpg',                        label: 'Kamera IP' },
+  { path: '/onvif/snapshot',                        label: 'ONVIF Camera' },
+  { path: '/tmpfs/auto.jpg',                        label: 'Kamera IP (wbudowana)' },
+  { path: '/axis-cgi/jpg/image.cgi',                label: 'Axis Camera' },
+];
+
+async function fingerprintByImage(ip, ports) {
+  for (const port of ports.slice(0, 3)) {
+    const proto=(port===443||port===8443)?'https':'http';
+    for (const fp of FP_IMAGES) {
+      if (await tryImageLoad(`${proto}://${ip}:${port}${fp.path}`, 1400))
+        return fp.label;
+    }
+  }
+  return null;
+}
+
+// ── Full enrichment (runs async after row is added) ──
+async function enrichRow(ip, ports, cells) {
+  const { cGeo, cDevice, cTitle, cAccess } = cells;
+
+  // Run geo + fingerprint + favicon + title in parallel
+  const [ geo, deviceLabel, hasFavicon, isOpen, title ] = await Promise.all([
+    geoLookup(ip),
+    fingerprintByImage(ip, ports),
+    checkFavicon(ip, ports[0]),
+    checkAuth(ip, ports),
+    isPrivateIP(ip) ? Promise.resolve(null) : fetchTitle(ip, ports[0]),
+  ]);
+
+  // Geo
+  if (geo) {
+    const vpnTag = geo.proxy   ? `<span class="detail-tag tag-vpn">${t('tagVpn')}</span>` : '';
+    const dcTag  = geo.hosting ? `<span class="detail-tag tag-dc">${t('tagDc')}</span>`   : '';
+    cGeo.innerHTML =
+      `<div class="detail-line"><b>${t('geoCountry')}</b> ${geo.country||'?'} — ${geo.city||'?'}${vpnTag}${dcTag}</div>`+
+      `<div class="detail-line"><b>${t('geoIsp')}</b> ${geo.isp||'?'}</div>`+
+      `<div class="detail-line"><b>${t('geoAs')}</b> ${geo.as||'?'}</div>`;
+  } else {
+    cGeo.innerHTML = isPrivateIP(ip)
+      ? `<div class="detail-line detail-muted">${t('geoLocal')}</div>`
+      : `<div class="detail-line status-error">${t('geoError')}</div>`;
+  }
+
+  // Device
+  let deviceHtml = '';
+  if (deviceLabel) {
+    deviceHtml += `<div class="detail-line"><b>${t('deviceType')}</b> ${deviceLabel} <span class="detail-tag tag-device">${t('tagRecognized')}</span></div>`;
+  }
+  deviceHtml += `<div class="detail-line"><b>${t('deviceFavicon')}</b> ${hasFavicon ? t('deviceFaviconYes') : t('deviceFaviconNo')}</div>`;
+  const portGuess = ports.includes(554)  ? t('portRtsp') :
+                    ports.includes(631)  ? t('portIpp')  :
+                    ports.includes(9100) ? t('portRaw')  :
+                    ports.includes(5000)||ports.includes(5001) ? t('portSyn') :
+                    ports.includes(8006) ? t('portProx') : null;
+  if (portGuess) deviceHtml += `<div class="detail-line"><b>${t('deviceSuggestion')}</b> ${portGuess}</div>`;
+  cDevice.innerHTML = deviceHtml || `<div class="detail-line detail-muted">${t('deviceUnknown')}</div>`;
+
+  // Title
+  if (title) {
+    cTitle.innerHTML = `<div class="detail-line"><b>${t('titleLabel')}</b> "${title}"</div>`;
+  } else if (isPrivateIP(ip)) {
+    cTitle.innerHTML = `<div class="detail-line detail-muted">${t('titleExtOnly')}</div>`;
+  } else {
+    cTitle.innerHTML = `<div class="detail-line detail-muted">${t('titleUnavailable')}</div>`;
+  }
+
+  // Access
+  cAccess.innerHTML = isOpen
+    ? `<div class="detail-line"><b>${t('accessLabel')}</b> <span class="text-ok">${t('accessOpen')}</span></div>`
+    : `<div class="detail-line"><b>${t('accessLabel')}</b> ${t('accessClosed')}</div>`;
+}
+
+// ── Hostname lookup via ip-api (already used for geo, reuse) ──
+const hostnameCache = {};
+async function lookupHostname(ip) {
+  if (hostnameCache[ip] !== undefined) return hostnameCache[ip];
+  try {
+    const r = await fetch(
+      `http://ip-api.com/json/${ip}?fields=status,reverse`,
+      { signal: AbortSignal.timeout(4000) }
+    );
+    const d = await r.json();
+    const result = (d.status === 'success' && d.reverse) ? d.reverse : null;
+    hostnameCache[ip] = result;
+    return result;
+  } catch { hostnameCache[ip] = null; return null; }
+}
+
+// ══════════════════════════════════════════════════
+//  ADD ROW
+// ══════════════════════════════════════════════════
+function addResultRow(ip, openPorts, pingMs) {
+  if (emptyRow.parentNode) emptyRow.remove();
+
+  // Generic paths — work for any device type
+  const paths = [
+    {p:'/',l:'/'}, {p:'/admin',l:'/admin'}, {p:'/video',l:'/video'},
+    {p:'/snapshot.jpg',l:'/snapshot'}, {p:'/files',l:'/files'},
+    {p:'/status',l:'/status'}, {p:'/stream',l:'/stream'},
+    {p:'/mjpeg',l:'/mjpeg'},
+  ];
+
+  const row = document.createElement('div');
+  row.className = 'lv-row';
+  row.dataset.ip = ip;
+
+  // Icon (toggleable checkmark — off by default)
+  const cIcon = document.createElement('div');
+  cIcon.className = 'lv-cell lv-icon';
+  cIcon.innerHTML = '<span class="icon-ok-off" title="Mark">✔</span>';
+  cIcon.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const span = cIcon.querySelector('span');
+    const on = span.className === 'icon-ok';
+    span.className = on ? 'icon-ok-off' : 'icon-ok';
+    span.title = on ? 'Mark' : 'Marked';
+  });
+  row.appendChild(cIcon);
+
+  // Star (favorites)
+  const cStar = document.createElement('div');
+  cStar.className = 'lv-cell lv-star';
+  const isFav = foundFavSet.has(ip);
+  cStar.innerHTML = `<span class="${isFav ? 'star-on' : 'star-off'}" title="${isFav ? 'Favorite' : 'Add to favorites'}">★</span>`;
+  cStar.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const span = cStar.querySelector('span');
+    if (foundFavSet.has(ip)) {
+      foundFavSet.delete(ip);
+      span.className = 'star-off';
+      span.title = 'Add to favorites';
+    } else {
+      foundFavSet.add(ip);
+      span.className = 'star-on';
+      span.title = 'Favorite';
+    }
+    if (_listFilter === 'favorites') applyListFilter();
+  });
+  row.appendChild(cStar);
+
+  // Status light
+  const cLight = document.createElement('div');
+  cLight.className = 'lv-cell lv-light';
+  cLight.innerHTML = '<span class="light-on" title="Active">●</span>';
+  row.appendChild(cLight);
+
+  // IP
+  const cIp = document.createElement('div');
+  cIp.className='lv-cell';
+  cIp.innerHTML = `${ip} <span id="acc_${ip.replace(/\./g,'_')}" class="lv-acc-span"></span>`;
+  row.appendChild(cIp);
+
+  // Expand (+)
+  const cExpand = document.createElement('div');
+  cExpand.className = 'lv-cell lv-expand-cell';
+  const expandBtn = document.createElement('span');
+  expandBtn.className = 'row-expand-btn';
+  expandBtn.textContent = '+';
+  expandBtn.title = 'Pokaż udostępnione zasoby';
+  cExpand.appendChild(expandBtn);
+  row.appendChild(cExpand);
+
+  // Ping
+  const cPing = document.createElement('div');
+  cPing.className='lv-cell';
+  if (pingMs !== null && pingMs !== undefined) {
+    const cls = pingMs < 100 ? 'ping-fast' : pingMs < 500 ? 'ping-ok' : 'ping-slow';
+    cPing.innerHTML = `<span class="${cls}">${pingMs} ms</span>`;
+    row.dataset.ping = pingMs;
+  } else {
+    cPing.innerHTML = '<span class="ping-none">-</span>';
+    row.dataset.ping = '';
+  }
+  row.appendChild(cPing);
+
+  // Extra enrichment cells (hidden until column enabled)
+  EXTRA_COLS.forEach(({ key }) => {
+    const c = document.createElement('div');
+    c.className = 'lv-cell lv-extra-cell';
+    c.dataset.col = key;
+    c.style.display = colsEnabled[key] ? '' : 'none';
+    c.textContent = '…';
+    row.appendChild(c);
+  });
+
+  // ── Paths sub-row (expandable below the row) ──
+  const pathsRow = document.createElement('div');
+  pathsRow.className = 'paths-row';
+  const pFrag = document.createDocumentFragment();
+  openPorts.forEach((port) => {
+    const line = document.createElement('div');
+    line.className = 'path-port-line';
+
+    // Col 1: toggleable ✔ (off by default, per-port key ip:port)
+    const sCheck = document.createElement('div');
+    sCheck.className = 'path-col-spacer';
+    const checkSpan = document.createElement('span');
+    checkSpan.className = 'icon-ok-off';
+    checkSpan.textContent = '✔';
+    checkSpan.title = 'Mark';
+    checkSpan.style.cursor = 'pointer';
+    checkSpan.addEventListener('click', e => {
+      e.stopPropagation();
+      const on = checkSpan.className === 'icon-ok';
+      checkSpan.className = on ? 'icon-ok-off' : 'icon-ok';
+      checkSpan.title = on ? 'Mark' : 'Marked';
+    });
+    sCheck.appendChild(checkSpan);
+    line.appendChild(sCheck);
+
+    // Col 2: toggleable ★ (off by default, per-port key ip:port)
+    const sStar = document.createElement('div');
+    sStar.className = 'path-col-spacer';
+    const starSpan = document.createElement('span');
+    const portKey = `${ip}:${port}`;
+    const portFav = foundFavSet.has(portKey);
+    starSpan.className = portFav ? 'star-on' : 'star-off';
+    starSpan.textContent = '★';
+    starSpan.title = portFav ? 'Favorite' : 'Add to favorites';
+    starSpan.style.cursor = 'pointer';
+    starSpan.addEventListener('click', e => {
+      e.stopPropagation();
+      const on = starSpan.className === 'star-on';
+      if (on) { foundFavSet.delete(portKey); starSpan.className = 'star-off'; starSpan.title = 'Add to favorites'; }
+      else     { foundFavSet.add(portKey);    starSpan.className = 'star-on';  starSpan.title = 'Favorite'; }
+      if (_listFilter === 'favorites') applyListFilter();
+    });
+    sStar.appendChild(starSpan);
+    line.appendChild(sStar);
+
+    // Col 3: empty (light spacer)
+    const sLight = document.createElement('div');
+    sLight.className = 'path-col-spacer';
+    line.appendChild(sLight);
+
+    // Col 4: port label (under IP)
+    const label = document.createElement('div');
+    label.className = 'path-port-label';
+    label.textContent = `:${port}`;
+    line.appendChild(label);
+
+    // Spacer for col 5 (+)
+    const s5 = document.createElement('div');
+    s5.className = 'path-col-spacer';
+    line.appendChild(s5);
+
+    // Col 6: links (under ping)
+    const linksDiv = document.createElement('div');
+    linksDiv.className = 'path-links';
+    const proto=(port===443||port===8443)?'https':'http';
+    paths.forEach(({p,l}, li) => {
+      if (li>0) linksDiv.appendChild(document.createTextNode(' '));
+      const a=document.createElement('span'); a.className='path-link';
+      const url=`${proto}://${ip}:${port}${p}`;
+      a.textContent=l; a.title=url;
+      a.addEventListener('click', e=>{ e.stopPropagation(); openPreview(url); });
+      linksDiv.appendChild(a);
+    });
+    line.appendChild(linksDiv);
+    pFrag.appendChild(line);
+  });
+  pathsRow.appendChild(pFrag);
+
+  expandBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const open = pathsRow.classList.toggle('open');
+    pathsRow.style.display = open ? 'flex' : 'none';
+    expandBtn.textContent = open ? '−' : '+';
+    expandBtn.classList.toggle('open', open);
+  });
+
+  // ── Left click → select only (no detail, no preview) ──
+  row.addEventListener('click', () => {
+    const wasSelected = row.classList.contains('selected');
+    document.querySelectorAll('.lv-row.selected').forEach(r => r.classList.remove('selected'));
+    if (!wasSelected) {
+      row.classList.add('selected');
+      selectedRowEl = row;
+    } else {
+      selectedRowEl = null;
+    }
+  });
+
+  // Right click → context menu
+  row.addEventListener('contextmenu', e=>{
+    e.preventDefault();
+    ctxTargetIp=ip; ctxTargetPorts=openPorts;
+    const vw=window.innerWidth, vh=window.innerHeight;
+    ctxMenu.style.left=Math.min(e.clientX, vw-175)+'px';
+    ctxMenu.style.top=Math.min(e.clientY, vh-220)+'px';
+    ctxMenu.classList.add('open');
+  });
+
+  listBody.appendChild(row);
+  listBody.appendChild(pathsRow);
+  applyListFilter();
+
+  // Enrich extra columns if any enabled
+  enrichRowCols(ip, openPorts, row);
+
+  // ── Auto geo-locate for globe dots ──
+  if (!ipGeoCoords[ip]) {
+    geoLookup(ip).then(d => {
+      // geoLookup already stores in ipGeoCoords and calls updateGlobeDots
+      // Also update the IP cell with 🔓 flag if auth check was done separately
+    });
+  } else {
+    updateGlobeDots();
+  }
+
+  saveResults();
+}
+
+// ══════════════════════════════════════════════════
+//  RESULTS PERSISTENCE
+// ══════════════════════════════════════════════════
+function saveResults() {
+  try {
+    const data = Object.entries(foundHostsMap).map(([ip, ports]) => ({
+      ip, ports,
+      ping: foundPingMap[ip] ?? null,
+      hostname: hostnameCache[ip] ?? null,
+      geo: ipGeoCoords[ip] ?? null,
+    }));
+    localStorage.setItem('netrecon_results', JSON.stringify(data));
+    localStorage.setItem('netrecon_results_ts', Date.now());
+  } catch {}
+}
+
+function restoreResults() {
+  try {
+    const raw = localStorage.getItem('netrecon_results');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (!data.length) return;
+    const ts = +localStorage.getItem('netrecon_results_ts');
+    const age = ts ? Math.round((Date.now() - ts) / 60000) : null;
+
+    data.forEach(({ ip, ports, ping, hostname, geo }) => {
+      foundHostsMap[ip] = ports;
+      totalFound++;
+      totalOpenPorts += ports.length;
+      if (ping !== null) foundPingMap[ip] = ping;
+      if (hostname !== null) hostnameCache[ip] = hostname;
+      if (geo) ipGeoCoords[ip] = geo;
+      addResultRow(ip, ports, ping);
+    });
+    updateProgress(0, 0, totalFound, totalOpenPorts);
+    const ageStr = age !== null ? ` (${age} min ago)` : '';
+    setStatus(`Restored ${totalFound} results from last scan${ageStr}.`, 'ok');
+    statusCount.textContent = t('statusHosts', totalFound);
+    if (typeof appendCmdLog === 'function') appendCmdLog(`Restored ${totalFound} host${totalFound===1?'':'s'} from last scan${ageStr}.`, 'scan');
+  } catch {}
+}
+
+// ── Restore on load ──
+restoreResults();
+
+// ══════════════════════════════════════════════════
+//  PREVIEW
+// ══════════════════════════════════════════════════
+function openInBrowser(url) {
+  if (window.__TAURI__) {
+    window.__TAURI__.core.invoke('open_browser', { url });
+  } else {
+    window.open(url, '_blank', 'noopener');
+  }
+}
+
+function openPreview(url) {
+  previewUrl.textContent = url;
+  previewWrap.classList.remove('preview-blocked-active');
+  previewFrame.src = url;
+  previewExtLink.href = url;
+  btnPreviewOpen.onclick = ()=>openInBrowser(url);
+  previewWrap.classList.add('open');
+  previewFrame.onload = () => {
+    try { void previewFrame.contentDocument; }
+    catch { previewWrap.classList.add('preview-blocked-active'); }
+  };
+  setTimeout(()=>previewWrap.scrollIntoView({behavior:'smooth',block:'start'}),60);
+}
+btnPreviewClose.addEventListener('click',()=>{
+  previewWrap.classList.remove('open');
+  previewFrame.src='about:blank';
+  if(selectedRowEl){selectedRowEl.classList.remove('selected');selectedRowEl=null;}
+});
+
+// ══════════════════════════════════════════════════
+//  ENRICH POPUP (draggable retro-win-style info window)
+// ══════════════════════════════════════════════════
+function showEnrichPopup(popupId, label, asyncFn) {
+  // Toggle: clicking the same menu item again closes the popup
+  const existing = document.getElementById(popupId);
+  if (existing) { existing.remove(); return; }
+
+  const win = document.createElement('div');
+  win.id = popupId;
+  win.className = 'enrich-popup';
+  const offset = document.querySelectorAll('.enrich-popup').length * 24;
+  win.style.top  = (90 + offset) + 'px';
+  win.style.left = Math.max(10, (window.innerWidth / 2 - 160)) + 'px';
+
+  const bar = document.createElement('div');
+  bar.className = 'enrich-popup-bar';
+  bar.innerHTML = `<span class="enrich-bar-label">${label}</span>` +
+    `<span class="title-btn enrich-bar-close">✕</span>`;
+  bar.querySelector('.title-btn').addEventListener('click', () => win.remove());
+
+  const body = document.createElement('div');
+  body.className = 'enrich-popup-body';
+  body.innerHTML = '<span class="enrich-body-loading">Ładowanie…</span>';
+
+  win.append(bar, body);
+  document.body.appendChild(win);
+
+  // Draggable titlebar
+  let drag = false, ox = 0, oy = 0;
+  bar.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    if (e.target.classList.contains('title-btn')) return;
+    drag = true;
+    const r = win.getBoundingClientRect();
+    ox = e.clientX - r.left; oy = e.clientY - r.top;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!drag) return;
+    win.style.left = (e.clientX - ox) + 'px';
+    win.style.top  = (e.clientY - oy) + 'px';
+  });
+  document.addEventListener('mouseup', () => { drag = false; });
+
+  asyncFn()
+    .then(html  => { body.innerHTML = html || '<span class="enrich-body-empty">Brak danych</span>'; })
+    .catch(() => { body.innerHTML = '<span class="enrich-body-error">Błąd ładowania danych</span>'; });
+}
+
+// ══════════════════════════════════════════════════
+//  CONTEXT MENU
+// ══════════════════════════════════════════════════
+document.getElementById('ctxCopyIp').addEventListener('click',()=>{
+  navigator.clipboard?.writeText(ctxTargetIp);
+  ctxMenu.classList.remove('open');
+});
+document.getElementById('ctxCopyPorts').addEventListener('click',()=>{
+  navigator.clipboard?.writeText(ctxTargetPorts.join(', '));
+  ctxMenu.classList.remove('open');
+});
+document.getElementById('ctxHostname').addEventListener('click',()=>{
+  const ip = ctxTargetIp;
+  ctxMenu.classList.remove('open');
+  showEnrichPopup(`enrich-host-${ip}`, `🧭 Hostname — ${ip}`, async () => {
+    const name = await lookupHostname(ip);
+    return name
+      ? `<div><b>Hostname:</b> ${name}</div>`
+      : `<span class="detail-muted">Brak rekordu reverse DNS</span>`;
+  });
+});
+document.getElementById('ctxOpenBrowser').addEventListener('click',()=>{
+  const proto=(ctxTargetPorts[0]===443||ctxTargetPorts[0]===8443)?'https':'http';
+  openInBrowser(`${proto}://${ctxTargetIp}:${ctxTargetPorts[0]}/`);
+  ctxMenu.classList.remove('open');
+});
+document.getElementById('ctxPreview').addEventListener('click',()=>{
+  const proto=(ctxTargetPorts[0]===443||ctxTargetPorts[0]===8443)?'https':'http';
+  openPreview(`${proto}://${ctxTargetIp}:${ctxTargetPorts[0]}/`);
+  ctxMenu.classList.remove('open');
+});
+document.getElementById('ctxScanAllPorts').addEventListener('click',()=>{
+  if (!ctxTargetIp || scanning) {
+    ctxMenu.classList.remove('open');
+    return;
+  }
+  portsOverride = Array.from({length: 65535}, (_, i) => i + 1);
+  setIP('f', ctxTargetIp);
+  setIP('t', ctxTargetIp);
+  ctxMenu.classList.remove('open');
+  startScan()
+    .catch(e => { setStatus(`Error: ${e.message}`, 'err'); setScanState(false); })
+    .finally(() => { portsOverride = null; });
+});
+document.addEventListener('click',()=>ctxMenu.classList.remove('open'));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') ctxMenu.classList.remove('open'); });
+
+// ── Detail enrichment handlers (right-click popup windows) ──
+document.getElementById('ctxDetailGeo').addEventListener('click', () => {
+  const ip = ctxTargetIp;
+  ctxMenu.classList.remove('open');
+  showEnrichPopup(`enrich-geo-${ip}`, `🌍 Geolokalizacja — ${ip}`, async () => {
+    const geo = await geoLookup(ip);
+    if (!geo) return isPrivateIP(ip)
+      ? `<span class="detail-muted">${t('geoLocal')}</span>`
+      : `<span class="status-error">${t('geoError')}</span>`;
+    const vpn = geo.proxy   ? `<span class="badge badge-vpn">VPN/Proxy</span>` : '';
+    const dc  = geo.hosting ? `<span class="badge badge-dc">DC</span>` : '';
+    return `<div class="geo-info-line">` +
+      `<b>${t('geoCountry')}</b> ${geo.country||'?'} — ${geo.city||'?'}${vpn}${dc}<br>` +
+      `<b>${t('geoIsp')}</b> ${geo.isp||'?'}<br>` +
+      `<b>${t('geoAs')}</b> ${geo.as||'?'}</div>`;
+  });
+});
+
+document.getElementById('ctxDetailDevice').addEventListener('click', () => {
+  const ip = ctxTargetIp, ports = ctxTargetPorts.slice();
+  ctxMenu.classList.remove('open');
+  showEnrichPopup(`enrich-dev-${ip}`, `🖥 Urządzenie — ${ip}`, async () => {
+    const [deviceLabel, hasFavicon] = await Promise.all([
+      fingerprintByImage(ip, ports),
+      checkFavicon(ip, ports[0]),
+    ]);
+    let html = '';
+    if (deviceLabel) html += `<div><b>${t('deviceType')}</b> ${deviceLabel} <span class="badge badge-recognized">${t('tagRecognized')}</span></div>`;
+    html += `<div><b>${t('deviceFavicon')}</b> ${hasFavicon ? t('deviceFaviconYes') : t('deviceFaviconNo')}</div>`;
+    const portGuess = ports.includes(554)?t('portRtsp'):ports.includes(631)?t('portIpp'):ports.includes(9100)?t('portRaw'):ports.includes(5000)||ports.includes(5001)?t('portSyn'):ports.includes(8006)?t('portProx'):null;
+    if (portGuess) html += `<div><b>${t('deviceSuggestion')}</b> ${portGuess}</div>`;
+    return html || `<span class="detail-muted">${t('deviceUnknown')}</span>`;
+  });
+});
+
+document.getElementById('ctxDetailTitle').addEventListener('click', () => {
+  const ip = ctxTargetIp, ports = ctxTargetPorts.slice();
+  ctxMenu.classList.remove('open');
+  showEnrichPopup(`enrich-title-${ip}`, `📄 Tytuł HTTP — ${ip}`, async () => {
+    if (isPrivateIP(ip)) return `<span class="detail-muted">${t('titleExtOnly')}</span>`;
+    const title = await fetchTitle(ip, ports[0]);
+    return title
+      ? `<b>${t('titleLabel')}</b> &ldquo;${title}&rdquo;`
+      : `<span class="detail-muted">${t('titleUnavailable')}</span>`;
+  });
+});
+
+document.getElementById('ctxDetailAccess').addEventListener('click', () => {
+  const ip = ctxTargetIp, ports = ctxTargetPorts.slice();
+  ctxMenu.classList.remove('open');
+  showEnrichPopup(`enrich-acc-${ip}`, `🔑 Dostęp — ${ip}`, async () => {
+    const isOpen = await checkAuth(ip, ports);
+    return isOpen
+      ? `<b>${t('accessLabel')}</b> <span class="text-ok">${t('accessOpen')}</span>`
+      : `<b>${t('accessLabel')}</b> ${t('accessClosed')}`;
+  });
+});
+
+// ══════════════════════════════════════════════════
+//  EXTERNAL IP
+// ══════════════════════════════════════════════════
+const btnMyIp      = document.getElementById('btnMyIp');
+const myIpResult   = document.getElementById('myIpResult');
+const btnCopyMyIp  = document.getElementById('btnCopyMyIp');
+const btnUseMyIp   = document.getElementById('btnUseMyIp');
+
+btnMyIp.addEventListener('click', async () => {
+  myIpResult.className = 'status-loading';
+  myIpResult.textContent = t('loading');
+  btnCopyMyIp.classList.add('initially-hidden');
+  btnUseMyIp.classList.add('initially-hidden');
+  btnMyIp.disabled = true;
+  try {
+    const res  = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    myIpResult.className = 'status-ok';
+    myIpResult.textContent = data.ip;
+    btnCopyMyIp.classList.remove('initially-hidden');
+    btnCopyMyIp.onclick = () => {
+      navigator.clipboard?.writeText(data.ip);
+      btnCopyMyIp.textContent = '✔ OK';
+      setTimeout(() => { btnCopyMyIp.textContent = t('btnCopy'); }, 1500);
+    };
+    btnUseMyIp.classList.remove('initially-hidden');
+    btnUseMyIp.onclick = () => {
+      const parts = data.ip.split('.').map(Number);
+      setIP('f', `${parts[0]}.${parts[1]}.${parts[2]}.1`);
+      setIP('t', `${parts[0]}.${parts[1]}.${parts[2]}.254`);
+    };
+  } catch {
+    myIpResult.className = 'status-error';
+    myIpResult.textContent = t('geoError');
+  } finally {
+    btnMyIp.disabled = false;
+  }
+});
+
+// ══════════════════════════════════════════════════
+// Local IP Detection
+const btnMyLocalIp      = document.getElementById('btnMyLocalIp');
+const myLocalIpResult   = document.getElementById('myLocalIpResult');
+const btnCopyMyLocalIp  = document.getElementById('btnCopyMyLocalIp');
+const btnUseMyLocalIp   = document.getElementById('btnUseMyLocalIp');
+const btnLocalSubnets   = document.getElementById('btnLocalSubnets');
+const localSubnetsResult= document.getElementById('localSubnetsResult');
+const localSubnetSelect = document.getElementById('localSubnetSelect');
+const btnUseLocalSubnet = document.getElementById('btnUseLocalSubnet');
+
+async function detectLocalIP() {
+  if (_tauriInvoke) {
+    try {
+      const ip = await _tauriInvoke('get_local_ip');
+      if (ip && isPrivateIP(ip)) return ip;
+      throw new Error('No local private IPv4 found');
+    } catch (err) {
+      // Fall through to WebRTC fallback for browser mode / dev diagnostics.
+    }
+  }
+  return new Promise((resolve, reject) => {
+    if (!window.RTCPeerConnection) {
+      reject(new Error('RTCPeerConnection unavailable'));
+      return;
+    }
+    let pc;
+    try {
+      pc = new RTCPeerConnection({ iceServers: [] });
+    } catch (err) {
+      reject(err);
+      return;
+    }
+
+    let done = false;
+    const finish = (ip) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timeoutId);
+      try { pc.close(); } catch {}
+      resolve(ip);
+    };
+
+    const fail = (err) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timeoutId);
+      try { pc.close(); } catch {}
+      reject(err || new Error('Local IP not found'));
+    };
+
+    const checkCandidateText = (text) => {
+      const ip = extractIpv4(text);
+      if (ip && isPrivateIP(ip)) finish(ip);
+    };
+
+    pc.onicecandidate = (evt) => {
+      if (!evt || !evt.candidate) return;
+      checkCandidateText(evt.candidate.candidate);
+      if (evt.candidate.address) checkCandidateText(evt.candidate.address);
+    };
+
+    pc.onicecandidateerror = () => {
+      // Ignore transient ICE errors; timeout/fallback will handle final state.
+    };
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        // Fallback for browsers that hide IP in candidate strings.
+        const stats = await pc.getStats();
+        for (const report of stats.values()) {
+          if (report.type === 'local-candidate' || report.type === 'candidate-pair') {
+            const ip = report.address || report.ip || extractIpv4(report.candidateType || '');
+            if (ip && isPrivateIP(ip)) {
+              finish(ip);
+              return;
+            }
+          }
+        }
+      } catch {}
+      fail(new Error('Timeout'));
+    }, 5000);
+
+    pc.createDataChannel('local-ip-probe');
+    pc.createOffer()
+      .then((offer) => pc.setLocalDescription(offer))
+      .catch((err) => fail(err));
+  });
+}
+
+function extractIpv4(text) {
+  if (!text) return null;
+  const m = text.match(/\b(\d{1,3}(?:\.\d{1,3}){3})\b/);
+  return m ? m[1] : null;
+}
+
+function ipToSubnetBase(ip) {
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some(n => Number.isNaN(n) || n < 0 || n > 255)) return null;
+  return `${parts[0]}.${parts[1]}.${parts[2]}`;
+}
+
+async function detectLocalSubnets() {
+  if (_tauriInvoke) {
+    try {
+      const subnets = await _tauriInvoke('get_local_subnets');
+      if (Array.isArray(subnets)) {
+        return [...new Set(subnets.filter(Boolean))]
+          .sort((a, b) => ipToNum(a + '.0') - ipToNum(b + '.0'));
+      }
+    } catch (err) {
+      // Fall through to WebRTC fallback for browser mode / dev diagnostics.
+    }
+  }
+  return new Promise((resolve, reject) => {
+    if (!window.RTCPeerConnection) {
+      reject(new Error('RTCPeerConnection unavailable'));
+      return;
+    }
+    let pc;
+    try {
+      pc = new RTCPeerConnection({ iceServers: [] });
+    } catch (err) {
+      reject(err);
+      return;
+    }
+
+    const ips = new Set();
+    let done = false;
+
+    const addIp = (ip) => {
+      if (ip && isPrivateIP(ip)) ips.add(ip);
+    };
+
+    const addFromText = (text) => {
+      const ip = extractIpv4(text);
+      addIp(ip);
+    };
+
+    const finish = async () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timeoutId);
+      try {
+        const stats = await pc.getStats();
+        for (const report of stats.values()) {
+          if (report.type === 'local-candidate' || report.type === 'candidate-pair') {
+            addIp(report.address || report.ip || null);
+          }
+        }
+      } catch {}
+      try { pc.close(); } catch {}
+
+      const subnets = [...new Set([...ips]
+        .map(ipToSubnetBase)
+        .filter(Boolean))]
+        .sort((a, b) => ipToNum(a + '.0') - ipToNum(b + '.0'));
+
+      resolve(subnets);
+    };
+
+    pc.onicecandidate = (evt) => {
+      if (evt && evt.candidate) {
+        addFromText(evt.candidate.candidate);
+        addFromText(evt.candidate.address);
+      }
+    };
+
+    pc.onicegatheringstatechange = () => {
+      if (pc.iceGatheringState === 'complete') {
+        finish();
+      }
+    };
+
+    pc.onicecandidateerror = () => {
+      // Ignore ICE transient errors.
+    };
+
+    const timeoutId = setTimeout(finish, 4500);
+    pc.createDataChannel('local-subnet-probe');
+    pc.createOffer()
+      .then((offer) => pc.setLocalDescription(offer))
+      .catch(() => finish());
+  });
+}
+
+btnMyLocalIp.addEventListener('click', async () => {
+  myLocalIpResult.className = 'status-loading';
+  myLocalIpResult.textContent = t('loading');
+  btnCopyMyLocalIp.classList.add('initially-hidden');
+  btnUseMyLocalIp.classList.add('initially-hidden');
+  btnMyLocalIp.disabled = true;
+  
+  try {
+    const localIP = await detectLocalIP();
+    myLocalIpResult.className = 'status-ok';
+    myLocalIpResult.textContent = localIP;
+    
+    btnCopyMyLocalIp.classList.remove('initially-hidden');
+    btnCopyMyLocalIp.onclick = () => {
+      navigator.clipboard?.writeText(localIP);
+      btnCopyMyLocalIp.textContent = '✔ OK';
+      setTimeout(() => { btnCopyMyLocalIp.textContent = t('btnCopy'); }, 1500);
+    };
+    
+    btnUseMyLocalIp.classList.remove('initially-hidden');
+    btnUseMyLocalIp.onclick = () => {
+      const parts = localIP.split('.').map(Number);
+      // Set range to scan local network
+      setIP('f', `${parts[0]}.${parts[1]}.${parts[2]}.1`);
+      setIP('t', `${parts[0]}.${parts[1]}.${parts[2]}.254`);
+    };
+  } catch (error) {
+    myLocalIpResult.className = 'status-error';
+    myLocalIpResult.textContent = /RTCPeerConnection unavailable/i.test(String(error && error.message || ''))
+      ? t('localDetectUnsupported')
+      : t('localIpDetectError');
+  } finally {
+    btnMyLocalIp.disabled = false;
+  }
+});
+
+btnLocalSubnets.addEventListener('click', async () => {
+  localSubnetsResult.className = 'status-loading';
+  localSubnetsResult.textContent = t('loading');
+  localSubnetSelect.classList.add('initially-hidden');
+  btnUseLocalSubnet.classList.add('initially-hidden');
+  btnLocalSubnets.disabled = true;
+
+  try {
+    const subnets = await detectLocalSubnets();
+    if (!subnets.length) {
+      localSubnetsResult.className = 'status-error';
+      localSubnetsResult.textContent = t('localSubnetsNone');
+      return;
+    }
+
+    localSubnetSelect.innerHTML = '';
+    subnets.forEach((base) => {
+      const opt = document.createElement('option');
+      opt.value = base;
+      opt.textContent = `${base}.0/24`;
+      localSubnetSelect.appendChild(opt);
+    });
+
+    localSubnetsResult.className = 'status-ok';
+    localSubnetsResult.textContent = t('localSubnetsFound', subnets.length);
+    localSubnetSelect.classList.remove('initially-hidden');
+    btnUseLocalSubnet.classList.remove('initially-hidden');
+
+    btnUseLocalSubnet.onclick = () => {
+      const base = localSubnetSelect.value;
+      if (!base) return;
+      setIP('f', `${base}.1`);
+      setIP('t', `${base}.254`);
+      setStatus(`Range set: ${base}.1 - ${base}.254`, 'ok');
+    };
+  } catch {
+    localSubnetsResult.className = 'status-error';
+    localSubnetsResult.textContent = t('localIpDetectError');
+  } finally {
+    btnLocalSubnets.disabled = false;
+  }
+});
+
+// ══════════════════════════════════════════════════
+async function startScan() {
+  window.__scanInvokeWarned = false;
+  const startIp=getIP('f'), endIp=getIP('t');
+  if (!isIPv4(startIp)||!isIPv4(endIp)) { setStatus(t('errInvalidIp'),'err'); return; }
+  const startNum=ipToNum(startIp), endNum=ipToNum(endIp);
+  if (startNum>endNum) { setStatus(t('errIpRange'),'err'); return; }
+
+  // Confirm if range > 256
+  if (endNum - startNum + 1 > 256) {
+    const confirmed = await showLargeRangeConfirm(endNum - startNum + 1);
+    if (!confirmed) return;
+  }
+
+  // Warn if any part of the range is external (public)
+  if (!isPrivateIp(startNum) || !isPrivateIp(endNum)) {
+    const confirmed = await showExternalIpConfirm(startIp, endIp);
+    if (!confirmed) return;
+  }
+
+  const selectedPorts = getActivePorts();
+  if (!selectedPorts.length) { setStatus(t('errNoPorts'),'err'); return; }
+
+  const total=endNum-startNum+1;
+  const concurrency = Math.min(+document.getElementById('concNum').value || 20, 64);
+  const delayMs = Math.max(0, Math.min(5000, +document.getElementById('delayMs').value || 0));
+  foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
+  refreshTopologyFilterOptions();
+  stopRequested=false; statTime.textContent='0.0s';
+  updateProgress(0,total,0,0); setScanState(true);
+  if (typeof appendCmdLog === 'function') appendCmdLog(`Scan start: ${startIp} — ${endIp}  [${selectedPorts.length} port${selectedPorts.length===1?'':'s'}, conc: ${concurrency}]`, 'scan');
+
+  // Clear list
+  listBody.innerHTML='';
+  listBody.appendChild(emptyRow);
+  emptyRow.textContent = t('emptyScanning');
+
+  if (total>500) {
+    const estSec=Math.round(total*(1500/concurrency)/1000);
+    const estStr=estSec>=60?`~${Math.ceil(estSec/60)} min`:`~${estSec}s`;
+    setStatus(t('statusLarge', total, selectedPorts.length, estStr),'warn');
+  } else {
+    setStatus(t('statusScanning', total, selectedPorts.length),'warn');
+  }
+
+  // Show/hide port progress bar
+  const portProgWrap  = document.getElementById('portProgWrap');
+  const portProgFill  = document.getElementById('portProgFill');
+  const portProgLabel = document.getElementById('portProgLabel');
+  function showPortProgress(current, total, ip) {
+    portProgWrap.classList.add('active');
+    const pct = total ? Math.round(current / total * 100) : 0;
+    portProgFill.style.width = pct + '%';
+    portProgLabel.textContent = `Porty: ${current + 1}–${Math.min(current + 100, total)} / ${total}  (${ip})`;
+  }
+  function hidePortProgress() {
+    portProgWrap.classList.remove('active');
+    portProgFill.style.width = '0%';
+  }
+
+  // Probe all ports for one IP — chunked to avoid freezing browser
+  async function probeAllPorts(ip, ports) {
+    const CHUNK = 100;
+    const results = [];
+    for (let i = 0; i < ports.length && !stopRequested; i += CHUNK) {
+      showPortProgress(i, ports.length, ip);
+      const batch = ports.slice(i, i + CHUNK);
+      const batchRes = await Promise.all(
+        batch.map(port => probePort(ip, port, 1400).then(r => ({ port, ok: r.ok, ms: r.ms })))
+      );
+      results.push(...batchRes);
+    }
+    hidePortProgress();
+    return results;
+  }
+
+  let nextIdx=0, checked=0;
+  const worker = async () => {
+    while (!stopRequested) {
+      const idx=nextIdx++; if(idx>=total) return;
+      const ip=numToIp(startNum+idx);
+      const res = selectedPorts.length > 200
+        ? await probeAllPorts(ip, selectedPorts)
+        : await Promise.all(selectedPorts.map(port=>probePort(ip,port,1400).then(r=>({port, ok:r.ok, ms:r.ms}))));
+      const openPorts=res.filter(r=>r.ok).map(r=>r.port);
+      const bestMs = res.filter(r=>r.ok).reduce((a,r)=>r.ms<a?r.ms:a, Infinity);
+      const pingMs = bestMs === Infinity ? null : bestMs;
+      if (openPorts.length) {
+        foundHostsMap[ip]=openPorts; totalFound++; totalOpenPorts+=openPorts.length;
+        if (pingMs !== null) foundPingMap[ip] = pingMs;
+        addResultRow(ip, openPorts, pingMs);
+        if (typeof appendCmdLog === 'function') appendCmdLog(`>> HOST  ${ip}  ports: [${openPorts.join(', ')}]${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
+      }
+      checked++;
+      if (checked%4===0||checked===total) updateProgress(checked,total,totalFound,totalOpenPorts);
+      if (delayMs > 0 && !stopRequested && nextIdx < total) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  };
+
+  await Promise.all(Array.from({length:concurrency},worker));
+  setScanState(false);
+  updateProgress(total,total,totalFound,totalOpenPorts);
+
+  if (totalFound===0 && emptyRow.parentNode) emptyRow.textContent = t('emptyNone');
+  if (stopRequested) setStatus(t('statusStopped', statChecked.textContent),'warn');
+  else if (totalFound>0) setStatus(t('statusDone', totalFound, totalOpenPorts),'ok');
+  else setStatus(t('statusNone'),'err');
+  if (typeof appendCmdLog === 'function') {
+    if (stopRequested) appendCmdLog(`Scan stopped. Checked: ${statChecked.textContent}, found: ${totalFound} host${totalFound===1?'':'s'}`, 'scan');
+    else if (totalFound>0) appendCmdLog(`Scan complete. Hosts: ${totalFound}, open ports: ${totalOpenPorts}`, 'scan');
+    else appendCmdLog('Scan complete. No hosts found.', 'scan');
+    appendCmdLog('─'.repeat(52), 'scan');
+  }
+}
+
+btnGo.addEventListener('click',()=>{
+  if(!scanning) startScan().catch(e=>{setStatus(`Error: ${e.message}`,'err');setScanState(false);});
+});
+btnStop.addEventListener('click',()=>{
+  stopRequested=true; activeControllers.forEach(c=>c.abort());
+  if (_tauriInvoke) _tauriInvoke('stop_scan').catch(()=>{});
+});
+btnClear.addEventListener('click',()=>{
+  foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
+  traceRoutes = {};
+  listBody.innerHTML=''; listBody.appendChild(emptyRow);
+  emptyRow.textContent = t('emptyRow');
+  updateProgress(0,0,0,0); statTime.textContent='0.0s';
+  setStatus(t('statusCleared'));
+  previewWrap.classList.remove('open');
+  previewFrame.src='about:blank'; selectedRowEl=null;
+  localStorage.removeItem('netrecon_results');
+  localStorage.removeItem('netrecon_results_ts');
+  localStorage.removeItem('netrecon_trace_routes');
+  refreshTopologyFilterOptions();
+  updateGlobeDots();
+});
+
+
+
+applyLang();
+applyScanDefaultsToMainInputs(loadScanDefaults());
+restoreTraceRoutes();
+refreshTopologyFilterOptions();

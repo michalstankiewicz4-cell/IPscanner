@@ -1,0 +1,424 @@
+/* ── Workbench Night skin overrides (enabled via body.skin-workbench) ── */
+body.skin-workbench {
+  background:
+    radial-gradient(circle at 14% -10%, rgba(99, 167, 255, 0.18), rgba(99, 167, 255, 0) 42%),
+    radial-gradient(circle at 90% 12%, rgba(0, 214, 201, 0.11), rgba(0, 214, 201, 0) 38%),
+    linear-gradient(165deg, #1f2430 0%, #191d27 55%, #151922 100%);
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  color: #d7dee8;
+}
+
+body.skin-workbench .retro-win,
+body.skin-workbench .dlg95,
+body.skin-workbench .ctxmenu,
+body.skin-workbench .menu-dropdown,
+body.skin-workbench .enrich-popup {
+  background: #252b36;
+  border-top: 1px solid #3a4353;
+  border-left: 1px solid #3a4353;
+  border-right: 1px solid #12161e;
+  border-bottom: 1px solid #12161e;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.46);
+}
+
+body.skin-workbench .titlebar,
+body.skin-workbench .dlg-title,
+body.skin-workbench .enrich-popup-bar,
+body.skin-workbench .preview-titlebar {
+  background: linear-gradient(180deg, #313a4a, #273041);
+  color: #e6edf7;
+  text-shadow: none;
+}
+
+body.skin-workbench .title-btn,
+body.skin-workbench .btn95 {
+  background: linear-gradient(180deg, #3a4456, #2e3747);
+  border-top: 1px solid #4d5a70;
+  border-left: 1px solid #4d5a70;
+  border-right: 1px solid #131923;
+  border-bottom: 1px solid #131923;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #dce6f5;
+}
+
+body.skin-workbench .btn95:active,
+body.skin-workbench .btn95.pressed,
+body.skin-workbench .title-btn:active {
+  background: linear-gradient(180deg, #2b3444, #3a4557);
+  border-top: 1px solid #131923;
+  border-left: 1px solid #131923;
+  border-right: 1px solid #4d5a70;
+  border-bottom: 1px solid #4d5a70;
+}
+
+body.skin-workbench .groupbox,
+body.skin-workbench .dlg-groupbox,
+body.skin-workbench .status-panel,
+body.skin-workbench .ip-box,
+body.skin-workbench .progress-bar-bg,
+body.skin-workbench .port-progress-bg,
+body.skin-workbench .listview-wrap,
+body.skin-workbench .preview-iframe,
+body.skin-workbench .detail-section {
+  background: #1f2530;
+  border-top: 1px solid #394354;
+  border-left: 1px solid #394354;
+  border-right: 1px solid #12161e;
+  border-bottom: 1px solid #12161e;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+body.skin-workbench .groupbox-legend,
+body.skin-workbench .dlg-groupbox-legend {
+  background: #252b36;
+  color: #b8c7de;
+}
+
+body.skin-workbench .menubar {
+  background: linear-gradient(180deg, #2d3544, #232b39);
+  border-bottom: 1px solid #111720;
+}
+
+body.skin-workbench .win-menubar95 {
+  background: linear-gradient(180deg, #2d3544, #232b39);
+  border-bottom: 1px solid #111720;
+  color: #d7dee8;
+}
+
+body.skin-workbench .menu-item,
+body.skin-workbench .menu-dd-item,
+body.skin-workbench .ctx-item,
+body.skin-workbench .country-item,
+body.skin-workbench .range-item,
+body.skin-workbench .notepad-menu-item,
+body.skin-workbench .lv-cell,
+body.skin-workbench .oct,
+body.skin-workbench .oct-dot,
+body.skin-workbench .stats-row,
+body.skin-workbench .port-progress-label,
+body.skin-workbench .statusbar,
+body.skin-workbench .status-panel {
+  color: #d7dee8;
+}
+
+body.skin-workbench .menu-item:hover,
+body.skin-workbench .menu-item.open,
+body.skin-workbench .menu-dd-item:hover,
+body.skin-workbench .ctx-item:hover,
+body.skin-workbench .notepad-menu-item:hover,
+body.skin-workbench .country-item:hover,
+body.skin-workbench .country-item.active,
+body.skin-workbench .range-item:hover,
+body.skin-workbench .range-item.active,
+body.skin-workbench .lv-row:hover,
+body.skin-workbench .lv-row.selected {
+  background: #094771;
+  color: #ffffff;
+}
+
+body.skin-workbench .lv-row.selected .lv-cell,
+body.skin-workbench .lv-row:hover .lv-cell {
+  color: #ffffff;
+}
+
+body.skin-workbench .progress-bar-fill {
+  background: linear-gradient(90deg, #0e639c, #1177bb);
+}
+
+body.skin-workbench .port-progress-fill {
+  background: linear-gradient(90deg, #2a9d8f, #38b5a3);
+}
+
+body.skin-workbench .stat-val,
+body.skin-workbench #statTime,
+body.skin-workbench #myIpResult,
+body.skin-workbench #myLocalIpResult,
+body.skin-workbench #localSubnetsResult,
+body.skin-workbench #activePorts,
+body.skin-workbench .port-hint,
+body.skin-workbench .empty-row {
+  color: #8cc7ff !important;
+}
+
+body.skin-workbench .listview-filter {
+  background: linear-gradient(180deg, #2a3344, #1f2a38);
+  border-bottom: 1px solid #111720;
+}
+body.skin-workbench .listview-filter .filter-label {
+  color: #8a9bb5;
+}
+body.skin-workbench .btn-filter,
+body.skin-workbench .btn-cols {
+  background: linear-gradient(180deg, #3a4456, #2e3747);
+  border-top: 1px solid #4d5a70;
+  border-left: 1px solid #4d5a70;
+  border-right: 1px solid #131923;
+  border-bottom: 1px solid #131923;
+  color: #dce6f5;
+}
+body.skin-workbench .btn-filter:hover,
+body.skin-workbench .btn-cols:hover {
+  background: linear-gradient(180deg, #4a5668, #3a4759);
+}
+body.skin-workbench .btn-filter.active,
+body.skin-workbench .btn-cols.active {
+  background: linear-gradient(180deg, #2b3444, #3a4557);
+  border-top: 1px solid #131923;
+  border-left: 1px solid #131923;
+  border-right: 1px solid #4d5a70;
+  border-bottom: 1px solid #4d5a70;
+  color: #ffffff;
+}
+body.skin-workbench .cols-panel {
+  background: #2b3444;
+  border-top: 1px solid #4d5a70;
+  border-left: 1px solid #4d5a70;
+  border-right: 1px solid #131923;
+  border-bottom: 1px solid #131923;
+  box-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+  color: #dce6f5;
+}
+body.skin-workbench .cols-panel-item {
+  color: #dce6f5;
+}
+body.skin-workbench .cols-panel-item:hover {
+  background: #4a6080;
+  color: #ffffff;
+}
+
+body.skin-workbench .listview-header {
+  background: linear-gradient(180deg, #303a4b, #242d3d);
+  border-bottom: 1px solid #111720;
+}
+
+body.skin-workbench .lv-col {
+  color: #d7dee8;
+  border-right: 1px solid #161d28;
+  border-top: 1px solid #475267;
+  border-left: 1px solid #475267;
+}
+
+body.skin-workbench .lv-col:first-child {
+  border-left: none;
+}
+
+body.skin-workbench .lv-col:last-child {
+  border-right: none;
+}
+
+body.skin-workbench .listview-body {
+  background: #1f2530;
+}
+
+/* ── Expanded row / detail panel ── */
+body.skin-workbench .detail-row,
+body.skin-workbench .paths-row {
+  background: #252b36 !important;
+  color: #d7dee8;
+}
+
+body.skin-workbench .detail-section-title {
+  color: #8cc7ff !important;
+  border-bottom-color: #394354 !important;
+}
+
+body.skin-workbench .detail-line b {
+  color: #8cc7ff !important;
+}
+
+body.skin-workbench .path-link {
+  color: #8cc7ff !important;
+}
+
+body.skin-workbench .path-link:hover {
+  color: #ff8c8c !important;
+}
+
+body.skin-workbench .path-port-label {
+  color: #d7dee8 !important;
+}
+
+body.skin-workbench .listview-body::-webkit-scrollbar-track {
+  background: #2a3241;
+}
+
+body.skin-workbench .listview-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #455168, #333d4f);
+  border-top: 1px solid #5a6880;
+  border-left: 1px solid #5a6880;
+  border-right: 1px solid #111720;
+  border-bottom: 1px solid #111720;
+}
+
+/* ── Floating windows and custom dialogs ── */
+body.skin-workbench #notepadWin,
+body.skin-workbench #cmdWin,
+body.skin-workbench #speedWin,
+body.skin-workbench #protoWin,
+body.skin-workbench #macroFolderWin,
+body.skin-workbench #dlgScanCountry,
+body.skin-workbench #dlgTrace {
+  background: #252b36 !important;
+  border-top: 1px solid #3a4353 !important;
+  border-left: 1px solid #3a4353 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.46) !important;
+}
+
+body.skin-workbench #notepadWin > div:first-child,
+body.skin-workbench #cmdWin > .titlebar,
+body.skin-workbench #speedWin > .titlebar,
+body.skin-workbench #protoWin > .titlebar,
+body.skin-workbench #macroFolderWin > .titlebar,
+body.skin-workbench #dlgScanCountry > .titlebar,
+body.skin-workbench #dlgTrace .titlebar {
+  background: linear-gradient(180deg, #313a4a, #273041) !important;
+  color: #e6edf7 !important;
+}
+
+body.skin-workbench #notepadWin textarea,
+body.skin-workbench #macroFolderList,
+body.skin-workbench #speedStatus,
+body.skin-workbench #countryListBox,
+body.skin-workbench #countryRanges,
+body.skin-workbench #presetListBox,
+body.skin-workbench #traceInput,
+body.skin-workbench #traceTargetIp,
+body.skin-workbench #cmdFilterSelect {
+  background: #1f2530 !important;
+  color: #d7dee8 !important;
+  border-top: 1px solid #394354 !important;
+  border-left: 1px solid #394354 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+}
+
+body.skin-workbench #cmdMenuFileDrop,
+body.skin-workbench #macroCtxMenu {
+  background: #252b36 !important;
+  border-top: 1px solid #3a4353 !important;
+  border-left: 1px solid #3a4353 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+  color: #d7dee8 !important;
+}
+
+/* Console bars */
+body.skin-workbench #cmdWin > div:not(.titlebar) {
+  background: #2a3241 !important;
+}
+
+body.skin-workbench #cmdWin > div:last-child {
+  background: #000000 !important;
+}
+
+/* Globe/Topology windows */
+body.skin-workbench #globeWin,
+body.skin-workbench #topoWin {
+  background: #252b36 !important;
+  border-top: 1px solid #3a4353 !important;
+  border-left: 1px solid #3a4353 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+}
+
+body.skin-workbench .globe-toolbar,
+body.skin-workbench .globe-statusbar,
+body.skin-workbench .globe-panel {
+  background: #2a3241 !important;
+  color: #d7dee8 !important;
+  border-color: #12161e !important;
+}
+
+body.skin-workbench #mapLiveLabel {
+  color: #8cc7ff !important;
+}
+
+body.skin-workbench .globe-toolbar .toolbar-label {
+  color: #d7dee8 !important;
+}
+
+body.skin-workbench #scDlgInfo,
+body.skin-workbench #traceParseStatus,
+body.skin-workbench #countryName {
+  color: #8cc7ff !important;
+}
+
+body.skin-workbench #countryMeta,
+body.skin-workbench #countryRangeHint {
+  color: #a7b5c8 !important;
+}
+
+/* Proto window — all light-bg panels force dark text */
+body.skin-workbench #protoWin .proto-node,
+body.skin-workbench #protoWin .proto-node-head,
+body.skin-workbench #protoWin .proto-node > div {
+  color: #1a2030 !important;
+}
+
+/* Toolbox items and blueprint items (no class, white/light bg inline) */
+body.skin-workbench #protoLayout {
+  color: #1a2030;
+}
+
+body.skin-workbench #protoStatus {
+  color: #d7dee8 !important;
+  border-top: 1px solid #394354 !important;
+  border-left: 1px solid #394354 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+}
+
+/* Macro window status bar (inline color:#000 and classic borders) */
+body.skin-workbench #macroFolderWin > div:last-child {
+  color: #d7dee8 !important;
+  border-color: #12161e !important;
+}
+
+body.skin-workbench #macroFolderCount {
+  color: #d7dee8 !important;
+  border-top: 1px solid #394354 !important;
+  border-left: 1px solid #394354 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+}
+
+body.skin-workbench #macroCtxDelete {
+  color: #d7dee8 !important;
+}
+
+/* Versions dialog content uses inline light background in HTML; force dark readable panel in workbench skin. */
+body.skin-workbench #dlgVersionsOverlay .dlg-body > div {
+  background: #1f2530 !important;
+  color: #d7dee8 !important;
+  border-top: 1px solid #394354 !important;
+  border-left: 1px solid #394354 !important;
+  border-right: 1px solid #12161e !important;
+  border-bottom: 1px solid #12161e !important;
+}
+
+body.skin-workbench #dlgVersionsOverlay .dlg-body > div > div[style*="font-weight:bold"] {
+  color: #8cc7ff !important;
+}
+
+/* ── New class overrides ── */
+body.skin-workbench .preset-row { background: #1f2530; color: #d7dee8; }
+body.skin-workbench .preset-row.selected { background: #094771; color: #ffffff; }
+body.skin-workbench .macro-list-row { border-bottom-color: #394354; color: #d7dee8; }
+body.skin-workbench .macro-list-row:hover { background: #094771; color: #ffffff; }
+body.skin-workbench .macro-list-empty { color: #8cc7ff; }
+body.skin-workbench .cmd-file-action:hover { background: #094771; color: #ffffff; }
+body.skin-workbench .macro-ctx-item:hover { background: #094771; color: #ffffff; }
+body.skin-workbench .status-loading { color: #7aabdf; }
+body.skin-workbench .status-ok      { color: #8cc7ff; }
+body.skin-workbench .status-error   { color: #ff7070; }
+body.skin-workbench .status-success { color: #6abf6a; }
+body.skin-workbench .ping-fast { color: #6abf6a; }
+body.skin-workbench .ping-ok   { color: #bfbf00; }
+body.skin-workbench .ping-slow { color: #ff7070; }
+body.skin-workbench .ping-none { color: #7aabdf; }
+body.skin-workbench .detail-muted { color: #8cc7ff; }
+body.skin-workbench .text-ok { color: #6abf6a; }
+body.skin-workbench .country-ranges-count { color: #8cc7ff; }
+body.skin-workbench .country-item.active .country-ranges-count { color: #ccc; }
