@@ -327,15 +327,32 @@ fn window_close(window: WebviewWindow) -> Result<(), String> {
 
 #[tauri::command]
 async fn open_clippy_window(app: AppHandle, lang: String) -> Result<(), String> {
+    const CLIPPY_WIDTH: f64 = 280.0;
+    const CLIPPY_HEIGHT: f64 = 185.0;
+    const CLIPPY_MARGIN: i32 = 20;
+
     if let Some(win) = app.get_webview_window("clippy") {
         let _ = win.show();
         let _ = win.set_focus();
         return Ok(());
     }
+
+    let mut pos_x = 40.0;
+    let mut pos_y = 40.0;
+    if let Some(main) = app.get_webview_window("main") {
+        if let (Ok(main_pos), Ok(main_size)) = (main.outer_position(), main.outer_size()) {
+            let target_x = main_pos.x + main_size.width as i32 - CLIPPY_WIDTH as i32 - CLIPPY_MARGIN;
+            let target_y = main_pos.y + main_size.height as i32 - CLIPPY_HEIGHT as i32 - CLIPPY_MARGIN;
+            pos_x = target_x.max(0) as f64;
+            pos_y = target_y.max(0) as f64;
+        }
+    }
+
     let url = WebviewUrl::App(format!("clippy.html#lang={}", lang).into());
     let win = WebviewWindowBuilder::new(&app, "clippy", url)
         .title("NetRecon Clippy")
-        .inner_size(280.0, 185.0)
+        .inner_size(CLIPPY_WIDTH, CLIPPY_HEIGHT)
+        .position(pos_x, pos_y)
         .decorations(false)
         .transparent(true)
         .shadow(false)
