@@ -981,6 +981,20 @@ const foundCheckSet = new Set(); // IP checkmarks
 // port keys stored inside foundFavSet as "ip:port"
 // port checkmarks stored inside foundPortCheckSet as "ip:port"
 const foundPortCheckSet = new Set();
+const foundExpandedSet  = new Set(); // IPs with ports row expanded
+
+function saveExpanded() {
+  try { localStorage.setItem('netrecon_expanded', JSON.stringify([...foundExpandedSet])); } catch {}
+}
+
+function restoreExpanded() {
+  try {
+    const raw = localStorage.getItem('netrecon_expanded');
+    if (!raw) return;
+    JSON.parse(raw).forEach(ip => foundExpandedSet.add(ip));
+  } catch {}
+}
+restoreExpanded();
 
 function saveMarks() {
   try {
@@ -1070,12 +1084,15 @@ document.getElementById('colExpandAll')?.addEventListener('click', () => {
       paths.classList.add('open');
       paths.style.display = 'flex';
       if (expandBtn) expandBtn.textContent = '−';
+      if (row?.dataset.ip) foundExpandedSet.add(row.dataset.ip);
     } else {
       paths.classList.remove('open');
       paths.style.display = 'none';
       if (expandBtn) expandBtn.textContent = '+';
+      if (row?.dataset.ip) foundExpandedSet.delete(row.dataset.ip);
     }
   });
+  saveExpanded();
 });
 
 // Check column header — right-click context menu
@@ -2009,6 +2026,8 @@ function addResultRow(ip, openPorts, pingMs) {
     pathsRow.style.display = open ? 'flex' : 'none';
     expandBtn.textContent = open ? '−' : '+';
     expandBtn.classList.toggle('open', open);
+    if (open) foundExpandedSet.add(ip); else foundExpandedSet.delete(ip);
+    saveExpanded();
   });
 
   // ── Left click → select only (no detail, no preview) ──
@@ -2099,6 +2118,17 @@ function restoreResults() {
 restoreResults();
 // Re-apply saved sort (pre-flip dir so sortListView flips it back to saved value)
 if (_sortCol) { _sortDir *= -1; sortListView(_sortCol); }
+// Re-apply saved expanded state
+foundExpandedSet.forEach(ip => {
+  const row = document.querySelector(`.lv-row[data-ip="${CSS.escape(ip)}"]`);
+  if (!row) return;
+  const pathsRow = row.nextElementSibling;
+  if (!pathsRow || !pathsRow.classList.contains('paths-row')) return;
+  pathsRow.classList.add('open');
+  pathsRow.style.display = 'flex';
+  const btn = row.querySelector('.row-expand-btn');
+  if (btn) { btn.textContent = '−'; btn.classList.add('open'); }
+});
 
 // ══════════════════════════════════════════════════
 //  PREVIEW
