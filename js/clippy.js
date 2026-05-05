@@ -6,6 +6,10 @@
   const STORAGE_KEY = 'clippy_enabled';
   const TIP_INTERVAL_MS = 9000;
 
+  // ── Skip in tool sub-windows (each is a separate WebviewWindow) ──
+  const _isToolWindow = typeof _toolMode !== 'undefined' && !!_toolMode;
+  if (_isToolWindow) return;
+
   const TIPS = {
     en: [
       "It looks like you're scanning a network!\nClick [+] on any row to expand open ports.",
@@ -37,44 +41,76 @@
   let tipTimer = null;
   let currentLang = 'en';
 
-  // ── Public API ───────────────────────────────────
+  // Reuse _tauriInvoke defined in app.js (loaded before clippy.js)
+  const _invoke = (typeof _tauriInvoke !== 'undefined') ? _tauriInvoke : null;
+
+  // ── Tauri native-window helpers ──────────────────────────────────
+  function _openNativeClippy() {
+    if (!_invoke) return false;
+    _invoke('open_clippy_window', { lang: currentLang }).catch(() => {});
+    return true;
+  }
+
+  function _closeNativeClippy() {
+    if (!_invoke) return false;
+    _invoke('close_clippy_window').catch(() => {});
+    return true;
+  }
+
+  // ── DOM fallback helpers (browser / non-Tauri) ───────────────────
+  function _showDOM() {
+    const el = document.getElementById('clippy-container');
+    if (el) el.classList.remove('clippy-hidden');
+    _showTip();
+    _startTimer();
+  }
+
+  function _hideDOM() {
+    const el = document.getElementById('clippy-container');
+    if (el) el.classList.add('clippy-hidden');
+  }
+
+  // ── Public API ───────────────────────────────────────────────────
   window.clippySetLang = function (lang) {
+    const prev = currentLang;
     currentLang = lang && TIPS[lang] ? lang : 'en';
+    // Reopen native window with updated language
+    if (_invoke && prev !== currentLang && localStorage.getItem(STORAGE_KEY) === '1') {
+      _invoke('close_clippy_window')
+        .catch(() => {})
+        .finally(() => {
+          _invoke('open_clippy_window', { lang: currentLang }).catch(() => {});
+        });
+    }
   };
 
   window.clippyShow = function () {
-    const el = document.getElementById('clippy-container');
-    if (el) {
-      el.classList.remove('clippy-hidden');
-      localStorage.setItem(STORAGE_KEY, '1');
-      _showTip();
-      _startTimer();
+    localStorage.setItem(STORAGE_KEY, '1');
+    if (!_openNativeClippy()) {
+      _showDOM();
     }
   };
 
   window.clippyHide = function () {
-    const el = document.getElementById('clippy-container');
-    if (el) el.classList.add('clippy-hidden');
     localStorage.setItem(STORAGE_KEY, '0');
     _stopTimer();
+    _closeNativeClippy();
+    _hideDOM();
   };
 
   window.clippyToggle = function () {
-    const el = document.getElementById('clippy-container');
-    if (!el) return;
-    if (el.classList.contains('clippy-hidden')) {
-      window.clippyShow();
-    } else {
+    if (localStorage.getItem(STORAGE_KEY) === '1') {
       window.clippyHide();
+    } else {
+      window.clippyShow();
     }
   };
 
   window.clippyIsVisible = function () {
-    const el = document.getElementById('clippy-container');
-    return el && !el.classList.contains('clippy-hidden');
+    return localStorage.getItem(STORAGE_KEY) === '1';
   };
 
-  // ── Internals ────────────────────────────────────
+  // ── Internals ────────────────────────────────────────────────────
   function _tips() {
     return TIPS[currentLang] || TIPS.en;
   }
@@ -95,7 +131,6 @@
     const ch = document.getElementById('clippy-char');
     if (!ch) return;
     ch.classList.remove('clippy-wiggle');
-    // force reflow so animation restarts
     void ch.offsetWidth;
     ch.classList.add('clippy-wiggle');
   }
@@ -109,22 +144,23 @@
     if (tipTimer) { clearInterval(tipTimer); tipTimer = null; }
   }
 
-  // ── Init ─────────────────────────────────────────
+  // ── Init ─────────────────────────────────────────────────────────
   function _init() {
-    const container = document.getElementById('clippy-container');
-    if (!container) return;
-
-    // Restore visibility from localStorage
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === '1') {
-      container.classList.remove('clippy-hidden');
-      _showTip();
-      _startTimer();
-    } else {
-      container.classList.add('clippy-hidden');
+    // Listen for native clippy window closed event (user clicked ✕ in OS window)
+    if (window.__TAURI__?.event?.listen) {
+      window.__TAURI__.event.listen('clippy-window-closed', () => {
+        localStorage.setItem(STORAGE_KEY, '0');
+      }).catch(() => {});
     }
 
-    // Click character → next tip + restart timer
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === '1') {
+      if (!_openNativeClippy()) {
+        _showDOM();
+      }
+    }
+
+    // DOM clippy event handlers (fallback / non-Tauri)
     const charEl = document.getElementById('clippy-char');
     if (charEl) {
       charEl.addEventListener('click', () => {
@@ -133,7 +169,6 @@
       });
     }
 
-    // Click bubble → next tip + restart timer
     const bubble = document.getElementById('clippy-bubble');
     if (bubble) {
       bubble.addEventListener('click', (e) => {
@@ -143,41 +178,34 @@
       });
     }
 
-    // Close [x] → hide
     const closeBtn = document.getElementById('clippy-close');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => window.clippyHide());
     }
 
-    // Draggable
-    _makeDraggable(container);
+    _makeDraggable(document.getElementById('clippy-container'));
   }
 
   function _makeDraggable(el) {
-    let startX, startY, origRight, origBottom;
-
+    if (!el) return;
     const handle = document.getElementById('clippy-char');
     if (!handle) return;
 
     handle.addEventListener('mousedown', (e) => {
-      // Only left button
       if (e.button !== 0) return;
       e.preventDefault();
 
       const rect = el.getBoundingClientRect();
-      startX = e.clientX;
-      startY = e.clientY;
-      // Convert right/bottom to left/top for easier dragging
+      const startX = e.clientX;
+      const startY = e.clientY;
       el.style.right = 'auto';
       el.style.bottom = 'auto';
       el.style.left = rect.left + 'px';
       el.style.top  = rect.top  + 'px';
 
       function onMove(ev) {
-        const dx = ev.clientX - startX;
-        const dy = ev.clientY - startY;
-        el.style.left = (rect.left + dx) + 'px';
-        el.style.top  = (rect.top  + dy) + 'px';
+        el.style.left = (rect.left + (ev.clientX - startX)) + 'px';
+        el.style.top  = (rect.top  + (ev.clientY - startY)) + 'px';
       }
       function onUp() {
         document.removeEventListener('mousemove', onMove);
@@ -188,7 +216,6 @@
     });
   }
 
-  // Run after DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', _init);
   } else {

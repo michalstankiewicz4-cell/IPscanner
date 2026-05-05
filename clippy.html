@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Clippy</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      background: transparent !important;
+      overflow: hidden;
+      user-select: none;
+      font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+    }
+    #clippy-wrap {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      padding: 0 8px 6px 8px;
+    }
+    #clippy-bubble {
+      background: #ffffc0;
+      border: 2px solid #000080;
+      padding: 7px 22px 7px 10px;
+      max-width: 230px;
+      min-width: 110px;
+      font-size: 11px;
+      line-height: 1.4;
+      position: relative;
+      box-shadow: 2px 2px 0 #808080;
+      cursor: pointer;
+      color: #000000;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    #clippy-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -11px;
+      right: 22px;
+      border: 6px solid transparent;
+      border-top-color: #000080;
+    }
+    #clippy-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      right: 23px;
+      border: 5px solid transparent;
+      border-top-color: #ffffc0;
+      z-index: 1;
+    }
+    #clippy-close {
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      font-size: 9px;
+      font-weight: bold;
+      line-height: 1;
+      cursor: pointer;
+      color: #000080;
+      padding: 1px 2px;
+    }
+    #clippy-close:hover { background: #c0c0c0; }
+    #clippy-char {
+      font-size: 52px;
+      line-height: 1;
+      cursor: grab;
+      text-align: right;
+      transition: transform 0.15s;
+      filter: drop-shadow(1px 1px 1px rgba(0,0,0,.35));
+    }
+    #clippy-char:hover  { transform: scale(1.12) rotate(-5deg); }
+    #clippy-char:active { transform: scale(0.92); cursor: grabbing; }
+    @keyframes clippy-wiggle {
+      0%   { transform: rotate(0deg); }
+      20%  { transform: rotate(-12deg); }
+      40%  { transform: rotate(10deg); }
+      60%  { transform: rotate(-8deg); }
+      80%  { transform: rotate(5deg); }
+      100% { transform: rotate(0deg); }
+    }
+    .clippy-wiggle { animation: clippy-wiggle 0.5s ease; }
+  </style>
+</head>
+<body>
+  <div id="clippy-wrap">
+    <div id="clippy-bubble">
+      <span id="clippy-close">✕</span>
+      <span id="clippy-tip-text"></span>
+    </div>
+    <div id="clippy-char">📎</div>
+  </div>
+
+  <script>
+    const TIPS = {
+      en: [
+        "It looks like you're scanning a network!\nClick [+] on any row to expand open ports.",
+        "Right-click an IP address for Geo, Device, Title and Access enrichment options.",
+        "You can save Port Presets in Options → Port Presets... for quick reuse.",
+        "Use the Macro folder to automate repetitive scan tasks.",
+        "The Speed Test button measures your current internet connection speed.",
+        "The Globe 🌍 view shows discovered hosts on a world map.",
+        "Tip: increase Threads for faster scans on a reliable network.",
+        "The Console ⌨ lets you run raw ping, traceroute and nmap commands.",
+        "You can switch UI skin to Classic or Glass under Options → Customization...",
+        "Click me for another tip! 😄",
+      ],
+      pl: [
+        "Wygląda na to, że skanujesz sieć!\nKliknij [+] w wierszu, aby rozwinąć otwarte porty.",
+        "Kliknij prawym na adres IP, aby uzyskać opcje Geo, Urządzenie, Tytuł i Dostęp.",
+        "Możesz zapisać Presety Portów w Opcje → Presety portów... i szybko je ponownie używać.",
+        "Użyj folderu Makr, aby zautomatyzować powtarzalne zadania skanowania.",
+        "Przycisk Speed Test mierzy aktualną prędkość twojego łącza internetowego.",
+        "Widok Globus 🌍 pokazuje wykryte hosty na mapie świata.",
+        "Wskazówka: zwiększ liczbę wątków, aby przyspieszyć skanowanie w stabilnej sieci.",
+        "Konsola ⌨ pozwala uruchamiać ping, traceroute i polecenia nmap bezpośrednio.",
+        "Możesz zmienić wygląd aplikacji na Classic lub Glass w Opcje → Dostosowanie...",
+        "Kliknij mnie, żeby zobaczyć kolejną wskazówkę! 😄",
+      ],
+    };
+
+    const params = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+    let lang = params.get('lang') || 'en';
+    if (!TIPS[lang]) lang = 'en';
+
+    let tipIndex = 0;
+    let tipTimer = null;
+    const TIP_INTERVAL_MS = 9000;
+
+    const _invoke = window.__TAURI_INTERNALS__?.invoke;
+
+    function tips() { return TIPS[lang]; }
+
+    function showTip(next) {
+      if (next) tipIndex = (tipIndex + 1) % tips().length;
+      const el = document.getElementById('clippy-tip-text');
+      if (el) el.textContent = tips()[tipIndex];
+      wiggle();
+    }
+
+    function wiggle() {
+      const ch = document.getElementById('clippy-char');
+      if (!ch) return;
+      ch.classList.remove('clippy-wiggle');
+      void ch.offsetWidth;
+      ch.classList.add('clippy-wiggle');
+    }
+
+    function startTimer() {
+      stopTimer();
+      tipTimer = setInterval(() => showTip(true), TIP_INTERVAL_MS);
+    }
+
+    function stopTimer() {
+      if (tipTimer) { clearInterval(tipTimer); tipTimer = null; }
+    }
+
+    // Native window drag — dragging the character moves the OS window
+    document.getElementById('clippy-char').addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      if (_invoke) _invoke('window_start_dragging').catch(() => {});
+    });
+
+    // Click char → next tip
+    document.getElementById('clippy-char').addEventListener('click', () => {
+      showTip(true);
+      startTimer();
+    });
+
+    // Click bubble → next tip
+    document.getElementById('clippy-bubble').addEventListener('click', (e) => {
+      if (e.target.id === 'clippy-close') return;
+      showTip(true);
+      startTimer();
+    });
+
+    // Close button — closes this OS window
+    document.getElementById('clippy-close').addEventListener('click', () => {
+      stopTimer();
+      if (_invoke) _invoke('window_close').catch(() => {});
+    });
+
+    showTip(false);
+    startTimer();
+  </script>
+</body>
+</html>

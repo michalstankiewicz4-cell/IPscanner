@@ -31,6 +31,7 @@ const TOOL_WINDOW_LABELS: &[&str] = &[
     "tool-proto",
     "tool-globe",
     "tool-topology",
+    "clippy",
 ];
 
 // ─── DTOs ────────────────────────────────────────────────────────────────────
@@ -325,6 +326,37 @@ fn window_close(window: WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn open_clippy_window(app: AppHandle, lang: String) -> Result<(), String> {
+    if let Some(win) = app.get_webview_window("clippy") {
+        let _ = win.show();
+        let _ = win.set_focus();
+        return Ok(());
+    }
+    let url = WebviewUrl::App(format!("clippy.html#lang={}", lang).into());
+    let win = WebviewWindowBuilder::new(&app, "clippy", url)
+        .title("NetRecon Clippy")
+        .inner_size(280.0, 185.0)
+        .decorations(false)
+        .transparent(true)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .resizable(false)
+        .build()
+        .map_err(|e| e.to_string())?;
+    let _ = win.set_focus();
+    Ok(())
+}
+
+#[tauri::command]
+fn close_clippy_window(app: AppHandle) -> Result<(), String> {
+    if let Some(win) = app.get_webview_window("clippy") {
+        win.close().map_err(|e| e.to_string())
+    } else {
+        Ok(())
+    }
+}
+
+#[tauri::command]
 async fn open_tool_window(app: AppHandle, tool: String) -> Result<(), String> {
     let tool = tool.trim().to_lowercase();
     let (label, title, width, height) = match tool.as_str() {
@@ -411,6 +443,11 @@ fn main() {
                     close_tool_windows(&window.app_handle());
                 }
             }
+            if window.label() == "clippy" {
+                if matches!(event, WindowEvent::Destroyed) {
+                    let _ = window.app_handle().emit("clippy-window-closed", ());
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             scan_port,
@@ -421,6 +458,8 @@ fn main() {
             get_local_subnets,
             run_traceroute,
             open_tool_window,
+            open_clippy_window,
+            close_clippy_window,
             open_browser,
             window_minimize,
             window_toggle_maximize,
