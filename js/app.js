@@ -1757,21 +1757,21 @@ const btnUseMyIp   = document.getElementById('btnUseMyIp');
 btnMyIp.addEventListener('click', async () => {
   myIpResult.className = 'status-loading';
   myIpResult.textContent = t('loading');
-  btnCopyMyIp.style.display = 'none';
-  btnUseMyIp.style.display  = 'none';
+  btnCopyMyIp.classList.add('initially-hidden');
+  btnUseMyIp.classList.add('initially-hidden');
   btnMyIp.disabled = true;
   try {
     const res  = await fetch('https://api.ipify.org?format=json');
     const data = await res.json();
     myIpResult.className = 'status-ok';
     myIpResult.textContent = data.ip;
-    btnCopyMyIp.style.display = 'inline-block';
+    btnCopyMyIp.classList.remove('initially-hidden');
     btnCopyMyIp.onclick = () => {
       navigator.clipboard?.writeText(data.ip);
       btnCopyMyIp.textContent = '✔ OK';
       setTimeout(() => { btnCopyMyIp.textContent = t('btnCopy'); }, 1500);
     };
-    btnUseMyIp.style.display = 'inline-block';
+    btnUseMyIp.classList.remove('initially-hidden');
     btnUseMyIp.onclick = () => {
       const parts = data.ip.split('.').map(Number);
       setIP('f', `${parts[0]}.${parts[1]}.${parts[2]}.1`);
@@ -1974,8 +1974,8 @@ async function detectLocalSubnets() {
 btnMyLocalIp.addEventListener('click', async () => {
   myLocalIpResult.className = 'status-loading';
   myLocalIpResult.textContent = t('loading');
-  btnCopyMyLocalIp.style.display = 'none';
-  btnUseMyLocalIp.style.display  = 'none';
+  btnCopyMyLocalIp.classList.add('initially-hidden');
+  btnUseMyLocalIp.classList.add('initially-hidden');
   btnMyLocalIp.disabled = true;
   
   try {
@@ -1983,14 +1983,14 @@ btnMyLocalIp.addEventListener('click', async () => {
     myLocalIpResult.className = 'status-ok';
     myLocalIpResult.textContent = localIP;
     
-    btnCopyMyLocalIp.style.display = 'inline-block';
+    btnCopyMyLocalIp.classList.remove('initially-hidden');
     btnCopyMyLocalIp.onclick = () => {
       navigator.clipboard?.writeText(localIP);
       btnCopyMyLocalIp.textContent = '✔ OK';
       setTimeout(() => { btnCopyMyLocalIp.textContent = t('btnCopy'); }, 1500);
     };
     
-    btnUseMyLocalIp.style.display = 'inline-block';
+    btnUseMyLocalIp.classList.remove('initially-hidden');
     btnUseMyLocalIp.onclick = () => {
       const parts = localIP.split('.').map(Number);
       // Set range to scan local network
@@ -2010,8 +2010,8 @@ btnMyLocalIp.addEventListener('click', async () => {
 btnLocalSubnets.addEventListener('click', async () => {
   localSubnetsResult.className = 'status-loading';
   localSubnetsResult.textContent = t('loading');
-  localSubnetSelect.style.display = 'none';
-  btnUseLocalSubnet.style.display = 'none';
+  localSubnetSelect.classList.add('initially-hidden');
+  btnUseLocalSubnet.classList.add('initially-hidden');
   btnLocalSubnets.disabled = true;
 
   try {
@@ -2032,8 +2032,8 @@ btnLocalSubnets.addEventListener('click', async () => {
 
     localSubnetsResult.className = 'status-ok';
     localSubnetsResult.textContent = t('localSubnetsFound', subnets.length);
-    localSubnetSelect.style.display = 'inline-block';
-    btnUseLocalSubnet.style.display = 'inline-block';
+    localSubnetSelect.classList.remove('initially-hidden');
+    btnUseLocalSubnet.classList.remove('initially-hidden');
 
     btnUseLocalSubnet.onclick = () => {
       const base = localSubnetSelect.value;
