@@ -21,20 +21,6 @@
   display: flex;
 }
 
-.notepad-menubar {
-  padding: 2px 4px;
-  gap: 2px;
-}
-
-.notepad-menu-item {
-  padding: 1px 6px;
-  cursor: default;
-}
-.notepad-menu-item:hover {
-  background: #000080;
-  color: #fff;
-}
-
 .notepad-textarea {
   width: 100%;
   height: 320px;
