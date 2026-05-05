@@ -106,14 +106,6 @@
     <div class="groupbox">
       <span class="groupbox-legend" data-i18n="scanSettings">Scan Settings</span>
 
-      <!-- Preset selector -->
-      <div class="settings-row">
-        <span class="label-nowrap" data-i18n="labelPreset">Preset:</span>
-        <select id="presetSelect" class="select95"></select>
-        <span class="label-muted-sm" data-i18n="labelPorts2">Ports:</span>
-        <span id="activePorts" class="active-ports-display"></span>
-      </div>
-
       <!-- External IP -->
       <div class="settings-row-sm">
         <button class="btn95 btn-wide-132" id="btnMyIp" data-i18n="btnMyIp">🌐 My External IP</button>
@@ -136,6 +128,14 @@
         <span id="localSubnetsResult" class="ip-result-label"></span>
         <select id="localSubnetSelect" class="select95 initially-hidden"></select>
         <button class="btn95 btn-action-sm initially-hidden" id="btnUseLocalSubnet" data-i18n="btnUse">➤ Use</button>
+      </div>
+
+      <!-- Preset selector -->
+      <div class="settings-row">
+        <span class="label-nowrap" data-i18n="labelPreset">Preset:</span>
+        <select id="presetSelect" class="select95"></select>
+        <span class="label-muted-sm" data-i18n="labelPorts2">Ports:</span>
+        <span id="activePorts" class="active-ports-display"></span>
       </div>
 
       <!-- IP Range -->
@@ -166,7 +166,6 @@
         <input type="number" min="2" max="64" value="32" id="concNum" style="display:none"/>
         <input type="number" min="0" max="5000" value="0" id="delayMs" style="display:none"/>
       </div>
-      <div class="port-hint" id="portHint"></div>
     </div>
 
     <!-- Progress -->
@@ -753,6 +752,9 @@
       <span class="dlg-icon dlg-icon-versions">📘</span>
       <div class="dlg-sunken-box dlg-versions-card">
         <div class="version-head">v1.5.9</div>
+        <div class="version-note">
+        </div>
+        <div class="version-head">v1.5.8</div>
         <div class="version-note">
           i18n: translated all toolbar buttons (Console→Konsola, Macro→Makro, Speed→Prędkość, Prototype→Prototyp, Topology→Topologia),
           fixed untranslated Polish strings (ipRange, accessLabel, traceRoutesLabel), fixed hardcoded Polish close-confirm dialog to use t().

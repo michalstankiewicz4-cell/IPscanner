@@ -793,8 +793,8 @@ function buildPresetSelect() {
 
 function updatePortsDisplay() {
   const ports = getActivePorts();
-  document.getElementById('activePorts').textContent = ports.join(', ');
-  document.getElementById('portHint').textContent = presets[activePresetIdx]?.ports || '';
+  const activePorts = document.getElementById('activePorts');
+  if (activePorts) activePorts.textContent = ports.join(', ');
 }
 
 document.getElementById('presetSelect').addEventListener('change', function() {

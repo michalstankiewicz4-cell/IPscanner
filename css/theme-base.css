@@ -3,10 +3,9 @@
 
 body {
   background: #c0c0c0;
-  min-height: 100vh;
+  height: 100vh;
   position: relative;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 0;
   font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, sans-serif;
   font-size: 11px;
@@ -29,7 +28,7 @@ html.tool-window-boot #mainWin {
 #mainWin {
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  height: 100vh;
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -97,7 +96,7 @@ body.dragging             { cursor: move !important; }
 .status-time { font-size: 10px; color: #000080; font-weight: bold; }
 
 /* ── Content area ── */
-.win-body { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.win-body { padding: 8px; display: flex; flex-direction: column; gap: 6px; flex: 1; overflow: hidden; min-height: 0; }
 
 /* ── Toolbar row ── */
 .toolbar {
@@ -227,6 +226,10 @@ body.dragging             { cursor: move !important; }
   box-shadow: inset 1px 1px 0 #404040;
   background: #fff;
   overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 .listview-header {
   display: grid;
@@ -249,19 +252,40 @@ body.dragging             { cursor: move !important; }
 .lv-col:last-child  { border-right: none; }
 
 .listview-body {
-  max-height: 260px;
+  flex: 1;
   overflow-y: scroll;
   overflow-x: auto;
+  min-height: 0;
 }
 /* Classic retro-win scrollbar approximation */
 .listview-body::-webkit-scrollbar { width: 16px; }
-.listview-body::-webkit-scrollbar-track { background: #c0c0c0; }
+.listview-body::-webkit-scrollbar-track {
+  background: #c0c0c0;
+  border-top:   1px solid #808080;
+  border-left:  1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom:1px solid #fff;
+  box-shadow: inset 1px 1px 0 #909090;
+}
 .listview-body::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border-top:   1px solid #fff;
+  border-left:  1px solid #fff;
+  border-right: 1px solid #404040;
+  border-bottom:1px solid #404040;
+  box-shadow: inset 1px 1px 0 #dfdfdf;
+}
+.listview-body::-webkit-scrollbar-thumb:hover {
+  background: #b0b0b0;
+}
+.listview-body::-webkit-scrollbar-button {
   background: #c0c0c0;
   border-top:   1px solid #fff;
   border-left:  1px solid #fff;
   border-right: 1px solid #808080;
   border-bottom:1px solid #808080;
+  height: 16px;
+  display: block;
 }
 
 .lv-row {
@@ -871,6 +895,14 @@ body.tool-window-mode #mainWin {
   user-select: none;
 }
 .ip-blur-active .lv-ip-cell:hover {
+  filter: none;
+}
+.ip-blur-active .path-port-label {
+  filter: blur(5px);
+  transition: filter 0.15s;
+  user-select: none;
+}
+.ip-blur-active .path-port-label:hover {
   filter: none;
 }
 .ip-range-blurred #boxFrom,
