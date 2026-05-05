@@ -230,7 +230,7 @@ body.dragging             { cursor: move !important; }
 }
 .listview-header {
   display: grid;
-  grid-template-columns: 20px 18px 18px 124px 26px 80px;
+  grid-template-columns: var(--lv-cols, 20px 18px 18px 124px 26px 80px);
   background: #c0c0c0;
   border-bottom: 1px solid #808080;
   min-width: 250px;
@@ -266,7 +266,7 @@ body.dragging             { cursor: move !important; }
 
 .lv-row {
   display: grid;
-  grid-template-columns: 20px 18px 18px 124px 26px 80px;
+  grid-template-columns: var(--lv-cols, 20px 18px 18px 124px 26px 80px);
   cursor: default;
   border-bottom: 1px solid #f0f0f0;
   animation: rowIn 200ms ease-out;
@@ -862,6 +862,70 @@ body.tool-window-mode #mainWin {
   padding: 3px 4px;
   border-bottom: 1px solid #808080;
   background: #c0c0c0;
+}
+
+/* Columns button */
+.btn-cols {
+  font-size: 10px;
+  padding: 1px 8px;
+  cursor: pointer;
+  background: #c0c0c0;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  font-family: inherit;
+  margin-left: 6px;
+}
+.btn-cols.active,
+.btn-cols:active {
+  border-top: 1px solid #808080;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+}
+
+/* Columns panel */
+.cols-panel {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 4px;
+  background: #c0c0c0;
+  border-top: 2px solid #fff;
+  border-left: 2px solid #fff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  box-shadow: 2px 2px 0 #000;
+  z-index: 3000;
+  min-width: 0;
+  width: max-content;
+  padding: 2px 0;
+}
+.cols-panel.open { display: block; }
+.cols-panel-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.cols-panel-item:hover { background: #000080; color: #fff; }
+.cols-panel-item input { cursor: pointer; margin: 0; }
+
+/* Extra enrichment cells in rows */
+.lv-extra-cell {
+  display: none;
+  padding: 2px 4px;
+  font-size: 10px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  align-self: center;
 }
 .listview-filter .filter-label {
   font-size: 10px;

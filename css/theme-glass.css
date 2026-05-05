@@ -114,7 +114,8 @@ body.skin-glass .listview-filter {
 body.skin-glass .listview-filter .filter-label {
   color: #153a63;
 }
-body.skin-glass .btn-filter {
+body.skin-glass .btn-filter,
+body.skin-glass .btn-cols {
   background: linear-gradient(180deg, #f6fbff, #cfe3fb);
   border-top: 1px solid #ffffff;
   border-left: 1px solid #ffffff;
@@ -122,16 +123,34 @@ body.skin-glass .btn-filter {
   border-bottom: 1px solid #6d8db1;
   color: #123a65;
 }
-body.skin-glass .btn-filter:hover {
+body.skin-glass .btn-filter:hover,
+body.skin-glass .btn-cols:hover {
   background: linear-gradient(180deg, #e0f0ff, #b8d6f5);
 }
-body.skin-glass .btn-filter.active {
+body.skin-glass .btn-filter.active,
+body.skin-glass .btn-cols.active {
   background: linear-gradient(180deg, #bbd5f2, #e5f2ff);
   border-top: 1px solid #6d8db1;
   border-left: 1px solid #6d8db1;
   border-right: 1px solid #ffffff;
   border-bottom: 1px solid #ffffff;
   color: #0a2e55;
+}
+body.skin-glass .cols-panel {
+  background: rgba(225, 240, 255, 0.97);
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #6d8db1;
+  border-bottom: 1px solid #6d8db1;
+  box-shadow: 2px 2px 4px rgba(80,120,180,0.25);
+  color: #123a65;
+}
+body.skin-glass .cols-panel-item {
+  color: #123a65;
+}
+body.skin-glass .cols-panel-item:hover {
+  background: #3a7abf;
+  color: #ffffff;
 }
 
 body.skin-glass .listview-header {

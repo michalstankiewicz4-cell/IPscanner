@@ -948,15 +948,38 @@ const foundFavSet = new Set();
 function applyListFilter() {
   document.querySelectorAll('.lv-row').forEach(row => {
     const isActive  = row.querySelector('.light-on') !== null;
-    const isFav     = row.querySelector('.star-on') !== null;
-    let visible = true;
-    if (_listFilter === 'active')    visible = isActive;
-    else if (_listFilter === 'dead') visible = !isActive;
-    else if (_listFilter === 'favorites') visible = isFav;
-    row.style.display = visible ? '' : 'none';
+    const isRowFav  = row.querySelector('.lv-star .star-on') !== null;
     const paths = row.nextElementSibling;
+    const hasPortFav = paths && paths.classList.contains('paths-row')
+      ? paths.querySelector('.star-on') !== null
+      : false;
+    const isFav = isRowFav || hasPortFav;
+
+    let visible = true;
+    if (_listFilter === 'active')         visible = isActive;
+    else if (_listFilter === 'dead')      visible = !isActive;
+    else if (_listFilter === 'favorites') visible = isFav;
+
+    row.style.display = visible ? '' : 'none';
+
     if (paths && paths.classList.contains('paths-row')) {
-      paths.style.display = visible ? (paths.classList.contains('open') ? 'flex' : 'none') : 'none';
+      if (!visible) {
+        paths.style.display = 'none';
+      } else if (_listFilter === 'favorites' && hasPortFav && !isRowFav) {
+        // host not favorited but has favorited ports — auto-expand
+        paths.classList.add('open');
+        paths.style.display = 'flex';
+      } else {
+        paths.style.display = paths.classList.contains('open') ? 'flex' : 'none';
+      }
+      // In favorites mode, hide individual port lines that aren't starred
+      paths.querySelectorAll('.path-port-line').forEach(line => {
+        if (_listFilter === 'favorites') {
+          line.style.display = line.querySelector('.star-on') !== null ? '' : 'none';
+        } else {
+          line.style.display = '';
+        }
+      });
     }
   });
 }
@@ -970,6 +993,241 @@ function applyListFilter() {
     document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     applyListFilter();
+  });
+});
+
+// Expand / collapse all rows via [+] header click
+let _allExpanded = false;
+document.getElementById('colExpandAll')?.addEventListener('click', () => {
+  _allExpanded = !_allExpanded;
+  document.getElementById('colExpandAll').textContent = _allExpanded ? '−' : '+';
+  document.querySelectorAll('.paths-row').forEach(paths => {
+    const row = paths.previousElementSibling;
+    if (row && row.style.display === 'none') return; // skip hidden rows
+    const expandBtn = row?.querySelector('.row-expand-btn');
+    if (_allExpanded) {
+      paths.classList.add('open');
+      paths.style.display = 'flex';
+      if (expandBtn) expandBtn.textContent = '−';
+    } else {
+      paths.classList.remove('open');
+      paths.style.display = 'none';
+      if (expandBtn) expandBtn.textContent = '+';
+    }
+  });
+});
+
+// Check column header — right-click context menu
+const checkCtxMenu = document.getElementById('checkCtxMenu');
+
+document.getElementById('colCheckAll')?.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  e.stopPropagation();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  checkCtxMenu.style.left = Math.min(e.clientX, vw - 180) + 'px';
+  checkCtxMenu.style.top  = Math.min(e.clientY, vh - 80)  + 'px';
+  checkCtxMenu.classList.add('open');
+});
+
+document.getElementById('checkCtxMarkVisible')?.addEventListener('click', () => {
+  checkCtxMenu.classList.remove('open');
+  document.querySelectorAll('.lv-row').forEach(row => {
+    if (row.style.display === 'none') return;
+    const span = row.querySelector('.lv-icon span');
+    if (span) { span.className = 'icon-ok'; span.title = 'Marked'; }
+  });
+});
+
+document.getElementById('checkCtxUnmarkVisible')?.addEventListener('click', () => {
+  checkCtxMenu.classList.remove('open');
+  document.querySelectorAll('.lv-row').forEach(row => {
+    if (row.style.display === 'none') return;
+    const span = row.querySelector('.lv-icon span');
+    if (span) { span.className = 'icon-ok-off'; span.title = 'Mark'; }
+  });
+});
+
+document.addEventListener('click', () => checkCtxMenu?.classList.remove('open'));
+
+// Favorites column header — right-click context menu
+const favCtxMenu = document.getElementById('favCtxMenu');
+
+document.getElementById('colFavAll')?.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  e.stopPropagation();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  favCtxMenu.style.left = Math.min(e.clientX, vw - 200) + 'px';
+  favCtxMenu.style.top  = Math.min(e.clientY, vh - 80)  + 'px';
+  favCtxMenu.classList.add('open');
+});
+
+document.getElementById('favCtxAddVisible')?.addEventListener('click', () => {
+  favCtxMenu.classList.remove('open');
+  document.querySelectorAll('.lv-row').forEach(row => {
+    if (row.style.display === 'none') return;
+    const span = row.querySelector('.lv-star span');
+    if (span) {
+      const ip = row.dataset.ip;
+      foundFavSet.add(ip);
+      span.className = 'star-on';
+      span.title = 'Favorite';
+    }
+  });
+  if (_listFilter === 'favorites') applyListFilter();
+});
+
+document.getElementById('favCtxRemoveVisible')?.addEventListener('click', () => {
+  favCtxMenu.classList.remove('open');
+  document.querySelectorAll('.lv-row').forEach(row => {
+    if (row.style.display === 'none') return;
+    const span = row.querySelector('.lv-star span');
+    if (span) {
+      const ip = row.dataset.ip;
+      foundFavSet.delete(ip);
+      span.className = 'star-off';
+      span.title = 'Add to favorites';
+    }
+  });
+  if (_listFilter === 'favorites') applyListFilter();
+});
+
+document.addEventListener('click', () => favCtxMenu?.classList.remove('open'));
+
+// ══════════════════════════════════════════════════
+//  COLUMN SORTING (IP / Ping)
+// ══════════════════════════════════════════════════
+let _sortCol = null; // 'ip' | 'ping'
+let _sortDir = 1;    // 1 = asc, -1 = desc
+
+function sortListView(col) {
+  if (_sortCol === col) _sortDir *= -1;
+  else { _sortCol = col; _sortDir = 1; }
+
+  // Update header indicators
+  const ipEl   = document.getElementById('colSortIp');
+  const pingEl = document.getElementById('colSortPing');
+  if (ipEl)   ipEl.textContent   = 'IP Address' + (col === 'ip'   ? (_sortDir === 1 ? ' ▲' : ' ▼') : '');
+  if (pingEl) pingEl.textContent = 'Ping'        + (col === 'ping' ? (_sortDir === 1 ? ' ▲' : ' ▼') : '');
+
+  // Collect row+pathsRow pairs from listBody
+  const listBody = document.getElementById('listBody');
+  const pairs = [];
+  let child = listBody.firstElementChild;
+  while (child) {
+    if (child.classList.contains('lv-row')) {
+      const next = child.nextElementSibling;
+      const pathsRow = (next && next.classList.contains('paths-row')) ? next : null;
+      pairs.push({ row: child, pathsRow });
+      child = pathsRow ? pathsRow.nextElementSibling : next;
+    } else {
+      child = child.nextElementSibling;
+    }
+  }
+
+  pairs.sort((a, b) => {
+    if (col === 'ip') {
+      return _sortDir * (ipToNum(a.row.dataset.ip) - ipToNum(b.row.dataset.ip));
+    } else {
+      const p = row => {
+        const v = row.dataset.ping;
+        return (v !== undefined && v !== '') ? parseInt(v) : Infinity;
+      };
+      return _sortDir * (p(a.row) - p(b.row));
+    }
+  });
+
+  // Re-insert in sorted order
+  const frag = document.createDocumentFragment();
+  pairs.forEach(({ row, pathsRow }) => {
+    frag.appendChild(row);
+    if (pathsRow) frag.appendChild(pathsRow);
+  });
+  listBody.appendChild(frag);
+}
+
+document.getElementById('colSortIp')?.addEventListener('click',   () => sortListView('ip'));
+document.getElementById('colSortPing')?.addEventListener('click', () => sortListView('ping'));
+
+// ══════════════════════════════════════════════════
+//  EXTRA COLUMNS (Columns panel)
+// ══════════════════════════════════════════════════
+const EXTRA_COLS = [
+  { key: 'hostname', width: '120px' },
+  { key: 'geo',      width: '170px' },
+  { key: 'device',   width: '140px' },
+  { key: 'title',    width: '200px' },
+  { key: 'access',   width: '80px'  },
+];
+const colsEnabled = { hostname: false, geo: false, device: false, title: false, access: false };
+const BASE_LV_COLS = '20px 18px 18px 124px 26px 80px';
+
+function updateColsGrid() {
+  const extras = EXTRA_COLS.filter(c => colsEnabled[c.key]).map(c => c.width).join(' ');
+  const cols = extras ? `${BASE_LV_COLS} ${extras}` : BASE_LV_COLS;
+  document.getElementById('listviewWrap')?.style.setProperty('--lv-cols', cols);
+  EXTRA_COLS.forEach(({ key }) => {
+    const show = colsEnabled[key];
+    document.querySelector(`.lv-extra-col[data-col="${key}"]`)?.style.setProperty('display', show ? '' : 'none');
+    document.querySelectorAll(`.lv-extra-cell[data-col="${key}"]`).forEach(el => {
+      el.style.display = show ? '' : 'none';
+    });
+  });
+}
+
+async function enrichRowCols(ip, ports, row) {
+  const active = EXTRA_COLS.map(c => c.key).filter(k => colsEnabled[k]);
+  if (!active.length) return;
+  const cell = key => row.querySelector(`.lv-extra-cell[data-col="${key}"]`);
+  const tasks = [];
+  if (colsEnabled.hostname) {
+    tasks.push(lookupHostname(ip).then(h => {
+      const c = cell('hostname'); if (c) c.textContent = h || '—';
+    }));
+  }
+  if (colsEnabled.geo || colsEnabled.device || colsEnabled.title || colsEnabled.access) {
+    tasks.push(enrichRow(ip, ports, {
+      cGeo:    cell('geo'),
+      cDevice: cell('device'),
+      cTitle:  cell('title'),
+      cAccess: cell('access'),
+    }));
+  }
+  await Promise.all(tasks);
+}
+
+// Columns panel toggle
+const colsPanel = document.getElementById('colsPanel');
+document.getElementById('btnCols')?.addEventListener('click', e => {
+  e.stopPropagation();
+  const btn = document.getElementById('btnCols');
+  const rect = btn.getBoundingClientRect();
+  colsPanel.style.position = 'fixed';
+  colsPanel.style.top  = rect.bottom + 2 + 'px';
+  colsPanel.style.left = rect.left + 'px';
+  colsPanel.style.right = '';
+  colsPanel.classList.toggle('open');
+  btn.classList.toggle('active', colsPanel.classList.contains('open'));
+});
+document.addEventListener('click', e => {
+  if (!colsPanel?.contains(e.target) && e.target.id !== 'btnCols') {
+    colsPanel?.classList.remove('open');
+    document.getElementById('btnCols')?.classList.remove('active');
+  }
+});
+
+// Checkbox handlers
+document.querySelectorAll('#colsPanel input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', () => {
+    colsEnabled[cb.dataset.col] = cb.checked;
+    updateColsGrid();
+    if (cb.checked) {
+      // Trigger enrichment for all existing rows
+      document.querySelectorAll('.lv-row[data-ip]').forEach(row => {
+        const ip = row.dataset.ip;
+        const ports = foundHostsMap[ip] || [];
+        enrichRowCols(ip, ports, row);
+      });
+    }
   });
 });
 
@@ -1545,10 +1803,22 @@ function addResultRow(ip, openPorts, pingMs) {
   if (pingMs !== null && pingMs !== undefined) {
     const cls = pingMs < 100 ? 'ping-fast' : pingMs < 500 ? 'ping-ok' : 'ping-slow';
     cPing.innerHTML = `<span class="${cls}">${pingMs} ms</span>`;
+    row.dataset.ping = pingMs;
   } else {
     cPing.innerHTML = '<span class="ping-none">-</span>';
+    row.dataset.ping = '';
   }
   row.appendChild(cPing);
+
+  // Extra enrichment cells (hidden until column enabled)
+  EXTRA_COLS.forEach(({ key }) => {
+    const c = document.createElement('div');
+    c.className = 'lv-cell lv-extra-cell';
+    c.dataset.col = key;
+    c.style.display = colsEnabled[key] ? '' : 'none';
+    c.textContent = '…';
+    row.appendChild(c);
+  });
 
   // ── Paths sub-row (expandable below the row) ──
   const pathsRow = document.createElement('div');
@@ -1558,14 +1828,47 @@ function addResultRow(ip, openPorts, pingMs) {
     const line = document.createElement('div');
     line.className = 'path-port-line';
 
-    // Spacers for col 1 (✔), col 2 (★), col 3 (light — empty)
-    const icons = ['✔', '★', ''];
-    for (let i = 0; i < 3; i++) {
-      const s = document.createElement('div');
-      s.className = 'path-col-spacer';
-      s.textContent = icons[i];
-      line.appendChild(s);
-    }
+    // Col 1: toggleable ✔ (off by default, per-port key ip:port)
+    const sCheck = document.createElement('div');
+    sCheck.className = 'path-col-spacer';
+    const checkSpan = document.createElement('span');
+    checkSpan.className = 'icon-ok-off';
+    checkSpan.textContent = '✔';
+    checkSpan.title = 'Mark';
+    checkSpan.style.cursor = 'pointer';
+    checkSpan.addEventListener('click', e => {
+      e.stopPropagation();
+      const on = checkSpan.className === 'icon-ok';
+      checkSpan.className = on ? 'icon-ok-off' : 'icon-ok';
+      checkSpan.title = on ? 'Mark' : 'Marked';
+    });
+    sCheck.appendChild(checkSpan);
+    line.appendChild(sCheck);
+
+    // Col 2: toggleable ★ (off by default, per-port key ip:port)
+    const sStar = document.createElement('div');
+    sStar.className = 'path-col-spacer';
+    const starSpan = document.createElement('span');
+    const portKey = `${ip}:${port}`;
+    const portFav = foundFavSet.has(portKey);
+    starSpan.className = portFav ? 'star-on' : 'star-off';
+    starSpan.textContent = '★';
+    starSpan.title = portFav ? 'Favorite' : 'Add to favorites';
+    starSpan.style.cursor = 'pointer';
+    starSpan.addEventListener('click', e => {
+      e.stopPropagation();
+      const on = starSpan.className === 'star-on';
+      if (on) { foundFavSet.delete(portKey); starSpan.className = 'star-off'; starSpan.title = 'Add to favorites'; }
+      else     { foundFavSet.add(portKey);    starSpan.className = 'star-on';  starSpan.title = 'Favorite'; }
+      if (_listFilter === 'favorites') applyListFilter();
+    });
+    sStar.appendChild(starSpan);
+    line.appendChild(sStar);
+
+    // Col 3: empty (light spacer)
+    const sLight = document.createElement('div');
+    sLight.className = 'path-col-spacer';
+    line.appendChild(sLight);
 
     // Col 4: port label (under IP)
     const label = document.createElement('div');
@@ -1628,6 +1931,9 @@ function addResultRow(ip, openPorts, pingMs) {
   listBody.appendChild(row);
   listBody.appendChild(pathsRow);
   applyListFilter();
+
+  // Enrich extra columns if any enabled
+  enrichRowCols(ip, openPorts, row);
 
   // ── Auto geo-locate for globe dots ──
   if (!ipGeoCoords[ip]) {

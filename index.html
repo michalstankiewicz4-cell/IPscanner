@@ -190,21 +190,34 @@
     </div>
 
     <!-- List view -->
-    <div class="listview-wrap">
+    <div class="listview-wrap" id="listviewWrap">
       <div class="listview-filter">
         <span class="filter-label" data-i18n="filterShow">Show:</span>
         <button class="btn-filter active" id="btnFilterAll" data-i18n="filterAll">All</button>
         <button class="btn-filter" id="btnFilterFavorites" data-i18n="filterFavorites">★ Favorites</button>
         <button class="btn-filter" id="btnFilterActive" data-i18n="filterActive">Active</button>
         <button class="btn-filter" id="btnFilterDead" data-i18n="filterDead">Dead</button>
+        <button class="btn-cols" id="btnCols">Columns ▾</button>
+        <div class="cols-panel" id="colsPanel">
+          <label class="cols-panel-item"><input type="checkbox" data-col="hostname"> 🧭 Hostname</label>
+          <label class="cols-panel-item"><input type="checkbox" data-col="geo"> 🌍 Geolocation / ISP</label>
+          <label class="cols-panel-item"><input type="checkbox" data-col="device"> 🖥 Device Identification</label>
+          <label class="cols-panel-item"><input type="checkbox" data-col="title"> 📄 HTTP Page Title</label>
+          <label class="cols-panel-item"><input type="checkbox" data-col="access"> 🔑 Access / Snapshot</label>
+        </div>
       </div>
       <div class="listview-header">
-        <div class="lv-col lv-col-dot">●</div>
-        <div class="lv-col lv-col-center" title="Favorites">★</div>
+        <div class="lv-col lv-col-dot" id="colCheckAll" title="Right-click for options" style="cursor:context-menu">✔</div>
+        <div class="lv-col lv-col-center" id="colFavAll" title="Right-click for options" style="cursor:context-menu">★</div>
         <div class="lv-col lv-col-center" title="Status">●</div>
-        <div class="lv-col" data-i18n="colIp">IP Address</div>
-        <div class="lv-col lv-col-center">+</div>
-        <div class="lv-col" data-i18n="colPing">Ping</div>
+        <div class="lv-col" id="colSortIp" data-i18n="colIp" style="cursor:pointer" title="Sort by IP">IP Address</div>
+        <div class="lv-col lv-col-center" id="colExpandAll" title="Expand / collapse all" style="cursor:pointer">+</div>
+        <div class="lv-col" id="colSortPing" data-i18n="colPing" style="cursor:pointer" title="Sort by Ping">Ping</div>
+        <div class="lv-col lv-extra-col" data-col="hostname" style="display:none">🧭 Hostname</div>
+        <div class="lv-col lv-extra-col" data-col="geo" style="display:none">🌍 Geo / ISP</div>
+        <div class="lv-col lv-extra-col" data-col="device" style="display:none">🖥 Device</div>
+        <div class="lv-col lv-extra-col" data-col="title" style="display:none">📄 Title</div>
+        <div class="lv-col lv-extra-col" data-col="access" style="display:none">🔑 Access</div>
       </div>
       <div class="listview-body" id="listBody">
         <div class="empty-row" id="emptyRow" data-i18n="emptyRow">No results. Configure IP range and click Start.</div>
@@ -841,6 +854,16 @@
 </div>
 
 <!-- Context menu -->
+<div class="ctxmenu" id="favCtxMenu">
+  <div class="ctx-item" id="favCtxAddVisible">★ Add visible to favorites</div>
+  <div class="ctx-item" id="favCtxRemoveVisible">☆ Remove visible from favorites</div>
+</div>
+
+<div class="ctxmenu" id="checkCtxMenu">
+  <div class="ctx-item" id="checkCtxMarkVisible">✔ Mark visible</div>
+  <div class="ctx-item" id="checkCtxUnmarkVisible">✕ Unmark visible</div>
+</div>
+
 <div class="ctxmenu" id="ctxMenu">
   <div class="ctx-item" id="ctxCopyIp" data-i18n="ctxCopyIp">Copy IP Address</div>
   <div class="ctx-item" id="ctxCopyPorts" data-i18n="ctxCopyPorts">Copy Ports</div>
