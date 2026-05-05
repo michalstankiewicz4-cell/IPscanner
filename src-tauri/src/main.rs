@@ -343,8 +343,8 @@ async fn open_clippy_window(app: AppHandle, lang: String) -> Result<(), String> 
     }
 
     if let Some(win) = app.get_webview_window("clippy") {
-        let _ = win.set_position(LogicalPosition::new(pos_x, pos_y));
         let _ = win.show();
+        let _ = win.set_position(LogicalPosition::new(pos_x, pos_y));
         let _ = win.set_focus();
         return Ok(());
     }
@@ -362,6 +362,7 @@ async fn open_clippy_window(app: AppHandle, lang: String) -> Result<(), String> 
         .resizable(false)
         .build()
         .map_err(|e| e.to_string())?;
+    let _ = win.set_position(LogicalPosition::new(pos_x, pos_y));
     let _ = win.set_focus();
     Ok(())
 }
