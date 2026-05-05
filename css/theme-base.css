@@ -1057,6 +1057,19 @@ body.tool-window-mode #mainWin {
 /* ── range item size ── */
 .range-size { font-size: 9px; color: inherit; opacity: 0.7; }
 
+/* ── Globe tooltip ── */
+#globeTooltip {
+  position: absolute; display: none;
+  background: #000080; color: #fff;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+  font-size: 10px; padding: 3px 8px;
+  border-top: 1px solid #fff; border-left: 1px solid #fff;
+  border-right: 1px solid #808080; border-bottom: 1px solid #808080;
+  pointer-events: none; z-index: 800; white-space: nowrap;
+  box-shadow: 1px 1px 0 #000;
+}
+#globeTooltip.visible { display: block; }
+
 /* ── Status feedback states (IP detect, trace) ── */
 .status-loading { color: #808000; }
 .status-ok      { color: #000080; }

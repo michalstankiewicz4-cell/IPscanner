@@ -209,7 +209,7 @@ function closeGlobe() {
   isDragging = false;
   wasDragged = false;
   const tooltip = document.getElementById('globeTooltip');
-  if (tooltip) tooltip.style.display = 'none';
+  if (tooltip) tooltip.classList.remove('visible');
   hoveredCountryName = null;
   if (_toolMode === 'globe' || _toolMode === 'topology') {
     closeMainWindow();
@@ -284,7 +284,7 @@ function setMapMode(mode) {
   mapMode = mode;
   hoveredCountryName = null;
   const tooltip = document.getElementById('globeTooltip');
-  if (tooltip) tooltip.style.display = 'none';
+  if (tooltip) tooltip.classList.remove('visible');
   const canvas = document.getElementById('globeCanvas');
   if (canvas) canvas.style.cursor = mode === 'globe' ? 'grab' : 'default';
   syncMapModeUI();
@@ -908,7 +908,7 @@ function setupGlobeEvents(canvas) {
 
       // Never keep tooltip active when cursor is outside globe canvas.
       if (!insideCanvas) {
-        tooltip.style.display = 'none';
+        tooltip.classList.remove('visible');
         hoveredCountryName = null;
         canvas.style.cursor = isDragging ? 'grabbing' : 'grab';
         return;
@@ -921,7 +921,7 @@ function setupGlobeEvents(canvas) {
       if (mapMode === 'topology') {
         const target = topologyHitTargets.find(item => Math.hypot(mx - item.x, my - item.y) <= item.radius);
         if (target) {
-          tooltip.style.display = 'block';
+          tooltip.classList.add('visible');
           positionTooltip(e.clientX, e.clientY);
           tooltip.textContent = target.type === 'host'
             ? `${target.data.ip} [${target.data.ports.join(', ')}]${target.data.ping ? ` · ${target.data.ping}ms` : ''}`
@@ -930,7 +930,7 @@ function setupGlobeEvents(canvas) {
               : `${target.data.subnet} · ${target.data.hosts.length} hosts`;
           canvas.style.cursor = 'pointer';
         } else {
-          tooltip.style.display = 'none';
+          tooltip.classList.remove('visible');
           canvas.style.cursor = 'default';
         }
         return;
@@ -946,21 +946,21 @@ function setupGlobeEvents(canvas) {
       });
 
       if (foundIp) {
-        tooltip.style.display = 'block';
+        tooltip.classList.add('visible');
         positionTooltip(e.clientX, e.clientY);
         const ports = foundHostsMap[foundIp]?.join(', ') || '';
         tooltip.textContent = `${foundIp}${ports ? ' ['+ports+']' : ''}`;
         canvas.style.cursor = 'pointer';
         hoveredCountryName = null;
       } else if (found) {
-        tooltip.style.display = 'block';
+        tooltip.classList.add('visible');
         positionTooltip(e.clientX, e.clientY);
         const inDb = COUNTRY_DB.find(c=>c.name===found);
         tooltip.textContent = found + (inDb ? ' — click to scan' : '');
         canvas.style.cursor = 'pointer';
         hoveredCountryName = found;
       } else {
-        tooltip.style.display = 'none';
+        tooltip.classList.remove('visible');
         hoveredCountryName = null;
         canvas.style.cursor = isDragging ? 'grabbing' : 'grab';
       }
@@ -971,7 +971,7 @@ function setupGlobeEvents(canvas) {
     canvas.style.cursor = 'grab';
   });
   canvas.addEventListener('mouseleave', () => {
-    tooltip.style.display = 'none';
+    tooltip.classList.remove('visible');
     hoveredCountryName = null;
   });
 
