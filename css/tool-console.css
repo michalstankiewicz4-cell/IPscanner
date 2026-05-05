@@ -16,7 +16,6 @@
 }
 
 .win-menubar95 {
-  background: #c0c0c0;
   font-size: 11px;
   border-bottom: 1px solid #808080;
   display: flex;
@@ -30,6 +29,10 @@
 .notepad-menu-item {
   padding: 1px 6px;
   cursor: default;
+}
+.notepad-menu-item:hover {
+  background: #000080;
+  color: #fff;
 }
 
 .notepad-textarea {

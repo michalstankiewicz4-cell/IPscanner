@@ -79,11 +79,18 @@ body.skin-workbench .menubar {
   border-bottom: 1px solid #111720;
 }
 
+body.skin-workbench .win-menubar95 {
+  background: linear-gradient(180deg, #2d3544, #232b39);
+  border-bottom: 1px solid #111720;
+  color: #d7dee8;
+}
+
 body.skin-workbench .menu-item,
 body.skin-workbench .menu-dd-item,
 body.skin-workbench .ctx-item,
 body.skin-workbench .country-item,
 body.skin-workbench .range-item,
+body.skin-workbench .notepad-menu-item,
 body.skin-workbench .lv-cell,
 body.skin-workbench .oct,
 body.skin-workbench .oct-dot,
@@ -98,6 +105,7 @@ body.skin-workbench .menu-item:hover,
 body.skin-workbench .menu-item.open,
 body.skin-workbench .menu-dd-item:hover,
 body.skin-workbench .ctx-item:hover,
+body.skin-workbench .notepad-menu-item:hover,
 body.skin-workbench .country-item:hover,
 body.skin-workbench .country-item.active,
 body.skin-workbench .range-item:hover,

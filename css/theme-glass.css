@@ -78,6 +78,11 @@ body.skin-glass .menubar {
   border-bottom: 1px solid #6d8db1;
 }
 
+body.skin-glass .win-menubar95 {
+  background: linear-gradient(180deg, rgba(234, 246, 255, 0.96), rgba(199, 221, 245, 0.94));
+  border-bottom: 1px solid #6d8db1;
+}
+
 body.skin-glass .menu-item,
 body.skin-glass .menu-dd-item {
   color: #163a5d;
@@ -87,6 +92,7 @@ body.skin-glass .menu-item:hover,
 body.skin-glass .menu-item.open,
 body.skin-glass .menu-dd-item:hover,
 body.skin-glass .ctx-item:hover,
+body.skin-glass .notepad-menu-item:hover,
 body.skin-glass .country-item:hover,
 body.skin-glass .country-item.active,
 body.skin-glass .range-item:hover,
