@@ -90,7 +90,7 @@ function renderCountryList(query) {
     if (q && !c.name.toLowerCase().includes(q) && !c.meta.toLowerCase().includes(q)) return;
     const row = document.createElement('div');
     row.className = 'country-item' + (i === selectedCountryIdx ? ' active' : '');
-    row.innerHTML = `<span style="font-size:16px;line-height:1">${c.flag}</span> <span>${c.name}</span> <span class="country-ranges-count">${c.ranges.length} ranges</span>`;
+    row.innerHTML = `<span class="flag-emoji">${c.flag}</span> <span>${c.name}</span> <span class="country-ranges-count">${c.ranges.length} ranges</span>`;
     row.addEventListener('click', () => selectCountry(i));
     box.appendChild(row);
   });

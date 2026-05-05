@@ -1,9 +1,9 @@
 function selectIcon(el) {
   const lbl = document.getElementById('iconLabel');
   const img = document.getElementById('iconImg');
-  lbl.style.background = '#000080';
-  img.style.filter = 'invert(1) sepia(1) saturate(5) hue-rotate(180deg)';
-  setTimeout(()=>{ lbl.style.background='transparent'; img.style.filter=''; }, 1200);
+  lbl.classList.add('icon-selected');
+  img.classList.add('icon-img-selected');
+  setTimeout(()=>{ lbl.classList.remove('icon-selected'); img.classList.remove('icon-img-selected'); }, 1200);
 }
 
 const APP_NAME = 'NetRecon IP Auditor';
@@ -167,7 +167,7 @@ function initWindowZStacking() {
 function makeWindowDraggable(winEl, handleEl) {
   if (!winEl || !handleEl || handleEl.dataset.dragBound === '1') return;
   handleEl.dataset.dragBound = '1';
-  handleEl.style.cursor = 'move';
+  handleEl.classList.add('cursor-move');
 
   let dragging = false;
   let activePointerId = null;
@@ -177,7 +177,7 @@ function makeWindowDraggable(winEl, handleEl) {
   const stopDragging = () => {
     dragging = false;
     activePointerId = null;
-    document.body.style.cursor = '';
+    document.body.classList.remove('dragging');
   };
 
   handleEl.addEventListener('pointerdown', (e) => {
@@ -200,7 +200,7 @@ function makeWindowDraggable(winEl, handleEl) {
     winEl.style.left = rect.left + 'px';
     winEl.style.top = rect.top + 'px';
 
-    document.body.style.cursor = 'move';
+    document.body.classList.add('dragging');
     handleEl.setPointerCapture?.(e.pointerId);
     e.preventDefault();
   });
@@ -1021,8 +1021,7 @@ function makeToolChromeCloseOnly(target) {
   const bar = target.querySelector('.titlebar');
   if (!bar) return;
 
-  bar.style.display = 'flex';
-  bar.style.cursor = 'move';
+  bar.classList.add('cursor-move');
 
   let btns = bar.querySelector('.titlebar-btns');
   if (!btns) {
@@ -1044,9 +1043,8 @@ function makeToolChromeCloseOnly(target) {
 
   if (!closeBtn) {
     closeBtn = document.createElement('button');
-    closeBtn.className = 'title-btn';
+    closeBtn.className = 'title-btn title-btn-close';
     closeBtn.textContent = '✕';
-    closeBtn.style.fontWeight = '900';
     btns.appendChild(closeBtn);
   }
 
@@ -1097,16 +1095,7 @@ function applyToolWindowMode() {
   const target = targetId ? document.getElementById(targetId) : null;
   if (!target) return;
 
-  target.style.display = 'block';
-  target.style.position = 'fixed';
-  target.style.top = '0';
-  target.style.left = '0';
-  target.style.width = '100vw';
-  target.style.height = '100vh';
-  target.style.maxWidth = '100vw';
-  target.style.maxHeight = '100vh';
-  target.style.transform = 'none';
-  target.style.zIndex = '1';
+  target.classList.add('tool-fullscreen');
 
   makeToolChromeCloseOnly(target);
   hideToolMenus(target);
