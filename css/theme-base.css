@@ -986,3 +986,55 @@ body.tool-window-mode #mainWin {
 .dlg-radio-row { display:flex; flex-direction:column; gap:5px; }
 .dlg-radio { display:flex; align-items:center; gap:6px; cursor:pointer; }
 
+/* ── Ping coloring ── */
+.ping-fast { color: green;   font-weight: bold; }
+.ping-ok   { color: #808000; font-weight: bold; }
+.ping-slow { color: #c00;    font-weight: bold; }
+.ping-none { color: #808080; }
+
+/* ── lv-row acc span ── */
+.lv-acc-span { font-size: 9px; }
+
+/* ── detail panel muted text ── */
+.detail-muted { color: #808080; }
+
+/* ── access open/ok text ── */
+.text-ok { color: green; }
+
+/* ── expand btn open state ── */
+.row-expand-btn.open { color: #c00; }
+
+/* ── enrich popup bar label / close ── */
+.enrich-bar-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.enrich-bar-close {
+  cursor: pointer;
+  font-size: 10px;
+  padding: 0 5px;
+  margin-left: 4px;
+}
+.enrich-body-loading { color: #808080; font-style: italic; }
+.enrich-body-empty   { color: #808080; }
+.enrich-body-error   { color: #c00; }
+
+/* ── country list ranges count ── */
+.country-ranges-count {
+  margin-left: auto;
+  font-size: 9px;
+  color: #808080;
+}
+.country-item.active .country-ranges-count { color: #ccc; }
+
+/* ── range item size ── */
+.range-size { font-size: 9px; color: inherit; opacity: 0.7; }
+
+/* ── Status feedback states (IP detect, trace) ── */
+.status-loading { color: #808000; }
+.status-ok      { color: #000080; }
+.status-error   { color: #c00; }
+.status-success { color: green; }
+

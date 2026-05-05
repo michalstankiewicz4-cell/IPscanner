@@ -90,7 +90,7 @@ function renderCountryList(query) {
     if (q && !c.name.toLowerCase().includes(q) && !c.meta.toLowerCase().includes(q)) return;
     const row = document.createElement('div');
     row.className = 'country-item' + (i === selectedCountryIdx ? ' active' : '');
-    row.innerHTML = `<span style="font-size:16px;line-height:1">${c.flag}</span> <span>${c.name}</span> <span style="margin-left:auto;font-size:9px;color:${i===selectedCountryIdx?'#ccc':'#808080'}">${c.ranges.length} ranges</span>`;
+    row.innerHTML = `<span style="font-size:16px;line-height:1">${c.flag}</span> <span>${c.name}</span> <span class="country-ranges-count">${c.ranges.length} ranges</span>`;
     row.addEventListener('click', () => selectCountry(i));
     box.appendChild(row);
   });
@@ -112,7 +112,7 @@ function selectCountry(idx) {
     row.className = 'range-item';
     const [from, to] = r.split('–');
     const size = ipToNum(to) - ipToNum(from) + 1;
-    row.innerHTML = `<span>${r}</span><span style="font-size:9px;color:inherit;opacity:0.7">${size.toLocaleString()} IPs</span>`;
+    row.innerHTML = `<span>${r}</span><span class="range-size">${size.toLocaleString()} IPs</span>`;
     row.addEventListener('click', () => {
       selectedRangeIdx = ri;
       document.querySelectorAll('.range-item').forEach((el,i) => {
@@ -790,19 +790,19 @@ function importTraceRoute(closeAfter = true) {
   const status = document.getElementById('traceParseStatus');
   if (!isIPv4(targetIp)) {
     status.textContent = t('traceErrTarget');
-    status.style.color = '#c00';
+    status.className = 'status-error';
     return;
   }
   const hops = parseTraceOutput(text);
   if (!hops.length) {
     status.textContent = t('traceErrParse');
-    status.style.color = '#c00';
+    status.className = 'status-error';
     return;
   }
   traceRoutes[targetIp] = hops;
   saveTraceRoutes();
   status.textContent = t('traceImported', hops.length, targetIp);
-  status.style.color = 'green';
+  status.className = 'status-success';
   if (typeof appendCmdLog === 'function') appendCmdLog(`Tracert import: ${targetIp}  hops: ${hops.length}`, 'tracert');
   if (mapMode !== 'topology') setMapMode('topology');
   drawCurrentMap();
@@ -818,19 +818,19 @@ async function autoTraceRoute() {
 
   if (!target) {
     status.textContent = t('traceErrTargetOrHost');
-    status.style.color = '#c00';
+    status.className = 'status-error';
     return;
   }
 
   if (!_tauriInvoke) {
     status.textContent = t('traceAutoDesktopOnly');
-    status.style.color = '#c00';
+    status.className = 'status-error';
     return;
   }
 
   btn.disabled = true;
   status.textContent = t('traceAutoRunning');
-  status.style.color = '#000080';
+  status.className = 'status-ok';
 
   try {
     const result = await _tauriInvoke('run_traceroute', { target });
@@ -845,7 +845,7 @@ async function autoTraceRoute() {
   } catch (err) {
     const msg = (err && err.message) ? err.message : String(err || 'unknown error');
     status.textContent = t('traceAutoFailed', msg);
-    status.style.color = '#c00';
+    status.className = 'status-error';
     if (typeof appendCmdLog === 'function') appendCmdLog(`Tracert failed: ${msg}`, 'tracert');
   } finally {
     btn.disabled = false;

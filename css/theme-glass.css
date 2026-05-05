@@ -299,4 +299,16 @@ body.skin-glass .macro-list-row:hover { background: #2b73b8; color: #eef5ff; }
 body.skin-glass .macro-list-empty { color: #3a6a9a; }
 body.skin-glass .cmd-file-action:hover { background: #2b73b8; color: #eef5ff; }
 body.skin-glass .macro-ctx-item:hover { background: #2b73b8; color: #eef5ff; }
+body.skin-glass .status-loading { color: #5a8fbf; }
+body.skin-glass .status-ok      { color: #1a4f8a; }
+body.skin-glass .status-error   { color: #b02020; }
+body.skin-glass .status-success { color: #1a6a1a; }
+body.skin-glass .ping-fast { color: #1a6a1a; }
+body.skin-glass .ping-ok   { color: #6a6a00; }
+body.skin-glass .ping-slow { color: #b02020; }
+body.skin-glass .ping-none { color: #5a8fbf; }
+body.skin-glass .detail-muted { color: #6a8aaa; }
+body.skin-glass .text-ok { color: #1a6a1a; }
+body.skin-glass .country-ranges-count { color: #808080; }
+body.skin-glass .country-item.active .country-ranges-count { color: #ccc; }
 

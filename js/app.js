@@ -1397,20 +1397,20 @@ async function enrichRow(ip, ports, cells) {
                     ports.includes(5000)||ports.includes(5001) ? t('portSyn') :
                     ports.includes(8006) ? t('portProx') : null;
   if (portGuess) deviceHtml += `<div class="detail-line"><b>${t('deviceSuggestion')}</b> ${portGuess}</div>`;
-  cDevice.innerHTML = deviceHtml || `<div class="detail-line" style="color:#808080">${t('deviceUnknown')}</div>`;
+  cDevice.innerHTML = deviceHtml || `<div class="detail-line detail-muted">${t('deviceUnknown')}</div>`;
 
   // Title
   if (title) {
     cTitle.innerHTML = `<div class="detail-line"><b>${t('titleLabel')}</b> "${title}"</div>`;
   } else if (isPrivateIP(ip)) {
-    cTitle.innerHTML = `<div class="detail-line" style="color:#808080">${t('titleExtOnly')}</div>`;
+    cTitle.innerHTML = `<div class="detail-line detail-muted">${t('titleExtOnly')}</div>`;
   } else {
-    cTitle.innerHTML = `<div class="detail-line" style="color:#808080">${t('titleUnavailable')}</div>`;
+    cTitle.innerHTML = `<div class="detail-line detail-muted">${t('titleUnavailable')}</div>`;
   }
 
   // Access
   cAccess.innerHTML = isOpen
-    ? `<div class="detail-line"><b>${t('accessLabel')}</b> <span style="color:green">${t('accessOpen')}</span></div>`
+    ? `<div class="detail-line"><b>${t('accessLabel')}</b> <span class="text-ok">${t('accessOpen')}</span></div>`
     : `<div class="detail-line"><b>${t('accessLabel')}</b> ${t('accessClosed')}</div>`;
 }
 
@@ -1457,7 +1457,7 @@ function addResultRow(ip, openPorts, pingMs) {
   // IP
   const cIp = document.createElement('div');
   cIp.className='lv-cell';
-  cIp.innerHTML = `${ip} <span id="acc_${ip.replace(/\./g,'_')}" style="font-size:9px"></span>`;
+  cIp.innerHTML = `${ip} <span id="acc_${ip.replace(/\./g,'_')}" class="lv-acc-span"></span>`;
   row.appendChild(cIp);
 
   // Expand (+)
@@ -1474,10 +1474,10 @@ function addResultRow(ip, openPorts, pingMs) {
   const cPing = document.createElement('div');
   cPing.className='lv-cell';
   if (pingMs !== null && pingMs !== undefined) {
-    const color = pingMs < 100 ? 'green' : pingMs < 500 ? '#808000' : '#c00';
-    cPing.innerHTML = `<span style="color:${color};font-weight:bold">${pingMs} ms</span>`;
+    const cls = pingMs < 100 ? 'ping-fast' : pingMs < 500 ? 'ping-ok' : 'ping-slow';
+    cPing.innerHTML = `<span class="${cls}">${pingMs} ms</span>`;
   } else {
-    cPing.innerHTML = '<span style="color:#808080">-</span>';
+    cPing.innerHTML = '<span class="ping-none">-</span>';
   }
   row.appendChild(cPing);
 
@@ -1511,7 +1511,7 @@ function addResultRow(ip, openPorts, pingMs) {
     e.stopPropagation();
     const open = pathsRow.classList.toggle('open');
     expandBtn.textContent = open ? '−' : '+';
-    expandBtn.style.color = open ? '#c00' : '';
+    expandBtn.classList.toggle('open', open);
   });
 
   // ── Left click → select only (no detail, no preview) ──
@@ -1645,13 +1645,13 @@ function showEnrichPopup(popupId, label, asyncFn) {
 
   const bar = document.createElement('div');
   bar.className = 'enrich-popup-bar';
-  bar.innerHTML = `<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span>` +
-    `<span class="title-btn" style="cursor:pointer;font-size:10px;padding:0 5px;margin-left:4px">✕</span>`;
+  bar.innerHTML = `<span class="enrich-bar-label">${label}</span>` +
+    `<span class="title-btn enrich-bar-close">✕</span>`;
   bar.querySelector('.title-btn').addEventListener('click', () => win.remove());
 
   const body = document.createElement('div');
   body.className = 'enrich-popup-body';
-  body.innerHTML = '<span style="color:#808080;font-style:italic">Ładowanie…</span>';
+  body.innerHTML = '<span class="enrich-body-loading">Ładowanie…</span>';
 
   win.append(bar, body);
   document.body.appendChild(win);
@@ -1674,8 +1674,8 @@ function showEnrichPopup(popupId, label, asyncFn) {
   document.addEventListener('mouseup', () => { drag = false; });
 
   asyncFn()
-    .then(html  => { body.innerHTML = html || '<span style="color:#808080">Brak danych</span>'; })
-    .catch(() => { body.innerHTML = '<span style="color:#c00">Błąd ładowania danych</span>'; });
+    .then(html  => { body.innerHTML = html || '<span class="enrich-body-empty">Brak danych</span>'; })
+    .catch(() => { body.innerHTML = '<span class="enrich-body-error">Błąd ładowania danych</span>'; });
 }
 
 // ══════════════════════════════════════════════════
@@ -1792,7 +1792,7 @@ const btnCopyMyIp  = document.getElementById('btnCopyMyIp');
 const btnUseMyIp   = document.getElementById('btnUseMyIp');
 
 btnMyIp.addEventListener('click', async () => {
-  myIpResult.style.color = '#808000';
+  myIpResult.className = 'status-loading';
   myIpResult.textContent = t('loading');
   btnCopyMyIp.style.display = 'none';
   btnUseMyIp.style.display  = 'none';
@@ -1800,7 +1800,7 @@ btnMyIp.addEventListener('click', async () => {
   try {
     const res  = await fetch('https://api.ipify.org?format=json');
     const data = await res.json();
-    myIpResult.style.color = '#000080';
+    myIpResult.className = 'status-ok';
     myIpResult.textContent = data.ip;
     btnCopyMyIp.style.display = 'inline-block';
     btnCopyMyIp.onclick = () => {
@@ -1815,7 +1815,7 @@ btnMyIp.addEventListener('click', async () => {
       setIP('t', `${parts[0]}.${parts[1]}.${parts[2]}.254`);
     };
   } catch {
-    myIpResult.style.color = '#c00';
+    myIpResult.className = 'status-error';
     myIpResult.textContent = t('geoError');
   } finally {
     btnMyIp.disabled = false;
@@ -2013,7 +2013,7 @@ async function detectLocalSubnets() {
 }
 
 btnMyLocalIp.addEventListener('click', async () => {
-  myLocalIpResult.style.color = '#808000';
+  myLocalIpResult.className = 'status-loading';
   myLocalIpResult.textContent = t('loading');
   btnCopyMyLocalIp.style.display = 'none';
   btnUseMyLocalIp.style.display  = 'none';
@@ -2021,7 +2021,7 @@ btnMyLocalIp.addEventListener('click', async () => {
   
   try {
     const localIP = await detectLocalIP();
-    myLocalIpResult.style.color = '#000080';
+    myLocalIpResult.className = 'status-ok';
     myLocalIpResult.textContent = localIP;
     
     btnCopyMyLocalIp.style.display = 'inline-block';
@@ -2039,7 +2039,7 @@ btnMyLocalIp.addEventListener('click', async () => {
       setIP('t', `${parts[0]}.${parts[1]}.${parts[2]}.254`);
     };
   } catch (error) {
-    myLocalIpResult.style.color = '#c00';
+    myLocalIpResult.className = 'status-error';
     myLocalIpResult.textContent = /RTCPeerConnection unavailable/i.test(String(error && error.message || ''))
       ? t('localDetectUnsupported')
       : t('localIpDetectError');
@@ -2049,7 +2049,7 @@ btnMyLocalIp.addEventListener('click', async () => {
 });
 
 btnLocalSubnets.addEventListener('click', async () => {
-  localSubnetsResult.style.color = '#808000';
+  localSubnetsResult.className = 'status-loading';
   localSubnetsResult.textContent = t('loading');
   localSubnetSelect.style.display = 'none';
   btnUseLocalSubnet.style.display = 'none';
@@ -2058,7 +2058,7 @@ btnLocalSubnets.addEventListener('click', async () => {
   try {
     const subnets = await detectLocalSubnets();
     if (!subnets.length) {
-      localSubnetsResult.style.color = '#c00';
+      localSubnetsResult.className = 'status-error';
       localSubnetsResult.textContent = t('localSubnetsNone');
       return;
     }
@@ -2071,7 +2071,7 @@ btnLocalSubnets.addEventListener('click', async () => {
       localSubnetSelect.appendChild(opt);
     });
 
-    localSubnetsResult.style.color = '#000080';
+    localSubnetsResult.className = 'status-ok';
     localSubnetsResult.textContent = t('localSubnetsFound', subnets.length);
     localSubnetSelect.style.display = 'inline-block';
     btnUseLocalSubnet.style.display = 'inline-block';
@@ -2084,7 +2084,7 @@ btnLocalSubnets.addEventListener('click', async () => {
       setStatus(`Range set: ${base}.1 - ${base}.254`, 'ok');
     };
   } catch {
-    localSubnetsResult.style.color = '#c00';
+    localSubnetsResult.className = 'status-error';
     localSubnetsResult.textContent = t('localIpDetectError');
   } finally {
     btnLocalSubnets.disabled = false;

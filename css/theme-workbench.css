@@ -363,3 +363,15 @@ body.skin-workbench .macro-list-row:hover { background: #094771; color: #ffffff;
 body.skin-workbench .macro-list-empty { color: #8cc7ff; }
 body.skin-workbench .cmd-file-action:hover { background: #094771; color: #ffffff; }
 body.skin-workbench .macro-ctx-item:hover { background: #094771; color: #ffffff; }
+body.skin-workbench .status-loading { color: #7aabdf; }
+body.skin-workbench .status-ok      { color: #8cc7ff; }
+body.skin-workbench .status-error   { color: #ff7070; }
+body.skin-workbench .status-success { color: #6abf6a; }
+body.skin-workbench .ping-fast { color: #6abf6a; }
+body.skin-workbench .ping-ok   { color: #bfbf00; }
+body.skin-workbench .ping-slow { color: #ff7070; }
+body.skin-workbench .ping-none { color: #7aabdf; }
+body.skin-workbench .detail-muted { color: #8cc7ff; }
+body.skin-workbench .text-ok { color: #6abf6a; }
+body.skin-workbench .country-ranges-count { color: #8cc7ff; }
+body.skin-workbench .country-item.active .country-ranges-count { color: #ccc; }
