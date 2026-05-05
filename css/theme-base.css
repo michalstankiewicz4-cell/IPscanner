@@ -233,7 +233,7 @@ body.dragging             { cursor: move !important; }
 }
 .listview-header {
   display: grid;
-  grid-template-columns: var(--lv-cols, 20px 18px 18px 124px 26px 80px);
+  grid-template-columns: var(--lv-cols, 20px 18px 18px 87px 26px 56px);
   background: #c0c0c0;
   border-bottom: 1px solid #808080;
   min-width: 250px;
@@ -290,7 +290,7 @@ body.dragging             { cursor: move !important; }
 
 .lv-row {
   display: grid;
-  grid-template-columns: var(--lv-cols, 20px 18px 18px 124px 26px 80px);
+  grid-template-columns: var(--lv-cols, 20px 18px 18px 87px 26px 56px);
   cursor: default;
   border-bottom: 1px solid #f0f0f0;
   animation: rowIn 200ms ease-out;

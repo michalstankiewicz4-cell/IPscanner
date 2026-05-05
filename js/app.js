@@ -1192,7 +1192,7 @@ const EXTRA_COLS = [
   { key: 'access',   width: '80px'  },
 ];
 const colsEnabled = { hostname: false, geo: false, device: false, title: false, access: false };
-const BASE_LV_COLS = '20px 18px 18px 124px 26px 80px';
+const BASE_LV_COLS = '20px 18px 18px 87px 26px 56px';
 
 function updateColsGrid() {
   const extras = EXTRA_COLS.filter(c => colsEnabled[c.key]).map(c => c.width).join(' ');
@@ -1249,8 +1249,10 @@ document.getElementById('btnBlurIp')?.addEventListener('click', () => {
   const on = listviewWrap.classList.toggle('ip-blur-active');
   rangeRow?.classList.toggle('ip-range-blurred', on);
   document.body.classList.toggle('ip-detect-blurred', on);
+  document.body.classList.toggle('ip-blur-active', on);
   btn.classList.toggle('active', on);
   btn.title = on ? 'Click to show IPs' : 'Toggle IP blur';
+  if (typeof updateGlobeDots === 'function') updateGlobeDots();
 });
 document.addEventListener('click', e => {
   if (!colsPanel?.contains(e.target) && e.target.id !== 'btnCols') {
