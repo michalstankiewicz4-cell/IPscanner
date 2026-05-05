@@ -2,7 +2,7 @@
 window.LANG_EN = {
   menuFile:'File', menuOptions:'Options', menuHelp:'Help',
   menuLanguage:'Language...', menuAbout:'About', menuVersions:'Versions', menuPresets:'Port Presets...', menuCountries:'Country IP Library...', menuDefaults:'Default Scan Values...',
-  btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Clear',
+  btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Clear', btnGlobe:'🌍 Globe',
   btnMyIp:'🌐 My External IP', btnMyLocalIp:'🏠 My Local IP', btnLocalSubnets:'🧭 Local Subnets', btnCopy:'📋 Copy', btnUse:'➤ Use',
   scanSettings:'Scan Settings', ipRange:'IP Range:', threads:'Threads:', delayMs:'Delay (ms):',
   modeCam:'📹 Cameras', modePrint:'🖨️ Printers',
