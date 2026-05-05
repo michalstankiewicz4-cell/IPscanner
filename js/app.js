@@ -976,7 +976,35 @@ const ctxMenu     = document.getElementById('ctxMenu');
 //  LIST FILTER
 // ══════════════════════════════════════════════════
 let _listFilter = 'all'; // 'all' | 'favorites' | 'active' | 'dead'
-const foundFavSet = new Set();
+const foundFavSet   = new Set(); // IP favorites
+const foundCheckSet = new Set(); // IP checkmarks
+// port keys stored inside foundFavSet as "ip:port"
+// port checkmarks stored inside foundPortCheckSet as "ip:port"
+const foundPortCheckSet = new Set();
+
+function saveMarks() {
+  try {
+    localStorage.setItem('netrecon_marks', JSON.stringify({
+      favIps:       [...foundFavSet].filter(k => !k.includes(':')),
+      favPorts:     [...foundFavSet].filter(k =>  k.includes(':')),
+      checkIps:     [...foundCheckSet],
+      checkPorts:   [...foundPortCheckSet],
+    }));
+  } catch {}
+}
+
+function restoreMarks() {
+  try {
+    const raw = localStorage.getItem('netrecon_marks');
+    if (!raw) return;
+    const { favIps = [], favPorts = [], checkIps = [], checkPorts = [] } = JSON.parse(raw);
+    favIps.forEach(k => foundFavSet.add(k));
+    favPorts.forEach(k => foundFavSet.add(k));
+    checkIps.forEach(k => foundCheckSet.add(k));
+    checkPorts.forEach(k => foundPortCheckSet.add(k));
+  } catch {}
+}
+restoreMarks();
 
 function applyListFilter() {
   document.querySelectorAll('.lv-row').forEach(row => {
@@ -1068,7 +1096,9 @@ document.getElementById('checkCtxMarkVisible')?.addEventListener('click', () => 
     if (row.style.display === 'none') return;
     const span = row.querySelector('.lv-icon span');
     if (span) { span.className = 'icon-ok'; span.title = 'Marked'; }
+    const ip = row.dataset.ip; if (ip) foundCheckSet.add(ip);
   });
+  saveMarks();
 });
 
 document.getElementById('checkCtxUnmarkVisible')?.addEventListener('click', () => {
@@ -1077,7 +1107,9 @@ document.getElementById('checkCtxUnmarkVisible')?.addEventListener('click', () =
     if (row.style.display === 'none') return;
     const span = row.querySelector('.lv-icon span');
     if (span) { span.className = 'icon-ok-off'; span.title = 'Mark'; }
+    const ip = row.dataset.ip; if (ip) foundCheckSet.delete(ip);
   });
+  saveMarks();
 });
 
 document.addEventListener('click', () => checkCtxMenu?.classList.remove('open'));
@@ -1106,6 +1138,7 @@ document.getElementById('favCtxAddVisible')?.addEventListener('click', () => {
       span.title = 'Favorite';
     }
   });
+  saveMarks();
   if (_listFilter === 'favorites') applyListFilter();
 });
 
@@ -1121,6 +1154,7 @@ document.getElementById('favCtxRemoveVisible')?.addEventListener('click', () => 
       span.title = 'Add to favorites';
     }
   });
+  saveMarks();
   if (_listFilter === 'favorites') applyListFilter();
 });
 
@@ -1791,12 +1825,18 @@ function addResultRow(ip, openPorts, pingMs) {
   const cIcon = document.createElement('div');
   cIcon.className = 'lv-cell lv-icon';
   cIcon.innerHTML = '<span class="icon-ok-off" title="Mark">✔</span>';
+  if (foundCheckSet.has(ip)) {
+    const s = cIcon.querySelector('span');
+    s.className = 'icon-ok'; s.title = 'Marked';
+  }
   cIcon.addEventListener('click', (e) => {
     e.stopPropagation();
     const span = cIcon.querySelector('span');
     const on = span.className === 'icon-ok';
     span.className = on ? 'icon-ok-off' : 'icon-ok';
     span.title = on ? 'Mark' : 'Marked';
+    if (on) foundCheckSet.delete(ip); else foundCheckSet.add(ip);
+    saveMarks();
   });
   row.appendChild(cIcon);
 
@@ -1817,6 +1857,7 @@ function addResultRow(ip, openPorts, pingMs) {
       span.className = 'star-on';
       span.title = 'Favorite';
     }
+    saveMarks();
     if (_listFilter === 'favorites') applyListFilter();
   });
   row.appendChild(cStar);
@@ -1878,15 +1919,18 @@ function addResultRow(ip, openPorts, pingMs) {
     const sCheck = document.createElement('div');
     sCheck.className = 'path-col-spacer';
     const checkSpan = document.createElement('span');
-    checkSpan.className = 'icon-ok-off';
+    const portCheckKey = `${ip}:${port}`;
+    checkSpan.className = foundPortCheckSet.has(portCheckKey) ? 'icon-ok' : 'icon-ok-off';
     checkSpan.textContent = '✔';
-    checkSpan.title = 'Mark';
+    checkSpan.title = foundPortCheckSet.has(portCheckKey) ? 'Marked' : 'Mark';
     checkSpan.style.cursor = 'pointer';
     checkSpan.addEventListener('click', e => {
       e.stopPropagation();
       const on = checkSpan.className === 'icon-ok';
       checkSpan.className = on ? 'icon-ok-off' : 'icon-ok';
       checkSpan.title = on ? 'Mark' : 'Marked';
+      if (on) foundPortCheckSet.delete(portCheckKey); else foundPortCheckSet.add(portCheckKey);
+      saveMarks();
     });
     sCheck.appendChild(checkSpan);
     line.appendChild(sCheck);
@@ -1906,6 +1950,7 @@ function addResultRow(ip, openPorts, pingMs) {
       const on = starSpan.className === 'star-on';
       if (on) { foundFavSet.delete(portKey); starSpan.className = 'star-off'; starSpan.title = 'Add to favorites'; }
       else     { foundFavSet.add(portKey);    starSpan.className = 'star-on';  starSpan.title = 'Favorite'; }
+      saveMarks();
       if (_listFilter === 'favorites') applyListFilter();
     });
     sStar.appendChild(starSpan);
