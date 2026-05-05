@@ -95,6 +95,14 @@
   border-radius: 6px;
   box-shadow: 0 2px 3px rgba(0,0,0,.12);
 }
+
+/* Maximized state */
+.proto-maximized {
+  left: 8px !important;
+  top: 36px !important;
+  width: calc(100vw - 16px) !important;
+  height: calc(100vh - 44px) !important;
+}
 .proto-node-head {
   padding: 4px 6px;
   font-size: 10px;

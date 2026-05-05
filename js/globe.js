@@ -274,7 +274,7 @@ function syncMapModeUI() {
   const statusText = document.getElementById('globeStatusText');
   globeBtn.classList.toggle('pressed', mapMode === 'globe');
   topoBtn.classList.toggle('pressed', mapMode === 'topology');
-  autoRotateWrap.style.display = mapMode === 'globe' ? 'flex' : 'none';
+  autoRotateWrap.classList.toggle('hidden', mapMode !== 'globe');
   statusText.textContent = mapMode === 'globe'
     ? 'Drag to rotate · Click country to scan · Click dot to preview'
     : 'Topology view · Click host to preview · Rings show subnet depth';

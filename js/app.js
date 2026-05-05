@@ -1068,12 +1068,12 @@ function makeToolChromeCloseOnly(target) {
 
 function hideToolMenus(target) {
   target.querySelectorAll('.menubar').forEach(el => {
-    el.style.display = 'none';
+    el.classList.add('initially-hidden');
   });
 
   const cmdMacroMenu = target.querySelector('#cmdMenuMacro');
   if (cmdMacroMenu?.parentElement) {
-    cmdMacroMenu.parentElement.style.display = 'none';
+    cmdMacroMenu.parentElement.classList.add('initially-hidden');
   }
 }
 

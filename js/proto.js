@@ -34,14 +34,12 @@ function toggleProtoWindowSize() {
     win.dataset.prevWidth = String(rect.width);
     win.dataset.prevHeight = String(rect.height);
 
-    win.style.left = '8px';
-    win.style.top = '36px';
-    win.style.width = 'calc(100vw - 16px)';
-    win.style.height = 'calc(100vh - 44px)';
+    win.classList.add('proto-maximized');
     win.dataset.maximized = '1';
     btn.textContent = '❐';
     btn.title = 'Restore';
   } else {
+    win.classList.remove('proto-maximized');
     win.style.left = `${win.dataset.prevLeft || 220}px`;
     win.style.top = `${win.dataset.prevTop || 88}px`;
     win.style.width = `${win.dataset.prevWidth || 920}px`;
