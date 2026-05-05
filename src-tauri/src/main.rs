@@ -346,6 +346,7 @@ async fn open_clippy_window(app: AppHandle, lang: String) -> Result<(), String> 
         let _ = win.show();
         let _ = win.set_position(LogicalPosition::new(pos_x, pos_y));
         let _ = win.set_focus();
+        let _ = app.emit("clippy-window-opened", ());
         return Ok(());
     }
 
@@ -364,6 +365,7 @@ async fn open_clippy_window(app: AppHandle, lang: String) -> Result<(), String> 
         .map_err(|e| e.to_string())?;
     let _ = win.set_position(LogicalPosition::new(pos_x, pos_y));
     let _ = win.set_focus();
+    let _ = app.emit("clippy-window-opened", ());
     Ok(())
 }
 

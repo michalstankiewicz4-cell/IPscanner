@@ -40,6 +40,7 @@
   let tipIndex = 0;
   let tipTimer = null;
   let currentLang = 'en';
+  let nativeOpenAckAt = 0;
 
   // Reuse _tauriInvoke defined in app.js (loaded before clippy.js)
   const _invoke = (typeof _tauriInvoke !== 'undefined') ? _tauriInvoke : null;
@@ -47,10 +48,17 @@
   // ── Tauri native-window helpers ──────────────────────────────────
   function _openNativeClippy() {
     if (!_invoke) return false;
+    const requestStartedAt = Date.now();
     _invoke('open_clippy_window', { lang: currentLang }).catch((err) => {
       console.warn('open_clippy_window failed, using DOM fallback:', err);
       _showDOM();
     });
+    setTimeout(() => {
+      if (localStorage.getItem(STORAGE_KEY) !== '1') return;
+      if (nativeOpenAckAt < requestStartedAt) {
+        _showDOM();
+      }
+    }, 450);
     return true;
   }
 
@@ -157,6 +165,13 @@
 
   // ── Init ─────────────────────────────────────────────────────────
   function _init() {
+    if (window.__TAURI__?.event?.listen) {
+      window.__TAURI__.event.listen('clippy-window-opened', () => {
+        nativeOpenAckAt = Date.now();
+        _hideDOM();
+      }).catch(() => {});
+    }
+
     // Listen for native clippy window closed event (user clicked ✕ in OS window)
     if (window.__TAURI__?.event?.listen) {
       window.__TAURI__.event.listen('clippy-window-closed', () => {
