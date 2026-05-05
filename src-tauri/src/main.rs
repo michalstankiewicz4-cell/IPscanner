@@ -338,6 +338,7 @@ async fn open_clippy_window(app: AppHandle, lang: String) -> Result<(), String> 
         .inner_size(280.0, 185.0)
         .decorations(false)
         .transparent(true)
+        .shadow(false)
         .always_on_top(true)
         .skip_taskbar(true)
         .resizable(false)
