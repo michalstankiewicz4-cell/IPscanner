@@ -695,6 +695,14 @@
     <div class="dlg-body dlg-icon-body dlg-versions-body">
       <span class="dlg-icon dlg-icon-versions">📘</span>
       <div class="dlg-sunken-box dlg-versions-card">
+        <div class="version-head">v1.5.7</div>
+        <div class="version-note">
+          i18n: translated all toolbar buttons (Console→Konsola, Macro→Makro, Speed→Prędkość, Prototype→Prototyp, Topology→Topologia),
+          fixed untranslated Polish strings (ipRange, accessLabel, traceRoutesLabel), fixed hardcoded Polish close-confirm dialog to use t().
+          Language and skin dialogs now have live preview with Cancel reverting the change.
+          BroadcastChannel sync: changing language or skin in any window instantly applies to all open tool windows.
+          Version numbers unified to 1.5.7 across app.js, tauri.conf.json, Cargo.toml and package.json.
+        </div>
         <div class="version-head">v1.5.6</div>
         <div class="version-note">
           Code quality refactor: replaced all inline styles with CSS classes across the entire UI (stages 1–8),
