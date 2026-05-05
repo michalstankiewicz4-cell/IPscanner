@@ -123,19 +123,6 @@ html.tool-window-boot #mainWin {
   font-size: 11px;
 }
 
-/* Dialog groupbox — same visual as .groupbox, used inside dialogs */
-.dlg-groupbox {
-  border: 1px solid #808080;
-  box-shadow: 1px 1px 0 #fff, inset 1px 1px 0 #808080;
-  padding: 10px 8px 8px 8px;
-  position: relative;
-}
-.dlg-groupbox-legend {
-  position: absolute; top: -6px; left: 8px;
-  background: #c0c0c0; padding: 0 3px;
-  font-size: 11px;
-}
-
 /* ── Mode tabs (styled as radio buttons) ── */
 .mode-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
 .mode-radio { display: flex; align-items: center; gap: 3px; cursor: pointer; }
@@ -469,7 +456,21 @@ html.tool-window-boot #mainWin {
 .tag-dc     { color: #808000; border-color: #808000; background: #fffff0; }
 .tag-open   { color: green; border-color: green; background: #f0fff0; }
 .tag-device { color: #000080; border-color: #000080; background: #f0f0ff; }
-.detail-loading { color: #808080; font-style: italic; }
+
+/* ── Inline badge pills (enrich popups) ── */
+.badge {
+  display: inline-block;
+  padding: 0 3px;
+  font-size: 9px;
+  margin-left: 3px;
+  color: #fff;
+}
+.badge-vpn         { background: #800080; }
+.badge-dc          { background: #808080; }
+.badge-recognized  { background: green; }
+
+/* ── Geo info line ── */
+.geo-info-line { line-height: 1.9; }
 
 /* ── Context menu ── */
 .ctxmenu {

@@ -1355,8 +1355,8 @@ async function enrichRow(ip, ports, cells) {
       `<div class="detail-line"><b>${t('geoAs')}</b> ${geo.as||'?'}</div>`;
   } else {
     cGeo.innerHTML = isPrivateIP(ip)
-      ? `<div class="detail-line" style="color:#808080">${t('geoLocal')}</div>`
-      : `<div class="detail-line" style="color:#c00">${t('geoError')}</div>`;
+      ? `<div class="detail-line detail-muted">${t('geoLocal')}</div>`
+      : `<div class="detail-line status-error">${t('geoError')}</div>`;
   }
 
   // Device
@@ -1670,7 +1670,7 @@ document.getElementById('ctxHostname').addEventListener('click',()=>{
     const name = await lookupHostname(ip);
     return name
       ? `<div><b>Hostname:</b> ${name}</div>`
-      : `<span style="color:#808080">Brak rekordu reverse DNS</span>`;
+      : `<span class="detail-muted">Brak rekordu reverse DNS</span>`;
   });
 });
 document.getElementById('ctxOpenBrowser').addEventListener('click',()=>{
@@ -1706,11 +1706,11 @@ document.getElementById('ctxDetailGeo').addEventListener('click', () => {
   showEnrichPopup(`enrich-geo-${ip}`, `🌍 Geolokalizacja — ${ip}`, async () => {
     const geo = await geoLookup(ip);
     if (!geo) return isPrivateIP(ip)
-      ? `<span style="color:#808080">${t('geoLocal')}</span>`
-      : `<span style="color:#c00">${t('geoError')}</span>`;
-    const vpn = geo.proxy   ? `<span style="background:#800080;color:#fff;padding:0 3px;font-size:9px;margin-left:3px">VPN/Proxy</span>` : '';
-    const dc  = geo.hosting ? `<span style="background:#808080;color:#fff;padding:0 3px;font-size:9px;margin-left:3px">DC</span>` : '';
-    return `<div style="line-height:1.9">` +
+      ? `<span class="detail-muted">${t('geoLocal')}</span>`
+      : `<span class="status-error">${t('geoError')}</span>`;
+    const vpn = geo.proxy   ? `<span class="badge badge-vpn">VPN/Proxy</span>` : '';
+    const dc  = geo.hosting ? `<span class="badge badge-dc">DC</span>` : '';
+    return `<div class="geo-info-line">` +
       `<b>${t('geoCountry')}</b> ${geo.country||'?'} — ${geo.city||'?'}${vpn}${dc}<br>` +
       `<b>${t('geoIsp')}</b> ${geo.isp||'?'}<br>` +
       `<b>${t('geoAs')}</b> ${geo.as||'?'}</div>`;
@@ -1726,11 +1726,11 @@ document.getElementById('ctxDetailDevice').addEventListener('click', () => {
       checkFavicon(ip, ports[0]),
     ]);
     let html = '';
-    if (deviceLabel) html += `<div><b>${t('deviceType')}</b> ${deviceLabel} <span style="background:green;color:#fff;padding:0 3px;font-size:9px">${t('tagRecognized')}</span></div>`;
+    if (deviceLabel) html += `<div><b>${t('deviceType')}</b> ${deviceLabel} <span class="badge badge-recognized">${t('tagRecognized')}</span></div>`;
     html += `<div><b>${t('deviceFavicon')}</b> ${hasFavicon ? t('deviceFaviconYes') : t('deviceFaviconNo')}</div>`;
     const portGuess = ports.includes(554)?t('portRtsp'):ports.includes(631)?t('portIpp'):ports.includes(9100)?t('portRaw'):ports.includes(5000)||ports.includes(5001)?t('portSyn'):ports.includes(8006)?t('portProx'):null;
     if (portGuess) html += `<div><b>${t('deviceSuggestion')}</b> ${portGuess}</div>`;
-    return html || `<span style="color:#808080">${t('deviceUnknown')}</span>`;
+    return html || `<span class="detail-muted">${t('deviceUnknown')}</span>`;
   });
 });
 
@@ -1738,11 +1738,11 @@ document.getElementById('ctxDetailTitle').addEventListener('click', () => {
   const ip = ctxTargetIp, ports = ctxTargetPorts.slice();
   ctxMenu.classList.remove('open');
   showEnrichPopup(`enrich-title-${ip}`, `📄 Tytuł HTTP — ${ip}`, async () => {
-    if (isPrivateIP(ip)) return `<span style="color:#808080">${t('titleExtOnly')}</span>`;
+    if (isPrivateIP(ip)) return `<span class="detail-muted">${t('titleExtOnly')}</span>`;
     const title = await fetchTitle(ip, ports[0]);
     return title
       ? `<b>${t('titleLabel')}</b> &ldquo;${title}&rdquo;`
-      : `<span style="color:#808080">${t('titleUnavailable')}</span>`;
+      : `<span class="detail-muted">${t('titleUnavailable')}</span>`;
   });
 });
 
@@ -1752,7 +1752,7 @@ document.getElementById('ctxDetailAccess').addEventListener('click', () => {
   showEnrichPopup(`enrich-acc-${ip}`, `🔑 Dostęp — ${ip}`, async () => {
     const isOpen = await checkAuth(ip, ports);
     return isOpen
-      ? `<b>${t('accessLabel')}</b> <span style="color:green">${t('accessOpen')}</span>`
+      ? `<b>${t('accessLabel')}</b> <span class="text-ok">${t('accessOpen')}</span>`
       : `<b>${t('accessLabel')}</b> ${t('accessClosed')}`;
   });
 });
