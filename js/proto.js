@@ -84,13 +84,9 @@ function initProtoCanvas() {
 
   function refreshAnchorStyles() {
     const anchors = canvas.querySelectorAll('.proto-anchor');
-    anchors.forEach(a => {
-      a.style.boxShadow = '';
-      a.style.transform = 'translateY(-50%)';
-    });
+    anchors.forEach(a => a.classList.remove('proto-anchor-active'));
     if (!pendingFrom) return;
-    pendingFrom.style.boxShadow = '0 0 0 2px rgba(255,210,80,.9), 0 0 8px rgba(0,0,0,.3)';
-    pendingFrom.style.transform = 'translateY(-50%) scale(1.12)';
+    pendingFrom.classList.add('proto-anchor-active');
   }
 
   function anchorPoint(nodeId, type) {
@@ -149,7 +145,6 @@ function initProtoCanvas() {
   }
 
   canvas.querySelectorAll('.proto-anchor-out').forEach(anchor => {
-    anchor.style.cursor = 'crosshair';
     anchor.addEventListener('click', e => {
       e.stopPropagation();
       pendingFrom = anchor;
@@ -163,7 +158,6 @@ function initProtoCanvas() {
   });
 
   canvas.querySelectorAll('.proto-anchor-in').forEach(anchor => {
-    anchor.style.cursor = 'pointer';
     anchor.addEventListener('click', e => {
       e.stopPropagation();
       if (!pendingFrom) {

@@ -362,3 +362,4 @@ body.skin-workbench .macro-list-row { border-bottom-color: #394354; color: #d7de
 body.skin-workbench .macro-list-row:hover { background: #094771; color: #ffffff; }
 body.skin-workbench .macro-list-empty { color: #8cc7ff; }
 body.skin-workbench .cmd-file-action:hover { background: #094771; color: #ffffff; }
+body.skin-workbench .macro-ctx-item:hover { background: #094771; color: #ffffff; }

@@ -298,4 +298,5 @@ body.skin-glass .macro-list-row { border-bottom-color: rgba(109,141,177,0.25); c
 body.skin-glass .macro-list-row:hover { background: #2b73b8; color: #eef5ff; }
 body.skin-glass .macro-list-empty { color: #3a6a9a; }
 body.skin-glass .cmd-file-action:hover { background: #2b73b8; color: #eef5ff; }
+body.skin-glass .macro-ctx-item:hover { background: #2b73b8; color: #eef5ff; }
 

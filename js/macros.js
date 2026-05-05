@@ -142,14 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (macroCtxDelete) {
-    macroCtxDelete.addEventListener('mouseenter', () => {
-      macroCtxDelete.style.background = '#000080';
-      macroCtxDelete.style.color = '#fff';
-    });
-    macroCtxDelete.addEventListener('mouseleave', () => {
-      macroCtxDelete.style.background = '';
-      macroCtxDelete.style.color = '';
-    });
     macroCtxDelete.addEventListener('click', () => {
       if (macroCtxIndex >= 0) deleteMacroByIndex(macroCtxIndex);
       closeMacroContextMenu();

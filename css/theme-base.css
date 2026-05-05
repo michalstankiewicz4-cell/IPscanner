@@ -274,6 +274,7 @@ html.tool-window-boot #mainWin {
   padding: 2px 4px;
   font-size: 11px; color: #000;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-align: left;
 }
 .lv-icon { text-align: center; font-size: 10px; }
 .icon-ok  { color: green; font-weight: bold; }

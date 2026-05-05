@@ -1447,7 +1447,6 @@ function addResultRow(ip, openPorts, pingMs) {
   const row = document.createElement('div');
   row.className = 'lv-row';
   row.dataset.ip = ip;
-  row.style.display = 'grid';
 
   // Icon
   const cIcon = document.createElement('div');
@@ -1474,7 +1473,6 @@ function addResultRow(ip, openPorts, pingMs) {
   // Ping
   const cPing = document.createElement('div');
   cPing.className='lv-cell';
-  cPing.style.textAlign = 'left';
   if (pingMs !== null && pingMs !== undefined) {
     const color = pingMs < 100 ? 'green' : pingMs < 500 ? '#808000' : '#c00';
     cPing.innerHTML = `<span style="color:${color};font-weight:bold">${pingMs} ms</span>`;

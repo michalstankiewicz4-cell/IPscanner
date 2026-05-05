@@ -114,10 +114,14 @@
   background: #2f4f7f;
   border: 1px solid #fff;
 }
-.proto-anchor-in  { left: -6px;  top: 50%; transform: translateY(-50%); }
-.proto-anchor-out { right: -6px; top: 50%; transform: translateY(-50%); }
+.proto-anchor-in  { left: -6px;  top: 50%; transform: translateY(-50%); cursor: pointer; }
+.proto-anchor-out { right: -6px; top: 50%; transform: translateY(-50%); cursor: crosshair; }
 .proto-anchor-true  { background: #3a8a3a; }
 .proto-anchor-false { background: #b04040; }
+.proto-anchor-active {
+  box-shadow: 0 0 0 2px rgba(255,210,80,.9), 0 0 8px rgba(0,0,0,.3);
+  transform: translateY(-50%) scale(1.12) !important;
+}
 .proto-anchor-label {
   position: absolute; right: 13px; top: -4px;
   font-size: 8px; font-weight: bold;

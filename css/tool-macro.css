@@ -29,6 +29,7 @@
   padding: 2px;
 }
 .macro-ctx-item { padding: 4px 8px; cursor: default; white-space: nowrap; }
+.macro-ctx-item:hover { background: #000080; color: #fff; }
 .macro-folder-footer {
   border-top: 1px solid #808080;
   padding: 2px 6px; font-size: 10px; color: #000;
