@@ -47,13 +47,18 @@
   // ── Tauri native-window helpers ──────────────────────────────────
   function _openNativeClippy() {
     if (!_invoke) return false;
-    _invoke('open_clippy_window', { lang: currentLang }).catch(() => {});
+    _invoke('open_clippy_window', { lang: currentLang }).catch((err) => {
+      console.warn('open_clippy_window failed, using DOM fallback:', err);
+      _showDOM();
+    });
     return true;
   }
 
   function _closeNativeClippy() {
     if (!_invoke) return false;
-    _invoke('close_clippy_window').catch(() => {});
+    _invoke('close_clippy_window').catch((err) => {
+      console.warn('close_clippy_window failed:', err);
+    });
     return true;
   }
 
@@ -77,15 +82,21 @@
     // Reopen native window with updated language
     if (_invoke && prev !== currentLang && localStorage.getItem(STORAGE_KEY) === '1') {
       _invoke('close_clippy_window')
-        .catch(() => {})
+        .catch((err) => {
+          console.warn('close_clippy_window failed during lang switch:', err);
+        })
         .finally(() => {
-          _invoke('open_clippy_window', { lang: currentLang }).catch(() => {});
+          _invoke('open_clippy_window', { lang: currentLang }).catch((err) => {
+            console.warn('open_clippy_window failed during lang switch, using DOM fallback:', err);
+            _showDOM();
+          });
         });
     }
   };
 
   window.clippyShow = function () {
     localStorage.setItem(STORAGE_KEY, '1');
+    _hideDOM();
     if (!_openNativeClippy()) {
       _showDOM();
     }
