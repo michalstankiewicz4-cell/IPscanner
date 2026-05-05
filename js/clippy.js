@@ -5,6 +5,7 @@
 (function () {
   const STORAGE_KEY = 'clippy_enabled';
   const TIP_INTERVAL_MS = 9000;
+  const FORCE_DOM_CLIPPY = true;
 
   // ── Skip in tool sub-windows (each is a separate WebviewWindow) ──
   const _isToolWindow = typeof _toolMode !== 'undefined' && !!_toolMode;
@@ -47,6 +48,7 @@
 
   // ── Tauri native-window helpers ──────────────────────────────────
   function _openNativeClippy() {
+    if (FORCE_DOM_CLIPPY) return false;
     if (!_invoke) return false;
     const requestStartedAt = Date.now();
     _invoke('open_clippy_window', { lang: currentLang }).catch((err) => {
@@ -63,6 +65,7 @@
   }
 
   function _closeNativeClippy() {
+    if (FORCE_DOM_CLIPPY) return false;
     if (!_invoke) return false;
     _invoke('close_clippy_window').catch((err) => {
       console.warn('close_clippy_window failed:', err);
@@ -165,7 +168,7 @@
 
   // ── Init ─────────────────────────────────────────────────────────
   function _init() {
-    if (window.__TAURI__?.event?.listen) {
+    if (!FORCE_DOM_CLIPPY && window.__TAURI__?.event?.listen) {
       window.__TAURI__.event.listen('clippy-window-opened', () => {
         nativeOpenAckAt = Date.now();
         _hideDOM();
@@ -173,7 +176,7 @@
     }
 
     // Listen for native clippy window closed event (user clicked ✕ in OS window)
-    if (window.__TAURI__?.event?.listen) {
+    if (!FORCE_DOM_CLIPPY && window.__TAURI__?.event?.listen) {
       window.__TAURI__.event.listen('clippy-window-closed', () => {
         localStorage.setItem(STORAGE_KEY, '0');
       }).catch(() => {});
