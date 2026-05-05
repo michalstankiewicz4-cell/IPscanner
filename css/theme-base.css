@@ -230,7 +230,7 @@ body.dragging             { cursor: move !important; }
 }
 .listview-header {
   display: grid;
-  grid-template-columns: 20px 124px 26px 80px;
+  grid-template-columns: 20px 18px 124px 26px 80px;
   background: #c0c0c0;
   border-bottom: 1px solid #808080;
   min-width: 250px;
@@ -266,7 +266,7 @@ body.dragging             { cursor: move !important; }
 
 .lv-row {
   display: grid;
-  grid-template-columns: 20px 124px 26px 80px;
+  grid-template-columns: 20px 18px 124px 26px 80px;
   cursor: default;
   border-bottom: 1px solid #f0f0f0;
   animation: rowIn 200ms ease-out;
@@ -285,6 +285,9 @@ body.dragging             { cursor: move !important; }
   text-align: left;
 }
 .lv-icon { text-align: center; font-size: 10px; }
+.lv-light { text-align: center; font-size: 11px; line-height: 1; }
+.light-on  { color: #22c55e; }
+.light-off { color: #ef4444; }
 .icon-ok  { color: green; font-weight: bold; }
 .icon-err { color: #c00; font-weight: bold; }
 .empty-row { padding: 8px; font-size: 11px; color: #808080; }
@@ -829,6 +832,40 @@ body.tool-window-mode #mainWin {
 /* ── List view header columns ── */
 .lv-col-dot    { font-size: 9px; }
 .lv-col-center { text-align: center; }
+
+/* ── List filter bar ── */
+.listview-filter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px;
+  border-bottom: 1px solid #808080;
+  background: #c0c0c0;
+}
+.listview-filter .filter-label {
+  font-size: 10px;
+  color: #000;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+.btn-filter {
+  font-size: 10px;
+  padding: 1px 8px;
+  cursor: pointer;
+  background: #c0c0c0;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  font-family: inherit;
+}
+.btn-filter.active {
+  border-top: 1px solid #808080;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+  background: #c0c0c0;
+}
 
 /* ── Preview ── */
 .preview-blocked-icon { font-size: 24px; }

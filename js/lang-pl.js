@@ -17,6 +17,7 @@ window.LANG_PL = {
   hintAll:'Wszystkie znane porty jednocześnie — wolniejszy, najdokładniejszy',
   labelChecked:'Sprawdzono:', labelFound:'Znaleziono:', labelPorts:'Portów:',
   colIp:'Adres IP', colPing:'Ping', colHostname:'Hostname', colPorts:'Porty', colLinks:'Ścieżki / Linki',
+  filterShow:'Pokaż:', filterAll:'Wszystkie', filterActive:'Aktywne', filterDead:'Martwe',
   emptyRow:'Brak wyników. Skonfiguruj zakres IP i kliknij Start.',
   emptyScanning:'Skanowanie…', emptyNone:'Nie znaleziono aktywnych hostów.',
   detailGeo:'🌍 Geolokalizacja / ISP', detailDevice:'🖥 Identyfikacja urządzenia',

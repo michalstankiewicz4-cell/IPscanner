@@ -940,6 +940,34 @@ const previewExtLink = document.getElementById('previewExtLink');
 const ctxMenu     = document.getElementById('ctxMenu');
 
 // ══════════════════════════════════════════════════
+//  LIST FILTER
+// ══════════════════════════════════════════════════
+let _listFilter = 'all'; // 'all' | 'active' | 'dead'
+
+function applyListFilter() {
+  document.querySelectorAll('.lv-row').forEach(row => {
+    const isActive = row.querySelector('.light-on') !== null;
+    let visible = true;
+    if (_listFilter === 'active') visible = isActive;
+    else if (_listFilter === 'dead') visible = !isActive;
+    row.style.display = visible ? '' : 'none';
+    const paths = row.nextElementSibling;
+    if (paths && paths.classList.contains('paths-row')) {
+      paths.style.display = visible ? (paths.classList.contains('open') ? 'flex' : 'none') : 'none';
+    }
+  });
+}
+
+['btnFilterAll', 'btnFilterActive', 'btnFilterDead'].forEach(id => {
+  document.getElementById(id)?.addEventListener('click', () => {
+    _listFilter = id === 'btnFilterAll' ? 'all' : id === 'btnFilterActive' ? 'active' : 'dead';
+    document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    applyListFilter();
+  });
+});
+
+// ══════════════════════════════════════════════════
 //  HELPERS
 // ══════════════════════════════════════════════════
 function isIPv4(v) {
@@ -1455,6 +1483,12 @@ function addResultRow(ip, openPorts, pingMs) {
   cIcon.innerHTML='<span class="icon-ok">✔</span>';
   row.appendChild(cIcon);
 
+  // Status light
+  const cLight = document.createElement('div');
+  cLight.className = 'lv-cell lv-light';
+  cLight.innerHTML = '<span class="light-on" title="Active">●</span>';
+  row.appendChild(cLight);
+
   // IP
   const cIp = document.createElement('div');
   cIp.className='lv-cell';
@@ -1539,6 +1573,7 @@ function addResultRow(ip, openPorts, pingMs) {
 
   listBody.appendChild(row);
   listBody.appendChild(pathsRow);
+  applyListFilter();
 
   // ── Auto geo-locate for globe dots ──
   if (!ipGeoCoords[ip]) {

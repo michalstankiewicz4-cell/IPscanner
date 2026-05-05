@@ -17,6 +17,8 @@ window.LANG_EN = {
   hintAll:'All known ports at once — slower, most thorough',
   labelChecked:'Checked:', labelFound:'Found:', labelPorts:'Ports:',
   colIp:'IP Address', colPing:'Ping', colHostname:'Hostname', colPorts:'Ports', colLinks:'Paths / Links',
+  filterShow:'Show:', filterAll:'All', filterActive:'Active', filterDead:'Dead',
+  filterShow:'Show:', filterAll:'All', filterActive:'Active', filterDead:'Dead',
   emptyRow:'No results. Configure IP range and click Start.',
   emptyScanning:'Scanning…', emptyNone:'No active hosts found.',
   detailGeo:'🌍 Geolocation / ISP', detailDevice:'🖥 Device Identification',
