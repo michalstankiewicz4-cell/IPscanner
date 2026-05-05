@@ -1,0 +1,53 @@
+localStorage keys used by IPscanner
+=====================================
+
+netrecon_lang
+  - wybrany język interfejsu ('en' lub 'pl')
+
+netrecon_scan_defaults
+  - ustawienia skanowania: threads, delayMs, delayMsPerPort, portScanMode, chunkSize
+
+netrecon_presets
+  - lista presetów portów (JSON array)
+
+netrecon_active_preset
+  - indeks aktywnego presetu portów
+
+netrecon_results
+  - wyniki ostatniego skanowania (JSON array: ip, ports, ping, hostname, geo itp.)
+
+netrecon_results_ts
+  - timestamp (Date.now()) ostatniego zapisu wyników
+
+netrecon_marks
+  - zaznaczeń checkmark i gwiazdek: { favIps, favPorts, checkIps, checkPorts }
+
+netrecon_expanded
+  - lista IP-ów z rozwiniętym wierszem portów [+]
+
+netrecon_sort
+  - aktywne sortowanie listy: { col: 'ip'|'ping', dir: 1|-1 }
+
+ui_skin
+  - aktywny motyw wizualny ('classic', 'glass', 'workbench')
+
+tb_globe
+  - widoczność przycisku Globe w pasku narzędzi (0/1)
+
+tb_console
+  - widoczność przycisku Console w pasku narzędzi (0/1)
+
+tb_macro
+  - widoczność przycisku Macro w pasku narzędzi (0/1)
+
+tb_speed
+  - widoczność przycisku Speed Test w pasku narzędzi (0/1)
+
+tb_proto
+  - widoczność przycisku Proto w pasku narzędzi (0/1)
+
+tb_topology
+  - widoczność przycisku Topology w pasku narzędzi (0/1)
+
+clippy_enabled
+  - czy asystent (Clippy) jest włączony (0/1)
