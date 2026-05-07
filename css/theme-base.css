@@ -93,7 +93,7 @@ body.dragging             { cursor: move !important; }
 /* ── Flag emoji in country list ── */
 .flag-emoji { font-size: 16px; line-height: 1; }
 .flex-spacer { flex: 1; }
-.ml-auto { margin-left: auto; }
+.ml-auto { margin-left: auto !important; }
 .ml-10 { margin-left: 10px; }
 .is-hidden { display: none; }
 .cursor-pointer { cursor: pointer !important; }
