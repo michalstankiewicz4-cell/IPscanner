@@ -7,7 +7,7 @@ function selectIcon(el) {
 }
 
 const APP_NAME = 'NetRecon IP Auditor';
-const APP_VERSION = '1.5.9';
+const APP_VERSION = '1.6.0';
 
 function getAppDisplayName() {
   return `${APP_NAME} v${APP_VERSION}`;
