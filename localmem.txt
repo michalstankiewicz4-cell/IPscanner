@@ -28,6 +28,9 @@ netrecon_expanded
 netrecon_sort
   - aktywne sortowanie listy: { col: 'ip'|'ping', dir: 1|-1 }
 
+netrecon_scan_watch
+  - ustawienia IP Scan Watch: { windowSecs, minPorts, pollSecs }
+
 ui_skin
   - aktywny motyw wizualny ('classic', 'glass', 'workbench')
 

@@ -210,6 +210,22 @@ body.skin-workbench .listview-body {
   background: #1f2530;
 }
 
+body.skin-workbench .scanwatch-table th {
+  border-bottom-color: #3d4a5f;
+}
+
+body.skin-workbench .scanwatch-row td {
+  border-bottom-color: #3b4456;
+}
+
+body.skin-workbench .scanwatch-empty-row td {
+  color: #9fb0c8;
+}
+
+body.skin-workbench .scanwatch-status-warn {
+  color: #ff9b9b;
+}
+
 /* ── Expanded row / detail panel ── */
 body.skin-workbench .detail-row,
 body.skin-workbench .paths-row {

@@ -73,6 +73,7 @@
         <div class="menu-dd-item" id="menuToolMacro" data-i18n="btnMacro">📁 Macro</div>
         <div class="menu-dd-item" id="menuToolSpeed" data-i18n="btnSpeed">📶 Speed</div>
         <div class="menu-dd-item" id="menuToolConsole" data-i18n="btnConsole">⌨ Console</div>
+        <div class="menu-dd-item" id="menuToolScanWatch">🛡 IP Scan Watch...</div>
       </div>
     </div>
     <div class="menu-item" id="menuHelp"><span data-i18n="menuHelp">Help</span>
@@ -161,9 +162,9 @@
           <span class="oct-dot">.</span>
           <input class="oct" id="t3" maxlength="3" placeholder="254"/>
         </div>
-        <button class="btn95" id="btnScanSpeed" style="margin-left: 10px;" onclick="openDefaultsDlg()">⚙ Scan Speed</button>
-        <input type="number" min="2" max="64" value="32" id="concNum" style="display:none"/>
-        <input type="number" min="0" max="5000" value="0" id="delayMs" style="display:none"/>
+        <button class="btn95 ml-10" id="btnScanSpeed" onclick="openDefaultsDlg()">⚙ Scan Speed</button>
+        <input type="number" min="2" max="64" value="32" id="concNum" class="is-hidden"/>
+        <input type="number" min="0" max="5000" value="0" id="delayMs" class="is-hidden"/>
       </div>
     </div>
 
@@ -183,7 +184,7 @@
         <div class="stat-item"><span data-i18n="labelChecked">Checked:</span> <span class="stat-val" id="statChecked">0</span></div>
         <div class="stat-item"><span data-i18n="labelFound">Found:</span> <span class="stat-val" id="statFound">0</span></div>
         <div class="stat-item"><span data-i18n="labelPorts">Ports:</span> <span class="stat-val" id="statPorts">0</span></div>
-        <div class="stat-item" style="margin-left:auto;"><span id="statTime" class="status-time">0.0s</span></div>
+        <div class="stat-item ml-auto"><span id="statTime" class="status-time">0.0s</span></div>
       </div>
     </div>
 
@@ -196,7 +197,7 @@
         <button class="btn-filter" id="btnFilterActive" data-i18n="filterActive">Active</button>
         <button class="btn-filter" id="btnFilterDead" data-i18n="filterDead">Dead</button>
         <button class="btn-cols" id="btnCols">Columns ▾</button>
-        <button class="btn-cols" id="btnBlurIp" style="margin-left:auto;" title="Toggle IP blur">👁 Blur</button>
+        <button class="btn-cols ml-auto" id="btnBlurIp" title="Toggle IP blur">👁 Blur</button>
         <div class="cols-panel" id="colsPanel">
           <label class="cols-panel-item"><input type="checkbox" data-col="hostname"> 🧭 Hostname</label>
           <label class="cols-panel-item"><input type="checkbox" data-col="geo"> 🌍 Geolocation / ISP</label>
@@ -206,17 +207,17 @@
         </div>
       </div>
       <div class="listview-header">
-        <div class="lv-col lv-col-dot" id="colCheckAll" title="Right-click for options" style="cursor:context-menu">✔</div>
-        <div class="lv-col lv-col-center" id="colFavAll" title="Right-click for options" style="cursor:context-menu">★</div>
+        <div class="lv-col lv-col-dot cursor-context-menu" id="colCheckAll" title="Right-click for options">✔</div>
+        <div class="lv-col lv-col-center cursor-context-menu" id="colFavAll" title="Right-click for options">★</div>
         <div class="lv-col lv-col-center" title="Status">●</div>
-        <div class="lv-col" id="colSortIp" data-i18n="colIp" style="cursor:pointer" title="Sort by IP">IP Address</div>
-        <div class="lv-col lv-col-center" id="colExpandAll" title="Expand / collapse all" style="cursor:pointer">+</div>
-        <div class="lv-col" id="colSortPing" data-i18n="colPing" style="cursor:pointer" title="Sort by Ping">Ping</div>
-        <div class="lv-col lv-extra-col" data-col="hostname" style="display:none">🧭 Hostname</div>
-        <div class="lv-col lv-extra-col" data-col="geo" style="display:none">🌍 Geo / ISP</div>
-        <div class="lv-col lv-extra-col" data-col="device" style="display:none">🖥 Device</div>
-        <div class="lv-col lv-extra-col" data-col="title" style="display:none">📄 Title</div>
-        <div class="lv-col lv-extra-col" data-col="access" style="display:none">🔑 Access</div>
+        <div class="lv-col cursor-pointer" id="colSortIp" data-i18n="colIp" title="Sort by IP">IP Address</div>
+        <div class="lv-col lv-col-center cursor-pointer" id="colExpandAll" title="Expand / collapse all">+</div>
+        <div class="lv-col cursor-pointer" id="colSortPing" data-i18n="colPing" title="Sort by Ping">Ping</div>
+        <div class="lv-col lv-extra-col is-hidden" data-col="hostname">🧭 Hostname</div>
+        <div class="lv-col lv-extra-col is-hidden" data-col="geo">🌍 Geo / ISP</div>
+        <div class="lv-col lv-extra-col is-hidden" data-col="device">🖥 Device</div>
+        <div class="lv-col lv-extra-col is-hidden" data-col="title">📄 Title</div>
+        <div class="lv-col lv-extra-col is-hidden" data-col="access">🔑 Access</div>
       </div>
       <div class="listview-body" id="listBody">
         <div class="empty-row" id="emptyRow" data-i18n="emptyRow">No results. Configure IP range and click Start.</div>
@@ -707,25 +708,25 @@
         </div>
       </div>
 
-      <div class="dlg-groupbox" style="margin-top: 12px;">
+      <div class="dlg-groupbox dlg-groupbox-mt12">
         <span class="dlg-groupbox-legend" title="Port scanning mode for each IP address">Port Scanning Mode</span>
         <div class="dlg-row dlg-row-mb6">
           <label class="dlg-label-98" title="Number of ports scanned simultaneously in parallel mode (10–500). Larger batch = faster, but more concurrent connections." data-i18n-title="tipBatchSize">Batch size:</label>
           <input class="dlg-input95 dlg-num-input" id="dlgDefaultChunkSize" type="number" min="10" max="500" value="100" title="Number of ports scanned simultaneously in parallel mode (10–500). Larger batch = faster, but more concurrent connections." data-i18n-title="tipBatchSize"/>
         </div>
         <div class="dlg-row dlg-row-mb6">
-          <label style="display: flex; align-items: center; margin-bottom: 6px;" title="All ports in a batch are scanned simultaneously — fastest mode." data-i18n-title="tipParallel">
-            <input type="radio" name="portScanMode" id="radioParallel" value="parallel" checked style="margin-right: 6px;"/>
-            <span style="font-size: 11px;" title="All ports in a batch are scanned simultaneously — fastest mode." data-i18n-title="tipParallel">Parallel (fast)</span>
+          <label class="port-mode-label" title="All ports in a batch are scanned simultaneously — fastest mode." data-i18n-title="tipParallel">
+            <input class="port-mode-radio" type="radio" name="portScanMode" id="radioParallel" value="parallel" checked/>
+            <span class="port-mode-text" title="All ports in a batch are scanned simultaneously — fastest mode." data-i18n-title="tipParallel">Parallel (fast)</span>
           </label>
         </div>
         <div class="dlg-row dlg-row-mb0">
-          <label style="display: flex; align-items: center; margin-bottom: 6px;" title="Ports are scanned one by one with a set delay — slower, but less visible to IDS/firewall." data-i18n-title="tipSequential">
-            <input type="radio" name="portScanMode" id="radioSequential" value="sequential" style="margin-right: 6px;"/>
-            <span style="font-size: 11px;" title="Ports are scanned one by one with a set delay — slower, but less visible to IDS/firewall." data-i18n-title="tipSequential">Sequential with delay</span>
+          <label class="port-mode-label" title="Ports are scanned one by one with a set delay — slower, but less visible to IDS/firewall." data-i18n-title="tipSequential">
+            <input class="port-mode-radio" type="radio" name="portScanMode" id="radioSequential" value="sequential"/>
+            <span class="port-mode-text" title="Ports are scanned one by one with a set delay — slower, but less visible to IDS/firewall." data-i18n-title="tipSequential">Sequential with delay</span>
           </label>
         </div>
-        <div class="dlg-row dlg-row-mb0" style="margin-left: 24px; margin-top: 6px;">
+        <div class="dlg-row dlg-row-mb0 dlg-row-indent-24">
           <label class="dlg-label-98" data-i18n="dlgDefaultDelayPerPort" title="Delay (ms) between scanning consecutive ports in sequential mode (0–1000)." data-i18n-title="tipPortDelay">Delay (ms):</label>
           <input class="dlg-input95 dlg-num-input" id="dlgDefaultDelayPerPort" type="number" min="0" max="1000" value="0" disabled title="Delay (ms) between scanning consecutive ports in sequential mode (0–1000)." data-i18n-title="tipPortDelay"/>
         </div>
@@ -733,9 +734,59 @@
       </div>
     </div>
     <div class="dlg-footer">
-      <button class="btn95" id="dlgDefaultsReset" style="margin-right: auto;">↺ Reset</button>
+      <button class="btn95 ml-auto" id="dlgDefaultsReset">↺ Reset</button>
       <button class="btn95" id="dlgDefaultsOk" data-i18n="dlgOk">OK</button>
       <button class="btn95" id="dlgDefaultsCancel" data-i18n="dlgCancel" onclick="closeDefaultsDlg()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- IP scan watch dialog -->
+<div class="dlg-overlay" id="dlgScanWatchOverlay">
+  <div class="dlg95 scanwatch-dlg">
+    <div class="dlg-title">
+      <span>🛡</span>
+      <span class="title-fill">IP Scan Watch</span>
+      <div class="title-btn" onclick="closeScanWatchDlg()">✕</div>
+    </div>
+    <div class="dlg-body">
+      <div class="dlg-groupbox">
+        <span class="dlg-groupbox-legend">Detection settings</span>
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-98" for="scanWatchWindowSecs" title="Time window used to aggregate suspicious activity.">Window (sec):</label>
+          <input class="dlg-input95 dlg-num-input" id="scanWatchWindowSecs" type="number" min="5" max="3600" value="30" title="Longer window catches slower scans; shorter window catches burst scans."/>
+        </div>
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-98" for="scanWatchMinPorts" title="Minimum number of different local ports touched by one remote IP before it is flagged.">Min unique ports:</label>
+          <input class="dlg-input95 dlg-num-input" id="scanWatchMinPorts" type="number" min="2" max="128" value="8" title="Higher value reduces false positives; lower value is more sensitive."/>
+        </div>
+        <div class="dlg-row dlg-row-mb0">
+          <label class="dlg-label-98" for="scanWatchPollSecs" title="How often watcher checks current TCP activity.">Refresh (sec):</label>
+          <input class="dlg-input95 dlg-num-input" id="scanWatchPollSecs" type="number" min="1" max="60" value="2" title="Lower value updates faster but uses more system checks."/>
+        </div>
+      </div>
+
+      <div class="dlg-sunken-box scanwatch-status" id="scanWatchStatus" title="Current detector state and latest summary.">Idle</div>
+
+      <div class="dlg-sunken-box scanwatch-table-wrap">
+        <table class="scanwatch-table">
+          <thead>
+            <tr>
+              <th title="Remote address that appears to probe multiple ports.">Remote IP</th>
+              <th class="scanwatch-num" title="Count of unique local ports touched by that address.">Ports</th>
+              <th class="scanwatch-num" title="Total connection events observed in current window.">Hits</th>
+              <th class="scanwatch-num" title="Seconds since last observed event from this address.">Last seen</th>
+            </tr>
+          </thead>
+          <tbody id="scanWatchTbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="btnScanWatchCheckNow" title="Run one immediate detection pass.">Check now</button>
+      <button class="btn95" id="btnScanWatchStart" title="Start automatic periodic detection checks.">Start watch</button>
+      <button class="btn95" id="btnScanWatchStop" disabled title="Stop automatic periodic checks.">Stop</button>
+      <button class="btn95" onclick="closeScanWatchDlg()" title="Close this window.">Close</button>
     </div>
   </div>
 </div>
@@ -753,6 +804,14 @@
       <div class="dlg-sunken-box dlg-versions-card">
         <div class="version-head">v1.5.9</div>
         <div class="version-note">
+          Added scan mode controls with selectable type and speed.
+          Results can now be sorted by IP address or response time (ms).
+          Port lists are faster to expand and browse.
+          Column settings are now available from the right-click context menu.
+          Improved IP filtering, favorites for addresses and ports, and grouping for both addresses and ports.
+          Added IP Scan Watch in Tools to detect suspicious multi-port probing of your address.
+          Added a Blur button to mask IP addresses for safer screen sharing.
+          Plus a handful of smaller quality-of-life refinements.
         </div>
         <div class="version-head">v1.5.8</div>
         <div class="version-note">
@@ -1023,6 +1082,7 @@
 <script src="js/lang-en.js"></script>
 <script src="js/lang-pl.js"></script>
 <script src="js/app.js"></script>
+<script src="js/scanwatch.js"></script>
 <script src="js/clippy.js"></script>
 </body>
 </html>

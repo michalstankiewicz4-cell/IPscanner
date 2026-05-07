@@ -93,6 +93,11 @@ body.dragging             { cursor: move !important; }
 /* ── Flag emoji in country list ── */
 .flag-emoji { font-size: 16px; line-height: 1; }
 .flex-spacer { flex: 1; }
+.ml-auto { margin-left: auto; }
+.ml-10 { margin-left: 10px; }
+.is-hidden { display: none; }
+.cursor-pointer { cursor: pointer !important; }
+.cursor-context-menu { cursor: context-menu !important; }
 .status-time { font-size: 10px; color: #000080; font-weight: bold; }
 
 /* ── Content area ── */
@@ -469,6 +474,62 @@ body.dragging             { cursor: move !important; }
 .status-panel.ok  { color: green; }
 .status-panel.err { color: #c00; }
 .status-panel.warn{ color: #808000; }
+
+/* ── IP Scan Watch dialog ── */
+.scanwatch-dlg {
+  width: 620px;
+  max-width: 92vw;
+}
+
+.scanwatch-status {
+  margin-top: 10px;
+  padding: 6px;
+  font-size: 11px;
+}
+
+.scanwatch-status-warn {
+  color: #7f0000;
+}
+
+.scanwatch-status-busy {
+  color: #000080;
+  font-weight: bold;
+}
+
+.scanwatch-table-wrap {
+  margin-top: 10px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.scanwatch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.scanwatch-table th {
+  text-align: left;
+  border-bottom: 1px solid #7f7f7f;
+  padding: 4px;
+}
+
+.scanwatch-table td {
+  padding: 4px;
+}
+
+.scanwatch-row td {
+  border-bottom: 1px dotted #aaa;
+}
+
+.scanwatch-num {
+  text-align: right !important;
+}
+
+.scanwatch-empty-row td {
+  padding: 6px;
+  color: #555;
+}
 
 /* ── Floating tool window shell ── */
 .tool-win-shell {
@@ -1041,6 +1102,13 @@ body.tool-window-mode #mainWin {
 /* ── dlg-row spacing variants ── */
 .dlg-row-mb6 { margin-bottom: 6px; }
 .dlg-row-mb0 { margin-bottom: 0; }
+
+/* ── defaults dialog helper classes ── */
+.dlg-row-indent-24 { margin-left: 24px; margin-top: 6px; }
+.dlg-groupbox-mt12 { margin-top: 12px; }
+.port-mode-label { display: flex; align-items: center; margin-bottom: 6px; }
+.port-mode-radio { margin-right: 6px; }
+.port-mode-text { font-size: 11px; }
 
 /* ── presetEditBox disabled state ── */
 #presetEditBox.disabled { opacity: 0.4; pointer-events: none; }

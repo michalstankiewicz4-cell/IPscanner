@@ -4,11 +4,13 @@
 use std::net::{IpAddr, SocketAddr};
 use std::process::Command;
 use std::str::FromStr;
+use std::collections::{HashMap, HashSet};
+use std::sync::Mutex;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, LogicalPosition, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
@@ -22,6 +24,17 @@ use std::os::windows::process::CommandExt;
 // ─── Shared scan-stop flag ───────────────────────────────────────────────────
 struct ScanState {
     stop: AtomicBool,
+}
+
+struct ScanWatchState {
+    events: Mutex<Vec<ScanWatchEvent>>,
+}
+
+#[derive(Clone)]
+struct ScanWatchEvent {
+    seen_at: Instant,
+    remote_ip: String,
+    local_port: u16,
 }
 
 const TOOL_WINDOW_LABELS: &[&str] = &[
@@ -68,6 +81,21 @@ pub struct GeoResult {
 struct TraceRunResult {
     output: String,
     resolved_ip: String,
+}
+
+#[derive(Serialize, Clone)]
+struct ScanWatchSuspect {
+    ip: String,
+    unique_ports: usize,
+    hits: usize,
+    last_seen_secs_ago: u64,
+}
+
+#[derive(Serialize, Clone)]
+struct ScanWatchResult {
+    generated_at_unix: u64,
+    sample_count: usize,
+    suspects: Vec<ScanWatchSuspect>,
 }
 
 // ─── Commands ────────────────────────────────────────────────────────────────
@@ -411,6 +439,145 @@ async fn open_tool_window(app: AppHandle, tool: String) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn check_scan_watch(
+    app: AppHandle,
+    window_secs: u64,
+    min_ports: usize,
+) -> Result<ScanWatchResult, String> {
+    let now = Instant::now();
+    let window = Duration::from_secs(window_secs.clamp(5, 3600));
+    let min_ports = min_ports.clamp(2, 128);
+
+    let output = {
+        #[cfg(target_os = "windows")]
+        {
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            Command::new("netstat")
+                .creation_flags(CREATE_NO_WINDOW)
+                .args(["-na", "-p", "tcp"])
+                .output()
+                .map_err(|e| format!("Failed to run netstat: {e}"))?
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            Command::new("netstat")
+                .args(["-nat"])
+                .output()
+                .map_err(|e| format!("Failed to run netstat: {e}"))?
+        }
+    };
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    if stdout.trim().is_empty() {
+        return Err("netstat returned empty output".into());
+    }
+
+    let mut snapshot_seen: HashSet<(String, u16, String)> = HashSet::new();
+    for line in stdout.lines() {
+        let cols: Vec<&str> = line.split_whitespace().collect();
+        if cols.len() < 4 {
+            continue;
+        }
+
+        let (local_col, remote_col, state_col) = if cols[0].eq_ignore_ascii_case("TCP") {
+            if cols.len() < 4 {
+                continue;
+            }
+            (cols[1], cols[2], cols[3])
+        } else {
+            continue;
+        };
+
+        let Some((local_ip, local_port)) = parse_ipv4_socket(local_col) else {
+            continue;
+        };
+        let Some((remote_ip, remote_port)) = parse_ipv4_socket(remote_col) else {
+            continue;
+        };
+
+        if remote_ip == "0.0.0.0" || remote_ip == "127.0.0.1" || local_ip == "127.0.0.1" {
+            continue;
+        }
+
+        let state = state_col.to_ascii_uppercase();
+        let interesting_state = matches!(
+            state.as_str(),
+            "SYN_RECEIVED" | "ESTABLISHED" | "TIME_WAIT" | "CLOSE_WAIT"
+        );
+        if !interesting_state {
+            continue;
+        }
+
+        // Heuristic for likely inbound probes.
+        if local_port > 49151 || remote_port <= 1023 {
+            continue;
+        }
+
+        snapshot_seen.insert((remote_ip, local_port, state));
+    }
+
+    let watch_state = app.state::<Arc<ScanWatchState>>();
+    let mut events = watch_state
+        .events
+        .lock()
+        .map_err(|_| "scan watch state lock poisoned")?;
+
+    for (remote_ip, local_port, _) in snapshot_seen {
+        events.push(ScanWatchEvent {
+            seen_at: now,
+            remote_ip,
+            local_port,
+        });
+    }
+
+    events.retain(|e| now.duration_since(e.seen_at) <= window);
+
+    let mut by_ip: HashMap<&str, (HashSet<u16>, usize, Instant)> = HashMap::new();
+    for ev in events.iter() {
+        let entry = by_ip
+            .entry(ev.remote_ip.as_str())
+            .or_insert_with(|| (HashSet::new(), 0usize, ev.seen_at));
+        entry.0.insert(ev.local_port);
+        entry.1 += 1;
+        if ev.seen_at > entry.2 {
+            entry.2 = ev.seen_at;
+        }
+    }
+
+    let mut suspects: Vec<ScanWatchSuspect> = by_ip
+        .into_iter()
+        .filter_map(|(ip, (ports, hits, last_seen))| {
+            if ports.len() < min_ports {
+                return None;
+            }
+            Some(ScanWatchSuspect {
+                ip: ip.to_string(),
+                unique_ports: ports.len(),
+                hits,
+                last_seen_secs_ago: now.duration_since(last_seen).as_secs(),
+            })
+        })
+        .collect();
+
+    suspects.sort_by(|a, b| {
+        b.unique_ports
+            .cmp(&a.unique_ports)
+            .then_with(|| b.hits.cmp(&a.hits))
+            .then_with(|| a.ip.cmp(&b.ip))
+    });
+
+    Ok(ScanWatchResult {
+        generated_at_unix: SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0),
+        sample_count: events.len(),
+        suspects,
+    })
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 fn ip_to_u32(ip: &str) -> Result<u32, String> {
@@ -423,6 +590,27 @@ fn ip_to_u32(ip: &str) -> Result<u32, String> {
 fn u32_to_ip(n: u32) -> String {
     let [a, b, c, d] = n.to_be_bytes();
     format!("{}.{}.{}.{}", a, b, c, d)
+}
+
+fn parse_ipv4_socket(s: &str) -> Option<(String, u16)> {
+    let mut parts = s.rsplitn(2, ':');
+    let port_str = parts.next()?;
+    let host_str = parts.next()?;
+    if host_str.contains('[') || host_str.contains(']') || host_str.contains("::") {
+        return None;
+    }
+    let port = port_str.parse::<u16>().ok()?;
+    let ip = host_str.trim();
+    if ip.is_empty() {
+        return None;
+    }
+    if IpAddr::from_str(ip).ok().and_then(|addr| match addr {
+        IpAddr::V4(v4) => Some(v4.to_string()),
+        IpAddr::V6(_) => None,
+    }).is_none() {
+        return None;
+    }
+    Some((ip.to_string(), port))
 }
 
 fn close_tool_windows(app: &AppHandle) {
@@ -459,6 +647,7 @@ async fn resolve_target_ipv4(target: &str) -> Result<String, String> {
 fn main() {
     tauri::Builder::default()
         .manage(Arc::new(ScanState { stop: AtomicBool::new(false) }))
+        .manage(Arc::new(ScanWatchState { events: Mutex::new(Vec::new()) }))
         .on_window_event(|window, event| {
             if window.label() == "main" {
                 if matches!(event, WindowEvent::Destroyed) {
@@ -480,6 +669,7 @@ fn main() {
             get_local_subnets,
             run_traceroute,
             open_tool_window,
+            check_scan_watch,
             open_clippy_window,
             close_clippy_window,
             open_browser,

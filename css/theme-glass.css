@@ -177,6 +177,22 @@ body.skin-glass .listview-body {
   background: rgba(248, 253, 255, 0.88);
 }
 
+body.skin-glass .scanwatch-table th {
+  border-bottom-color: #6d8db1;
+}
+
+body.skin-glass .scanwatch-row td {
+  border-bottom-color: rgba(109, 141, 177, 0.4);
+}
+
+body.skin-glass .scanwatch-empty-row td {
+  color: #2d537a;
+}
+
+body.skin-glass .scanwatch-status-warn {
+  color: #8f2323;
+}
+
 body.skin-glass .listview-body::-webkit-scrollbar-track {
   background: linear-gradient(180deg, rgba(230, 242, 255, 0.96), rgba(201, 222, 245, 0.96));
 }
