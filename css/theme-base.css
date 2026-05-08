@@ -531,6 +531,116 @@ body.dragging             { cursor: move !important; }
   color: #555;
 }
 
+/* ── WiFi Detector dialog ── */
+.wifi-detector-dlg {
+  width: 520px;
+  max-width: 92vw;
+}
+
+.wifi-detector-status {
+  margin-top: 10px;
+  padding: 6px;
+  font-size: 11px;
+}
+
+.wifi-detector-status-warn {
+  color: #7f0000;
+}
+
+.wifi-detector-status-busy {
+  color: #000080;
+  font-weight: bold;
+}
+
+.wifi-detector-content {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 10px;
+}
+
+.wifi-detector-pane {
+  min-width: 0;
+}
+
+.wifi-detector-pane-title {
+  font-size: 11px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.wifi-detector-net-list {
+  min-height: 220px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.wifi-detector-net-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.wifi-detector-net-item:hover {
+  background: #000080;
+  color: #fff;
+}
+
+.wifi-detector-net-item.active {
+  background: #000080;
+  color: #fff;
+}
+
+.wifi-detector-net-meta {
+  display: block;
+  opacity: 0.85;
+  font-size: 10px;
+}
+
+.wifi-detector-empty {
+  padding: 8px;
+  color: #555;
+  font-size: 11px;
+}
+
+.wifi-detector-table-wrap {
+  min-height: 220px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.wifi-detector-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.wifi-detector-table td {
+  padding: 4px;
+  border-bottom: 1px dotted #aaa;
+}
+
+.wifi-detector-key {
+  width: 40%;
+  font-weight: bold;
+}
+
+.wifi-detector-value {
+  width: 60%;
+}
+
+@media (max-width: 760px) {
+  .wifi-detector-content {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Floating tool window shell ── */
 .tool-win-shell {
   display: none;
@@ -1093,6 +1203,7 @@ body.tool-window-mode #mainWin {
 #dlgCountriesOverlay .dlg95   { min-width: 500px; max-width: 96vw; }
 #dlgPresetsOverlay .dlg95     { min-width: 380px; }
 #dlgDefaultsOverlay .dlg95    { min-width: 290px; }
+#dlgWifiDetectorOverlay .dlg95 { min-width: 420px; max-width: 94vw; }
 #dlgVersionsOverlay .dlg95    { min-width: 470px; max-width: 94vw; }
 #dlgCustomizeOverlay .dlg95   { min-width: 300px; }
 

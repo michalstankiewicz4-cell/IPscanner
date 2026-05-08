@@ -98,6 +98,26 @@ struct ScanWatchResult {
     suspects: Vec<ScanWatchSuspect>,
 }
 
+#[derive(Serialize, Clone)]
+struct WifiNetwork {
+    ssid: String,
+    bssid_count: usize,
+    best_signal_pct: Option<u8>,
+    source: String,
+}
+
+#[derive(Serialize, Clone)]
+struct WifiProperty {
+    key: String,
+    value: String,
+}
+
+#[derive(Clone, Default)]
+struct WifiNetworkBlock {
+    ssid: String,
+    lines: Vec<String>,
+}
+
 // ─── Commands ────────────────────────────────────────────────────────────────
 
 /// Single TCP port probe.
@@ -578,7 +598,314 @@ fn check_scan_watch(
     })
 }
 
+#[tauri::command]
+fn list_wifi_networks() -> Result<Vec<WifiNetwork>, String> {
+    match run_wifi_netsh_show_networks() {
+        Ok(output) => {
+            let blocks = parse_wifi_network_blocks(&output);
+
+            let mut out: Vec<WifiNetwork> = blocks
+                .iter()
+                .map(|b| WifiNetwork {
+                    ssid: b.ssid.clone(),
+                    bssid_count: count_bssid_lines(&b.lines),
+                    best_signal_pct: best_signal_percent(&b.lines),
+                    source: "scan".to_string(),
+                })
+                .collect();
+
+            out.sort_by(|a, b| {
+                b.best_signal_pct
+                    .unwrap_or(0)
+                    .cmp(&a.best_signal_pct.unwrap_or(0))
+                    .then_with(|| a.ssid.cmp(&b.ssid))
+            });
+
+            Ok(out)
+        }
+        Err(scan_err) => {
+            // Corporate policy can block live scanning. Fallback to saved profiles.
+            let profiles = list_saved_wifi_profiles()?;
+            if profiles.is_empty() {
+                Err(scan_err)
+            } else {
+                Ok(profiles)
+            }
+        }
+    }
+}
+
+#[tauri::command]
+fn get_wifi_network_details(ssid: String) -> Result<Vec<WifiProperty>, String> {
+    if let Ok(output) = run_wifi_netsh_show_networks() {
+        let blocks = parse_wifi_network_blocks(&output);
+        if let Some(wanted) = blocks.into_iter().find(|b| b.ssid == ssid) {
+            let mut properties = parse_wifi_properties_from_lines(&wanted.lines);
+            if properties.is_empty() {
+                properties.push(WifiProperty {
+                    key: "Info".to_string(),
+                    value: "No structured properties were parsed for this network.".to_string(),
+                });
+            }
+            return Ok(properties);
+        }
+    }
+
+    // Fallback path for environments where scan is blocked.
+    let profile_raw = run_wifi_netsh_show_profile(&ssid)?;
+    let profile_lines: Vec<String> = profile_raw.lines().map(|l| l.trim().to_string()).collect();
+    let mut properties = parse_wifi_properties_from_lines(&profile_lines);
+    if properties.is_empty() {
+        properties.push(WifiProperty {
+            key: "Info".to_string(),
+            value: "No structured properties were parsed for this profile.".to_string(),
+        });
+    }
+    Ok(properties)
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+fn run_wifi_netsh_show_networks() -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        let output = Command::new("netsh")
+            .creation_flags(CREATE_NO_WINDOW)
+            .args(["wlan", "show", "networks", "mode=bssid"])
+            .output()
+            .map_err(|e| format!("Failed to run netsh wlan show networks: {e}"))?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let combined = if stderr.trim().is_empty() {
+            stdout.clone()
+        } else {
+            format!("{}\n{}", stdout, stderr)
+        };
+
+        if !output.status.success() {
+            return Err(map_wifi_netsh_error(&combined));
+        }
+
+        if stdout.trim().is_empty() {
+            return Err("netsh returned empty output".into());
+        }
+
+        if combined.to_ascii_lowercase().contains("location permission")
+            || combined.to_ascii_lowercase().contains("requires elevation")
+        {
+            return Err(map_wifi_netsh_error(&combined));
+        }
+
+        Ok(stdout)
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("WiFi Detector is currently supported on Windows only.".into())
+    }
+}
+
+fn map_wifi_netsh_error(raw: &str) -> String {
+    let lower = raw.to_ascii_lowercase();
+
+    if lower.contains("location permission") {
+        return "WiFi scan blocked by Windows privacy settings. Enable Location Services in Settings > Privacy & security > Location.".to_string();
+    }
+    if lower.contains("requires elevation") || lower.contains("error 5") {
+        return "WiFi scan requires elevated privileges. Run the app as Administrator and try again.".to_string();
+    }
+    if lower.contains("there is no wireless interface") {
+        return "No wireless interface detected on this system.".to_string();
+    }
+
+    format!("WiFi scan failed: {}", raw.trim())
+}
+
+fn list_saved_wifi_profiles() -> Result<Vec<WifiNetwork>, String> {
+    #[cfg(target_os = "windows")]
+    {
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        let output = Command::new("netsh")
+            .creation_flags(CREATE_NO_WINDOW)
+            .args(["wlan", "show", "profiles"])
+            .output()
+            .map_err(|e| format!("Failed to run netsh wlan show profiles: {e}"))?;
+
+        if !output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+            let combined = if stderr.trim().is_empty() { stdout } else { format!("{}\n{}", stdout, stderr) };
+            return Err(format!("Failed to read saved WiFi profiles: {}", combined.trim()));
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let mut names = HashSet::<String>::new();
+
+        for line in stdout.lines() {
+            let trimmed = line.trim();
+            let Some((left, right)) = trimmed.split_once(':') else {
+                continue;
+            };
+            let left_l = left.to_ascii_lowercase();
+            if !left_l.contains("profile") {
+                continue;
+            }
+            let name = right.trim();
+            if name.is_empty() || name.eq_ignore_ascii_case("<none>") {
+                continue;
+            }
+            names.insert(name.to_string());
+        }
+
+        let mut out: Vec<WifiNetwork> = names
+            .into_iter()
+            .map(|ssid| WifiNetwork {
+                ssid,
+                bssid_count: 0,
+                best_signal_pct: None,
+                source: "profile".to_string(),
+            })
+            .collect();
+
+        out.sort_by(|a, b| a.ssid.cmp(&b.ssid));
+        Ok(out)
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("WiFi profile fallback is currently supported on Windows only.".into())
+    }
+}
+
+fn run_wifi_netsh_show_profile(profile_name: &str) -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        let output = Command::new("netsh")
+            .creation_flags(CREATE_NO_WINDOW)
+            .args(["wlan", "show", "profile", &format!("name={}", profile_name)])
+            .output()
+            .map_err(|e| format!("Failed to run netsh wlan show profile: {e}"))?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let combined = if stderr.trim().is_empty() { stdout.clone() } else { format!("{}\n{}", stdout, stderr) };
+
+        if !output.status.success() {
+            return Err(format!("Failed to read WiFi profile '{}': {}", profile_name, combined.trim()));
+        }
+
+        if stdout.trim().is_empty() {
+            return Err(format!("WiFi profile '{}' returned empty output", profile_name));
+        }
+
+        Ok(stdout)
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("WiFi profile details are currently supported on Windows only.".into())
+    }
+}
+
+fn parse_wifi_properties_from_lines(lines: &[String]) -> Vec<WifiProperty> {
+    let mut properties = Vec::new();
+    for line in lines {
+        if let Some((k, v)) = line.split_once(':') {
+            let key = k.trim();
+            let value = v.trim();
+            if key.is_empty() || value.is_empty() {
+                continue;
+            }
+            properties.push(WifiProperty {
+                key: key.to_string(),
+                value: value.to_string(),
+            });
+        }
+    }
+    properties
+}
+
+fn parse_wifi_network_blocks(raw: &str) -> Vec<WifiNetworkBlock> {
+    let mut blocks: Vec<WifiNetworkBlock> = Vec::new();
+    let mut current: Option<WifiNetworkBlock> = None;
+
+    for line in raw.lines() {
+        let trimmed = line.trim();
+        if let Some(ssid) = parse_ssid_header_line(trimmed) {
+            if let Some(prev) = current.take() {
+                blocks.push(prev);
+            }
+            current = Some(WifiNetworkBlock {
+                ssid,
+                lines: vec![trimmed.to_string()],
+            });
+            continue;
+        }
+
+        if let Some(ref mut block) = current {
+            block.lines.push(trimmed.to_string());
+        }
+    }
+
+    if let Some(last) = current {
+        blocks.push(last);
+    }
+
+    blocks
+}
+
+fn parse_ssid_header_line(line: &str) -> Option<String> {
+    let (left, right) = line.split_once(':')?;
+    let key = left.trim().to_ascii_lowercase();
+    if !key.starts_with("ssid ") {
+        return None;
+    }
+    if key.contains("bssid") {
+        return None;
+    }
+
+    let ssid = right.trim();
+    if ssid.is_empty() {
+        Some("(hidden SSID)".to_string())
+    } else {
+        Some(ssid.to_string())
+    }
+}
+
+fn count_bssid_lines(lines: &[String]) -> usize {
+    lines
+        .iter()
+        .filter(|line| {
+            line.split_once(':')
+                .map(|(k, _)| {
+                    let key = k.trim().to_ascii_lowercase();
+                    key.starts_with("bssid ")
+                })
+                .unwrap_or(false)
+        })
+        .count()
+}
+
+fn best_signal_percent(lines: &[String]) -> Option<u8> {
+    let mut best: Option<u8> = None;
+    for line in lines {
+        let Some((_, value_part)) = line.split_once(':') else {
+            continue;
+        };
+        if !value_part.contains('%') {
+            continue;
+        }
+        let digits: String = value_part.chars().filter(|c| c.is_ascii_digit()).collect();
+        let Ok(value) = digits.parse::<u8>() else {
+            continue;
+        };
+        best = Some(best.map_or(value, |prev| prev.max(value)));
+    }
+    best
+}
 
 fn ip_to_u32(ip: &str) -> Result<u32, String> {
     match IpAddr::from_str(ip).map_err(|e| e.to_string())? {
@@ -670,6 +997,8 @@ fn main() {
             run_traceroute,
             open_tool_window,
             check_scan_watch,
+            list_wifi_networks,
+            get_wifi_network_details,
             open_clippy_window,
             close_clippy_window,
             open_browser,

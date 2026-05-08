@@ -74,6 +74,7 @@
         <div class="menu-dd-item" id="menuToolSpeed" data-i18n="btnSpeed">📶 Speed</div>
         <div class="menu-dd-item" id="menuToolConsole" data-i18n="btnConsole">⌨ Console</div>
         <div class="menu-dd-item" id="menuToolScanWatch">🛡 IP Scan Watch...</div>
+        <div class="menu-dd-item" id="menuToolWifiDetector">📡 WiFi Detector...</div>
       </div>
     </div>
     <div class="menu-item" id="menuHelp"><span data-i18n="menuHelp">Help</span>
@@ -791,6 +792,50 @@
   </div>
 </div>
 
+<!-- WiFi detector dialog -->
+<div class="dlg-overlay" id="dlgWifiDetectorOverlay">
+  <div class="dlg95 wifi-detector-dlg">
+    <div class="dlg-title">
+      <span>📡</span>
+      <span class="title-fill">WiFi Detector</span>
+      <div class="title-btn" onclick="closeWifiDetectorDlg()">✕</div>
+    </div>
+    <div class="dlg-body">
+      <div class="dlg-groupbox">
+        <span class="dlg-groupbox-legend">Detection settings</span>
+        <div class="dlg-row dlg-row-mb0">
+          <label class="dlg-label-98" for="wifiDetectorPollSecs" title="Refresh interval used when detector watch is running.">Refresh (sec):</label>
+          <input class="dlg-input95 dlg-num-input" id="wifiDetectorPollSecs" type="number" min="1" max="60" value="5" title="Lower value updates faster but can use more CPU."/>
+        </div>
+      </div>
+
+      <div class="dlg-sunken-box wifi-detector-status" id="wifiDetectorStatus" title="Current detector state.">Idle</div>
+
+      <div class="wifi-detector-content">
+        <div class="wifi-detector-pane">
+          <div class="wifi-detector-pane-title">Available networks</div>
+          <div class="dlg-sunken-box wifi-detector-net-list" id="wifiDetectorNetworkList"></div>
+        </div>
+
+        <div class="wifi-detector-pane">
+          <div class="wifi-detector-pane-title" id="wifiDetectorDetailsTitle">Properties</div>
+          <div class="dlg-sunken-box wifi-detector-table-wrap">
+            <table class="wifi-detector-table">
+              <tbody id="wifiDetectorDetailsTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="btnWifiDetectorCheckNow" title="Run one immediate WiFi detection pass.">Check now</button>
+      <button class="btn95" id="btnWifiDetectorStart" title="Start automatic periodic checks.">Start watch</button>
+      <button class="btn95" id="btnWifiDetectorStop" disabled title="Stop automatic periodic checks.">Stop</button>
+      <button class="btn95" onclick="closeWifiDetectorDlg()" title="Close this window.">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Versions dialog -->
 <div class="dlg-overlay" id="dlgVersionsOverlay">
   <div class="dlg95">
@@ -1086,6 +1131,7 @@
 <script src="js/lang-pl.js"></script>
 <script src="js/app.js"></script>
 <script src="js/scanwatch.js"></script>
+<script src="js/wifi-detector.js"></script>
 <script src="js/clippy.js"></script>
 </body>
 </html>
