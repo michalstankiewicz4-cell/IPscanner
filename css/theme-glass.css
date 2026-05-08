@@ -258,6 +258,7 @@ body.skin-glass #cmdWin,
 body.skin-glass #speedWin,
 body.skin-glass #protoWin,
 body.skin-glass #macroFolderWin,
+body.skin-glass #wifiRadarWin,
 body.skin-glass #dlgScanCountry,
 body.skin-glass #dlgTrace {
   background: linear-gradient(180deg, rgba(246, 250, 255, 0.94), rgba(217, 231, 248, 0.94)) !important;

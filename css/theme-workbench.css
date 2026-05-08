@@ -272,6 +272,7 @@ body.skin-workbench #cmdWin,
 body.skin-workbench #speedWin,
 body.skin-workbench #protoWin,
 body.skin-workbench #macroFolderWin,
+body.skin-workbench #wifiRadarWin,
 body.skin-workbench #dlgScanCountry,
 body.skin-workbench #dlgTrace {
   background: #252b36 !important;
@@ -287,6 +288,7 @@ body.skin-workbench #cmdWin > .titlebar,
 body.skin-workbench #speedWin > .titlebar,
 body.skin-workbench #protoWin > .titlebar,
 body.skin-workbench #macroFolderWin > .titlebar,
+body.skin-workbench #wifiRadarWin > .titlebar,
 body.skin-workbench #dlgScanCountry > .titlebar,
 body.skin-workbench #dlgTrace .titlebar {
   background: linear-gradient(180deg, #313a4a, #273041) !important;

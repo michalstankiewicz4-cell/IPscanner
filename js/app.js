@@ -147,6 +147,7 @@ function initWindowZStacking() {
     'macroFolderWin',
     'globeWin',
     'topoWin',
+    'wifiRadarWin',
     'dlgScanCountry',
     'dlgTrace'
   ];
@@ -235,6 +236,14 @@ function initAllDialogDragging() {
 
   document.querySelectorAll('.dlg95').forEach((dlg) => {
     makeWindowDraggable(dlg, dlg.querySelector('.dlg-title'));
+  });
+
+  // Handle all tool-win-shell windows (Speed, Proto, WiFi Radar, etc.)
+  document.querySelectorAll('.tool-win-shell').forEach((toolWin) => {
+    const titlebar = toolWin.querySelector('.titlebar');
+    if (titlebar) {
+      makeWindowDraggable(toolWin, titlebar);
+    }
   });
 
   makeWindowDraggable(
@@ -626,6 +635,7 @@ document.getElementById('menuToolProto').addEventListener('click', () => { close
 document.getElementById('menuToolMacro').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnMacroToolbar')?.click(); });
 document.getElementById('menuToolSpeed').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnSpeedToolbar')?.click(); });
 document.getElementById('menuToolConsole').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnCmdConsole')?.click(); });
+document.getElementById('menuToolWifiRadar').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnWifiRadarToolbar')?.click(); });
 document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
 
 // ══════════════════════════════════════════════════
@@ -714,6 +724,7 @@ document.querySelectorAll('input[name="uiSkin"]').forEach(radio => {
 document.getElementById('btnMacroToolbar').addEventListener('click', openMacroFolder);
 document.getElementById('btnSpeedToolbar').addEventListener('click', openSpeedWindow);
 document.getElementById('btnProtoToolbar').addEventListener('click', openProtoWindow);
+document.getElementById('btnWifiRadarToolbar').addEventListener('click', () => window.openWifiRadarDlg?.());
 
 applyToolbarCustomization();
 applySkinCustomization();
@@ -1531,6 +1542,7 @@ function applyToolWindowMode() {
     proto: 'protoWin',
     globe: 'globeWin',
     topology: 'topoWin',
+    'wifi-radar': 'wifiRadarWin',
   };
 
   const targetId = toolToWindow[_toolMode];

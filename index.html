@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="css/tool-speed.css"/>
 <link rel="stylesheet" href="css/tool-macro.css"/>
 <link rel="stylesheet" href="css/tool-globe.css"/>
+<link rel="stylesheet" href="css/tool-radar.css"/>
 <link rel="stylesheet" href="css/theme-glass.css"/>
 <link rel="stylesheet" href="css/theme-workbench.css"/>
 <link rel="stylesheet" href="css/clippy.css"/>
@@ -75,6 +76,7 @@
         <div class="menu-dd-item" id="menuToolConsole" data-i18n="btnConsole">⌨ Console</div>
         <div class="menu-dd-item" id="menuToolScanWatch">🛡 IP Scan Watch...</div>
         <div class="menu-dd-item" id="menuToolWifiDetector">📡 WiFi Detector...</div>
+        <div class="menu-dd-item" id="menuToolWifiRadar">📍 WiFi Radar...</div>
       </div>
     </div>
     <div class="menu-item" id="menuHelp"><span data-i18n="menuHelp">Help</span>
@@ -100,6 +102,7 @@
       <button class="btn95" id="btnMacroToolbar" title="Macro Folder" data-i18n="btnMacro">📁 Macro</button>
       <button class="btn95" id="btnSpeedToolbar" title="Speed Test" data-i18n="btnSpeed">📶 Speed</button>
       <button class="btn95" id="btnCmdConsole" title="Command Console" data-i18n="btnConsole">⌨ Console</button>
+      <button class="btn95" id="btnWifiRadarToolbar" title="WiFi Radar" data-i18n="btnWifiRadar">📍 WiFi Radar</button>
       <div class="flex-spacer"></div>
     </div>
 
@@ -836,6 +839,44 @@
   </div>
 </div>
 
+<!-- WiFi Radar window -->
+<div class="tool-win-shell wifi-radar-win" id="wifiRadarWin">
+  <div class="titlebar cursor-move" id="wifiRadarTitlebar">
+    <span class="icon">📍</span>
+    <span class="title">WiFi Radar</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnWifiRadarClose">✕</button>
+    </div>
+  </div>
+
+  <div class="wifi-radar-body">
+    <div class="wifi-radar-controls">
+      <label class="wifi-radar-sort-label" for="wifiRadarSortBy">Sort by:</label>
+      <select class="select95" id="wifiRadarSortBy">
+        <option value="signal">Signal Strength</option>
+        <option value="ssid">SSID</option>
+        <option value="freq">Frequency</option>
+        <option value="bssid_count">Access Points</option>
+      </select>
+    </div>
+
+    <div class="wifi-radar-container">
+      <canvas id="wifiRadarCanvas" class="wifi-radar-canvas"></canvas>
+    </div>
+
+    <div class="wifi-radar-legend">
+      <div class="radar-legend-title">Networks</div>
+      <div id="wifiRadarLegend" class="radar-legend-items"></div>
+    </div>
+
+    <div class="wifi-radar-footer">
+      <button class="btn95" id="btnWifiRadarRefresh" title="Refresh WiFi networks">Refresh</button>
+      <button class="btn95" id="btnWifiRadarAutoRefresh" title="Start automatic periodic refresh">Auto</button>
+      <button class="btn95" id="btnWifiRadarStopAuto" disabled title="Stop automatic refresh">Stop</button>
+    </div>
+  </div>
+</div>
+
 <!-- Versions dialog -->
 <div class="dlg-overlay" id="dlgVersionsOverlay">
   <div class="dlg95">
@@ -1133,6 +1174,7 @@
 <script src="js/app.js"></script>
 <script src="js/scanwatch.js"></script>
 <script src="js/wifi-detector.js"></script>
+<script src="js/radar.js"></script>
 <script src="js/clippy.js"></script>
 </body>
 </html>

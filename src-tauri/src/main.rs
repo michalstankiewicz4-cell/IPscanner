@@ -44,6 +44,7 @@ const TOOL_WINDOW_LABELS: &[&str] = &[
     "tool-proto",
     "tool-globe",
     "tool-topology",
+    "tool-radar",
     "clippy",
 ];
 
@@ -436,6 +437,7 @@ async fn open_tool_window(app: AppHandle, tool: String) -> Result<(), String> {
         "proto" => ("tool-proto", "NetRecon - Prototype", 980.0, 680.0),
         "globe" => ("tool-globe", "NetRecon - World Map", 1060.0, 740.0),
         "topology" => ("tool-topology", "NetRecon - Topology", 1060.0, 740.0),
+        "wifi-radar" => ("tool-radar", "NetRecon - WiFi Radar", 760.0, 640.0),
         _ => return Err(format!("Unsupported tool window: {tool}")),
     };
 
