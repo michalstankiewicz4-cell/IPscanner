@@ -13,6 +13,7 @@ use std::sync::{
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, LogicalPosition, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
 use tokio::net::lookup_host;
 use tokio::net::TcpStream;
@@ -45,6 +46,7 @@ const TOOL_WINDOW_LABELS: &[&str] = &[
     "tool-globe",
     "tool-topology",
     "tool-radar",
+    "tool-ai-assistant",
     "clippy",
 ];
 
@@ -438,6 +440,7 @@ async fn open_tool_window(app: AppHandle, tool: String) -> Result<(), String> {
         "globe" => ("tool-globe", "NetRecon - World Map", 1060.0, 740.0),
         "topology" => ("tool-topology", "NetRecon - Topology", 1060.0, 740.0),
         "wifi-radar" => ("tool-radar", "NetRecon - WiFi Radar", 760.0, 640.0),
+        "ai-assistant" => ("tool-ai-assistant", "NetRecon - AI Security Assistant", 880.0, 760.0),
         _ => return Err(format!("Unsupported tool window: {tool}")),
     };
 
@@ -664,6 +667,211 @@ fn get_wifi_network_details(ssid: String) -> Result<Vec<WifiProperty>, String> {
         });
     }
     Ok(properties)
+}
+
+#[tauri::command]
+async fn ai_multi_provider_query(
+    provider: String,
+    api_key: String,
+    model: String,
+    prompt: String,
+) -> Result<String, String> {
+    let provider = provider.trim().to_lowercase();
+    let api_key = api_key.trim().to_string();
+    let prompt = prompt.trim().to_string();
+    let model = model.trim().to_string();
+
+    if api_key.is_empty() {
+        return Err("API key is required.".into());
+    }
+    if prompt.is_empty() {
+        return Err("Prompt is empty.".into());
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(60))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+
+    match provider.as_str() {
+        "claude" => {
+            let use_model = if model.is_empty() {
+                "claude-3-5-sonnet-latest".to_string()
+            } else {
+                model
+            };
+
+            let body = json!({
+                "model": use_model,
+                "max_tokens": 900,
+                "messages": [
+                    { "role": "user", "content": prompt }
+                ]
+            });
+
+            let resp = client
+                .post("https://api.anthropic.com/v1/messages")
+                .header("x-api-key", api_key)
+                .header("anthropic-version", "2023-06-01")
+                .header("content-type", "application/json")
+                .json(&body)
+                .send()
+                .await
+                .map_err(|e| format!("Claude request failed: {e}"))?;
+
+            let status = resp.status();
+            let raw = resp
+                .text()
+                .await
+                .map_err(|e| format!("Claude response read failed: {e}"))?;
+
+            if !status.is_success() {
+                return Err(format!("Claude API error ({}): {}", status, raw));
+            }
+
+            let v: Value = serde_json::from_str(&raw)
+                .map_err(|e| format!("Claude response parse failed: {e}"))?;
+
+            let text = v
+                .get("content")
+                .and_then(|c| c.as_array())
+                .and_then(|arr| arr.first())
+                .and_then(|first| first.get("text"))
+                .and_then(|t| t.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+
+            if text.is_empty() {
+                return Err("Claude returned empty content.".into());
+            }
+
+            Ok(text)
+        }
+        "google" => {
+            let use_model = if model.is_empty() {
+                "gemini-1.5-flash".to_string()
+            } else {
+                model
+            };
+
+            let url = format!(
+                "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
+                use_model, api_key
+            );
+
+            let body = json!({
+                "contents": [
+                    {
+                        "parts": [
+                            { "text": prompt }
+                        ]
+                    }
+                ]
+            });
+
+            let resp = client
+                .post(url)
+                .header("content-type", "application/json")
+                .json(&body)
+                .send()
+                .await
+                .map_err(|e| format!("Google request failed: {e}"))?;
+
+            let status = resp.status();
+            let raw = resp
+                .text()
+                .await
+                .map_err(|e| format!("Google response read failed: {e}"))?;
+
+            if !status.is_success() {
+                return Err(format!("Google API error ({}): {}", status, raw));
+            }
+
+            let v: Value = serde_json::from_str(&raw)
+                .map_err(|e| format!("Google response parse failed: {e}"))?;
+
+            let text = v
+                .get("candidates")
+                .and_then(|c| c.as_array())
+                .and_then(|arr| arr.first())
+                .and_then(|c| c.get("content"))
+                .and_then(|c| c.get("parts"))
+                .and_then(|p| p.as_array())
+                .map(|parts| {
+                    parts
+                        .iter()
+                        .filter_map(|p| p.get("text").and_then(|t| t.as_str()))
+                        .collect::<Vec<&str>>()
+                        .join("\n")
+                })
+                .unwrap_or_default()
+                .trim()
+                .to_string();
+
+            if text.is_empty() {
+                return Err("Google API returned empty content.".into());
+            }
+
+            Ok(text)
+        }
+        "copilot" => {
+            // Uses GitHub Models OpenAI-compatible endpoint and token.
+            let use_model = if model.is_empty() {
+                "gpt-4o-mini".to_string()
+            } else {
+                model
+            };
+
+            let body = json!({
+                "model": use_model,
+                "messages": [
+                    { "role": "user", "content": prompt }
+                ],
+                "temperature": 0.2
+            });
+
+            let resp = client
+                .post("https://models.inference.ai.azure.com/chat/completions")
+                .header("authorization", format!("Bearer {}", api_key))
+                .header("content-type", "application/json")
+                .json(&body)
+                .send()
+                .await
+                .map_err(|e| format!("Copilot request failed: {e}"))?;
+
+            let status = resp.status();
+            let raw = resp
+                .text()
+                .await
+                .map_err(|e| format!("Copilot response read failed: {e}"))?;
+
+            if !status.is_success() {
+                return Err(format!("Copilot API error ({}): {}", status, raw));
+            }
+
+            let v: Value = serde_json::from_str(&raw)
+                .map_err(|e| format!("Copilot response parse failed: {e}"))?;
+
+            let text = v
+                .get("choices")
+                .and_then(|c| c.as_array())
+                .and_then(|arr| arr.first())
+                .and_then(|c| c.get("message"))
+                .and_then(|m| m.get("content"))
+                .and_then(|t| t.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+
+            if text.is_empty() {
+                return Err("Copilot API returned empty content.".into());
+            }
+
+            Ok(text)
+        }
+        _ => Err(format!("Unsupported AI provider: {}", provider)),
+    }
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -1001,6 +1209,7 @@ fn main() {
             check_scan_watch,
             list_wifi_networks,
             get_wifi_network_details,
+            ai_multi_provider_query,
             open_clippy_window,
             close_clippy_window,
             open_browser,

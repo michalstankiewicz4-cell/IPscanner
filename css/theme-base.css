@@ -635,6 +635,82 @@ body.dragging             { cursor: move !important; }
   width: 60%;
 }
 
+/* ── AI Assistant dialog ── */
+.ai-assistant-win {
+  width: 760px;
+  height: 700px;
+  max-width: 94vw;
+  max-height: 92vh;
+  left: 110px;
+  top: 34px;
+}
+
+.ai-assistant-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  height: calc(100% - 32px);
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.ai-input-grow {
+  flex: 1;
+  min-width: 220px;
+}
+
+.ai-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ai-prompt-box {
+  width: 100%;
+  min-height: 90px;
+  max-height: 180px;
+  resize: vertical;
+  font-size: 11px;
+  font-family: Consolas, 'Courier New', monospace;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.ai-response-box {
+  width: 100%;
+  min-height: 110px;
+  max-height: 260px;
+  resize: vertical;
+  font-size: 11px;
+  font-family: Consolas, 'Courier New', monospace;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.ai-status {
+  margin-top: 10px;
+  padding: 6px 8px;
+  font-size: 11px;
+}
+
+.ai-status-busy {
+  color: #000080;
+  font-weight: bold;
+}
+
+.ai-status-warn {
+  color: #7f0000;
+}
+
+.ai-assistant-footer {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
 @media (max-width: 760px) {
   .wifi-detector-content {
     grid-template-columns: 1fr;

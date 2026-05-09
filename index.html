@@ -77,6 +77,7 @@
         <div class="menu-dd-item" id="menuToolScanWatch">🛡 IP Scan Watch...</div>
         <div class="menu-dd-item" id="menuToolWifiDetector">📡 WiFi Detector...</div>
         <div class="menu-dd-item" id="menuToolWifiRadar">📍 WiFi Radar...</div>
+        <div class="menu-dd-item" id="menuToolAiAssistant">🤖 AI Security Assistant...</div>
       </div>
     </div>
     <div class="menu-item" id="menuHelp"><span data-i18n="menuHelp">Help</span>
@@ -877,6 +878,66 @@
   </div>
 </div>
 
+<!-- AI Assistant window -->
+<div class="tool-win-shell ai-assistant-win" id="aiAssistantWin">
+  <div class="titlebar cursor-move" id="aiAssistantTitlebar">
+    <span>🤖</span>
+    <span class="title-fill">AI Security Assistant</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnAiClose">✕</button>
+    </div>
+  </div>
+  <div class="ai-assistant-body">
+    <div class="dlg-groupbox">
+      <span class="dlg-groupbox-legend">Provider</span>
+      <div class="dlg-row dlg-row-mb6">
+        <label class="dlg-label-98" for="aiProviderSelect">Engine:</label>
+        <select class="select95" id="aiProviderSelect">
+          <option value="claude">Claude API</option>
+          <option value="google">Google Gemini API</option>
+          <option value="copilot">Copilot API (GitHub Models)</option>
+        </select>
+      </div>
+      <div class="dlg-row dlg-row-mb6">
+        <label class="dlg-label-98" for="aiModelInput">Model:</label>
+        <input class="dlg-input95 ai-input-grow" id="aiModelInput" type="text" value="claude-3-5-sonnet-latest"/>
+      </div>
+      <div class="dlg-row dlg-row-mb0">
+        <label class="dlg-label-98" for="aiApiKeyInput">API Key:</label>
+        <input class="dlg-input95 ai-input-grow" id="aiApiKeyInput" type="password" placeholder="Paste provider API key"/>
+      </div>
+    </div>
+
+    <div class="dlg-groupbox dlg-groupbox-mt12">
+      <span class="dlg-groupbox-legend">Security prompt presets</span>
+      <div class="ai-preset-row">
+        <button class="btn95" id="aiPresetNetwork">Network risk review</button>
+        <button class="btn95" id="aiPresetIp">IP exposure analysis</button>
+        <button class="btn95" id="aiPresetWifi">WiFi hardening checklist</button>
+        <button class="btn95" id="aiPresetIncident">Incident triage</button>
+      </div>
+    </div>
+
+    <div class="dlg-groupbox dlg-groupbox-mt12">
+      <span class="dlg-groupbox-legend">Prompt</span>
+      <textarea id="aiPromptInput" class="ai-prompt-box" spellcheck="false"></textarea>
+    </div>
+
+    <div class="dlg-sunken-box ai-status" id="aiAssistantStatus">Idle</div>
+
+    <div class="dlg-groupbox dlg-groupbox-mt12">
+      <span class="dlg-groupbox-legend">Response</span>
+      <textarea id="aiResponseOutput" class="ai-response-box" spellcheck="false" readonly></textarea>
+    </div>
+
+    <div class="ai-assistant-footer">
+      <button class="btn95" id="btnAiSend">Send</button>
+      <button class="btn95" id="btnAiClear">Clear</button>
+      <button class="btn95" id="btnAiCloseBottom">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Versions dialog -->
 <div class="dlg-overlay" id="dlgVersionsOverlay">
   <div class="dlg95">
@@ -1175,6 +1236,7 @@
 <script src="js/scanwatch.js"></script>
 <script src="js/wifi-detector.js"></script>
 <script src="js/radar.js"></script>
+<script src="js/ai-assistant.js"></script>
 <script src="js/clippy.js"></script>
 </body>
 </html>

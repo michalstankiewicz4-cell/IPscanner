@@ -1543,6 +1543,7 @@ function applyToolWindowMode() {
     globe: 'globeWin',
     topology: 'topoWin',
     'wifi-radar': 'wifiRadarWin',
+    'ai-assistant': 'aiAssistantWin',
   };
 
   const targetId = toolToWindow[_toolMode];
