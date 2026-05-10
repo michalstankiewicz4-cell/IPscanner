@@ -76,7 +76,8 @@
         <div class="menu-dd-item" id="menuToolConsole" data-i18n="btnConsole">⌨ Console</div>
         <div class="menu-dd-item" id="menuToolScanWatch">🛡 IP Scan Watch...</div>
         <div class="menu-dd-item" id="menuToolWifiDetector">📡 WiFi Detector...</div>
-        <div class="menu-dd-item" id="menuToolWifiRadar">📍 WiFi Radar...</div>
+        <div class="menu-dd-item" id="menuToolWifiRadar" data-i18n="btnWifiRadar">📍 WiFi Radar</div>
+        <div class="menu-dd-item" id="menuToolBtDetector" data-i18n="btnBtDetectorMenu">🔵 Bluetooth Detector...</div>
         <div class="menu-dd-item" id="menuToolAiAssistant">🤖 AI Security Assistant...</div>
       </div>
     </div>
@@ -104,6 +105,7 @@
       <button class="btn95" id="btnSpeedToolbar" title="Speed Test" data-i18n="btnSpeed">📶 Speed</button>
       <button class="btn95" id="btnCmdConsole" title="Command Console" data-i18n="btnConsole">⌨ Console</button>
       <button class="btn95" id="btnWifiRadarToolbar" title="WiFi Radar" data-i18n="btnWifiRadar">📍 WiFi Radar</button>
+      <button class="btn95" id="btnBtDetectorToolbar" title="Bluetooth Detector" data-i18n="btnBtDetector">🔵 BT Detector</button>
       <div class="flex-spacer"></div>
     </div>
 
@@ -878,6 +880,48 @@
   </div>
 </div>
 
+<!-- Bluetooth Detector window -->
+<div class="tool-win-shell bt-detector-win" id="btDetectorWin">
+  <div class="titlebar cursor-move" id="btDetectorTitlebar">
+    <span class="icon">🔵</span>
+    <span class="title" data-i18n="btWinTitle">Bluetooth Detector</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnBtDetectorClose">✕</button>
+    </div>
+  </div>
+
+  <div class="bt-detector-body">
+    <div class="dlg-groupbox bt-detector-settings">
+      <span class="dlg-groupbox-legend" data-i18n="btScanSettings">Scan settings</span>
+      <div class="bt-detector-controls">
+        <label for="btScanDuration" data-i18n="btDuration">Duration:</label>
+        <select class="select95" id="btScanDuration">
+          <option value="3">3 sec</option>
+          <option value="5" selected>5 sec</option>
+          <option value="10">10 sec</option>
+          <option value="15">15 sec</option>
+        </select>
+        <button class="btn95" id="btnBtScan" data-i18n="btScan">Scan</button>
+        <button class="btn95" id="btnBtScanStop" disabled data-i18n="btStop">Stop</button>
+      </div>
+    </div>
+
+    <div class="bt-detector-content">
+      <div class="bt-detector-pane">
+        <div class="bt-detector-pane-title" data-i18n="btNearbyDevices">Nearby devices</div>
+        <div class="dlg-sunken-box bt-detector-list" id="btDeviceList"></div>
+      </div>
+
+      <div class="bt-detector-pane">
+        <div class="bt-detector-pane-title" data-i18n="btProperties">Properties</div>
+        <div class="dlg-sunken-box bt-detector-detail" id="btDeviceDetail"></div>
+      </div>
+    </div>
+
+    <div class="dlg-sunken-box bt-detector-status" id="btDetectorStatus" data-i18n="btReady">Ready.</div>
+  </div>
+</div>
+
 <!-- AI Assistant window -->
 <div class="tool-win-shell ai-assistant-win" id="aiAssistantWin">
   <div class="titlebar cursor-move" id="aiAssistantTitlebar">
@@ -1238,6 +1282,7 @@
 <script src="js/wifi-detector.js"></script>
 <script src="js/radar.js"></script>
 <script src="js/ai-assistant.js"></script>
+<script src="js/bt-detector.js"></script>
 <script src="js/clippy.js"></script>
 </body>
 </html>

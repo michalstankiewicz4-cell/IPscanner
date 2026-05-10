@@ -1516,3 +1516,178 @@ body.tool-window-mode #mainWin {
 .status-error   { color: #c00; }
 .status-success { color: green; }
 
+/* Bluetooth Detector */
+.bt-detector-win {
+  width: 780px;
+  height: 580px;
+  left: 130px;
+  top: 40px;
+  display: none;
+}
+
+.bt-detector-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  height: calc(100% - 32px);
+  overflow: hidden;
+  font-family: "Segoe UI", Tahoma, "MS Sans Serif", "Microsoft Sans Serif", sans-serif;
+}
+
+.bt-detector-settings {
+  margin-bottom: 0;
+}
+
+.bt-detector-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bt-detector-content {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.bt-detector-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.bt-detector-pane-title {
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.bt-detector-list,
+.bt-detector-detail {
+  flex: 1;
+  overflow: auto;
+  padding: 6px;
+}
+
+.bt-device-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+  padding: 4px 6px;
+  border-bottom: 1px solid #d0d0d0;
+  cursor: pointer;
+}
+
+.bt-device-row:hover {
+  background: #d4d0c8;
+}
+
+.bt-device-row-active,
+.bt-device-row-active:hover {
+  background: #000080;
+  color: #fff;
+}
+
+.bt-device-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bt-device-rssi {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.bt-empty {
+  color: #666;
+  font-size: 11px;
+  font-style: italic;
+}
+
+.bt-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: bold;
+  line-height: 1.2;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.bt-badge-ble {
+  background: #003f8a;
+  color: #fff;
+}
+
+.bt-badge-classic {
+  background: #005f20;
+  color: #fff;
+}
+
+.bt-rssi {
+  font-weight: bold;
+}
+
+.bt-rssi-good {
+  color: #006400;
+}
+
+.bt-rssi-fair {
+  color: #8b8000;
+}
+
+.bt-rssi-weak {
+  color: #7f0000;
+}
+
+.bt-rssi-unknown {
+  color: #888;
+}
+
+.bt-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.bt-detail-key {
+  width: 120px;
+  color: #555;
+  padding: 3px 4px;
+  vertical-align: top;
+}
+
+.bt-detail-val {
+  padding: 3px 4px;
+}
+
+.bt-services-head {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: #444;
+}
+
+.bt-services-list {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 10px;
+  text-transform: none;
+}
+
+.bt-detector-status {
+  font-size: 11px;
+  padding: 5px 7px;
+}
+
+.bt-status-warn {
+  color: #8b0000;
+}
+
+.bt-status-busy {
+  color: #000080;
+}
+

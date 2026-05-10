@@ -636,6 +636,7 @@ document.getElementById('menuToolMacro').addEventListener('click', () => { close
 document.getElementById('menuToolSpeed').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnSpeedToolbar')?.click(); });
 document.getElementById('menuToolConsole').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnCmdConsole')?.click(); });
 document.getElementById('menuToolWifiRadar').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnWifiRadarToolbar')?.click(); });
+document.getElementById('menuToolBtDetector').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnBtDetectorToolbar')?.click(); });
 document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
 
 // ══════════════════════════════════════════════════
@@ -725,6 +726,7 @@ document.getElementById('btnMacroToolbar').addEventListener('click', openMacroFo
 document.getElementById('btnSpeedToolbar').addEventListener('click', openSpeedWindow);
 document.getElementById('btnProtoToolbar').addEventListener('click', openProtoWindow);
 document.getElementById('btnWifiRadarToolbar').addEventListener('click', () => window.openWifiRadarDlg?.());
+document.getElementById('btnBtDetectorToolbar').addEventListener('click', () => window.openBtDetectorDlg?.());
 
 applyToolbarCustomization();
 applySkinCustomization();
@@ -1543,6 +1545,7 @@ function applyToolWindowMode() {
     globe: 'globeWin',
     topology: 'topoWin',
     'wifi-radar': 'wifiRadarWin',
+    'bt-detector': 'btDetectorWin',
     'ai-assistant': 'aiAssistantWin',
   };
 

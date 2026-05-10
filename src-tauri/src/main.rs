@@ -47,6 +47,7 @@ const TOOL_WINDOW_LABELS: &[&str] = &[
     "tool-topology",
     "tool-radar",
     "tool-ai-assistant",
+    "tool-bt-detector",
     "clippy",
 ];
 
@@ -119,6 +120,16 @@ struct WifiProperty {
 struct WifiNetworkBlock {
     ssid: String,
     lines: Vec<String>,
+}
+
+#[derive(Serialize, Clone)]
+struct BtDevice {
+    name: String,
+    address: String,
+    rssi: Option<i16>,
+    connectable: bool,
+    services: Vec<String>,
+    source: String,
 }
 
 // ─── Commands ────────────────────────────────────────────────────────────────
@@ -441,6 +452,7 @@ async fn open_tool_window(app: AppHandle, tool: String) -> Result<(), String> {
         "topology" => ("tool-topology", "NetRecon - Topology", 1060.0, 740.0),
         "wifi-radar" => ("tool-radar", "NetRecon - WiFi Radar", 760.0, 640.0),
         "ai-assistant" => ("tool-ai-assistant", "NetRecon - AI Security Assistant", 880.0, 760.0),
+        "bt-detector" => ("tool-bt-detector", "NetRecon - Bluetooth Detector", 820.0, 600.0),
         _ => return Err(format!("Unsupported tool window: {tool}")),
     };
 
@@ -874,6 +886,171 @@ async fn ai_multi_provider_query(
     }
 }
 
+#[tauri::command]
+async fn scan_bluetooth_devices(duration_secs: u64) -> Result<Vec<BtDevice>, String> {
+    use btleplug::api::{Central, Manager as _, ScanFilter};
+    use btleplug::platform::Manager;
+
+    let duration_secs = duration_secs.clamp(3, 30);
+    let mut devices: Vec<BtDevice> = Vec::new();
+
+    // ── BLE scan via btleplug ───────────────────────────────────────────────
+    let ble_result: Result<Vec<BtDevice>, String> = async {
+        let manager = Manager::new()
+            .await
+            .map_err(|e| format!("BT manager error: {e}"))?;
+
+        let adapters = manager
+            .adapters()
+            .await
+            .map_err(|e| format!("No BT adapters: {e}"))?;
+
+        let adapter = adapters
+            .into_iter()
+            .next()
+            .ok_or_else(|| "No Bluetooth adapter found.".to_string())?;
+
+        adapter
+            .start_scan(ScanFilter::default())
+            .await
+            .map_err(|e| format!("BLE scan start failed: {e}"))?;
+
+        tokio::time::sleep(Duration::from_secs(duration_secs)).await;
+
+        adapter
+            .stop_scan()
+            .await
+            .map_err(|e| format!("BLE scan stop failed: {e}"))?;
+
+        let peripherals = adapter
+            .peripherals()
+            .await
+            .map_err(|e| format!("Peripheral list failed: {e}"))?;
+
+        let mut ble_devices: Vec<BtDevice> = Vec::new();
+        for p in peripherals {
+            use btleplug::api::Peripheral as _;
+            let props = p.properties().await.ok().flatten();
+            if let Some(props) = props {
+                ble_devices.push(BtDevice {
+                    name: props.local_name.unwrap_or_else(|| "Unknown".to_string()),
+                    address: p.address().to_string(),
+                    rssi: props.rssi,
+                    connectable: false,
+                    services: props.services.iter().map(|s| s.to_string()).collect(),
+                    source: "BLE".to_string(),
+                });
+            }
+        }
+        Ok(ble_devices)
+    }.await;
+
+    match ble_result {
+        Ok(mut ble) => devices.append(&mut ble),
+        Err(_) => {
+            // BLE failed (no adapter or policy blocked) — continue to Classic BT
+        }
+    }
+
+    // ── Classic BT via PowerShell (paired/visible devices) ──────────────────
+    #[cfg(target_os = "windows")]
+    {
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        // Enumerate BT devices from PnP (covers paired Classic BT + BLE)
+        let ps_output = Command::new("powershell")
+            .creation_flags(CREATE_NO_WINDOW)
+            .args([
+                "-NoProfile", "-NonInteractive", "-Command",
+                r#"Get-PnpDevice -Class Bluetooth -ErrorAction SilentlyContinue |
+                   Select-Object FriendlyName, Status, InstanceId |
+                   ConvertTo-Json -Compress"#,
+            ])
+            .output();
+
+        if let Ok(out) = ps_output {
+            let raw = String::from_utf8_lossy(&out.stdout).to_string();
+            let raw = raw.trim();
+            // Wrap single object in array if needed
+            let json_str = if raw.starts_with('{') {
+                format!("[{}]", raw)
+            } else {
+                raw.to_string()
+            };
+
+            if let Ok(arr) = serde_json::from_str::<Vec<serde_json::Value>>(&json_str) {
+                for entry in arr {
+                    let name = entry.get("FriendlyName")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("Unknown")
+                        .to_string();
+                    let status = entry.get("Status")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let instance_id = entry.get("InstanceId")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+
+                    // Extract BT address from InstanceId (e.g. BTHENUM\..._LOCALMFR&...\7&...)
+                    // InstanceId for BTHA2DP or BTHENUM contains the address in the DeviceID
+                    let address = extract_bt_address_from_instance_id(&instance_id)
+                        .unwrap_or_else(|| "-".to_string());
+
+                    // Avoid duplicating devices already found by BLE scan
+                    if !address.eq("-") && devices.iter().any(|d| {
+                        d.address.to_lowercase().replace(':', "") ==
+                        address.to_lowercase().replace(':', "")
+                    }) {
+                        continue;
+                    }
+
+                    devices.push(BtDevice {
+                        name,
+                        address,
+                        rssi: None,
+                        connectable: status.eq_ignore_ascii_case("OK"),
+                        services: vec![],
+                        source: format!("Classic BT ({})", status),
+                    });
+                }
+            }
+        }
+    }
+
+    // Sort: BLE by RSSI first, Classic BT at end
+    devices.sort_by(|a, b| {
+        let a_rssi = a.rssi.unwrap_or(i16::MIN);
+        let b_rssi = b.rssi.unwrap_or(i16::MIN);
+        b_rssi.cmp(&a_rssi)
+    });
+
+    Ok(devices)
+}
+
+fn extract_bt_address_from_instance_id(instance_id: &str) -> Option<String> {
+    // InstanceId format examples:
+    //   BTHENUM\{0000110b-...}\7&2a3b4c5d&0&000EC6AABBCC_C00000000
+    //   BTHLE\DEV_AABBCCDDEEFF\...
+    // Try to extract 12 hex digits that look like a MAC address
+    let upper = instance_id.to_uppercase();
+    for part in upper.split(['\\', '_', '&', '{', '}']) {
+        let p = part.trim();
+        if p.len() == 12 && p.chars().all(|c| c.is_ascii_hexdigit()) {
+            let addr = p.chars()
+                .collect::<Vec<_>>()
+                .chunks(2)
+                .map(|ch| ch.iter().collect::<String>())
+                .collect::<Vec<_>>()
+                .join(":");
+            return Some(addr);
+        }
+    }
+    None
+}
+
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 fn run_wifi_netsh_show_networks() -> Result<String, String> {
@@ -1210,6 +1387,7 @@ fn main() {
             list_wifi_networks,
             get_wifi_network_details,
             ai_multi_provider_query,
+            scan_bluetooth_devices,
             open_clippy_window,
             close_clippy_window,
             open_browser,
