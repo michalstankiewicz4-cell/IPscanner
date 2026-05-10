@@ -210,6 +210,22 @@ body.skin-workbench .listview-body {
   background: #1f2530;
 }
 
+body.skin-workbench .scanwatch-table th {
+  border-bottom-color: #3d4a5f;
+}
+
+body.skin-workbench .scanwatch-row td {
+  border-bottom-color: #3b4456;
+}
+
+body.skin-workbench .scanwatch-empty-row td {
+  color: #9fb0c8;
+}
+
+body.skin-workbench .scanwatch-status-warn {
+  color: #ff9b9b;
+}
+
 /* ── Expanded row / detail panel ── */
 body.skin-workbench .detail-row,
 body.skin-workbench .paths-row {
@@ -251,11 +267,7 @@ body.skin-workbench .listview-body::-webkit-scrollbar-thumb {
 }
 
 /* ── Floating windows and custom dialogs ── */
-body.skin-workbench #notepadWin,
-body.skin-workbench #cmdWin,
-body.skin-workbench #speedWin,
-body.skin-workbench #protoWin,
-body.skin-workbench #macroFolderWin,
+body.skin-workbench .tool-win-shell,
 body.skin-workbench #dlgScanCountry,
 body.skin-workbench #dlgTrace {
   background: #252b36 !important;
@@ -266,26 +278,24 @@ body.skin-workbench #dlgTrace {
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.46) !important;
 }
 
-body.skin-workbench #notepadWin > div:first-child,
-body.skin-workbench #cmdWin > .titlebar,
-body.skin-workbench #speedWin > .titlebar,
-body.skin-workbench #protoWin > .titlebar,
-body.skin-workbench #macroFolderWin > .titlebar,
+body.skin-workbench .tool-win-shell > .titlebar,
 body.skin-workbench #dlgScanCountry > .titlebar,
 body.skin-workbench #dlgTrace .titlebar {
   background: linear-gradient(180deg, #313a4a, #273041) !important;
   color: #e6edf7 !important;
 }
 
-body.skin-workbench #notepadWin textarea,
-body.skin-workbench #macroFolderList,
-body.skin-workbench #speedStatus,
-body.skin-workbench #countryListBox,
-body.skin-workbench #countryRanges,
-body.skin-workbench #presetListBox,
-body.skin-workbench #traceInput,
-body.skin-workbench #traceTargetIp,
-body.skin-workbench #cmdFilterSelect {
+body.skin-workbench :is(
+  #notepadWin textarea,
+  #macroFolderList,
+  #speedStatus,
+  #countryListBox,
+  #countryRanges,
+  #presetListBox,
+  #traceInput,
+  #traceTargetIp,
+  #cmdFilterSelect
+) {
   background: #1f2530 !important;
   color: #d7dee8 !important;
   border-top: 1px solid #394354 !important;
@@ -294,8 +304,7 @@ body.skin-workbench #cmdFilterSelect {
   border-bottom: 1px solid #12161e !important;
 }
 
-body.skin-workbench #cmdMenuFileDrop,
-body.skin-workbench #macroCtxMenu {
+body.skin-workbench :is(#cmdMenuFileDrop, #macroCtxMenu) {
   background: #252b36 !important;
   border-top: 1px solid #3a4353 !important;
   border-left: 1px solid #3a4353 !important;

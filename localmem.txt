@@ -1,0 +1,78 @@
+localStorage keys used by IPscanner
+=====================================
+
+netrecon_lang
+  - wybrany język interfejsu ('en' lub 'pl')
+  - domyślnie (gdy brak klucza): 'en'
+
+netrecon_scan_defaults
+  - ustawienia skanowania: threads, delayMs, delayMsPerPort, portScanMode, chunkSize
+  - domyślnie (gdy brak/invalid): { threads: 32, delayMs: 0, delayMsPerPort: 0, portScanMode: 'parallel', chunkSize: 100 }
+
+netrecon_presets
+  - lista presetów portów (JSON array)
+  - domyślnie (gdy brak/invalid): wbudowana lista DEFAULT_PRESETS (6 presetów)
+
+netrecon_active_preset
+  - indeks aktywnego presetu portów
+  - domyślnie (gdy brak klucza): 0
+
+netrecon_results
+  - wyniki ostatniego skanowania (JSON array: ip, ports, ping, hostname, geo itp.)
+  - domyślnie: brak klucza (nic do przywrócenia)
+
+netrecon_results_ts
+  - timestamp (Date.now()) ostatniego zapisu wyników
+  - domyślnie: brak klucza
+
+netrecon_marks
+  - zaznaczeń checkmark i gwiazdek: { favIps, favPorts, checkIps, checkPorts }
+  - domyślnie (gdy brak/invalid): { favIps: [], favPorts: [], checkIps: [], checkPorts: [] }
+
+netrecon_expanded
+  - lista IP-ów z rozwiniętym wierszem portów [+]
+  - domyślnie (gdy brak/invalid): []
+
+netrecon_sort
+  - aktywne sortowanie listy: { col: 'ip'|'ping', dir: 1|-1 }
+  - domyślnie (gdy brak/invalid): brak sortowania (_sortCol = null, _sortDir = 1)
+
+netrecon_scan_watch
+  - ustawienia IP Scan Watch: { windowSecs, minPorts, pollSecs }
+  - domyślnie (gdy brak/invalid): { windowSecs: 30, minPorts: 8, pollSecs: 2 }
+
+netrecon_focus_ip
+  - zapamiętany/fokusowany IP (legacy/stan pomocniczy)
+  - domyślnie (gdy brak klucza): ''
+
+ui_skin
+  - aktywny motyw wizualny ('classic', 'glass', 'workbench')
+  - domyślnie (gdy brak/invalid): 'classic'
+
+tb_globe
+  - widoczność przycisku Globe w pasku narzędzi (0/1)
+  - domyślnie (gdy brak klucza): 1 (widoczny)
+
+tb_console
+  - widoczność przycisku Console w pasku narzędzi (0/1)
+  - domyślnie (gdy brak klucza): 1 (widoczny)
+
+tb_macro
+  - widoczność przycisku Macro w pasku narzędzi (0/1)
+  - domyślnie (gdy brak klucza): 1 (widoczny)
+
+tb_speed
+  - widoczność przycisku Speed Test w pasku narzędzi (0/1)
+  - domyślnie (gdy brak klucza): 1 (widoczny)
+
+tb_proto
+  - widoczność przycisku Proto w pasku narzędzi (0/1)
+  - domyślnie (gdy brak klucza): 1 (widoczny)
+
+tb_topology
+  - widoczność przycisku Topology w pasku narzędzi (0/1)
+  - domyślnie (gdy brak klucza): 1 (widoczny)
+
+clippy_enabled
+  - czy asystent (Clippy) jest włączony (0/1)
+  - domyślnie (gdy brak klucza): 0 / wyłączony

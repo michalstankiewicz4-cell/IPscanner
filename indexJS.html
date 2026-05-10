@@ -19,7 +19,6 @@
 <link rel="stylesheet" href="css/tool-speed.css"/>
 <link rel="stylesheet" href="css/tool-macro.css"/>
 <link rel="stylesheet" href="css/tool-globe.css"/>
-<link rel="stylesheet" href="css/tool-radar.css"/>
 <link rel="stylesheet" href="css/theme-glass.css"/>
 <link rel="stylesheet" href="css/theme-workbench.css"/>
 <link rel="stylesheet" href="css/clippy.css"/>
@@ -39,6 +38,32 @@
   }
 })();
 </script>
+
+<div id="welcomeWin" class="retro-win open">
+  <div class="titlebar">
+    <span class="icon">📢</span>
+    <span class="title">Informacja od autora</span>
+    <div class="titlebar-btns">
+      <div class="title-btn" onclick="document.getElementById('welcomeWin').style.display='none'" style="font-weight:900;cursor:pointer">✕</div>
+    </div>
+  </div>
+  <div class="win-body">
+    <p>Hej!&nbsp;</p>
+    <p>Widzę, że pojawiają się emocje wokół mojego projektu, więc chcę coś wyjaśnić, żeby nie było nieporozumień.</p>
+    <p>Ten program to jeden z wielu moich prywatnych projektów hobbystycznych stworzonych przy pomocy vibecodingu.<br>Nie jest komercyjny, nie ma reklam, nie zbiera danych i nie powstał po to, żeby komukolwiek zaszkodzić, czy to konkurencji czy to samym użytkownikom.</p>
+    <p>Nie uczę się programowania "od zera" po prostu lubię realizować swoje pomysły techniczne, nawet jeśli nie jestem zawodowym programistą. Teraz pojawiły się narzędzia więc mogę realizować plany.<br>Sieci mnie interesują, mam w tym trochę doświadczenia, a takie projekty robię, bo sprawia mi to frajdę.</p>
+    <p>Nie konkuruję z żadnymi firmami, płatnymi narzędziami ani usługami.<br>Nie planuję sprzedaży, subskrypcji, premium, nic z tych rzeczy.<br>To po prostu projekt pasjonata, który chciał zrobić coś po swojemu i udostępnił to za darmo, bo może komuś się przyda.</p>
+    <p>Jeśli ktoś woli profesjonalne rozwiązania to super.<br>Jeśli komuś mój projekt pomaga jeszcze lepiej.<br>Nie mam żadnych ukrytych intencji i nie wchodzę nikomu w drogę.</p>
+    <p>Pozdrawiam i dzięki za zrozumienie.</p>
+  </div>
+  <div class="welcome-footer">
+    <button class="btn95" onclick="document.getElementById('welcomeWin').style.display='none'">OK</button>
+  </div>
+</div>
+
+<div id="desktopArt" aria-hidden="true">
+  <img id="desktopZebra" src="./zebrus.png" alt="" onload="this.parentElement.classList.add('ready')" onerror="this.parentElement.remove()"/>
+</div>
 
 <div class="retro-win" id="mainWin">
   <!-- Title bar -->
@@ -74,12 +99,6 @@
         <div class="menu-dd-item" id="menuToolMacro" data-i18n="btnMacro">📁 Macro</div>
         <div class="menu-dd-item" id="menuToolSpeed" data-i18n="btnSpeed">📶 Speed</div>
         <div class="menu-dd-item" id="menuToolConsole" data-i18n="btnConsole">⌨ Console</div>
-        <div class="menu-dd-item" id="menuToolScanWatch">🛡 IP Scan Watch...</div>
-        <div class="menu-dd-item" id="menuToolWifiDetector">📡 WiFi Detector...</div>
-        <div class="menu-dd-item" id="menuToolWifiRadar" data-i18n="btnWifiRadar">📍 WiFi Radar</div>
-        <div class="menu-dd-item" id="menuToolBtDetector" data-i18n="btnBtDetectorMenu">🔵 Bluetooth Detector...</div>
-        <div class="menu-dd-item" id="menuToolSniffer" data-i18n="btnSnifferMenu">🔎 Network Sniffer...</div>
-        <div class="menu-dd-item" id="menuToolAiAssistant">🤖 AI Security Assistant...</div>
       </div>
     </div>
     <div class="menu-item" id="menuHelp"><span data-i18n="menuHelp">Help</span>
@@ -99,21 +118,27 @@
       <button class="btn95" id="btnGo" data-i18n="btnStart">▶ Start</button>
       <button class="btn95" id="btnStop" disabled data-i18n="btnStop">■ Stop</button>
       <button class="btn95" id="btnClear" data-i18n="btnClear">✕ Clear</button>
-      <button class="btn95" id="btnTopologyToolbar" title="Topology" data-i18n="btnTopology">🕸 Topology</button>
       <button class="btn95" id="btnGlobe" title="World Map" data-i18n="btnGlobe">🌍 Globe</button>
-      <button class="btn95" id="btnProtoToolbar" title="Prototype" data-i18n="btnProto">🧩 Prototype</button>
+      <button class="btn95" id="btnCmdConsole" title="Command Console" data-i18n="btnConsole">⌨ Console</button>
       <button class="btn95" id="btnMacroToolbar" title="Macro Folder" data-i18n="btnMacro">📁 Macro</button>
       <button class="btn95" id="btnSpeedToolbar" title="Speed Test" data-i18n="btnSpeed">📶 Speed</button>
-      <button class="btn95" id="btnCmdConsole" title="Command Console" data-i18n="btnConsole">⌨ Console</button>
-      <button class="btn95" id="btnWifiRadarToolbar" title="WiFi Radar" data-i18n="btnWifiRadar">📍 WiFi Radar</button>
-      <button class="btn95" id="btnBtDetectorToolbar" title="Bluetooth Detector" data-i18n="btnBtDetector">🔵 BT Detector</button>
-      <button class="btn95" id="btnSnifferToolbar" title="Network Sniffer" data-i18n="btnSniffer">🔎 Sniffer</button>
+      <button class="btn95" id="btnProtoToolbar" title="Prototype" data-i18n="btnProto">🧩 Prototype</button>
+      <button class="btn95" id="btnTopologyToolbar" title="Topology" data-i18n="btnTopology">🕸 Topology</button>
       <div class="flex-spacer"></div>
+      <span id="statTime" class="status-time">0.0s</span>
     </div>
 
     <!-- Mode + IP Range -->
     <div class="groupbox">
       <span class="groupbox-legend" data-i18n="scanSettings">Scan Settings</span>
+
+      <!-- Preset selector -->
+      <div class="settings-row">
+        <span class="label-nowrap" data-i18n="labelPreset">Preset:</span>
+        <select id="presetSelect" class="select95"></select>
+        <span class="label-muted-sm" data-i18n="labelPorts2">Ports:</span>
+        <span id="activePorts" class="active-ports-display"></span>
+      </div>
 
       <!-- External IP -->
       <div class="settings-row-sm">
@@ -137,14 +162,6 @@
         <span id="localSubnetsResult" class="ip-result-label"></span>
         <select id="localSubnetSelect" class="select95 initially-hidden"></select>
         <button class="btn95 btn-action-sm initially-hidden" id="btnUseLocalSubnet" data-i18n="btnUse">➤ Use</button>
-      </div>
-
-      <!-- Preset selector -->
-      <div class="settings-row">
-        <span class="label-nowrap" data-i18n="labelPreset">Preset:</span>
-        <select id="presetSelect" class="select95"></select>
-        <span class="label-muted-sm" data-i18n="labelPorts2">Ports:</span>
-        <span id="activePorts" class="active-ports-display"></span>
       </div>
 
       <!-- IP Range -->
@@ -171,10 +188,12 @@
           <span class="oct-dot">.</span>
           <input class="oct" id="t3" maxlength="3" placeholder="254"/>
         </div>
-        <button class="btn95 ml-10" id="btnScanSpeed" onclick="openDefaultsDlg()">⚙ Scan Speed</button>
-        <input type="number" min="2" max="64" value="32" id="concNum" class="is-hidden"/>
-        <input type="number" min="0" max="5000" value="0" id="delayMs" class="is-hidden"/>
+        <span class="label-ml" data-i18n="threads">Threads:</span>
+        <input type="number" min="2" max="64" value="20" id="concNum" class="input-num-sm"/>
+        <span class="label-ml" data-i18n="delayMs">Delay (ms):</span>
+        <input type="number" min="0" max="5000" value="0" id="delayMs" class="input-num-sm"/>
       </div>
+      <div class="port-hint" id="portHint"></div>
     </div>
 
     <!-- Progress -->
@@ -193,7 +212,6 @@
         <div class="stat-item"><span data-i18n="labelChecked">Checked:</span> <span class="stat-val" id="statChecked">0</span></div>
         <div class="stat-item"><span data-i18n="labelFound">Found:</span> <span class="stat-val" id="statFound">0</span></div>
         <div class="stat-item"><span data-i18n="labelPorts">Ports:</span> <span class="stat-val" id="statPorts">0</span></div>
-        <div class="stat-item ml-auto"><span id="statTime" class="status-time">0.0s</span></div>
       </div>
     </div>
 
@@ -206,7 +224,6 @@
         <button class="btn-filter" id="btnFilterActive" data-i18n="filterActive">Active</button>
         <button class="btn-filter" id="btnFilterDead" data-i18n="filterDead">Dead</button>
         <button class="btn-cols" id="btnCols">Columns ▾</button>
-        <button class="btn-cols ml-auto" id="btnBlurIp" title="Toggle IP blur">👁 Blur</button>
         <div class="cols-panel" id="colsPanel">
           <label class="cols-panel-item"><input type="checkbox" data-col="hostname"> 🧭 Hostname</label>
           <label class="cols-panel-item"><input type="checkbox" data-col="geo"> 🌍 Geolocation / ISP</label>
@@ -216,17 +233,17 @@
         </div>
       </div>
       <div class="listview-header">
-        <div class="lv-col lv-col-dot cursor-context-menu" id="colCheckAll" title="Right-click for options">✔</div>
-        <div class="lv-col lv-col-center cursor-context-menu" id="colFavAll" title="Right-click for options">★</div>
+        <div class="lv-col lv-col-dot" id="colCheckAll" title="Right-click for options" style="cursor:context-menu">✔</div>
+        <div class="lv-col lv-col-center" id="colFavAll" title="Right-click for options" style="cursor:context-menu">★</div>
         <div class="lv-col lv-col-center" title="Status">●</div>
-        <div class="lv-col cursor-pointer" id="colSortIp" data-i18n="colIp" title="Sort by IP">IP Address</div>
-        <div class="lv-col lv-col-center cursor-pointer" id="colExpandAll" title="Expand / collapse all">+</div>
-        <div class="lv-col cursor-pointer" id="colSortPing" data-i18n="colPing" title="Sort by Ping">Ping</div>
-        <div class="lv-col lv-extra-col is-hidden" data-col="hostname">🧭 Hostname</div>
-        <div class="lv-col lv-extra-col is-hidden" data-col="geo">🌍 Geo / ISP</div>
-        <div class="lv-col lv-extra-col is-hidden" data-col="device">🖥 Device</div>
-        <div class="lv-col lv-extra-col is-hidden" data-col="title">📄 Title</div>
-        <div class="lv-col lv-extra-col is-hidden" data-col="access">🔑 Access</div>
+        <div class="lv-col" id="colSortIp" data-i18n="colIp" style="cursor:pointer" title="Sort by IP">IP Address</div>
+        <div class="lv-col lv-col-center" id="colExpandAll" title="Expand / collapse all" style="cursor:pointer">+</div>
+        <div class="lv-col" id="colSortPing" data-i18n="colPing" style="cursor:pointer" title="Sort by Ping">Ping</div>
+        <div class="lv-col lv-extra-col" data-col="hostname" style="display:none">🧭 Hostname</div>
+        <div class="lv-col lv-extra-col" data-col="geo" style="display:none">🌍 Geo / ISP</div>
+        <div class="lv-col lv-extra-col" data-col="device" style="display:none">🖥 Device</div>
+        <div class="lv-col lv-extra-col" data-col="title" style="display:none">📄 Title</div>
+        <div class="lv-col lv-extra-col" data-col="access" style="display:none">🔑 Access</div>
       </div>
       <div class="listview-body" id="listBody">
         <div class="empty-row" id="emptyRow" data-i18n="emptyRow">No results. Configure IP range and click Start.</div>
@@ -706,342 +723,21 @@
       <span class="dlg-icon">⚙</span>
       <div class="dlg-content-fill">
       <div class="dlg-groupbox">
-        <span class="dlg-groupbox-legend" title="IP address scanning settings">IP Scanning</span>
+        <span class="dlg-groupbox-legend" data-i18n="dlgDefaults">Default Scan Values:</span>
         <div class="dlg-row dlg-row-mb6">
-          <label class="dlg-label-98" data-i18n="dlgDefaultThreads" title="Number of parallel scanning threads (2–64). More = faster, but higher network load." data-i18n-title="tipThreads">Threads:</label>
-          <input class="dlg-input95 dlg-num-input" id="dlgDefaultThreads" type="number" min="2" max="64" value="32" title="Number of parallel scanning threads (2–64). More = faster, but higher network load." data-i18n-title="tipThreads"/>
+          <label class="dlg-label-98" data-i18n="dlgDefaultThreads">Threads:</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultThreads" type="number" min="2" max="64" value="20"/>
         </div>
         <div class="dlg-row dlg-row-mb0">
-          <label class="dlg-label-98" data-i18n="dlgDefaultDelay" title="Delay (ms) between consecutive IP addresses scanned by each thread. 0 = no delay." data-i18n-title="tipIpDelay">Delay (ms):</label>
-          <input class="dlg-input95 dlg-num-input" id="dlgDefaultDelay" type="number" min="0" max="5000" value="0" title="Delay (ms) between consecutive IP addresses scanned by each thread. 0 = no delay." data-i18n-title="tipIpDelay"/>
-        </div>
-      </div>
-
-      <div class="dlg-groupbox dlg-groupbox-mt12">
-        <span class="dlg-groupbox-legend" title="Port scanning mode for each IP address">Port Scanning Mode</span>
-        <div class="dlg-row dlg-row-mb6">
-          <label class="dlg-label-98" title="Number of ports scanned simultaneously in parallel mode (10–500). Larger batch = faster, but more concurrent connections." data-i18n-title="tipBatchSize">Batch size:</label>
-          <input class="dlg-input95 dlg-num-input" id="dlgDefaultChunkSize" type="number" min="10" max="500" value="100" title="Number of ports scanned simultaneously in parallel mode (10–500). Larger batch = faster, but more concurrent connections." data-i18n-title="tipBatchSize"/>
-        </div>
-        <div class="dlg-row dlg-row-mb6">
-          <label class="port-mode-label" title="All ports in a batch are scanned simultaneously — fastest mode." data-i18n-title="tipParallel">
-            <input class="port-mode-radio" type="radio" name="portScanMode" id="radioParallel" value="parallel" checked/>
-            <span class="port-mode-text" title="All ports in a batch are scanned simultaneously — fastest mode." data-i18n-title="tipParallel">Parallel (fast)</span>
-          </label>
-        </div>
-        <div class="dlg-row dlg-row-mb0">
-          <label class="port-mode-label" title="Ports are scanned one by one with a set delay — slower, but less visible to IDS/firewall." data-i18n-title="tipSequential">
-            <input class="port-mode-radio" type="radio" name="portScanMode" id="radioSequential" value="sequential"/>
-            <span class="port-mode-text" title="Ports are scanned one by one with a set delay — slower, but less visible to IDS/firewall." data-i18n-title="tipSequential">Sequential with delay</span>
-          </label>
-        </div>
-        <div class="dlg-row dlg-row-mb0 dlg-row-indent-24">
-          <label class="dlg-label-98" data-i18n="dlgDefaultDelayPerPort" title="Delay (ms) between scanning consecutive ports in sequential mode (0–1000)." data-i18n-title="tipPortDelay">Delay (ms):</label>
-          <input class="dlg-input95 dlg-num-input" id="dlgDefaultDelayPerPort" type="number" min="0" max="1000" value="0" disabled title="Delay (ms) between scanning consecutive ports in sequential mode (0–1000)." data-i18n-title="tipPortDelay"/>
+          <label class="dlg-label-98" data-i18n="dlgDefaultDelay">Delay (ms):</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultDelay" type="number" min="0" max="5000" value="0"/>
         </div>
       </div>
       </div>
     </div>
     <div class="dlg-footer">
-      <button class="btn95 ml-auto" id="dlgDefaultsReset">↺ Reset</button>
       <button class="btn95" id="dlgDefaultsOk" data-i18n="dlgOk">OK</button>
       <button class="btn95" id="dlgDefaultsCancel" data-i18n="dlgCancel" onclick="closeDefaultsDlg()">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- IP scan watch dialog -->
-<div class="dlg-overlay" id="dlgScanWatchOverlay">
-  <div class="dlg95 scanwatch-dlg">
-    <div class="dlg-title">
-      <span>🛡</span>
-      <span class="title-fill">IP Scan Watch</span>
-      <div class="title-btn" onclick="closeScanWatchDlg()">✕</div>
-    </div>
-    <div class="dlg-body">
-      <div class="dlg-groupbox">
-        <span class="dlg-groupbox-legend">Detection settings</span>
-        <div class="dlg-row dlg-row-mb6">
-          <label class="dlg-label-98" for="scanWatchWindowSecs" title="Time window used to aggregate suspicious activity.">Window (sec):</label>
-          <input class="dlg-input95 dlg-num-input" id="scanWatchWindowSecs" type="number" min="5" max="3600" value="30" title="Longer window catches slower scans; shorter window catches burst scans."/>
-        </div>
-        <div class="dlg-row dlg-row-mb6">
-          <label class="dlg-label-98" for="scanWatchMinPorts" title="Minimum number of different local ports touched by one remote IP before it is flagged.">Min unique ports:</label>
-          <input class="dlg-input95 dlg-num-input" id="scanWatchMinPorts" type="number" min="2" max="128" value="8" title="Higher value reduces false positives; lower value is more sensitive."/>
-        </div>
-        <div class="dlg-row dlg-row-mb0">
-          <label class="dlg-label-98" for="scanWatchPollSecs" title="How often watcher checks current TCP activity.">Refresh (sec):</label>
-          <input class="dlg-input95 dlg-num-input" id="scanWatchPollSecs" type="number" min="1" max="60" value="2" title="Lower value updates faster but uses more system checks."/>
-        </div>
-      </div>
-
-      <div class="dlg-sunken-box scanwatch-status" id="scanWatchStatus" title="Current detector state and latest summary.">Idle</div>
-
-      <div class="dlg-sunken-box scanwatch-table-wrap">
-        <table class="scanwatch-table">
-          <thead>
-            <tr>
-              <th title="Remote address that appears to probe multiple ports.">Remote IP</th>
-              <th class="scanwatch-num" title="Count of unique local ports touched by that address.">Ports</th>
-              <th class="scanwatch-num" title="Total connection events observed in current window.">Hits</th>
-              <th class="scanwatch-num" title="Seconds since last observed event from this address.">Last seen</th>
-            </tr>
-          </thead>
-          <tbody id="scanWatchTbody"></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="dlg-footer">
-      <button class="btn95" id="btnScanWatchCheckNow" title="Run one immediate detection pass.">Check now</button>
-      <button class="btn95" id="btnScanWatchStart" title="Start automatic periodic detection checks.">Start watch</button>
-      <button class="btn95" id="btnScanWatchStop" disabled title="Stop automatic periodic checks.">Stop</button>
-      <button class="btn95" onclick="closeScanWatchDlg()" title="Close this window.">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- WiFi detector dialog -->
-<div class="dlg-overlay" id="dlgWifiDetectorOverlay">
-  <div class="dlg95 wifi-detector-dlg">
-    <div class="dlg-title">
-      <span>📡</span>
-      <span class="title-fill">WiFi Detector</span>
-      <div class="title-btn" onclick="closeWifiDetectorDlg()">✕</div>
-    </div>
-    <div class="dlg-body">
-      <div class="dlg-groupbox">
-        <span class="dlg-groupbox-legend">Detection settings</span>
-        <div class="dlg-row dlg-row-mb0">
-          <label class="dlg-label-98" for="wifiDetectorPollSecs" title="Refresh interval used when detector watch is running.">Refresh (sec):</label>
-          <input class="dlg-input95 dlg-num-input" id="wifiDetectorPollSecs" type="number" min="1" max="60" value="5" title="Lower value updates faster but can use more CPU."/>
-        </div>
-      </div>
-
-      <div class="dlg-sunken-box wifi-detector-status" id="wifiDetectorStatus" title="Current detector state.">Idle</div>
-
-      <div class="wifi-detector-content">
-        <div class="wifi-detector-pane">
-          <div class="wifi-detector-pane-title">Available networks</div>
-          <div class="dlg-sunken-box wifi-detector-net-list" id="wifiDetectorNetworkList"></div>
-        </div>
-
-        <div class="wifi-detector-pane">
-          <div class="wifi-detector-pane-title" id="wifiDetectorDetailsTitle">Properties</div>
-          <div class="dlg-sunken-box wifi-detector-table-wrap">
-            <table class="wifi-detector-table">
-              <tbody id="wifiDetectorDetailsTbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="dlg-footer">
-      <button class="btn95" id="btnWifiDetectorCheckNow" title="Run one immediate WiFi detection pass.">Check now</button>
-      <button class="btn95" id="btnWifiDetectorStart" title="Start automatic periodic checks.">Start watch</button>
-      <button class="btn95" id="btnWifiDetectorStop" disabled title="Stop automatic periodic checks.">Stop</button>
-      <button class="btn95" onclick="closeWifiDetectorDlg()" title="Close this window.">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- WiFi Radar window -->
-<div class="tool-win-shell wifi-radar-win" id="wifiRadarWin">
-  <div class="titlebar cursor-move" id="wifiRadarTitlebar">
-    <span class="icon">📍</span>
-    <span class="title">WiFi Radar</span>
-    <div class="titlebar-btns">
-      <button class="title-btn title-btn-close" id="btnWifiRadarClose">✕</button>
-    </div>
-  </div>
-
-  <div class="wifi-radar-body">
-    <div class="wifi-radar-controls">
-      <label class="wifi-radar-sort-label" for="wifiRadarSortBy">Sort by:</label>
-      <select class="select95" id="wifiRadarSortBy">
-        <option value="signal">Signal Strength</option>
-        <option value="ssid">SSID</option>
-        <option value="freq">Frequency</option>
-        <option value="bssid_count">Access Points</option>
-      </select>
-    </div>
-
-    <div class="wifi-radar-container">
-      <canvas id="wifiRadarCanvas" class="wifi-radar-canvas"></canvas>
-    </div>
-
-    <div class="wifi-radar-legend">
-      <div class="radar-legend-title">Networks</div>
-      <div id="wifiRadarLegend" class="radar-legend-items"></div>
-    </div>
-
-    <div class="wifi-radar-footer">
-      <button class="btn95" id="btnWifiRadarRefresh" title="Refresh WiFi networks">Refresh</button>
-      <button class="btn95" id="btnWifiRadarAutoRefresh" title="Start automatic periodic refresh">Auto</button>
-      <button class="btn95" id="btnWifiRadarStopAuto" disabled title="Stop automatic refresh">Stop</button>
-    </div>
-  </div>
-</div>
-
-<!-- Bluetooth Detector window -->
-<div class="tool-win-shell bt-detector-win" id="btDetectorWin">
-  <div class="titlebar cursor-move" id="btDetectorTitlebar">
-    <span class="icon">🔵</span>
-    <span class="title" data-i18n="btWinTitle">Bluetooth Detector</span>
-    <div class="titlebar-btns">
-      <button class="title-btn title-btn-close" id="btnBtDetectorClose">✕</button>
-    </div>
-  </div>
-
-  <div class="bt-detector-body">
-    <div class="dlg-groupbox bt-detector-settings">
-      <span class="dlg-groupbox-legend" data-i18n="btScanSettings">Scan settings</span>
-      <div class="bt-detector-controls">
-        <label for="btScanDuration" data-i18n="btDuration">Duration:</label>
-        <select class="select95" id="btScanDuration">
-          <option value="3">3 sec</option>
-          <option value="5" selected>5 sec</option>
-          <option value="10">10 sec</option>
-          <option value="15">15 sec</option>
-        </select>
-        <button class="btn95" id="btnBtScan" data-i18n="btScan">Scan</button>
-        <button class="btn95" id="btnBtScanStop" disabled data-i18n="btStop">Stop</button>
-      </div>
-    </div>
-
-    <div class="bt-detector-content">
-      <div class="bt-detector-pane">
-        <div class="bt-detector-pane-title" data-i18n="btNearbyDevices">Nearby devices</div>
-        <div class="dlg-sunken-box bt-detector-list" id="btDeviceList"></div>
-      </div>
-
-      <div class="bt-detector-pane">
-        <div class="bt-detector-pane-title" data-i18n="btProperties">Properties</div>
-        <div class="dlg-sunken-box bt-detector-detail" id="btDeviceDetail"></div>
-      </div>
-    </div>
-
-    <div class="dlg-sunken-box bt-detector-status" id="btDetectorStatus" data-i18n="btReady">Ready.</div>
-  </div>
-</div>
-
-<!-- Network Sniffer window -->
-<div class="tool-win-shell sniffer-win" id="snifferWin">
-  <div class="titlebar cursor-move" id="snifferTitlebar">
-    <span class="icon">🔎</span>
-    <span class="title" data-i18n="snifferWinTitle">Network Sniffer</span>
-    <div class="titlebar-btns">
-      <button class="title-btn title-btn-close" id="btnSnifferClose">✕</button>
-    </div>
-  </div>
-
-  <div class="sniffer-body">
-    <div class="sniffer-toolbar">
-      <select class="select95" id="snifferProto">
-        <option value="" data-i18n="snifferAll">All</option>
-        <option value="TCP">TCP</option>
-        <option value="UDP">UDP</option>
-      </select>
-      <select class="select95" id="snifferState">
-        <option value="" data-i18n="snifferAll">All</option>
-        <option value="Established">ESTABLISHED</option>
-        <option value="Listen">LISTEN</option>
-        <option value="TimeWait">TIME_WAIT</option>
-        <option value="CloseWait">CLOSE_WAIT</option>
-      </select>
-      <input class="input95 sniffer-search" id="snifferSearch" placeholder="Filter process / IP...">
-      <button class="btn95" id="btnSnifferRefresh" data-i18n="snifferRefresh">↻ Refresh</button>
-      <label class="sniffer-live-label">
-        <input type="checkbox" id="snifferLive">
-        <span data-i18n="snifferLive">Live</span>
-      </label>
-      <select class="select95" id="snifferInterval">
-        <option value="1000">1s</option>
-        <option value="2000" selected>2s</option>
-        <option value="5000">5s</option>
-        <option value="10000">10s</option>
-      </select>
-      <button class="btn95" id="btnSnifferExport" data-i18n="snifferExport">💾 Export CSV</button>
-    </div>
-
-    <div class="dlg-sunken-box sniffer-table-wrap">
-      <table class="sniffer-table" id="snifferTable">
-        <thead>
-          <tr>
-            <th data-col="pid"    data-i18n="snifferColPid">PID</th>
-            <th data-col="proc"   data-i18n="snifferColProc">Process</th>
-            <th data-col="proto"  data-i18n="snifferColProto">Proto</th>
-            <th data-col="local"  data-i18n="snifferColLocal">Local</th>
-            <th data-col="remote" data-i18n="snifferColRemote">Remote</th>
-            <th data-col="state"  data-i18n="snifferColState">State</th>
-          </tr>
-        </thead>
-        <tbody id="snifferTableBody"></tbody>
-      </table>
-    </div>
-
-    <div class="sniffer-footer">
-      <div class="sniffer-stats" id="snifferStats"></div>
-      <div class="sniffer-status" id="snifferStatus" data-i18n="snifferReady">Ready.</div>
-    </div>
-  </div>
-</div>
-
-<!-- AI Assistant window -->
-<div class="tool-win-shell ai-assistant-win" id="aiAssistantWin">
-  <div class="titlebar cursor-move" id="aiAssistantTitlebar">
-    <span>🤖</span>
-    <span class="title-fill">AI Security Assistant</span>
-    <div class="titlebar-btns">
-      <button class="title-btn title-btn-close" id="btnAiClose">✕</button>
-    </div>
-  </div>
-  <div class="ai-assistant-body">
-    <div class="dlg-groupbox">
-      <span class="dlg-groupbox-legend">Provider</span>
-      <div class="dlg-row dlg-row-mb6">
-        <label class="dlg-label-98" for="aiProviderSelect">Engine:</label>
-        <select class="select95" id="aiProviderSelect">
-          <option value="claude">Claude API</option>
-          <option value="google">Google Gemini API</option>
-          <option value="copilot">Copilot API (GitHub Models)</option>
-        </select>
-      </div>
-      <div class="dlg-row dlg-row-mb6">
-        <label class="dlg-label-98" for="aiModelInput">Model:</label>
-        <input class="dlg-input95 ai-input-grow" id="aiModelInput" type="text" value="claude-3-5-sonnet-latest"/>
-      </div>
-      <div class="dlg-row dlg-row-mb0">
-        <label class="dlg-label-98" for="aiApiKeyInput">API Key:</label>
-        <input class="dlg-input95 ai-input-grow" id="aiApiKeyInput" type="password" placeholder="Paste provider API key"/>
-      </div>
-    </div>
-
-    <div class="dlg-groupbox dlg-groupbox-mt12">
-      <span class="dlg-groupbox-legend">Security prompt presets</span>
-      <div class="ai-preset-row">
-        <button class="btn95" id="aiPresetNetwork">Network risk review</button>
-        <button class="btn95" id="aiPresetIp">IP exposure analysis</button>
-        <button class="btn95" id="aiPresetWifi">WiFi hardening checklist</button>
-        <button class="btn95" id="aiPresetIncident">Incident triage</button>
-      </div>
-    </div>
-
-    <div class="dlg-groupbox dlg-groupbox-mt12">
-      <span class="dlg-groupbox-legend">Prompt</span>
-      <textarea id="aiPromptInput" class="ai-prompt-box" spellcheck="false"></textarea>
-    </div>
-
-    <div class="dlg-sunken-box ai-status" id="aiAssistantStatus">Idle</div>
-
-    <div class="dlg-groupbox dlg-groupbox-mt12">
-      <span class="dlg-groupbox-legend">Response</span>
-      <textarea id="aiResponseOutput" class="ai-response-box" spellcheck="false" readonly></textarea>
-    </div>
-
-    <div class="ai-assistant-footer">
-      <button class="btn95" id="btnAiSend">Send</button>
-      <button class="btn95" id="btnAiClear">Clear</button>
-      <button class="btn95" id="btnAiCloseBottom">Close</button>
     </div>
   </div>
 </div>
@@ -1057,25 +753,7 @@
     <div class="dlg-body dlg-icon-body dlg-versions-body">
       <span class="dlg-icon dlg-icon-versions">📘</span>
       <div class="dlg-sunken-box dlg-versions-card">
-        <div class="version-head">v1.6.0</div>
-        <div class="version-note">
-          Added IP Scan Watch in Tools to detect suspicious multi-port probing of your address.
-          Added WiFi Detector in Tools with clickable network list and per-network properties view.
-          Added AI Security Assistant tool with Claude, Google and Copilot API support plus ready-made security prompts.
-          Added Bluetooth Scanner in Tools with BLE and Classic BT device detection, signal strength and device properties.
-          Added Network Sniffer in Tools with live connections table, filtering/sorting and CSV export (Windows backend enabled).
-        </div>
-        <div class="version-head">v1.5.9</div>
-        <div class="version-note">
-          Added scan mode controls with selectable type and speed.
-          Results can now be sorted by IP address or response time (ms).
-          Port lists are faster to expand and browse.
-          Column settings are now available from the right-click context menu.
-          Improved IP filtering, favorites for addresses and ports, and grouping for both addresses and ports.
-          Added a Blur button to mask IP addresses for safer screen sharing.
-          Plus a handful of smaller quality-of-life refinements.
-        </div>
-        <div class="version-head">v1.5.8</div>
+        <div class="version-head">v1.5.7</div>
         <div class="version-note">
           i18n: translated all toolbar buttons (Console→Konsola, Macro→Makro, Speed→Prędkość, Prototype→Prototyp, Topology→Topologia),
           fixed untranslated Polish strings (ipRange, accessLabel, traceRoutesLabel), fixed hardcoded Polish close-confirm dialog to use t().
@@ -1150,16 +828,12 @@
         <span class="dlg-groupbox-legend" data-i18n="customizeToolbarLegend">Toolbar buttons</span>
         <div class="dlg-check-col">
           <label class="dlg-check-label">
-            <input type="checkbox" id="chkBtnTopology" checked/>
-            <span data-i18n="customizeTopology">🕸 Topology</span>
-          </label>
-          <label class="dlg-check-label">
             <input type="checkbox" id="chkBtnGlobe" checked/>
             <span data-i18n="customizeGlobe">🌍 Globe (World Map)</span>
           </label>
           <label class="dlg-check-label">
-            <input type="checkbox" id="chkBtnProto" checked/>
-            <span data-i18n="customizeProto">🧩 Prototype</span>
+            <input type="checkbox" id="chkBtnConsole" checked/>
+            <span data-i18n="customizeConsole">⌨ Console</span>
           </label>
           <label class="dlg-check-label">
             <input type="checkbox" id="chkBtnMacro" checked/>
@@ -1170,8 +844,12 @@
             <span data-i18n="customizeSpeed">📶 Speed Test</span>
           </label>
           <label class="dlg-check-label">
-            <input type="checkbox" id="chkBtnConsole" checked/>
-            <span data-i18n="customizeConsole">⌨ Console</span>
+            <input type="checkbox" id="chkBtnProto" checked/>
+            <span data-i18n="customizeProto">🧩 Prototype</span>
+          </label>
+          <label class="dlg-check-label">
+            <input type="checkbox" id="chkBtnTopology" checked/>
+            <span data-i18n="customizeTopology">🕸 Topology</span>
           </label>
         </div>
       </div>
@@ -1344,12 +1022,100 @@
 <script src="js/lang-en.js"></script>
 <script src="js/lang-pl.js"></script>
 <script src="js/app.js"></script>
-<script src="js/scanwatch.js"></script>
-<script src="js/wifi-detector.js"></script>
-<script src="js/radar.js"></script>
-<script src="js/ai-assistant.js"></script>
-<script src="js/bt-detector.js"></script>
-<script src="js/sniffer.js"></script>
 <script src="js/clippy.js"></script>
+
+<!-- Scanner desktop icon -->
+<div id="scannerDesktopIcon" style="
+  position:fixed; top:10px; left:10px;
+  width:72px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:pointer; user-select:none; z-index:8;
+" onclick="openMainWindow()">
+  <div style="font-size:28px;line-height:1;padding:2px">📡</div>
+  <div style="
+    font-family:'MS Sans Serif',Tahoma,sans-serif;
+    font-size:11px; color:#fff;
+    background:transparent;
+    padding:1px 3px;
+    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    white-space:nowrap;
+  ">IP Scanner</div>
+</div>
+
+<!-- Tauri branch desktop icon + red marker annotation -->
+<div style="position:fixed;top:0;left:82px;width:170px;height:120px;z-index:9;pointer-events:none;">
+  <!-- wobbly red marker circle -->
+  <svg width="170" height="120" viewBox="0 0 170 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;">
+    <!-- rough circle around icon (~36x36 icon at top:10 left:92, relative: left=10, top=10) -->
+    <path d="M52,18 C46,8 28,5 18,14 C6,24 4,42 8,56 C12,70 26,82 42,84 C58,86 76,80 84,68 C94,54 92,34 82,22 C76,14 62,12 52,18 Z"
+          stroke="#e00" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"
+          stroke-dasharray="4 2" opacity="0.92"/>
+    <!-- second pass for marker feel -->
+    <path d="M54,16 C48,7 30,6 19,16 C7,26 6,44 10,58 C14,72 28,83 44,85 C60,87 78,79 86,66 C96,51 93,32 83,20 C77,12 64,11 54,16 Z"
+          stroke="#c00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+    <!-- arrow from right side -->
+    <path d="M95,55 C110,52 130,50 145,48" stroke="#e00" stroke-width="2.8" stroke-linecap="round"/>
+    <polygon points="145,42 152,48 145,54" fill="#e00"/>
+    <!-- arrow from bottom -->
+    <path d="M46,90 C50,100 52,108 54,114" stroke="#e00" stroke-width="2.8" stroke-linecap="round"/>
+    <polygon points="48,114 54,120 60,114" fill="#e00"/>
+  </svg>
+  <!-- "APP HERE" label right of icon -->
+  <div style="
+    position:absolute; top:40px; left:96px;
+    font-family:'Comic Sans MS','Segoe Script',cursive;
+    font-size:12px; font-weight:bold;
+    color:#e00;
+    text-shadow:0 0 3px #fff,0 0 3px #fff;
+    white-space:nowrap;
+    transform:rotate(-8deg);
+    letter-spacing:0.5px;
+  ">APP HERE</div>
+  <!-- label below icon -->
+  <div style="
+    position:absolute; top:100px; left:14px;
+    font-family:'Comic Sans MS','Segoe Script',cursive;
+    font-size:11px; font-weight:bold;
+    color:#e00;
+    text-shadow:0 0 3px #fff,0 0 3px #fff;
+    white-space:nowrap;
+    transform:rotate(3deg);
+  ">⬇ download</div>
+</div>
+
+<div id="tauriDesktopIcon" style="
+  position:fixed; top:10px; left:92px;
+  width:72px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:pointer; user-select:none; z-index:8;
+" onclick="(function(u){try{window.__TAURI__?window.__TAURI__.shell.open(u):window.open(u,'_blank')}catch(e){window.open(u,'_blank')}}('https://github.com/michalstankiewicz4-cell/IPscanner/tree/tauri'))">
+  <div style="font-size:28px;line-height:1;padding:2px">🦀</div>
+  <div style="
+    font-family:'MS Sans Serif',Tahoma,sans-serif;
+    font-size:11px; color:#fff;
+    background:transparent;
+    padding:1px 3px;
+    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    white-space:nowrap;
+  ">Tauri/Rust</div>
+</div>
+
+<!-- HTML/JS desktop icon -->
+<div id="jsDesktopIcon" style="
+  position:fixed; top:10px; left:174px;
+  width:72px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:pointer; user-select:none; z-index:8;
+" onclick="(function(u){try{window.__TAURI__?window.__TAURI__.shell.open(u):window.open(u,'_blank')}catch(e){window.open(u,'_blank')}}('https://github.com/michalstankiewicz4-cell/IPscanner'))">
+  <div style="font-size:28px;line-height:1;padding:2px">💻</div>
+  <div style="
+    font-family:'MS Sans Serif',Tahoma,sans-serif;
+    font-size:11px; color:#fff;
+    background:transparent;
+    padding:1px 3px;
+    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    white-space:nowrap;
+  ">HTML/JS</div>
+</div>
 </body>
 </html>

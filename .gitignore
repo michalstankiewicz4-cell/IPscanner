@@ -1,4 +1,9 @@
 node_modules/
-src-tauri/
 package-lock.json
+src-tauri/target/
+src-tauri/gen/
 app/
+
+native-ui/**/bin/
+native-ui/**/obj/
+release/

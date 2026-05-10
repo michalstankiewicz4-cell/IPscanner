@@ -27,6 +27,13 @@ let topologyHitTargets = [];
 let traceRoutes = {};
 const topologyFilters = { port: '', subnet: '', pingMax: '' };
 let topoCtx = null, topoWidth = 0, topoHeight = 0, topoReady = false;
+let topoDataCleared = false;
+
+function maskIp(ip) {
+  if (!document.body.classList.contains('ip-blur-active')) return ip;
+  const parts = ip.split('.');
+  return parts[0] + '.' + parts[1] + '.x.x';
+}
 
 // ══════════════════════════════════════════════════
 //  COUNTRY IP LIBRARY
@@ -301,17 +308,18 @@ function drawCurrentMap() {
 }
 
 function getFilteredHosts() {
+  if (topoDataCleared) return [];
   const subnetNeedle = topologyFilters.subnet.trim();
   const pingLimit = topologyFilters.pingMax === '' ? null : Number(topologyFilters.pingMax);
 
-  return Object.entries(foundHostsMap)
+  return Object.entries(foundHostsMap ?? {})
     .map(([ip, ports]) => {
       const parts = ip.split('.');
       return {
         ip,
         ports,
         portCount: ports.length,
-        ping: foundPingMap[ip] ?? null,
+        ping: (foundPingMap ?? {})[ip] ?? null,
         subnet: parts.slice(0, 3).join('.') + '.0/24',
         hostOctet: Number(parts[3]) || 0
       };
@@ -330,7 +338,7 @@ function refreshTopologyFilterOptions() {
   const select = document.getElementById('topoPortFilter');
   if (!select) return;
   const current = topologyFilters.port;
-  const ports = Array.from(new Set(Object.values(foundHostsMap).flat())).sort((a, b) => a - b);
+  const ports = Array.from(new Set(Object.values(foundHostsMap ?? {}).flat())).sort((a, b) => a - b);
   select.innerHTML = `<option value="">${t('filterAllPorts')}</option>` + ports.map(port => `<option value="${port}">${port}</option>`).join('');
   select.value = current;
 }
@@ -623,7 +631,7 @@ function drawTopology() {
         ctx.fillStyle = '#1f1f1f';
         ctx.font = '10px MS Sans Serif';
         ctx.textAlign = hostX < centerX ? 'right' : 'left';
-        ctx.fillText(host.ip, hostX + (hostX < centerX ? -10 : 10), hostY + 3);
+        ctx.fillText(maskIp(host.ip), hostX + (hostX < centerX ? -10 : 10), hostY + 3);
       }
 
       topologyHitTargets.push({
@@ -670,7 +678,7 @@ function drawTopology() {
     ctx.fillStyle = '#002299';
     ctx.font = 'bold 10px MS Sans Serif';
     ctx.textAlign = nodeX < centerX ? 'right' : 'left';
-    ctx.fillText(targetIp, nodeX + (nodeX < centerX ? -13 : 13), nodeY + 3);
+    ctx.fillText(maskIp(targetIp), nodeX + (nodeX < centerX ? -13 : 13), nodeY + 3);
 
     const fakeTarget = { x: nodeX, y: nodeY, radius: 9, data: { ip: targetIp } };
     topologyHitTargets.push({ type: 'host', x: nodeX, y: nodeY, radius: 14, data: { ip: targetIp } });
@@ -1058,6 +1066,7 @@ document.getElementById('scDlgYes').addEventListener('click', () => {
 
 // ── Update dots when new IP found ──
 function updateGlobeDots() {
+  topoDataCleared = false;
   refreshTopologyFilterOptions();
   if (document.getElementById('globeWin')?.style.display !== 'none' && globeReady) drawGlobe();
   if (document.getElementById('topoWin')?.style.display !== 'none' && topoReady) drawTopology();
@@ -1073,9 +1082,10 @@ document.getElementById('btnAutoTraceTopology').addEventListener('click', () => 
 });
 document.getElementById('btnClearGraph').addEventListener('click', () => {
   traceRoutes = {};
+  topoDataCleared = true;
   saveTraceRoutes();
   drawTopology();
-  setStatus(t('graphCleared'), 'ok');
+  if (typeof setStatus === 'function') setStatus(t('graphCleared'), 'ok');
 });
 document.getElementById('btnTraceAuto').addEventListener('click', autoTraceRoute);
 document.getElementById('btnTraceSave').addEventListener('click', importTraceRoute);

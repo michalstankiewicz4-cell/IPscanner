@@ -7,7 +7,7 @@ function selectIcon(el) {
 }
 
 const APP_NAME = 'NetRecon IP Auditor';
-const APP_VERSION = '1.5.7';
+const APP_VERSION = '1.6.0';
 
 function getAppDisplayName() {
   return `${APP_NAME} v${APP_VERSION}`;
@@ -147,6 +147,7 @@ function initWindowZStacking() {
     'macroFolderWin',
     'globeWin',
     'topoWin',
+    'wifiRadarWin',
     'dlgScanCountry',
     'dlgTrace'
   ];
@@ -235,6 +236,14 @@ function initAllDialogDragging() {
 
   document.querySelectorAll('.dlg95').forEach((dlg) => {
     makeWindowDraggable(dlg, dlg.querySelector('.dlg-title'));
+  });
+
+  // Handle all tool-win-shell windows (Speed, Proto, WiFi Radar, etc.)
+  document.querySelectorAll('.tool-win-shell').forEach((toolWin) => {
+    const titlebar = toolWin.querySelector('.titlebar');
+    if (titlebar) {
+      makeWindowDraggable(toolWin, titlebar);
+    }
   });
 
   makeWindowDraggable(
@@ -350,6 +359,7 @@ const WINDOW_ROOT_SELECTOR = [
   '#globeWin',
   '#topoWin',
   '#dlgScanCountry',
+    'snifferWin',
   '#dlgTrace',
   '.enrich-popup',
 ].join(', ');
@@ -412,6 +422,21 @@ document.addEventListener('DOMContentLoaded', () => {
   initWindowRightClickGuards();
   initAllDialogDragging();
   initWindowZStacking();
+
+  // Auto-resize window width to fit all toolbar buttons (min 900px)
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const toolbar = document.querySelector('.toolbar');
+    if (!toolbar) return;
+    const needed = toolbar.scrollWidth;
+    const minW = 900;
+    if (needed > window.innerWidth) {
+      const newW = Math.max(needed, minW);
+      try {
+        const tWin = window.__TAURI__?.window?.getCurrentWindow?.();
+        if (tWin) tWin.setSize(new window.__TAURI__.dpi.LogicalSize(newW, window.innerHeight));
+      } catch (_) {}
+    }
+  }));
 });
 
 // ══════════════════════════════════════════════════
@@ -458,6 +483,11 @@ function applyLang(broadcast = true) {
     const v = t(key);
     if (typeof v === 'string') el.placeholder = v;
   });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.dataset.i18nTitle;
+    const v = t(key);
+    if (typeof v === 'string') el.title = v;
+  });
   const subnetInput = document.getElementById('topoSubnetFilter');
   const pingInput = document.getElementById('topoPingMax');
   if (subnetInput) subnetInput.placeholder = t('filterSubnetLabel');
@@ -480,31 +510,35 @@ function clampInt(v, min, max, fallback) {
 function loadScanDefaults() {
   try {
     const raw = localStorage.getItem('netrecon_scan_defaults');
-    if (!raw) return { threads: 20, delayMs: 0 };
+    if (!raw) return { threads: 32, delayMs: 0, delayMsPerPort: 0, portScanMode: 'parallel', chunkSize: 100 };
     const obj = JSON.parse(raw);
     return {
-      threads: clampInt(obj.threads, 2, 64, 20),
-      delayMs: clampInt(obj.delayMs, 0, 5000, 0)
+      threads: clampInt(obj.threads, 2, 64, 32),
+      delayMs: clampInt(obj.delayMs, 0, 5000, 0),
+      delayMsPerPort: clampInt(obj.delayMsPerPort, 0, 1000, 0),
+      portScanMode: (obj.portScanMode === 'sequential' ? 'sequential' : 'parallel'),
+      chunkSize: clampInt(obj.chunkSize, 10, 500, 100)
     };
   } catch {
-    return { threads: 20, delayMs: 0 };
+    return { threads: 32, delayMs: 0, delayMsPerPort: 0, portScanMode: 'parallel', chunkSize: 100 };
   }
 }
 
-function saveScanDefaults(threads, delayMs) {
+function saveScanDefaults(threads, delayMs, delayMsPerPort, portScanMode, chunkSize) {
   const safe = {
-    threads: clampInt(threads, 2, 64, 20),
-    delayMs: clampInt(delayMs, 0, 5000, 0)
+    threads: clampInt(threads, 2, 64, 32),
+    delayMs: clampInt(delayMs, 0, 5000, 0),
+    delayMsPerPort: clampInt(delayMsPerPort, 0, 1000, 0),
+    portScanMode: (portScanMode === 'sequential' ? 'sequential' : 'parallel'),
+    chunkSize: clampInt(chunkSize, 10, 500, 100)
   };
   localStorage.setItem('netrecon_scan_defaults', JSON.stringify(safe));
   return safe;
 }
 
 function applyScanDefaultsToMainInputs(cfg) {
-  const threadsInput = document.getElementById('concNum');
-  const delayInput = document.getElementById('delayMs');
-  threadsInput.value = String(clampInt(cfg.threads, 2, 64, 20));
-  delayInput.value = String(clampInt(cfg.delayMs, 0, 5000, 0));
+  document.getElementById('concNum').value = String(clampInt(cfg.threads, 2, 64, 32));
+  document.getElementById('delayMs').value = String(clampInt(cfg.delayMs, 0, 5000, 0));
 }
 
 // ── Dialog overlay helpers ──
@@ -547,22 +581,46 @@ function openDefaultsDlg() {
   const cfg = loadScanDefaults();
   document.getElementById('dlgDefaultThreads').value = String(cfg.threads);
   document.getElementById('dlgDefaultDelay').value = String(cfg.delayMs);
+  document.getElementById('dlgDefaultDelayPerPort').value = String(cfg.delayMsPerPort);
+  document.getElementById('dlgDefaultChunkSize').value = String(cfg.chunkSize);
+  document.getElementById('radioParallel').checked = (cfg.portScanMode === 'parallel');
+  document.getElementById('radioSequential').checked = (cfg.portScanMode === 'sequential');
+  updatePortDelayInputState();
   openOverlay('dlgDefaultsOverlay');
 }
+
+function updatePortDelayInputState() {
+  const delayInput = document.getElementById('dlgDefaultDelayPerPort');
+  delayInput.disabled = document.getElementById('radioParallel').checked;
+}
+
 function closeDefaultsDlg() { closeOverlay('dlgDefaultsOverlay'); }
 
 // ── Versions dialog ──
 function openVersionsDlg() { openOverlay('dlgVersionsOverlay'); }
 function closeVersionsDlg() { closeOverlay('dlgVersionsOverlay'); }
 function persistDefaultsFromDialog() {
+  const portScanMode = document.getElementById('radioSequential').checked ? 'sequential' : 'parallel';
   const cfg = saveScanDefaults(
     document.getElementById('dlgDefaultThreads').value,
-    document.getElementById('dlgDefaultDelay').value
+    document.getElementById('dlgDefaultDelay').value,
+    document.getElementById('dlgDefaultDelayPerPort').value,
+    portScanMode,
+    document.getElementById('dlgDefaultChunkSize').value
   );
   applyScanDefaultsToMainInputs(cfg);
 }
 document.getElementById('dlgDefaultThreads').addEventListener('input', persistDefaultsFromDialog);
 document.getElementById('dlgDefaultDelay').addEventListener('input', persistDefaultsFromDialog);
+document.getElementById('dlgDefaultDelayPerPort').addEventListener('input', persistDefaultsFromDialog);
+document.getElementById('dlgDefaultChunkSize').addEventListener('input', persistDefaultsFromDialog);
+document.getElementById('radioParallel').addEventListener('change', () => { updatePortDelayInputState(); persistDefaultsFromDialog(); });
+document.getElementById('radioSequential').addEventListener('change', () => { updatePortDelayInputState(); persistDefaultsFromDialog(); });
+document.getElementById('dlgDefaultsReset').addEventListener('click', () => {
+  const cfg = saveScanDefaults(32, 0, 0, 'parallel', 100);
+  applyScanDefaultsToMainInputs(cfg);
+  openDefaultsDlg();
+});
 document.getElementById('dlgDefaultsOk').addEventListener('click', () => {
   persistDefaultsFromDialog();
   closeDefaultsDlg();
@@ -593,6 +651,9 @@ document.getElementById('menuToolProto').addEventListener('click', () => { close
 document.getElementById('menuToolMacro').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnMacroToolbar')?.click(); });
 document.getElementById('menuToolSpeed').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnSpeedToolbar')?.click(); });
 document.getElementById('menuToolConsole').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnCmdConsole')?.click(); });
+document.getElementById('menuToolWifiRadar').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnWifiRadarToolbar')?.click(); });
+document.getElementById('menuToolBtDetector').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnBtDetectorToolbar')?.click(); });
+document.getElementById('menuToolSniffer').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnSnifferToolbar')?.click(); });
 document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
 
 // ══════════════════════════════════════════════════
@@ -681,6 +742,9 @@ document.querySelectorAll('input[name="uiSkin"]').forEach(radio => {
 document.getElementById('btnMacroToolbar').addEventListener('click', openMacroFolder);
 document.getElementById('btnSpeedToolbar').addEventListener('click', openSpeedWindow);
 document.getElementById('btnProtoToolbar').addEventListener('click', openProtoWindow);
+document.getElementById('btnWifiRadarToolbar').addEventListener('click', () => window.openWifiRadarDlg?.());
+document.getElementById('btnBtDetectorToolbar').addEventListener('click', () => window.openBtDetectorDlg?.());
+document.getElementById('btnSnifferToolbar').addEventListener('click', () => window.openSnifferDlg?.());
 
 applyToolbarCustomization();
 applySkinCustomization();
@@ -760,8 +824,8 @@ function buildPresetSelect() {
 
 function updatePortsDisplay() {
   const ports = getActivePorts();
-  document.getElementById('activePorts').textContent = ports.join(', ');
-  document.getElementById('portHint').textContent = presets[activePresetIdx]?.ports || '';
+  const activePorts = document.getElementById('activePorts');
+  if (activePorts) activePorts.textContent = ports.join(', ');
 }
 
 document.getElementById('presetSelect').addEventListener('change', function() {
@@ -943,7 +1007,49 @@ const ctxMenu     = document.getElementById('ctxMenu');
 //  LIST FILTER
 // ══════════════════════════════════════════════════
 let _listFilter = 'all'; // 'all' | 'favorites' | 'active' | 'dead'
-const foundFavSet = new Set();
+const foundFavSet   = new Set(); // IP favorites
+const foundCheckSet = new Set(); // IP checkmarks
+// port keys stored inside foundFavSet as "ip:port"
+// port checkmarks stored inside foundPortCheckSet as "ip:port"
+const foundPortCheckSet = new Set();
+const foundExpandedSet  = new Set(); // IPs with ports row expanded
+
+function saveExpanded() {
+  try { localStorage.setItem('netrecon_expanded', JSON.stringify([...foundExpandedSet])); } catch {}
+}
+
+function restoreExpanded() {
+  try {
+    const raw = localStorage.getItem('netrecon_expanded');
+    if (!raw) return;
+    JSON.parse(raw).forEach(ip => foundExpandedSet.add(ip));
+  } catch {}
+}
+restoreExpanded();
+
+function saveMarks() {
+  try {
+    localStorage.setItem('netrecon_marks', JSON.stringify({
+      favIps:       [...foundFavSet].filter(k => !k.includes(':')),
+      favPorts:     [...foundFavSet].filter(k =>  k.includes(':')),
+      checkIps:     [...foundCheckSet],
+      checkPorts:   [...foundPortCheckSet],
+    }));
+  } catch {}
+}
+
+function restoreMarks() {
+  try {
+    const raw = localStorage.getItem('netrecon_marks');
+    if (!raw) return;
+    const { favIps = [], favPorts = [], checkIps = [], checkPorts = [] } = JSON.parse(raw);
+    favIps.forEach(k => foundFavSet.add(k));
+    favPorts.forEach(k => foundFavSet.add(k));
+    checkIps.forEach(k => foundCheckSet.add(k));
+    checkPorts.forEach(k => foundPortCheckSet.add(k));
+  } catch {}
+}
+restoreMarks();
 
 function applyListFilter() {
   document.querySelectorAll('.lv-row').forEach(row => {
@@ -1009,12 +1115,15 @@ document.getElementById('colExpandAll')?.addEventListener('click', () => {
       paths.classList.add('open');
       paths.style.display = 'flex';
       if (expandBtn) expandBtn.textContent = '−';
+      if (row?.dataset.ip) foundExpandedSet.add(row.dataset.ip);
     } else {
       paths.classList.remove('open');
       paths.style.display = 'none';
       if (expandBtn) expandBtn.textContent = '+';
+      if (row?.dataset.ip) foundExpandedSet.delete(row.dataset.ip);
     }
   });
+  saveExpanded();
 });
 
 // Check column header — right-click context menu
@@ -1035,7 +1144,9 @@ document.getElementById('checkCtxMarkVisible')?.addEventListener('click', () => 
     if (row.style.display === 'none') return;
     const span = row.querySelector('.lv-icon span');
     if (span) { span.className = 'icon-ok'; span.title = 'Marked'; }
+    const ip = row.dataset.ip; if (ip) foundCheckSet.add(ip);
   });
+  saveMarks();
 });
 
 document.getElementById('checkCtxUnmarkVisible')?.addEventListener('click', () => {
@@ -1044,7 +1155,9 @@ document.getElementById('checkCtxUnmarkVisible')?.addEventListener('click', () =
     if (row.style.display === 'none') return;
     const span = row.querySelector('.lv-icon span');
     if (span) { span.className = 'icon-ok-off'; span.title = 'Mark'; }
+    const ip = row.dataset.ip; if (ip) foundCheckSet.delete(ip);
   });
+  saveMarks();
 });
 
 document.addEventListener('click', () => checkCtxMenu?.classList.remove('open'));
@@ -1073,6 +1186,7 @@ document.getElementById('favCtxAddVisible')?.addEventListener('click', () => {
       span.title = 'Favorite';
     }
   });
+  saveMarks();
   if (_listFilter === 'favorites') applyListFilter();
 });
 
@@ -1088,6 +1202,7 @@ document.getElementById('favCtxRemoveVisible')?.addEventListener('click', () => 
       span.title = 'Add to favorites';
     }
   });
+  saveMarks();
   if (_listFilter === 'favorites') applyListFilter();
 });
 
@@ -1102,6 +1217,7 @@ let _sortDir = 1;    // 1 = asc, -1 = desc
 function sortListView(col) {
   if (_sortCol === col) _sortDir *= -1;
   else { _sortCol = col; _sortDir = 1; }
+  try { localStorage.setItem('netrecon_sort', JSON.stringify({ col: _sortCol, dir: _sortDir })); } catch {}
 
   // Update header indicators
   const ipEl   = document.getElementById('colSortIp');
@@ -1148,6 +1264,19 @@ function sortListView(col) {
 document.getElementById('colSortIp')?.addEventListener('click',   () => sortListView('ip'));
 document.getElementById('colSortPing')?.addEventListener('click', () => sortListView('ping'));
 
+// Restore saved sort state
+try {
+  const savedSort = JSON.parse(localStorage.getItem('netrecon_sort') || 'null');
+  if (savedSort && (savedSort.col === 'ip' || savedSort.col === 'ping')) {
+    _sortCol = savedSort.col;
+    _sortDir = savedSort.dir === -1 ? -1 : 1;
+    const ipEl   = document.getElementById('colSortIp');
+    const pingEl = document.getElementById('colSortPing');
+    if (ipEl)   ipEl.textContent   = 'IP Address' + (_sortCol === 'ip'   ? (_sortDir === 1 ? ' ▲' : ' ▼') : '');
+    if (pingEl) pingEl.textContent = 'Ping'        + (_sortCol === 'ping' ? (_sortDir === 1 ? ' ▲' : ' ▼') : '');
+  }
+} catch {}
+
 // ══════════════════════════════════════════════════
 //  EXTRA COLUMNS (Columns panel)
 // ══════════════════════════════════════════════════
@@ -1159,7 +1288,7 @@ const EXTRA_COLS = [
   { key: 'access',   width: '80px'  },
 ];
 const colsEnabled = { hostname: false, geo: false, device: false, title: false, access: false };
-const BASE_LV_COLS = '20px 18px 18px 124px 26px 80px';
+const BASE_LV_COLS = '20px 18px 18px 87px 26px 56px';
 
 function updateColsGrid() {
   const extras = EXTRA_COLS.filter(c => colsEnabled[c.key]).map(c => c.width).join(' ');
@@ -1207,6 +1336,19 @@ document.getElementById('btnCols')?.addEventListener('click', e => {
   colsPanel.style.right = '';
   colsPanel.classList.toggle('open');
   btn.classList.toggle('active', colsPanel.classList.contains('open'));
+});
+
+document.getElementById('btnBlurIp')?.addEventListener('click', () => {
+  const btn = document.getElementById('btnBlurIp');
+  const listviewWrap = document.getElementById('listviewWrap');
+  const rangeRow = document.querySelector('.range-row');
+  const on = listviewWrap.classList.toggle('ip-blur-active');
+  rangeRow?.classList.toggle('ip-range-blurred', on);
+  document.body.classList.toggle('ip-detect-blurred', on);
+  document.body.classList.toggle('ip-blur-active', on);
+  btn.classList.toggle('active', on);
+  btn.title = on ? 'Click to show IPs' : 'Toggle IP blur';
+  if (typeof updateGlobeDots === 'function') updateGlobeDots();
 });
 document.addEventListener('click', e => {
   if (!colsPanel?.contains(e.target) && e.target.id !== 'btnCols') {
@@ -1420,6 +1562,10 @@ function applyToolWindowMode() {
     proto: 'protoWin',
     globe: 'globeWin',
     topology: 'topoWin',
+    'wifi-radar': 'wifiRadarWin',
+    'bt-detector': 'btDetectorWin',
+    sniffer: 'snifferWin',
+    'ai-assistant': 'aiAssistantWin',
   };
 
   const targetId = toolToWindow[_toolMode];
@@ -1745,12 +1891,18 @@ function addResultRow(ip, openPorts, pingMs) {
   const cIcon = document.createElement('div');
   cIcon.className = 'lv-cell lv-icon';
   cIcon.innerHTML = '<span class="icon-ok-off" title="Mark">✔</span>';
+  if (foundCheckSet.has(ip)) {
+    const s = cIcon.querySelector('span');
+    s.className = 'icon-ok'; s.title = 'Marked';
+  }
   cIcon.addEventListener('click', (e) => {
     e.stopPropagation();
     const span = cIcon.querySelector('span');
     const on = span.className === 'icon-ok';
     span.className = on ? 'icon-ok-off' : 'icon-ok';
     span.title = on ? 'Mark' : 'Marked';
+    if (on) foundCheckSet.delete(ip); else foundCheckSet.add(ip);
+    saveMarks();
   });
   row.appendChild(cIcon);
 
@@ -1771,6 +1923,7 @@ function addResultRow(ip, openPorts, pingMs) {
       span.className = 'star-on';
       span.title = 'Favorite';
     }
+    saveMarks();
     if (_listFilter === 'favorites') applyListFilter();
   });
   row.appendChild(cStar);
@@ -1783,7 +1936,7 @@ function addResultRow(ip, openPorts, pingMs) {
 
   // IP
   const cIp = document.createElement('div');
-  cIp.className='lv-cell';
+  cIp.className='lv-cell lv-ip-cell';
   cIp.innerHTML = `${ip} <span id="acc_${ip.replace(/\./g,'_')}" class="lv-acc-span"></span>`;
   row.appendChild(cIp);
 
@@ -1832,15 +1985,18 @@ function addResultRow(ip, openPorts, pingMs) {
     const sCheck = document.createElement('div');
     sCheck.className = 'path-col-spacer';
     const checkSpan = document.createElement('span');
-    checkSpan.className = 'icon-ok-off';
+    const portCheckKey = `${ip}:${port}`;
+    checkSpan.className = foundPortCheckSet.has(portCheckKey) ? 'icon-ok' : 'icon-ok-off';
     checkSpan.textContent = '✔';
-    checkSpan.title = 'Mark';
+    checkSpan.title = foundPortCheckSet.has(portCheckKey) ? 'Marked' : 'Mark';
     checkSpan.style.cursor = 'pointer';
     checkSpan.addEventListener('click', e => {
       e.stopPropagation();
       const on = checkSpan.className === 'icon-ok';
       checkSpan.className = on ? 'icon-ok-off' : 'icon-ok';
       checkSpan.title = on ? 'Mark' : 'Marked';
+      if (on) foundPortCheckSet.delete(portCheckKey); else foundPortCheckSet.add(portCheckKey);
+      saveMarks();
     });
     sCheck.appendChild(checkSpan);
     line.appendChild(sCheck);
@@ -1860,6 +2016,7 @@ function addResultRow(ip, openPorts, pingMs) {
       const on = starSpan.className === 'star-on';
       if (on) { foundFavSet.delete(portKey); starSpan.className = 'star-off'; starSpan.title = 'Add to favorites'; }
       else     { foundFavSet.add(portKey);    starSpan.className = 'star-on';  starSpan.title = 'Favorite'; }
+      saveMarks();
       if (_listFilter === 'favorites') applyListFilter();
     });
     sStar.appendChild(starSpan);
@@ -1904,6 +2061,8 @@ function addResultRow(ip, openPorts, pingMs) {
     pathsRow.style.display = open ? 'flex' : 'none';
     expandBtn.textContent = open ? '−' : '+';
     expandBtn.classList.toggle('open', open);
+    if (open) foundExpandedSet.add(ip); else foundExpandedSet.delete(ip);
+    saveExpanded();
   });
 
   // ── Left click → select only (no detail, no preview) ──
@@ -1992,6 +2151,19 @@ function restoreResults() {
 
 // ── Restore on load ──
 restoreResults();
+// Re-apply saved sort (pre-flip dir so sortListView flips it back to saved value)
+if (_sortCol) { _sortDir *= -1; sortListView(_sortCol); }
+// Re-apply saved expanded state
+foundExpandedSet.forEach(ip => {
+  const row = document.querySelector(`.lv-row[data-ip="${CSS.escape(ip)}"]`);
+  if (!row) return;
+  const pathsRow = row.nextElementSibling;
+  if (!pathsRow || !pathsRow.classList.contains('paths-row')) return;
+  pathsRow.classList.add('open');
+  pathsRow.style.display = 'flex';
+  const btn = row.querySelector('.row-expand-btn');
+  if (btn) { btn.textContent = '−'; btn.classList.add('open'); }
+});
 
 // ══════════════════════════════════════════════════
 //  PREVIEW
@@ -2506,13 +2678,19 @@ async function startScan() {
   if (!selectedPorts.length) { setStatus(t('errNoPorts'),'err'); return; }
 
   const total=endNum-startNum+1;
-  const concurrency = Math.min(+document.getElementById('concNum').value || 20, 64);
+  const concurrency = Math.min(+document.getElementById('concNum').value || 32, 64);
   const delayMs = Math.max(0, Math.min(5000, +document.getElementById('delayMs').value || 0));
+  const _defs = loadScanDefaults();
+  const delayMsPerPort = (_defs.portScanMode === 'sequential') ? _defs.delayMsPerPort : 0;
+  const portChunkSize = _defs.chunkSize || 100;
   foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
   refreshTopologyFilterOptions();
   stopRequested=false; statTime.textContent='0.0s';
   updateProgress(0,total,0,0); setScanState(true);
-  if (typeof appendCmdLog === 'function') appendCmdLog(`Scan start: ${startIp} — ${endIp}  [${selectedPorts.length} port${selectedPorts.length===1?'':'s'}, conc: ${concurrency}]`, 'scan');
+  if (typeof appendCmdLog === 'function') {
+    appendCmdLog(`Scan start: ${startIp} — ${endIp}  [${selectedPorts.length} port${selectedPorts.length===1?'':'s'}, conc: ${concurrency}]`, 'scan');
+    appendCmdLog(`IP delay: ${delayMs}ms  |  Port mode: ${_defs.portScanMode === 'sequential' ? `sequential, delay ${delayMsPerPort}ms/port` : 'parallel'}  |  Batch: ${portChunkSize}`, 'scan');
+  }
 
   // Clear list
   listBody.innerHTML='';
@@ -2542,17 +2720,29 @@ async function startScan() {
     portProgFill.style.width = '0%';
   }
 
-  // Probe all ports for one IP — chunked to avoid freezing browser
-  async function probeAllPorts(ip, ports) {
-    const CHUNK = 100;
+  // Probe all ports for one IP — chunked to avoid freezing browser, optionally with per-port delay
+  async function probeAllPorts(ip, ports, delayBetweenPorts = 0) {
+    const CHUNK = portChunkSize;
     const results = [];
     for (let i = 0; i < ports.length && !stopRequested; i += CHUNK) {
       showPortProgress(i, ports.length, ip);
       const batch = ports.slice(i, i + CHUNK);
-      const batchRes = await Promise.all(
-        batch.map(port => probePort(ip, port, 1400).then(r => ({ port, ok: r.ok, ms: r.ms })))
-      );
-      results.push(...batchRes);
+      if (delayBetweenPorts > 0) {
+        // Sequential with delay
+        for (const port of batch) {
+          const r = await probePort(ip, port, 1400);
+          results.push({ port, ok: r.ok, ms: r.ms });
+          if (delayBetweenPorts > 0 && !stopRequested) {
+            await new Promise(resolve => setTimeout(resolve, delayBetweenPorts));
+          }
+        }
+      } else {
+        // Parallel without delay
+        const batchRes = await Promise.all(
+          batch.map(port => probePort(ip, port, 1400).then(r => ({ port, ok: r.ok, ms: r.ms })))
+        );
+        results.push(...batchRes);
+      }
     }
     hidePortProgress();
     return results;
@@ -2564,8 +2754,10 @@ async function startScan() {
       const idx=nextIdx++; if(idx>=total) return;
       const ip=numToIp(startNum+idx);
       const res = selectedPorts.length > 200
-        ? await probeAllPorts(ip, selectedPorts)
-        : await Promise.all(selectedPorts.map(port=>probePort(ip,port,1400).then(r=>({port, ok:r.ok, ms:r.ms}))));
+        ? await probeAllPorts(ip, selectedPorts, delayMsPerPort)
+        : delayMsPerPort > 0
+          ? await probeAllPorts(ip, selectedPorts, delayMsPerPort)
+          : await Promise.all(selectedPorts.map(port=>probePort(ip,port,1400).then(r=>({port, ok:r.ok, ms:r.ms}))));
       const openPorts=res.filter(r=>r.ok).map(r=>r.port);
       const bestMs = res.filter(r=>r.ok).reduce((a,r)=>r.ms<a?r.ms:a, Infinity);
       const pingMs = bestMs === Infinity ? null : bestMs;
