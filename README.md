@@ -8,7 +8,7 @@ or here https://www.ipscanner.pl
 # Projekt amatorski wykonany wyłącznie przy użyciu vibe-codingu w celach naukowych.
 # An amateur project made solely using vibe-coding for scientific purposes.
 
-# IPscanner no server, one file, index.html, js, ready to run
+# IPscanner ready to run
 IP address scanner online
 
 <img width="1042" height="852" alt="image" src="https://github.com/user-attachments/assets/c7b0f7dd-f0b3-4882-aaed-b8c919045ea1" />
@@ -20,6 +20,14 @@ IP address scanner online
 <img width="1072" height="838" alt="image" src="https://github.com/user-attachments/assets/94146e40-5993-4cbd-9333-e0390b89f56d" />
 .
 <img width="1919" height="1123" alt="image" src="https://github.com/user-attachments/assets/8fb27d15-d021-4be7-8478-7d1a359e215b" />
+.
+<img width="1691" height="1020" alt="image" src="https://github.com/user-attachments/assets/82023340-5d0c-451b-aea0-1c7bbf8d99d9" />
+.
+<img width="1633" height="947" alt="image" src="https://github.com/user-attachments/assets/38156ec6-386f-4f38-9e35-ea88002f7042" />
+.
+<img width="806" height="472" alt="image" src="https://github.com/user-attachments/assets/e93c4357-28b4-488f-8ed3-078502c0d488" />
+.
+<img width="1096" height="642" alt="image" src="https://github.com/user-attachments/assets/6c1d1269-e19c-4942-bb82-8aab3a58166a" />
 
 W przygotowaniu/soon: (in windows application)
 
