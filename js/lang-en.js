@@ -117,7 +117,7 @@ window.LANG_EN = {
   customizeGlobe:'🌍 Globe (World Map)', customizeConsole:'⌨ Console',
   customizeMacro:'📁 Macro', customizeSpeed:'📶 Speed Test',
   customizeProto:'🧩 Prototype', customizeTopology:'🕸 Topology',
-  customizeSkinLegend:'Skin', skinClassic:'Classic', skinGlass:'Glass', skinWorkbench:'Workbench Night',
+  customizeSkinLegend:'Skin', skinClassic:'Classic', skinGlass:'Glass', skinWorkbench:'Workbench Night', skinPurpleDark:'Purple Dark', skinBlackFlat:'Black Flat',
   globeWinTitle:'Network Map – IP Scan Results',
   topoWinTitle:'Network Topology',
   btnMapGlobe:'Globe', btnMapTopology:'Topology',

@@ -22,6 +22,8 @@
 <link rel="stylesheet" href="css/tool-radar.css"/>
 <link rel="stylesheet" href="css/theme-glass.css"/>
 <link rel="stylesheet" href="css/theme-workbench.css"/>
+<link rel="stylesheet" href="css/theme-purple-dark.css"/>
+<link rel="stylesheet" href="css/theme-black-flat.css"/>
 <link rel="stylesheet" href="css/clippy.css"/>
 </head>
 <body>
@@ -29,7 +31,7 @@
 (function () {
   try {
     var skin = localStorage.getItem('ui_skin');
-    if (skin === 'glass' || skin === 'workbench' || skin === 'classic') {
+    if (skin === 'glass' || skin === 'workbench' || skin === 'purple-dark' || skin === 'black-flat' || skin === 'classic') {
       document.body.classList.add('skin-' + skin);
     } else {
       document.body.classList.add('skin-classic');
@@ -1402,6 +1404,14 @@
           <label class="dlg-radio">
             <input type="radio" name="uiSkin" id="skinWorkbench" value="workbench"/>
             <span data-i18n="skinWorkbench">Workbench Night</span>
+          </label>
+          <label class="dlg-radio">
+            <input type="radio" name="uiSkin" id="skinPurpleDark" value="purple-dark"/>
+            <span data-i18n="skinPurpleDark">Purple Dark</span>
+          </label>
+          <label class="dlg-radio">
+            <input type="radio" name="uiSkin" id="skinBlackFlat" value="black-flat"/>
+            <span data-i18n="skinBlackFlat">Black Flat</span>
           </label>
         </div>
       </div>
