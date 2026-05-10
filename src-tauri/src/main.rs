@@ -2797,7 +2797,9 @@ fn read_image_meta(
     out.push(ImgMetaEntry::new("File","MagicBytes", hex.trim()));
 
     match format {
-        "JPEG" => parse_jpeg(data, &mut out),
+        "JPEG" => {
+            parse_jpeg(data, &mut out);
+        }
         "PNG"  => parse_png(data, &mut out),
         "BMP"  => parse_bmp(data, &mut out),
         "GIF"  => parse_gif(data, &mut out),
