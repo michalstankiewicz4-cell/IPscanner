@@ -682,7 +682,7 @@ const TOOLBAR_BTNS_CFG = [
   { chk: 'chkBtnTopology',   id: 'btnTopologyToolbar', key: 'tb_topology' },
 ];
 const UI_SKIN_KEY = 'ui_skin';
-const UI_SKINS = ['classic', 'glass', 'workbench', 'purple-dark', 'black-flat'];
+const UI_SKINS = ['classic', 'glass', 'workbench', 'purple-dark', 'black-flat', 'retrogray'];
 
 function getSavedSkin() {
   const savedSkin = localStorage.getItem(UI_SKIN_KEY);
@@ -690,7 +690,7 @@ function getSavedSkin() {
 }
 
 function setBodySkinClass(skin, broadcast = true) {
-  document.body.classList.remove('skin-classic', 'skin-glass', 'skin-workbench', 'skin-purple-dark', 'skin-black-flat');
+  document.body.classList.remove('skin-classic', 'skin-glass', 'skin-workbench', 'skin-purple-dark', 'skin-black-flat', 'skin-retrogray');
   document.body.classList.add(`skin-${skin}`);
   // Broadcast to other windows
   if (broadcast && _syncChannel) _syncChannel.postMessage({ type: 'skin', value: skin });
@@ -722,11 +722,13 @@ function openCustomizeDlg() {
   const skinWorkbench = document.getElementById('skinWorkbench');
   const skinPurpleDark = document.getElementById('skinPurpleDark');
   const skinBlackFlat = document.getElementById('skinBlackFlat');
+  const skinRetrogray = document.getElementById('skinRetrogray');
   if (skinClassic) skinClassic.checked = activeSkin === 'classic';
   if (skinGlass) skinGlass.checked = activeSkin === 'glass';
   if (skinWorkbench) skinWorkbench.checked = activeSkin === 'workbench';
   if (skinPurpleDark) skinPurpleDark.checked = activeSkin === 'purple-dark';
   if (skinBlackFlat) skinBlackFlat.checked = activeSkin === 'black-flat';
+  if (skinRetrogray) skinRetrogray.checked = activeSkin === 'retrogray';
 
   openOverlay('dlgCustomizeOverlay');
 }

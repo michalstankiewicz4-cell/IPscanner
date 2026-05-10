@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="css/theme-workbench.css"/>
 <link rel="stylesheet" href="css/theme-purple-dark.css"/>
 <link rel="stylesheet" href="css/theme-black-flat.css"/>
+<link rel="stylesheet" href="css/theme-retrogray.css"/>
 <link rel="stylesheet" href="css/clippy.css"/>
 </head>
 <body>
@@ -31,7 +32,7 @@
 (function () {
   try {
     var skin = localStorage.getItem('ui_skin');
-    if (skin === 'glass' || skin === 'workbench' || skin === 'purple-dark' || skin === 'black-flat' || skin === 'classic') {
+    if (skin === 'glass' || skin === 'workbench' || skin === 'purple-dark' || skin === 'black-flat' || skin === 'retrogray' || skin === 'classic') {
       document.body.classList.add('skin-' + skin);
     } else {
       document.body.classList.add('skin-classic');
@@ -1413,6 +1414,10 @@
           <label class="dlg-radio">
             <input type="radio" name="uiSkin" id="skinBlackFlat" value="black-flat"/>
             <span data-i18n="skinBlackFlat">Black Flat</span>
+          </label>
+          <label class="dlg-radio">
+            <input type="radio" name="uiSkin" id="skinRetrogray" value="retrogray"/>
+            <span data-i18n="skinRetrogray">Retro Gray</span>
           </label>
         </div>
       </div>

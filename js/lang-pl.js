@@ -117,7 +117,7 @@ window.LANG_PL = {
   customizeGlobe:'🌍 Glob (Mapa świata)', customizeConsole:'⌨ Konsola',
   customizeMacro:'📁 Makro', customizeSpeed:'📶 Test prędkości',
   customizeProto:'🧩 Prototyp', customizeTopology:'🕸 Topologia',
-  customizeSkinLegend:'Wygląd', skinClassic:'Klasyczny', skinGlass:'Szklany', skinWorkbench:'Ciemny motyw', skinPurpleDark:'Fioletowy ciemny', skinBlackFlat:'Czarny flat',
+  customizeSkinLegend:'Wygląd', skinClassic:'Klasyczny', skinGlass:'Szklany', skinWorkbench:'Ciemny motyw', skinPurpleDark:'Fioletowy ciemny', skinBlackFlat:'Czarny flat', skinRetrogray:'Retro szary',
   globeWinTitle:'Mapa sieci – Wyniki skanowania',
   topoWinTitle:'Topologia sieci',
   btnMapGlobe:'Glob', btnMapTopology:'Topologia',
