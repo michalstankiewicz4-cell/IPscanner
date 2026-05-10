@@ -1691,3 +1691,152 @@ body.tool-window-mode #mainWin {
   color: #000080;
 }
 
+  /* ── Network Sniffer ─────────────────────────────────── */
+  .sniffer-win {
+    position: absolute;
+    width: 860px;
+    height: 480px;
+    min-width: 600px;
+    min-height: 320px;
+    display: none;
+    flex-direction: column;
+    resize: both;
+    overflow: hidden;
+  }
+
+  .sniffer-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    padding: 8px;
+    gap: 6px;
+    font-family: "Segoe UI", Tahoma, "MS Sans Serif", sans-serif;
+    font-size: 11px;
+  }
+
+  .sniffer-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .sniffer-search {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  .sniffer-live-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .sniffer-table-wrap {
+    flex: 1;
+    overflow: auto;
+    padding: 0;
+    min-height: 0;
+  }
+
+  .sniffer-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    font-family: "Segoe UI", Tahoma, "MS Sans Serif", sans-serif;
+  }
+
+  .sniffer-table thead th {
+    background: #c0c0c0;
+    border: 1px solid #808080;
+    padding: 3px 6px;
+    text-align: left;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    user-select: none;
+  }
+
+  .sniffer-table thead th:hover {
+    background: #d4d0c8;
+  }
+
+  .sniffer-table thead th.sn-sort-asc::after  { content: ' ▲'; font-size: 9px; }
+  .sniffer-table thead th.sn-sort-desc::after { content: ' ▼'; font-size: 9px; }
+
+  .sniffer-table tbody tr {
+    cursor: default;
+  }
+
+  .sniffer-table tbody tr:hover {
+    background: #d4e8ff;
+  }
+
+  .sniffer-table tbody tr.sn-row-selected {
+    background: #0a246a;
+    color: #fff;
+  }
+
+  .sniffer-table tbody tr.sn-row-selected .sn-state-chip {
+    border-color: #fff !important;
+    color: #fff !important;
+    background: transparent !important;
+  }
+
+  .sniffer-table td {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 2px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+
+  .sn-pid   { width: 46px;  color: #555; }
+  .sn-proc  { max-width: 130px; font-weight: bold; }
+  .sn-proto { width: 44px; text-align: center; font-weight: bold; }
+  .sn-addr  { font-family: Consolas, "Courier New", monospace; font-size: 11px; max-width: 180px; }
+
+  .sn-proto-tcp { color: #003580; }
+  .sn-proto-udp { color: #004d00; }
+
+  .sn-state-chip {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: bold;
+    padding: 1px 5px;
+    border: 1px solid;
+    border-radius: 2px;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .sn-empty {
+    text-align: center;
+    color: #888;
+    padding: 16px;
+    font-style: italic;
+  }
+
+  .sniffer-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sniffer-stats {
+    font-size: 10px;
+    color: #444;
+    flex: 1;
+  }
+
+  .sniffer-status {
+    font-size: 11px;
+    color: #000080;
+  }
+

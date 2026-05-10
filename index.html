@@ -78,6 +78,7 @@
         <div class="menu-dd-item" id="menuToolWifiDetector">📡 WiFi Detector...</div>
         <div class="menu-dd-item" id="menuToolWifiRadar" data-i18n="btnWifiRadar">📍 WiFi Radar</div>
         <div class="menu-dd-item" id="menuToolBtDetector" data-i18n="btnBtDetectorMenu">🔵 Bluetooth Detector...</div>
+        <div class="menu-dd-item" id="menuToolSniffer" data-i18n="btnSnifferMenu">🔎 Network Sniffer...</div>
         <div class="menu-dd-item" id="menuToolAiAssistant">🤖 AI Security Assistant...</div>
       </div>
     </div>
@@ -106,6 +107,7 @@
       <button class="btn95" id="btnCmdConsole" title="Command Console" data-i18n="btnConsole">⌨ Console</button>
       <button class="btn95" id="btnWifiRadarToolbar" title="WiFi Radar" data-i18n="btnWifiRadar">📍 WiFi Radar</button>
       <button class="btn95" id="btnBtDetectorToolbar" title="Bluetooth Detector" data-i18n="btnBtDetector">🔵 BT Detector</button>
+      <button class="btn95" id="btnSnifferToolbar" title="Network Sniffer" data-i18n="btnSniffer">🔎 Sniffer</button>
       <div class="flex-spacer"></div>
     </div>
 
@@ -922,6 +924,68 @@
   </div>
 </div>
 
+<!-- Network Sniffer window -->
+<div class="tool-win-shell sniffer-win" id="snifferWin">
+  <div class="titlebar cursor-move" id="snifferTitlebar">
+    <span class="icon">🔎</span>
+    <span class="title" data-i18n="snifferWinTitle">Network Sniffer</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnSnifferClose">✕</button>
+    </div>
+  </div>
+
+  <div class="sniffer-body">
+    <div class="sniffer-toolbar">
+      <select class="select95" id="snifferProto">
+        <option value="" data-i18n="snifferAll">All</option>
+        <option value="TCP">TCP</option>
+        <option value="UDP">UDP</option>
+      </select>
+      <select class="select95" id="snifferState">
+        <option value="" data-i18n="snifferAll">All</option>
+        <option value="Established">ESTABLISHED</option>
+        <option value="Listen">LISTEN</option>
+        <option value="TimeWait">TIME_WAIT</option>
+        <option value="CloseWait">CLOSE_WAIT</option>
+      </select>
+      <input class="input95 sniffer-search" id="snifferSearch" placeholder="Filter process / IP...">
+      <button class="btn95" id="btnSnifferRefresh" data-i18n="snifferRefresh">↻ Refresh</button>
+      <label class="sniffer-live-label">
+        <input type="checkbox" id="snifferLive">
+        <span data-i18n="snifferLive">Live</span>
+      </label>
+      <select class="select95" id="snifferInterval">
+        <option value="1000">1s</option>
+        <option value="2000" selected>2s</option>
+        <option value="5000">5s</option>
+        <option value="10000">10s</option>
+      </select>
+      <button class="btn95" id="btnSnifferExport" data-i18n="snifferExport">💾 Export CSV</button>
+    </div>
+
+    <div class="dlg-sunken-box sniffer-table-wrap">
+      <table class="sniffer-table" id="snifferTable">
+        <thead>
+          <tr>
+            <th data-col="pid"    data-i18n="snifferColPid">PID</th>
+            <th data-col="proc"   data-i18n="snifferColProc">Process</th>
+            <th data-col="proto"  data-i18n="snifferColProto">Proto</th>
+            <th data-col="local"  data-i18n="snifferColLocal">Local</th>
+            <th data-col="remote" data-i18n="snifferColRemote">Remote</th>
+            <th data-col="state"  data-i18n="snifferColState">State</th>
+          </tr>
+        </thead>
+        <tbody id="snifferTableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="sniffer-footer">
+      <div class="sniffer-stats" id="snifferStats"></div>
+      <div class="sniffer-status" id="snifferStatus" data-i18n="snifferReady">Ready.</div>
+    </div>
+  </div>
+</div>
+
 <!-- AI Assistant window -->
 <div class="tool-win-shell ai-assistant-win" id="aiAssistantWin">
   <div class="titlebar cursor-move" id="aiAssistantTitlebar">
@@ -999,6 +1063,7 @@
           Added WiFi Detector in Tools with clickable network list and per-network properties view.
           Added AI Security Assistant tool with Claude, Google and Copilot API support plus ready-made security prompts.
           Added Bluetooth Scanner in Tools with BLE and Classic BT device detection, signal strength and device properties.
+          Added Network Sniffer in Tools with live connections table, filtering/sorting and CSV export (Windows backend enabled).
         </div>
         <div class="version-head">v1.5.9</div>
         <div class="version-note">
@@ -1284,6 +1349,7 @@
 <script src="js/radar.js"></script>
 <script src="js/ai-assistant.js"></script>
 <script src="js/bt-detector.js"></script>
+<script src="js/sniffer.js"></script>
 <script src="js/clippy.js"></script>
 </body>
 </html>

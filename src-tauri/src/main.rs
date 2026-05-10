@@ -46,6 +46,7 @@ const TOOL_WINDOW_LABELS: &[&str] = &[
     "tool-globe",
     "tool-topology",
     "tool-radar",
+    "tool-sniffer",
     "tool-ai-assistant",
     "tool-bt-detector",
     "clippy",
@@ -130,6 +131,16 @@ struct BtDevice {
     connectable: bool,
     services: Vec<String>,
     source: String,
+}
+
+#[derive(Serialize, Clone)]
+struct SnifferConn {
+    pid: u32,
+    proc: String,
+    proto: String,
+    local: String,
+    remote: String,
+    state: String,
 }
 
 // ─── Commands ────────────────────────────────────────────────────────────────
@@ -451,6 +462,7 @@ async fn open_tool_window(app: AppHandle, tool: String) -> Result<(), String> {
         "globe" => ("tool-globe", "NetRecon - World Map", 1060.0, 740.0),
         "topology" => ("tool-topology", "NetRecon - Topology", 1060.0, 740.0),
         "wifi-radar" => ("tool-radar", "NetRecon - WiFi Radar", 760.0, 640.0),
+        "sniffer" => ("tool-sniffer", "NetRecon - Network Sniffer", 980.0, 620.0),
         "ai-assistant" => ("tool-ai-assistant", "NetRecon - AI Security Assistant", 880.0, 760.0),
         "bt-detector" => ("tool-bt-detector", "NetRecon - Bluetooth Detector", 820.0, 600.0),
         _ => return Err(format!("Unsupported tool window: {tool}")),
@@ -1031,6 +1043,114 @@ async fn scan_bluetooth_devices(duration_secs: u64) -> Result<Vec<BtDevice>, Str
     Ok(devices)
 }
 
+#[tauri::command]
+fn get_connections() -> Result<Vec<SnifferConn>, String> {
+        #[cfg(target_os = "windows")]
+        {
+                const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+                let ps_script = r#"
+$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+
+$tcp = Get-NetTCPConnection -ErrorAction SilentlyContinue |
+    Select-Object OwningProcess,LocalAddress,LocalPort,RemoteAddress,RemotePort,State
+$udp = Get-NetUDPEndpoint -ErrorAction SilentlyContinue |
+    Select-Object OwningProcess,LocalAddress,LocalPort,RemoteAddress,RemotePort
+
+$procMap = @{}
+Get-Process -ErrorAction SilentlyContinue | ForEach-Object {
+    $procMap[[string]$_.Id] = $_.ProcessName
+}
+
+$rows = @()
+
+foreach ($c in $tcp) {
+    $pid = [int]($c.OwningProcess)
+    $pidKey = [string]$pid
+    $pname = if ($procMap.ContainsKey($pidKey)) { $procMap[$pidKey] } else { 'unknown' }
+    $rows += [PSCustomObject]@{
+        pid   = $pid
+        proc  = $pname
+        proto = 'TCP'
+        local = "{0}:{1}" -f $c.LocalAddress, $c.LocalPort
+        remote= "{0}:{1}" -f $c.RemoteAddress, $c.RemotePort
+        state = [string]$c.State
+    }
+}
+
+foreach ($c in $udp) {
+    $pid = [int]($c.OwningProcess)
+    $pidKey = [string]$pid
+    $pname = if ($procMap.ContainsKey($pidKey)) { $procMap[$pidKey] } else { 'unknown' }
+    $rows += [PSCustomObject]@{
+        pid   = $pid
+        proc  = $pname
+        proto = 'UDP'
+        local = "{0}:{1}" -f $c.LocalAddress, $c.LocalPort
+        remote= if ($c.RemoteAddress -and $c.RemotePort) { "{0}:{1}" -f $c.RemoteAddress, $c.RemotePort } else { '-' }
+        state = 'Listen'
+    }
+}
+
+$rows | ConvertTo-Json -Compress
+"#;
+
+                let out = Command::new("powershell")
+                        .creation_flags(CREATE_NO_WINDOW)
+                        .args(["-NoProfile", "-NonInteractive", "-Command", ps_script])
+                        .output()
+                        .map_err(|e| format!("PowerShell sniffer failed: {e}"))?;
+
+                let raw = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                if raw.is_empty() {
+                        return Ok(Vec::new());
+                }
+
+                let json_str = if raw.starts_with('{') {
+                        format!("[{}]", raw)
+                } else {
+                        raw
+                };
+
+                let arr: Vec<Value> = serde_json::from_str(&json_str)
+                        .map_err(|e| format!("Sniffer JSON parse failed: {e}"))?;
+
+                let mut rows = Vec::new();
+                for item in arr {
+                        let pid = item.get("pid").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+                        let proc = item.get("proc").and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
+                        let proto = item.get("proto").and_then(|v| v.as_str()).unwrap_or("?").to_string();
+                        let local = item.get("local").and_then(|v| v.as_str()).unwrap_or("-").to_string();
+                        let remote = item.get("remote").and_then(|v| v.as_str()).unwrap_or("-").to_string();
+                        let state = item.get("state").and_then(|v| v.as_str()).unwrap_or("-").to_string();
+
+                        rows.push(SnifferConn {
+                                pid,
+                                proc,
+                                proto,
+                                local,
+                                remote,
+                                state,
+                        });
+                }
+
+                rows.sort_by(|a, b| {
+                        a.proc
+                                .to_ascii_lowercase()
+                                .cmp(&b.proc.to_ascii_lowercase())
+                                .then(a.pid.cmp(&b.pid))
+                });
+
+                Ok(rows)
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+                Err("Sniffer backend is currently supported on Windows only.".into())
+        }
+}
+
 fn extract_bt_address_from_instance_id(instance_id: &str) -> Option<String> {
     // InstanceId format examples:
     //   BTHENUM\{0000110b-...}\7&2a3b4c5d&0&000EC6AABBCC_C00000000
@@ -1390,6 +1510,7 @@ fn main() {
             get_wifi_network_details,
             ai_multi_provider_query,
             scan_bluetooth_devices,
+            get_connections,
             open_clippy_window,
             close_clippy_window,
             open_browser,
