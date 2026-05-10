@@ -962,7 +962,9 @@ async fn scan_bluetooth_devices(duration_secs: u64) -> Result<Vec<BtDevice>, Str
             .creation_flags(CREATE_NO_WINDOW)
             .args([
                 "-NoProfile", "-NonInteractive", "-Command",
-                r#"Get-PnpDevice -Class Bluetooth -ErrorAction SilentlyContinue |
+                r#"$OutputEncoding = [System.Text.UTF8Encoding]::new($false);
+                   [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false);
+                   Get-PnpDevice -Class Bluetooth -ErrorAction SilentlyContinue |
                    Select-Object FriendlyName, Status, InstanceId |
                    ConvertTo-Json -Compress"#,
             ])

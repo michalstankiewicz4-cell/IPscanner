@@ -421,6 +421,21 @@ document.addEventListener('DOMContentLoaded', () => {
   initWindowRightClickGuards();
   initAllDialogDragging();
   initWindowZStacking();
+
+  // Auto-resize window width to fit all toolbar buttons (min 900px)
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const toolbar = document.querySelector('.toolbar');
+    if (!toolbar) return;
+    const needed = toolbar.scrollWidth;
+    const minW = 900;
+    if (needed > window.innerWidth) {
+      const newW = Math.max(needed, minW);
+      try {
+        const tWin = window.__TAURI__?.window?.getCurrentWindow?.();
+        if (tWin) tWin.setSize(new window.__TAURI__.dpi.LogicalSize(newW, window.innerHeight));
+      } catch (_) {}
+    }
+  }));
 });
 
 // ══════════════════════════════════════════════════
