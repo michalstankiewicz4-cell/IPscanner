@@ -640,6 +640,10 @@ document.addEventListener('click', closeAllMenus);
 document.getElementById('menuLang').addEventListener('click', () => { closeAllMenus(); openLangDlg(); });
 document.getElementById('menuDefaults').addEventListener('click', () => { closeAllMenus(); openDefaultsDlg(); });
 document.getElementById('menuVersions').addEventListener('click', () => { closeAllMenus(); openVersionsDlg(); });
+document.getElementById('menuDownload').addEventListener('click', () => {
+  closeAllMenus();
+  openInBrowser('https://github.com/michalstankiewicz4-cell/IPscanner/releases');
+});
 document.getElementById('menuAbout').addEventListener('click', () => { closeAllMenus(); openNotepad(); });
 document.getElementById('menuClippy').addEventListener('click', () => {
   closeAllMenus();
