@@ -2247,6 +2247,72 @@ body.tool-window-mode #mainWin {
   table-layout: fixed;
 }
 
+.imgmeta-table thead {
+  display: none;
+}
+
+.imgmeta-group-head th {
+  padding: 0;
+  border-bottom: 1px solid #999;
+  background: #d8d8d8;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.imgmeta-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  background: #d8d8d8;
+  color: #000;
+  font: inherit;
+  font-weight: bold;
+  padding: 4px 6px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.imgmeta-group-toggle:hover {
+  background: #c8d9ff;
+}
+
+.imgmeta-group-toggle-icon {
+  width: 14px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.imgmeta-group-toggle-label {
+  flex: 1;
+}
+
+.imgmeta-group-count {
+  color: #555;
+  font-weight: normal;
+}
+
+.imgmeta-table-headrow th {
+  background: #000080;
+  color: #fff;
+  padding: 3px 6px;
+  text-align: left;
+  position: sticky;
+  top: 24px;
+  z-index: 1;
+  font-weight: bold;
+  user-select: none;
+}
+
+.imgmeta-group.is-collapsed .imgmeta-table-headrow,
+.imgmeta-group.is-collapsed .imgmeta-row-editable,
+.imgmeta-group.is-collapsed .imgmeta-row-readonly {
+  display: none;
+}
+
 .imgmeta-table th {
   background: #000080;
   color: #fff;

@@ -54,6 +54,7 @@
 
   let _currentFile = null;
   let _entries     = [];
+  let _collapsedSections = new Set();
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -312,6 +313,33 @@
     return `<span class="imgmeta-section-badge ${cls}">${escHtml(sec)}</span>`;
   }
 
+  function sectionKey(sec) {
+    return String(sec || '').trim();
+  }
+
+  function getOrderedSections(entries) {
+    const seen = new Set();
+    const ordered = [];
+
+    for (const group of IMG_META_FIELD_GROUPS) {
+      const groupSection = sectionKey(group.section);
+      if (entries.some(e => sectionKey(e.section) === groupSection) && !seen.has(groupSection)) {
+        ordered.push(groupSection);
+        seen.add(groupSection);
+      }
+    }
+
+    for (const entry of entries) {
+      const sec = sectionKey(entry.section);
+      if (!seen.has(sec)) {
+        ordered.push(sec);
+        seen.add(sec);
+      }
+    }
+
+    return ordered;
+  }
+
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
@@ -336,23 +364,45 @@
       wrap.innerHTML = '';
       return;
     }
-    const rows = entries.map(e =>
-      `<tr class="${isEditableEntry(e) ? 'imgmeta-row-editable' : 'imgmeta-row-readonly'}">
-        <td class="imgmeta-col-section">${sectionBadge(e.section)}</td>
-        <td class="imgmeta-col-key">${escHtml(e.key)}</td>
-        <td class="imgmeta-col-value">${renderValueCell(e)}</td>
-      </tr>`
-    ).join('');
+
+    const bySection = new Map();
+    for (const entry of entries) {
+      const sec = sectionKey(entry.section);
+      if (!bySection.has(sec)) bySection.set(sec, []);
+      bySection.get(sec).push(entry);
+    }
+
+    const sections = getOrderedSections(entries);
+    const bodies = sections.map(sec => {
+      const rows = (bySection.get(sec) || []).map(e =>
+        `<tr class="${isEditableEntry(e) ? 'imgmeta-row-editable' : 'imgmeta-row-readonly'}">
+          <td class="imgmeta-col-key">${escHtml(e.key)}</td>
+          <td class="imgmeta-col-value">${renderValueCell(e)}</td>
+        </tr>`
+      ).join('');
+      const collapsed = _collapsedSections.has(sec);
+      return `
+        <tbody class="imgmeta-group ${collapsed ? 'is-collapsed' : ''}" data-section="${escAttr(sec)}">
+          <tr class="imgmeta-group-head">
+            <th colspan="3">
+              <button type="button" class="imgmeta-group-toggle" data-section="${escAttr(sec)}" aria-expanded="${collapsed ? 'false' : 'true'}">
+                <span class="imgmeta-group-toggle-icon">${collapsed ? '+' : '−'}</span>
+                <span class="imgmeta-group-toggle-label">${sectionBadge(sec)}</span>
+                <span class="imgmeta-group-count">${(bySection.get(sec) || []).length}</span>
+              </button>
+            </th>
+          </tr>
+          <tr class="imgmeta-table-headrow">
+            <th class="imgmeta-col-key" data-i18n="imgMetaKey">${escHtml(t('imgMetaKey'))}</th>
+            <th class="imgmeta-col-value" data-i18n="imgMetaValue">${escHtml(t('imgMetaValue'))}</th>
+          </tr>
+          ${rows}
+        </tbody>`;
+    }).join('');
+
     wrap.innerHTML = `
       <table class="imgmeta-table">
-        <thead>
-          <tr>
-            <th class="imgmeta-col-section" data-i18n="imgMetaSection">${escHtml(t('imgMetaSection'))}</th>
-            <th class="imgmeta-col-key"     data-i18n="imgMetaKey">${escHtml(t('imgMetaKey'))}</th>
-            <th class="imgmeta-col-value"   data-i18n="imgMetaValue">${escHtml(t('imgMetaValue'))}</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
+        ${bodies}
       </table>`;
   }
 
@@ -417,6 +467,7 @@
   function onClear() {
     _currentFile = null;
     _entries = [];
+    _collapsedSections = new Set();
     closeInfoPopup();
     renderTable([]);
     const fn = document.getElementById('imgMetaFilename');
@@ -424,6 +475,18 @@
     const inp = document.getElementById('imgMetaFileInput');
     if (inp) inp.value = '';
     setStatus(t('imgMetaReady'));
+  }
+
+  function onZeroValues() {
+    if (!_entries.length) return;
+    for (const entry of _entries) {
+      if (isEditableEntry(entry)) {
+        entry.value = '';
+      }
+    }
+    refreshDerivedGps(_entries);
+    renderTable(_entries);
+    setStatus(t('imgMetaEdited'));
   }
 
   function updateEntryValue(section, key, value) {
@@ -449,6 +512,16 @@
     updateEntryValue(section, key, target.value);
     renderTable(_entries);
     setStatusEdited();
+  }
+
+  function handleGroupToggle(e) {
+    const btn = e.target.closest?.('.imgmeta-group-toggle');
+    if (!btn) return;
+    const section = sectionKey(btn.dataset.section);
+    if (!section) return;
+    if (_collapsedSections.has(section)) _collapsedSections.delete(section);
+    else _collapsedSections.add(section);
+    renderTable(_entries);
   }
 
   // ── Drag & drop ────────────────────────────────────────────────────────────
@@ -546,6 +619,9 @@
     const btnExport = document.getElementById('btnImgMetaExport');
     if (btnExport) btnExport.addEventListener('click', onExport);
 
+    const btnZero = document.getElementById('btnImgMetaZero');
+    if (btnZero) btnZero.addEventListener('click', onZeroValues);
+
     const btnClear = document.getElementById('btnImgMetaClear');
     if (btnClear) btnClear.addEventListener('click', onClear);
 
@@ -565,6 +641,7 @@
     if (tableWrap && !tableWrap.dataset.imgmetaHooksInstalled) {
       tableWrap.addEventListener('input', handleTableInput);
       tableWrap.addEventListener('change', handleTableChange);
+      tableWrap.addEventListener('click', handleGroupToggle);
       tableWrap.dataset.imgmetaHooksInstalled = '1';
     }
 

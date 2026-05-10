@@ -172,7 +172,7 @@ window.LANG_EN = {
   snifferTotal:'Total',
   btnImgMetaMenu:'🖼 Image Metadata...', imgMetaWinTitle:'Image Metadata Analyzer',
   imgMetaDropHint:'Drop an image here or click to browse',
-  imgMetaBrowse:'Browse...', imgMetaClear:'Clear', imgMetaClearAll:'Clear all', imgMetaCopy:'Copy', imgMetaExport:'Export TXT',
+  imgMetaBrowse:'Browse...', imgMetaClear:'Clear', imgMetaClearAll:'Clear all', imgMetaZeroValues:'Zero values', imgMetaCopy:'Copy', imgMetaExport:'Export TXT',
   imgMetaSection:'Section', imgMetaKey:'Field', imgMetaValue:'Value',
   imgMetaReady:'Ready. Open an image to analyze its metadata.',
   imgMetaLoading:'Reading file...', imgMetaAnalyzing:'Analyzing...',
