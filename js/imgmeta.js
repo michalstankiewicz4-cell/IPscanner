@@ -145,7 +145,14 @@
   }
 
   function isTauri() {
-    return !!(window.__TAURI__ || window.__TAURI_INTERNALS__);
+    return !!getTauriInvoke();
+  }
+
+  function getTauriInvoke() {
+    return window.__TAURI_INTERNALS__?.invoke
+      ?? window.__TAURI__?.invoke
+      ?? window.__TAURI__?.core?.invoke
+      ?? null;
   }
 
   // ── File reading ───────────────────────────────────────────────────────────
@@ -166,8 +173,9 @@
 
     try {
       let result;
-      if (isTauri()) {
-        result = await window.__TAURI__.core.invoke('read_image_meta', {
+      const invoke = getTauriInvoke();
+      if (invoke) {
+        result = await invoke('read_image_meta', {
           headerBytes: byteArr,
           filename: file.name,
           mimeType: file.type || null,
@@ -340,17 +348,60 @@
 
   // ── Drag & drop ────────────────────────────────────────────────────────────
 
+  function extractFileFromDropEvent(e) {
+    const dt = e?.dataTransfer;
+    if (!dt) return null;
+
+    if (dt.files && dt.files.length > 0) {
+      return dt.files[0] || null;
+    }
+
+    if (dt.items && dt.items.length > 0) {
+      for (const item of dt.items) {
+        if (item && item.kind === 'file') {
+          const f = item.getAsFile?.();
+          if (f) return f;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function handleDropEvent(e, zone) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (zone) zone.classList.remove('drag-over');
+
+    const file = extractFileFromDropEvent(e);
+    if (file) {
+      analyzeFile(file);
+    } else {
+      setStatus(t('imgMetaErrRead'));
+    }
+  }
+
   function initDrop() {
     const zone = document.getElementById('imgMetaDropZone');
     if (!zone) return;
-    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
-    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-    zone.addEventListener('drop', e => {
+
+    // Prevent WebView from navigating away on file drop.
+    document.addEventListener('dragover', e => {
       e.preventDefault();
-      zone.classList.remove('drag-over');
-      const file = e.dataTransfer?.files?.[0];
-      if (file) analyzeFile(file);
     });
+    document.addEventListener('drop', e => {
+      if (!zone.contains(e.target)) {
+        handleDropEvent(e, zone);
+      }
+    });
+
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.add('drag-over');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => handleDropEvent(e, zone));
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
