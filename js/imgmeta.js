@@ -11,34 +11,46 @@
       fields: ['Filename', 'MimeType', 'FileSize', 'LastModifiedUnix', 'LastModifiedLocal', 'LastModifiedUTC', 'DataReceived', 'Extension', 'Format', 'MagicBytes'],
     },
     {
-      section: 'Image',
-      fields: ['Width', 'Height', 'BitDepth', 'BitsPerPixel', 'ColorMode', 'Encoding', 'Components', 'Interlace'],
-    },
-    {
-      section: 'EXIF / ExifIFD',
-      fields: ['Make', 'Model', 'Software', 'DateTime', 'DateTimeOriginal', 'DateTimeDigitized', 'Orientation', 'ISO', 'ExposureTime', 'FNumber', 'FocalLength', 'Flash', 'ColorSpace', 'Copyright', 'Artist', 'ImageDescription'],
-    },
-    {
-      section: 'GPS',
-      fields: ['LatitudeRef', 'Latitude', 'LongitudeRef', 'Longitude', 'LatitudeDecimal', 'LongitudeDecimal', 'Altitude', 'Speed', 'TimeStampUTC', 'DateStamp', 'Coordinates', 'MapLink'],
+      section: 'Image / geometry',
+      fields: ['Width', 'Height', 'BitDepth', 'BitsPerSample', 'BitsPerPixel', 'ColorMode', 'ColorType', 'ColorPlanes', 'Components', 'Encoding', 'Interlace', 'GIFVersion', 'Animated', 'FrameCount'],
     },
     {
       section: 'JPEG / JFIF / Adobe',
-      fields: ['Version', 'DensityUnit', 'XDensity', 'YDensity', 'Thumbnail', 'DCTEncodeVersion', 'ColorTransform', 'Comment'],
+      fields: ['Version', 'DensityUnit', 'XDensity', 'YDensity', 'Thumbnail', 'DCTEncodeVersion', 'ColorTransform'],
+    },
+    {
+      section: 'EXIF / ExifIFD',
+      fields: ['ImageDescription', 'Make', 'Model', 'Orientation', 'XResolution', 'YResolution', 'ResolutionUnit', 'Software', 'DateTime', 'Artist', 'Copyright', 'ExposureTime', 'FNumber', 'ExposureProgram', 'ISO', 'ExifVersion', 'DateTimeOriginal', 'DateTimeDigitized', 'ShutterSpeedValue', 'ApertureValue', 'ExposureBias', 'MeteringMode', 'LightSource', 'Flash', 'FocalLength', 'FlashPixVersion', 'ColorSpace', 'PixelWidth', 'PixelHeight', 'CustomRendered', 'ExposureMode', 'WhiteBalance', 'DigitalZoomRatio', 'FocalLength35mm', 'SceneCaptureType', 'Contrast', 'Saturation', 'Sharpness', 'ImageUniqueID', 'UserComment'],
+    },
+    {
+      section: 'GPS',
+      fields: ['LatitudeRef', 'Latitude', 'LongitudeRef', 'Longitude', 'AltitudeRef', 'SpeedRef', 'ImgDirectionRef', 'MapDatum', 'DateStamp', 'LatitudeDecimal', 'LongitudeDecimal', 'Altitude', 'Speed', 'ImgDirection', 'TimeStampUTC', 'Coordinates', 'MapLink'],
     },
     {
       section: 'PNG',
-      fields: ['ColorType', 'LastModified', 'Gamma', 'sRGB', 'XPixelDensity', 'YPixelDensity', 'PixelAspect', 'ICC Profile'],
+      fields: ['ColorType', 'LastModified', 'Gamma', 'sRGB', 'ICC Profile', 'XPixelDensity', 'YPixelDensity', 'PixelAspect', 'BackgroundColor', 'Histogram', 'SignificantBits'],
     },
     {
       section: 'GIF / BMP / WebP / PSD / TIFF',
-      fields: ['GIFVersion', 'FrameCount', 'AnimationLoops', 'Compression', 'DIBHeaderSize', 'XPixelsPerMeter', 'YPixelsPerMeter', 'Subtype', 'Channels', 'PhotometricInterp'],
+      fields: ['Compression', 'DIBHeaderSize', 'FileSize', 'PixelArrayOffset', 'ImageDataSize', 'XPixelsPerMeter', 'YPixelsPerMeter', 'ColorsUsed', 'GlobalColorTable', 'ColorTableSize', 'ColorResolution', 'BackgroundColorIndex', 'PixelAspectRatio', 'AnimationLoops', 'RIFFSize', 'Subtype', 'Animation', 'EXIF', 'XMP', 'Alpha', 'Channels', 'PhotometricInterp', 'Version', 'BitDepth', 'ColorMode'],
     },
     {
       section: 'IPTC / XMP / Text',
-      fields: ['Title', 'Description', 'Creator', 'Subject', 'Rights', 'CreateDate', 'ModifyDate', 'Keywords', 'Caption', 'Credit', 'Source'],
+      fields: ['ObjectName', 'EditStatus', 'Category', 'Supplemental', 'FixtureId', 'Keywords', 'ReleaseDate', 'ReleaseTime', 'SpecialInstruction', 'DateCreated', 'TimeCreated', 'DigitalCreationDate', 'DigitalCreationTime', 'OriginatingProgram', 'ProgramVersion', 'ByLine', 'ByLineTitle', 'City', 'SubLocation', 'Province', 'CountryCode', 'CountryName', 'TransmissionRef', 'Headline', 'Credit', 'Source', 'Title', 'Description', 'Creator', 'Subject', 'Rights', 'CreateDate', 'ModifyDate', 'CreatorTool', 'Rating', 'Caption'],
+    },
+    {
+      section: 'Comment / Color',
+      fields: ['Comment', 'ICC Profile'],
     },
   ];
+
+  const NON_EDITABLE_KEYS = new Set([
+    'FileSize', 'DataReceived', 'Extension', 'Format', 'MagicBytes', 'LastModifiedUnix', 'LastModifiedLocal', 'LastModifiedUTC',
+    'Width', 'Height', 'BitDepth', 'BitsPerSample', 'BitsPerPixel', 'ColorMode', 'ColorType', 'ColorPlanes', 'Components', 'Encoding', 'Interlace', 'GIFVersion', 'Animated', 'FrameCount',
+    'Version', 'DensityUnit', 'XDensity', 'YDensity', 'Thumbnail', 'DCTEncodeVersion', 'ColorTransform',
+    'XResolution', 'YResolution', 'ResolutionUnit', 'ExposureTime', 'FNumber', 'ExposureProgram', 'ISO', 'ExifVersion', 'DateTimeOriginal', 'DateTimeDigitized', 'ShutterSpeedValue', 'ApertureValue', 'ExposureBias', 'MeteringMode', 'LightSource', 'Flash', 'FocalLength', 'FlashPixVersion', 'ColorSpace', 'PixelWidth', 'PixelHeight', 'CustomRendered', 'ExposureMode', 'WhiteBalance', 'DigitalZoomRatio', 'FocalLength35mm', 'SceneCaptureType', 'Contrast', 'Saturation', 'Sharpness', 'ImageUniqueID',
+    'LatitudeDecimal', 'LongitudeDecimal', 'Coordinates', 'MapLink', 'RIFFSize', 'Subtype', 'Animation', 'EXIF', 'XMP', 'Alpha', 'Channels', 'PhotometricInterp', 'PixelArrayOffset', 'ImageDataSize', 'XPixelsPerMeter', 'YPixelsPerMeter', 'ColorsUsed', 'GlobalColorTable', 'ColorTableSize', 'ColorResolution', 'BackgroundColorIndex', 'PixelAspectRatio', 'BackgroundColor', 'Histogram', 'SignificantBits', 'ICC Profile',
+  ]);
 
   let _currentFile = null;
   let _entries     = [];
@@ -56,6 +68,10 @@
   function setStatus(msg) {
     const el = document.getElementById('imgMetaStatus');
     if (el) el.textContent = msg;
+  }
+
+  function setStatusEdited() {
+    setStatus(t('imgMetaEdited'));
   }
 
   function formatBytesHuman(n) {
@@ -95,9 +111,70 @@
     else entries.push(row);
   }
 
+  function removeEntry(entries, section, key) {
+    const idx = entries.findIndex(e => e.section === section && e.key === key);
+    if (idx >= 0) entries.splice(idx, 1);
+  }
+
   function findValue(entries, section, key) {
     const e = entries.find(x => x.section === section && x.key === key);
     return e ? String(e.value || '') : '';
+  }
+
+  function isEditableEntry(entry) {
+    return !NON_EDITABLE_KEYS.has(String(entry.key || ''));
+  }
+
+  function escAttr(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function parseGpsDecimal(value, ref) {
+    const raw = String(value || '').trim();
+    if (!raw) return null;
+
+    const direct = Number(raw.replace(',', '.'));
+    if (Number.isFinite(direct)) {
+      return ref === 'S' || ref === 'W' ? -Math.abs(direct) : direct;
+    }
+
+    const dms = raw.match(/(-?\d+(?:\.\d+)?)\s*[°ºd]\s*(\d+(?:\.\d+)?)?\s*['’m]?\s*(\d+(?:\.\d+)?)?\s*(?:["”s])?/i);
+    if (!dms) return null;
+
+    const deg = Number(dms[1]);
+    const min = Number(dms[2] || 0);
+    const sec = Number(dms[3] || 0);
+    if (!Number.isFinite(deg) || !Number.isFinite(min) || !Number.isFinite(sec)) return null;
+
+    let decimal = Math.abs(deg) + (min / 60) + (sec / 3600);
+    const negative = ref === 'S' || ref === 'W' || deg < 0;
+    if (negative) decimal = -decimal;
+    return decimal;
+  }
+
+  function refreshDerivedGps(entries) {
+    const latRef = findValue(entries, 'GPS', 'LatitudeRef').trim().toUpperCase();
+    const lonRef = findValue(entries, 'GPS', 'LongitudeRef').trim().toUpperCase();
+    const latSource = findValue(entries, 'GPS', 'Latitude') || findValue(entries, 'GPS', 'LatitudeDecimal');
+    const lonSource = findValue(entries, 'GPS', 'Longitude') || findValue(entries, 'GPS', 'LongitudeDecimal');
+
+    const lat = parseGpsDecimal(latSource, latRef);
+    const lon = parseGpsDecimal(lonSource, lonRef);
+
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      pushOrReplace(entries, 'GPS', 'LatitudeDecimal', lat.toFixed(8));
+      pushOrReplace(entries, 'GPS', 'LongitudeDecimal', lon.toFixed(8));
+      pushOrReplace(entries, 'GPS', 'Coordinates', `${lat.toFixed(8)}, ${lon.toFixed(8)}`);
+      pushOrReplace(entries, 'GPS', 'MapLink', `https://www.openstreetmap.org/?mlat=${lat.toFixed(8)}&mlon=${lon.toFixed(8)}#map=16/${lat.toFixed(8)}/${lon.toFixed(8)}`);
+    } else {
+      removeEntry(entries, 'GPS', 'Coordinates');
+      removeEntry(entries, 'GPS', 'MapLink');
+    }
   }
 
   function enrichEntries(entries, file, bytesRead) {
@@ -242,6 +319,9 @@
   function renderValueCell(e) {
     const key = String(e.key || '');
     const value = String(e.value || '');
+    if (isEditableEntry(e)) {
+      return `<input class="imgmeta-value-input" data-entry-section="${escAttr(e.section)}" data-entry-key="${escAttr(e.key)}" value="${escAttr(value)}" spellcheck="false">`;
+    }
     if (key === 'MapLink' && /^https?:\/\//i.test(value)) {
       const safe = escHtml(value);
       return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${safe}</a>`;
@@ -257,7 +337,7 @@
       return;
     }
     const rows = entries.map(e =>
-      `<tr>
+      `<tr class="${isEditableEntry(e) ? 'imgmeta-row-editable' : 'imgmeta-row-readonly'}">
         <td class="imgmeta-col-section">${sectionBadge(e.section)}</td>
         <td class="imgmeta-col-key">${escHtml(e.key)}</td>
         <td class="imgmeta-col-value">${renderValueCell(e)}</td>
@@ -344,6 +424,31 @@
     const inp = document.getElementById('imgMetaFileInput');
     if (inp) inp.value = '';
     setStatus(t('imgMetaReady'));
+  }
+
+  function updateEntryValue(section, key, value) {
+    const entry = _entries.find(item => item.section === section && item.key === key);
+    if (!entry) return;
+    entry.value = String(value);
+    refreshDerivedGps(_entries);
+  }
+
+  function handleTableInput(e) {
+    const target = e.target;
+    if (!target || !target.classList || !target.classList.contains('imgmeta-value-input')) return;
+    const section = target.dataset.entrySection || '';
+    const key = target.dataset.entryKey || '';
+    updateEntryValue(section, key, target.value);
+  }
+
+  function handleTableChange(e) {
+    const target = e.target;
+    if (!target || !target.classList || !target.classList.contains('imgmeta-value-input')) return;
+    const section = target.dataset.entrySection || '';
+    const key = target.dataset.entryKey || '';
+    updateEntryValue(section, key, target.value);
+    renderTable(_entries);
+    setStatusEdited();
   }
 
   // ── Drag & drop ────────────────────────────────────────────────────────────
@@ -455,6 +560,13 @@
       const file = e.target.files?.[0];
       if (file) analyzeFile(file);
     });
+
+    const tableWrap = document.getElementById('imgMetaTableWrap');
+    if (tableWrap && !tableWrap.dataset.imgmetaHooksInstalled) {
+      tableWrap.addEventListener('input', handleTableInput);
+      tableWrap.addEventListener('change', handleTableChange);
+      tableWrap.dataset.imgmetaHooksInstalled = '1';
+    }
 
     initDrop();
   }

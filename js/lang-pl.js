@@ -172,7 +172,7 @@ window.LANG_PL = {
   snifferTotal:'Razem',
   btnImgMetaMenu:'🖼 Metadane obrazów...', imgMetaWinTitle:'Analizator metadanych obrazów',
   imgMetaDropHint:'Upuść obraz tutaj lub kliknij, aby wybrać',
-  imgMetaBrowse:'Przeglądaj...', imgMetaClear:'Wyczyść', imgMetaCopy:'Kopiuj', imgMetaExport:'Eksport TXT',
+  imgMetaBrowse:'Przeglądaj...', imgMetaClear:'Wyczyść', imgMetaClearAll:'Wyczyść wszystko', imgMetaCopy:'Kopiuj', imgMetaExport:'Eksport TXT',
   imgMetaSection:'Sekcja', imgMetaKey:'Pole', imgMetaValue:'Wartość',
   imgMetaReady:'Gotowy. Otwórz obraz, aby przeanalizować metadane.',
   imgMetaLoading:'Odczytuję plik...', imgMetaAnalyzing:'Analizuję...',
@@ -181,5 +181,6 @@ window.LANG_PL = {
   imgMetaDesktopHint:'Pełne dane EXIF i GPS wymagają trybu desktopowego (Tauri).',
   imgMetaErrRead:'Nie udało się odczytać pliku.',
   imgMetaInfo:'Info', imgMetaInfoTitle:'Analizowane pola metadanych',
+  imgMetaEdited:'Zmiana zapisana lokalnie.',
   imgMetaCopied:'Skopiowano do schowka.',
 };
