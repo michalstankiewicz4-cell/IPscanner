@@ -53,6 +53,10 @@ Gotowy plik EXE oraz instalatory pojawią się w:
 <img width="806" height="472" alt="image" src="https://github.com/user-attachments/assets/e93c4357-28b4-488f-8ed3-078502c0d488" />
 .
 <img width="1096" height="642" alt="image" src="https://github.com/user-attachments/assets/6c1d1269-e19c-4942-bb82-8aab3a58166a" />
+.
+<img width="1450" height="943" alt="image" src="https://github.com/user-attachments/assets/f2ed0a18-b5db-4cf4-8502-facb34c6c055" />
+.
+<img width="1285" height="877" alt="image" src="https://github.com/user-attachments/assets/8cd8398c-9e46-4f5c-9271-fde860acc922" />
 
 W przygotowaniu/soon: (in windows application)
 
