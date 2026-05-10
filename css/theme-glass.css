@@ -193,6 +193,23 @@ body.skin-glass .scanwatch-status-warn {
   color: #8f2323;
 }
 
+body.skin-glass .lte-handover-list,
+body.skin-glass .lte-audit-list,
+body.skin-glass .lte-corr-list,
+body.skin-glass .lte-watchdog-list {
+  background: rgba(247, 252, 255, 0.92);
+  border-color: #6d8db1;
+}
+
+body.skin-glass .lte-card-title,
+body.skin-glass .lte-corr-summary {
+  color: #15406d;
+}
+
+body.skin-glass .lte-inline-label {
+  color: #1c446d;
+}
+
 body.skin-glass .listview-body::-webkit-scrollbar-track {
   background: linear-gradient(180deg, rgba(230, 242, 255, 0.96), rgba(201, 222, 245, 0.96));
 }

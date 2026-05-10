@@ -7,7 +7,7 @@ function selectIcon(el) {
 }
 
 const APP_NAME = 'NetRecon IP Auditor';
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.6.1';
 
 function getAppDisplayName() {
   return `${APP_NAME} v${APP_VERSION}`;
@@ -148,6 +148,10 @@ function initWindowZStacking() {
     'globeWin',
     'topoWin',
     'wifiRadarWin',
+    'btDetectorWin',
+    'snifferWin',
+    'gnssWin',
+    'lteWin',
     'dlgScanCountry',
     'dlgTrace'
   ];
@@ -359,7 +363,9 @@ const WINDOW_ROOT_SELECTOR = [
   '#globeWin',
   '#topoWin',
   '#dlgScanCountry',
-    'snifferWin',
+  '#snifferWin',
+  '#gnssWin',
+  '#lteWin',
   '#dlgTrace',
   '.enrich-popup',
 ].join(', ');
@@ -657,6 +663,8 @@ document.getElementById('menuToolSpeed').addEventListener('click', () => { close
 document.getElementById('menuToolConsole').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnCmdConsole')?.click(); });
 document.getElementById('menuToolWifiRadar').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnWifiRadarToolbar')?.click(); });
 document.getElementById('menuToolBtDetector').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnBtDetectorToolbar')?.click(); });
+document.getElementById('menuToolGnss').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnGnssToolbar')?.click(); });
+document.getElementById('menuToolLte').addEventListener('click', () => { closeAllMenus(); window.openLteDlg?.(); });
 document.getElementById('menuToolSniffer').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnSnifferToolbar')?.click(); });
 document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
 
@@ -748,6 +756,7 @@ document.getElementById('btnSpeedToolbar').addEventListener('click', openSpeedWi
 document.getElementById('btnProtoToolbar').addEventListener('click', openProtoWindow);
 document.getElementById('btnWifiRadarToolbar').addEventListener('click', () => window.openWifiRadarDlg?.());
 document.getElementById('btnBtDetectorToolbar').addEventListener('click', () => window.openBtDetectorDlg?.());
+document.getElementById('btnGnssToolbar').addEventListener('click', () => window.openGnssDlg?.());
 document.getElementById('btnSnifferToolbar').addEventListener('click', () => window.openSnifferDlg?.());
 
 applyToolbarCustomization();
@@ -1568,6 +1577,8 @@ function applyToolWindowMode() {
     topology: 'topoWin',
     'wifi-radar': 'wifiRadarWin',
     'bt-detector': 'btDetectorWin',
+    gnss: 'gnssWin',
+    lte: 'lteWin',
     sniffer: 'snifferWin',
     'ai-assistant': 'aiAssistantWin',
   };

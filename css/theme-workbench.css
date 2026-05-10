@@ -226,6 +226,23 @@ body.skin-workbench .scanwatch-status-warn {
   color: #ff9b9b;
 }
 
+body.skin-workbench .lte-handover-list,
+body.skin-workbench .lte-audit-list,
+body.skin-workbench .lte-corr-list,
+body.skin-workbench .lte-watchdog-list {
+  background: #1d232e;
+  border-color: #394354;
+}
+
+body.skin-workbench .lte-card-title,
+body.skin-workbench .lte-corr-summary {
+  color: #8cc7ff;
+}
+
+body.skin-workbench .lte-inline-label {
+  color: #c8d5e8;
+}
+
 /* ── Expanded row / detail panel ── */
 body.skin-workbench .detail-row,
 body.skin-workbench .paths-row {

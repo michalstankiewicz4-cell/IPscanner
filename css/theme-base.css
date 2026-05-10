@@ -1840,3 +1840,241 @@ body.tool-window-mode #mainWin {
     color: #000080;
   }
 
+/* ── GNSS Monitor ───────────────────────────────────── */
+.gnss-win {
+  position: absolute;
+  width: 940px;
+  height: 640px;
+  min-width: 700px;
+  min-height: 460px;
+  display: none;
+  flex-direction: column;
+  resize: both;
+  overflow: hidden;
+}
+
+.gnss-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  height: calc(100% - 30px);
+  font-size: 11px;
+}
+
+.gnss-controls,
+.gnss-audit-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.gnss-grid {
+  display: grid;
+  grid-template-columns: minmax(230px, 1fr) minmax(320px, 1.3fr);
+  gap: 8px;
+  min-height: 0;
+}
+
+.gnss-card {
+  padding: 6px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.gnss-card-title {
+  font-weight: bold;
+  color: #000080;
+  margin-bottom: 6px;
+}
+
+.gnss-metrics {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.gnss-metric-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px dotted #b4b4b4;
+  padding-bottom: 2px;
+}
+
+#gnssSkyplot {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto 6px;
+  border: 1px solid #9a9a9a;
+  background: #f2f2f2;
+}
+
+.gnss-sat-list-wrap {
+  max-height: 180px;
+  overflow: auto;
+}
+
+.gnss-sat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.gnss-sat-table th,
+.gnss-sat-table td {
+  border: 1px solid #c4c4c4;
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+
+.gnss-sat-table th {
+  background: #d6d6d6;
+}
+
+.gnss-audit-box {
+  padding: 6px;
+}
+
+.gnss-audit-list {
+  min-height: 64px;
+  max-height: 140px;
+  overflow: auto;
+  margin-top: 6px;
+  padding: 6px;
+}
+
+.gnss-audit-row {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10px;
+  padding: 2px 0;
+  border-bottom: 1px dashed #d0d0d0;
+}
+
+.gnss-status {
+  padding: 4px 6px;
+  color: #000080;
+}
+
+/* ── LTE Monitor ───────────────────────────────────── */
+.lte-win {
+  position: absolute;
+  width: 960px;
+  height: 670px;
+  min-width: 720px;
+  min-height: 480px;
+  display: none;
+  flex-direction: column;
+  resize: both;
+  overflow: hidden;
+}
+
+.lte-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  height: calc(100% - 30px);
+  font-size: 11px;
+}
+
+.lte-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.lte-inline-label {
+  color: #333;
+}
+
+.lte-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr);
+  gap: 8px;
+  min-height: 0;
+}
+
+.lte-card {
+  padding: 6px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.lte-card-title {
+  font-weight: bold;
+  color: #000080;
+  margin-bottom: 6px;
+}
+
+.lte-metrics {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.lte-metric-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px dotted #b4b4b4;
+  padding-bottom: 2px;
+}
+
+.lte-handover-list,
+.lte-audit-list,
+.lte-corr-list,
+.lte-watchdog-list {
+  min-height: 72px;
+  max-height: 150px;
+  overflow: auto;
+  border: 1px solid #b8b8b8;
+  padding: 4px;
+  background: #fff;
+}
+
+.lte-row {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10px;
+  padding: 2px 0;
+  border-bottom: 1px dashed #d0d0d0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lte-empty {
+  color: #666;
+  font-style: italic;
+  padding: 6px 4px;
+}
+
+.lte-corr-summary {
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: bold;
+  color: #0a246a;
+}
+
+.lte-ok {
+  color: #0a5d0a;
+}
+
+.lte-fail {
+  color: #9a0000;
+}
+
+.lte-status {
+  padding: 4px 6px;
+  color: #000080;
+}
+
+@media (max-width: 980px) {
+  .lte-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

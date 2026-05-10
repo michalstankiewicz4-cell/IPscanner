@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::net::{IpAddr, SocketAddr};
+use std::io::Read;
 use std::process::Command;
 use std::str::FromStr;
 use std::collections::{HashMap, HashSet};
@@ -46,6 +47,8 @@ const TOOL_WINDOW_LABELS: &[&str] = &[
     "tool-globe",
     "tool-topology",
     "tool-radar",
+    "tool-gnss",
+    "tool-lte",
     "tool-sniffer",
     "tool-ai-assistant",
     "tool-bt-detector",
@@ -141,6 +144,48 @@ struct SnifferConn {
     local: String,
     remote: String,
     state: String,
+}
+
+#[derive(Serialize, Clone)]
+struct GnssSat {
+    prn: String,
+    elevation: Option<u8>,
+    azimuth: Option<u16>,
+    snr: Option<u8>,
+    constellation: String,
+}
+
+#[derive(Serialize, Clone)]
+struct GnssSnapshot {
+    source: String,
+    timestamp_utc: Option<String>,
+    latitude: Option<f64>,
+    longitude: Option<f64>,
+    altitude_m: Option<f64>,
+    speed_kmh: Option<f64>,
+    fix_type: String,
+    hdop: Option<f64>,
+    sats_used: Option<u32>,
+    sats_in_view: Option<u32>,
+    satellites: Vec<GnssSat>,
+}
+
+#[derive(Serialize, Clone, Default)]
+struct LteSnapshot {
+    source: String,
+    port_name: String,
+    baud_rate: u32,
+    operator: Option<String>,
+    tech: Option<String>,
+    band: Option<String>,
+    earfcn: Option<i32>,
+    cell_id: Option<String>,
+    tac: Option<String>,
+    rssi_dbm: Option<f64>,
+    rsrp_dbm: Option<f64>,
+    rsrq_db: Option<f64>,
+    sinr_db: Option<f64>,
+    raw_lines: Vec<String>,
 }
 
 // ─── Commands ────────────────────────────────────────────────────────────────
@@ -462,6 +507,8 @@ async fn open_tool_window(app: AppHandle, tool: String) -> Result<(), String> {
         "globe" => ("tool-globe", "NetRecon - World Map", 1060.0, 740.0),
         "topology" => ("tool-topology", "NetRecon - Topology", 1060.0, 740.0),
         "wifi-radar" => ("tool-radar", "NetRecon - WiFi Radar", 760.0, 640.0),
+        "gnss" => ("tool-gnss", "NetRecon - GNSS Monitor", 980.0, 700.0),
+        "lte" => ("tool-lte", "NetRecon - LTE Monitor", 980.0, 700.0),
         "sniffer" => ("tool-sniffer", "NetRecon - Network Sniffer", 980.0, 620.0),
         "ai-assistant" => ("tool-ai-assistant", "NetRecon - AI Security Assistant", 880.0, 760.0),
         "bt-detector" => ("tool-bt-detector", "NetRecon - Bluetooth Detector", 820.0, 600.0),
@@ -1151,6 +1198,578 @@ $rows | ConvertTo-Json -Compress
         }
 }
 
+#[derive(Default)]
+struct GnssParseState {
+    timestamp_utc: Option<String>,
+    latitude: Option<f64>,
+    longitude: Option<f64>,
+    altitude_m: Option<f64>,
+    speed_kmh: Option<f64>,
+    hdop: Option<f64>,
+    fix_quality: Option<u8>,
+    sats_used: Option<u32>,
+    sats_in_view: Option<u32>,
+    sat_map: HashMap<String, GnssSat>,
+}
+
+#[tauri::command]
+fn list_serial_ports() -> Result<Vec<String>, String> {
+    let ports = serialport::available_ports()
+        .map_err(|e| format!("Failed to enumerate serial ports: {e}"))?;
+    let mut out = ports.into_iter().map(|p| p.port_name).collect::<Vec<_>>();
+    out.sort();
+    Ok(out)
+}
+
+#[tauri::command]
+fn read_gnss_snapshot(port_name: String, baud_rate: u32, sample_secs: u64) -> Result<GnssSnapshot, String> {
+    let baud_rate = baud_rate.clamp(1200, 921600);
+    let sample_secs = sample_secs.clamp(1, 20);
+
+    let mut port = serialport::new(port_name.clone(), baud_rate)
+        .timeout(Duration::from_millis(250))
+        .open()
+        .map_err(|e| format!("Failed to open serial port '{}': {e}", port_name))?;
+
+    let started = Instant::now();
+    let mut read_buf = [0u8; 2048];
+    let mut acc = String::new();
+    let mut state = GnssParseState::default();
+
+    while started.elapsed() < Duration::from_secs(sample_secs) {
+        match port.read(&mut read_buf) {
+            Ok(n) if n > 0 => {
+                acc.push_str(&String::from_utf8_lossy(&read_buf[..n]));
+            }
+            Ok(_) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::TimedOut => {}
+            Err(e) => return Err(format!("GNSS read error: {e}")),
+        }
+
+        while let Some(pos) = acc.find('\n') {
+            let mut line = acc.drain(..=pos).collect::<String>();
+            line = line.trim().to_string();
+            if line.is_empty() {
+                continue;
+            }
+            parse_nmea_line(&line, &mut state);
+        }
+    }
+
+    let mut satellites = state.sat_map.into_values().collect::<Vec<_>>();
+    satellites.sort_by(|a, b| {
+        b.snr
+            .unwrap_or(0)
+            .cmp(&a.snr.unwrap_or(0))
+            .then(a.prn.cmp(&b.prn))
+    });
+
+    let fix_type = match state.fix_quality {
+        Some(0) => "No Fix",
+        Some(1) => "GPS Fix",
+        Some(2) => "DGPS Fix",
+        Some(4) => "RTK Fixed",
+        Some(5) => "RTK Float",
+        Some(6) => "Estimated",
+        Some(_) => "Fix",
+        None => {
+            if state.latitude.is_some() && state.longitude.is_some() {
+                "Fix"
+            } else {
+                "No Fix"
+            }
+        }
+    }
+    .to_string();
+
+    Ok(GnssSnapshot {
+        source: format!("NMEA/Serial ({})", port_name),
+        timestamp_utc: state.timestamp_utc,
+        latitude: state.latitude,
+        longitude: state.longitude,
+        altitude_m: state.altitude_m,
+        speed_kmh: state.speed_kmh,
+        fix_type,
+        hdop: state.hdop,
+        sats_used: state.sats_used,
+        sats_in_view: state.sats_in_view,
+        satellites,
+    })
+}
+
+fn parse_nmea_line(line: &str, state: &mut GnssParseState) {
+    if !line.starts_with('$') {
+        return;
+    }
+
+    let payload = line.trim_start_matches('$').split('*').next().unwrap_or("");
+    let mut parts = payload.split(',');
+    let sentence = parts.next().unwrap_or("");
+    let fields = parts.collect::<Vec<_>>();
+    if sentence.len() < 3 {
+        return;
+    }
+
+    let kind = &sentence[sentence.len() - 3..];
+    let constellation = nmea_constellation(sentence).to_string();
+
+    match kind {
+        "GGA" => {
+            if state.timestamp_utc.is_none() {
+                state.timestamp_utc = fields.get(0).and_then(|s| format_nmea_time(s));
+            }
+            if let (Some(lat), Some(ns), Some(lon), Some(ew)) = (fields.get(1), fields.get(2), fields.get(3), fields.get(4)) {
+                if let Some(v) = parse_nmea_coord(lat, ns, 2) {
+                    state.latitude = Some(v);
+                }
+                if let Some(v) = parse_nmea_coord(lon, ew, 3) {
+                    state.longitude = Some(v);
+                }
+            }
+            state.fix_quality = fields.get(5).and_then(|s| s.parse::<u8>().ok());
+            state.sats_used = fields.get(6).and_then(|s| s.parse::<u32>().ok());
+            state.hdop = fields.get(7).and_then(|s| s.parse::<f64>().ok());
+            state.altitude_m = fields.get(8).and_then(|s| s.parse::<f64>().ok());
+        }
+        "RMC" => {
+            if state.timestamp_utc.is_none() {
+                state.timestamp_utc = fields.get(0).and_then(|s| format_nmea_time(s));
+            }
+            if let (Some(lat), Some(ns), Some(lon), Some(ew)) = (fields.get(2), fields.get(3), fields.get(4), fields.get(5)) {
+                if let Some(v) = parse_nmea_coord(lat, ns, 2) {
+                    state.latitude = Some(v);
+                }
+                if let Some(v) = parse_nmea_coord(lon, ew, 3) {
+                    state.longitude = Some(v);
+                }
+            }
+            if let Some(knots) = fields.get(6).and_then(|s| s.parse::<f64>().ok()) {
+                state.speed_kmh = Some(knots * 1.852);
+            }
+        }
+        "GSV" => {
+            if let Some(v) = fields.get(2).and_then(|s| s.parse::<u32>().ok()) {
+                state.sats_in_view = Some(v);
+            }
+            let mut i = 3usize;
+            while i + 3 < fields.len() {
+                let prn = fields[i].trim();
+                if !prn.is_empty() {
+                    let key = format!("{}:{}", constellation, prn);
+                    let sat = GnssSat {
+                        prn: prn.to_string(),
+                        elevation: fields[i + 1].parse::<u8>().ok(),
+                        azimuth: fields[i + 2].parse::<u16>().ok(),
+                        snr: fields[i + 3].parse::<u8>().ok(),
+                        constellation: constellation.clone(),
+                    };
+                    state.sat_map.insert(key, sat);
+                }
+                i += 4;
+            }
+        }
+        _ => {}
+    }
+}
+
+fn nmea_constellation(sentence: &str) -> &'static str {
+    if sentence.starts_with("GP") || sentence.starts_with("GN") {
+        "GPS"
+    } else if sentence.starts_with("GL") {
+        "GLONASS"
+    } else if sentence.starts_with("GA") {
+        "Galileo"
+    } else if sentence.starts_with("GB") || sentence.starts_with("BD") {
+        "BeiDou"
+    } else if sentence.starts_with("GI") {
+        "NavIC"
+    } else {
+        "GNSS"
+    }
+}
+
+fn parse_nmea_coord(raw: &str, hemi: &str, deg_digits: usize) -> Option<f64> {
+    let raw = raw.trim();
+    if raw.len() < deg_digits + 2 {
+        return None;
+    }
+    let (deg_part, min_part) = raw.split_at(deg_digits);
+    let deg = deg_part.parse::<f64>().ok()?;
+    let min = min_part.parse::<f64>().ok()?;
+    let mut out = deg + (min / 60.0);
+    if hemi.eq_ignore_ascii_case("S") || hemi.eq_ignore_ascii_case("W") {
+        out = -out;
+    }
+    Some(out)
+}
+
+fn format_nmea_time(raw: &str) -> Option<String> {
+    let s = raw.trim();
+    if s.len() < 6 {
+        return None;
+    }
+    let hh = &s[0..2];
+    let mm = &s[2..4];
+    let ss = &s[4..6];
+    Some(format!("{}:{}:{} UTC", hh, mm, ss))
+}
+
+#[tauri::command]
+fn read_lte_snapshot(port_name: String, baud_rate: u32, sample_secs: u64) -> Result<LteSnapshot, String> {
+    let baud_rate = baud_rate.clamp(1200, 921600);
+    let sample_secs = sample_secs.clamp(1, 8);
+
+    let mut port = serialport::new(port_name.clone(), baud_rate)
+        .timeout(Duration::from_millis(220))
+        .open()
+        .map_err(|e| format!("Failed to open serial port '{}': {e}", port_name))?;
+
+    let mut lines: Vec<String> = Vec::new();
+    let commands: [(&str, u64); 10] = [
+        ("AT", 220),
+        ("ATI", 300),
+        ("AT+CSQ", 260),
+        ("AT+CESQ", 260),
+        ("AT+COPS?", 320),
+        ("AT+CPSI?", 350),
+        ("AT+QENG=\"servingcell\"", 420),
+        ("AT+QCAINFO", 320),
+        ("AT^HCSQ?", 320),
+        ("AT+CEREG?", 300),
+    ];
+
+    for (cmd, wait_ms) in commands {
+        let mut chunk = at_collect_lines(&mut *port, cmd, Duration::from_millis(wait_ms));
+        lines.append(&mut chunk);
+    }
+
+    // Passive sampling for URC/network notifications.
+    let started = Instant::now();
+    let mut acc = String::new();
+    let mut buf = [0u8; 1024];
+    while started.elapsed() < Duration::from_secs(sample_secs) {
+        match port.read(&mut buf) {
+            Ok(n) if n > 0 => {
+                acc.push_str(&String::from_utf8_lossy(&buf[..n]));
+                while let Some(pos) = acc.find('\n') {
+                    let line = acc.drain(..=pos).collect::<String>().trim().to_string();
+                    if !line.is_empty() {
+                        lines.push(line);
+                    }
+                }
+            }
+            Ok(_) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::TimedOut => {}
+            Err(_) => break,
+        }
+    }
+
+    let mut snap = parse_lte_snapshot(&lines, &port_name, baud_rate);
+    if snap.raw_lines.len() > 140 {
+        snap.raw_lines.truncate(140);
+    }
+
+    let has_metrics = snap.rssi_dbm.is_some()
+        || snap.rsrp_dbm.is_some()
+        || snap.rsrq_db.is_some()
+        || snap.sinr_db.is_some()
+        || snap.operator.is_some()
+        || snap.tech.is_some()
+        || snap.band.is_some()
+        || snap.earfcn.is_some()
+        || snap.cell_id.is_some();
+
+    if !has_metrics {
+        return Err("Port responded but no LTE metrics were detected.".into());
+    }
+
+    Ok(snap)
+}
+
+#[tauri::command]
+fn read_lte_snapshot_auto(sample_secs: u64) -> Result<LteSnapshot, String> {
+    let sample_secs = sample_secs.clamp(1, 4);
+    let ports = list_serial_ports()?;
+    if ports.is_empty() {
+        return Err("No serial ports found.".into());
+    }
+
+    let baud_candidates: [u32; 4] = [115200, 57600, 38400, 9600];
+    let mut tries = 0usize;
+    let mut last_err: Option<String> = None;
+
+    for port in ports {
+        for baud in baud_candidates {
+            tries += 1;
+            match read_lte_snapshot(port.clone(), baud, sample_secs) {
+                Ok(s) => return Ok(s),
+                Err(e) => last_err = Some(format!("{} @ {}: {}", port, baud, e)),
+            }
+        }
+    }
+
+    Err(format!(
+        "Could not detect LTE modem on serial ports ({} attempts). Last error: {}",
+        tries,
+        last_err.unwrap_or_else(|| "n/a".to_string())
+    ))
+}
+
+fn at_collect_lines(
+    port: &mut dyn serialport::SerialPort,
+    cmd: &str,
+    wait: Duration,
+) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    let mut acc = String::new();
+    let mut buf = [0u8; 1024];
+
+    let _ = port.write_all(format!("{}\r", cmd).as_bytes());
+    let _ = port.flush();
+
+    let started = Instant::now();
+    while started.elapsed() < wait {
+        match port.read(&mut buf) {
+            Ok(n) if n > 0 => {
+                acc.push_str(&String::from_utf8_lossy(&buf[..n]));
+                while let Some(pos) = acc.find('\n') {
+                    let mut line = acc.drain(..=pos).collect::<String>();
+                    line = line.trim().to_string();
+                    if line.is_empty() {
+                        continue;
+                    }
+                    if line.eq_ignore_ascii_case("OK") || line.eq_ignore_ascii_case(cmd) {
+                        continue;
+                    }
+                    out.push(line.clone());
+                    if line.to_ascii_uppercase().contains("ERROR") {
+                        return out;
+                    }
+                }
+            }
+            Ok(_) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::TimedOut => {}
+            Err(_) => break,
+        }
+    }
+
+    out
+}
+
+fn parse_lte_snapshot(lines: &[String], port_name: &str, baud_rate: u32) -> LteSnapshot {
+    let mut s = LteSnapshot {
+        source: format!("AT/Serial ({})", port_name),
+        port_name: port_name.to_string(),
+        baud_rate,
+        raw_lines: lines.to_vec(),
+        ..Default::default()
+    };
+
+    for line in lines {
+        let up = line.to_ascii_uppercase();
+
+        if up.starts_with("+CSQ:") {
+            let nums = parse_signed_numbers(line);
+            if let Some(v) = nums.first() {
+                if (0..=31).contains(v) {
+                    s.rssi_dbm = Some(-113.0 + ((*v as f64) * 2.0));
+                }
+            }
+        }
+
+        if up.starts_with("+CESQ:") {
+            let nums = parse_signed_numbers(line);
+            if nums.len() >= 6 {
+                let rsrq = nums[4];
+                let rsrp = nums[5];
+                if (0..=34).contains(&rsrq) {
+                    s.rsrq_db = Some(-19.5 + (rsrq as f64 * 0.5));
+                }
+                if (0..=97).contains(&rsrp) {
+                    s.rsrp_dbm = Some(-140.0 + rsrp as f64);
+                }
+            }
+        }
+
+        if up.starts_with("^HCSQ") {
+            let nums = parse_signed_numbers(line);
+            if nums.len() >= 3 {
+                let rsrp = nums[0];
+                let rsrq = nums[1];
+                let sinr = nums[2];
+                if s.rsrp_dbm.is_none() && (0..=97).contains(&rsrp) {
+                    s.rsrp_dbm = Some(-140.0 + rsrp as f64);
+                }
+                if s.rsrq_db.is_none() && (0..=34).contains(&rsrq) {
+                    s.rsrq_db = Some(-19.5 + (rsrq as f64 * 0.5));
+                }
+                if s.sinr_db.is_none() && (0..=250).contains(&sinr) {
+                    s.sinr_db = Some(-20.0 + (sinr as f64 * 0.2));
+                }
+            }
+            if up.contains("LTE") {
+                s.tech = Some("LTE".to_string());
+            }
+        }
+
+        if up.starts_with("+COPS:") {
+            if let Some(op) = first_quoted(line) {
+                if !op.trim().is_empty() {
+                    s.operator = Some(op);
+                }
+            }
+            if let Some(act) = parse_signed_numbers(line).last().copied() {
+                if s.tech.is_none() {
+                    s.tech = Some(map_cops_act_to_tech(act).to_string());
+                }
+            }
+        }
+
+        if up.starts_with("+CPSI:") || up.contains("SERVINGCELL") || up.contains("QENG") {
+            if s.tech.is_none() {
+                if up.contains("LTE") {
+                    s.tech = Some("LTE".to_string());
+                } else if up.contains("NR5G") || up.contains("5G") {
+                    s.tech = Some("NR5G".to_string());
+                }
+            }
+
+            if s.band.is_none() {
+                for tok in line.split(|c: char| c == ',' || c.is_whitespace()) {
+                    let t = tok.trim();
+                    let tu = t.to_ascii_uppercase();
+                    if tu.contains("BAND") && !t.is_empty() {
+                        s.band = Some(t.to_string());
+                        break;
+                    }
+                }
+            }
+
+            if s.earfcn.is_none() {
+                for n in parse_signed_numbers(line) {
+                    if (100..=90000).contains(&n) {
+                        s.earfcn = Some(n);
+                        break;
+                    }
+                }
+            }
+
+            for hx in find_hex_words(line) {
+                if s.tac.is_none() {
+                    s.tac = Some(hx);
+                } else if s.cell_id.is_none() {
+                    s.cell_id = Some(hx);
+                    break;
+                }
+            }
+
+            let nums = parse_signed_numbers(line);
+            if s.rsrp_dbm.is_none() {
+                if let Some(v) = nums.iter().copied().find(|v| (-160..=-40).contains(v)) {
+                    s.rsrp_dbm = Some(v as f64);
+                }
+            }
+            if s.rsrq_db.is_none() {
+                if let Some(v) = nums.iter().copied().find(|v| (-30..=0).contains(v)) {
+                    s.rsrq_db = Some(v as f64);
+                }
+            }
+            if s.sinr_db.is_none() {
+                if let Some(v) = nums.iter().copied().rev().find(|v| (-30..=80).contains(v)) {
+                    s.sinr_db = Some(v as f64);
+                }
+            }
+        }
+
+        if up.starts_with("+CEREG:") || up.starts_with("+CGREG:") || up.starts_with("+CREG:") {
+            let q = quoted_values(line);
+            if q.len() >= 2 {
+                if s.tac.is_none() {
+                    s.tac = Some(q[0].clone());
+                }
+                if s.cell_id.is_none() {
+                    s.cell_id = Some(q[1].clone());
+                }
+            }
+        }
+    }
+
+    if s.tech.is_none() {
+        s.tech = Some("LTE".to_string());
+    }
+
+    s
+}
+
+fn parse_signed_numbers(text: &str) -> Vec<i32> {
+    let mut out = Vec::new();
+    let mut cur = String::new();
+    for ch in text.chars() {
+        if ch.is_ascii_digit() || ((ch == '-' || ch == '+') && cur.is_empty()) {
+            cur.push(ch);
+        } else if !cur.is_empty() {
+            if let Ok(v) = cur.parse::<i32>() {
+                out.push(v);
+            }
+            cur.clear();
+        }
+    }
+    if !cur.is_empty() {
+        if let Ok(v) = cur.parse::<i32>() {
+            out.push(v);
+        }
+    }
+    out
+}
+
+fn first_quoted(text: &str) -> Option<String> {
+    quoted_values(text).into_iter().next()
+}
+
+fn quoted_values(text: &str) -> Vec<String> {
+    let mut vals = Vec::new();
+    let mut in_q = false;
+    let mut cur = String::new();
+    for ch in text.chars() {
+        if ch == '"' {
+            if in_q {
+                vals.push(cur.clone());
+                cur.clear();
+                in_q = false;
+            } else {
+                in_q = true;
+            }
+            continue;
+        }
+        if in_q {
+            cur.push(ch);
+        }
+    }
+    vals
+}
+
+fn find_hex_words(text: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for tok in text.split(|c: char| c == ',' || c.is_whitespace() || c == ':') {
+        let t = tok.trim();
+        let tu = t.to_ascii_lowercase();
+        if tu.starts_with("0x") && tu.len() > 2 && tu[2..].chars().all(|c| c.is_ascii_hexdigit()) {
+            out.push(t.to_string());
+        }
+    }
+    out
+}
+
+fn map_cops_act_to_tech(act: i32) -> &'static str {
+    match act {
+        7 => "LTE",
+        9 => "LTE-M",
+        2 => "UTRAN",
+        0 => "GSM",
+        _ => "Cellular",
+    }
+}
+
 fn extract_bt_address_from_instance_id(instance_id: &str) -> Option<String> {
     // InstanceId format examples:
     //   BTHENUM\{0000110b-...}\7&2a3b4c5d&0&000EC6AABBCC_C00000000
@@ -1511,6 +2130,10 @@ fn main() {
             ai_multi_provider_query,
             scan_bluetooth_devices,
             get_connections,
+            list_serial_ports,
+            read_gnss_snapshot,
+            read_lte_snapshot,
+            read_lte_snapshot_auto,
             open_clippy_window,
             close_clippy_window,
             open_browser,

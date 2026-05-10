@@ -78,6 +78,8 @@
         <div class="menu-dd-item" id="menuToolWifiDetector">📡 WiFi Detector...</div>
         <div class="menu-dd-item" id="menuToolWifiRadar" data-i18n="btnWifiRadar">📍 WiFi Radar</div>
         <div class="menu-dd-item" id="menuToolBtDetector" data-i18n="btnBtDetectorMenu">🔵 Bluetooth Detector...</div>
+        <div class="menu-dd-item" id="menuToolGnss" data-i18n="btnGnssMenu">🛰 GNSS Monitor...</div>
+        <div class="menu-dd-item" id="menuToolLte" data-i18n="btnLteMenu">📶 LTE Monitor...</div>
         <div class="menu-dd-item" id="menuToolSniffer" data-i18n="btnSnifferMenu">🔎 Network Sniffer...</div>
         <div class="menu-dd-item" id="menuToolAiAssistant">🤖 AI Security Assistant...</div>
       </div>
@@ -108,6 +110,7 @@
       <button class="btn95" id="btnCmdConsole" title="Command Console" data-i18n="btnConsole">⌨ Console</button>
       <button class="btn95" id="btnWifiRadarToolbar" title="WiFi Radar" data-i18n="btnWifiRadar">📍 WiFi Radar</button>
       <button class="btn95" id="btnBtDetectorToolbar" title="Bluetooth Detector" data-i18n="btnBtDetector">🔵 BT Detector</button>
+      <button class="btn95" id="btnGnssToolbar" title="GNSS Monitor" data-i18n="btnGnss">🛰 GNSS</button>
       <button class="btn95" id="btnSnifferToolbar" title="Network Sniffer" data-i18n="btnSniffer">🔎 Sniffer</button>
       <div class="flex-spacer"></div>
     </div>
@@ -987,6 +990,161 @@
   </div>
 </div>
 
+<!-- GNSS Monitor window -->
+<div class="tool-win-shell gnss-win" id="gnssWin">
+  <div class="titlebar cursor-move" id="gnssTitlebar">
+    <span class="icon">🛰</span>
+    <span class="title" data-i18n="gnssWinTitle">GNSS Monitor</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnGnssClose">✕</button>
+    </div>
+  </div>
+
+  <div class="gnss-body">
+    <div class="gnss-controls">
+      <label for="gnssPortSelect" data-i18n="gnssPort">Port:</label>
+      <select class="select95" id="gnssPortSelect"></select>
+      <label for="gnssBaudSelect" data-i18n="gnssBaud">Baud:</label>
+      <select class="select95" id="gnssBaudSelect">
+        <option value="4800">4800</option>
+        <option value="9600" selected>9600</option>
+        <option value="38400">38400</option>
+        <option value="115200">115200</option>
+      </select>
+      <button class="btn95" id="btnGnssRefreshPorts" data-i18n="gnssRefreshPorts">Refresh ports</button>
+      <button class="btn95" id="btnGnssReadNow" data-i18n="gnssReadNow">Read now</button>
+      <button class="btn95" id="btnGnssStartLive" data-i18n="gnssStartLive">Start live</button>
+      <button class="btn95" id="btnGnssStopLive" disabled data-i18n="gnssStopLive">Stop</button>
+    </div>
+
+    <div class="gnss-grid">
+      <div class="dlg-sunken-box gnss-card">
+        <div class="gnss-card-title" data-i18n="gnssStatus">GNSS status</div>
+        <div class="gnss-metrics" id="gnssMetrics"></div>
+      </div>
+
+      <div class="dlg-sunken-box gnss-card">
+        <div class="gnss-card-title" data-i18n="gnssSatMonitor">Satellite monitor</div>
+        <canvas id="gnssSkyplot" width="260" height="260"></canvas>
+        <div class="gnss-sat-list-wrap">
+          <table class="gnss-sat-table">
+            <thead>
+              <tr>
+                <th>PRN</th>
+                <th data-i18n="gnssConstellation">Constellation</th>
+                <th>Az</th>
+                <th>El</th>
+                <th>SNR</th>
+              </tr>
+            </thead>
+            <tbody id="gnssSatTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="dlg-sunken-box gnss-audit-box">
+      <div class="gnss-card-title" data-i18n="gnssWifiAudit">GPS + WiFi audit</div>
+      <div class="gnss-audit-controls">
+        <button class="btn95" id="btnGnssWifiScan" data-i18n="gnssWifiScan">Scan WiFi now</button>
+        <button class="btn95" id="btnGnssAuditPoint" data-i18n="gnssAddPoint">Add audit point</button>
+        <button class="btn95" id="btnGnssExportAudit" data-i18n="gnssExportAudit">Export CSV</button>
+      </div>
+      <div class="gnss-audit-list dlg-sunken-box" id="gnssAuditList"></div>
+    </div>
+
+    <div class="dlg-sunken-box gnss-status" id="gnssStatus" data-i18n="gnssReady">Ready.</div>
+  </div>
+</div>
+
+<!-- LTE Monitor window -->
+<div class="tool-win-shell lte-win" id="lteWin">
+  <div class="titlebar cursor-move" id="lteTitlebar">
+    <span class="icon">📶</span>
+    <span class="title" data-i18n="lteWinTitle">LTE Monitor</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnLteClose">✕</button>
+    </div>
+  </div>
+
+  <div class="lte-body">
+    <div class="lte-controls">
+      <button class="btn95" id="btnLteRefresh" data-i18n="lteRefresh">Refresh</button>
+      <button class="btn95" id="btnLteStartLive" data-i18n="lteStartLive">Start live</button>
+      <button class="btn95" id="btnLteStopLive" disabled data-i18n="lteStopLive">Stop</button>
+      <label class="lte-inline-label" for="ltePortSelect" data-i18n="ltePort">Port:</label>
+      <select class="select95" id="ltePortSelect">
+        <option value="__auto__" data-i18n="lteAutoDetect">Auto</option>
+      </select>
+      <label class="lte-inline-label" for="lteBaudSelect" data-i18n="lteBaud">Baud:</label>
+      <select class="select95" id="lteBaudSelect">
+        <option value="115200" selected>115200</option>
+        <option value="57600">57600</option>
+        <option value="38400">38400</option>
+        <option value="19200">19200</option>
+        <option value="9600">9600</option>
+      </select>
+      <label class="lte-inline-label" for="lteLiveSecs" data-i18n="lteLiveEvery">Every (s):</label>
+      <select class="select95" id="lteLiveSecs">
+        <option value="2">2</option>
+        <option value="3" selected>3</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+      </select>
+    </div>
+
+    <div class="lte-grid">
+      <div class="dlg-sunken-box lte-card">
+        <div class="lte-card-title" data-i18n="lteStatusTitle">LTE status monitor</div>
+        <div class="lte-metrics" id="lteMetrics"></div>
+      </div>
+
+      <div class="dlg-sunken-box lte-card">
+        <div class="lte-card-title" data-i18n="lteHandoverTitle">Cell handover tracker</div>
+        <div class="lte-handover-list" id="lteHandoverList"></div>
+      </div>
+    </div>
+
+    <div class="dlg-sunken-box lte-card">
+      <div class="lte-card-title" data-i18n="lteAuditTitle">LTE + GPS audit</div>
+      <div class="lte-controls">
+        <button class="btn95" id="btnLteAddPoint" data-i18n="lteAddPoint">Add point</button>
+        <button class="btn95" id="btnLteExportAudit" data-i18n="lteExportAudit">Export CSV</button>
+      </div>
+      <div class="lte-audit-list" id="lteAuditList"></div>
+    </div>
+
+    <div class="lte-grid">
+      <div class="dlg-sunken-box lte-card">
+        <div class="lte-card-title" data-i18n="lteCorrelationTitle">Speed + quality correlation</div>
+        <div class="lte-controls">
+          <button class="btn95" id="btnLteRunSpeed" data-i18n="lteRunSpeed">Run sample</button>
+          <button class="btn95" id="btnLteExportCorrelation" data-i18n="lteExportCorrelation">Export CSV</button>
+        </div>
+        <div class="lte-corr-list" id="lteCorrList"></div>
+      </div>
+
+      <div class="dlg-sunken-box lte-card">
+        <div class="lte-card-title" data-i18n="lteWatchdogTitle">LTE internet watchdog</div>
+        <div class="lte-controls">
+          <button class="btn95" id="btnLteStartWatchdog" data-i18n="lteStartWatchdog">Start watchdog</button>
+          <button class="btn95" id="btnLteStopWatchdog" disabled data-i18n="lteStopWatchdog">Stop</button>
+          <label class="lte-inline-label" for="lteWatchdogSecs" data-i18n="lteLiveEvery">Every (s):</label>
+          <select class="select95" id="lteWatchdogSecs">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+        <div class="lte-watchdog-list" id="lteWatchdogList"></div>
+      </div>
+    </div>
+
+    <div class="dlg-sunken-box lte-status" id="lteStatus" data-i18n="lteReady">Ready.</div>
+  </div>
+</div>
+
 <!-- AI Assistant window -->
 <div class="tool-win-shell ai-assistant-win" id="aiAssistantWin">
   <div class="titlebar cursor-move" id="aiAssistantTitlebar">
@@ -1058,6 +1216,15 @@
     <div class="dlg-body dlg-icon-body dlg-versions-body">
       <span class="dlg-icon dlg-icon-versions">📘</span>
       <div class="dlg-sunken-box dlg-versions-card">
+        <div class="version-head">v1.6.1</div>
+        <div class="version-note">
+          Added GNSS Monitor tool with independent tool-window mode, serial NMEA parsing, live skyplot, satellite table,
+          and GPS + WiFi audit points export.
+          Added LTE Monitor tool with independent tool-window mode, live status monitor, handover tracker, LTE + GPS audit,
+          speed/quality correlation, and internet watchdog.
+          Added LTE serial modem backend integration (AT/COM) with auto-detection and manual COM/baud override,
+          including operator, band, EARFCN, cell ID, TAC, RSSI/RSRP/RSRQ/SINR metrics.
+        </div>
         <div class="version-head">v1.6.0</div>
         <div class="version-note">
           Added IP Scan Watch in Tools to detect suspicious multi-port probing of your address.
@@ -1350,6 +1517,8 @@
 <script src="js/radar.js"></script>
 <script src="js/ai-assistant.js"></script>
 <script src="js/bt-detector.js"></script>
+<script src="js/gnss.js"></script>
+<script src="js/lte.js"></script>
 <script src="js/sniffer.js"></script>
 <script src="js/clippy.js"></script>
 </body>
