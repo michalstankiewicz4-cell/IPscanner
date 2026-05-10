@@ -81,6 +81,7 @@
         <div class="menu-dd-item" id="menuToolGnss" data-i18n="btnGnssMenu">🛰 GNSS Monitor...</div>
         <div class="menu-dd-item" id="menuToolLte" data-i18n="btnLteMenu">📶 LTE Monitor...</div>
         <div class="menu-dd-item" id="menuToolSniffer" data-i18n="btnSnifferMenu">🔎 Network Sniffer...</div>
+        <div class="menu-dd-item" id="menuToolImgMeta" data-i18n="btnImgMetaMenu">🖼 Image Metadata...</div>
         <div class="menu-dd-item" id="menuToolAiAssistant">🤖 AI Security Assistant...</div>
       </div>
     </div>
@@ -1145,6 +1146,44 @@
   </div>
 </div>
 
+<!-- Image Metadata Analyzer window -->
+<div class="tool-win-shell imgmeta-win" id="imgMetaWin">
+  <div class="titlebar cursor-move" id="imgMetaTitlebar">
+    <span class="icon">🖼</span>
+    <span class="title" data-i18n="imgMetaWinTitle">Image Metadata Analyzer</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnImgMetaClose">✕</button>
+    </div>
+  </div>
+
+  <div class="imgmeta-body">
+    <div id="imgMetaDropZone" class="imgmeta-drop-zone">
+      <span data-i18n="imgMetaDropHint">Drop an image here or click to browse</span>
+      <input type="file" id="imgMetaFileInput" accept="image/*,.psd,.tif,.tiff,.webp,.bmp,.gif">
+    </div>
+
+    <div class="imgmeta-controls">
+      <span class="imgmeta-filename" id="imgMetaFilename"></span>
+      <button class="btn95" id="btnImgMetaInfo" data-i18n="imgMetaInfo">Info</button>
+      <button class="btn95" id="btnImgMetaCopy" data-i18n="imgMetaCopy">Copy</button>
+      <button class="btn95" id="btnImgMetaExport" data-i18n="imgMetaExport">Export TXT</button>
+      <button class="btn95" id="btnImgMetaClear" data-i18n="imgMetaClear">Clear</button>
+    </div>
+
+    <div class="imgmeta-info-pop" id="imgMetaInfoPop">
+      <div class="imgmeta-info-head">
+        <span data-i18n="imgMetaInfoTitle">Analyzed metadata fields</span>
+        <button class="btn95 imgmeta-info-close" id="btnImgMetaInfoClose">✕</button>
+      </div>
+      <div class="imgmeta-info-body" id="imgMetaInfoBody"></div>
+    </div>
+
+    <div class="imgmeta-table-wrap" id="imgMetaTableWrap"></div>
+
+    <div class="imgmeta-status" id="imgMetaStatus" data-i18n="imgMetaReady">Ready.</div>
+  </div>
+</div>
+
 <!-- AI Assistant window -->
 <div class="tool-win-shell ai-assistant-win" id="aiAssistantWin">
   <div class="titlebar cursor-move" id="aiAssistantTitlebar">
@@ -1216,6 +1255,11 @@
     <div class="dlg-body dlg-icon-body dlg-versions-body">
       <span class="dlg-icon dlg-icon-versions">📘</span>
       <div class="dlg-sunken-box dlg-versions-card">
+        <div class="version-head">v1.6.2</div>
+        <div class="version-note">
+          Added Photo Analyze tool enhancements with extended image metadata extraction and presentation,
+          including richer EXIF/GPS/IPTC/XMP overview, readable date/size formatting, and map links for GPS coordinates.
+        </div>
         <div class="version-head">v1.6.1</div>
         <div class="version-note">
           Added GNSS Monitor tool with independent tool-window mode, serial NMEA parsing, live skyplot, satellite table,
@@ -1511,6 +1555,7 @@
 <script src="js/console.js"></script>
 <script src="js/lang-en.js"></script>
 <script src="js/lang-pl.js"></script>
+<script src="js/imgmeta.js"></script>
 <script src="js/app.js"></script>
 <script src="js/scanwatch.js"></script>
 <script src="js/wifi-detector.js"></script>

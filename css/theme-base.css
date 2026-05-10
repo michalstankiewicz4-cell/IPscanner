@@ -2078,3 +2078,200 @@ body.tool-window-mode #mainWin {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   IMAGE METADATA ANALYZER
+═══════════════════════════════════════════════════════════════ */
+.imgmeta-win {
+  position: absolute;
+  width: 740px;
+  height: 580px;
+  min-width: 480px;
+  min-height: 340px;
+  display: none;
+  flex-direction: column;
+  resize: both;
+  overflow: hidden;
+}
+
+.imgmeta-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  padding: 6px;
+  gap: 6px;
+}
+
+.imgmeta-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.imgmeta-info-pop {
+  display: none;
+  border: 1px solid #666;
+  background: #fffff0;
+  box-shadow: 2px 2px 0 #808080;
+  max-height: 220px;
+  overflow: hidden;
+}
+
+.imgmeta-info-pop.is-open {
+  display: flex;
+  flex-direction: column;
+}
+
+.imgmeta-info-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  background: #000080;
+  color: #fff;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.imgmeta-info-close {
+  min-width: 22px;
+  padding: 0 4px;
+  line-height: 1.2;
+}
+
+.imgmeta-info-body {
+  padding: 6px 8px;
+  overflow: auto;
+  font-size: 11px;
+}
+
+.imgmeta-info-section {
+  margin: 0 0 6px;
+}
+
+.imgmeta-info-section strong {
+  color: #000080;
+}
+
+.imgmeta-info-list {
+  margin: 2px 0 0 16px;
+  padding: 0;
+}
+
+.imgmeta-info-list li {
+  margin: 0;
+}
+
+.imgmeta-drop-zone {
+  border: 2px dashed #888;
+  background: #f0f0f0;
+  text-align: center;
+  padding: 14px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #444;
+  transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.imgmeta-drop-zone.drag-over {
+  background: #dce8ff;
+  border-color: #0000cc;
+  color: #0000cc;
+}
+
+.imgmeta-drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.imgmeta-filename {
+  font-weight: bold;
+  color: #000080;
+  font-size: 11px;
+  margin-left: 4px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imgmeta-table-wrap {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #999;
+  background: #fff;
+}
+
+.imgmeta-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  table-layout: fixed;
+}
+
+.imgmeta-table th {
+  background: #000080;
+  color: #fff;
+  padding: 3px 6px;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-weight: bold;
+  user-select: none;
+}
+
+.imgmeta-table td {
+  padding: 2px 6px;
+  border-bottom: 1px solid #ddd;
+  vertical-align: top;
+  word-break: break-all;
+}
+
+.imgmeta-table tr:nth-child(even) td { background: #f5f5f5; }
+.imgmeta-table tr:hover td { background: #dce8ff; }
+
+.imgmeta-col-section { width: 90px; color: #555; font-style: italic; }
+.imgmeta-col-key     { width: 160px; font-weight: bold; color: #000080; }
+.imgmeta-col-value   { }
+
+.imgmeta-section-badge {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: bold;
+  color: #fff;
+  background: #555;
+}
+.imgmeta-section-badge.s-File     { background: #6b6b6b; }
+.imgmeta-section-badge.s-Image    { background: #2a6496; }
+.imgmeta-section-badge.s-JFIF     { background: #5a7a3a; }
+.imgmeta-section-badge.s-EXIF     { background: #8b4513; }
+.imgmeta-section-badge.s-ExifIFD  { background: #7b3f8a; }
+.imgmeta-section-badge.s-GPS      { background: #1a7a4a; }
+.imgmeta-section-badge.s-PNG      { background: #1a5276; }
+.imgmeta-section-badge.s-GIF      { background: #6e4c99; }
+.imgmeta-section-badge.s-BMP      { background: #7a5c00; }
+.imgmeta-section-badge.s-WebP     { background: #c0392b; }
+.imgmeta-section-badge.s-PSD      { background: #2980b9; }
+.imgmeta-section-badge.s-IPTC     { background: #c0392b; }
+.imgmeta-section-badge.s-XMP      { background: #1abc9c; }
+.imgmeta-section-badge.s-Text     { background: #e67e22; }
+.imgmeta-section-badge.s-Color    { background: #27ae60; }
+.imgmeta-section-badge.s-Adobe    { background: #e74c3c; }
+.imgmeta-section-badge.s-Comment  { background: #7f8c8d; }
+
+.imgmeta-status {
+  padding: 4px 6px;
+  color: #000080;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+

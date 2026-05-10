@@ -7,7 +7,7 @@ function selectIcon(el) {
 }
 
 const APP_NAME = 'NetRecon IP Auditor';
-const APP_VERSION = '1.6.1';
+const APP_VERSION = '1.6.2';
 
 function getAppDisplayName() {
   return `${APP_NAME} v${APP_VERSION}`;
@@ -152,6 +152,7 @@ function initWindowZStacking() {
     'snifferWin',
     'gnssWin',
     'lteWin',
+    'imgMetaWin',
     'dlgScanCountry',
     'dlgTrace'
   ];
@@ -666,6 +667,7 @@ document.getElementById('menuToolBtDetector').addEventListener('click', () => { 
 document.getElementById('menuToolGnss').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnGnssToolbar')?.click(); });
 document.getElementById('menuToolLte').addEventListener('click', () => { closeAllMenus(); window.openLteDlg?.(); });
 document.getElementById('menuToolSniffer').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnSnifferToolbar')?.click(); });
+document.getElementById('menuToolImgMeta').addEventListener('click', () => { closeAllMenus(); if (typeof openImgMetaDlg === 'function') openImgMetaDlg(); else if (typeof window.openImgMetaDlg === 'function') window.openImgMetaDlg(); });
 document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
 
 // ══════════════════════════════════════════════════
@@ -1580,6 +1582,7 @@ function applyToolWindowMode() {
     gnss: 'gnssWin',
     lte: 'lteWin',
     sniffer: 'snifferWin',
+    'imgmeta': 'imgMetaWin',
     'ai-assistant': 'aiAssistantWin',
   };
 

@@ -50,6 +50,7 @@ const TOOL_WINDOW_LABELS: &[&str] = &[
     "tool-gnss",
     "tool-lte",
     "tool-sniffer",
+    "tool-imgmeta",
     "tool-ai-assistant",
     "tool-bt-detector",
     "clippy",
@@ -510,6 +511,7 @@ async fn open_tool_window(app: AppHandle, tool: String) -> Result<(), String> {
         "gnss" => ("tool-gnss", "NetRecon - GNSS Monitor", 980.0, 700.0),
         "lte" => ("tool-lte", "NetRecon - LTE Monitor", 980.0, 700.0),
         "sniffer" => ("tool-sniffer", "NetRecon - Network Sniffer", 980.0, 620.0),
+        "imgmeta" => ("tool-imgmeta", "NetRecon - Image Metadata Analyzer", 900.0, 680.0),
         "ai-assistant" => ("tool-ai-assistant", "NetRecon - AI Security Assistant", 880.0, 760.0),
         "bt-detector" => ("tool-bt-detector", "NetRecon - Bluetooth Detector", 820.0, 600.0),
         _ => return Err(format!("Unsupported tool window: {tool}")),
@@ -2097,6 +2099,738 @@ async fn resolve_target_ipv4(target: &str) -> Result<String, String> {
     Err("No IPv4 address found for this hostname".into())
 }
 
+// ─── Image Metadata ──────────────────────────────────────────────────────────
+
+#[derive(Serialize, Clone)]
+struct ImgMetaEntry {
+    section: String,
+    key: String,
+    value: String,
+}
+
+impl ImgMetaEntry {
+    fn new(section: &str, key: &str, value: impl Into<String>) -> Self {
+        ImgMetaEntry { section: section.into(), key: key.into(), value: value.into() }
+    }
+}
+
+fn read_u8(buf: &[u8], off: usize) -> Option<u8> {
+    buf.get(off).copied()
+}
+fn read_u16_be(buf: &[u8], off: usize) -> Option<u16> {
+    Some(((*buf.get(off)?) as u16) << 8 | (*buf.get(off + 1)?) as u16)
+}
+fn read_u16_le(buf: &[u8], off: usize) -> Option<u16> {
+    Some((*buf.get(off)?) as u16 | ((*buf.get(off + 1)?) as u16) << 8)
+}
+fn read_u32_be(buf: &[u8], off: usize) -> Option<u32> {
+    Some(((*buf.get(off)?) as u32) << 24 | ((*buf.get(off+1)?) as u32) << 16
+        | ((*buf.get(off+2)?) as u32) << 8 | (*buf.get(off+3)?) as u32)
+}
+fn read_u32_le(buf: &[u8], off: usize) -> Option<u32> {
+    Some((*buf.get(off)?) as u32 | ((*buf.get(off+1)?) as u32) << 8
+        | ((*buf.get(off+2)?) as u32) << 16 | ((*buf.get(off+3)?) as u32) << 24)
+}
+fn read_i32_le(buf: &[u8], off: usize) -> Option<i32> {
+    read_u32_le(buf, off).map(|v| v as i32)
+}
+
+fn safe_ascii(buf: &[u8]) -> String {
+    buf.iter().map(|&b| if b >= 0x20 && b < 0x7f { b as char } else { '?' }).collect()
+}
+
+// ── JPEG ──────────────────────────────────────────────────────────────────────
+
+fn parse_jpeg(data: &[u8], out: &mut Vec<ImgMetaEntry>) {
+    let mut pos = 2usize; // skip SOI FF D8
+    while pos + 3 < data.len() {
+        if data[pos] != 0xFF { break; }
+        let marker = data[pos + 1];
+        if marker == 0xD9 || marker == 0xD8 { pos += 2; continue; }
+        let seg_len = match read_u16_be(data, pos + 2) { Some(l) => l as usize, None => break };
+        let seg_end = pos + 2 + seg_len;
+        let seg = data.get(pos + 4..seg_end.min(data.len())).unwrap_or(&[]);
+
+        match marker {
+            0xE0 => { // APP0 JFIF
+                if seg.starts_with(b"JFIF\0") && seg.len() >= 14 {
+                    let units = seg[7];
+                    let xdpi = read_u16_be(seg, 8).unwrap_or(0);
+                    let ydpi = read_u16_be(seg, 10).unwrap_or(0);
+                    out.push(ImgMetaEntry::new("JFIF","Version", format!("{}.{:02}", seg[5], seg[6])));
+                    out.push(ImgMetaEntry::new("JFIF","DensityUnit", match units { 1 => "DPI", 2 => "DPCM", _ => "Aspect ratio" }));
+                    if units > 0 { out.push(ImgMetaEntry::new("JFIF","XDensity", xdpi.to_string())); out.push(ImgMetaEntry::new("JFIF","YDensity", ydpi.to_string())); }
+                    if seg.len() >= 14 { out.push(ImgMetaEntry::new("JFIF","Thumbnail", format!("{}×{}", seg[12], seg[13]))); }
+                }
+            }
+            0xE1 => { // APP1 EXIF or XMP
+                if seg.starts_with(b"Exif\0\0") {
+                    parse_exif(&seg[6..], out);
+                } else if seg.starts_with(b"http://ns.adobe.com/xap/1.0/\0") {
+                    if let Ok(s) = std::str::from_utf8(&seg[29..]) {
+                        extract_xmp_simple(s, out);
+                    }
+                }
+            }
+            0xE2 => { // APP2 ICC or Flashpix
+                if seg.starts_with(b"ICC_PROFILE\0") { out.push(ImgMetaEntry::new("Color","ICC Profile","present")); }
+            }
+            0xED => { // APP13 IPTC
+                if seg.starts_with(b"Photoshop 3.0\0") { parse_iptc(seg, out); }
+            }
+            0xEE => { // APP14 Adobe
+                if seg.starts_with(b"Adobe") && seg.len() >= 12 {
+                    out.push(ImgMetaEntry::new("Adobe","DCTEncodeVersion", read_u16_be(seg,6).unwrap_or(0).to_string()));
+                    out.push(ImgMetaEntry::new("Adobe","ColorTransform", match seg.get(11).copied().unwrap_or(0) { 0=>"RGB/CMYK", 1=>"YCbCr", 2=>"YCCK", _=>"Unknown" }));
+                }
+            }
+            0xC0 | 0xC1 | 0xC2 | 0xC3 => { // SOF markers → dimensions
+                if seg.len() >= 5 {
+                    let prec = seg[0];
+                    let h = read_u16_be(seg, 1).unwrap_or(0);
+                    let w = read_u16_be(seg, 3).unwrap_or(0);
+                    let comp = seg.get(5).copied().unwrap_or(0);
+                    out.push(ImgMetaEntry::new("Image","Width", w.to_string()));
+                    out.push(ImgMetaEntry::new("Image","Height", h.to_string()));
+                    out.push(ImgMetaEntry::new("Image","BitDepth", prec.to_string()));
+                    out.push(ImgMetaEntry::new("Image","Components", comp.to_string()));
+                    out.push(ImgMetaEntry::new("Image","ColorMode", match comp { 1=>"Grayscale", 3=>"YCbCr/RGB", 4=>"CMYK", _=>"Unknown" }));
+                    out.push(ImgMetaEntry::new("Image","Encoding", match marker { 0xC0=>"Baseline DCT", 0xC1=>"Extended seq. DCT", 0xC2=>"Progressive DCT", 0xC3=>"Lossless", _=>"Unknown" }));
+                }
+            }
+            0xFE => { // COM comment
+                if let Ok(s) = std::str::from_utf8(seg) { out.push(ImgMetaEntry::new("Comment","Comment", s.trim())); }
+            }
+            _ => {}
+        }
+
+        if seg_end <= pos + 2 { break; }
+        pos = seg_end;
+    }
+}
+
+// ── EXIF/TIFF IFD parser ─────────────────────────────────────────────────────
+
+fn parse_exif(data: &[u8], out: &mut Vec<ImgMetaEntry>) {
+    if data.len() < 8 { return; }
+    let little_endian = match data.get(0..2) {
+        Some(b"II") => true,
+        Some(b"MM") => false,
+        _ => return,
+    };
+    let r16 = |off: usize| -> Option<u16> { if little_endian { read_u16_le(data, off) } else { read_u16_be(data, off) } };
+    let r32 = |off: usize| -> Option<u32> { if little_endian { read_u32_le(data, off) } else { read_u32_be(data, off) } };
+    let magic = r16(2).unwrap_or(0);
+    if magic != 42 { return; }
+    let ifd0_off = r32(4).unwrap_or(0) as usize;
+    parse_tiff_ifd(data, ifd0_off, little_endian, "EXIF", out, 0);
+}
+
+fn parse_tiff_ifd(data: &[u8], off: usize, le: bool, section: &str, out: &mut Vec<ImgMetaEntry>, depth: u8) {
+    if depth > 3 { return; }
+    let r16 = |o: usize| -> Option<u16> { if le { read_u16_le(data, o) } else { read_u16_be(data, o) } };
+    let r32 = |o: usize| -> Option<u32> { if le { read_u32_le(data, o) } else { read_u32_be(data, o) } };
+
+    let count = match r16(off) { Some(c) => c as usize, None => return };
+    for i in 0..count {
+        let entry_off = off + 2 + i * 12;
+        if entry_off + 12 > data.len() { break; }
+        let tag = match r16(entry_off) { Some(v) => v, None => break };
+        let typ = match r16(entry_off + 2) { Some(v) => v, None => break };
+        let cnt = match r32(entry_off + 4) { Some(v) => v as usize, None => break };
+        let val_off_raw = match r32(entry_off + 8) { Some(v) => v as usize, None => break };
+
+        // Value offset or inline value
+        let type_size = match typ { 1|2|7 => 1, 3|8 => 2, 4|9|11 => 4, 5|10|12 => 8, _ => 1 };
+        let val_size = type_size * cnt;
+        let val_start = if val_size <= 4 { entry_off + 8 } else { val_off_raw };
+        if val_start + val_size > data.len() && val_size > 4 { continue; }
+        let vdata = data.get(val_start..).unwrap_or(&[]);
+
+        let read_rat = |o: usize| -> Option<String> {
+            let n = if le { read_u32_le(data, val_start + o) } else { read_u32_be(data, val_start + o) };
+            let d = if le { read_u32_le(data, val_start + o + 4) } else { read_u32_be(data, val_start + o + 4) };
+            match (n, d) {
+                (Some(n), Some(d)) if d != 0 => Some(format!("{}/{}", n, d)),
+                (Some(n), Some(_)) => Some(n.to_string()),
+                _ => None,
+            }
+        };
+        let read_rat_f = |o: usize| -> Option<f64> {
+            let n = if le { read_u32_le(data, val_start + o) } else { read_u32_be(data, val_start + o) };
+            let d = if le { read_u32_le(data, val_start + o + 4) } else { read_u32_be(data, val_start + o + 4) };
+            match (n, d) {
+                (Some(n), Some(d)) if d != 0 => Some(n as f64 / d as f64),
+                _ => None,
+            }
+        };
+        let read_str = || -> String {
+            let end = vdata.iter().position(|&b| b == 0).unwrap_or(val_size.min(vdata.len()));
+            std::str::from_utf8(&vdata[..end]).unwrap_or("").trim().to_string()
+        };
+        let read_u16v = || -> Option<u16> { if le { read_u16_le(vdata, 0) } else { read_u16_be(vdata, 0) } };
+        let read_u32v = || -> Option<u32> { if le { read_u32_le(vdata, 0) } else { read_u32_be(vdata, 0) } };
+
+        match (section, tag) {
+            // ── IFD0 / common TIFF tags ──────────────────────────────────────
+            (_, 0x010E) => out.push(ImgMetaEntry::new(section, "ImageDescription", read_str())),
+            (_, 0x010F) => out.push(ImgMetaEntry::new(section, "Make", read_str())),
+            (_, 0x0110) => out.push(ImgMetaEntry::new(section, "Model", read_str())),
+            (_, 0x0112) => out.push(ImgMetaEntry::new(section, "Orientation", match read_u16v().unwrap_or(0) {
+                1=>"Normal",2=>"Mirror H",3=>"180°",4=>"Mirror V",
+                5=>"Mirror H+90°CW",6=>"90°CW",7=>"Mirror H+90°CCW",8=>"90°CCW",_=>"Unknown"
+            })),
+            (_, 0x011A) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new(section,"XResolution", format!("{:.2}", v))); } }
+            (_, 0x011B) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new(section,"YResolution", format!("{:.2}", v))); } }
+            (_, 0x0128) => out.push(ImgMetaEntry::new(section,"ResolutionUnit", match read_u16v().unwrap_or(0) { 2=>"inch",3=>"cm",_=>"none" })),
+            (_, 0x0131) => out.push(ImgMetaEntry::new(section,"Software", read_str())),
+            (_, 0x0132) => out.push(ImgMetaEntry::new(section,"DateTime", read_str())),
+            (_, 0x013B) => out.push(ImgMetaEntry::new(section,"Artist", read_str())),
+            (_, 0x8298) => out.push(ImgMetaEntry::new(section,"Copyright", read_str())),
+            (_, 0x0100) => { if let Some(v) = read_u32v() { out.push(ImgMetaEntry::new(section,"Width", v.to_string())); } }
+            (_, 0x0101) => { if let Some(v) = read_u32v() { out.push(ImgMetaEntry::new(section,"Height", v.to_string())); } }
+            (_, 0x0102) => { if let Some(v) = read_u16v() { out.push(ImgMetaEntry::new(section,"BitsPerSample", v.to_string())); } }
+            (_, 0x0103) => out.push(ImgMetaEntry::new(section,"Compression", match read_u16v().unwrap_or(0) {
+                1=>"None",2=>"CCITT",3=>"Fax3",4=>"Fax4",5=>"LZW",6=>"JPEG (old)",7=>"JPEG",
+                8=>"Deflate",32773=>"PackBits",_=>"Other"
+            })),
+            (_, 0x0106) => out.push(ImgMetaEntry::new(section,"PhotometricInterp", match read_u16v().unwrap_or(0) {
+                0=>"WhiteIsZero",1=>"BlackIsZero",2=>"RGB",3=>"Palette",
+                4=>"Transparency Mask",5=>"CMYK",6=>"YCbCr",8=>"CIELab",_=>"Other"
+            })),
+            // ── SubIFD pointers ──────────────────────────────────────────────
+            (_, 0x8769) => { // ExifIFD
+                if let Some(ptr) = read_u32v() { parse_tiff_ifd(data, ptr as usize, le, "ExifIFD", out, depth + 1); }
+            }
+            (_, 0x8825) => { // GPSIFD
+                if let Some(ptr) = read_u32v() { parse_tiff_ifd(data, ptr as usize, le, "GPS", out, depth + 1); }
+            }
+            // ── ExifIFD tags ─────────────────────────────────────────────────
+            ("ExifIFD", 0x829A) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","ExposureTime", format!("{:.6} s", v))); } }
+            ("ExifIFD", 0x829D) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","FNumber", format!("f/{:.1}", v))); } }
+            ("ExifIFD", 0x8822) => out.push(ImgMetaEntry::new("ExifIFD","ExposureProgram", match read_u16v().unwrap_or(0) {
+                0=>"Not defined",1=>"Manual",2=>"Normal",3=>"Aperture priority",
+                4=>"Shutter priority",5=>"Creative",6=>"Action",7=>"Portrait",8=>"Landscape",_=>"Other"
+            })),
+            ("ExifIFD", 0x8827) => { if let Some(v) = read_u16v() { out.push(ImgMetaEntry::new("ExifIFD","ISO", v.to_string())); } }
+            ("ExifIFD", 0x9000) => out.push(ImgMetaEntry::new("ExifIFD","ExifVersion", safe_ascii(&vdata[..val_size.min(4).min(vdata.len())]))),
+            ("ExifIFD", 0x9003) => out.push(ImgMetaEntry::new("ExifIFD","DateTimeOriginal", read_str())),
+            ("ExifIFD", 0x9004) => out.push(ImgMetaEntry::new("ExifIFD","DateTimeDigitized", read_str())),
+            ("ExifIFD", 0x9201) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","ShutterSpeedValue", format!("{:.4} EV", v))); } }
+            ("ExifIFD", 0x9202) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","ApertureValue", format!("{:.4} EV", v))); } }
+            ("ExifIFD", 0x9204) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","ExposureBias", format!("{:.2} EV", v))); } }
+            ("ExifIFD", 0x9207) => out.push(ImgMetaEntry::new("ExifIFD","MeteringMode", match read_u16v().unwrap_or(0) {
+                1=>"Average",2=>"CenterWeighted",3=>"Spot",4=>"MultiSpot",5=>"Pattern",6=>"Partial",_=>"Other"
+            })),
+            ("ExifIFD", 0x9208) => out.push(ImgMetaEntry::new("ExifIFD","LightSource", match read_u16v().unwrap_or(0) {
+                0=>"Unknown",1=>"Daylight",2=>"Fluorescent",3=>"Tungsten",4=>"Flash",9=>"Fine weather",10=>"Cloudy",_=>"Other"
+            })),
+            ("ExifIFD", 0x9209) => { if let Some(v) = read_u16v() { out.push(ImgMetaEntry::new("ExifIFD","Flash", if v & 1 == 1 { "Fired" } else { "Did not fire" })); } }
+            ("ExifIFD", 0x920A) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","FocalLength", format!("{:.1} mm", v))); } }
+            ("ExifIFD", 0xA000) => out.push(ImgMetaEntry::new("ExifIFD","FlashPixVersion", safe_ascii(&vdata[..val_size.min(4).min(vdata.len())]))),
+            ("ExifIFD", 0xA001) => out.push(ImgMetaEntry::new("ExifIFD","ColorSpace", match read_u16v().unwrap_or(0) { 1=>"sRGB", 0xFFFF=>"Uncalibrated", _=>"Other" })),
+            ("ExifIFD", 0xA002) => { if let Some(v) = read_u32v() { out.push(ImgMetaEntry::new("ExifIFD","PixelWidth", v.to_string())); } }
+            ("ExifIFD", 0xA003) => { if let Some(v) = read_u32v() { out.push(ImgMetaEntry::new("ExifIFD","PixelHeight", v.to_string())); } }
+            ("ExifIFD", 0xA401) => out.push(ImgMetaEntry::new("ExifIFD","CustomRendered", match read_u16v().unwrap_or(0) { 0=>"Normal",1=>"Custom",_=>"Other" })),
+            ("ExifIFD", 0xA402) => out.push(ImgMetaEntry::new("ExifIFD","ExposureMode", match read_u16v().unwrap_or(0) { 0=>"Auto",1=>"Manual",2=>"Auto bracket",_=>"Other" })),
+            ("ExifIFD", 0xA403) => out.push(ImgMetaEntry::new("ExifIFD","WhiteBalance", match read_u16v().unwrap_or(0) { 0=>"Auto",1=>"Manual",_=>"Other" })),
+            ("ExifIFD", 0xA404) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","DigitalZoomRatio", format!("{:.2}×", v))); } }
+            ("ExifIFD", 0xA405) => { if let Some(v) = read_u16v() { out.push(ImgMetaEntry::new("ExifIFD","FocalLength35mm", format!("{} mm", v))); } }
+            ("ExifIFD", 0xA406) => out.push(ImgMetaEntry::new("ExifIFD","SceneCaptureType", match read_u16v().unwrap_or(0) { 0=>"Standard",1=>"Landscape",2=>"Portrait",3=>"Night scene",_=>"Other" })),
+            ("ExifIFD", 0xA408) => out.push(ImgMetaEntry::new("ExifIFD","Contrast", match read_u16v().unwrap_or(0) { 0=>"Normal",1=>"Soft",2=>"Hard",_=>"Other" })),
+            ("ExifIFD", 0xA409) => out.push(ImgMetaEntry::new("ExifIFD","Saturation", match read_u16v().unwrap_or(0) { 0=>"Normal",1=>"Low",2=>"High",_=>"Other" })),
+            ("ExifIFD", 0xA40A) => out.push(ImgMetaEntry::new("ExifIFD","Sharpness", match read_u16v().unwrap_or(0) { 0=>"Normal",1=>"Soft",2=>"Hard",_=>"Other" })),
+            ("ExifIFD", 0xA420) => out.push(ImgMetaEntry::new("ExifIFD","ImageUniqueID", read_str())),
+            ("ExifIFD", 0x9286) => { // UserComment
+                if vdata.len() >= 8 {
+                    let charset = &vdata[..8];
+                    let txt = &vdata[8..val_size.min(vdata.len())];
+                    if charset.starts_with(b"ASCII") || charset.starts_with(b"\0\0\0\0\0\0\0\0") {
+                        if let Ok(s) = std::str::from_utf8(txt) { let s = s.trim_matches('\0').trim().to_string(); if !s.is_empty() { out.push(ImgMetaEntry::new("ExifIFD","UserComment", s)); } }
+                    }
+                }
+            }
+            // ── GPS tags ─────────────────────────────────────────────────────
+            ("GPS", 0x0001) => out.push(ImgMetaEntry::new("GPS","LatitudeRef", safe_ascii(&vdata[..1.min(vdata.len())]))),
+            ("GPS", 0x0003) => out.push(ImgMetaEntry::new("GPS","LongitudeRef", safe_ascii(&vdata[..1.min(vdata.len())]))),
+            ("GPS", 0x0005) => out.push(ImgMetaEntry::new("GPS","AltitudeRef", match vdata.first().copied().unwrap_or(0) { 0=>"Above sea level",1=>"Below sea level",_=>"Unknown" })),
+            ("GPS", 0x000C) => out.push(ImgMetaEntry::new("GPS","SpeedRef", safe_ascii(&vdata[..1.min(vdata.len())]))),
+            ("GPS", 0x0010) => out.push(ImgMetaEntry::new("GPS","ImgDirectionRef", safe_ascii(&vdata[..1.min(vdata.len())]))),
+            ("GPS", 0x0012) => out.push(ImgMetaEntry::new("GPS","MapDatum", read_str())),
+            ("GPS", 0x001D) => out.push(ImgMetaEntry::new("GPS","DateStamp", read_str())),
+            ("GPS", 0x0002) => { // GPSLatitude (3 rationals)
+                if let (Some(d), Some(m), Some(s)) = (read_rat_f(0), read_rat_f(8), read_rat_f(16)) {
+                    out.push(ImgMetaEntry::new("GPS","Latitude", format!("{}°{}'{:.4}\"", d as u32, m as u32, s)));
+                }
+            }
+            ("GPS", 0x0004) => { // GPSLongitude (3 rationals)
+                if let (Some(d), Some(m), Some(s)) = (read_rat_f(0), read_rat_f(8), read_rat_f(16)) {
+                    out.push(ImgMetaEntry::new("GPS","Longitude", format!("{}°{}'{:.4}\"", d as u32, m as u32, s)));
+                }
+            }
+            ("GPS", 0x0006) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("GPS","Altitude", format!("{:.2} m", v))); } }
+            ("GPS", 0x000D) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("GPS","Speed", format!("{:.2}", v))); } }
+            ("GPS", 0x0011) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("GPS","ImgDirection", format!("{:.2}°", v))); } }
+            ("GPS", 0x0007) => { // GPSTimeStamp (3 rationals HH MM SS)
+                if let (Some(h), Some(m), Some(s)) = (read_rat_f(0), read_rat_f(8), read_rat_f(16)) {
+                    out.push(ImgMetaEntry::new("GPS","TimeStampUTC", format!("{:02}:{:02}:{:06.3}", h as u32, m as u32, s)));
+                }
+            }
+            _ => {}
+        }
+    }
+    // Follow next IFD if present
+    let next_off_pos = off + 2 + count * 12;
+    if let Some(next) = r32(next_off_pos) {
+        if next != 0 && next as usize + 2 < data.len() && depth == 0 {
+            parse_tiff_ifd(data, next as usize, le, section, out, depth + 1);
+        }
+    }
+}
+
+// ── IPTC ─────────────────────────────────────────────────────────────────────
+
+fn parse_iptc(data: &[u8], out: &mut Vec<ImgMetaEntry>) {
+    let mut pos = 14usize; // skip "Photoshop 3.0\0"
+    while pos + 5 < data.len() {
+        if data[pos] != 0x38 || data[pos+1] != 0x42 || data[pos+2] != 0x49 || data[pos+3] != 0x4D { pos += 1; continue; }
+        let resource_type = read_u16_be(data, pos+4).unwrap_or(0);
+        let name_len = data.get(pos+7).copied().unwrap_or(0) as usize;
+        let name_pad = if (name_len + 1) % 2 == 0 { name_len + 1 } else { name_len + 2 };
+        let data_len = read_u32_be(data, pos + 6 + name_pad).unwrap_or(0) as usize;
+        let block_start = pos + 10 + name_pad;
+        if resource_type == 0x0404 { // IPTC-NAA
+            let iptc_data = data.get(block_start..block_start+data_len).unwrap_or(&[]);
+            let mut ip = 0usize;
+            while ip + 4 < iptc_data.len() {
+                if iptc_data[ip] != 0x1C { ip += 1; continue; }
+                let ds = iptc_data[ip+1];
+                let tag = iptc_data[ip+2];
+                let len = read_u16_be(iptc_data, ip+3).unwrap_or(0) as usize;
+                let val = iptc_data.get(ip+5..ip+5+len).unwrap_or(&[]);
+                if ds == 2 {
+                    let key = match tag {
+                        5=>"ObjectName",7=>"EditStatus",15=>"Category",20=>"Supplemental",
+                        22=>"FixtureId",25=>"Keywords",30=>"ReleaseDate",35=>"ReleaseTime",
+                        40=>"SpecialInstruction",55=>"DateCreated",60=>"TimeCreated",
+                        62=>"DigitalCreationDate",63=>"DigitalCreationTime",
+                        65=>"OriginatingProgram",70=>"ProgramVersion",
+                        80=>"ByLine",85=>"ByLineTitle",90=>"City",92=>"SubLocation",
+                        95=>"Province",100=>"CountryCode",101=>"CountryName",
+                        103=>"TransmissionRef",105=>"Headline",110=>"Credit",
+                        115=>"Source",116=>"Copyright",120=>"Caption",_=>"Other"
+                    };
+                    if let Ok(s) = std::str::from_utf8(val) { let s = s.trim().to_string(); if !s.is_empty() { out.push(ImgMetaEntry::new("IPTC", key, s)); } }
+                }
+                ip += 5 + len;
+            }
+        }
+        let block_end = block_start + data_len + if data_len % 2 != 0 { 1 } else { 0 };
+        pos = block_end;
+    }
+}
+
+// ── XMP extraction (simple tag scan) ─────────────────────────────────────────
+
+fn extract_xmp_simple(xmp: &str, out: &mut Vec<ImgMetaEntry>) {
+    let fields = [
+        ("dc:title","Title"), ("dc:description","Description"), ("dc:creator","Creator"),
+        ("dc:subject","Subject"), ("dc:rights","Rights"), ("xmp:CreateDate","CreateDate"),
+        ("xmp:ModifyDate","ModifyDate"), ("xmp:CreatorTool","CreatorTool"),
+        ("xmp:Rating","Rating"), ("photoshop:DateCreated","DateCreated"),
+        ("photoshop:Credit","Credit"), ("photoshop:Source","Source"),
+    ];
+    for (tag, label) in &fields {
+        let open = format!("<{}>", tag);
+        let close = format!("</{}>", tag);
+        let alt = format!("{}=\"", tag);
+        if let Some(s) = xmp.find(&open).and_then(|i| {
+            let inner = &xmp[i+open.len()..];
+            inner.find(&close).map(|j| inner[..j].trim().to_string())
+        }) {
+            if !s.is_empty() { out.push(ImgMetaEntry::new("XMP", label, s)); }
+        } else if let Some(i) = xmp.find(&alt) {
+            let rest = &xmp[i+alt.len()..];
+            if let Some(j) = rest.find('"') { out.push(ImgMetaEntry::new("XMP", label, rest[..j].to_string())); }
+        }
+    }
+}
+
+// ── PNG ───────────────────────────────────────────────────────────────────────
+
+fn parse_png(data: &[u8], out: &mut Vec<ImgMetaEntry>) {
+    let mut pos = 8usize; // skip PNG signature
+    while pos + 8 <= data.len() {
+        let chunk_len = read_u32_be(data, pos).unwrap_or(0) as usize;
+        let chunk_type = data.get(pos+4..pos+8).unwrap_or(&[]);
+        let chunk_data = data.get(pos+8..pos+8+chunk_len.min(data.len().saturating_sub(pos+8))).unwrap_or(&[]);
+
+        match chunk_type {
+            b"IHDR" if chunk_data.len() >= 13 => {
+                let w = read_u32_be(chunk_data, 0).unwrap_or(0);
+                let h = read_u32_be(chunk_data, 4).unwrap_or(0);
+                let depth = chunk_data[8];
+                let color_type = chunk_data[9];
+                let interlace = chunk_data[12];
+                out.push(ImgMetaEntry::new("Image","Width", w.to_string()));
+                out.push(ImgMetaEntry::new("Image","Height", h.to_string()));
+                out.push(ImgMetaEntry::new("Image","BitDepth", depth.to_string()));
+                out.push(ImgMetaEntry::new("Image","ColorType", match color_type {
+                    0=>"Grayscale",2=>"Truecolor",3=>"Indexed",4=>"Grayscale+Alpha",6=>"Truecolor+Alpha",_=>"Unknown"
+                }));
+                out.push(ImgMetaEntry::new("Image","Interlace", if interlace == 0 { "None" } else { "Adam7" }));
+            }
+            b"tEXt" => {
+                if let Some(sep) = chunk_data.iter().position(|&b| b == 0) {
+                    let key = std::str::from_utf8(&chunk_data[..sep]).unwrap_or("?");
+                    let val = std::str::from_utf8(&chunk_data[sep+1..]).unwrap_or("?");
+                    out.push(ImgMetaEntry::new("Text", key, val.trim()));
+                }
+            }
+            b"iTXt" => {
+                if let Some(sep) = chunk_data.iter().position(|&b| b == 0) {
+                    let key = std::str::from_utf8(&chunk_data[..sep]).unwrap_or("?");
+                    // skip compression flag (1), compression method (1), language tag (null terminated), translated keyword (null terminated)
+                    let rest = &chunk_data[sep+1..];
+                    let skip_nulls = |s: &[u8], n: usize| -> usize {
+                        let mut pos = 0; let mut found = 0;
+                        while pos < s.len() { if s[pos] == 0 { found += 1; if found == n { return pos + 1; } } pos += 1; }
+                        s.len()
+                    };
+                    let val_start = 2 + skip_nulls(&rest[2..], 2);
+                    let val = rest.get(val_start..).and_then(|v| std::str::from_utf8(v).ok()).unwrap_or("").trim().to_string();
+                    if !val.is_empty() { out.push(ImgMetaEntry::new("Text", key, val)); }
+                }
+            }
+            b"tIME" if chunk_data.len() >= 7 => {
+                let y = read_u16_be(chunk_data, 0).unwrap_or(0);
+                out.push(ImgMetaEntry::new("PNG","LastModified",
+                    format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}", y, chunk_data[2], chunk_data[3], chunk_data[4], chunk_data[5], chunk_data[6])));
+            }
+            b"gAMA" if chunk_data.len() >= 4 => {
+                let gamma = read_u32_be(chunk_data, 0).unwrap_or(0);
+                out.push(ImgMetaEntry::new("PNG","Gamma", format!("{:.5}", gamma as f64 / 100000.0)));
+            }
+            b"sRGB" if !chunk_data.is_empty() => {
+                out.push(ImgMetaEntry::new("Color","sRGB", match chunk_data[0] {
+                    0=>"Perceptual",1=>"Relative colorimetric",2=>"Saturation",3=>"Absolute colorimetric",_=>"Other"
+                }));
+            }
+            b"iCCP" => { out.push(ImgMetaEntry::new("Color","ICC Profile","present")); }
+            b"pHYs" if chunk_data.len() >= 9 => {
+                let xppu = read_u32_be(chunk_data, 0).unwrap_or(0);
+                let yppu = read_u32_be(chunk_data, 4).unwrap_or(0);
+                let unit = chunk_data[8];
+                if unit == 1 {
+                    out.push(ImgMetaEntry::new("PNG","XPixelDensity", format!("{} px/m ({:.0} DPI)", xppu, xppu as f64 * 0.0254)));
+                    out.push(ImgMetaEntry::new("PNG","YPixelDensity", format!("{} px/m ({:.0} DPI)", yppu, yppu as f64 * 0.0254)));
+                } else {
+                    out.push(ImgMetaEntry::new("PNG","PixelAspect", format!("{}:{}", xppu, yppu)));
+                }
+            }
+            b"bKGD" => { out.push(ImgMetaEntry::new("PNG","BackgroundColor","present")); }
+            b"hIST" => { out.push(ImgMetaEntry::new("PNG","Histogram","present")); }
+            b"sBIT" => { out.push(ImgMetaEntry::new("PNG","SignificantBits","present")); }
+            b"eXIf" | b"eXif" => { parse_exif(chunk_data, out); } // PNG EXIF chunk
+            b"IEND" => break,
+            _ => {}
+        }
+        pos = pos + 12 + chunk_len;
+    }
+}
+
+// ── BMP ───────────────────────────────────────────────────────────────────────
+
+fn parse_bmp(data: &[u8], out: &mut Vec<ImgMetaEntry>) {
+    if data.len() < 54 { return; }
+    let file_size = read_u32_le(data, 2).unwrap_or(0);
+    let data_off  = read_u32_le(data, 10).unwrap_or(0);
+    let dib_size  = read_u32_le(data, 14).unwrap_or(0);
+    out.push(ImgMetaEntry::new("BMP","FileSize", format!("{} bytes", file_size)));
+    out.push(ImgMetaEntry::new("BMP","PixelArrayOffset", format!("{} bytes", data_off)));
+    out.push(ImgMetaEntry::new("BMP","DIBHeaderSize", format!("{} bytes ({})",dib_size, match dib_size {
+        12=>"BITMAPCOREHEADER",40=>"BITMAPINFOHEADER",52=>"BITMAPV2INFOHEADER",
+        56=>"BITMAPV3INFOHEADER",108=>"BITMAPV4HEADER",124=>"BITMAPV5HEADER",_=>"Unknown"
+    })));
+    if dib_size >= 40 && data.len() >= 54 {
+        let w    = read_i32_le(data, 18).unwrap_or(0).abs() as u32;
+        let h    = read_i32_le(data, 22).unwrap_or(0).abs() as u32;
+        let planes = read_u16_le(data, 26).unwrap_or(0);
+        let bpp  = read_u16_le(data, 28).unwrap_or(0);
+        let comp = read_u32_le(data, 30).unwrap_or(0);
+        let img_size = read_u32_le(data, 34).unwrap_or(0);
+        let xppm = read_i32_le(data, 38).unwrap_or(0);
+        let yppm = read_i32_le(data, 42).unwrap_or(0);
+        let colors_used = read_u32_le(data, 46).unwrap_or(0);
+        out.push(ImgMetaEntry::new("Image","Width", w.to_string()));
+        out.push(ImgMetaEntry::new("Image","Height", h.to_string()));
+        out.push(ImgMetaEntry::new("Image","ColorPlanes", planes.to_string()));
+        out.push(ImgMetaEntry::new("Image","BitsPerPixel", bpp.to_string()));
+        out.push(ImgMetaEntry::new("Image","ColorMode", match bpp { 1=>"Monochrome",4=>"16-color",8=>"256-color",16=>"High color",24=>"True color",32=>"True color+Alpha",_=>"Other" }));
+        out.push(ImgMetaEntry::new("BMP","Compression", match comp { 0=>"BI_RGB (none)",1=>"BI_RLE8",2=>"BI_RLE4",3=>"BI_BITFIELDS",4=>"BI_JPEG",5=>"BI_PNG",_=>"Other" }));
+        out.push(ImgMetaEntry::new("BMP","ImageDataSize", format!("{} bytes", img_size)));
+        if xppm > 0 { out.push(ImgMetaEntry::new("BMP","XPixelsPerMeter", format!("{} ({:.0} DPI)", xppm, xppm as f64 * 0.0254))); }
+        if yppm > 0 { out.push(ImgMetaEntry::new("BMP","YPixelsPerMeter", format!("{} ({:.0} DPI)", yppm, yppm as f64 * 0.0254))); }
+        if colors_used > 0 { out.push(ImgMetaEntry::new("BMP","ColorsUsed", colors_used.to_string())); }
+    }
+}
+
+// ── GIF ───────────────────────────────────────────────────────────────────────
+
+fn parse_gif(data: &[u8], out: &mut Vec<ImgMetaEntry>) {
+    if data.len() < 13 { return; }
+    let version = std::str::from_utf8(&data[3..6]).unwrap_or("?");
+    let w = read_u16_le(data, 6).unwrap_or(0);
+    let h = read_u16_le(data, 8).unwrap_or(0);
+    let packed = data[10];
+    let gct = (packed >> 7) & 1;
+    let color_res = ((packed >> 4) & 0x7) + 1;
+    let gct_size = packed & 0x7;
+    let bg_index = data[11];
+    let aspect = data[12];
+
+    out.push(ImgMetaEntry::new("Image","GIFVersion", version));
+    out.push(ImgMetaEntry::new("Image","Width", w.to_string()));
+    out.push(ImgMetaEntry::new("Image","Height", h.to_string()));
+    out.push(ImgMetaEntry::new("GIF","GlobalColorTable", if gct == 1 { "Yes" } else { "No" }));
+    if gct == 1 { out.push(ImgMetaEntry::new("GIF","ColorTableSize", format!("{} colors", 2u32.pow(gct_size as u32 + 1)))); }
+    out.push(ImgMetaEntry::new("GIF","ColorResolution", format!("{} bits/channel", color_res)));
+    out.push(ImgMetaEntry::new("GIF","BackgroundColorIndex", bg_index.to_string()));
+    if aspect != 0 { out.push(ImgMetaEntry::new("GIF","PixelAspectRatio", format!("{:.4}", (aspect as f64 + 15.0) / 64.0))); }
+
+    // Scan for Netscape Application Extension (animated GIF loop count)
+    let mut pos = 13usize + if gct == 1 { 3 * (2usize.pow(gct_size as u32 + 1)) } else { 0 };
+    let mut frame_count = 0u32;
+    while pos < data.len() {
+        match data[pos] {
+            0x2C => { frame_count += 1; pos += 1; if pos + 9 <= data.len() { pos += 9; } else { break; } }
+            0x21 => {
+                if pos + 1 >= data.len() { break; }
+                let ext_type = data[pos+1];
+                pos += 2;
+                if ext_type == 0xFF && pos + 1 < data.len() { // App extension
+                    let blen = data[pos] as usize; pos += 1;
+                    if let Some(app) = data.get(pos..pos+blen.min(11)) {
+                        if app.starts_with(b"NETSCAPE2.0") {
+                            pos += blen;
+                            if pos + 1 < data.len() { let sublen = data[pos] as usize; pos += 1;
+                                if sublen >= 3 { let loops = read_u16_le(data, pos+1).unwrap_or(0);
+                                    out.push(ImgMetaEntry::new("GIF","AnimationLoops", if loops == 0 { "Infinite".into() } else { loops.to_string() })); }
+                                pos += sublen;
+                            }
+                        } else { pos += blen; }
+                    } else { pos += blen; }
+                }
+                // skip sub-blocks
+                while pos < data.len() { let bl = data[pos] as usize; pos += 1; if bl == 0 { break; } pos += bl; }
+            }
+            0x3B => break, // Trailer
+            _ => { pos += 1; }
+        }
+    }
+    if frame_count > 1 { out.push(ImgMetaEntry::new("GIF","Animated", "Yes")); out.push(ImgMetaEntry::new("GIF","FrameCount", frame_count.to_string())); }
+    else { out.push(ImgMetaEntry::new("GIF","Animated", "No")); }
+}
+
+// ── WebP ─────────────────────────────────────────────────────────────────────
+
+fn parse_webp(data: &[u8], out: &mut Vec<ImgMetaEntry>) {
+    if data.len() < 12 { return; }
+    let riff_size = read_u32_le(data, 4).unwrap_or(0);
+    out.push(ImgMetaEntry::new("WebP","RIFFSize", format!("{} bytes", riff_size + 8)));
+    let subtype = data.get(8..12).unwrap_or(&[]);
+    let subtype_str = safe_ascii(subtype);
+    out.push(ImgMetaEntry::new("WebP","Subtype", subtype_str.trim().to_string()));
+
+    let mut pos = 12usize;
+    while pos + 8 <= data.len() {
+        let fcc = data.get(pos..pos+4).unwrap_or(&[]);
+        let chunk_size = read_u32_le(data, pos+4).unwrap_or(0) as usize;
+        let chunk_data = data.get(pos+8..pos+8+chunk_size.min(data.len().saturating_sub(pos+8))).unwrap_or(&[]);
+        match fcc {
+            b"VP8 " => {
+                out.push(ImgMetaEntry::new("Image","Encoding","VP8 (Lossy)"));
+                if chunk_data.len() >= 10 && chunk_data[0] == 0x9D && chunk_data[1] == 0x01 && chunk_data[2] == 0x2A {
+                    let w = read_u16_le(chunk_data, 6).unwrap_or(0) & 0x3FFF;
+                    let h = read_u16_le(chunk_data, 8).unwrap_or(0) & 0x3FFF;
+                    out.push(ImgMetaEntry::new("Image","Width", w.to_string()));
+                    out.push(ImgMetaEntry::new("Image","Height", h.to_string()));
+                }
+            }
+            b"VP8L" => {
+                out.push(ImgMetaEntry::new("Image","Encoding","VP8L (Lossless)"));
+                if chunk_data.len() >= 5 && chunk_data[0] == 0x2F {
+                    let bits = ((chunk_data[4] as u32) << 24) | ((chunk_data[3] as u32) << 16) | ((chunk_data[2] as u32) << 8) | chunk_data[1] as u32;
+                    let w = (bits & 0x3FFF) + 1;
+                    let h = ((bits >> 14) & 0x3FFF) + 1;
+                    out.push(ImgMetaEntry::new("Image","Width", w.to_string()));
+                    out.push(ImgMetaEntry::new("Image","Height", h.to_string()));
+                }
+            }
+            b"VP8X" => {
+                out.push(ImgMetaEntry::new("Image","Encoding","VP8X (Extended)"));
+                if chunk_data.len() >= 10 {
+                    let flags = chunk_data[0];
+                    let w = (read_u32_le(chunk_data, 4).unwrap_or(0) & 0xFFFFFF) + 1;
+                    let h = (read_u32_le(chunk_data, 7).unwrap_or(0) & 0xFFFFFF) + 1;
+                    out.push(ImgMetaEntry::new("Image","Width", w.to_string()));
+                    out.push(ImgMetaEntry::new("Image","Height", h.to_string()));
+                    if flags & 0x02 != 0 { out.push(ImgMetaEntry::new("WebP","ICC Profile","present")); }
+                    if flags & 0x04 != 0 { out.push(ImgMetaEntry::new("WebP","Animation","Yes")); }
+                    if flags & 0x08 != 0 { out.push(ImgMetaEntry::new("WebP","EXIF","present")); }
+                    if flags & 0x10 != 0 { out.push(ImgMetaEntry::new("WebP","Alpha","Yes")); }
+                    if flags & 0x20 != 0 { out.push(ImgMetaEntry::new("WebP","XMP","present")); }
+                }
+            }
+            b"EXIF" => { parse_exif(chunk_data, out); }
+            b"XMP " => { if let Ok(s) = std::str::from_utf8(chunk_data) { extract_xmp_simple(s, out); } }
+            b"ICCP" => { out.push(ImgMetaEntry::new("Color","ICC Profile","present")); }
+            _ => {}
+        }
+        let aligned = chunk_size + (chunk_size & 1);
+        pos = pos + 8 + aligned;
+    }
+}
+
+// ── TIFF standalone ───────────────────────────────────────────────────────────
+
+fn parse_tiff_file(data: &[u8], out: &mut Vec<ImgMetaEntry>) {
+    parse_exif(data, out); // TIFF and EXIF share the same TIFF structure
+}
+
+fn find_meta_value(entries: &[ImgMetaEntry], section: &str, key: &str) -> Option<String> {
+    entries
+        .iter()
+        .find(|e| e.section == section && e.key == key)
+        .map(|e| e.value.clone())
+}
+
+fn parse_gps_dms(dms: &str) -> Option<f64> {
+    // Expected format: 52°12'34.5678"
+    let deg_pos = dms.find('°')?;
+    let min_pos = dms.find('\'')?;
+    let sec_pos = dms.rfind('"')?;
+    if !(deg_pos < min_pos && min_pos < sec_pos) { return None; }
+
+    let deg = dms[..deg_pos].trim().parse::<f64>().ok()?;
+    let min = dms[deg_pos + 1..min_pos].trim().parse::<f64>().ok()?;
+    let sec = dms[min_pos + 1..sec_pos].trim().parse::<f64>().ok()?;
+
+    Some(deg + (min / 60.0) + (sec / 3600.0))
+}
+
+fn add_derived_gps(entries: &mut Vec<ImgMetaEntry>) {
+    let lat_ref = find_meta_value(entries, "GPS", "LatitudeRef").unwrap_or_default();
+    let lon_ref = find_meta_value(entries, "GPS", "LongitudeRef").unwrap_or_default();
+    let lat_dms = match find_meta_value(entries, "GPS", "Latitude") {
+        Some(v) => v,
+        None => return,
+    };
+    let lon_dms = match find_meta_value(entries, "GPS", "Longitude") {
+        Some(v) => v,
+        None => return,
+    };
+
+    if let Some(mut lat) = parse_gps_dms(&lat_dms) {
+        if lat_ref.eq_ignore_ascii_case("S") { lat = -lat; }
+        entries.push(ImgMetaEntry::new("GPS", "LatitudeDecimal", format!("{:.8}", lat)));
+    }
+    if let Some(mut lon) = parse_gps_dms(&lon_dms) {
+        if lon_ref.eq_ignore_ascii_case("W") { lon = -lon; }
+        entries.push(ImgMetaEntry::new("GPS", "LongitudeDecimal", format!("{:.8}", lon)));
+    }
+}
+
+// ── Format detection ──────────────────────────────────────────────────────────
+
+fn detect_image_format(data: &[u8]) -> &'static str {
+    if data.starts_with(b"\xFF\xD8\xFF")                           { return "JPEG"; }
+    if data.starts_with(b"\x89PNG\r\n\x1A\n")                     { return "PNG"; }
+    if data.starts_with(b"GIF87a") || data.starts_with(b"GIF89a") { return "GIF"; }
+    if data.starts_with(b"BM")                                    { return "BMP"; }
+    if data.starts_with(b"RIFF") && data.get(8..12) == Some(b"WEBP") { return "WebP"; }
+    if data.starts_with(b"II\x2A\x00") || data.starts_with(b"MM\x00\x2A") { return "TIFF"; }
+    if data.starts_with(b"\x00\x00\x01\x00")                      { return "ICO"; }
+    if data.starts_with(b"\x00\x00\x02\x00")                      { return "CUR"; }
+    if data.starts_with(b"8BPS")                                   { return "PSD"; }
+    if data.starts_with(b"\x00\x00\x00") && data.get(4..8) == Some(b"ftyp") { return "HEIC/MP4"; }
+    "Unknown"
+}
+
+// ── Main command ──────────────────────────────────────────────────────────────
+
+#[tauri::command]
+fn read_image_meta(
+    header_bytes: Vec<u8>,
+    filename: String,
+    mime_type: Option<String>,
+    file_size: Option<u64>,
+    last_modified_unix_ms: Option<u64>,
+) -> Vec<ImgMetaEntry> {
+    let mut out: Vec<ImgMetaEntry> = Vec::new();
+    let data = &header_bytes;
+
+    out.push(ImgMetaEntry::new("File","Filename", &filename));
+    if let Some(mt) = mime_type {
+        if !mt.trim().is_empty() {
+            out.push(ImgMetaEntry::new("File", "MimeType", mt.trim().to_string()));
+        }
+    }
+    if let Some(fs) = file_size {
+        out.push(ImgMetaEntry::new("File", "FileSize", format!("{} bytes", fs)));
+    }
+    if let Some(ts_ms) = last_modified_unix_ms {
+        let secs = ts_ms / 1000;
+        let rem_ms = ts_ms % 1000;
+        out.push(ImgMetaEntry::new("File", "LastModifiedUnix", format!("{}.{}", secs, rem_ms)));
+    }
+    out.push(ImgMetaEntry::new("File","DataReceived", format!("{} bytes", data.len())));
+
+    let ext = filename.rsplit('.').next().unwrap_or("").to_uppercase();
+    out.push(ImgMetaEntry::new("File","Extension", &ext));
+
+    let format = detect_image_format(data);
+    out.push(ImgMetaEntry::new("File","Format", format));
+
+    // Hex dump of first 16 bytes
+    let hex: String = data.iter().take(16).map(|b| format!("{:02X} ", b)).collect();
+    out.push(ImgMetaEntry::new("File","MagicBytes", hex.trim()));
+
+    match format {
+        "JPEG" => parse_jpeg(data, &mut out),
+        "PNG"  => parse_png(data, &mut out),
+        "BMP"  => parse_bmp(data, &mut out),
+        "GIF"  => parse_gif(data, &mut out),
+        "WebP" => parse_webp(data, &mut out),
+        "TIFF" => parse_tiff_file(data, &mut out),
+        "PSD"  => {
+            if data.len() >= 26 {
+                let version = read_u16_be(data, 4).unwrap_or(0);
+                let channels = read_u16_be(data, 12).unwrap_or(0);
+                let h = read_u32_be(data, 14).unwrap_or(0);
+                let w = read_u32_be(data, 18).unwrap_or(0);
+                let depth = read_u16_be(data, 22).unwrap_or(0);
+                let color_mode = read_u16_be(data, 24).unwrap_or(0);
+                out.push(ImgMetaEntry::new("PSD","Version", if version == 1 { "PSD" } else { "PSB" }));
+                out.push(ImgMetaEntry::new("Image","Width", w.to_string()));
+                out.push(ImgMetaEntry::new("Image","Height", h.to_string()));
+                out.push(ImgMetaEntry::new("PSD","Channels", channels.to_string()));
+                out.push(ImgMetaEntry::new("PSD","BitDepth", depth.to_string()));
+                out.push(ImgMetaEntry::new("PSD","ColorMode", match color_mode {
+                    0=>"Bitmap",1=>"Grayscale",2=>"Indexed",3=>"RGB",4=>"CMYK",
+                    7=>"Multichannel",8=>"Duotone",9=>"Lab",_=>"Other"
+                }));
+            }
+        }
+        _ => {}
+    }
+
+    // Derive decimal GPS coordinates from EXIF DMS fields when possible.
+    add_derived_gps(&mut out);
+
+    out
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 fn main() {
@@ -2134,6 +2868,7 @@ fn main() {
             read_gnss_snapshot,
             read_lte_snapshot,
             read_lte_snapshot_auto,
+            read_image_meta,
             open_clippy_window,
             close_clippy_window,
             open_browser,
