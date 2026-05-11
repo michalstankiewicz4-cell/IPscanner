@@ -52,6 +52,68 @@
     'LatitudeDecimal', 'LongitudeDecimal', 'Coordinates', 'MapLink', 'RIFFSize', 'Subtype', 'Animation', 'EXIF', 'XMP', 'Alpha', 'Channels', 'PhotometricInterp', 'PixelArrayOffset', 'ImageDataSize', 'XPixelsPerMeter', 'YPixelsPerMeter', 'ColorsUsed', 'GlobalColorTable', 'ColorTableSize', 'ColorResolution', 'BackgroundColorIndex', 'PixelAspectRatio', 'BackgroundColor', 'Histogram', 'SignificantBits', 'ICC Profile',
   ]);
 
+  const IMG_META_HINTS = {
+    Filename: 'Original file name.',
+    MimeType: 'Declared file MIME type.',
+    FileSize: 'Size of the file on disk.',
+    LastModifiedUnix: 'Last modified timestamp (Unix).',
+    LastModifiedLocal: 'Last modified timestamp (local time).',
+    LastModifiedUTC: 'Last modified timestamp (UTC).',
+    DataReceived: 'How many bytes were analyzed.',
+    Extension: 'File extension from name.',
+    Format: 'Detected image format from signature.',
+    MagicBytes: 'First bytes of file header (signature).',
+    Width: 'Image width in pixels.',
+    Height: 'Image height in pixels.',
+    BitDepth: 'Bits used per channel or sample.',
+    BitsPerPixel: 'Total bits per pixel.',
+    ColorMode: 'Color model used by image data.',
+    ColorType: 'PNG color type / channel layout.',
+    Components: 'Number of image components/channels.',
+    Interlace: 'Interlace mode used by image format.',
+    Orientation: 'How the image should be rotated/flipped.',
+    Software: 'Software that saved or edited the file.',
+    DateTime: 'Generic EXIF date/time (often last metadata write).',
+    DateTimeOriginal: 'When the image was originally created.',
+    DateTimeDigitized: 'When image was digitized by device.',
+    ModifyDate: 'XMP metadata modification time.',
+    MetadataDate: 'XMP metadata package update time.',
+    Artist: 'Author/artist from EXIF.',
+    Creator: 'Creator from XMP.',
+    ByLine: 'Photographer/creator from IPTC.',
+    XPAuthor: 'Author from Windows XP EXIF tag.',
+    CameraOwnerName: 'Camera owner name from EXIF.',
+    WriterEditor: 'Writer/editor from IPTC.',
+    CaptionWriter: 'Caption writer from XMP/Photoshop.',
+    OriginatingProgram: 'Program that created IPTC metadata.',
+    ProgramVersion: 'Version of originating IPTC program.',
+    CreatorTool: 'Tool/app used to create metadata.',
+    Copyright: 'Copyright statement.',
+    Rights: 'Rights/license statement from XMP.',
+    UsageTerms: 'Usage terms from XMP rights metadata.',
+    Credit: 'Credit line (who to credit).',
+    Source: 'Original source/publication.',
+    UserComment: 'User-supplied comment from EXIF.',
+    ImageDescription: 'Short description of the image.',
+    Title: 'Title of the image/document.',
+    Description: 'Longer description/caption.',
+    Subject: 'Keywords/topics assigned to image.',
+    Keywords: 'IPTC keywords/tags.',
+    Latitude: 'GPS latitude in degrees/minutes/seconds.',
+    Longitude: 'GPS longitude in degrees/minutes/seconds.',
+    LatitudeDecimal: 'GPS latitude in decimal degrees.',
+    LongitudeDecimal: 'GPS longitude in decimal degrees.',
+    Altitude: 'GPS altitude.',
+    Coordinates: 'Combined decimal latitude/longitude.',
+    MapLink: 'Open coordinates on map service.',
+    ExposureTime: 'Camera exposure time (shutter).',
+    FNumber: 'Aperture (f-stop).',
+    ISO: 'Sensor ISO sensitivity.',
+    FocalLength: 'Lens focal length.',
+    WhiteBalance: 'White balance mode used by camera.',
+    Flash: 'Flash fired state.',
+  };
+
   let _currentFile = null;
   let _entries     = [];
   let _collapsedSections = new Set();
@@ -344,17 +406,29 @@
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
+  function getMetaHint(key) {
+    const k = String(key || '').trim();
+    if (!k) return 'Metadata field.';
+    if (IMG_META_HINTS[k]) return IMG_META_HINTS[k];
+    if (k.includes('Date') || k.includes('Time')) return 'Date/time metadata field.';
+    if (k.includes('Author') || k.includes('Creator') || k.includes('Artist') || k.includes('Owner')) return 'Author/creator related metadata.';
+    if (k.includes('GPS') || k.includes('Latitude') || k.includes('Longitude') || k.includes('Altitude')) return 'Location metadata from GPS.';
+    if (k.includes('Copyright') || k.includes('Rights') || k.includes('Credit') || k.includes('Usage')) return 'Copyright/rights metadata.';
+    return `Metadata field: ${k}`;
+  }
+
   function renderValueCell(e) {
     const key = String(e.key || '');
     const value = String(e.value || '');
+    const hint = escAttr(getMetaHint(key));
     if (isEditableEntry(e)) {
-      return `<input class="imgmeta-value-input" data-entry-section="${escAttr(e.section)}" data-entry-key="${escAttr(e.key)}" value="${escAttr(value)}" spellcheck="false">`;
+      return `<input class="imgmeta-value-input" data-entry-section="${escAttr(e.section)}" data-entry-key="${escAttr(e.key)}" value="${escAttr(value)}" spellcheck="false" title="${hint}">`;
     }
     if (key === 'MapLink' && /^https?:\/\//i.test(value)) {
       const safe = escHtml(value);
-      return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${safe}</a>`;
+      return `<a href="${safe}" target="_blank" rel="noopener noreferrer" title="${hint}">${safe}</a>`;
     }
-    return escHtml(value);
+    return `<span title="${hint}">${escHtml(value)}</span>`;
   }
 
   function renderTable(entries) {
@@ -374,12 +448,13 @@
 
     const sections = getOrderedSections(entries);
     const bodies = sections.map(sec => {
-      const rows = (bySection.get(sec) || []).map(e =>
-        `<tr class="${isEditableEntry(e) ? 'imgmeta-row-editable' : 'imgmeta-row-readonly'}">
-          <td class="imgmeta-col-key">${escHtml(e.key)}</td>
-          <td class="imgmeta-col-value">${renderValueCell(e)}</td>
-        </tr>`
-      ).join('');
+      const rows = (bySection.get(sec) || []).map(e => {
+        const hint = escAttr(getMetaHint(e.key));
+        return `<tr class="${isEditableEntry(e) ? 'imgmeta-row-editable' : 'imgmeta-row-readonly'}">
+          <td class="imgmeta-col-key" title="${hint}">${escHtml(e.key)}</td>
+          <td class="imgmeta-col-value" title="${hint}">${renderValueCell(e)}</td>
+        </tr>`;
+      }).join('');
       const collapsed = _collapsedSections.has(sec);
       return `
         <tbody class="imgmeta-group ${collapsed ? 'is-collapsed' : ''}" data-section="${escAttr(sec)}">
@@ -410,7 +485,9 @@
     const body = document.getElementById('imgMetaInfoBody');
     if (!body) return;
     const html = IMG_META_FIELD_GROUPS.map(group => {
-      const items = group.fields.map(f => `<li>${escHtml(f)}</li>`).join('');
+      const items = group.fields
+        .map(f => `<li title="${escAttr(getMetaHint(f))}">${escHtml(f)}</li>`)
+        .join('');
       return `
         <div class="imgmeta-info-section">
           <strong>${escHtml(group.section)}</strong>
