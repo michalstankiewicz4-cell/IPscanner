@@ -2909,6 +2909,83 @@ fn detect_image_format(data: &[u8]) -> &'static str {
     "Unknown"
 }
 
+fn detect_container_end_exclusive(data: &[u8], format: &str) -> Option<usize> {
+    match format {
+        "JPEG" => {
+            if data.len() < 4 { return None; }
+            let mut last_eoi: Option<usize> = None;
+            for i in 0..(data.len() - 1) {
+                if data[i] == 0xFF && data[i + 1] == 0xD9 {
+                    last_eoi = Some(i + 2);
+                }
+            }
+            last_eoi
+        }
+        "PNG" => {
+            if data.len() < 8 || !data.starts_with(b"\x89PNG\r\n\x1A\n") { return None; }
+            let mut pos = 8usize;
+            while pos + 8 <= data.len() {
+                let chunk_len = read_u32_be(data, pos).unwrap_or(0) as usize;
+                let chunk_type = data.get(pos + 4..pos + 8).unwrap_or(&[]);
+                let total = 12usize.saturating_add(chunk_len);
+                if pos + total > data.len() { return None; }
+                if chunk_type == b"IEND" {
+                    return Some(pos + total);
+                }
+                pos += total;
+            }
+            None
+        }
+        "BMP" => {
+            let declared = read_u32_le(data, 2).unwrap_or(0) as usize;
+            if declared >= 14 && declared <= data.len() {
+                Some(declared)
+            } else {
+                None
+            }
+        }
+        "WebP" => {
+            if data.len() < 12 || !data.starts_with(b"RIFF") || data.get(8..12) != Some(b"WEBP") {
+                return None;
+            }
+            let riff_size = read_u32_le(data, 4).unwrap_or(0) as usize;
+            let end = 8usize.saturating_add(riff_size);
+            if end <= data.len() { Some(end) } else { None }
+        }
+        _ => None,
+    }
+}
+
+fn add_container_boundary_meta(data: &[u8], format: &str, out: &mut Vec<ImgMetaEntry>) {
+    if data.is_empty() { return; }
+
+    out.push(ImgMetaEntry::new("File", "ContainerStartOffset", "0"));
+    out.push(ImgMetaEntry::new("File", "FileEndOffset", (data.len() - 1).to_string()));
+
+    let Some(end_exclusive) = detect_container_end_exclusive(data, format) else {
+        return;
+    };
+    if end_exclusive == 0 { return; }
+
+    out.push(ImgMetaEntry::new("File", "ContainerEndOffset", (end_exclusive - 1).to_string()));
+
+    if end_exclusive < data.len() {
+        let trailing = data.len() - end_exclusive;
+        out.push(ImgMetaEntry::new("File", "HasTrailingData", "Yes"));
+        out.push(ImgMetaEntry::new("File", "TrailingDataBytes", trailing.to_string()));
+        let preview: String = data[end_exclusive..]
+            .iter()
+            .take(16)
+            .map(|b| format!("{:02X} ", b))
+            .collect();
+        if !preview.is_empty() {
+            out.push(ImgMetaEntry::new("File", "TrailingDataHexPreview", preview.trim()));
+        }
+    } else {
+        out.push(ImgMetaEntry::new("File", "HasTrailingData", "No"));
+    }
+}
+
 // ── Main command ──────────────────────────────────────────────────────────────
 
 #[tauri::command]
@@ -2943,6 +3020,7 @@ fn read_image_meta(
 
     let format = detect_image_format(data);
     out.push(ImgMetaEntry::new("File","Format", format));
+    add_container_boundary_meta(data, format, &mut out);
 
     // Hex dump of first 16 bytes
     let hex: String = data.iter().take(16).map(|b| format!("{:02X} ", b)).collect();

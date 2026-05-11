@@ -8,7 +8,7 @@
   const IMG_META_FIELD_GROUPS = [
     {
       section: 'File',
-      fields: ['Filename', 'MimeType', 'FileSize', 'LastModifiedUnix', 'LastModifiedLocal', 'LastModifiedUTC', 'DataReceived', 'Extension', 'Format', 'MagicBytes'],
+      fields: ['Filename', 'MimeType', 'FileSize', 'LastModifiedUnix', 'LastModifiedLocal', 'LastModifiedUTC', 'DataReceived', 'Extension', 'Format', 'MagicBytes', 'ContainerStartOffset', 'ContainerEndOffset', 'FileEndOffset', 'HasTrailingData', 'TrailingDataBytes', 'TrailingDataHexPreview'],
     },
     {
       section: 'Image / geometry',
@@ -46,6 +46,7 @@
 
   const NON_EDITABLE_KEYS = new Set([
     'FileSize', 'DataReceived', 'Extension', 'Format', 'MagicBytes', 'LastModifiedUnix', 'LastModifiedLocal', 'LastModifiedUTC',
+    'ContainerStartOffset', 'ContainerEndOffset', 'FileEndOffset', 'HasTrailingData', 'TrailingDataBytes', 'TrailingDataHexPreview',
     'Width', 'Height', 'BitDepth', 'BitsPerSample', 'BitsPerPixel', 'ColorMode', 'ColorType', 'ColorPlanes', 'Components', 'Encoding', 'Interlace', 'GIFVersion', 'Animated', 'FrameCount',
     'Version', 'DensityUnit', 'XDensity', 'YDensity', 'Thumbnail', 'DCTEncodeVersion', 'ColorTransform',
     'XResolution', 'YResolution', 'ResolutionUnit', 'ExposureTime', 'FNumber', 'ExposureProgram', 'ISO', 'ExifVersion', 'DateTimeOriginal', 'DateTimeDigitized', 'ShutterSpeedValue', 'ApertureValue', 'ExposureBias', 'MeteringMode', 'LightSource', 'Flash', 'FocalLength', 'FlashPixVersion', 'ColorSpace', 'PixelWidth', 'PixelHeight', 'CustomRendered', 'ExposureMode', 'WhiteBalance', 'DigitalZoomRatio', 'FocalLength35mm', 'SceneCaptureType', 'Contrast', 'Saturation', 'Sharpness', 'ImageUniqueID',
@@ -77,6 +78,12 @@
     Extension: 'File extension from name.',
     Format: 'Detected image format from signature.',
     MagicBytes: 'First bytes of file header (signature).',
+    ContainerStartOffset: 'Byte offset where image/container starts (usually 0).',
+    ContainerEndOffset: 'Byte offset where valid image/container ends.',
+    FileEndOffset: 'Last byte offset of the full file.',
+    HasTrailingData: 'Indicates if bytes exist after valid image/container end.',
+    TrailingDataBytes: 'Number of bytes found after image/container end.',
+    TrailingDataHexPreview: 'Hex preview of trailing bytes after container end.',
     Width: 'Image width in pixels.',
     Height: 'Image height in pixels.',
     BitDepth: 'Bits used per channel or sample.',
@@ -290,6 +297,16 @@
     return !NON_EDITABLE_KEYS.has(String(entry.key || ''));
   }
 
+  function stegoStatusMessage(entries) {
+    const hasTrailingRaw = String(findValue(entries, 'File', 'HasTrailingData') || '').trim().toLowerCase();
+    const hasTrailing = hasTrailingRaw === 'yes' || hasTrailingRaw === 'true' || hasTrailingRaw === 'tak';
+    if (hasTrailing) {
+      const bytes = parseFirstInt(findValue(entries, 'File', 'TrailingDataBytes')) || 0;
+      return t('imgMetaStegoDetected', bytes);
+    }
+    return t('imgMetaStegoNotDetected');
+  }
+
   function escAttr(s) {
     return String(s)
       .replace(/&/g, '&amp;')
@@ -432,10 +449,17 @@
       _entries = enrichEntries(result || [], file, bytes.length);
       renderTable(_entries);
 
+      const stegoMsg = `${t('imgMetaStegoChecked')} ${stegoStatusMessage(_entries)}`;
+
       if (_entries.length === 0) {
-        setStatus(t('imgMetaNoMeta'));
+        setStatus(`${t('imgMetaNoMeta')}  ${stegoMsg}`);
       } else {
-        setStatus(t('imgMetaDone', _entries.length) + (isTauri() ? '' : '  ' + t('imgMetaDesktopHint')));
+        setStatus(
+          t('imgMetaDone', _entries.length)
+          + (isTauri() ? '' : '  ' + t('imgMetaDesktopHint'))
+          + '  '
+          + stegoMsg
+        );
       }
     } catch (e) {
       setStatus(t('imgMetaErrRead') + ' ' + (e?.message || e));
@@ -455,7 +479,67 @@
     push('File', 'MagicBytes', hex);
     const fmt = detectFormat(bytes);
     push('File', 'Format', fmt);
+
+    if (bytes.length > 0) {
+      push('File', 'ContainerStartOffset', '0');
+      push('File', 'FileEndOffset', String(bytes.length - 1));
+      const endExclusive = detectContainerEndExclusive(bytes, fmt);
+      if (Number.isFinite(endExclusive) && endExclusive > 0) {
+        push('File', 'ContainerEndOffset', String(endExclusive - 1));
+        if (endExclusive < bytes.length) {
+          const trailingLen = bytes.length - endExclusive;
+          const trailingHex = Array.from(bytes.slice(endExclusive, endExclusive + 16))
+            .map(b => b.toString(16).padStart(2, '0').toUpperCase() + ' ')
+            .join('')
+            .trim();
+          push('File', 'HasTrailingData', 'Yes');
+          push('File', 'TrailingDataBytes', String(trailingLen));
+          if (trailingHex) push('File', 'TrailingDataHexPreview', trailingHex);
+        } else {
+          push('File', 'HasTrailingData', 'No');
+        }
+      }
+    }
+
     return entries;
+  }
+
+  function detectContainerEndExclusive(bytes, format) {
+    switch (format) {
+      case 'JPEG': {
+        let lastEoi = -1;
+        for (let i = 0; i < bytes.length - 1; i += 1) {
+          if (bytes[i] === 0xFF && bytes[i + 1] === 0xD9) lastEoi = i + 2;
+        }
+        return lastEoi > 0 ? lastEoi : null;
+      }
+      case 'PNG': {
+        if (bytes.length < 8) return null;
+        let pos = 8;
+        while (pos + 8 <= bytes.length) {
+          const len = ((bytes[pos] << 24) | (bytes[pos + 1] << 16) | (bytes[pos + 2] << 8) | bytes[pos + 3]) >>> 0;
+          const total = 12 + len;
+          if (pos + total > bytes.length) return null;
+          const isIend = bytes[pos + 4] === 0x49 && bytes[pos + 5] === 0x45 && bytes[pos + 6] === 0x4E && bytes[pos + 7] === 0x44;
+          if (isIend) return pos + total;
+          pos += total;
+        }
+        return null;
+      }
+      case 'BMP': {
+        if (bytes.length < 6) return null;
+        const declared = (bytes[2] | (bytes[3] << 8) | (bytes[4] << 16) | (bytes[5] << 24)) >>> 0;
+        return declared >= 14 && declared <= bytes.length ? declared : null;
+      }
+      case 'WebP': {
+        if (bytes.length < 12) return null;
+        const riffSize = (bytes[4] | (bytes[5] << 8) | (bytes[6] << 16) | (bytes[7] << 24)) >>> 0;
+        const end = 8 + riffSize;
+        return end <= bytes.length ? end : null;
+      }
+      default:
+        return null;
+    }
   }
 
   function detectFormat(bytes) {
