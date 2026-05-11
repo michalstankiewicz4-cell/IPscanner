@@ -2300,9 +2300,23 @@ fn parse_tiff_ifd(data: &[u8], off: usize, le: bool, section: &str, out: &mut Ve
             (_, 0x013B) => out.push(ImgMetaEntry::new(section,"Artist", read_str())),
             (_, 0x013C) => out.push(ImgMetaEntry::new(section,"HostComputer", read_str())),
             (_, 0x8298) => out.push(ImgMetaEntry::new(section,"Copyright", read_str())),
-            (_, 0x9C9D) => {
-                let s = decode_utf16le_ztrim(vdata);
-                if !s.is_empty() { out.push(ImgMetaEntry::new(section, "XPAuthor", s)); }
+            // Windows XP EXIF tags (UTF-16LE)
+            (_, 0x9C9B) => { let s = decode_utf16le_ztrim(vdata); if !s.is_empty() { out.push(ImgMetaEntry::new(section,"XPAuthor", s)); } }
+            (_, 0x9C9C) => { let s = decode_utf16le_ztrim(vdata); if !s.is_empty() { out.push(ImgMetaEntry::new(section,"XPComment", s)); } }
+            (_, 0x9C9D) => { let s = decode_utf16le_ztrim(vdata); if !s.is_empty() { out.push(ImgMetaEntry::new(section,"XPKeywords", s)); } }
+            (_, 0x9C9E) => { let s = decode_utf16le_ztrim(vdata); if !s.is_empty() { out.push(ImgMetaEntry::new(section,"XPSubject", s)); } }
+            (_, 0x9C9F) => { let s = decode_utf16le_ztrim(vdata); if !s.is_empty() { out.push(ImgMetaEntry::new(section,"XPTitle", s)); } }
+            // TIFF structural tags
+            (_, 0x0115) => { if let Some(v) = read_u16v() { out.push(ImgMetaEntry::new(section,"SamplesPerPixel", v.to_string())); } }
+            (_, 0x0116) => { if let Some(v) = read_u32v() { out.push(ImgMetaEntry::new(section,"RowsPerStrip", v.to_string())); } }
+            (_, 0x011C) => out.push(ImgMetaEntry::new(section,"PlanarConfig", match read_u16v().unwrap_or(0) { 1=>"Chunky",2=>"Planar",_=>"Other" })),
+            (_, 0x013D) => out.push(ImgMetaEntry::new(section,"Predictor", match read_u16v().unwrap_or(0) { 1=>"None",2=>"Horizontal",3=>"Float",_=>"Other" })),
+            (_, 0x013E) => { if let (Some(x), Some(y)) = (read_rat_f(0), read_rat_f(8)) { out.push(ImgMetaEntry::new(section,"WhitePoint", format!("{:.4}, {:.4}", x, y))); } }
+            (_, 0x013F) => { // PrimaryChromaticities: 6 rationals (Rx,Ry,Gx,Gy,Bx,By)
+                if val_size >= 48 {
+                    let vals: Vec<String> = (0..6).filter_map(|i| read_rat_f(i * 8).map(|v| format!("{:.4}", v))).collect();
+                    if vals.len() == 6 { out.push(ImgMetaEntry::new(section,"PrimaryChromaticities", vals.join(", "))); }
+                }
             }
             (_, 0x0100) => { if let Some(v) = read_u32v() { out.push(ImgMetaEntry::new(section,"Width", v.to_string())); } }
             (_, 0x0101) => { if let Some(v) = read_u32v() { out.push(ImgMetaEntry::new(section,"Height", v.to_string())); } }
@@ -2368,6 +2382,49 @@ fn parse_tiff_ifd(data: &[u8], off: usize, le: bool, section: &str, out: &mut Ve
                     }
                 }
             }
+            // ── More ExifIFD tags ────────────────────────────────────────────
+            ("ExifIFD", 0x9203) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","BrightnessValue", format!("{:.4} EV", v))); } }
+            ("ExifIFD", 0x9205) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","MaxApertureValue", format!("{:.4} EV", v))); } }
+            ("ExifIFD", 0x9206) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","SubjectDistance", format!("{:.2} m", v))); } }
+            ("ExifIFD", 0x9214) => { // SubjectArea: 2, 3, or 4 SHORTs
+                let cnt2 = cnt.min(4);
+                let vals: Vec<String> = (0..cnt2).filter_map(|i| r16(val_start + i*2).map(|v| v.to_string())).collect();
+                if !vals.is_empty() { out.push(ImgMetaEntry::new("ExifIFD","SubjectArea", vals.join(", "))); }
+            }
+            ("ExifIFD", 0x927C) => { out.push(ImgMetaEntry::new("ExifIFD","MakerNote","present")); }
+            ("ExifIFD", 0x9290) => { let s = read_str(); if !s.is_empty() { out.push(ImgMetaEntry::new("ExifIFD","SubSecTime", s)); } }
+            ("ExifIFD", 0x9291) => { let s = read_str(); if !s.is_empty() { out.push(ImgMetaEntry::new("ExifIFD","SubSecTimeOriginal", s)); } }
+            ("ExifIFD", 0x9292) => { let s = read_str(); if !s.is_empty() { out.push(ImgMetaEntry::new("ExifIFD","SubSecTimeDigitized", s)); } }
+            ("ExifIFD", 0xA20E) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","FocalPlaneXResolution", format!("{:.2}", v))); } }
+            ("ExifIFD", 0xA20F) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","FocalPlaneYResolution", format!("{:.2}", v))); } }
+            ("ExifIFD", 0xA210) => out.push(ImgMetaEntry::new("ExifIFD","FocalPlaneResUnit", match read_u16v().unwrap_or(0) { 1=>"None",2=>"inch",3=>"cm",_=>"Other" })),
+            ("ExifIFD", 0xA214) => { if let (Some(x), Some(y)) = (r16(val_start), r16(val_start+2)) { out.push(ImgMetaEntry::new("ExifIFD","SubjectLocation", format!("{}, {}", x, y))); } }
+            ("ExifIFD", 0xA215) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","ExposureIndex", format!("{:.2}", v))); } }
+            ("ExifIFD", 0xA217) => out.push(ImgMetaEntry::new("ExifIFD","SensingMethod", match read_u16v().unwrap_or(0) {
+                1=>"Not defined",2=>"One-chip color area",3=>"Two-chip color area",
+                4=>"Three-chip color area",5=>"Color sequential area",
+                7=>"Trilinear",8=>"Color sequential linear",_=>"Other"
+            })),
+            ("ExifIFD", 0xA300) => { out.push(ImgMetaEntry::new("ExifIFD","FileSource", match vdata.first().copied().unwrap_or(0) { 1=>"Film scanner",2=>"Reflection print scanner",3=>"Digital camera",_=>"Other" })); }
+            ("ExifIFD", 0xA301) => { out.push(ImgMetaEntry::new("ExifIFD","SceneType", match vdata.first().copied().unwrap_or(0) { 1=>"Directly photographed",_=>"Other" })); }
+            ("ExifIFD", 0xA407) => out.push(ImgMetaEntry::new("ExifIFD","GainControl", match read_u16v().unwrap_or(0) { 0=>"None",1=>"Low gain up",2=>"High gain up",3=>"Low gain down",4=>"High gain down",_=>"Other" })),
+            ("ExifIFD", 0xA40C) => out.push(ImgMetaEntry::new("ExifIFD","SubjectDistanceRange", match read_u16v().unwrap_or(0) { 0=>"Unknown",1=>"Macro",2=>"Close",3=>"Distant",_=>"Other" })),
+            ("ExifIFD", 0xA431) => { let s = read_str(); if !s.is_empty() { out.push(ImgMetaEntry::new("ExifIFD","BodySerialNumber", s)); } }
+            ("ExifIFD", 0xA432) => { // LensSpecification: min focal, max focal, min aperture, max aperture (4 RATIONAL)
+                if let (Some(f1), Some(f2)) = (read_rat_f(0), read_rat_f(8)) {
+                    let astr = match (read_rat_f(16), read_rat_f(24)) {
+                        (Some(a1), Some(a2)) if a1 > 0.0 && a2 > 0.0 && (a1 - a2).abs() > 0.05 => format!(" f/{:.1}-{:.1}", a1, a2),
+                        (Some(a1), _) if a1 > 0.0 => format!(" f/{:.1}", a1),
+                        _ => String::new(),
+                    };
+                    let fstr = if (f1 - f2).abs() < 0.5 { format!("{:.0}mm", f1) } else { format!("{:.0}-{:.0}mm", f1, f2) };
+                    out.push(ImgMetaEntry::new("ExifIFD","LensSpecification", format!("{}{}", fstr, astr)));
+                }
+            }
+            ("ExifIFD", 0xA433) => { let s = read_str(); if !s.is_empty() { out.push(ImgMetaEntry::new("ExifIFD","LensMake", s)); } }
+            ("ExifIFD", 0xA434) => { let s = read_str(); if !s.is_empty() { out.push(ImgMetaEntry::new("ExifIFD","LensModel", s)); } }
+            ("ExifIFD", 0xA435) => { let s = read_str(); if !s.is_empty() { out.push(ImgMetaEntry::new("ExifIFD","LensSerialNumber", s)); } }
+            ("ExifIFD", 0xA500) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("ExifIFD","Gamma", format!("{:.4}", v))); } }
             // ── GPS tags ─────────────────────────────────────────────────────
             ("GPS", 0x0001) => out.push(ImgMetaEntry::new("GPS","LatitudeRef", safe_ascii(&vdata[..1.min(vdata.len())]))),
             ("GPS", 0x0003) => out.push(ImgMetaEntry::new("GPS","LongitudeRef", safe_ascii(&vdata[..1.min(vdata.len())]))),
@@ -2394,6 +2451,32 @@ fn parse_tiff_ifd(data: &[u8], off: usize, le: bool, section: &str, out: &mut Ve
                     out.push(ImgMetaEntry::new("GPS","TimeStampUTC", format!("{:02}:{:02}:{:06.3}", h as u32, m as u32, s)));
                 }
             }
+            ("GPS", 0x0008) => { let s = read_str(); if !s.is_empty() { out.push(ImgMetaEntry::new("GPS","Satellites", s)); } }
+            ("GPS", 0x0009) => { let s = safe_ascii(&vdata[..1.min(vdata.len())]); if !s.is_empty() { out.push(ImgMetaEntry::new("GPS","Status", s)); } }
+            ("GPS", 0x000A) => { let s = safe_ascii(&vdata[..1.min(vdata.len())]); if !s.is_empty() { out.push(ImgMetaEntry::new("GPS","MeasureMode", s)); } }
+            ("GPS", 0x000B) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("GPS","DOP", format!("{:.4}", v))); } }
+            ("GPS", 0x000E) => { let s = safe_ascii(&vdata[..1.min(vdata.len())]); if !s.is_empty() { out.push(ImgMetaEntry::new("GPS","TrackRef", s)); } }
+            ("GPS", 0x000F) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("GPS","Track", format!("{:.2}°", v))); } }
+            ("GPS", 0x0013) => { let s = safe_ascii(&vdata[..1.min(vdata.len())]); if !s.is_empty() { out.push(ImgMetaEntry::new("GPS","DestLatitudeRef", s)); } }
+            ("GPS", 0x0014) => {
+                if let (Some(d), Some(m), Some(s)) = (read_rat_f(0), read_rat_f(8), read_rat_f(16)) {
+                    out.push(ImgMetaEntry::new("GPS","DestLatitude", format!("{}°{}'{:.4}\"", d as u32, m as u32, s)));
+                }
+            }
+            ("GPS", 0x0015) => { let s = safe_ascii(&vdata[..1.min(vdata.len())]); if !s.is_empty() { out.push(ImgMetaEntry::new("GPS","DestLongitudeRef", s)); } }
+            ("GPS", 0x0016) => {
+                if let (Some(d), Some(m), Some(s)) = (read_rat_f(0), read_rat_f(8), read_rat_f(16)) {
+                    out.push(ImgMetaEntry::new("GPS","DestLongitude", format!("{}°{}'{:.4}\"", d as u32, m as u32, s)));
+                }
+            }
+            ("GPS", 0x0017) => { let s = safe_ascii(&vdata[..1.min(vdata.len())]); if !s.is_empty() { out.push(ImgMetaEntry::new("GPS","DestBearingRef", s)); } }
+            ("GPS", 0x0018) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("GPS","DestBearing", format!("{:.2}°", v))); } }
+            ("GPS", 0x0019) => { let s = safe_ascii(&vdata[..1.min(vdata.len())]); if !s.is_empty() { out.push(ImgMetaEntry::new("GPS","DestDistanceRef", s)); } }
+            ("GPS", 0x001A) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("GPS","DestDistance", format!("{:.4}", v))); } }
+            ("GPS", 0x001B) => { let s = read_str(); if !s.is_empty() { out.push(ImgMetaEntry::new("GPS","GPSProcessingMethod", s)); } }
+            ("GPS", 0x001C) => { let s = read_str(); if !s.is_empty() { out.push(ImgMetaEntry::new("GPS","GPSAreaInformation", s)); } }
+            ("GPS", 0x001E) => { if let Some(v) = read_u16v() { out.push(ImgMetaEntry::new("GPS","Differential", if v == 0 { "No correction" } else { "Differential" })); } }
+            ("GPS", 0x001F) => { if let Some(v) = read_rat_f(0) { out.push(ImgMetaEntry::new("GPS","HPositioningError", format!("{:.2} m", v))); } }
             _ => {}
         }
     }
@@ -2428,17 +2511,22 @@ fn parse_iptc(data: &[u8], out: &mut Vec<ImgMetaEntry>) {
                 let val = iptc_data.get(ip+5..ip+5+len).unwrap_or(&[]);
                 if ds == 2 {
                     let key = match tag {
-                        5=>"ObjectName",7=>"EditStatus",15=>"Category",20=>"Supplemental",
-                        22=>"FixtureId",25=>"Keywords",30=>"ReleaseDate",35=>"ReleaseTime",
-                        40=>"SpecialInstruction",55=>"DateCreated",60=>"TimeCreated",
+                        5=>"ObjectName",7=>"EditStatus",10=>"Urgency",15=>"Category",20=>"Supplemental",
+                        22=>"FixtureId",25=>"Keywords",26=>"ContentLocationCode",27=>"ContentLocationName",
+                        30=>"ReleaseDate",35=>"ReleaseTime",37=>"ExpirationDate",38=>"ExpirationTime",
+                        40=>"SpecialInstruction",42=>"ActionAdvised",45=>"ReferenceService",
+                        47=>"ReferenceDate",50=>"ReferenceNumber",55=>"DateCreated",60=>"TimeCreated",
                         62=>"DigitalCreationDate",63=>"DigitalCreationTime",
-                        65=>"OriginatingProgram",70=>"ProgramVersion",
+                        65=>"OriginatingProgram",70=>"ProgramVersion",75=>"ObjectCycle",
                         80=>"ByLine",85=>"ByLineTitle",90=>"City",92=>"SubLocation",
                         95=>"Province",100=>"CountryCode",101=>"CountryName",
-                        103=>"TransmissionRef",105=>"Headline",110=>"Credit",
-                        115=>"Source",116=>"Copyright",120=>"Caption",122=>"WriterEditor",_=>"Other"
+                        103=>"TransmissionRef",105=>"Headline",110=>"Credit",118=>"Contact",
+                        115=>"Source",116=>"Copyright",120=>"Caption",122=>"WriterEditor",
+                        130=>"ImageType",131=>"ImageOrientation",135=>"LanguageIdentifier",_=>"Other"
                     };
-                    if let Ok(s) = std::str::from_utf8(val) { let s = s.trim().to_string(); if !s.is_empty() { out.push(ImgMetaEntry::new("IPTC", key, s)); } }
+                    if key != "Other" {
+                        if let Ok(s) = std::str::from_utf8(val) { let s = s.trim().to_string(); if !s.is_empty() { out.push(ImgMetaEntry::new("IPTC", key, s)); } }
+                    }
                 }
                 ip += 5 + len;
             }
@@ -2494,6 +2582,24 @@ fn extract_xmp_simple(xmp: &str, out: &mut Vec<ImgMetaEntry>) {
         ("xmp:Rating","Rating"), ("photoshop:DateCreated","DateCreated"),
         ("photoshop:Credit","Credit"), ("photoshop:Source","Source"),
         ("photoshop:CaptionWriter","CaptionWriter"), ("xmpRights:UsageTerms","UsageTerms"),
+        // Document identity (xmpMM)
+        ("xmpMM:DocumentID","DocumentID"), ("xmpMM:OriginalDocumentID","OriginalDocumentID"),
+        ("xmpMM:InstanceID","InstanceID"),
+        // Photoshop namespace extras
+        ("photoshop:ColorMode","XmpColorMode"), ("photoshop:ICCProfile","XmpICCProfile"),
+        ("photoshop:Headline","XmpHeadline"), ("photoshop:Instructions","Instructions"),
+        ("photoshop:TransmissionReference","TransmissionReference"),
+        ("photoshop:Urgency","XmpUrgency"),
+        ("photoshop:City","XmpCity"), ("photoshop:State","XmpState"),
+        ("photoshop:Country","XmpCountry"),
+        ("photoshop:AuthorsPosition","AuthorsPosition"),
+        ("photoshop:Byline","XmpByline"), ("photoshop:BylineTitle","XmpBylineTitle"),
+        ("photoshop:Caption","XmpCaption"),
+        // IPTC core (Iptc4xmpCore)
+        ("Iptc4xmpCore:Location","IptcLocation"), ("Iptc4xmpCore:CountryCode","IptcCountryCode"),
+        ("Iptc4xmpCore:Scene","Scene"), ("Iptc4xmpCore:SubjectCode","SubjectCode"),
+        // Rights
+        ("xmpRights:WebStatement","WebStatement"), ("xmpRights:Marked","RightsMarked"),
     ];
     for (tag, label) in &fields {
         if let Some(s) = extract_xmp_tag_value(xmp, tag) {
