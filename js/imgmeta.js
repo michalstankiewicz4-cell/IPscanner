@@ -482,26 +482,31 @@
   }
 
   function getOrderedSections(entries) {
+    const knownSections = new Set(IMG_META_FIELD_GROUPS.map(g => sectionKey(g.section)));
     const seen = new Set();
-    const ordered = [];
-
-    for (const group of IMG_META_FIELD_GROUPS) {
-      const groupSection = sectionKey(group.section);
-      if (entries.some(e => sectionKey(e.section) === groupSection) && !seen.has(groupSection)) {
-        ordered.push(groupSection);
-        seen.add(groupSection);
-      }
-    }
+    const unknown = [];
+    const knownPresent = new Set();
 
     for (const entry of entries) {
       const sec = sectionKey(entry.section);
       if (!seen.has(sec)) {
-        ordered.push(sec);
         seen.add(sec);
+        if (knownSections.has(sec)) {
+          knownPresent.add(sec);
+        } else {
+          unknown.push(sec);
+        }
       }
     }
 
-    return ordered;
+    // Unknown/custom sections first, then known groups in defined order
+    const orderedKnown = [];
+    for (const group of IMG_META_FIELD_GROUPS) {
+      const sec = sectionKey(group.section);
+      if (knownPresent.has(sec)) orderedKnown.push(sec);
+    }
+
+    return [...unknown, ...orderedKnown];
   }
 
   function escHtml(s) {
