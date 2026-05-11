@@ -2139,6 +2139,18 @@ fn safe_ascii(buf: &[u8]) -> String {
     buf.iter().map(|&b| if b >= 0x20 && b < 0x7f { b as char } else { '?' }).collect()
 }
 
+fn decode_utf16le_ztrim(buf: &[u8]) -> String {
+    let mut units = Vec::with_capacity(buf.len() / 2);
+    let mut i = 0usize;
+    while i + 1 < buf.len() {
+        let u = u16::from_le_bytes([buf[i], buf[i + 1]]);
+        if u == 0 { break; }
+        units.push(u);
+        i += 2;
+    }
+    String::from_utf16_lossy(&units).trim().to_string()
+}
+
 // ── JPEG ──────────────────────────────────────────────────────────────────────
 
 fn parse_jpeg(data: &[u8], out: &mut Vec<ImgMetaEntry>) {
@@ -2286,7 +2298,12 @@ fn parse_tiff_ifd(data: &[u8], off: usize, le: bool, section: &str, out: &mut Ve
             (_, 0x0131) => out.push(ImgMetaEntry::new(section,"Software", read_str())),
             (_, 0x0132) => out.push(ImgMetaEntry::new(section,"DateTime", read_str())),
             (_, 0x013B) => out.push(ImgMetaEntry::new(section,"Artist", read_str())),
+            (_, 0x013C) => out.push(ImgMetaEntry::new(section,"HostComputer", read_str())),
             (_, 0x8298) => out.push(ImgMetaEntry::new(section,"Copyright", read_str())),
+            (_, 0x9C9D) => {
+                let s = decode_utf16le_ztrim(vdata);
+                if !s.is_empty() { out.push(ImgMetaEntry::new(section, "XPAuthor", s)); }
+            }
             (_, 0x0100) => { if let Some(v) = read_u32v() { out.push(ImgMetaEntry::new(section,"Width", v.to_string())); } }
             (_, 0x0101) => { if let Some(v) = read_u32v() { out.push(ImgMetaEntry::new(section,"Height", v.to_string())); } }
             (_, 0x0102) => { if let Some(v) = read_u16v() { out.push(ImgMetaEntry::new(section,"BitsPerSample", v.to_string())); } }
@@ -2341,6 +2358,7 @@ fn parse_tiff_ifd(data: &[u8], off: usize, le: bool, section: &str, out: &mut Ve
             ("ExifIFD", 0xA409) => out.push(ImgMetaEntry::new("ExifIFD","Saturation", match read_u16v().unwrap_or(0) { 0=>"Normal",1=>"Low",2=>"High",_=>"Other" })),
             ("ExifIFD", 0xA40A) => out.push(ImgMetaEntry::new("ExifIFD","Sharpness", match read_u16v().unwrap_or(0) { 0=>"Normal",1=>"Soft",2=>"Hard",_=>"Other" })),
             ("ExifIFD", 0xA420) => out.push(ImgMetaEntry::new("ExifIFD","ImageUniqueID", read_str())),
+            ("ExifIFD", 0xA430) => out.push(ImgMetaEntry::new("ExifIFD","CameraOwnerName", read_str())),
             ("ExifIFD", 0x9286) => { // UserComment
                 if vdata.len() >= 8 {
                     let charset = &vdata[..8];
@@ -2418,7 +2436,7 @@ fn parse_iptc(data: &[u8], out: &mut Vec<ImgMetaEntry>) {
                         80=>"ByLine",85=>"ByLineTitle",90=>"City",92=>"SubLocation",
                         95=>"Province",100=>"CountryCode",101=>"CountryName",
                         103=>"TransmissionRef",105=>"Headline",110=>"Credit",
-                        115=>"Source",116=>"Copyright",120=>"Caption",_=>"Other"
+                        115=>"Source",116=>"Copyright",120=>"Caption",122=>"WriterEditor",_=>"Other"
                     };
                     if let Ok(s) = std::str::from_utf8(val) { let s = s.trim().to_string(); if !s.is_empty() { out.push(ImgMetaEntry::new("IPTC", key, s)); } }
                 }
@@ -2432,26 +2450,54 @@ fn parse_iptc(data: &[u8], out: &mut Vec<ImgMetaEntry>) {
 
 // ── XMP extraction (simple tag scan) ─────────────────────────────────────────
 
+fn extract_xmp_tag_value(xmp: &str, tag: &str) -> Option<String> {
+    let open = format!("<{}>", tag);
+    let close = format!("</{}>", tag);
+    if let Some(i) = xmp.find(&open) {
+        let inner = &xmp[i + open.len()..];
+        if let Some(j) = inner.find(&close) {
+            let body = inner[..j].trim();
+            if !body.is_empty() && !body.contains('<') {
+                return Some(body.to_string());
+            }
+            if let Some(li_start) = body.find("<rdf:li") {
+                let li_body = &body[li_start..];
+                if let Some(gt) = li_body.find('>') {
+                    let after = &li_body[gt + 1..];
+                    if let Some(li_end) = after.find("</rdf:li>") {
+                        let val = after[..li_end].trim();
+                        if !val.is_empty() { return Some(val.to_string()); }
+                    }
+                }
+            }
+        }
+    }
+
+    let attr = format!("{}=\"", tag);
+    if let Some(i) = xmp.find(&attr) {
+        let rest = &xmp[i + attr.len()..];
+        if let Some(j) = rest.find('"') {
+            let val = rest[..j].trim();
+            if !val.is_empty() { return Some(val.to_string()); }
+        }
+    }
+
+    None
+}
+
 fn extract_xmp_simple(xmp: &str, out: &mut Vec<ImgMetaEntry>) {
     let fields = [
         ("dc:title","Title"), ("dc:description","Description"), ("dc:creator","Creator"),
         ("dc:subject","Subject"), ("dc:rights","Rights"), ("xmp:CreateDate","CreateDate"),
         ("xmp:ModifyDate","ModifyDate"), ("xmp:CreatorTool","CreatorTool"),
+        ("xmp:MetadataDate","MetadataDate"),
         ("xmp:Rating","Rating"), ("photoshop:DateCreated","DateCreated"),
         ("photoshop:Credit","Credit"), ("photoshop:Source","Source"),
+        ("photoshop:CaptionWriter","CaptionWriter"), ("xmpRights:UsageTerms","UsageTerms"),
     ];
     for (tag, label) in &fields {
-        let open = format!("<{}>", tag);
-        let close = format!("</{}>", tag);
-        let alt = format!("{}=\"", tag);
-        if let Some(s) = xmp.find(&open).and_then(|i| {
-            let inner = &xmp[i+open.len()..];
-            inner.find(&close).map(|j| inner[..j].trim().to_string())
-        }) {
-            if !s.is_empty() { out.push(ImgMetaEntry::new("XMP", label, s)); }
-        } else if let Some(i) = xmp.find(&alt) {
-            let rest = &xmp[i+alt.len()..];
-            if let Some(j) = rest.find('"') { out.push(ImgMetaEntry::new("XMP", label, rest[..j].to_string())); }
+        if let Some(s) = extract_xmp_tag_value(xmp, tag) {
+            out.push(ImgMetaEntry::new("XMP", label, s));
         }
     }
 }

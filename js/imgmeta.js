@@ -20,7 +20,7 @@
     },
     {
       section: 'EXIF / ExifIFD',
-      fields: ['ImageDescription', 'Make', 'Model', 'Orientation', 'XResolution', 'YResolution', 'ResolutionUnit', 'Software', 'DateTime', 'Artist', 'Copyright', 'ExposureTime', 'FNumber', 'ExposureProgram', 'ISO', 'ExifVersion', 'DateTimeOriginal', 'DateTimeDigitized', 'ShutterSpeedValue', 'ApertureValue', 'ExposureBias', 'MeteringMode', 'LightSource', 'Flash', 'FocalLength', 'FlashPixVersion', 'ColorSpace', 'PixelWidth', 'PixelHeight', 'CustomRendered', 'ExposureMode', 'WhiteBalance', 'DigitalZoomRatio', 'FocalLength35mm', 'SceneCaptureType', 'Contrast', 'Saturation', 'Sharpness', 'ImageUniqueID', 'UserComment'],
+      fields: ['ImageDescription', 'Make', 'Model', 'Orientation', 'XResolution', 'YResolution', 'ResolutionUnit', 'Software', 'DateTime', 'Artist', 'Copyright', 'HostComputer', 'XPAuthor', 'ExposureTime', 'FNumber', 'ExposureProgram', 'ISO', 'ExifVersion', 'DateTimeOriginal', 'DateTimeDigitized', 'ShutterSpeedValue', 'ApertureValue', 'ExposureBias', 'MeteringMode', 'LightSource', 'Flash', 'FocalLength', 'FlashPixVersion', 'ColorSpace', 'PixelWidth', 'PixelHeight', 'CustomRendered', 'ExposureMode', 'WhiteBalance', 'DigitalZoomRatio', 'FocalLength35mm', 'SceneCaptureType', 'Contrast', 'Saturation', 'Sharpness', 'ImageUniqueID', 'CameraOwnerName', 'UserComment'],
     },
     {
       section: 'GPS',
@@ -36,7 +36,7 @@
     },
     {
       section: 'IPTC / XMP / Text',
-      fields: ['ObjectName', 'EditStatus', 'Category', 'Supplemental', 'FixtureId', 'Keywords', 'ReleaseDate', 'ReleaseTime', 'SpecialInstruction', 'DateCreated', 'TimeCreated', 'DigitalCreationDate', 'DigitalCreationTime', 'OriginatingProgram', 'ProgramVersion', 'ByLine', 'ByLineTitle', 'City', 'SubLocation', 'Province', 'CountryCode', 'CountryName', 'TransmissionRef', 'Headline', 'Credit', 'Source', 'Title', 'Description', 'Creator', 'Subject', 'Rights', 'CreateDate', 'ModifyDate', 'CreatorTool', 'Rating', 'Caption'],
+      fields: ['ObjectName', 'EditStatus', 'Category', 'Supplemental', 'FixtureId', 'Keywords', 'ReleaseDate', 'ReleaseTime', 'SpecialInstruction', 'DateCreated', 'TimeCreated', 'DigitalCreationDate', 'DigitalCreationTime', 'OriginatingProgram', 'ProgramVersion', 'ByLine', 'ByLineTitle', 'WriterEditor', 'City', 'SubLocation', 'Province', 'CountryCode', 'CountryName', 'TransmissionRef', 'Headline', 'Credit', 'Source', 'Title', 'Description', 'Creator', 'Subject', 'Rights', 'CreateDate', 'ModifyDate', 'MetadataDate', 'CreatorTool', 'Rating', 'Caption', 'CaptionWriter', 'UsageTerms'],
     },
     {
       section: 'Comment / Color',
