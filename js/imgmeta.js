@@ -226,6 +226,7 @@
   let _currentFile = null;
   let _entries     = [];
   let _collapsedSections = new Set();
+  let _hideEmptyEntries = true;
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -295,6 +296,23 @@
 
   function isEditableEntry(entry) {
     return !NON_EDITABLE_KEYS.has(String(entry.key || ''));
+  }
+
+  function hasRenderableValue(entry) {
+    return String(entry?.value ?? '').trim() !== '';
+  }
+
+  function getDisplayEntries(entries) {
+    const source = Array.isArray(entries) ? entries : [];
+    return _hideEmptyEntries ? source.filter(hasRenderableValue) : source;
+  }
+
+  function refreshHideEmptyButton() {
+    const btn = document.getElementById('btnImgMetaHideEmpty');
+    if (!btn) return;
+    btn.textContent = t(_hideEmptyEntries ? 'imgMetaHideEmptyOn' : 'imgMetaHideEmptyOff');
+    btn.setAttribute('aria-pressed', _hideEmptyEntries ? 'true' : 'false');
+    btn.title = t('imgMetaHideEmptyHint');
   }
 
   function stegoStatusMessage(entries) {
@@ -450,12 +468,13 @@
       renderTable(_entries);
 
       const stegoMsg = `${t('imgMetaStegoChecked')} ${stegoStatusMessage(_entries)}`;
+      const visibleEntries = getDisplayEntries(_entries);
 
-      if (_entries.length === 0) {
+      if (visibleEntries.length === 0) {
         setStatus(`${t('imgMetaNoMeta')}  ${stegoMsg}`);
       } else {
         setStatus(
-          t('imgMetaDone', _entries.length)
+          t('imgMetaDone', visibleEntries.length)
           + (isTauri() ? '' : '  ' + t('imgMetaDesktopHint'))
           + '  '
           + stegoMsg
@@ -625,19 +644,20 @@
   function renderTable(entries) {
     const wrap = document.getElementById('imgMetaTableWrap');
     if (!wrap) return;
-    if (!entries || entries.length === 0) {
+    const visibleEntries = getDisplayEntries(entries);
+    if (!visibleEntries.length) {
       wrap.innerHTML = '';
       return;
     }
 
     const bySection = new Map();
-    for (const entry of entries) {
+    for (const entry of visibleEntries) {
       const sec = sectionKey(entry.section);
       if (!bySection.has(sec)) bySection.set(sec, []);
       bySection.get(sec).push(entry);
     }
 
-    const sections = getOrderedSections(entries);
+    const sections = getOrderedSections(visibleEntries);
     const bodies = sections.map(sec => {
       const rows = (bySection.get(sec) || []).map(e => {
         const hint = escAttr(getMetaHint(e.key));
@@ -704,10 +724,11 @@
   // ── Export / Copy ──────────────────────────────────────────────────────────
 
   function buildText() {
-    if (!_entries.length) return '';
+    const displayEntries = getDisplayEntries(_entries);
+    if (!displayEntries.length) return '';
     const lines = [`Image Metadata — ${_currentFile?.name || ''}\n${'='.repeat(60)}`];
     let lastSec = null;
-    for (const e of _entries) {
+    for (const e of displayEntries) {
       if (e.section !== lastSec) { lines.push(`\n[${e.section}]`); lastSec = e.section; }
       lines.push(`  ${e.key.padEnd(26)}${e.value}`);
     }
@@ -742,6 +763,7 @@
     if (fn) fn.textContent = '';
     const inp = document.getElementById('imgMetaFileInput');
     if (inp) inp.value = '';
+    refreshHideEmptyButton();
     setStatus(t('imgMetaReady'));
   }
 
@@ -755,6 +777,22 @@
     refreshDerivedGps(_entries);
     renderTable(_entries);
     setStatus(t('imgMetaEdited'));
+  }
+
+  function toggleHideEmptyEntries() {
+    _hideEmptyEntries = !_hideEmptyEntries;
+    refreshHideEmptyButton();
+    renderTable(_entries);
+    if (_currentFile) {
+      const visibleEntries = getDisplayEntries(_entries);
+      const stegoMsg = `${t('imgMetaStegoChecked')} ${stegoStatusMessage(_entries)}`;
+      setStatus(
+        (visibleEntries.length ? t('imgMetaDone', visibleEntries.length) : t('imgMetaNoMeta'))
+        + (isTauri() ? '' : '  ' + t('imgMetaDesktopHint'))
+        + '  '
+        + stegoMsg
+      );
+    }
   }
 
   function updateEntryValue(section, key, value) {
@@ -896,6 +934,9 @@
     const btnInfo = document.getElementById('btnImgMetaInfo');
     if (btnInfo) btnInfo.addEventListener('click', openInfoPopup);
 
+    const btnHideEmpty = document.getElementById('btnImgMetaHideEmpty');
+    if (btnHideEmpty) btnHideEmpty.addEventListener('click', toggleHideEmptyEntries);
+
     const btnInfoClose = document.getElementById('btnImgMetaInfoClose');
     if (btnInfoClose) btnInfoClose.addEventListener('click', closeInfoPopup);
 
@@ -914,6 +955,7 @@
     }
 
     initDrop();
+    refreshHideEmptyButton();
   }
 
   window.openImgMetaDlg  = openImgMetaDlg;

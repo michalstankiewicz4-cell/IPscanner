@@ -173,6 +173,7 @@ window.LANG_PL = {
   btnImgMetaMenu:'🖼 Metadane obrazów...', imgMetaWinTitle:'Analizator metadanych i steganografii obrazów',
   imgMetaDropHint:'Upuść obraz tutaj lub kliknij, aby wybrać',
   imgMetaBrowse:'Przeglądaj...', imgMetaClear:'Wyczyść', imgMetaClearAll:'Wyczyść wszystko', imgMetaZeroValues:'Wyzeruj wartości', imgMetaCopy:'Kopiuj', imgMetaExport:'Eksport TXT',
+  imgMetaHideEmptyOn:'Ukryj puste: WŁ.', imgMetaHideEmptyOff:'Ukryj puste: WYŁ.', imgMetaHideEmptyHint:'Ukrywa lub pokazuje wykryte pola metadanych z pustą wartością.',
   imgMetaSection:'Sekcja', imgMetaKey:'Pole', imgMetaValue:'Wartość',
   imgMetaReady:'Gotowy. Otwórz obraz, aby przeanalizować metadane (sprawdzanie steganografii włączone).',
   imgMetaLoading:'Odczytuję plik...', imgMetaAnalyzing:'Analizuję...',

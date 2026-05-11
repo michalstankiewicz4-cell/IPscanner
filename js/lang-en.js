@@ -173,6 +173,7 @@ window.LANG_EN = {
   btnImgMetaMenu:'🖼 Image Metadata...', imgMetaWinTitle:'Image Metadata and Steganography Analyzer',
   imgMetaDropHint:'Drop an image here or click to browse',
   imgMetaBrowse:'Browse...', imgMetaClear:'Clear', imgMetaClearAll:'Clear all', imgMetaZeroValues:'Zero values', imgMetaCopy:'Copy', imgMetaExport:'Export TXT',
+  imgMetaHideEmptyOn:'Hide empty: ON', imgMetaHideEmptyOff:'Hide empty: OFF', imgMetaHideEmptyHint:'Hide or show detected metadata fields with empty values.',
   imgMetaSection:'Section', imgMetaKey:'Field', imgMetaValue:'Value',
   imgMetaReady:'Ready. Open an image to analyze its metadata (steganography check enabled).',
   imgMetaLoading:'Reading file...', imgMetaAnalyzing:'Analyzing...',

@@ -1168,6 +1168,7 @@
     <div class="imgmeta-controls">
       <span class="imgmeta-filename" id="imgMetaFilename"></span>
       <button class="btn95" id="btnImgMetaInfo" data-i18n="imgMetaInfo">Info</button>
+      <button class="btn95" id="btnImgMetaHideEmpty" data-i18n="imgMetaHideEmptyOn">Hide empty: ON</button>
       <button class="btn95" id="btnImgMetaCopy" data-i18n="imgMetaCopy">Copy</button>
       <button class="btn95" id="btnImgMetaExport" data-i18n="imgMetaExport">Export TXT</button>
       <button class="btn95" id="btnImgMetaZero" data-i18n="imgMetaZeroValues">Zero values</button>
@@ -1259,6 +1260,12 @@
     <div class="dlg-body dlg-icon-body dlg-versions-body">
       <span class="dlg-icon dlg-icon-versions">📘</span>
       <div class="dlg-sunken-box dlg-versions-card">
+        <div class="version-head">v1.6.3</div>
+        <div class="version-note">
+          Extended the Image Metadata and Steganography Analyzer with broader EXIF/IPTC/XMP extraction,
+          detection of custom/unknown metadata groups, trailing-data checks after image/container end,
+          steganography status messages, and a default-on filter that hides empty detected metadata fields.
+        </div>
         <div class="version-head">v1.6.2</div>
         <div class="version-note">
           Added Photo Analyze tool enhancements with extended image metadata extraction and presentation,
