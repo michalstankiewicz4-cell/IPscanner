@@ -19,6 +19,7 @@ use tauri::{AppHandle, Emitter, LogicalPosition, Manager, WebviewUrl, WebviewWin
 use tokio::net::lookup_host;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
+use keyring::Entry;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -944,6 +945,58 @@ async fn ai_multi_provider_query(
             Ok(text)
         }
         _ => Err(format!("Unsupported AI provider: {}", provider)),
+    }
+}
+
+fn ai_secure_storage_account(provider: &str) -> Result<String, String> {
+    let p = provider.trim().to_lowercase();
+    if p.is_empty() {
+        return Err("Provider is required.".into());
+    }
+    if !p.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+        return Err("Provider contains invalid characters.".into());
+    }
+    Ok(format!("provider:{}", p))
+}
+
+#[tauri::command]
+fn ai_store_api_key_secure(provider: String, api_key: String) -> Result<(), String> {
+    let account = ai_secure_storage_account(&provider)?;
+    let key = api_key.trim();
+    if key.is_empty() {
+        return Err("API key is required.".into());
+    }
+
+    let entry = Entry::new("netrecon.ipscanner.ai", &account)
+        .map_err(|e| format!("Secure storage init failed: {e}"))?;
+    entry
+        .set_password(key)
+        .map_err(|e| format!("Secure storage write failed: {e}"))
+}
+
+#[tauri::command]
+fn ai_load_api_key_secure(provider: String) -> Result<Option<String>, String> {
+    let account = ai_secure_storage_account(&provider)?;
+    let entry = Entry::new("netrecon.ipscanner.ai", &account)
+        .map_err(|e| format!("Secure storage init failed: {e}"))?;
+
+    match entry.get_password() {
+        Ok(value) => Ok(Some(value)),
+        Err(keyring::Error::NoEntry) => Ok(None),
+        Err(e) => Err(format!("Secure storage read failed: {e}")),
+    }
+}
+
+#[tauri::command]
+fn ai_delete_api_key_secure(provider: String) -> Result<(), String> {
+    let account = ai_secure_storage_account(&provider)?;
+    let entry = Entry::new("netrecon.ipscanner.ai", &account)
+        .map_err(|e| format!("Secure storage init failed: {e}"))?;
+
+    match entry.delete_password() {
+        Ok(()) => Ok(()),
+        Err(keyring::Error::NoEntry) => Ok(()),
+        Err(e) => Err(format!("Secure storage delete failed: {e}")),
     }
 }
 
@@ -3094,6 +3147,9 @@ fn main() {
             list_wifi_networks,
             get_wifi_network_details,
             ai_multi_provider_query,
+            ai_store_api_key_secure,
+            ai_load_api_key_secure,
+            ai_delete_api_key_secure,
             scan_bluetooth_devices,
             get_connections,
             list_serial_ports,

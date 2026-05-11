@@ -1,6 +1,11 @@
 const AI_PROVIDER_KEY = 'netrecon_ai_provider';
 const AI_MODEL_KEY_PREFIX = 'netrecon_ai_model_';
 const AI_API_KEY_PREFIX = 'netrecon_ai_key_';
+const AI_KEY_MODE_KEY = 'netrecon_ai_key_mode';
+
+const AI_KEY_MODE_LOCAL = 'local';
+const AI_KEY_MODE_RAM = 'ram';
+const AI_KEY_MODE_SECURE = 'secure';
 
 const AI_DEFAULT_MODELS = {
   claude: 'claude-3-5-sonnet-latest',
@@ -9,9 +14,78 @@ const AI_DEFAULT_MODELS = {
 };
 
 let _aiBusy = false;
+let _aiRamKeys = {};
 
 function aiSelectedProvider() {
   return document.getElementById('aiProviderSelect')?.value || 'claude';
+}
+
+function aiSelectedKeyMode() {
+  const mode = document.getElementById('aiKeyStorageMode')?.value || AI_KEY_MODE_LOCAL;
+  return [AI_KEY_MODE_LOCAL, AI_KEY_MODE_RAM, AI_KEY_MODE_SECURE].includes(mode) ? mode : AI_KEY_MODE_LOCAL;
+}
+
+function aiSanitizeProvider(provider) {
+  const p = String(provider || '').trim().toLowerCase();
+  return p || 'claude';
+}
+
+async function aiStoreKey(provider, apiKey, mode = aiSelectedKeyMode()) {
+  const p = aiSanitizeProvider(provider);
+  const key = String(apiKey || '').trim();
+
+  if (mode === AI_KEY_MODE_LOCAL) {
+    localStorage.setItem(`${AI_API_KEY_PREFIX}${p}`, key);
+    return;
+  }
+  if (mode === AI_KEY_MODE_RAM) {
+    _aiRamKeys[p] = key;
+    return;
+  }
+  if (mode === AI_KEY_MODE_SECURE) {
+    if (!_tauriInvoke) {
+      throw new Error('Secure storage is available only in desktop (Tauri) mode.');
+    }
+    await _tauriInvoke('ai_store_api_key_secure', { provider: p, apiKey: key });
+  }
+}
+
+async function aiLoadKey(provider, mode = aiSelectedKeyMode()) {
+  const p = aiSanitizeProvider(provider);
+
+  if (mode === AI_KEY_MODE_LOCAL) {
+    return localStorage.getItem(`${AI_API_KEY_PREFIX}${p}`) || '';
+  }
+  if (mode === AI_KEY_MODE_RAM) {
+    return _aiRamKeys[p] || '';
+  }
+  if (mode === AI_KEY_MODE_SECURE) {
+    if (!_tauriInvoke) return '';
+    try {
+      return (await _tauriInvoke('ai_load_api_key_secure', { provider: p })) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  return '';
+}
+
+async function aiDeleteKey(provider, mode) {
+  const p = aiSanitizeProvider(provider);
+  if (mode === AI_KEY_MODE_LOCAL) {
+    localStorage.removeItem(`${AI_API_KEY_PREFIX}${p}`);
+    return;
+  }
+  if (mode === AI_KEY_MODE_RAM) {
+    delete _aiRamKeys[p];
+    return;
+  }
+  if (mode === AI_KEY_MODE_SECURE) {
+    if (_tauriInvoke) {
+      await _tauriInvoke('ai_delete_api_key_secure', { provider: p });
+    }
+  }
 }
 
 function aiSetStatus(text, warn = false, busy = false) {
@@ -22,34 +96,51 @@ function aiSetStatus(text, warn = false, busy = false) {
   el.classList.toggle('ai-status-busy', !!busy);
 }
 
-function aiLoadPersistedConfig() {
+async function aiLoadPersistedConfig() {
   const providerSel = document.getElementById('aiProviderSelect');
   const modelInput = document.getElementById('aiModelInput');
   const keyInput = document.getElementById('aiApiKeyInput');
-  if (!providerSel || !modelInput || !keyInput) return;
+  const modeSel = document.getElementById('aiKeyStorageMode');
+  if (!providerSel || !modelInput || !keyInput || !modeSel) return;
 
   const savedProvider = localStorage.getItem(AI_PROVIDER_KEY);
   providerSel.value = savedProvider && AI_DEFAULT_MODELS[savedProvider] ? savedProvider : 'claude';
+
+  const savedMode = localStorage.getItem(AI_KEY_MODE_KEY);
+  modeSel.value = [AI_KEY_MODE_LOCAL, AI_KEY_MODE_RAM, AI_KEY_MODE_SECURE].includes(savedMode)
+    ? savedMode
+    : AI_KEY_MODE_LOCAL;
+
+  if (!_tauriInvoke) {
+    modeSel.querySelector('option[value="secure"]')?.setAttribute('disabled', 'disabled');
+    if (modeSel.value === AI_KEY_MODE_SECURE) {
+      modeSel.value = AI_KEY_MODE_LOCAL;
+    }
+  }
 
   const provider = aiSelectedProvider();
   const savedModel = localStorage.getItem(`${AI_MODEL_KEY_PREFIX}${provider}`);
   modelInput.value = savedModel || AI_DEFAULT_MODELS[provider] || '';
 
-  const savedKey = localStorage.getItem(`${AI_API_KEY_PREFIX}${provider}`);
-  keyInput.value = savedKey || '';
+  keyInput.value = await aiLoadKey(provider);
 }
 
-function aiPersistConfig() {
+async function aiPersistConfig() {
   const provider = aiSelectedProvider();
   const model = document.getElementById('aiModelInput')?.value?.trim() || '';
   const apiKey = document.getElementById('aiApiKeyInput')?.value?.trim() || '';
+  const mode = aiSelectedKeyMode();
 
   localStorage.setItem(AI_PROVIDER_KEY, provider);
+  localStorage.setItem(AI_KEY_MODE_KEY, mode);
   localStorage.setItem(`${AI_MODEL_KEY_PREFIX}${provider}`, model);
-  localStorage.setItem(`${AI_API_KEY_PREFIX}${provider}`, apiKey);
+
+  if (apiKey) {
+    await aiStoreKey(provider, apiKey, mode);
+  }
 }
 
-function aiOnProviderChanged() {
+async function aiOnProviderChanged() {
   const provider = aiSelectedProvider();
   const modelInput = document.getElementById('aiModelInput');
   const keyInput = document.getElementById('aiApiKeyInput');
@@ -58,10 +149,37 @@ function aiOnProviderChanged() {
   const savedModel = localStorage.getItem(`${AI_MODEL_KEY_PREFIX}${provider}`);
   modelInput.value = savedModel || AI_DEFAULT_MODELS[provider] || '';
 
-  const savedKey = localStorage.getItem(`${AI_API_KEY_PREFIX}${provider}`);
-  keyInput.value = savedKey || '';
+  keyInput.value = await aiLoadKey(provider);
 
   localStorage.setItem(AI_PROVIDER_KEY, provider);
+}
+
+async function aiOnKeyModeChanged() {
+  const modeSel = document.getElementById('aiKeyStorageMode');
+  const keyInput = document.getElementById('aiApiKeyInput');
+  if (!modeSel || !keyInput) return;
+
+  const provider = aiSelectedProvider();
+  const prevMode = localStorage.getItem(AI_KEY_MODE_KEY) || AI_KEY_MODE_LOCAL;
+  const nextMode = aiSelectedKeyMode();
+  const currentKey = keyInput.value.trim();
+
+  localStorage.setItem(AI_KEY_MODE_KEY, nextMode);
+
+  try {
+    if (currentKey) {
+      await aiStoreKey(provider, currentKey, nextMode);
+      if (prevMode !== nextMode) {
+        await aiDeleteKey(provider, prevMode);
+      }
+    }
+    keyInput.value = await aiLoadKey(provider, nextMode);
+  } catch (e) {
+    const msg = e?.message || String(e);
+    aiSetStatus(`Key mode change error: ${msg}`, true, false);
+    modeSel.value = prevMode;
+    localStorage.setItem(AI_KEY_MODE_KEY, prevMode);
+  }
 }
 
 function aiBuildPrompt(kind) {
@@ -121,7 +239,7 @@ async function aiSendPrompt() {
     return;
   }
 
-  aiPersistConfig();
+  await aiPersistConfig();
 
   _aiBusy = true;
   if (sendBtn) sendBtn.disabled = true;
@@ -145,8 +263,8 @@ async function aiSendPrompt() {
   }
 }
 
-function initAiAssistantUi() {
-  aiLoadPersistedConfig();
+async function initAiAssistantUi() {
+  await aiLoadPersistedConfig();
   aiSetStatus('Idle', false, false);
 }
 
@@ -154,7 +272,7 @@ function openAiAssistantWindow() {
   if (openToolNativeWindow('ai-assistant')) return;
   const win = document.getElementById('aiAssistantWin');
   if (!win) return;
-  initAiAssistantUi();
+  void initAiAssistantUi();
   win.style.display = 'block';
   if (typeof window.bringToFront === 'function') window.bringToFront(win);
 }
@@ -176,9 +294,10 @@ document.getElementById('menuToolAiAssistant')?.addEventListener('click', () => 
   openAiAssistantWindow();
 });
 
-document.getElementById('aiProviderSelect')?.addEventListener('change', aiOnProviderChanged);
-document.getElementById('aiModelInput')?.addEventListener('change', aiPersistConfig);
-document.getElementById('aiApiKeyInput')?.addEventListener('change', aiPersistConfig);
+document.getElementById('aiProviderSelect')?.addEventListener('change', () => { void aiOnProviderChanged(); });
+document.getElementById('aiModelInput')?.addEventListener('change', () => { void aiPersistConfig(); });
+document.getElementById('aiApiKeyInput')?.addEventListener('change', () => { void aiPersistConfig(); });
+document.getElementById('aiKeyStorageMode')?.addEventListener('change', () => { void aiOnKeyModeChanged(); });
 
 document.getElementById('aiPresetNetwork')?.addEventListener('click', () => {
   const input = document.getElementById('aiPromptInput');
@@ -213,5 +332,5 @@ document.getElementById('btnAiClose')?.addEventListener('click', closeAiAssistan
 document.getElementById('btnAiCloseBottom')?.addEventListener('click', closeAiAssistantWindow);
 
 if (_toolMode === 'ai-assistant') {
-  initAiAssistantUi();
+  void initAiAssistantUi();
 }
