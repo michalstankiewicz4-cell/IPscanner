@@ -116,6 +116,41 @@
   color: #0099ff;
 }
 
+.phonelookup-help-content {
+  padding: 8px;
+  background: var(--sunken-bg, #ffffff);
+  border: 1px solid var(--section-border, #c0c0c0);
+}
+
+.phonelookup-api-info {
+  padding: 6px 0;
+  font-size: 12px;
+  color: var(--text-color, #000);
+  line-height: 1.5;
+}
+
+.phonelookup-api-info strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--text-color, #000);
+}
+
+.phonelookup-api-link {
+  margin-left: 4px;
+  color: #0066cc;
+}
+
+.phonelookup-api-link a {
+  color: #0066cc;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.phonelookup-api-link a:hover {
+  text-decoration: underline;
+  color: #0099ff;
+}
+
 /* Dark theme support */
 .skin-glass .phonelookup-win,
 .skin-workbench .phonelookup-win,

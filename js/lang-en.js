@@ -184,6 +184,7 @@ window.LANG_EN = {
   imgMetaStegoDetected:(n)=>`Potential hidden trailing data detected: ${n} byte(s).`,
   imgMetaDesktopHint:'Full EXIF and GPS data requires desktop (Tauri) mode.',
   btnPhoneLookupMenu:'📱 Phone Reverse Lookup...', phoneLookupWinTitle:'Phone Reverse Lookup',
+  phoneLookupApiSetup:'API Setup Guide',
   phoneLookupApiKeys:'API Keys Configuration',
   phoneLookupInput:'Phone Number', phoneLookupSearchBtn:'Search',
   phoneLookupReady:'Ready. Enter a phone number to search.',

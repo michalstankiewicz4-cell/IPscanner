@@ -184,6 +184,7 @@ window.LANG_PL = {
   imgMetaStegoDetected:(n)=>`Wykryto potencjalnie ukryte dane końcowe: ${n} bajt(ów).`,
   imgMetaDesktopHint:'Pełne dane EXIF i GPS wymagają trybu desktopowego (Tauri).',
   btnPhoneLookupMenu:'📱 Wsteczne wyszukiwanie numeru...', phoneLookupWinTitle:'Wsteczne wyszukiwanie numeru telefonu',
+  phoneLookupApiSetup:'Przewodnik konfiguracji API',
   phoneLookupApiKeys:'Konfiguracja kluczy API',
   phoneLookupInput:'Numer telefonu', phoneLookupSearchBtn:'Szukaj',
   phoneLookupReady:'Gotowy. Wpisz numer telefonu, aby wyszukać informacje.',
