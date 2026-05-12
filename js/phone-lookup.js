@@ -4,7 +4,12 @@
 let phoneLookupState = {
   currentNumber: '',
   results: null,
-  isLoading: false
+  isLoading: false,
+  apiKeys: {
+    numverify: localStorage.getItem('phoneLookup_numverify_key') || '',
+    opencellid: localStorage.getItem('phoneLookup_opencellid_key') || '',
+    google: localStorage.getItem('phoneLookup_google_key') || ''
+  }
 };
 
 function initPhoneLookup() {
@@ -14,10 +19,20 @@ function initPhoneLookup() {
   const searchBtn = document.getElementById('btnPhoneLookupSearch');
   const copyBtn = document.getElementById('btnPhoneLookupCopy');
   const clearBtn = document.getElementById('btnPhoneLookupClear');
+  const saveKeysBtn = document.getElementById('btnPhoneLookupSaveKeys');
+  const clearKeysBtn = document.getElementById('btnPhoneLookupClearKeys');
   const input = document.getElementById('phoneLookupInput');
   const titlebar = document.getElementById('phoneLookupTitlebar');
+  const numverifyKeyInput = document.getElementById('phoneLookupNumVerifyKey');
+  const opencellIdKeyInput = document.getElementById('phoneLookupOpenCellIDKey');
+  const googleKeyInput = document.getElementById('phoneLookupGoogleKey');
 
   if (!menuItem || !win) return;
+
+  // Load saved API keys on init
+  numverifyKeyInput.value = phoneLookupState.apiKeys.numverify;
+  opencellIdKeyInput.value = phoneLookupState.apiKeys.opencellid;
+  googleKeyInput.value = phoneLookupState.apiKeys.google;
 
   // Menu item click
   menuItem.addEventListener('click', () => {
@@ -32,6 +47,44 @@ function initPhoneLookup() {
   // Close button
   closeBtn.addEventListener('click', () => {
     win.style.display = 'none';
+  });
+
+  // Save API Keys
+  saveKeysBtn.addEventListener('click', () => {
+    phoneLookupState.apiKeys.numverify = numverifyKeyInput.value;
+    phoneLookupState.apiKeys.opencellid = opencellIdKeyInput.value;
+    phoneLookupState.apiKeys.google = googleKeyInput.value;
+
+    localStorage.setItem('phoneLookup_numverify_key', phoneLookupState.apiKeys.numverify);
+    localStorage.setItem('phoneLookup_opencellid_key', phoneLookupState.apiKeys.opencellid);
+    localStorage.setItem('phoneLookup_google_key', phoneLookupState.apiKeys.google);
+
+    const status = document.getElementById('phoneLookupStatus');
+    status.textContent = 'API keys saved.';
+    setTimeout(() => {
+      status.textContent = 'Ready.';
+    }, 2000);
+  });
+
+  // Clear API Keys
+  clearKeysBtn.addEventListener('click', () => {
+    numverifyKeyInput.value = '';
+    opencellIdKeyInput.value = '';
+    googleKeyInput.value = '';
+
+    phoneLookupState.apiKeys.numverify = '';
+    phoneLookupState.apiKeys.opencellid = '';
+    phoneLookupState.apiKeys.google = '';
+
+    localStorage.removeItem('phoneLookup_numverify_key');
+    localStorage.removeItem('phoneLookup_opencellid_key');
+    localStorage.removeItem('phoneLookup_google_key');
+
+    const status = document.getElementById('phoneLookupStatus');
+    status.textContent = 'API keys cleared.';
+    setTimeout(() => {
+      status.textContent = 'Ready.';
+    }, 2000);
   });
 
   // Search button
@@ -84,6 +137,12 @@ async function phoneLookupSearch(phoneNumber) {
     return;
   }
 
+  if (!phoneLookupState.apiKeys.numverify && !phoneLookupState.apiKeys.opencellid && !phoneLookupState.apiKeys.google) {
+    statusEl.textContent = 'Error: No API keys configured. Please enter at least one API key above.';
+    resultsWrap.innerHTML = '<div class="phonelookup-error">No API keys configured. Please save your API keys first.</div>';
+    return;
+  }
+
   phoneLookupState.isLoading = true;
   phoneLookupState.currentNumber = phoneNumber;
   statusEl.textContent = 'Searching...';
@@ -94,7 +153,10 @@ async function phoneLookupSearch(phoneNumber) {
     let response;
     try {
       response = await window.__TAURI__.invoke('phone_lookup_query', {
-        phoneNumber: phoneNumber
+        phoneNumber: phoneNumber,
+        numverifyKey: phoneLookupState.apiKeys.numverify,
+        opencellIdKey: phoneLookupState.apiKeys.opencellid,
+        googleKey: phoneLookupState.apiKeys.google
       });
     } catch (tauriErr) {
       console.error('Tauri error:', tauriErr);

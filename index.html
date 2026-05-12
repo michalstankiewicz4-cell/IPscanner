@@ -1271,6 +1271,26 @@
 
   <div class="phonelookup-body">
     <div class="dlg-groupbox">
+      <span class="dlg-groupbox-legend" data-i18n="phoneLookupApiKeys">API Keys Configuration</span>
+      <div class="dlg-row dlg-row-mb6">
+        <label class="dlg-label-98" for="phoneLookupNumVerifyKey">NumVerify:</label>
+        <input class="dlg-input95 ai-input-grow" id="phoneLookupNumVerifyKey" type="password" placeholder="Your NumVerify API key (free: 100/month)"/>
+      </div>
+      <div class="dlg-row dlg-row-mb6">
+        <label class="dlg-label-98" for="phoneLookupOpenCellIDKey">OpenCellID:</label>
+        <input class="dlg-input95 ai-input-grow" id="phoneLookupOpenCellIDKey" type="password" placeholder="Your OpenCellID API key"/>
+      </div>
+      <div class="dlg-row dlg-row-mb6">
+        <label class="dlg-label-98" for="phoneLookupGoogleKey">Google People:</label>
+        <input class="dlg-input95 ai-input-grow" id="phoneLookupGoogleKey" type="password" placeholder="Your Google People API key (requires OAuth)"/>
+      </div>
+      <div class="dlg-row dlg-row-mb0">
+        <button class="btn95" id="btnPhoneLookupSaveKeys" data-i18n="btnSave">Save Keys</button>
+        <button class="btn95" id="btnPhoneLookupClearKeys" data-i18n="btnClear">Clear Keys</button>
+      </div>
+    </div>
+
+    <div class="dlg-groupbox dlg-groupbox-mt12">
       <span class="dlg-groupbox-legend" data-i18n="phoneLookupInput">Phone Number</span>
       <div class="dlg-row dlg-row-mb6">
         <input class="dlg-input95 phonelookup-input-grow" id="phoneLookupInput" type="text" placeholder="+1234567890 or 123-456-7890" spellcheck="false"/>
