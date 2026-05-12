@@ -42,6 +42,10 @@ VirusTotal:
 
 https://www.virustotal.com/gui/file/7c0706ee5d06693271bb14280606c14b59562fb7b8974e708c2d3b3084f75c0a
 
+www is clean atm:
+
+https://www.virustotal.com/gui/domain/ipscanner.pl
+
 ---
 
 <img width="1042" height="852" alt="image" src="https://github.com/user-attachments/assets/c7b0f7dd-f0b3-4882-aaed-b8c919045ea1" />
