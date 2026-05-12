@@ -3116,7 +3116,115 @@ fn read_image_meta(
     out
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
+// ─── Phone Lookup Commands ────────────────────────────────────────────────────
+
+#[tauri::command]
+async fn phone_lookup_query(phone_number: String) -> Result<serde_json::Value, String> {
+    // Normalize phone number
+    let normalized = phone_number.replace(" ", "").replace("-", "").replace("(", "").replace(")", "");
+    
+    // Initialize result object
+    let mut result = serde_json::json!({
+        "numverify": null,
+        "opencellid": [],
+        "people_api": null,
+        "error": null
+    });
+
+    // 1. Call NumVerify API
+    if let Ok(nv_result) = phone_lookup_numverify(&normalized).await {
+        result["numverify"] = nv_result;
+    }
+
+    // 2. Call OpenCellID API
+    if let Ok(occ_result) = phone_lookup_opencellid(&normalized).await {
+        result["opencellid"] = occ_result;
+    }
+
+    // 3. Call Google People API (optional, requires API key)
+    if let Ok(people_result) = phone_lookup_google_people(&normalized).await {
+        result["people_api"] = people_result;
+    }
+
+    Ok(result)
+}
+
+async fn phone_lookup_numverify(phone_number: &str) -> Result<serde_json::Value, String> {
+    let client = reqwest::Client::new();
+    
+    // NumVerify API - free tier: 100 requests/month
+    // Get API key from environment or use free tier
+    let api_key = std::env::var("NUMVERIFY_API_KEY").unwrap_or_else(|_| "".to_string());
+    
+    if api_key.is_empty() {
+        return Ok(serde_json::json!({
+            "valid": false,
+            "country_name": "N/A",
+            "country_code": "N/A",
+            "number_type": "Unknown",
+            "carrier": "N/A",
+            "international_format": phone_number,
+            "national_format": phone_number,
+            "location": "Requires API key"
+        }));
+    }
+
+    let url = format!(
+        "http://api.numverify.com/validate?number={}&access_key={}",
+        phone_number, api_key
+    );
+
+    match client.get(&url).send().await {
+        Ok(resp) => {
+            match resp.json::<serde_json::Value>().await {
+                Ok(json) => {
+                    Ok(serde_json::json!({
+                        "valid": json.get("valid").and_then(|v| v.as_bool()).unwrap_or(false),
+                        "country_name": json.get("country_name").and_then(|v| v.as_str()).unwrap_or("N/A"),
+                        "country_code": json.get("country_code").and_then(|v| v.as_str()).unwrap_or("N/A"),
+                        "number_type": json.get("number_type").and_then(|v| v.as_str()).unwrap_or("Unknown"),
+                        "carrier": json.get("carrier").and_then(|v| v.as_str()).unwrap_or("N/A"),
+                        "international_format": json.get("international_format").and_then(|v| v.as_str()).unwrap_or(phone_number),
+                        "national_format": json.get("national_format").and_then(|v| v.as_str()).unwrap_or(phone_number),
+                        "location": json.get("location").and_then(|v| v.as_str()).unwrap_or("N/A"),
+                    }))
+                }
+                Err(_) => Err("Failed to parse NumVerify response".to_string())
+            }
+        }
+        Err(_) => Err("NumVerify API unavailable".to_string())
+    }
+}
+
+async fn phone_lookup_opencellid(_phone_number: &str) -> Result<serde_json::Value, String> {
+    let _client = reqwest::Client::new();
+    
+    // OpenCellID API - free tier
+    let api_key = std::env::var("OPENCELLID_API_KEY").unwrap_or_else(|_| "".to_string());
+    
+    if api_key.is_empty() {
+        return Ok(serde_json::json!([]));
+    }
+
+    // Note: OpenCellID requires cell tower info, not just phone number
+    // This is a placeholder for actual implementation
+    Ok(serde_json::json!([]))
+}
+
+async fn phone_lookup_google_people(_phone_number: &str) -> Result<serde_json::Value, String> {
+    // Google People API requires OAuth and API key
+    // Returns null in sandbox mode
+    let api_key = std::env::var("GOOGLE_PEOPLE_API_KEY").unwrap_or_else(|_| "".to_string());
+    
+    if api_key.is_empty() {
+        return Ok(serde_json::Value::Null);
+    }
+
+    // Placeholder: Google People API would require proper OAuth setup
+    Ok(serde_json::Value::Null)
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────────────
 
 fn main() {
     tauri::Builder::default()
@@ -3157,6 +3265,7 @@ fn main() {
             read_lte_snapshot,
             read_lte_snapshot_auto,
             read_image_meta,
+            phone_lookup_query,
             open_clippy_window,
             close_clippy_window,
             open_browser,

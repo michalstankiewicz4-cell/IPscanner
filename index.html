@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="css/tool-macro.css"/>
 <link rel="stylesheet" href="css/tool-globe.css"/>
 <link rel="stylesheet" href="css/tool-radar.css"/>
+<link rel="stylesheet" href="css/tool-phonelookup.css"/>
 <link rel="stylesheet" href="css/theme-glass.css"/>
 <link rel="stylesheet" href="css/theme-workbench.css"/>
 <link rel="stylesheet" href="css/theme-purple-dark.css"/>
@@ -85,6 +86,7 @@
         <div class="menu-dd-item" id="menuToolLte" data-i18n="btnLteMenu">📶 LTE Monitor...</div>
         <div class="menu-dd-item" id="menuToolSniffer" data-i18n="btnSnifferMenu">🔎 Network Sniffer...</div>
         <div class="menu-dd-item" id="menuToolImgMeta" data-i18n="btnImgMetaMenu">🖼 Image Metadata...</div>
+        <div class="menu-dd-item" id="menuToolPhoneLookup" data-i18n="btnPhoneLookupMenu">📱 Phone Reverse Lookup...</div>
         <div class="menu-dd-item" id="menuToolAiAssistant">🤖 AI Security Assistant...</div>
       </div>
     </div>
@@ -1257,6 +1259,35 @@
   </div>
 </div>
 
+<!-- Phone Reverse Lookup window -->
+<div class="tool-win-shell phonelookup-win" id="phoneLookupWin">
+  <div class="titlebar cursor-move" id="phoneLookupTitlebar">
+    <span class="icon">📱</span>
+    <span class="title" data-i18n="phoneLookupWinTitle">Phone Reverse Lookup</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnPhoneLookupClose">✕</button>
+    </div>
+  </div>
+
+  <div class="phonelookup-body">
+    <div class="dlg-groupbox">
+      <span class="dlg-groupbox-legend" data-i18n="phoneLookupInput">Phone Number</span>
+      <div class="dlg-row dlg-row-mb6">
+        <input class="dlg-input95 phonelookup-input-grow" id="phoneLookupInput" type="text" placeholder="+1234567890 or 123-456-7890" spellcheck="false"/>
+      </div>
+      <div class="dlg-row dlg-row-mb0">
+        <button class="btn95" id="btnPhoneLookupSearch" data-i18n="phoneLookupSearchBtn">Search</button>
+        <button class="btn95" id="btnPhoneLookupCopy" data-i18n="btnCopy">Copy</button>
+        <button class="btn95" id="btnPhoneLookupClear" data-i18n="btnClear">Clear</button>
+      </div>
+    </div>
+
+    <div class="phonelookup-status" id="phoneLookupStatus" data-i18n="phoneLookupReady">Ready.</div>
+
+    <div class="phonelookup-results-wrap" id="phoneLookupResultsWrap"></div>
+  </div>
+</div>
+
 <!-- Versions dialog -->
 <div class="dlg-overlay" id="dlgVersionsOverlay">
   <div class="dlg95">
@@ -1593,6 +1624,7 @@
 <script src="js/gnss.js"></script>
 <script src="js/lte.js"></script>
 <script src="js/sniffer.js"></script>
+<script src="js/phone-lookup.js"></script>
 <script src="js/clippy.js"></script>
 </body>
 </html>
