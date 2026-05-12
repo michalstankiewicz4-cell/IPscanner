@@ -36,8 +36,11 @@ Gotowy plik EXE oraz instalatory pojawią się w:
 
 Antivirus can detect:
 
-
 <img width="147" height="26" alt="image" src="https://github.com/user-attachments/assets/4768d6d8-9f5e-42c0-a3e9-1d27ab1608ff" />
+
+VirusTotal:
+
+https://www.virustotal.com/gui/file/7c0706ee5d06693271bb14280606c14b59562fb7b8974e708c2d3b3084f75c0a
 
 ---
 
