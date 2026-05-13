@@ -2,7 +2,7 @@
 window.LANG_EN = {
   menuFile:'File', menuOptions:'Options', menuTools:'Tools', menuHelp:'Help',
   menuLanguage:'Language...', menuAbout:'About', menuVersions:'Versions', menuDownload:'📥 Download', menuPresets:'Port Presets...', menuCountries:'Country IP Library...', menuDefaults:'Default Scan Values...',
-  btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Clear', btnFactoryReset:'⟲ Reset All', btnGlobe:'🌍 Globe',
+  btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Clear', btnFactoryReset:'⟲ Reset All', btnFactoryResetTip:'Factory reset: clear all saved app data and reload.', btnGlobe:'🌍 Globe',
   btnConsole:'⌨ Console', btnMacro:'📁 Macro', btnSpeed:'📶 Speed', btnProto:'🧩 Prototype', btnTopology:'🕸 Topology', btnWifiRadar:'📍 WiFi Radar',
   btnBtDetector:'🔵 BT Detector', btnBtDetectorMenu:'🔵 Bluetooth Detector...',
   btWinTitle:'Bluetooth Detector', btScanSettings:'Scan settings', btDuration:'Duration:', btScan:'Scan', btStop:'Stop',

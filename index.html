@@ -50,6 +50,7 @@
     <img class="icon title-icon-img" src="zebrus.png" width="14" height="14" alt=""/>
     <span class="title" id="appTitle">NetRecon IP Auditor</span>
     <div class="titlebar-btns">
+      <div class="title-btn title-btn-clickable title-btn-reset-danger" id="btnFactoryReset" data-i18n-title="btnFactoryResetTip" title="Factory reset">⟲</div>
       <div class="title-btn title-btn-clickable" id="mainMinBtn">_</div>
       <div class="title-btn title-btn-clickable" id="mainMaxBtn">□</div>
       <div class="title-btn title-btn-close" id="mainCloseBtn">✕</div>
@@ -119,7 +120,6 @@
       <button class="btn95" id="btnGnssToolbar" title="GNSS Monitor" data-i18n="btnGnss">🛰 GNSS</button>
       <button class="btn95" id="btnSnifferToolbar" title="Network Sniffer" data-i18n="btnSniffer">🔎 Sniffer</button>
       <div class="flex-spacer"></div>
-      <button class="btn95 btn-reset-danger" id="btnFactoryReset" data-i18n="btnFactoryReset">⟲ Reset All</button>
     </div>
 
     <!-- Mode + IP Range -->
@@ -1344,6 +1344,12 @@
     <div class="dlg-body dlg-icon-body dlg-versions-body">
       <span class="dlg-icon dlg-icon-versions">📘</span>
       <div class="dlg-sunken-box dlg-versions-card">
+        <div class="version-head">v1.6.3</div>
+        <div class="version-note">
+          Added a factory reset button in the title bar, positioned left of minimize, with a confirmation prompt,
+          icon-only appearance, and tooltip for quick access. The reset action clears stored app data and localStorage,
+          restoring the app to a clean first-run state.
+        </div>
         <div class="version-head">v1.6.2</div>
         <div class="version-note">
           Added Phone Reverse Lookup tool with integration of NumVerify API (phone validation, carrier detection),

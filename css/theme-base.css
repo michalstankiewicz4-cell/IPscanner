@@ -70,6 +70,24 @@ html.tool-window-boot #mainWin {
 .title-icon-img { vertical-align: middle; flex-shrink: 0; }
 .title-btn-clickable { cursor: pointer; }
 .title-btn-close { cursor: pointer; font-weight: 900; }
+.title-btn-reset-danger {
+  background: #c63b34;
+  color: #fff;
+  border-top: 1px solid #f0b3af;
+  border-left: 1px solid #f0b3af;
+  border-right: 1px solid #7d201b;
+  border-bottom: 1px solid #7d201b;
+  box-shadow: inset 1px 1px 0 #ef8e88;
+}
+.title-btn-reset-danger:active {
+  background: #9f221d;
+  color: #fff;
+  border-top: 1px solid #7d201b;
+  border-left: 1px solid #7d201b;
+  border-right: 1px solid #f0b3af;
+  border-bottom: 1px solid #f0b3af;
+  box-shadow: none;
+}
 .cursor-move { cursor: move; }
 
 /* ── Icon selection flash (selectIcon) ── */

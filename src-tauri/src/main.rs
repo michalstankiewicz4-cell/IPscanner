@@ -2167,9 +2167,6 @@ impl ImgMetaEntry {
     }
 }
 
-fn read_u8(buf: &[u8], off: usize) -> Option<u8> {
-    buf.get(off).copied()
-}
 fn read_u16_be(buf: &[u8], off: usize) -> Option<u16> {
     Some(((*buf.get(off)?) as u16) << 8 | (*buf.get(off + 1)?) as u16)
 }
@@ -2312,15 +2309,6 @@ fn parse_tiff_ifd(data: &[u8], off: usize, le: bool, section: &str, out: &mut Ve
         if val_start + val_size > data.len() && val_size > 4 { continue; }
         let vdata = data.get(val_start..).unwrap_or(&[]);
 
-        let read_rat = |o: usize| -> Option<String> {
-            let n = if le { read_u32_le(data, val_start + o) } else { read_u32_be(data, val_start + o) };
-            let d = if le { read_u32_le(data, val_start + o + 4) } else { read_u32_be(data, val_start + o + 4) };
-            match (n, d) {
-                (Some(n), Some(d)) if d != 0 => Some(format!("{}/{}", n, d)),
-                (Some(n), Some(_)) => Some(n.to_string()),
-                _ => None,
-            }
-        };
         let read_rat_f = |o: usize| -> Option<f64> {
             let n = if le { read_u32_le(data, val_start + o) } else { read_u32_be(data, val_start + o) };
             let d = if le { read_u32_le(data, val_start + o + 4) } else { read_u32_be(data, val_start + o + 4) };
