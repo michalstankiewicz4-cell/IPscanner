@@ -42,7 +42,7 @@ VirusTotal:
 
 https://www.virustotal.com/gui/file/7c0706ee5d06693271bb14280606c14b59562fb7b8974e708c2d3b3084f75c0a
 
-www is clean atm:
+www is clean atm (2026.05.13):
 
 https://www.virustotal.com/gui/domain/ipscanner.pl
 
