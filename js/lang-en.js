@@ -2,7 +2,7 @@
 window.LANG_EN = {
   menuFile:'File', menuOptions:'Options', menuTools:'Tools', menuHelp:'Help',
   menuLanguage:'Language...', menuAbout:'About', menuVersions:'Versions', menuDownload:'📥 Download', menuPresets:'Port Presets...', menuCountries:'Country IP Library...', menuDefaults:'Default Scan Values...',
-  btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Clear', btnGlobe:'🌍 Globe',
+  btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Clear', btnFactoryReset:'⟲ Reset All', btnGlobe:'🌍 Globe',
   btnConsole:'⌨ Console', btnMacro:'📁 Macro', btnSpeed:'📶 Speed', btnProto:'🧩 Prototype', btnTopology:'🕸 Topology', btnWifiRadar:'📍 WiFi Radar',
   btnBtDetector:'🔵 BT Detector', btnBtDetectorMenu:'🔵 Bluetooth Detector...',
   btWinTitle:'Bluetooth Detector', btScanSettings:'Scan settings', btDuration:'Duration:', btScan:'Scan', btStop:'Stop',
@@ -13,6 +13,7 @@ window.LANG_EN = {
   btStatusNoDevices:'Scan complete - no devices detected nearby.', btStatusError:(e)=>`Error: ${e}`,
   btStatusStopRequested:'Stop requested - waiting for scan to finish...',
   btLabelName:'Name', btLabelAddress:'Address', btLabelSignal:'Signal (RSSI)', btLabelConnectable:'Connectable', btLabelSource:'Source',
+  confirmFactoryReset:'This will clear all app data stored in localStorage and reset the interface. Continue?',
   btServicesHead:'Services / UUIDs', btUnknown:'Unknown', btYes:'Yes', btNo:'No',
   btnMyIp:'🌐 My External IP', btnMyLocalIp:'🏠 My Local IP', btnLocalSubnets:'🧭 Local Subnets', btnCopy:'📋 Copy', btnUse:'➤ Use',
   scanSettings:'Scan Settings', ipRange:'IP Range:', threads:'Threads:', delayMs:'Delay (ms):',

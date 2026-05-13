@@ -137,6 +137,25 @@ body.dragging             { cursor: move !important; }
 .btn95:disabled { color: #808080; cursor: default; }
 .btn95:disabled .btn-shadow { color: #fff; }
 .btn-stop95 { background: #c0c0c0; }
+.toolbar .btn95.btn-reset-danger {
+  background: #c63b34;
+  color: #fff;
+  border-top: 1px solid #f0b3af;
+  border-left: 1px solid #f0b3af;
+  border-right: 1px solid #7d201b;
+  border-bottom: 1px solid #7d201b;
+  box-shadow: inset 1px 1px 0 #ef8e88;
+}
+.toolbar .btn95.btn-reset-danger:active,
+.toolbar .btn95.btn-reset-danger.pressed {
+  background: #9f221d;
+  color: #fff;
+  border-top: 1px solid #7d201b;
+  border-left: 1px solid #7d201b;
+  border-right: 1px solid #f0b3af;
+  border-bottom: 1px solid #f0b3af;
+  box-shadow: none;
+}
 
 /* ── Mode selector ── */
 .groupbox {

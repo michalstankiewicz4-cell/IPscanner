@@ -2,7 +2,7 @@
 window.LANG_PL = {
   menuFile:'Plik', menuOptions:'Opcje', menuTools:'Narzędzia', menuHelp:'Pomoc',
   menuLanguage:'Język...', menuAbout:'O programie', menuVersions:'Wersje', menuDownload:'📥 Pobierz', menuPresets:'Presety portów...', menuCountries:'Biblioteka krajów IP...', menuDefaults:'Domyślne wartości skanowania...',
-  btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Wyczyść', btnGlobe:'🌍 Mapa',
+  btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Wyczyść', btnFactoryReset:'⟲ Resetuj wszystko', btnGlobe:'🌍 Mapa',
   btnConsole:'⌨ Konsola', btnMacro:'📁 Makro', btnSpeed:'📶 Prędkość', btnProto:'🧩 Prototyp', btnTopology:'🕸 Topologia', btnWifiRadar:'📍 WiFi Radar',
   btnBtDetector:'🔵 BT Detektor', btnBtDetectorMenu:'🔵 Bluetooth Detector...',
   btWinTitle:'Bluetooth Detector', btScanSettings:'Ustawienia skanowania', btDuration:'Czas:', btScan:'Skanuj', btStop:'Stop',
@@ -13,6 +13,7 @@ window.LANG_PL = {
   btStatusNoDevices:'Skan zakończony - nie wykryto urządzeń w pobliżu.', btStatusError:(e)=>`Błąd: ${e}`,
   btStatusStopRequested:'Żądanie zatrzymania - czekam na zakończenie skanowania...',
   btLabelName:'Nazwa', btLabelAddress:'Adres', btLabelSignal:'Sygnał (RSSI)', btLabelConnectable:'Łączność', btLabelSource:'Źródło',
+  confirmFactoryReset:'To wyczyści wszystkie dane aplikacji zapisane w localStorage i zresetuje interfejs. Kontynuować?',
   btServicesHead:'Usługi / UUID', btUnknown:'Nieznane', btYes:'Tak', btNo:'Nie',
   btnMyIp:'🌐 Moje zewnętrzne IP', btnMyLocalIp:'🏠 Moje lokalne IP', btnLocalSubnets:'🧭 Lokalne podsieci', btnCopy:'📋 Kopiuj', btnUse:'➤ Użyj',
   scanSettings:'Ustawienia skanowania', ipRange:'Zakres IP:', threads:'Wątki:', delayMs:'Opóźnienie (ms):',

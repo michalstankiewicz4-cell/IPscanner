@@ -548,6 +548,19 @@ function applyScanDefaultsToMainInputs(cfg) {
   document.getElementById('delayMs').value = String(clampInt(cfg.delayMs, 0, 5000, 0));
 }
 
+function factoryResetApp() {
+  const confirmText = t('confirmFactoryReset');
+  if (!window.confirm(confirmText)) return;
+
+  stopRequested = true;
+  try { activeControllers.forEach(controller => controller.abort()); } catch (_) {}
+
+  try { localStorage.clear(); } catch (_) {}
+  try { sessionStorage.clear(); } catch (_) {}
+
+  setTimeout(() => window.location.reload(), 50);
+}
+
 // ── Dialog overlay helpers ──
 function openOverlay(id) {
   document.getElementById(id).classList.add('open');
@@ -1005,6 +1018,7 @@ let focusedIp = localStorage.getItem('netrecon_focus_ip') || '';
 const btnGo       = document.getElementById('btnGo');
 const btnStop     = document.getElementById('btnStop');
 const btnClear    = document.getElementById('btnClear');
+const btnFactoryReset = document.getElementById('btnFactoryReset');
 const progFill    = document.getElementById('progFill');
 const progPct     = document.getElementById('progPct');
 const statChecked = document.getElementById('statChecked');
@@ -2837,6 +2851,8 @@ btnClear.addEventListener('click',()=>{
   refreshTopologyFilterOptions();
   updateGlobeDots();
 });
+
+btnFactoryReset?.addEventListener('click', factoryResetApp);
 
 
 
