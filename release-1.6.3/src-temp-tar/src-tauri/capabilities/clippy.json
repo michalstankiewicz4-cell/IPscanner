@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "clippy",
+  "description": "Capability for the Clippy floating assistant window",
+  "windows": ["clippy"],
+  "permissions": [
+    "core:default"
+  ]
+}

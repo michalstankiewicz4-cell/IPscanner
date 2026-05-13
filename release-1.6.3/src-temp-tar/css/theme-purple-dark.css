@@ -1,0 +1,208 @@
+/* -- Purple Dark skin overrides (enabled via body.skin-purple-dark) -- */
+body.skin-purple-dark {
+  background:
+    radial-gradient(circle at 14% -12%, rgba(180, 110, 255, 0.2), rgba(180, 110, 255, 0) 42%),
+    radial-gradient(circle at 90% 8%, rgba(91, 180, 255, 0.13), rgba(91, 180, 255, 0) 36%),
+    linear-gradient(165deg, #251a38 0%, #1f1630 52%, #181225 100%);
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  color: #f1edff;
+}
+
+body.skin-purple-dark .retro-win,
+body.skin-purple-dark .dlg95,
+body.skin-purple-dark .ctxmenu,
+body.skin-purple-dark .menu-dropdown,
+body.skin-purple-dark .enrich-popup {
+  background: #2f2344;
+  border-top: 1px solid #5d4a80;
+  border-left: 1px solid #5d4a80;
+  border-right: 1px solid #161022;
+  border-bottom: 1px solid #161022;
+  box-shadow: 0 12px 30px rgba(8, 5, 18, 0.5);
+}
+
+body.skin-purple-dark .titlebar,
+body.skin-purple-dark .dlg-title,
+body.skin-purple-dark .enrich-popup-bar,
+body.skin-purple-dark .preview-titlebar {
+  background: linear-gradient(180deg, #4a3573, #3a2a5f);
+  color: #f8f4ff;
+  text-shadow: none;
+}
+
+body.skin-purple-dark .title-btn,
+body.skin-purple-dark .btn95,
+body.skin-purple-dark .btn-filter,
+body.skin-purple-dark .btn-cols {
+  background: linear-gradient(180deg, #533b7f, #422f66);
+  border-top: 1px solid #7257a6;
+  border-left: 1px solid #7257a6;
+  border-right: 1px solid #1b142a;
+  border-bottom: 1px solid #1b142a;
+  color: #f4eeff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+body.skin-purple-dark .btn95:active,
+body.skin-purple-dark .btn95.pressed,
+body.skin-purple-dark .title-btn:active,
+body.skin-purple-dark .btn-filter.active,
+body.skin-purple-dark .btn-cols.active {
+  background: linear-gradient(180deg, #37274f, #4b3670);
+  border-top: 1px solid #1b142a;
+  border-left: 1px solid #1b142a;
+  border-right: 1px solid #7257a6;
+  border-bottom: 1px solid #7257a6;
+}
+
+body.skin-purple-dark .groupbox,
+body.skin-purple-dark .dlg-groupbox,
+body.skin-purple-dark .status-panel,
+body.skin-purple-dark .ip-box,
+body.skin-purple-dark .progress-bar-bg,
+body.skin-purple-dark .port-progress-bg,
+body.skin-purple-dark .listview-wrap,
+body.skin-purple-dark .preview-iframe,
+body.skin-purple-dark .detail-section {
+  background: #261b39;
+  border-top: 1px solid #554377;
+  border-left: 1px solid #554377;
+  border-right: 1px solid #14101f;
+  border-bottom: 1px solid #14101f;
+}
+
+body.skin-purple-dark .groupbox-legend,
+body.skin-purple-dark .dlg-groupbox-legend {
+  background: #31244b;
+  color: #dacbff;
+}
+
+body.skin-purple-dark .menubar,
+body.skin-purple-dark .win-menubar95,
+body.skin-purple-dark .listview-filter {
+  background: linear-gradient(180deg, #3b2b5b, #2d2145);
+  border-bottom: 1px solid #130f1d;
+}
+
+body.skin-purple-dark .menu-item,
+body.skin-purple-dark .menu-dd-item,
+body.skin-purple-dark .ctx-item,
+body.skin-purple-dark .country-item,
+body.skin-purple-dark .range-item,
+body.skin-purple-dark .notepad-menu-item,
+body.skin-purple-dark .lv-cell,
+body.skin-purple-dark .oct,
+body.skin-purple-dark .oct-dot,
+body.skin-purple-dark .stats-row,
+body.skin-purple-dark .port-progress-label,
+body.skin-purple-dark .statusbar,
+body.skin-purple-dark .status-panel,
+body.skin-purple-dark .label-muted,
+body.skin-purple-dark .label-muted-sm,
+body.skin-purple-dark .filter-label,
+body.skin-purple-dark .dlg-check-label,
+body.skin-purple-dark .dlg-radio {
+  color: #f1edff;
+}
+
+body.skin-purple-dark .menu-item:hover,
+body.skin-purple-dark .menu-item.open,
+body.skin-purple-dark .menu-dd-item:hover,
+body.skin-purple-dark .ctx-item:hover,
+body.skin-purple-dark .notepad-menu-item:hover,
+body.skin-purple-dark .country-item:hover,
+body.skin-purple-dark .country-item.active,
+body.skin-purple-dark .range-item:hover,
+body.skin-purple-dark .range-item.active,
+body.skin-purple-dark .lv-row:hover,
+body.skin-purple-dark .lv-row.selected,
+body.skin-purple-dark .cols-panel-item:hover,
+body.skin-purple-dark .btn-filter:hover,
+body.skin-purple-dark .btn-cols:hover {
+  background: #6d46b8;
+  color: #ffffff;
+}
+
+body.skin-purple-dark .lv-row.selected .lv-cell,
+body.skin-purple-dark .lv-row:hover .lv-cell {
+  color: #ffffff;
+}
+
+body.skin-purple-dark .cols-panel {
+  background: #33254d;
+  border-top: 1px solid #7158a8;
+  border-left: 1px solid #7158a8;
+  border-right: 1px solid #1a1427;
+  border-bottom: 1px solid #1a1427;
+  color: #f2ecff;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.45);
+}
+
+body.skin-purple-dark .listview-header {
+  background: linear-gradient(180deg, #47336f, #33254d);
+  border-bottom: 1px solid #130f1d;
+}
+
+body.skin-purple-dark .lv-col {
+  color: #f2ecff;
+  border-right: 1px solid #1c1530;
+  border-top: 1px solid #6f58a3;
+  border-left: 1px solid #6f58a3;
+}
+
+body.skin-purple-dark .listview-body {
+  background: #261b39;
+}
+
+body.skin-purple-dark .progress-bar-fill {
+  background: linear-gradient(90deg, #8c4dff, #6c88ff);
+}
+
+body.skin-purple-dark .port-progress-fill {
+  background: linear-gradient(90deg, #49c4ff, #5b8cff);
+}
+
+body.skin-purple-dark .stat-val,
+body.skin-purple-dark #statTime,
+body.skin-purple-dark #myIpResult,
+body.skin-purple-dark #myLocalIpResult,
+body.skin-purple-dark #localSubnetsResult,
+body.skin-purple-dark #activePorts,
+body.skin-purple-dark .port-hint,
+body.skin-purple-dark .empty-row,
+body.skin-purple-dark .imgmeta-status {
+  color: #bfe9ff !important;
+}
+
+body.skin-purple-dark input,
+body.skin-purple-dark select,
+body.skin-purple-dark textarea,
+body.skin-purple-dark .select95,
+body.skin-purple-dark .input95 {
+  background: #1f1730;
+  color: #f5f0ff;
+  border-top: 1px solid #120e1c;
+  border-left: 1px solid #120e1c;
+  border-right: 1px solid #5f4a8b;
+  border-bottom: 1px solid #5f4a8b;
+}
+
+body.skin-purple-dark input::placeholder,
+body.skin-purple-dark textarea::placeholder {
+  color: #baa9dc;
+}
+
+body.skin-purple-dark .lv-port-tag,
+body.skin-purple-dark .tag-ok,
+body.skin-purple-dark .tag-closed,
+body.skin-purple-dark .tag-none,
+body.skin-purple-dark .tag-proxy,
+body.skin-purple-dark .tag-dc,
+body.skin-purple-dark .tag-rec {
+  color: #fff;
+}
+
+body.skin-purple-dark a,
+body.skin-purple-dark .statusbar a {
+  color: #b2dcff;
+}

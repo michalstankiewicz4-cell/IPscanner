@@ -1,0 +1,1 @@
+{"clippy":{"identifier":"clippy","description":"Capability for the Clippy floating assistant window","local":true,"windows":["clippy"],"permissions":["core:default"]},"default":{"identifier":"default","description":"Default capability for main window IPC and core APIs","local":true,"windows":["main"],"permissions":["core:default"]}}

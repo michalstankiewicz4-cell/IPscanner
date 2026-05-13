@@ -1,0 +1,93 @@
+/* ── Clippy assistant ── */
+
+#clippy-container {
+  position: fixed;
+  bottom: 60px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  user-select: none;
+}
+
+#clippy-container.clippy-hidden {
+  display: none;
+}
+
+/* Speech bubble */
+#clippy-bubble {
+  background: #ffffc0;
+  border: 2px solid #000080;
+  padding: 7px 22px 7px 10px;
+  max-width: 210px;
+  min-width: 120px;
+  font-size: 11px;
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+  line-height: 1.4;
+  position: relative;
+  box-shadow: 2px 2px 0 #808080;
+  cursor: pointer;
+  color: #000000;
+}
+
+/* Arrow pointing down toward character */
+#clippy-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -11px;
+  right: 22px;
+  border: 6px solid transparent;
+  border-top-color: #000080;
+}
+#clippy-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  right: 23px;
+  border: 5px solid transparent;
+  border-top-color: #ffffc0;
+  z-index: 1;
+}
+
+/* Close x inside bubble */
+#clippy-close {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 9px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  color: #000080;
+  padding: 1px 2px;
+}
+#clippy-close:hover {
+  background: #c0c0c0;
+}
+
+/* The character */
+#clippy-char {
+  font-size: 52px;
+  line-height: 1;
+  cursor: pointer;
+  text-align: right;
+  transition: transform 0.15s;
+  filter: drop-shadow(1px 1px 1px rgba(0,0,0,.35));
+}
+#clippy-char:hover  { transform: scale(1.12) rotate(-5deg); }
+#clippy-char:active { transform: scale(0.92); }
+
+/* Wiggle animation when tip changes */
+@keyframes clippy-wiggle {
+  0%   { transform: rotate(0deg); }
+  20%  { transform: rotate(-12deg); }
+  40%  { transform: rotate(10deg); }
+  60%  { transform: rotate(-8deg); }
+  80%  { transform: rotate(5deg); }
+  100% { transform: rotate(0deg); }
+}
+#clippy-char.clippy-wiggle {
+  animation: clippy-wiggle 0.5s ease;
+}
