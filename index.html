@@ -183,7 +183,7 @@
           <input class="oct" id="t3" maxlength="3" placeholder="254"/>
         </div>
         <button class="btn95 ml-10" id="btnScanSpeed" onclick="openDefaultsDlg()">⚙ Scan Speed</button>
-        <input type="number" min="2" max="64" value="32" id="concNum" class="is-hidden"/>
+        <input type="number" min="2" max="64" value="24" id="concNum" class="is-hidden"/>
         <input type="number" min="0" max="5000" value="0" id="delayMs" class="is-hidden"/>
       </div>
     </div>
@@ -717,37 +717,37 @@
       <span class="dlg-icon">⚙</span>
       <div class="dlg-content-fill">
       <div class="dlg-groupbox">
-        <span class="dlg-groupbox-legend" title="IP address scanning settings">IP Scanning</span>
+        <span class="dlg-groupbox-legend" data-i18n="dlgIpScanningLegend" title="IP address scanning settings">IP scanning</span>
         <div class="dlg-row dlg-row-mb6">
-          <label class="dlg-label-98" data-i18n="dlgDefaultThreads" title="Number of parallel scanning threads (2–64). More = faster, but higher network load." data-i18n-title="tipThreads">Threads:</label>
-          <input class="dlg-input95 dlg-num-input" id="dlgDefaultThreads" type="number" min="2" max="64" value="32" title="Number of parallel scanning threads (2–64). More = faster, but higher network load." data-i18n-title="tipThreads"/>
+          <label class="dlg-label-98" data-i18n="dlgDefaultThreads" title="Number of parallel scanning threads (2–64). More = faster, but higher network load." data-i18n-title="tipThreads">Parallel connections (limit):</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultThreads" type="number" min="2" max="64" value="24" title="Number of parallel scanning threads (2–64). More = faster, but higher network load." data-i18n-title="tipThreads"/>
         </div>
         <div class="dlg-row dlg-row-mb0">
-          <label class="dlg-label-98" data-i18n="dlgDefaultDelay" title="Delay (ms) between consecutive IP addresses scanned by each thread. 0 = no delay." data-i18n-title="tipIpDelay">Delay (ms):</label>
+          <label class="dlg-label-98" data-i18n="dlgDefaultDelay" title="Delay (ms) between consecutive IP addresses scanned by each thread. 0 = no delay." data-i18n-title="tipIpDelay">Delay between IP addresses (ms):</label>
           <input class="dlg-input95 dlg-num-input" id="dlgDefaultDelay" type="number" min="0" max="5000" value="0" title="Delay (ms) between consecutive IP addresses scanned by each thread. 0 = no delay." data-i18n-title="tipIpDelay"/>
         </div>
       </div>
 
       <div class="dlg-groupbox dlg-groupbox-mt12">
-        <span class="dlg-groupbox-legend" title="Port scanning mode for each IP address">Port Scanning Mode</span>
+        <span class="dlg-groupbox-legend" data-i18n="dlgPortModeLegend" title="Port scanning mode for each IP address">Port scan behavior</span>
         <div class="dlg-row dlg-row-mb6">
-          <label class="dlg-label-98" title="Number of ports scanned simultaneously in parallel mode (10–500). Larger batch = faster, but more concurrent connections." data-i18n-title="tipBatchSize">Batch size:</label>
-          <input class="dlg-input95 dlg-num-input" id="dlgDefaultChunkSize" type="number" min="10" max="500" value="100" title="Number of ports scanned simultaneously in parallel mode (10–500). Larger batch = faster, but more concurrent connections." data-i18n-title="tipBatchSize"/>
+          <label class="dlg-label-98" data-i18n="dlgDefaultBatchSize" title="Ports processed per batch in parallel mode (10–500). Affects update cadence and pacing, not total global probe limit." data-i18n-title="tipBatchSize">Port batch size:</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultChunkSize" type="number" min="10" max="500" value="64" title="Ports processed per batch in parallel mode (10–500). Affects update cadence and pacing, not total global probe limit." data-i18n-title="tipBatchSize"/>
         </div>
         <div class="dlg-row dlg-row-mb6">
           <label class="port-mode-label" title="All ports in a batch are scanned simultaneously — fastest mode." data-i18n-title="tipParallel">
             <input class="port-mode-radio" type="radio" name="portScanMode" id="radioParallel" value="parallel" checked/>
-            <span class="port-mode-text" title="All ports in a batch are scanned simultaneously — fastest mode." data-i18n-title="tipParallel">Parallel (fast)</span>
+            <span class="port-mode-text" data-i18n="dlgPortModeParallel" title="All ports in a batch are scanned simultaneously — fastest mode." data-i18n-title="tipParallel">Parallel (throughput)</span>
           </label>
         </div>
         <div class="dlg-row dlg-row-mb0">
           <label class="port-mode-label" title="Ports are scanned one by one with a set delay — slower, but less visible to IDS/firewall." data-i18n-title="tipSequential">
             <input class="port-mode-radio" type="radio" name="portScanMode" id="radioSequential" value="sequential"/>
-            <span class="port-mode-text" title="Ports are scanned one by one with a set delay — slower, but less visible to IDS/firewall." data-i18n-title="tipSequential">Sequential with delay</span>
+            <span class="port-mode-text" data-i18n="dlgPortModeSequential" title="Ports are scanned one by one with a set delay — slower, but less visible to IDS/firewall." data-i18n-title="tipSequential">Sequential (stealthier)</span>
           </label>
         </div>
         <div class="dlg-row dlg-row-mb0 dlg-row-indent-24">
-          <label class="dlg-label-98" data-i18n="dlgDefaultDelayPerPort" title="Delay (ms) between scanning consecutive ports in sequential mode (0–1000)." data-i18n-title="tipPortDelay">Delay (ms):</label>
+          <label class="dlg-label-98" data-i18n="dlgDefaultDelayPerPort" title="Delay (ms) between scanning consecutive ports in sequential mode (0–1000)." data-i18n-title="tipPortDelay">Delay between ports (ms):</label>
           <input class="dlg-input95 dlg-num-input" id="dlgDefaultDelayPerPort" type="number" min="0" max="1000" value="0" disabled title="Delay (ms) between scanning consecutive ports in sequential mode (0–1000)." data-i18n-title="tipPortDelay"/>
         </div>
       </div>

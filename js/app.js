@@ -517,34 +517,34 @@ function clampInt(v, min, max, fallback) {
 function loadScanDefaults() {
   try {
     const raw = localStorage.getItem('netrecon_scan_defaults');
-    if (!raw) return { threads: 32, delayMs: 0, delayMsPerPort: 0, portScanMode: 'parallel', chunkSize: 100 };
+    if (!raw) return { threads: 24, delayMs: 0, delayMsPerPort: 0, portScanMode: 'parallel', chunkSize: 64 };
     const obj = JSON.parse(raw);
     return {
-      threads: clampInt(obj.threads, 2, 64, 32),
+      threads: clampInt(obj.threads, 2, 64, 24),
       delayMs: clampInt(obj.delayMs, 0, 5000, 0),
       delayMsPerPort: clampInt(obj.delayMsPerPort, 0, 1000, 0),
       portScanMode: (obj.portScanMode === 'sequential' ? 'sequential' : 'parallel'),
-      chunkSize: clampInt(obj.chunkSize, 10, 500, 100)
+      chunkSize: clampInt(obj.chunkSize, 10, 500, 64)
     };
   } catch {
-    return { threads: 32, delayMs: 0, delayMsPerPort: 0, portScanMode: 'parallel', chunkSize: 100 };
+    return { threads: 24, delayMs: 0, delayMsPerPort: 0, portScanMode: 'parallel', chunkSize: 64 };
   }
 }
 
 function saveScanDefaults(threads, delayMs, delayMsPerPort, portScanMode, chunkSize) {
   const safe = {
-    threads: clampInt(threads, 2, 64, 32),
+    threads: clampInt(threads, 2, 64, 24),
     delayMs: clampInt(delayMs, 0, 5000, 0),
     delayMsPerPort: clampInt(delayMsPerPort, 0, 1000, 0),
     portScanMode: (portScanMode === 'sequential' ? 'sequential' : 'parallel'),
-    chunkSize: clampInt(chunkSize, 10, 500, 100)
+    chunkSize: clampInt(chunkSize, 10, 500, 64)
   };
   localStorage.setItem('netrecon_scan_defaults', JSON.stringify(safe));
   return safe;
 }
 
 function applyScanDefaultsToMainInputs(cfg) {
-  document.getElementById('concNum').value = String(clampInt(cfg.threads, 2, 64, 32));
+  document.getElementById('concNum').value = String(clampInt(cfg.threads, 2, 64, 24));
   document.getElementById('delayMs').value = String(clampInt(cfg.delayMs, 0, 5000, 0));
 }
 
@@ -637,7 +637,7 @@ document.getElementById('dlgDefaultChunkSize').addEventListener('input', persist
 document.getElementById('radioParallel').addEventListener('change', () => { updatePortDelayInputState(); persistDefaultsFromDialog(); });
 document.getElementById('radioSequential').addEventListener('change', () => { updatePortDelayInputState(); persistDefaultsFromDialog(); });
 document.getElementById('dlgDefaultsReset').addEventListener('click', () => {
-  const cfg = saveScanDefaults(32, 0, 0, 'parallel', 100);
+  const cfg = saveScanDefaults(24, 0, 0, 'parallel', 64);
   applyScanDefaultsToMainInputs(cfg);
   openDefaultsDlg();
 });
@@ -1008,6 +1008,34 @@ function setIP(prefix, ip) {
 let scanning=false, stopRequested=false;
 const activeControllers = new Set();
 var foundHostsMap={}, foundPingMap={}, totalFound=0, totalOpenPorts=0;
+
+function getResultCounts() {
+  let activeHosts = 0;
+  let deadHosts = 0;
+  for (const ports of Object.values(foundHostsMap)) {
+    if (Array.isArray(ports) && ports.length > 0) activeHosts++;
+    else deadHosts++;
+  }
+  return { activeHosts, deadHosts, totalHosts: activeHosts + deadHosts };
+}
+
+function getFavoriteHostCount() {
+  let favoriteHosts = 0;
+  for (const [ip, ports] of Object.entries(foundHostsMap)) {
+    const hasPortFav = (ports || []).some(port => foundFavSet.has(`${ip}:${port}`));
+    if (foundFavSet.has(ip) || hasPortFav) favoriteHosts++;
+  }
+  return favoriteHosts;
+}
+
+function getStatusCountForFilter() {
+  const counts = getResultCounts();
+  if (_listFilter === 'all') return counts.totalHosts;
+  if (_listFilter === 'dead') return counts.deadHosts;
+  if (_listFilter === 'favorites') return getFavoriteHostCount();
+  return counts.activeHosts;
+}
+
 let timerInterval=null, scanStart=0;
 let selectedRowEl=null, ctxTargetIp='', ctxTargetPorts=[];
 let focusedIp = localStorage.getItem('netrecon_focus_ip') || '';
@@ -1088,8 +1116,7 @@ restoreMarks();
 
 function applyListFilter() {
   document.querySelectorAll('.lv-row').forEach(row => {
-    const isActive  = row.querySelector('.light-on, .light-dead') !== null;
-    const isDead    = row.querySelector('.light-dead') !== null;
+    const isDead    = row.dataset.hostState === 'dead';
     const isRowFav  = row.querySelector('.lv-star .star-on') !== null;
     const paths = row.nextElementSibling;
     const hasPortFav = paths && paths.classList.contains('paths-row')
@@ -1124,6 +1151,7 @@ function applyListFilter() {
       });
     }
   });
+  statusCount.textContent = t('statusHosts', getStatusCountForFilter());
 }
 
 ['btnFilterAll', 'btnFilterFavorites', 'btnFilterActive', 'btnFilterDead'].forEach(id => {
@@ -1540,7 +1568,7 @@ function updateProgress(checked, total, fh, op) {
   statChecked.textContent = checked;
   statFound.textContent   = fh;
   statPorts.textContent   = op;
-  statusCount.textContent = t('statusHosts', fh);
+  statusCount.textContent = t('statusHosts', getStatusCountForFilter());
 }
 function setScanState(on) {
   scanning=on; btnGo.disabled=on; btnStop.disabled=!on;
@@ -2023,6 +2051,7 @@ function addResultRow(ip, openPorts, pingMs) {
   const row = document.createElement('div');
   row.className = 'lv-row';
   row.dataset.ip = ip;
+  row.dataset.hostState = openPorts.length === 0 ? 'dead' : 'active';
 
   // Icon (toggleable checkmark — off by default)
   const cIcon = document.createElement('div');
@@ -2267,7 +2296,9 @@ function addResultRow(ip, openPorts, pingMs) {
 // ══════════════════════════════════════════════════
 //  RESULTS PERSISTENCE
 // ══════════════════════════════════════════════════
-function saveResults() {
+let _saveResultsTimer = null;
+
+function saveResultsNow() {
   try {
     const data = Object.entries(foundHostsMap).map(([ip, ports]) => ({
       ip, ports,
@@ -2278,6 +2309,14 @@ function saveResults() {
     localStorage.setItem('netrecon_results', JSON.stringify(data));
     localStorage.setItem('netrecon_results_ts', Date.now());
   } catch {}
+}
+
+function saveResults() {
+  if (_saveResultsTimer) clearTimeout(_saveResultsTimer);
+  _saveResultsTimer = setTimeout(() => {
+    _saveResultsTimer = null;
+    saveResultsNow();
+  }, 180);
 }
 
 function restoreResults() {
@@ -2291,18 +2330,19 @@ function restoreResults() {
 
     data.forEach(({ ip, ports, ping, hostname, geo }) => {
       foundHostsMap[ip] = ports;
-      totalFound++;
       totalOpenPorts += ports.length;
       if (ping !== null) foundPingMap[ip] = ping;
       if (hostname !== null) hostnameCache[ip] = hostname;
       if (geo) ipGeoCoords[ip] = geo;
       addResultRow(ip, ports, ping);
     });
+    const counts = getResultCounts();
+    totalFound = counts.activeHosts;
     updateProgress(0, 0, totalFound, totalOpenPorts);
     const ageStr = age !== null ? ` (${age} min ago)` : '';
-    setStatus(`Restored ${totalFound} results from last scan${ageStr}.`, 'ok');
+    setStatus(`Restored ${counts.totalHosts} results from last scan${ageStr}.`, 'ok');
     statusCount.textContent = t('statusHosts', totalFound);
-    if (typeof appendCmdLog === 'function') appendCmdLog(`Restored ${totalFound} host${totalFound===1?'':'s'} from last scan${ageStr}.`, 'scan');
+    if (typeof appendCmdLog === 'function') appendCmdLog(`Restored ${counts.totalHosts} result${counts.totalHosts===1?'':'s'} from last scan${ageStr}. Active hosts: ${counts.activeHosts}.`, 'scan');
   } catch {}
 }
 
@@ -2840,6 +2880,27 @@ async function startScan() {
   const _defs = loadScanDefaults();
   const delayMsPerPort = (_defs.portScanMode === 'sequential') ? _defs.delayMsPerPort : 0;
   const portChunkSize = _defs.chunkSize || 100;
+  const maxConcurrentProbes = Math.max(1, concurrency);
+  let inFlightProbes = 0;
+  const probeWaiters = [];
+
+  async function withProbeSlot(task) {
+    while (inFlightProbes >= maxConcurrentProbes) {
+      await new Promise(resolve => probeWaiters.push(resolve));
+    }
+    inFlightProbes++;
+    try {
+      return await task();
+    } finally {
+      inFlightProbes--;
+      const wake = probeWaiters.shift();
+      if (wake) wake();
+    }
+  }
+
+  function scanProbePort(ip, port, ms = 1400) {
+    return withProbeSlot(() => probePort(ip, port, ms));
+  }
 
   // Warn if scanning "all ports" in sequential mode (extremely long time)
   if (portsOverride !== null && _defs.portScanMode === 'sequential' && delayMsPerPort > 50) {
@@ -2885,7 +2946,7 @@ async function startScan() {
     portProgWrap.classList.add('active');
     const pct = total ? Math.round(current / total * 100) : 0;
     portProgFill.style.width = pct + '%';
-    portProgLabel.textContent = `Porty: ${current + 1}–${Math.min(current + 100, total)} / ${total}  (${ip})`;
+    portProgLabel.textContent = `Porty: ${current + 1}–${Math.min(current + portChunkSize, total)} / ${total}  (${ip})`;
   }
   function hidePortProgress() {
     portProgWrap.classList.remove('active');
@@ -2903,7 +2964,7 @@ async function startScan() {
       if (delayBetweenPorts > 0) {
         // Sequential with delay
         for (const port of batch) {
-          const r = await probePort(ip, port, 1400);
+          const r = await scanProbePort(ip, port, 1400);
           results.push({ port, ok: r.ok, ms: r.ms });
           if (delayBetweenPorts > 0 && !stopRequested) {
             await new Promise(resolve => setTimeout(resolve, delayBetweenPorts));
@@ -2912,7 +2973,7 @@ async function startScan() {
       } else {
         // Parallel without delay
         const batchRes = await Promise.all(
-          batch.map(port => probePort(ip, port, 1400).then(r => ({ port, ok: r.ok, ms: r.ms })))
+          batch.map(port => scanProbePort(ip, port, 1400).then(r => ({ port, ok: r.ok, ms: r.ms })))
         );
         results.push(...batchRes);
       }
@@ -2928,6 +2989,7 @@ async function startScan() {
     while (!stopRequested) {
       const idx=nextIdx++; if(idx>=total) return;
       const ip=numToIp(startNum+idx);
+      let lastLiveRowUiUpdateAt = 0;
 
       // Live row update callback for "all ports" mode — fires after each batch of ports
       let liveRowAdded = false;
@@ -2938,13 +3000,15 @@ async function startScan() {
         const pingMs = bestMs === Infinity ? null : bestMs;
         // Only update row if we found new ports since last callback
         if (partialOpen.length === liveOpenCount) return;
-        if (!liveRowAdded) {
-          liveRowAdded = true;
-          totalFound++;
-        }
+        const now = Date.now();
+        // Avoid excessive DOM churn in all-ports mode while still keeping periodic live feedback.
+        if (now - lastLiveRowUiUpdateAt < 180 && partialOpen.length < selectedPorts.length) return;
+        lastLiveRowUiUpdateAt = now;
+        if (!liveRowAdded) liveRowAdded = true;
         totalOpenPorts += partialOpen.length - liveOpenCount;
         liveOpenCount = partialOpen.length;
         foundHostsMap[ip] = partialOpen;
+        totalFound = getResultCounts().activeHosts;
         if (pingMs !== null) foundPingMap[ip] = pingMs;
         addResultRow(ip, partialOpen, pingMs);
       } : null;
@@ -2953,7 +3017,7 @@ async function startScan() {
         ? await probeAllPorts(ip, selectedPorts, delayMsPerPort, onBatch)
         : delayMsPerPort > 0
           ? await probeAllPorts(ip, selectedPorts, delayMsPerPort, onBatch)
-          : await Promise.all(selectedPorts.map(port=>probePort(ip,port,1400).then(r=>({port, ok:r.ok, ms:r.ms}))));
+          : await Promise.all(selectedPorts.map(port=>scanProbePort(ip,port,1400).then(r=>({port, ok:r.ok, ms:r.ms}))));
       const openPorts=res.filter(r=>r.ok).map(r=>r.port);
       const bestMs = res.filter(r=>r.ok).reduce((a,r)=>r.ms<a?r.ms:a, Infinity);
       const pingMs = bestMs === Infinity ? null : bestMs;
@@ -2962,6 +3026,7 @@ async function startScan() {
         // Final update — sync final open ports count and replace row with definitive data
         totalOpenPorts += openPorts.length - liveOpenCount;
         foundHostsMap[ip] = openPorts;
+        totalFound = getResultCounts().activeHosts;
         if (pingMs !== null) foundPingMap[ip] = pingMs;
         addResultRow(ip, openPorts, pingMs);
         if (typeof appendCmdLog === 'function') {
@@ -2969,13 +3034,15 @@ async function startScan() {
           else appendCmdLog(`>> IP  ${ip}  (no open ports)${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
         }
       } else if (openPorts.length) {
-        foundHostsMap[ip]=openPorts; totalFound++; totalOpenPorts+=openPorts.length;
+        foundHostsMap[ip]=openPorts; totalOpenPorts+=openPorts.length;
+        totalFound = getResultCounts().activeHosts;
         if (pingMs !== null) foundPingMap[ip] = pingMs;
         addResultRow(ip, openPorts, pingMs);
         if (typeof appendCmdLog === 'function') appendCmdLog(`>> HOST  ${ip}  ports: [${openPorts.join(', ')}]${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
       } else {
         // Dead host — no open ports, but still add to results
-        foundHostsMap[ip]=[]; totalFound++;
+        foundHostsMap[ip]=[];
+        totalFound = getResultCounts().activeHosts;
         if (pingMs !== null) foundPingMap[ip] = pingMs;
         addResultRow(ip, [], pingMs);
         if (typeof appendCmdLog === 'function') appendCmdLog(`>> DEAD  ${ip}${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
@@ -2990,6 +3057,7 @@ async function startScan() {
 
   await Promise.all(Array.from({length:concurrency},worker));
   setScanState(false);
+  totalFound = getResultCounts().activeHosts;
   updateProgress(total,total,totalFound,totalOpenPorts);
 
   if (totalFound===0 && emptyRow.parentNode) emptyRow.textContent = t('emptyNone');
