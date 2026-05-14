@@ -1913,6 +1913,16 @@ async function lookupHostname(ip) {
 function addResultRow(ip, openPorts, pingMs) {
   if (emptyRow.parentNode) emptyRow.remove();
 
+  // If re-scanning "all ports" - remove old row/pathsRow for this IP
+  const existingRow = document.querySelector(`.lv-row[data-ip="${ip}"]`);
+  if (existingRow && portsOverride !== null) {
+    const existingPaths = existingRow.nextElementSibling;
+    if (existingPaths && existingPaths.classList.contains('paths-row')) {
+      existingPaths.remove();
+    }
+    existingRow.remove();
+  }
+
   // Generic paths — work for any device type
   const paths = [
     {p:'/',l:'/'}, {p:'/admin',l:'/admin'}, {p:'/video',l:'/video'},
@@ -1978,12 +1988,16 @@ function addResultRow(ip, openPorts, pingMs) {
   cIp.innerHTML = `${ip} <span id="acc_${ip.replace(/\./g,'_')}" class="lv-acc-span"></span>`;
   row.appendChild(cIp);
 
+  // Restore expanded state if this IP was previously expanded
+  const wasExpanded = foundExpandedSet.has(ip);
+
   // Expand (+)
   const cExpand = document.createElement('div');
   cExpand.className = 'lv-cell lv-expand-cell';
   const expandBtn = document.createElement('span');
   expandBtn.className = 'row-expand-btn';
-  expandBtn.textContent = '+';
+  expandBtn.textContent = wasExpanded ? '−' : '+';
+  if (wasExpanded) expandBtn.classList.add('open');
   expandBtn.title = 'Pokaż udostępnione zasoby';
   cExpand.appendChild(expandBtn);
   row.appendChild(cExpand);
@@ -2014,6 +2028,10 @@ function addResultRow(ip, openPorts, pingMs) {
   // ── Paths sub-row (expandable below the row) ──
   const pathsRow = document.createElement('div');
   pathsRow.className = 'paths-row';
+  if (wasExpanded) {
+    pathsRow.classList.add('open');
+    pathsRow.style.display = 'flex';
+  }
   const pFrag = document.createDocumentFragment();
   openPorts.forEach((port) => {
     const line = document.createElement('div');
@@ -2721,6 +2739,15 @@ async function startScan() {
   const _defs = loadScanDefaults();
   const delayMsPerPort = (_defs.portScanMode === 'sequential') ? _defs.delayMsPerPort : 0;
   const portChunkSize = _defs.chunkSize || 100;
+
+  // Warn if scanning "all ports" in sequential mode (extremely long time)
+  if (portsOverride !== null && _defs.portScanMode === 'sequential' && delayMsPerPort > 50) {
+    const estMs = selectedPorts.length * (delayMsPerPort + 1400);
+    const estHours = Math.ceil(estMs / 1000 / 3600);
+    const confirmed = await showLargeRangeConfirm(selectedPorts.length, `WARNING: Scanning all ${selectedPorts.length} ports sequentially with ${delayMsPerPort}ms/port delay = ~${estHours} hours per IP!`);
+    if (!confirmed) return;
+  }
+
   foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
   refreshTopologyFilterOptions();
   stopRequested=false; statTime.textContent='0.0s';
@@ -2730,9 +2757,15 @@ async function startScan() {
     appendCmdLog(`IP delay: ${delayMs}ms  |  Port mode: ${_defs.portScanMode === 'sequential' ? `sequential, delay ${delayMsPerPort}ms/port` : 'parallel'}  |  Batch: ${portChunkSize}`, 'scan');
   }
 
-  // Clear list
-  listBody.innerHTML='';
-  listBody.appendChild(emptyRow);
+  // For "all ports" mode, don't clear the list - keep existing results and update rows
+  // For normal scans, clear list
+  if (portsOverride === null) {
+    listBody.innerHTML='';
+    listBody.appendChild(emptyRow);
+  } else {
+    // "All ports" mode: remove emptyRow if present, but keep existing data
+    if (emptyRow.parentNode) emptyRow.remove();
+  }
   emptyRow.textContent = t('emptyScanning');
 
   if (total>500) {
@@ -2759,7 +2792,8 @@ async function startScan() {
   }
 
   // Probe all ports for one IP — chunked to avoid freezing browser, optionally with per-port delay
-  async function probeAllPorts(ip, ports, delayBetweenPorts = 0) {
+  // onBatchResult callback called after each batch with accumulated open ports so far
+  async function probeAllPorts(ip, ports, delayBetweenPorts = 0, onBatchResult = null) {
     const CHUNK = portChunkSize;
     const results = [];
     for (let i = 0; i < ports.length && !stopRequested; i += CHUNK) {
@@ -2781,6 +2815,8 @@ async function startScan() {
         );
         results.push(...batchRes);
       }
+      // Live update after each batch
+      if (onBatchResult) onBatchResult(results);
     }
     hidePortProgress();
     return results;
@@ -2791,19 +2827,57 @@ async function startScan() {
     while (!stopRequested) {
       const idx=nextIdx++; if(idx>=total) return;
       const ip=numToIp(startNum+idx);
+
+      // Live row update callback for "all ports" mode — fires after each batch of ports
+      let liveRowAdded = false;
+      let liveOpenCount = 0;
+      const onBatch = portsOverride !== null ? (partialResults) => {
+        const partialOpen = partialResults.filter(r=>r.ok).map(r=>r.port);
+        const bestMs = partialResults.filter(r=>r.ok).reduce((a,r)=>r.ms<a?r.ms:a, Infinity);
+        const pingMs = bestMs === Infinity ? null : bestMs;
+        // Only update row if we found new ports since last callback
+        if (partialOpen.length === liveOpenCount) return;
+        if (!liveRowAdded) {
+          liveRowAdded = true;
+          totalFound++;
+        }
+        totalOpenPorts += partialOpen.length - liveOpenCount;
+        liveOpenCount = partialOpen.length;
+        foundHostsMap[ip] = partialOpen;
+        if (pingMs !== null) foundPingMap[ip] = pingMs;
+        addResultRow(ip, partialOpen, pingMs);
+      } : null;
+
       const res = selectedPorts.length > 200
-        ? await probeAllPorts(ip, selectedPorts, delayMsPerPort)
+        ? await probeAllPorts(ip, selectedPorts, delayMsPerPort, onBatch)
         : delayMsPerPort > 0
-          ? await probeAllPorts(ip, selectedPorts, delayMsPerPort)
+          ? await probeAllPorts(ip, selectedPorts, delayMsPerPort, onBatch)
           : await Promise.all(selectedPorts.map(port=>probePort(ip,port,1400).then(r=>({port, ok:r.ok, ms:r.ms}))));
       const openPorts=res.filter(r=>r.ok).map(r=>r.port);
       const bestMs = res.filter(r=>r.ok).reduce((a,r)=>r.ms<a?r.ms:a, Infinity);
       const pingMs = bestMs === Infinity ? null : bestMs;
-      if (openPorts.length) {
+
+      if (liveRowAdded) {
+        // Final update — sync final open ports count and replace row with definitive data
+        totalOpenPorts += openPorts.length - liveOpenCount;
+        foundHostsMap[ip] = openPorts;
+        if (pingMs !== null) foundPingMap[ip] = pingMs;
+        addResultRow(ip, openPorts, pingMs);
+        if (typeof appendCmdLog === 'function') {
+          if (openPorts.length) appendCmdLog(`>> HOST  ${ip}  ports: [${openPorts.join(', ')}]${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
+          else appendCmdLog(`>> IP  ${ip}  (no open ports)${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
+        }
+      } else if (openPorts.length) {
         foundHostsMap[ip]=openPorts; totalFound++; totalOpenPorts+=openPorts.length;
         if (pingMs !== null) foundPingMap[ip] = pingMs;
         addResultRow(ip, openPorts, pingMs);
         if (typeof appendCmdLog === 'function') appendCmdLog(`>> HOST  ${ip}  ports: [${openPorts.join(', ')}]${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
+      } else if (portsOverride !== null) {
+        // "all ports" with no batch callback hit — should not happen, but handle gracefully
+        foundHostsMap[ip]=[]; totalFound++;
+        if (pingMs !== null) foundPingMap[ip] = pingMs;
+        addResultRow(ip, [], pingMs);
+        if (typeof appendCmdLog === 'function') appendCmdLog(`>> IP  ${ip}  (no open ports)${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
       }
       checked++;
       if (checked%4===0||checked===total) updateProgress(checked,total,totalFound,totalOpenPorts);
