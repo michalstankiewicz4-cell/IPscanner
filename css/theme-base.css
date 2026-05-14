@@ -360,6 +360,7 @@ body.dragging             { cursor: move !important; }
 .star-off { color: #888; }
 .lv-light { text-align: center; font-size: 11px; line-height: 1; }
 .light-on  { color: #22c55e; }
+.light-dead { color: #ef4444; }
 .light-off { color: #ef4444; }
 .icon-ok       { color: green; font-weight: bold; cursor: pointer; }
 .icon-ok-off   { color: #bbb;  font-weight: bold; cursor: pointer; }

@@ -87,6 +87,12 @@ pub struct GeoResult {
     pub lon: Option<f64>,
 }
 
+#[derive(Deserialize)]
+struct HostnameResult {
+    status: String,
+    reverse: Option<String>,
+}
+
 #[derive(Serialize, Clone)]
 struct TraceRunResult {
     output: String,
@@ -312,6 +318,24 @@ async fn geo_lookup(ip: String) -> Option<GeoResult> {
         .ok()?;
     let geo: GeoResult = client.get(&url).send().await.ok()?.json().await.ok()?;
     if geo.status == "success" { Some(geo) } else { None }
+}
+
+#[tauri::command]
+async fn hostname_lookup(ip: String) -> Option<String> {
+    let url = format!("http://ip-api.com/json/{}?fields=status,reverse", ip);
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .ok()?;
+    let host: HostnameResult = client.get(&url).send().await.ok()?.json().await.ok()?;
+    if host.status == "success" {
+        host.reverse.and_then(|v| {
+            let trimmed = v.trim().to_string();
+            if trimmed.is_empty() { None } else { Some(trimmed) }
+        })
+    } else {
+        None
+    }
 }
 
 /// Returns first detected private IPv4 on active non-loopback interfaces.
@@ -3232,6 +3256,7 @@ fn main() {
             scan_range,
             stop_scan,
             geo_lookup,
+            hostname_lookup,
             get_local_ip,
             get_local_subnets,
             run_traceroute,

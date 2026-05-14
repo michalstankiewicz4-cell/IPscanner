@@ -1041,7 +1041,7 @@ const ctxMenu     = document.getElementById('ctxMenu');
 // ══════════════════════════════════════════════════
 //  LIST FILTER
 // ══════════════════════════════════════════════════
-let _listFilter = 'all'; // 'all' | 'favorites' | 'active' | 'dead'
+let _listFilter = 'active'; // 'all' | 'favorites' | 'active' | 'dead'
 const foundFavSet   = new Set(); // IP favorites
 const foundCheckSet = new Set(); // IP checkmarks
 // port keys stored inside foundFavSet as "ip:port"
@@ -1088,7 +1088,8 @@ restoreMarks();
 
 function applyListFilter() {
   document.querySelectorAll('.lv-row').forEach(row => {
-    const isActive  = row.querySelector('.light-on') !== null;
+    const isActive  = row.querySelector('.light-on, .light-dead') !== null;
+    const isDead    = row.querySelector('.light-dead') !== null;
     const isRowFav  = row.querySelector('.lv-star .star-on') !== null;
     const paths = row.nextElementSibling;
     const hasPortFav = paths && paths.classList.contains('paths-row')
@@ -1097,8 +1098,8 @@ function applyListFilter() {
     const isFav = isRowFav || hasPortFav;
 
     let visible = true;
-    if (_listFilter === 'active')         visible = isActive;
-    else if (_listFilter === 'dead')      visible = !isActive;
+    if (_listFilter === 'active')         visible = !isDead;
+    else if (_listFilter === 'dead')      visible = isDead;
     else if (_listFilter === 'favorites') visible = isFav;
 
     row.style.display = visible ? '' : 'none';
@@ -1324,6 +1325,34 @@ const EXTRA_COLS = [
 ];
 const colsEnabled = { hostname: false, geo: false, device: false, title: false, access: false };
 const BASE_LV_COLS = '20px 18px 18px 87px 26px 56px';
+const ENRICH_QUEUE_CONCURRENCY = 4;
+const enrichQueue = [];
+let enrichWorkers = 0;
+
+function queueRowEnrichment(ip, ports, row) {
+  if (!row) return;
+  if (row.dataset.enrichQueued === '1') return;
+  row.dataset.enrichQueued = '1';
+  enrichQueue.push({ ip, ports, row });
+  drainEnrichQueue();
+}
+
+function drainEnrichQueue() {
+  while (enrichWorkers < ENRICH_QUEUE_CONCURRENCY && enrichQueue.length) {
+    const job = enrichQueue.shift();
+    enrichWorkers++;
+    Promise.resolve()
+      .then(async () => {
+        if (!job.row?.isConnected) return;
+        await enrichRowCols(job.ip, job.ports, job.row);
+      })
+      .finally(() => {
+        if (job.row) delete job.row.dataset.enrichQueued;
+        enrichWorkers--;
+        drainEnrichQueue();
+      });
+  }
+}
 
 function updateColsGrid() {
   const extras = EXTRA_COLS.filter(c => colsEnabled[c.key]).map(c => c.width).join(' ');
@@ -1331,8 +1360,12 @@ function updateColsGrid() {
   document.getElementById('listviewWrap')?.style.setProperty('--lv-cols', cols);
   EXTRA_COLS.forEach(({ key }) => {
     const show = colsEnabled[key];
-    document.querySelector(`.lv-extra-col[data-col="${key}"]`)?.style.setProperty('display', show ? '' : 'none');
+    document.querySelectorAll(`.lv-extra-col[data-col="${key}"]`).forEach(el => {
+      el.classList.toggle('is-hidden', !show);
+      el.style.display = show ? '' : 'none';
+    });
     document.querySelectorAll(`.lv-extra-cell[data-col="${key}"]`).forEach(el => {
+      el.classList.toggle('is-hidden', !show);
       el.style.display = show ? '' : 'none';
     });
   });
@@ -1348,7 +1381,25 @@ async function enrichRowCols(ip, ports, row) {
       const c = cell('hostname'); if (c) c.textContent = h || '—';
     }));
   }
-  if (colsEnabled.geo || colsEnabled.device || colsEnabled.title || colsEnabled.access) {
+  if (colsEnabled.geo) {
+    tasks.push(geoLookup(ip).then(geo => {
+      const c = cell('geo');
+      if (!c) return;
+      if (geo) {
+        const vpnTag = geo.proxy ? `<span class="detail-tag tag-vpn">${t('tagVpn')}</span>` : '';
+        const dcTag = geo.hosting ? `<span class="detail-tag tag-dc">${t('tagDc')}</span>` : '';
+        c.innerHTML =
+          `<div class="detail-line"><b>${t('geoCountry')}</b> ${geo.country || '?'} — ${geo.city || '?'}${vpnTag}${dcTag}</div>` +
+          `<div class="detail-line"><b>${t('geoIsp')}</b> ${geo.isp || '?'}</div>` +
+          `<div class="detail-line"><b>${t('geoAs')}</b> ${geo.as || '?'}</div>`;
+      } else {
+        c.innerHTML = isPrivateIP(ip)
+          ? `<div class="detail-line detail-muted">${t('geoLocal')}</div>`
+          : `<div class="detail-line status-error">${t('geoError')}</div>`;
+      }
+    }));
+  }
+  if (colsEnabled.device || colsEnabled.title || colsEnabled.access) {
     tasks.push(enrichRow(ip, ports, {
       cGeo:    cell('geo'),
       cDevice: cell('device'),
@@ -1402,11 +1453,14 @@ document.querySelectorAll('#colsPanel input[type="checkbox"]').forEach(cb => {
       document.querySelectorAll('.lv-row[data-ip]').forEach(row => {
         const ip = row.dataset.ip;
         const ports = foundHostsMap[ip] || [];
-        enrichRowCols(ip, ports, row);
+        queueRowEnrichment(ip, ports, row);
       });
     }
   });
 });
+
+// Apply base column visibility on startup.
+updateColsGrid();
 
 // ══════════════════════════════════════════════════
 //  HELPERS
@@ -1752,8 +1806,17 @@ function isPrivateIP(ip) {
   return isPrivateIp(ipToNum(ip));
 }
 
+const geoCache = {};
+const geoPending = new Map();
+const hostnameCache = {};
+const hostnamePending = new Map();
+
 // ── Geolocation via ip-api.com ──
 async function geoLookup(ip) {
+  if (geoCache[ip] !== undefined) return geoCache[ip];
+  if (geoPending.has(ip)) return geoPending.get(ip);
+
+  const run = (async () => {
   try {
     let d;
     if (_tauriInvoke) {
@@ -1767,14 +1830,23 @@ async function geoLookup(ip) {
       d = await r.json();
     }
     if (d && d.status === 'success') {
+      geoCache[ip] = d;
       if (d.lat && d.lon) {
         ipGeoCoords[ip] = { lat: d.lat, lon: d.lon, country: d.country };
         updateGlobeDots();
       }
       return d;
     }
+    geoCache[ip] = null;
     return null;
-  } catch { return null; }
+  } catch {
+    geoCache[ip] = null;
+    return null;
+  }
+  })();
+
+  geoPending.set(ip, run);
+  return run.finally(() => geoPending.delete(ip));
 }
 
 // ── Page title via CORS proxy (external IPs only) ──
@@ -1892,9 +1964,21 @@ async function enrichRow(ip, ports, cells) {
 }
 
 // ── Hostname lookup via ip-api (already used for geo, reuse) ──
-const hostnameCache = {};
 async function lookupHostname(ip) {
   if (hostnameCache[ip] !== undefined) return hostnameCache[ip];
+  if (hostnamePending.has(ip)) return hostnamePending.get(ip);
+
+  const run = (async () => {
+  if (_tauriInvoke) {
+    try {
+      const result = await _tauriInvoke('hostname_lookup', { ip });
+      hostnameCache[ip] = result || null;
+      return hostnameCache[ip];
+    } catch {
+      hostnameCache[ip] = null;
+      return null;
+    }
+  }
   try {
     const r = await fetch(
       `http://ip-api.com/json/${ip}?fields=status,reverse`,
@@ -1905,6 +1989,11 @@ async function lookupHostname(ip) {
     hostnameCache[ip] = result;
     return result;
   } catch { hostnameCache[ip] = null; return null; }
+
+  })();
+
+  hostnamePending.set(ip, run);
+  return run.finally(() => hostnamePending.delete(ip));
 }
 
 // ══════════════════════════════════════════════════
@@ -1979,7 +2068,10 @@ function addResultRow(ip, openPorts, pingMs) {
   // Status light
   const cLight = document.createElement('div');
   cLight.className = 'lv-cell lv-light';
-  cLight.innerHTML = '<span class="light-on" title="Active">●</span>';
+  const isDead = openPorts.length === 0;
+  const lightClass = isDead ? 'light-dead' : 'light-on';
+  const lightTitle = isDead ? 'Dead' : 'Active';
+  cLight.innerHTML = `<span class="${lightClass}" title="${lightTitle}">●</span>`;
   row.appendChild(cLight);
 
   // IP
@@ -1991,14 +2083,20 @@ function addResultRow(ip, openPorts, pingMs) {
   // Restore expanded state if this IP was previously expanded
   const wasExpanded = foundExpandedSet.has(ip);
 
-  // Expand (+)
+  // Expand (+) — only for hosts with open ports
   const cExpand = document.createElement('div');
   cExpand.className = 'lv-cell lv-expand-cell';
   const expandBtn = document.createElement('span');
   expandBtn.className = 'row-expand-btn';
-  expandBtn.textContent = wasExpanded ? '−' : '+';
-  if (wasExpanded) expandBtn.classList.add('open');
-  expandBtn.title = 'Pokaż udostępnione zasoby';
+  if (openPorts.length > 0) {
+    expandBtn.textContent = wasExpanded ? '−' : '+';
+    if (wasExpanded) expandBtn.classList.add('open');
+    expandBtn.title = 'Pokaż udostępnione zasoby';
+  } else {
+    expandBtn.textContent = '';
+    expandBtn.title = '';
+    expandBtn.style.cursor = 'default';
+  }
   cExpand.appendChild(expandBtn);
   row.appendChild(cExpand);
 
@@ -2019,6 +2117,7 @@ function addResultRow(ip, openPorts, pingMs) {
   EXTRA_COLS.forEach(({ key }) => {
     const c = document.createElement('div');
     c.className = 'lv-cell lv-extra-cell';
+    c.classList.toggle('is-hidden', !colsEnabled[key]);
     c.dataset.col = key;
     c.style.display = colsEnabled[key] ? '' : 'none';
     c.textContent = '…';
@@ -2111,15 +2210,17 @@ function addResultRow(ip, openPorts, pingMs) {
   });
   pathsRow.appendChild(pFrag);
 
-  expandBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    const open = pathsRow.classList.toggle('open');
-    pathsRow.style.display = open ? 'flex' : 'none';
-    expandBtn.textContent = open ? '−' : '+';
-    expandBtn.classList.toggle('open', open);
-    if (open) foundExpandedSet.add(ip); else foundExpandedSet.delete(ip);
-    saveExpanded();
-  });
+  if (openPorts.length > 0) {
+    expandBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const open = pathsRow.classList.toggle('open');
+      pathsRow.style.display = open ? 'flex' : 'none';
+      expandBtn.textContent = open ? '−' : '+';
+      expandBtn.classList.toggle('open', open);
+      if (open) foundExpandedSet.add(ip); else foundExpandedSet.delete(ip);
+      saveExpanded();
+    });
+  }
 
   // ── Left click → select only (no detail, no preview) ──
   row.addEventListener('click', () => {
@@ -2148,7 +2249,7 @@ function addResultRow(ip, openPorts, pingMs) {
   applyListFilter();
 
   // Enrich extra columns if any enabled
-  enrichRowCols(ip, openPorts, row);
+  queueRowEnrichment(ip, openPorts, row);
 
   // ── Auto geo-locate for globe dots ──
   if (!ipGeoCoords[ip]) {
@@ -2872,12 +2973,12 @@ async function startScan() {
         if (pingMs !== null) foundPingMap[ip] = pingMs;
         addResultRow(ip, openPorts, pingMs);
         if (typeof appendCmdLog === 'function') appendCmdLog(`>> HOST  ${ip}  ports: [${openPorts.join(', ')}]${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
-      } else if (portsOverride !== null) {
-        // "all ports" with no batch callback hit — should not happen, but handle gracefully
+      } else {
+        // Dead host — no open ports, but still add to results
         foundHostsMap[ip]=[]; totalFound++;
         if (pingMs !== null) foundPingMap[ip] = pingMs;
         addResultRow(ip, [], pingMs);
-        if (typeof appendCmdLog === 'function') appendCmdLog(`>> IP  ${ip}  (no open ports)${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
+        if (typeof appendCmdLog === 'function') appendCmdLog(`>> DEAD  ${ip}${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
       }
       checked++;
       if (checked%4===0||checked===total) updateProgress(checked,total,totalFound,totalOpenPorts);
