@@ -1528,6 +1528,156 @@ body.tool-window-mode #mainWin {
 .enrich-body-empty   { color: #808080; }
 .enrich-body-error   { color: #c00; }
 
+/* ── Settings Row with History ── */
+.settings-row-sm-with-history {
+  display: flex; gap: 12px; align-items: flex-start; margin-bottom: 6px;
+}
+
+.settings-row-sm-col {
+  flex: 1; display: flex; flex-direction: column;
+}
+
+.settings-row-sm-history {
+  flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; width: 190px;
+}
+
+.scan-history-label {
+  font-size: 10px; font-weight: bold; color: #000080; white-space: nowrap;
+}
+
+.scan-history-list {
+  border-top:   1px solid #808080;
+  border-left:  1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom:1px solid #fff;
+  box-shadow: inset 1px 1px 0 #404040;
+  background: #fff;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 64px;
+  font-size: 10px;
+  min-width: 0;
+}
+
+.scan-history-list::-webkit-scrollbar {
+  width: 12px;
+}
+
+.scan-history-list::-webkit-scrollbar-track {
+  background: #c0c0c0;
+  border-top: 1px solid #808080;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+  box-shadow: inset 1px 1px 0 #909090;
+}
+
+.scan-history-list::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border-top:   1px solid #fff;
+  border-left:  1px solid #fff;
+  border-right: 1px solid #404040;
+  border-bottom:1px solid #404040;
+  box-shadow: inset 1px 1px 0 #dfdfdf;
+}
+
+.scan-history-list::-webkit-scrollbar-thumb:hover {
+  background: #b0b0b0;
+}
+
+.scan-history-empty {
+  padding: 6px 4px;
+  color: #808080;
+  font-style: italic;
+  text-align: center;
+  font-size: 9px;
+}
+
+.scan-history-item {
+  padding: 3px 4px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scan-history-item:hover {
+  background: #f0f8ff;
+}
+
+.scan-history-item-range {
+  flex: 1;
+  min-width: 23ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #000;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.scan-history-range-text {
+  display: inline-flex;
+  align-items: center;
+}
+
+.scan-history-ip {
+  display: inline-flex;
+  align-items: center;
+}
+
+.scan-history-octet {
+  display: inline-block;
+  width: 3ch;
+  text-align: center;
+}
+
+.scan-history-sep,
+.scan-history-range-dash {
+  display: inline-block;
+}
+
+.scan-history-item:hover .scan-history-item-range {
+  color: #000080;
+  font-weight: bold;
+}
+
+.scan-history-item-delete {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: #808080;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 1px;
+}
+
+.scan-history-item-delete:hover {
+  background: #ff6b6b;
+  color: #fff;
+  border-color: #c92a2a;
+}
+
+.scan-history-item.selected {
+  background: #000080;
+  color: #fff;
+}
+
+.scan-history-item.selected .scan-history-item-range {
+  color: #fff;
+}
+
 /* ── country list ranges count ── */
 .country-ranges-count {
   margin-left: auto;

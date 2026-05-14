@@ -206,3 +206,13 @@ body.skin-purple-dark a,
 body.skin-purple-dark .statusbar a {
   color: #b2dcff;
 }
+
+/* Scan history items */
+body.skin-purple-dark .scan-history-item:hover {
+  background: #4a3570 !important;
+}
+
+body.skin-purple-dark .scan-history-item.selected {
+  background: #6d46b8 !important;
+  color: #fff !important;
+}

@@ -175,3 +175,13 @@ body.skin-retrogray a,
 body.skin-retrogray .statusbar a {
   color: #000080;
 }
+
+/* Scan history items */
+body.skin-retrogray .scan-history-item:hover {
+  background: #a9a9a9 !important;
+}
+
+body.skin-retrogray .scan-history-item.selected {
+  background: #7a7a7a !important;
+  color: #ffffff !important;
+}

@@ -1009,6 +1009,11 @@ let scanning=false, stopRequested=false;
 const activeControllers = new Set();
 var foundHostsMap={}, foundPingMap={}, totalFound=0, totalOpenPorts=0;
 
+// ── Scan History ──
+const SCAN_HISTORY_KEY = 'netrecon_scan_history';
+const MAX_HISTORY_ITEMS = 50;
+let scanHistory = JSON.parse(localStorage.getItem(SCAN_HISTORY_KEY)) || [];
+
 function getResultCounts() {
   let activeHosts = 0;
   let deadHosts = 0;
@@ -2859,6 +2864,9 @@ async function startScan() {
   const startNum=ipToNum(startIp), endNum=ipToNum(endIp);
   if (startNum>endNum) { setStatus(t('errIpRange'),'err'); return; }
 
+  // Add to scan history
+  addToScanHistory(`${startIp} - ${endIp}`);
+
   // Confirm if range > 256
   if (endNum - startNum + 1 > 256) {
     const confirmed = await showLargeRangeConfirm(endNum - startNum + 1);
@@ -3103,3 +3111,149 @@ applyLang();
 applyScanDefaultsToMainInputs(loadScanDefaults());
 restoreTraceRoutes();
 refreshTopologyFilterOptions();
+
+// ══════════════════════════════════════════════════
+//  SCAN HISTORY MANAGEMENT
+// ══════════════════════════════════════════════════
+
+function addToScanHistory(rangeStr) {
+  // Remove if already exists (move to front)
+  scanHistory = scanHistory.filter(item => item !== rangeStr);
+  // Add to front
+  scanHistory.unshift(rangeStr);
+  // Keep only MAX_HISTORY_ITEMS
+  if (scanHistory.length > MAX_HISTORY_ITEMS) {
+    scanHistory = scanHistory.slice(0, MAX_HISTORY_ITEMS);
+  }
+  // Save to localStorage
+  localStorage.setItem(SCAN_HISTORY_KEY, JSON.stringify(scanHistory));
+  // Render the list
+  renderScanHistory();
+}
+
+function removeFromScanHistory(rangeStr) {
+  scanHistory = scanHistory.filter(item => item !== rangeStr);
+  localStorage.setItem(SCAN_HISTORY_KEY, JSON.stringify(scanHistory));
+  renderScanHistory();
+}
+
+function buildHistoryIpNode(ip) {
+  const ipWrap = document.createElement('span');
+  ipWrap.className = 'scan-history-ip';
+
+  const parts = String(ip || '').trim().split('.');
+  if (parts.length !== 4) {
+    ipWrap.textContent = String(ip || '').trim();
+    return ipWrap;
+  }
+
+  parts.forEach((part, idx) => {
+    const octet = document.createElement('span');
+    octet.className = 'scan-history-octet';
+    octet.textContent = String(part).trim();
+    ipWrap.appendChild(octet);
+
+    if (idx < 3) {
+      const dot = document.createElement('span');
+      dot.className = 'scan-history-sep';
+      dot.textContent = '.';
+      ipWrap.appendChild(dot);
+    }
+  });
+
+  return ipWrap;
+}
+
+function buildHistoryRangeNode(rangeStr) {
+  const rangeWrap = document.createElement('span');
+  rangeWrap.className = 'scan-history-range-text';
+
+  const parts = String(rangeStr || '').split(' - ').map(s => s.trim());
+  if (parts.length !== 2) {
+    rangeWrap.textContent = String(rangeStr || '');
+    return rangeWrap;
+  }
+
+  rangeWrap.appendChild(buildHistoryIpNode(parts[0]));
+
+  const dash = document.createElement('span');
+  dash.className = 'scan-history-range-dash';
+  dash.textContent = ' - ';
+  rangeWrap.appendChild(dash);
+
+  rangeWrap.appendChild(buildHistoryIpNode(parts[1]));
+  return rangeWrap;
+}
+
+function renderScanHistory() {
+  const historyList = document.getElementById('scanHistoryList');
+  if (!historyList) return;
+
+  if (scanHistory.length === 0) {
+    historyList.innerHTML = '<div class="scan-history-empty">No history</div>';
+    return;
+  }
+
+  historyList.innerHTML = '';
+  scanHistory.forEach((rangeStr) => {
+    const item = document.createElement('div');
+    item.className = 'scan-history-item';
+    item.dataset.range = rangeStr;
+
+    const rangeEl = document.createElement('div');
+    rangeEl.className = 'scan-history-item-range';
+    rangeEl.appendChild(buildHistoryRangeNode(rangeStr));
+
+    const deleteBtn = document.createElement('div');
+    deleteBtn.className = 'scan-history-item-delete';
+    deleteBtn.title = 'Delete';
+    deleteBtn.textContent = '✕';
+
+    item.appendChild(rangeEl);
+    item.appendChild(deleteBtn);
+
+    // Double-click to load range
+    item.addEventListener('dblclick', () => {
+      loadRangeFromHistory(rangeStr);
+    });
+
+    // Delete button
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeFromScanHistory(rangeStr);
+    });
+
+    historyList.appendChild(item);
+  });
+}
+
+function loadRangeFromHistory(rangeStr) {
+  // Parse "start - end" format
+  const parts = rangeStr.split(' - ').map(s => s.trim());
+  if (parts.length !== 2) return;
+
+  const startIp = parts[0];
+  const endIp = parts[1];
+
+  // Validate IPs
+  if (!isIPv4(startIp) || !isIPv4(endIp)) return;
+
+  // Fill in the IP range fields
+  setIP('f', startIp);
+  setIP('t', endIp);
+
+  // Highlight the item briefly
+  const historyList = document.getElementById('scanHistoryList');
+  if (historyList) {
+    const items = historyList.querySelectorAll('.scan-history-item');
+    items.forEach(item => {
+      if (item.dataset.range === rangeStr) {
+        item.classList.add('selected');
+        setTimeout(() => item.classList.remove('selected'), 800);
+      }
+    });
+  }
+}
+
+// Initialize history rendering on page load
+renderScanHistory();

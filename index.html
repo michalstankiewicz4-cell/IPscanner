@@ -126,28 +126,41 @@
     <div class="groupbox">
       <span class="groupbox-legend" data-i18n="scanSettings">Scan Settings</span>
 
-      <!-- External IP -->
-      <div class="settings-row-sm">
-        <button class="btn95 btn-wide-132" id="btnMyIp" data-i18n="btnMyIp">🌐 My External IP</button>
-        <span id="myIpResult" class="ip-result-label"></span>
-        <button class="btn95 btn-action-sm initially-hidden" id="btnCopyMyIp" data-i18n="btnCopy">📋 Copy</button>
-        <button class="btn95 btn-action-sm initially-hidden" id="btnUseMyIp"  data-i18n="btnUse">➤ Use</button>
-      </div>
+      <!-- IP Detection Buttons with History -->
+      <div class="settings-row-sm-with-history">
+        <div class="settings-row-sm-col">
+          <!-- External IP -->
+          <div class="settings-row-sm">
+            <button class="btn95 btn-wide-132" id="btnMyIp" data-i18n="btnMyIp">🌐 My External IP</button>
+            <span id="myIpResult" class="ip-result-label"></span>
+            <button class="btn95 btn-action-sm initially-hidden" id="btnCopyMyIp" data-i18n="btnCopy">📋 Copy</button>
+            <button class="btn95 btn-action-sm initially-hidden" id="btnUseMyIp"  data-i18n="btnUse">➤ Use</button>
+          </div>
 
-      <!-- Local IP -->
-      <div class="settings-row-sm">
-        <button class="btn95 btn-wide-132" id="btnMyLocalIp" data-i18n="btnMyLocalIp">🏠 My Local IP</button>
-        <span id="myLocalIpResult" class="ip-result-label"></span>
-        <button class="btn95 btn-action-sm initially-hidden" id="btnCopyMyLocalIp" data-i18n="btnCopy">📋 Copy</button>
-        <button class="btn95 btn-action-sm initially-hidden" id="btnUseMyLocalIp"  data-i18n="btnUse">➤ Use</button>
-      </div>
+          <!-- Local IP -->
+          <div class="settings-row-sm">
+            <button class="btn95 btn-wide-132" id="btnMyLocalIp" data-i18n="btnMyLocalIp">🏠 My Local IP</button>
+            <span id="myLocalIpResult" class="ip-result-label"></span>
+            <button class="btn95 btn-action-sm initially-hidden" id="btnCopyMyLocalIp" data-i18n="btnCopy">📋 Copy</button>
+            <button class="btn95 btn-action-sm initially-hidden" id="btnUseMyLocalIp"  data-i18n="btnUse">➤ Use</button>
+          </div>
 
-      <!-- Local Subnets -->
-      <div class="settings-row-sm-wrap">
-        <button class="btn95 btn-wide-132" id="btnLocalSubnets" data-i18n="btnLocalSubnets">🧭 Local Subnets</button>
-        <span id="localSubnetsResult" class="ip-result-label"></span>
-        <select id="localSubnetSelect" class="select95 initially-hidden"></select>
-        <button class="btn95 btn-action-sm initially-hidden" id="btnUseLocalSubnet" data-i18n="btnUse">➤ Use</button>
+          <!-- Local Subnets -->
+          <div class="settings-row-sm-wrap">
+            <button class="btn95 btn-wide-132" id="btnLocalSubnets" data-i18n="btnLocalSubnets">🧭 Local Subnets</button>
+            <span id="localSubnetsResult" class="ip-result-label"></span>
+            <select id="localSubnetSelect" class="select95 initially-hidden"></select>
+            <button class="btn95 btn-action-sm initially-hidden" id="btnUseLocalSubnet" data-i18n="btnUse">➤ Use</button>
+          </div>
+        </div>
+
+        <!-- History panel -->
+        <div class="settings-row-sm-history">
+          <div class="scan-history-label">📋 Range History:</div>
+          <div class="scan-history-list" id="scanHistoryList">
+            <div class="scan-history-empty">No history</div>
+          </div>
+        </div>
       </div>
 
       <!-- Preset selector -->

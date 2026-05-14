@@ -414,6 +414,16 @@ body.skin-workbench #macroCtxDelete {
   color: #d7dee8 !important;
 }
 
+/* Scan history items */
+body.skin-workbench .scan-history-item:hover {
+  background: #334455 !important;
+}
+
+body.skin-workbench .scan-history-item.selected {
+  background: #0e639c !important;
+  color: #fff !important;
+}
+
 /* Versions dialog content uses inline light background in HTML; force dark readable panel in workbench skin. */
 body.skin-workbench #dlgVersionsOverlay .dlg-body > div {
   background: #1f2530 !important;

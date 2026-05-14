@@ -148,3 +148,13 @@ body.skin-black-flat a,
 body.skin-black-flat .statusbar a {
   color: #9dff9d;
 }
+
+/* Scan history items */
+body.skin-black-flat .scan-history-item:hover {
+  background: #163816 !important;
+}
+
+body.skin-black-flat .scan-history-item.selected {
+  background: #2d5a2d !important;
+  color: #a7ffa7 !important;
+}

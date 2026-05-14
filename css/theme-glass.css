@@ -338,6 +338,16 @@ body.skin-glass #cmdWin > div:not(.titlebar) {
   background: linear-gradient(180deg, rgba(240, 248, 255, 0.96), rgba(210, 227, 246, 0.94)) !important;
 }
 
+/* Scan history items */
+body.skin-glass .scan-history-item:hover {
+  background: #e0f2ff !important;
+}
+
+body.skin-glass .scan-history-item.selected {
+  background: #0e639c !important;
+  color: #fff !important;
+}
+
 body.skin-glass #cmdWin > div:last-child {
   background: #000000 !important;
 }
