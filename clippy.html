@@ -130,6 +130,26 @@
     const TIP_INTERVAL_MS = 9000;
 
     const _invoke = window.__TAURI_INTERNALS__?.invoke;
+    const _getCurrentWindow =
+      window.__TAURI__?.window?.getCurrentWindow ||
+      window.__TAURI__?.webviewWindow?.getCurrentWindow ||
+      window.__TAURI_INTERNALS__?.window?.getCurrentWindow;
+
+    function _startDraggingFallback() {
+      const w = _getCurrentWindow ? _getCurrentWindow() : null;
+      if (w && typeof w.startDragging === 'function') {
+        return w.startDragging();
+      }
+      return Promise.reject(new Error('startDragging unavailable'));
+    }
+
+    function _closeWindowFallback() {
+      const w = _getCurrentWindow ? _getCurrentWindow() : null;
+      if (w && typeof w.close === 'function') {
+        return w.close();
+      }
+      return Promise.reject(new Error('close unavailable'));
+    }
 
     function tips() { return TIPS[lang]; }
 
@@ -161,7 +181,13 @@
     document.getElementById('clippy-char').addEventListener('mousedown', (e) => {
       if (e.button !== 0) return;
       e.preventDefault();
-      if (_invoke) _invoke('window_start_dragging').catch(() => {});
+      if (_invoke) {
+        _invoke('window_start_dragging').catch(() => {
+          _startDraggingFallback().catch(() => {});
+        });
+        return;
+      }
+      _startDraggingFallback().catch(() => {});
     });
 
     // Click char → next tip
@@ -180,11 +206,21 @@
     // Close button — closes this OS window
     document.getElementById('clippy-close').addEventListener('click', () => {
       stopTimer();
-      if (_invoke) _invoke('window_close').catch(() => {});
+      if (_invoke) {
+        _invoke('window_close').catch(() => {
+          _closeWindowFallback().catch(() => {});
+        });
+        return;
+      }
+      _closeWindowFallback().catch(() => {});
     });
 
     showTip(false);
     startTimer();
+
+    if (_invoke) {
+      _invoke('clippy_window_ready').catch(() => {});
+    }
   </script>
 </body>
 </html>

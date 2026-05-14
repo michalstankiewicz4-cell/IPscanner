@@ -195,7 +195,7 @@
           <span class="oct-dot">.</span>
           <input class="oct" id="t3" maxlength="3" placeholder="254"/>
         </div>
-        <button class="btn95 ml-10" id="btnScanSpeed" onclick="openDefaultsDlg()">⚙ Scan Speed</button>
+        <button class="btn95 ml-10" id="btnScanSpeed">⚙ Scan Speed</button>
         <input type="number" min="2" max="64" value="24" id="concNum" class="is-hidden"/>
         <input type="number" min="0" max="5000" value="0" id="delayMs" class="is-hidden"/>
       </div>
@@ -293,7 +293,7 @@
     <span>📝</span>
     <span class="title-fill" data-i18n="notepadWinTitle">About</span>
     <div class="titlebar-btns">
-      <div class="title-btn title-btn-clickable" onclick="closeNotepad()">✕</div>
+      <div class="title-btn title-btn-clickable" id="btnNotepadClose">✕</div>
     </div>
   </div>
 
@@ -606,7 +606,7 @@
     <div class="dlg-title">
       <span>🌍</span>
       <span data-i18n="menuCountries">Country IP Library</span>
-      <div class="title-btn" onclick="closeCountriesDlg()">✕</div>
+      <div class="title-btn" id="btnCountriesCloseX">✕</div>
     </div>
     <div class="dlg-body dlg-body-compact dlg-icon-body">
       <span class="dlg-icon dlg-icon-versions">🌍</span>
@@ -633,7 +633,7 @@
       </div>
     </div>
     <div class="dlg-footer">
-      <button class="btn95" onclick="closeCountriesDlg()" data-i18n="dlgCancel">Cancel</button>
+      <button class="btn95" id="btnCountriesCancel" data-i18n="dlgCancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -644,7 +644,7 @@
     <div class="dlg-title">
       <span>⚙</span>
       <span data-i18n="menuPresets">Port Presets</span>
-      <div class="title-btn" onclick="closePresetsDlg()">✕</div>
+      <div class="title-btn" id="btnPresetsCloseX">✕</div>
     </div>
     <div class="dlg-body dlg-icon-body dlg-icon-body-compact">
       <span class="dlg-icon">⚙</span>
@@ -680,7 +680,7 @@
     </div>
     <div class="dlg-footer">
       <button class="btn95" id="dlgPresetsOk" data-i18n="dlgOk">OK</button>
-      <button class="btn95" onclick="closePresetsDlg()" data-i18n="dlgCancel">Cancel</button>
+      <button class="btn95" id="btnPresetsCancel" data-i18n="dlgCancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -691,7 +691,7 @@
     <div class="dlg-title">
       <span>⚙</span>
       <span data-i18n="dlgTitle">Options</span>
-      <div class="title-btn" onclick="closeLangDlg()">✕</div>
+      <div class="title-btn" id="btnLangCloseX">✕</div>
     </div>
     <div class="dlg-body dlg-icon-body">
       <span class="dlg-icon">⚙</span>
@@ -724,7 +724,7 @@
     <div class="dlg-title">
       <span>⚙</span>
       <span data-i18n="menuDefaults">Default Scan Values...</span>
-      <div class="title-btn" onclick="closeDefaultsDlg()">✕</div>
+      <div class="title-btn" id="btnDefaultsCloseX">✕</div>
     </div>
     <div class="dlg-body dlg-icon-body">
       <span class="dlg-icon">⚙</span>
@@ -769,7 +769,7 @@
     <div class="dlg-footer">
       <button class="btn95 ml-auto" id="dlgDefaultsReset">↺ Reset</button>
       <button class="btn95" id="dlgDefaultsOk" data-i18n="dlgOk">OK</button>
-      <button class="btn95" id="dlgDefaultsCancel" data-i18n="dlgCancel" onclick="closeDefaultsDlg()">Cancel</button>
+      <button class="btn95" id="dlgDefaultsCancel" data-i18n="dlgCancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -780,7 +780,7 @@
     <div class="dlg-title">
       <span>🛡</span>
       <span class="title-fill">IP Scan Watch</span>
-      <div class="title-btn" onclick="closeScanWatchDlg()">✕</div>
+      <div class="title-btn" id="btnScanWatchCloseX">✕</div>
     </div>
     <div class="dlg-body">
       <div class="dlg-groupbox">
@@ -819,7 +819,7 @@
       <button class="btn95" id="btnScanWatchCheckNow" title="Run one immediate detection pass.">Check now</button>
       <button class="btn95" id="btnScanWatchStart" title="Start automatic periodic detection checks.">Start watch</button>
       <button class="btn95" id="btnScanWatchStop" disabled title="Stop automatic periodic checks.">Stop</button>
-      <button class="btn95" onclick="closeScanWatchDlg()" title="Close this window.">Close</button>
+      <button class="btn95" id="btnScanWatchCloseBtn" title="Close this window.">Close</button>
     </div>
   </div>
 </div>
@@ -830,7 +830,7 @@
     <div class="dlg-title">
       <span>📡</span>
       <span class="title-fill">WiFi Detector</span>
-      <div class="title-btn" onclick="closeWifiDetectorDlg()">✕</div>
+      <div class="title-btn" id="btnWifiDetectorCloseX">✕</div>
     </div>
     <div class="dlg-body">
       <div class="dlg-groupbox">
@@ -863,7 +863,7 @@
       <button class="btn95" id="btnWifiDetectorCheckNow" title="Run one immediate WiFi detection pass.">Check now</button>
       <button class="btn95" id="btnWifiDetectorStart" title="Start automatic periodic checks.">Start watch</button>
       <button class="btn95" id="btnWifiDetectorStop" disabled title="Stop automatic periodic checks.">Stop</button>
-      <button class="btn95" onclick="closeWifiDetectorDlg()" title="Close this window.">Close</button>
+      <button class="btn95" id="btnWifiDetectorCloseBtn" title="Close this window.">Close</button>
     </div>
   </div>
 </div>
@@ -1225,22 +1225,24 @@
           <option value="copilot">Copilot API (GitHub Models)</option>
         </select>
       </div>
-      <div class="dlg-row dlg-row-mb6">
-        <label class="dlg-label-98" for="aiModelInput">Model:</label>
-        <input class="dlg-input95 ai-input-grow" id="aiModelInput" type="text" value="claude-3-5-sonnet-latest"/>
-      </div>
-      <div class="dlg-row dlg-row-mb0">
-        <label class="dlg-label-98" for="aiApiKeyInput">API Key:</label>
-        <input class="dlg-input95 ai-input-grow" id="aiApiKeyInput" type="password" placeholder="Paste provider API key"/>
-      </div>
-      <div class="dlg-row dlg-row-mb0">
-        <label class="dlg-label-98" for="aiKeyStorageMode">Key storage:</label>
-        <select class="select95 ai-input-grow" id="aiKeyStorageMode">
-          <option value="local">Local storage</option>
-          <option value="ram">RAM only</option>
-          <option value="secure">Secure storage</option>
-        </select>
-      </div>
+      <form autocomplete="on" onsubmit="return false;">
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-98" for="aiModelInput">Model:</label>
+          <input class="dlg-input95 ai-input-grow" id="aiModelInput" type="text" value="claude-3-5-sonnet-latest"/>
+        </div>
+        <div class="dlg-row dlg-row-mb0">
+          <label class="dlg-label-98" for="aiApiKeyInput">API Key:</label>
+          <input class="dlg-input95 ai-input-grow" id="aiApiKeyInput" type="password" autocomplete="current-password" placeholder="Paste provider API key"/>
+        </div>
+        <div class="dlg-row dlg-row-mb0">
+          <label class="dlg-label-98" for="aiKeyStorageMode">Key storage:</label>
+          <select class="select95 ai-input-grow" id="aiKeyStorageMode">
+            <option value="local">Local storage</option>
+            <option value="ram">RAM only</option>
+            <option value="secure">Secure storage</option>
+          </select>
+        </div>
+      </form>
     </div>
 
     <div class="dlg-groupbox dlg-groupbox-mt12">
@@ -1310,22 +1312,24 @@
 
     <div class="dlg-groupbox dlg-groupbox-mt12">
       <span class="dlg-groupbox-legend" data-i18n="phoneLookupApiKeys">API Keys Configuration</span>
-      <div class="dlg-row dlg-row-mb6">
-        <label class="dlg-label-98" for="phoneLookupNumVerifyKey">NumVerify:</label>
-        <input class="dlg-input95 ai-input-grow" id="phoneLookupNumVerifyKey" type="password" placeholder="Your NumVerify API key (free: 100/month)"/>
-      </div>
-      <div class="dlg-row dlg-row-mb6">
-        <label class="dlg-label-98" for="phoneLookupOpenCellIDKey">OpenCellID:</label>
-        <input class="dlg-input95 ai-input-grow" id="phoneLookupOpenCellIDKey" type="password" placeholder="Your OpenCellID API key"/>
-      </div>
-      <div class="dlg-row dlg-row-mb6">
-        <label class="dlg-label-98" for="phoneLookupGoogleKey">Google People:</label>
-        <input class="dlg-input95 ai-input-grow" id="phoneLookupGoogleKey" type="password" placeholder="Your Google People API key (requires OAuth)"/>
-      </div>
-      <div class="dlg-row dlg-row-mb0">
-        <button class="btn95" id="btnPhoneLookupSaveKeys" data-i18n="btnSave">Save Keys</button>
-        <button class="btn95" id="btnPhoneLookupClearKeys" data-i18n="btnClear">Clear Keys</button>
-      </div>
+      <form autocomplete="on" onsubmit="return false;">
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-98" for="phoneLookupNumVerifyKey">NumVerify:</label>
+          <input class="dlg-input95 ai-input-grow" id="phoneLookupNumVerifyKey" type="password" autocomplete="current-password" placeholder="Your NumVerify API key (free: 100/month)"/>
+        </div>
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-98" for="phoneLookupOpenCellIDKey">OpenCellID:</label>
+          <input class="dlg-input95 ai-input-grow" id="phoneLookupOpenCellIDKey" type="password" autocomplete="current-password" placeholder="Your OpenCellID API key"/>
+        </div>
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-98" for="phoneLookupGoogleKey">Google People:</label>
+          <input class="dlg-input95 ai-input-grow" id="phoneLookupGoogleKey" type="password" autocomplete="current-password" placeholder="Your Google People API key (requires OAuth)"/>
+        </div>
+        <div class="dlg-row dlg-row-mb0">
+          <button class="btn95" id="btnPhoneLookupSaveKeys" data-i18n="btnSave">Save Keys</button>
+          <button class="btn95" id="btnPhoneLookupClearKeys" data-i18n="btnClear">Clear Keys</button>
+        </div>
+      </form>
     </div>
 
     <div class="dlg-groupbox dlg-groupbox-mt12">
@@ -1352,7 +1356,7 @@
     <div class="dlg-title">
       <span>📘</span>
       <span data-i18n="dlgVersionsTitle">Versions</span>
-      <div class="title-btn" onclick="closeVersionsDlg()">✕</div>
+      <div class="title-btn" id="btnVersionsCloseX">✕</div>
     </div>
     <div class="dlg-body dlg-icon-body dlg-versions-body">
       <span class="dlg-icon dlg-icon-versions">📘</span>
@@ -1470,7 +1474,7 @@
     <div class="dlg-title">
       <span>🎛</span>
       <span class="title-fill" data-i18n="customizeTitle">Customization – Toolbar</span>
-      <div class="title-btn" onclick="cancelCustomizeDlg()">✕</div>
+      <div class="title-btn" id="btnCustomizeCancelX">✕</div>
     </div>
     <div class="dlg-body dlg-customize-body">
       <span class="dlg-icon-xl">🎛</span>
@@ -1536,8 +1540,8 @@
       </div>
     </div>
     <div class="dlg-footer">
-      <button class="btn95" onclick="closeCustomizeDlg()" data-i18n="dlgOk">OK</button>
-      <button class="btn95" onclick="cancelCustomizeDlg()" data-i18n="dlgCancel">Cancel</button>
+      <button class="btn95" id="btnCustomizeOk" data-i18n="dlgOk">OK</button>
+      <button class="btn95" id="btnCustomizeCancel" data-i18n="dlgCancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -1576,7 +1580,7 @@
     <span>🌍</span>
     <span class="title-fill" data-i18n="globeWinTitle">Network Map – IP Scan Results</span>
     <div class="titlebar-btns">
-      <div class="title-btn title-btn-clickable" onclick="closeGlobe()">✕</div>
+      <div class="title-btn title-btn-clickable" id="btnGlobeClose">✕</div>
     </div>
   </div>
   <div class="globe-toolbar">
@@ -1598,7 +1602,7 @@
     <span>🕸</span>
     <span class="title-fill" data-i18n="topoWinTitle">Network Topology</span>
     <div class="titlebar-btns">
-      <div class="title-btn title-btn-clickable" onclick="closeTopo()">✕</div>
+      <div class="title-btn title-btn-clickable" id="btnTopoClose">✕</div>
     </div>
   </div>
   <div class="globe-toolbar">
@@ -1625,7 +1629,7 @@
   <div class="titlebar">
     <span>❓</span>
     <span class="title-fill" data-i18n="scanCountryDlgTitle">Scan Country</span>
-    <div class="title-btn title-btn-clickable" onclick="closeScanCountryDlg()">✕</div>
+    <div class="title-btn title-btn-clickable" id="btnScanCountryCloseX">✕</div>
   </div>
   <div class="dlg-content-pad dlg-icon-body">
     <div class="dlg-icon-32" id="scDlgIcon">🌍</div>
@@ -1637,7 +1641,7 @@
   <div class="dlg-muted-block" id="scDlgRanges"></div>
   <div class="dlg-footer-bar">
     <button class="btn95 btn-min-60" id="scDlgYes" data-i18n="dlgYes">Yes</button>
-    <button class="btn95 btn-min-60" onclick="closeScanCountryDlg()" data-i18n="dlgNo">No</button>
+    <button class="btn95 btn-min-60" id="btnScanCountryNo" data-i18n="dlgNo">No</button>
   </div>
 </div>
 
@@ -1647,7 +1651,7 @@
     <div class="titlebar">
       <span>🧭</span>
       <span class="trace-title" id="traceDlgTitle" data-i18n="traceDlgTitle">Import traceroute</span>
-      <div class="title-btn" onclick="closeTraceDlg()">✕</div>
+      <div class="title-btn" id="btnTraceCloseX">✕</div>
     </div>
     <div class="trace-body">
       <div class="trace-row">
@@ -1661,7 +1665,7 @@
     <div class="dlg-footer-bar">
       <button class="btn95" id="btnTraceAuto" data-i18n="btnTraceAuto">Auto Trace</button>
       <button class="btn95" id="btnTraceSave" data-i18n="btnTraceSave">Import</button>
-      <button class="btn95" onclick="closeTraceDlg()" id="btnTraceCancel" data-i18n="dlgCancel">Cancel</button>
+      <button class="btn95" id="btnTraceCancel" data-i18n="dlgCancel">Cancel</button>
     </div>
   </div>
 </div>

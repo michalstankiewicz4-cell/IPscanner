@@ -667,7 +667,11 @@ document.getElementById('menuDownload').addEventListener('click', () => {
 document.getElementById('menuAbout').addEventListener('click', () => { closeAllMenus(); openNotepad(); });
 document.getElementById('menuClippy').addEventListener('click', () => {
   closeAllMenus();
-  if (typeof window.clippyToggle === 'function') window.clippyToggle();
+  if (typeof window.clippyShow === 'function') {
+    window.clippyShow();
+  } else {
+    setStatus('Clippy init error: clippyShow unavailable.', 'err');
+  }
 });
 document.getElementById('menuToolTopology').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnTopologyToolbar')?.click(); });
 document.getElementById('menuToolGlobe').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnGlobe')?.click(); });
@@ -682,6 +686,35 @@ document.getElementById('menuToolLte').addEventListener('click', () => { closeAl
 document.getElementById('menuToolSniffer').addEventListener('click', () => { closeAllMenus(); document.getElementById('btnSnifferToolbar')?.click(); });
 document.getElementById('menuToolImgMeta').addEventListener('click', () => { closeAllMenus(); if (typeof openImgMetaDlg === 'function') openImgMetaDlg(); else if (typeof window.openImgMetaDlg === 'function') window.openImgMetaDlg(); });
 document.getElementById('dlgVersionsCloseBtn').addEventListener('click', closeVersionsDlg);
+
+function bindClickToGlobal(id, fnName) {
+  const el = document.getElementById(id);
+  const fn = window[fnName];
+  if (el && typeof fn === 'function') el.addEventListener('click', fn);
+}
+
+bindClickToGlobal('btnScanSpeed', 'openDefaultsDlg');
+bindClickToGlobal('btnNotepadClose', 'closeNotepad');
+bindClickToGlobal('btnCountriesCloseX', 'closeCountriesDlg');
+bindClickToGlobal('btnCountriesCancel', 'closeCountriesDlg');
+bindClickToGlobal('btnPresetsCloseX', 'closePresetsDlg');
+bindClickToGlobal('btnPresetsCancel', 'closePresetsDlg');
+bindClickToGlobal('btnLangCloseX', 'closeLangDlg');
+bindClickToGlobal('btnDefaultsCloseX', 'closeDefaultsDlg');
+bindClickToGlobal('btnScanWatchCloseX', 'closeScanWatchDlg');
+bindClickToGlobal('btnScanWatchCloseBtn', 'closeScanWatchDlg');
+bindClickToGlobal('btnWifiDetectorCloseX', 'closeWifiDetectorDlg');
+bindClickToGlobal('btnWifiDetectorCloseBtn', 'closeWifiDetectorDlg');
+bindClickToGlobal('btnVersionsCloseX', 'closeVersionsDlg');
+bindClickToGlobal('btnCustomizeCancelX', 'cancelCustomizeDlg');
+bindClickToGlobal('btnCustomizeOk', 'closeCustomizeDlg');
+bindClickToGlobal('btnCustomizeCancel', 'cancelCustomizeDlg');
+bindClickToGlobal('btnGlobeClose', 'closeGlobe');
+bindClickToGlobal('btnTopoClose', 'closeTopo');
+bindClickToGlobal('btnScanCountryCloseX', 'closeScanCountryDlg');
+bindClickToGlobal('btnScanCountryNo', 'closeScanCountryDlg');
+bindClickToGlobal('btnTraceCloseX', 'closeTraceDlg');
+bindClickToGlobal('btnTraceCancel', 'closeTraceDlg');
 
 // ══════════════════════════════════════════════════
 //  CUSTOMIZATION
@@ -1843,24 +1876,61 @@ const geoCache = {};
 const geoPending = new Map();
 const hostnameCache = {};
 const hostnamePending = new Map();
+let geoApiQueue = Promise.resolve();
+let geoApiCooldownUntil = 0;
+let geoApiNextAt = 0;
+const GEO_API_MIN_GAP_MS = 380;
+
+function waitMs(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isPublicIpv4(ip) {
+  return isIPv4(ip) && !isPrivateIP(ip);
+}
+
+async function queueGeoApiCall(task) {
+  const run = geoApiQueue.then(async () => {
+    const now = Date.now();
+    if (now < geoApiCooldownUntil) return null;
+    if (geoApiNextAt > now) await waitMs(geoApiNextAt - now);
+    geoApiNextAt = Date.now() + GEO_API_MIN_GAP_MS;
+    return task();
+  });
+  geoApiQueue = run.then(() => null, () => null);
+  return run;
+}
 
 // ── Geolocation via ip-api.com ──
 async function geoLookup(ip) {
+  if (!isPublicIpv4(ip)) {
+    geoCache[ip] = null;
+    return null;
+  }
   if (geoCache[ip] !== undefined) return geoCache[ip];
   if (geoPending.has(ip)) return geoPending.get(ip);
 
   const run = (async () => {
   try {
-    let d;
-    if (_tauriInvoke) {
-      // Rust handles the HTTP request — no CORS/mixed-content issues
-      d = await _tauriInvoke('geo_lookup', { ip });
-    } else {
+    const d = await queueGeoApiCall(async () => {
+      if (_tauriInvoke) {
+        // Rust handles the HTTP request — no CORS/mixed-content issues
+        return await _tauriInvoke('geo_lookup', { ip });
+      }
       const r = await fetch(
         `http://ip-api.com/json/${ip}?fields=status,country,city,isp,org,proxy,hosting,as,lat,lon`,
         { signal: AbortSignal.timeout(4000) }
       );
-      d = await r.json();
+      if (r.status === 429) {
+        const ttlSec = Math.max(30, Number(r.headers.get('x-ttl') || '60') || 60);
+        geoApiCooldownUntil = Date.now() + ttlSec * 1000;
+        return null;
+      }
+      return await r.json();
+    });
+    if (!d) {
+      geoCache[ip] = null;
+      return null;
     }
     if (d && d.status === 'success') {
       geoCache[ip] = d;
@@ -1998,6 +2068,10 @@ async function enrichRow(ip, ports, cells) {
 
 // ── Hostname lookup via ip-api (already used for geo, reuse) ──
 async function lookupHostname(ip) {
+  if (!isPublicIpv4(ip)) {
+    hostnameCache[ip] = null;
+    return null;
+  }
   if (hostnameCache[ip] !== undefined) return hostnameCache[ip];
   if (hostnamePending.has(ip)) return hostnamePending.get(ip);
 
@@ -2013,11 +2087,22 @@ async function lookupHostname(ip) {
     }
   }
   try {
-    const r = await fetch(
-      `http://ip-api.com/json/${ip}?fields=status,reverse`,
-      { signal: AbortSignal.timeout(4000) }
-    );
-    const d = await r.json();
+    const d = await queueGeoApiCall(async () => {
+      const r = await fetch(
+        `http://ip-api.com/json/${ip}?fields=status,reverse`,
+        { signal: AbortSignal.timeout(4000) }
+      );
+      if (r.status === 429) {
+        const ttlSec = Math.max(30, Number(r.headers.get('x-ttl') || '60') || 60);
+        geoApiCooldownUntil = Date.now() + ttlSec * 1000;
+        return null;
+      }
+      return await r.json();
+    });
+    if (!d) {
+      hostnameCache[ip] = null;
+      return null;
+    }
     const result = (d.status === 'success' && d.reverse) ? d.reverse : null;
     hostnameCache[ip] = result;
     return result;

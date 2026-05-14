@@ -5,7 +5,7 @@
 (function () {
   const STORAGE_KEY = 'clippy_enabled';
   const TIP_INTERVAL_MS = 9000;
-  const FORCE_DOM_CLIPPY = true;
+  const _isTauriDesktop = !!(window.__TAURI__ || window.__TAURI_INTERNALS__ || navigator.userAgent.toLowerCase().includes('tauri'));
 
   // ── Skip in tool sub-windows (each is a separate WebviewWindow) ──
   const _isToolWindow = typeof _toolMode !== 'undefined' && !!_toolMode;
@@ -41,31 +41,54 @@
   let tipIndex = 0;
   let tipTimer = null;
   let currentLang = 'en';
-  let nativeOpenAckAt = 0;
 
-  // Reuse _tauriInvoke defined in app.js (loaded before clippy.js)
-  const _invoke = (typeof _tauriInvoke !== 'undefined') ? _tauriInvoke : null;
+  // Resolve invoke directly to avoid scope/ordering issues.
+  const _invoke =
+    (typeof _tauriInvoke !== 'undefined' ? _tauriInvoke : null)
+    || window.__TAURI_INTERNALS__?.invoke
+    || window.__TAURI__?.core?.invoke
+    || window.__TAURI__?.invoke
+    || null;
+
+  function _setStatusHint(msg, type) {
+    const el = document.getElementById('statusMsg');
+    if (!el || !msg) return;
+    el.textContent = msg;
+    if (type) {
+      el.className = 'status-panel ' + type;
+    }
+  }
 
   // ── Tauri native-window helpers ──────────────────────────────────
   function _openNativeClippy() {
-    if (FORCE_DOM_CLIPPY) return false;
     if (!_invoke) return false;
-    const requestStartedAt = Date.now();
-    _invoke('open_clippy_window', { lang: currentLang }).catch((err) => {
-      console.warn('open_clippy_window failed, using DOM fallback:', err);
-      _showDOM();
-    });
-    setTimeout(() => {
+    const fallbackTimer = setTimeout(() => {
       if (localStorage.getItem(STORAGE_KEY) !== '1') return;
-      if (nativeOpenAckAt < requestStartedAt) {
-        _showDOM();
-      }
-    }, 450);
+      _setStatusHint('Clippy: native open timeout, fallback enabled.', 'warn');
+      _showDOM();
+    }, 1200);
+
+    const tryOpen = (attempt) => {
+      _invoke('open_clippy_window', { lang: currentLang })
+        .then(() => {
+          clearTimeout(fallbackTimer);
+        })
+        .catch((err) => {
+          if (attempt < 2) {
+            setTimeout(() => tryOpen(attempt + 1), 250 + attempt * 250);
+            return;
+          }
+          clearTimeout(fallbackTimer);
+          console.warn('open_clippy_window failed, using DOM fallback:', err);
+          _setStatusHint('Clippy: native window failed, fallback enabled.', 'warn');
+          _showDOM();
+        });
+    };
+    tryOpen(0);
     return true;
   }
 
   function _closeNativeClippy() {
-    if (FORCE_DOM_CLIPPY) return false;
     if (!_invoke) return false;
     _invoke('close_clippy_window').catch((err) => {
       console.warn('close_clippy_window failed:', err);
@@ -107,8 +130,10 @@
 
   window.clippyShow = function () {
     localStorage.setItem(STORAGE_KEY, '1');
-    _hideDOM();
     if (!_openNativeClippy()) {
+      if (_isTauriDesktop && !_invoke) {
+        _setStatusHint('Clippy: native invoke unavailable, fallback enabled.', 'warn');
+      }
       _showDOM();
     }
   };
@@ -168,15 +193,12 @@
 
   // ── Init ─────────────────────────────────────────────────────────
   function _init() {
-    if (!FORCE_DOM_CLIPPY && window.__TAURI__?.event?.listen) {
-      window.__TAURI__.event.listen('clippy-window-opened', () => {
-        nativeOpenAckAt = Date.now();
+    if (window.__TAURI__?.event?.listen) {
+      window.__TAURI__.event.listen('clippy-window-ready', () => {
         _hideDOM();
       }).catch(() => {});
-    }
 
-    // Listen for native clippy window closed event (user clicked ✕ in OS window)
-    if (!FORCE_DOM_CLIPPY && window.__TAURI__?.event?.listen) {
+      // Listen for native clippy window closed event (user clicked ✕ in OS window)
       window.__TAURI__.event.listen('clippy-window-closed', () => {
         localStorage.setItem(STORAGE_KEY, '0');
       }).catch(() => {});
@@ -185,8 +207,13 @@
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === '1') {
       if (!_openNativeClippy()) {
+        if (_isTauriDesktop && !_invoke) {
+          _setStatusHint('Clippy: native invoke unavailable, fallback enabled.', 'warn');
+        }
         _showDOM();
       }
+    } else if (_isTauriDesktop) {
+      _hideDOM();
     }
 
     // DOM clippy event handlers (fallback / non-Tauri)

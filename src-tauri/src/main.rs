@@ -15,7 +15,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use tauri::{AppHandle, Emitter, LogicalPosition, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
+use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
 use tokio::net::lookup_host;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
@@ -471,24 +471,47 @@ fn window_close(window: WebviewWindow) -> Result<(), String> {
 
 #[tauri::command]
 async fn open_clippy_window(app: AppHandle, lang: String) -> Result<(), String> {
-    const CLIPPY_WIDTH: f64 = 280.0;
-    const CLIPPY_HEIGHT: f64 = 185.0;
+    const CLIPPY_WIDTH: i32 = 280;
+    const CLIPPY_HEIGHT: i32 = 185;
     const CLIPPY_MARGIN: i32 = 20;
 
-    let mut pos_x = 40.0;
-    let mut pos_y = 40.0;
+    let mut target_monitor = app.primary_monitor().ok().flatten();
+
+    let mut pos_x: i32 = 40;
+    let mut pos_y: i32 = 40;
     if let Some(main) = app.get_webview_window("main") {
+        if let Ok(Some(mon)) = main.current_monitor() {
+            target_monitor = Some(mon);
+        }
         if let (Ok(main_pos), Ok(main_size)) = (main.outer_position(), main.outer_size()) {
-            let target_x = main_pos.x + main_size.width as i32 - CLIPPY_WIDTH as i32 - CLIPPY_MARGIN;
-            let target_y = main_pos.y + main_size.height as i32 - CLIPPY_HEIGHT as i32 - CLIPPY_MARGIN;
-            pos_x = target_x.max(0) as f64;
-            pos_y = target_y.max(0) as f64;
+            let target_x = main_pos.x + main_size.width as i32 - CLIPPY_WIDTH - CLIPPY_MARGIN;
+            let target_y = main_pos.y + main_size.height as i32 - CLIPPY_HEIGHT - CLIPPY_MARGIN;
+
+            let (cx, cy) = if let Some(mon) = target_monitor.as_ref() {
+                let mon_pos = mon.position();
+                let mon_size = mon.size();
+
+                let min_x = mon_pos.x;
+                let min_y = mon_pos.y;
+                let max_x = mon_pos.x + mon_size.width as i32 - CLIPPY_WIDTH;
+                let max_y = mon_pos.y + mon_size.height as i32 - CLIPPY_HEIGHT;
+
+                let clamped_x = target_x.clamp(min_x, max_x.max(min_x));
+                let clamped_y = target_y.clamp(min_y, max_y.max(min_y));
+                (clamped_x, clamped_y)
+            } else {
+                (target_x.max(0), target_y.max(0))
+            };
+
+            pos_x = cx;
+            pos_y = cy;
         }
     }
 
     if let Some(win) = app.get_webview_window("clippy") {
+        let _ = win.unminimize();
         let _ = win.show();
-        let _ = win.set_position(LogicalPosition::new(pos_x, pos_y));
+        let _ = win.set_position(PhysicalPosition::new(pos_x, pos_y));
         let _ = win.set_focus();
         let _ = app.emit("clippy-window-opened", ());
         return Ok(());
@@ -497,8 +520,8 @@ async fn open_clippy_window(app: AppHandle, lang: String) -> Result<(), String> 
     let url = WebviewUrl::App(format!("clippy.html#lang={}", lang).into());
     let win = WebviewWindowBuilder::new(&app, "clippy", url)
         .title("NetRecon Clippy")
-        .inner_size(CLIPPY_WIDTH, CLIPPY_HEIGHT)
-        .position(pos_x, pos_y)
+        .inner_size(CLIPPY_WIDTH as f64, CLIPPY_HEIGHT as f64)
+        .position(pos_x as f64, pos_y as f64)
         .decorations(false)
         .transparent(true)
         .shadow(false)
@@ -507,7 +530,7 @@ async fn open_clippy_window(app: AppHandle, lang: String) -> Result<(), String> 
         .resizable(false)
         .build()
         .map_err(|e| e.to_string())?;
-    let _ = win.set_position(LogicalPosition::new(pos_x, pos_y));
+    let _ = win.set_position(PhysicalPosition::new(pos_x, pos_y));
     let _ = win.set_focus();
     let _ = app.emit("clippy-window-opened", ());
     Ok(())
@@ -520,6 +543,12 @@ fn close_clippy_window(app: AppHandle) -> Result<(), String> {
     } else {
         Ok(())
     }
+}
+
+#[tauri::command]
+fn clippy_window_ready(app: AppHandle) -> Result<(), String> {
+    app.emit("clippy-window-ready", ())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -3278,6 +3307,7 @@ fn main() {
             phone_lookup_query,
             open_clippy_window,
             close_clippy_window,
+            clippy_window_ready,
             open_browser,
             window_minimize,
             window_toggle_maximize,
