@@ -69,39 +69,3 @@ https://www.virustotal.com/gui/domain/ipscanner.pl
 <img width="1450" height="943" alt="image" src="https://github.com/user-attachments/assets/f2ed0a18-b5db-4cf4-8502-facb34c6c055" />
 .
 <img width="1359" height="1030" alt="image" src="https://github.com/user-attachments/assets/16d84391-4b03-456f-8bd4-e6ef73cdf6a9" />
-
-W przygotowaniu/soon: (in windows application)
-
-Security alerts, powiadamianie o skanowaniu
-
-1. Skaner IP – (Asset Management)
-
-Wykrywanie urządzeń (Live Host Discovery): Szybkie skanowanie zakresów adresów IP (np. 192.168.1.1-254) w celu znalezienia wszystkich podłączonych urządzeń (przewodowych i Wi-Fi).
-
-Identyfikacja zasobów: Pobieranie nazwy hosta (hostname), adresu IP, adresu MAC oraz producenta karty sieciowej.
-
-Skanowanie portów: Wykrywanie otwartych portów (TCP/UDP) na urządzeniach, co pozwala zidentyfikować uruchomione usługi.
-
-Analiza usług i systemu: Identyfikacja wersji systemu operacyjnego (OS Fingerprinting) oraz działających usług (np. serwery WWW, bazy danych).
-
-Inwentaryzacja zasobów współdzielonych: Wykrywanie udostępnionych folderów, drukarek i zasobów sieciowych.
-
-Zdalne zarządzanie: Możliwość zdalnego włączania/wyłączania komputerów (Wake-on-LAN) oraz łączenia się przez RDP/Radmin.
-
-Eksport danych: Generowanie raportów (CSV, XML) z inwentaryzacji.
-
-2. Sniffer LAN – Możliwości Bezpieczeństwa (Security & Monitoring)
-
-Sniffer LAN przechwytuje i analizuje pakiety w czasie rzeczywistym, działając w trybie "promiscuous mode".
-
-Monitorowanie ruchu w czasie rzeczywistym: Analiza przepływu danych pomiędzy hostami w sieci.
-
-Wykrywanie zagrożeń (IDS): Identyfikacja podejrzanych działań, takich jak ataki typu Man-in-the-Middle (MITM), ARP spoofing, czy skanowanie portów przez intruzów.
-
-Analiza protokołów: Szczegółowa dekodowanie pakietów (HTTP, DNS, DHCP, FTP, TCP/IP), co pozwala zrozumieć, jakie dane są przesyłane.
-
-Wykrywanie wycieków danych: Monitorowanie, czy wrażliwe informacje nie są przesyłane otwartym tekstem (niezaszyfrowane hasła, loginy).
-
-Diagnostyka problemów (Troubleshooting): Identyfikacja wąskich gardeł, analizowanie opóźnień (latency) i zgubionych pakietów.
-
-Filtrowanie ruchu: Możliwość skupienia się na konkretnym adresie IP, porcie lub protokole.
