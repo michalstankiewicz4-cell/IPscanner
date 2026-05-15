@@ -1803,6 +1803,10 @@ if (_tauriListen) {
 async function probePort(ip, port, ms=1500) {
   if (_tauriInvoke) {
     // Native Rust TCP probe — no CORS restrictions
+    // Early exit if scan stop was requested
+    if (window.__scanRuntime?.stopRequested) {
+      return { ok: false, ms: null };
+    }
     try {
       const r = await _tauriInvoke('scan_port', { ip, port, timeoutMs: ms });
       return { ok: r.open, ms: r.ms ?? null };
@@ -1816,6 +1820,10 @@ async function probePort(ip, port, ms=1500) {
     }
   }
   // Browser fallback (used when opening index.html directly)
+  // Early exit if scan stop was requested
+  if (window.__scanRuntime?.stopRequested) {
+    return { ok: false, ms: null };
+  }
   const ctrl = new AbortController();
   activeControllers.add(ctrl);
   const tid = setTimeout(()=>ctrl.abort(), ms);

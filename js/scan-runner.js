@@ -150,6 +150,8 @@
         const batch = ports.slice(i, i + chunk);
         if (delayBetweenPorts > 0) {
           for (const port of batch) {
+            // Check if stop requested before probing each port
+            if (getStopRequested()) break;
             const r = await scanProbePort(ip, port, 1400);
             results.push({ port, ok: r.ok, ms: r.ms });
             if (delayBetweenPorts > 0 && !getStopRequested()) {
@@ -157,8 +159,13 @@
             }
           }
         } else {
+          // Parallel port probing with stop check
           const batchRes = await Promise.all(
-            batch.map(port => scanProbePort(ip, port, 1400).then(r => ({ port, ok: r.ok, ms: r.ms })))
+            batch.map(port => {
+              // Skip if stop already requested
+              if (getStopRequested()) return { port, ok: false, ms: null };
+              return scanProbePort(ip, port, 1400).then(r => ({ port, ok: r.ok, ms: r.ms }));
+            })
           );
           results.push(...batchRes);
         }
