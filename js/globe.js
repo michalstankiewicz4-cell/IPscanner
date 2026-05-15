@@ -307,6 +307,11 @@ function drawCurrentMap() {
   else drawGlobe();
 }
 
+function isActiveHostForGlobe(ip) {
+  const ports = foundHostsMap?.[ip];
+  return Array.isArray(ports) && ports.length > 0;
+}
+
 function getFilteredHosts() {
   if (topoDataCleared) return [];
   const subnetNeedle = topologyFilters.subnet.trim();
@@ -442,6 +447,7 @@ function drawGlobe() {
   // IP dots
   const proj2 = proj;
   Object.entries(ipGeoCoords).forEach(([ip, geo]) => {
+    if (!isActiveHostForGlobe(ip)) return;
     const [x, y] = proj2([geo.lon, geo.lat]);
     if (x === undefined || isNaN(x)) return;
     // Check if point is on visible hemisphere
@@ -940,6 +946,7 @@ function setupGlobeEvents(canvas) {
       // Check IP dots
       let foundIp = null;
       Object.entries(ipGeoCoords).forEach(([ip, geo]) => {
+        if (!isActiveHostForGlobe(ip)) return;
         const [x,y] = proj([geo.lon, geo.lat]);
         if (Math.hypot(mx-x, my-y) < 8) foundIp = ip;
       });
@@ -994,6 +1001,7 @@ function setupGlobeEvents(canvas) {
     // Check IP dots first
     let clickedIp = null;
     Object.entries(ipGeoCoords).forEach(([ip, geo]) => {
+      if (!isActiveHostForGlobe(ip)) return;
       const [x,y] = proj([geo.lon, geo.lat]);
       if (Math.hypot(mx-x, my-y) < 8) clickedIp = ip;
     });
@@ -1076,9 +1084,13 @@ function updateGlobeDots() {
 document.getElementById('btnGlobe').addEventListener('click', openGlobe);
 document.getElementById('btnTopologyToolbar').addEventListener('click', openTopology);
 document.getElementById('btnAutoTraceTopology').addEventListener('click', () => {
-  const defaultIp = selectedRowEl?.dataset?.ip || Object.keys(foundHostsMap)[0] || '';
+  const selectedIp = window.previewContext?.selectedRowEl?.dataset?.ip || '';
+  const firstActiveIp = Object.entries(foundHostsMap || {})
+    .find(([, ports]) => Array.isArray(ports) && ports.length > 0)?.[0] || '';
+  const firstVisibleIp = getFilteredHosts()[0]?.ip || '';
+  const defaultIp = selectedIp || firstVisibleIp || firstActiveIp;
   openTraceDlg(defaultIp);
-  autoTraceRoute();
+  if (defaultIp) autoTraceRoute();
 });
 document.getElementById('btnClearGraph').addEventListener('click', () => {
   traceRoutes = {};

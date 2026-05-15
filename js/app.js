@@ -1955,6 +1955,43 @@ const COUNTRY_CENTROIDS = {
   IE: { lat: 53.1, lon: -8.2 }, CH: { lat: 46.8, lon: 8.2 }, GR: { lat: 39.1, lon: 22.9 },
 };
 
+const COUNTRY_NAME_TO_CODE = {
+  Poland: 'PL', Germany: 'DE', France: 'FR', 'United Kingdom': 'GB', Spain: 'ES', Italy: 'IT',
+  Netherlands: 'NL', Belgium: 'BE', Portugal: 'PT', 'Czech Republic': 'CZ', Slovakia: 'SK',
+  Austria: 'AT', Hungary: 'HU', Romania: 'RO', Ukraine: 'UA', 'United States': 'US',
+  Canada: 'CA', Mexico: 'MX', Brazil: 'BR', Argentina: 'AR', Chile: 'CL', Russia: 'RU',
+  Turkey: 'TR', Israel: 'IL', 'Saudi Arabia': 'SA', 'United Arab Emirates': 'AE', India: 'IN',
+  China: 'CN', Japan: 'JP', 'South Korea': 'KR', Australia: 'AU', 'New Zealand': 'NZ',
+  'South Africa': 'ZA', Egypt: 'EG', Nigeria: 'NG', Sweden: 'SE', Norway: 'NO',
+  Finland: 'FI', Denmark: 'DK', Ireland: 'IE', Switzerland: 'CH', Greece: 'GR', Iran: 'IR'
+};
+
+function inferCountryFromLibrary(ip) {
+  if (!isIPv4(ip) || typeof COUNTRY_DB === 'undefined' || !Array.isArray(COUNTRY_DB)) return null;
+  const n = ipToNum(ip);
+  for (const country of COUNTRY_DB) {
+    const ranges = Array.isArray(country.ranges) ? country.ranges : [];
+    for (const range of ranges) {
+      const [from, to] = String(range).split('–');
+      if (!from || !to) continue;
+      const start = ipToNum(from);
+      const end = ipToNum(to);
+      if (n >= start && n <= end) {
+        const countryName = country.name || null;
+        const code = countryName ? (COUNTRY_NAME_TO_CODE[countryName] || '') : '';
+        const coords = code && COUNTRY_CENTROIDS[code] ? COUNTRY_CENTROIDS[code] : null;
+        return {
+          country: countryName,
+          countryCode: code || null,
+          lat: coords?.lat ?? null,
+          lon: coords?.lon ?? null,
+        };
+      }
+    }
+  }
+  return null;
+}
+
 function resolveGeoCoords(geo) {
   if (!geo || typeof geo !== 'object') return null;
   const lat = Number(geo.lat);
@@ -2009,6 +2046,29 @@ async function geoLookup(ip) {
       return await r.json();
     });
     if (!d) {
+      const fallback = inferCountryFromLibrary(ip);
+      if (fallback) {
+        const pseudo = {
+          status: 'success',
+          country: fallback.country,
+          countryCode: fallback.countryCode,
+          city: null,
+          isp: null,
+          org: null,
+          as: null,
+          proxy: null,
+          hosting: null,
+          lat: fallback.lat,
+          lon: fallback.lon,
+        };
+        geoCache[ip] = pseudo;
+        const coords = resolveGeoCoords(pseudo);
+        if (coords) {
+          ipGeoCoords[ip] = { lat: coords.lat, lon: coords.lon, country: pseudo.country };
+          updateGlobeDots();
+        }
+        return pseudo;
+      }
       geoCache[ip] = null;
       return null;
     }
@@ -2022,8 +2082,54 @@ async function geoLookup(ip) {
       return d;
     }
     geoCache[ip] = null;
+    const fallback = inferCountryFromLibrary(ip);
+    if (fallback) {
+      const pseudo = {
+        status: 'success',
+        country: fallback.country,
+        countryCode: fallback.countryCode,
+        city: null,
+        isp: null,
+        org: null,
+        as: null,
+        proxy: null,
+        hosting: null,
+        lat: fallback.lat,
+        lon: fallback.lon,
+      };
+      geoCache[ip] = pseudo;
+      const coords = resolveGeoCoords(pseudo);
+      if (coords) {
+        ipGeoCoords[ip] = { lat: coords.lat, lon: coords.lon, country: pseudo.country };
+        updateGlobeDots();
+      }
+      return pseudo;
+    }
     return null;
   } catch {
+    const fallback = inferCountryFromLibrary(ip);
+    if (fallback) {
+      const pseudo = {
+        status: 'success',
+        country: fallback.country,
+        countryCode: fallback.countryCode,
+        city: null,
+        isp: null,
+        org: null,
+        as: null,
+        proxy: null,
+        hosting: null,
+        lat: fallback.lat,
+        lon: fallback.lon,
+      };
+      geoCache[ip] = pseudo;
+      const coords = resolveGeoCoords(pseudo);
+      if (coords) {
+        ipGeoCoords[ip] = { lat: coords.lat, lon: coords.lon, country: pseudo.country };
+        updateGlobeDots();
+      }
+      return pseudo;
+    }
     geoCache[ip] = null;
     return null;
   }
