@@ -118,7 +118,7 @@ function snRenderTable() {
       if (!row?.remote) return;
       const ip = row.remote.split(':')[0];
       if (ip && ip !== '0.0.0.0' && ip !== '::' && ip !== '*' && ip !== '') {
-        try { window.open(`http://${ip}`, '_blank'); } catch (_) {}
+        try { window.open(`https://${ip}`, '_blank'); } catch (_) {}
       }
     });
   });

@@ -1829,7 +1829,8 @@ async function probePort(ip, port, ms=1500) {
   const tid = setTimeout(()=>ctrl.abort(), ms);
   const t0 = Date.now();
   try {
-    const proto = (port===443||port===8443)?'https':'http';
+    // On www (HTTPS), always use HTTPS to avoid Mixed Content errors
+    const proto = 'https';
     await fetch(`${proto}://${ip}:${port}/`,{mode:'no-cors',cache:'no-store',signal:ctrl.signal});
     return { ok: true, ms: Date.now() - t0 };
   } catch { return { ok: false, ms: null }; }
@@ -1933,7 +1934,8 @@ async function geoLookup(ip) {
 
 // ── Page title via CORS proxy (external IPs only) ──
 async function fetchTitle(ip, port) {
-  const proto = (port===443||port===8443)?'https':'http';
+  // On www (HTTPS), always use HTTPS to avoid Mixed Content errors
+  const proto = 'https';
   const target = encodeURIComponent(`${proto}://${ip}:${port}/`);
   try {
     const r = await fetch(`https://corsproxy.io/?${target}`,
@@ -1946,7 +1948,8 @@ async function fetchTitle(ip, port) {
 
 // ── Favicon probe ──
 function checkFavicon(ip, port) {
-  const proto = (port===443||port===8443)?'https':'http';
+  // On www (HTTPS), always use HTTPS to avoid Mixed Content errors
+  const proto = 'https';
   return tryImageLoad(`${proto}://${ip}:${port}/favicon.ico`, 2000);
 }
 
@@ -1960,7 +1963,8 @@ async function checkAuth(ip, ports) {
     '/onvif/snapshot',
   ];
   for (const port of ports) {
-    const proto=(port===443||port===8443)?'https':'http';
+    // On www (HTTPS), always use HTTPS to avoid Mixed Content errors
+    const proto='https';
     for (const path of snaps)
       if (await tryImageLoad(`${proto}://${ip}:${port}${path}`, 1800)) return true;
   }
@@ -1980,7 +1984,8 @@ const FP_IMAGES = [
 
 async function fingerprintByImage(ip, ports) {
   for (const port of ports.slice(0, 3)) {
-    const proto=(port===443||port===8443)?'https':'http';
+    // On www (HTTPS), always use HTTPS to avoid Mixed Content errors
+    const proto='https';
     for (const fp of FP_IMAGES) {
       if (await tryImageLoad(`${proto}://${ip}:${port}${fp.path}`, 1400))
         return fp.label;
