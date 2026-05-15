@@ -7,4 +7,4 @@ app/
 native-ui/**/bin/
 native-ui/**/obj/
 release/
-release-1.6.3/
+release-*/
