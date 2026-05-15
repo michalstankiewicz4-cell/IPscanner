@@ -7,7 +7,7 @@ function selectIcon(el) {
 }
 
 const APP_NAME = 'NetRecon IP Auditor';
-const APP_VERSION = '1.6.4';
+const APP_VERSION = '1.6.5';
 
 function getAppDisplayName() {
   return `${APP_NAME} v${APP_VERSION}`;
@@ -2414,6 +2414,7 @@ function addResultRow(ip, openPorts, pingMs, skipEnrich = false, isAnomaly = fal
     if (wasExpanded) expandBtn.classList.add('open');
     expandBtn.title = 'Pokaż udostępnione zasoby';
   } else {
+    cExpand.classList.add('lv-expand-empty');
     expandBtn.textContent = '';
     expandBtn.title = '';
     expandBtn.style.cursor = 'default';

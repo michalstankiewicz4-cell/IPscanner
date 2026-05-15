@@ -287,8 +287,12 @@ body.dragging             { cursor: move !important; }
   background: #c0c0c0;
   border-bottom: 1px solid #808080;
   min-width: 250px;
+  color: #101010;
 }
 .lv-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 2px 4px;
   font-size: 11px; font-weight: bold;
   border-right: 1px solid #808080;
@@ -297,6 +301,7 @@ body.dragging             { cursor: move !important; }
   cursor: default;
   white-space: nowrap;
   overflow: hidden;
+  text-align: center;
 }
 .lv-col:first-child { border-left: none; }
 .lv-col:last-child  { border-right: none; }
@@ -353,24 +358,106 @@ body.dragging             { cursor: move !important; }
 .lv-row.selected .lv-cell { color: #fff; }
 .lv-row:hover .lv-cell { color: #fff; }
 .lv-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 2px 4px;
   font-size: 11px; color: #000;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  text-align: left;
+  text-align: center;
 }
-.lv-icon { text-align: center; font-size: 10px; }
-.lv-star  { text-align: center; font-size: 11px; line-height: 1; cursor: pointer; }
+.lv-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 10px;
+}
+.lv-star {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
 .star-on  { color: #f5a623; }
 .star-off { color: #888; }
-.lv-light { text-align: center; font-size: 11px; line-height: 1; }
-.light-on  { color: #22c55e; }
-.light-dead { color: #ef4444; }
-.light-suspect { color: #3b82f6; }
-.light-off { color: #ef4444; }
+.lv-light {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 22px;
+  line-height: 1;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.lv-light span {
+  display: inline-block;
+  transform: translateY(-1px);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35), 0 0 4px rgba(255, 255, 255, 0.18);
+}
+.light-on  {
+  color: #22c55e;
+  font-weight: 700;
+  text-shadow:
+    0 0 1px rgba(255, 255, 255, 0.95),
+    0 0 4px rgba(34, 197, 94, 0.95),
+    0 0 10px rgba(34, 197, 94, 0.65),
+    0 1px 1px rgba(0, 0, 0, 0.5);
+  filter: drop-shadow(0 0 2px rgba(34, 197, 94, 0.75));
+}
+.light-dead {
+  color: #ef4444;
+  background: radial-gradient(circle at 35% 28%, #fff0f0 0%, #ff9c9c 20%, #f45b5b 48%, #c02626 78%, #8a1f1f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.82),
+    0 0 2px rgba(255, 255, 255, 0.4),
+    0 0 4px rgba(239, 68, 68, 0.62),
+    0 0 8px rgba(239, 68, 68, 0.34),
+    0 1px 1px rgba(0, 0, 0, 0.4);
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.18)) drop-shadow(0 0 2px rgba(239, 68, 68, 0.38));
+}
+.light-suspect {
+  color: #3b82f6;
+  font-weight: 700;
+  text-shadow:
+    0 0 1px rgba(255, 255, 255, 0.9),
+    0 0 4px rgba(59, 130, 246, 0.9),
+    0 0 10px rgba(59, 130, 246, 0.6),
+    0 1px 1px rgba(0, 0, 0, 0.5);
+  filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.7));
+}
+.light-off {
+  color: #ef4444;
+  font-weight: 700;
+  text-shadow:
+    0 0 1px rgba(255, 255, 255, 0.8),
+    0 0 3px rgba(239, 68, 68, 0.45),
+    0 1px 1px rgba(0, 0, 0, 0.3);
+}
 .icon-ok       { color: green; font-weight: bold; cursor: pointer; }
 .icon-ok-off   { color: #bbb;  font-weight: bold; cursor: pointer; }
 .icon-err { color: #c00; font-weight: bold; }
-.empty-row { padding: 8px; font-size: 11px; color: #808080; }
+.empty-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  font-size: 11px;
+  color: #808080;
+  background: #fff;
+  border: none;
+}
 
 /* ── Paths popup ── */
 .paths-row {
@@ -429,6 +516,10 @@ body.dragging             { cursor: move !important; }
   align-items: center;
   justify-content: center;
   padding: 2px 2px;
+}
+.lv-expand-empty {
+  border: none;
+  padding: 0;
 }
 /* ── Enrich detail popup ── */
 .enrich-popup {
