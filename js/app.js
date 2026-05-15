@@ -1396,7 +1396,7 @@ const EXTRA_COLS = [
   { key: 'title',    width: '200px' },
   { key: 'access',   width: '80px'  },
 ];
-const colsEnabled = { hostname: false, geo: false, device: false, title: false, access: false };
+const colsEnabled = { hostname: true, geo: true, device: false, title: false, access: false };
 const BASE_LV_COLS = '20px 18px 18px 87px 26px 56px';
 const ENRICH_QUEUE_CONCURRENCY = 4;
 const enrichQueue = [];
@@ -1451,7 +1451,14 @@ async function enrichRowCols(ip, ports, row) {
   const tasks = [];
   if (colsEnabled.hostname) {
     tasks.push(lookupHostname(ip).then(h => {
-      const c = cell('hostname'); if (c) c.textContent = h || '—';
+      const c = cell('hostname');
+      if (!c) return;
+      if (h) {
+        c.textContent = h;
+      } else {
+        const msg = isPrivateIP(ip) ? t('hostnameLocal') : t('hostnameNone');
+        c.innerHTML = `<span class="detail-muted">${msg}</span>`;
+      }
     }));
   }
   if (colsEnabled.geo) {
@@ -2101,7 +2108,7 @@ async function lookupHostname(ip) {
 // ══════════════════════════════════════════════════
 //  ADD ROW
 // ══════════════════════════════════════════════════
-function addResultRow(ip, openPorts, pingMs) {
+function addResultRow(ip, openPorts, pingMs, skipEnrich = false) {
   if (emptyRow.parentNode) emptyRow.remove();
 
   // If re-scanning "all ports" - remove old row/pathsRow for this IP
@@ -2223,7 +2230,6 @@ function addResultRow(ip, openPorts, pingMs) {
     c.classList.toggle('is-hidden', !colsEnabled[key]);
     c.dataset.col = key;
     c.style.display = colsEnabled[key] ? '' : 'none';
-    c.textContent = '…';
     row.appendChild(c);
   });
 
@@ -2352,20 +2358,24 @@ function addResultRow(ip, openPorts, pingMs) {
   listBody.appendChild(pathsRow);
   applyListFilter();
 
-  // Enrich extra columns if any enabled
-  queueRowEnrichment(ip, openPorts, row);
+  if (!skipEnrich) {
+    // Enrich extra columns if any enabled
+    queueRowEnrichment(ip, openPorts, row);
 
-  // ── Auto geo-locate for globe dots ──
-  if (!ipGeoCoords[ip]) {
-    geoLookup(ip).then(d => {
-      // geoLookup already stores in ipGeoCoords and calls updateGlobeDots
-      // Also update the IP cell with 🔓 flag if auth check was done separately
-    });
+    // ── Auto geo-locate for globe dots ──
+    if (!ipGeoCoords[ip] && !(ip in geoCache)) {
+      geoLookup(ip).then(d => {
+        // geoLookup already stores in ipGeoCoords and calls updateGlobeDots
+      });
+    } else {
+      updateGlobeDots();
+    }
   } else {
     updateGlobeDots();
   }
 
   saveResults();
+  return row;
 }
 
 // ══════════════════════════════════════════════════

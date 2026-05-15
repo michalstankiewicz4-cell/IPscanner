@@ -33,6 +33,8 @@ window.LANG_PL = {
   emptyScanning:'Skanowanie…', emptyNone:'Nie znaleziono aktywnych hostów.',
   detailGeo:'🌍 Geolokalizacja / ISP', detailDevice:'🖥 Identyfikacja urządzenia',
   detailTitle:'📄 Tytuł strony HTTP', detailAccess:'🔑 Dostęp',
+  hostnameLocal:'Sieć lokalna — brak nazwy hosta',
+  hostnameNone:'Brak nazwy hosta',
   geoLocal:'Adres lokalny — geolokalizacja niedostępna',
   geoError:'Błąd pobierania danych',
   geoCountry:'Kraj:', geoIsp:'ISP:', geoAs:'AS:',

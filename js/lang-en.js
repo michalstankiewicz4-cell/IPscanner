@@ -33,6 +33,8 @@ window.LANG_EN = {
   emptyScanning:'Scanning…', emptyNone:'No active hosts found.',
   detailGeo:'🌍 Geolocation / ISP', detailDevice:'🖥 Device Identification',
   detailTitle:'📄 HTTP Page Title', detailAccess:'🔑 Access',
+  hostnameLocal:'Local network — no hostname',
+  hostnameNone:'No hostname found',
   geoLocal:'Local address — geolocation unavailable',
   geoError:'Failed to fetch data',
   geoCountry:'Country:', geoIsp:'ISP:', geoAs:'AS:',
