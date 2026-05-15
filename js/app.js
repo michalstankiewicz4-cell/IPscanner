@@ -1897,7 +1897,7 @@ async function geoLookup(ip) {
         return await _tauriInvoke('geo_lookup', { ip });
       }
       const r = await fetch(
-        `http://ip-api.com/json/${ip}?fields=status,country,city,isp,org,proxy,hosting,as,lat,lon`,
+        `https://ip-api.com/json/${ip}?fields=status,country,city,isp,org,proxy,hosting,as,lat,lon`,
         { signal: AbortSignal.timeout(4000) }
       );
       if (r.status === 429) {
@@ -2068,7 +2068,7 @@ async function lookupHostname(ip) {
   try {
     const d = await queueGeoApiCall(async () => {
       const r = await fetch(
-        `http://ip-api.com/json/${ip}?fields=status,reverse`,
+        `https://ip-api.com/json/${ip}?fields=status,reverse`,
         { signal: AbortSignal.timeout(4000) }
       );
       if (r.status === 429) {
