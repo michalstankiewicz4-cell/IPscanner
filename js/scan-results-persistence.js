@@ -7,6 +7,7 @@
         ip,
         ports,
         ping: foundPingMap[ip] ?? null,
+        anomaly: foundAnomalyMap[ip] === true,
         hostname: hostnameCache[ip] ?? null,
         geo: geoCache[ip] ?? null,  // Save full geo object to restore cache on reload
       }));
@@ -32,10 +33,11 @@
       const ts = +localStorage.getItem('netrecon_results_ts');
       const age = ts ? Math.round((Date.now() - ts) / 60000) : null;
 
-      data.forEach(({ ip, ports, ping, hostname, geo }) => {
+      data.forEach(({ ip, ports, ping, anomaly, hostname, geo }) => {
         foundHostsMap[ip] = ports;
         totalOpenPorts += ports.length;
         if (ping !== null) foundPingMap[ip] = ping;
+        foundAnomalyMap[ip] = anomaly === true;
         // Always restore hostnameCache including null (prevents re-querying on every restore)
         hostnameCache[ip] = hostname ?? null;
         // Restore full geo to geoCache (prevents re-querying API on every restore)
@@ -45,7 +47,7 @@
           ipGeoCoords[ip] = { lat: coords.lat, lon: coords.lon, country: geo?.country };
         }
         // skipEnrich=true: no async enrichment queue — populate cells directly below
-        const row = addResultRow(ip, ports, ping, true);
+        const row = addResultRow(ip, ports, ping, true, anomaly === true);
 
         // Populate hostname and geo cells synchronously from saved data
         if (row) {

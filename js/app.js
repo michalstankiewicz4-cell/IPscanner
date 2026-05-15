@@ -1038,6 +1038,7 @@ function setIP(prefix, ip) {
 let scanning=false, stopRequested=false;
 const activeControllers = new Set();
 var foundHostsMap={}, foundPingMap={}, totalFound=0, totalOpenPorts=0;
+var foundAnomalyMap={};
 window.__isScanInProgress = () => scanning;
 window.__scanRuntime = {
   get scanning() { return scanning; },
@@ -1070,9 +1071,20 @@ function getFavoriteHostCount() {
   return favoriteHosts;
 }
 
+function getAnomalyHostCount() {
+  let anomalyHosts = 0;
+  for (const [ip, isAnomaly] of Object.entries(foundAnomalyMap || {})) {
+    if (!isAnomaly) continue;
+    const ports = foundHostsMap[ip] || [];
+    if (Array.isArray(ports) && ports.length === 0) anomalyHosts++;
+  }
+  return anomalyHosts;
+}
+
 function getStatusCountForFilter() {
   const counts = getResultCounts();
   if (_listFilter === 'all') return counts.totalHosts;
+  if (_listFilter === 'anomaly') return getAnomalyHostCount();
   if (_listFilter === 'dead') return counts.deadHosts;
   if (_listFilter === 'favorites') return getFavoriteHostCount();
   return counts.activeHosts;
@@ -1162,6 +1174,7 @@ restoreMarks();
 function applyListFilter() {
   document.querySelectorAll('.lv-row').forEach(row => {
     const isDead    = row.dataset.hostState === 'dead';
+    const isAnomaly = row.dataset.hostAnomaly === '1';
     const isRowFav  = row.querySelector('.lv-star .star-on') !== null;
     const paths = row.nextElementSibling;
     const hasPortFav = paths && paths.classList.contains('paths-row')
@@ -1171,7 +1184,8 @@ function applyListFilter() {
 
     let visible = true;
     if (_listFilter === 'active')         visible = !isDead;
-    else if (_listFilter === 'dead')      visible = isDead;
+    else if (_listFilter === 'anomaly')   visible = isAnomaly;
+    else if (_listFilter === 'dead')      visible = isDead && !isAnomaly;
     else if (_listFilter === 'favorites') visible = isFav;
 
     row.style.display = visible ? '' : 'none';
@@ -1199,11 +1213,12 @@ function applyListFilter() {
   statusCount.textContent = t('statusHosts', getStatusCountForFilter());
 }
 
-['btnFilterAll', 'btnFilterFavorites', 'btnFilterActive', 'btnFilterDead'].forEach(id => {
+['btnFilterAll', 'btnFilterFavorites', 'btnFilterActive', 'btnFilterAnomaly', 'btnFilterDead'].forEach(id => {
   document.getElementById(id)?.addEventListener('click', () => {
     _listFilter = id === 'btnFilterAll' ? 'all'
       : id === 'btnFilterFavorites' ? 'favorites'
       : id === 'btnFilterActive'    ? 'active'
+      : id === 'btnFilterAnomaly'   ? 'anomaly'
       : 'dead';
     document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -2296,7 +2311,7 @@ async function lookupHostname(ip) {
 // ══════════════════════════════════════════════════
 //  ADD ROW
 // ══════════════════════════════════════════════════
-function addResultRow(ip, openPorts, pingMs, skipEnrich = false) {
+function addResultRow(ip, openPorts, pingMs, skipEnrich = false, isAnomaly = false) {
   if (emptyRow.parentNode) emptyRow.remove();
 
   // On a real scan (not restore), evict stale cached nulls so Tauri is re-queried
@@ -2327,6 +2342,7 @@ function addResultRow(ip, openPorts, pingMs, skipEnrich = false) {
   row.className = 'lv-row';
   row.dataset.ip = ip;
   row.dataset.hostState = openPorts.length === 0 ? 'dead' : 'active';
+  row.dataset.hostAnomaly = isAnomaly ? '1' : '0';
 
   // Icon (toggleable checkmark — off by default)
   const cIcon = document.createElement('div');
@@ -2373,8 +2389,9 @@ function addResultRow(ip, openPorts, pingMs, skipEnrich = false) {
   const cLight = document.createElement('div');
   cLight.className = 'lv-cell lv-light';
   const isDead = openPorts.length === 0;
-  const lightClass = isDead ? 'light-dead' : 'light-on';
-  const lightTitle = isDead ? 'Dead' : 'Active';
+  const isOdd = isDead && isAnomaly;
+  const lightClass = isOdd ? 'light-suspect' : isDead ? 'light-dead' : 'light-on';
+  const lightTitle = isOdd ? 'Unusual response' : isDead ? 'Dead' : 'Active';
   cLight.innerHTML = `<span class="${lightClass}" title="${lightTitle}">●</span>`;
   row.appendChild(cLight);
 
@@ -2629,7 +2646,7 @@ foundExpandedSet.forEach(ip => {
 });
 
 btnClear.addEventListener('click',()=>{
-  foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
+  foundHostsMap={}; foundPingMap={}; foundAnomalyMap={}; totalFound=0; totalOpenPorts=0;
   traceRoutes = {};
   listBody.innerHTML=''; listBody.appendChild(emptyRow);
   emptyRow.textContent = t('emptyRow');

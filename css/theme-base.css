@@ -365,6 +365,7 @@ body.dragging             { cursor: move !important; }
 .lv-light { text-align: center; font-size: 11px; line-height: 1; }
 .light-on  { color: #22c55e; }
 .light-dead { color: #ef4444; }
+.light-suspect { color: #3b82f6; }
 .light-off { color: #ef4444; }
 .icon-ok       { color: green; font-weight: bold; cursor: pointer; }
 .icon-ok-off   { color: #bbb;  font-weight: bold; cursor: pointer; }

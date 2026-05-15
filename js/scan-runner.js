@@ -86,6 +86,7 @@
 
     foundHostsMap = {};
     foundPingMap = {};
+    foundAnomalyMap = {};
     totalFound = 0;
     totalOpenPorts = 0;
     refreshTopologyFilterOptions();
@@ -191,6 +192,8 @@
           const partialOpen = partialResults.filter(r => r.ok).map(r => r.port);
           const bestMs = partialResults.filter(r => r.ok).reduce((a, r) => (r.ms < a ? r.ms : a), Infinity);
           const pingMs = bestMs === Infinity ? null : bestMs;
+          const hasAnyResponse = partialResults.some(r => r.ms !== null);
+          const isAnomaly = partialOpen.length === 0 && hasAnyResponse;
           if (partialOpen.length === liveOpenCount) return;
           const now = Date.now();
           if (now - lastLiveRowUiUpdateAt < 180 && partialOpen.length < selectedPorts.length) return;
@@ -199,9 +202,10 @@
           totalOpenPorts += partialOpen.length - liveOpenCount;
           liveOpenCount = partialOpen.length;
           foundHostsMap[ip] = partialOpen;
+          foundAnomalyMap[ip] = isAnomaly;
           totalFound = getResultCounts().activeHosts;
           if (pingMs !== null) foundPingMap[ip] = pingMs;
-          addResultRow(ip, partialOpen, pingMs);
+          addResultRow(ip, partialOpen, pingMs, false, isAnomaly);
         } : null;
 
         const res = (selectedPorts.length > 200 || delayMsPerPort > 0 || onBatch !== null)
@@ -210,15 +214,18 @@
         const openPorts = res.filter(r => r.ok).map(r => r.port);
         const bestMs = res.filter(r => r.ok).reduce((a, r) => (r.ms < a ? r.ms : a), Infinity);
         const pingMs = bestMs === Infinity ? null : bestMs;
+        const hasAnyResponse = res.some(r => r.ms !== null);
+        const isAnomaly = openPorts.length === 0 && hasAnyResponse;
 
         // Adjust totalOpenPorts: liveRowAdded already counted partial ports, so apply delta
         totalOpenPorts += liveRowAdded
           ? openPorts.length - liveOpenCount
           : openPorts.length;
         foundHostsMap[ip] = openPorts;
+        foundAnomalyMap[ip] = isAnomaly;
         totalFound = getResultCounts().activeHosts;
         if (pingMs !== null) foundPingMap[ip] = pingMs;
-        addResultRow(ip, openPorts, pingMs);
+        addResultRow(ip, openPorts, pingMs, false, isAnomaly);
         if (typeof appendCmdLog === 'function') {
           if (openPorts.length) appendCmdLog(`>> HOST  ${ip}  ports: [${openPorts.join(', ')}]${pingMs !== null ? `  ping: ${pingMs}ms` : ''}`, 'scan');
           else appendCmdLog(`>> DEAD  ${ip}${pingMs !== null ? `  ping: ${pingMs}ms` : ''}`, 'scan');
