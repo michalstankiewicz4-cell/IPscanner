@@ -2612,10 +2612,21 @@ function addResultRow(ip, openPorts, pingMs, skipEnrich = false, isAnomaly = fal
     queueRowEnrichment(ip, openPorts, row);
 
     // ── Auto geo-locate for globe dots ──
-    if (!ipGeoCoords[ip] && !(ip in geoCache)) {
-      geoLookup(ip).then(d => {
-        // geoLookup already stores in ipGeoCoords and calls updateGlobeDots
-      });
+    if (!ipGeoCoords[ip]) {
+      const cachedGeo = geoCache[ip];
+      const cachedCoords = resolveGeoCoords(cachedGeo || null);
+
+      if (cachedCoords) {
+        ipGeoCoords[ip] = { lat: cachedCoords.lat, lon: cachedCoords.lon, country: cachedGeo?.country || null };
+        updateGlobeDots();
+      } else {
+        // Cached geo without usable coords can block dots on subsequent scans.
+        // Drop it and re-query once for fresh coordinates.
+        if (cachedGeo !== undefined) delete geoCache[ip];
+        geoLookup(ip).then(() => {
+          // geoLookup stores in ipGeoCoords and calls updateGlobeDots.
+        });
+      }
     } else {
       updateGlobeDots();
     }
