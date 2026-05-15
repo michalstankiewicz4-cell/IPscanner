@@ -4,6 +4,8 @@
   'use strict';
 
   const READ_BYTES = 0; // 0 => read full file for maximal metadata coverage
+  const IMG_META_WARN_FILE_BYTES = 32 * 1024 * 1024;
+  const IMG_META_HARD_FILE_BYTES = 128 * 1024 * 1024;
 
   const IMG_META_FIELD_GROUPS = [
     {
@@ -440,6 +442,30 @@
     _entries = [];
     renderTable([]);
     setStatus(t('imgMetaLoading'));
+
+    if (READ_BYTES === 0 && Number.isFinite(file?.size)) {
+      if (file.size > IMG_META_HARD_FILE_BYTES) {
+        setStatus(`File is too large for full metadata analysis (${formatBytesHuman(file.size)}). Max allowed is ${formatBytesHuman(IMG_META_HARD_FILE_BYTES)}.`);
+        return;
+      }
+      if (file.size > IMG_META_WARN_FILE_BYTES) {
+        const proceed = window.confirm(
+          [
+            'Large file warning',
+            '',
+            `Selected file size: ${formatBytesHuman(file.size)}`,
+            `Full analysis reads the entire file into memory.`,
+            `Recommended max without warning: ${formatBytesHuman(IMG_META_WARN_FILE_BYTES)}.`,
+            '',
+            'Continue?'
+          ].join('\n')
+        );
+        if (!proceed) {
+          setStatus('Analysis cancelled for large file.');
+          return;
+        }
+      }
+    }
 
     const slice = READ_BYTES > 0 ? file.slice(0, READ_BYTES) : file;
     const arrayBuf = await slice.arrayBuffer();

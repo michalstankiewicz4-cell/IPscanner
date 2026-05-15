@@ -35,9 +35,7 @@ function openNotepad() {
 
   BLIK → 797 486 355   💙  Dziękuję!
 
-----------------------------------------------------------------
   LICENCJA (MIT) — Polski
-----------------------------------------------------------------
 
   Niniejszym udziela się bezpłatnie każdemu, kto uzyska
   kopię tego oprogramowania i powiązanych plików dokumentacji
@@ -63,9 +61,7 @@ function openNotepad() {
   DELIKTU CZY W INNY SPOSÓB, WYNIKAJĄCĄ Z OPROGRAMOWANIA
   LUB KORZYSTANIA Z NIEGO.
 
-----------------------------------------------------------------
   LICENSE (MIT) — English
-----------------------------------------------------------------
 
   Permission is hereby granted, free of charge, to any
   person obtaining a copy of this software and associated
@@ -95,240 +91,249 @@ function openNotepad() {
 
 ================================================================`;
 }
-function closeNotepad() {
-  document.getElementById('notepadWin').style.display = 'none';
-}
 
-let _windowZCounter = 1200;
+  function closeNotepad() {
+    document.getElementById('notepadWin').style.display = 'none';
+  }
 
-function bringToFront(target) {
-  if (!target) return;
+  let _windowZCounter = 1200;
 
-  const topZ = ++_windowZCounter;
+  function bringToFront(target) {
+    if (!target) return;
 
-  const dialogPanel = target.classList?.contains('dlg95') ? target : target.closest?.('.dlg95');
-  if (dialogPanel) {
-    const overlay = dialogPanel.closest('.dlg-overlay');
-    if (overlay) {
-      overlay.style.zIndex = String(topZ);
-      dialogPanel.style.zIndex = String(topZ + 1);
+    const topZ = ++_windowZCounter;
+
+    const dialogPanel = target.classList?.contains('dlg95') ? target : target.closest?.('.dlg95');
+    if (dialogPanel) {
+      const overlay = dialogPanel.closest('.dlg-overlay');
+      if (overlay) {
+        overlay.style.zIndex = String(topZ);
+        dialogPanel.style.zIndex = String(topZ + 1);
+        return;
+      }
+      dialogPanel.style.zIndex = String(topZ);
       return;
     }
-    dialogPanel.style.zIndex = String(topZ);
-    return;
-  }
 
-  if (target.id === 'dlgTrace' || target.closest?.('#dlgTrace')) {
-    const overlay = document.getElementById('dlgTraceOverlay');
-    const dlgTrace = document.getElementById('dlgTrace');
-    if (overlay) overlay.style.zIndex = String(topZ);
-    if (dlgTrace) dlgTrace.style.zIndex = String(topZ + 1);
-    return;
-  }
-
-  if (target.classList?.contains('dlg-overlay')) {
-    target.style.zIndex = String(topZ);
-    return;
-  }
-
-  if (target.style) {
-    target.style.zIndex = String(topZ);
-  }
-}
-
-window.bringToFront = bringToFront;
-
-function initWindowZStacking() {
-  const floatingWindowIds = [
-    'notepadWin',
-    'cmdWin',
-    'speedWin',
-    'protoWin',
-    'macroFolderWin',
-    'globeWin',
-    'topoWin',
-    'wifiRadarWin',
-    'btDetectorWin',
-    'snifferWin',
-    'gnssWin',
-    'lteWin',
-    'imgMetaWin',
-    'dlgScanCountry',
-    'dlgTrace'
-  ];
-
-  floatingWindowIds.forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el || el.dataset.zstackBound === '1') return;
-    el.dataset.zstackBound = '1';
-    el.addEventListener('pointerdown', () => bringToFront(el));
-  });
-
-  document.querySelectorAll('.dlg95').forEach((dlg) => {
-    if (dlg.dataset.zstackBound === '1') return;
-    dlg.dataset.zstackBound = '1';
-    dlg.addEventListener('pointerdown', () => bringToFront(dlg));
-  });
-}
-
-function makeWindowDraggable(winEl, handleEl) {
-  if (!winEl || !handleEl || handleEl.dataset.dragBound === '1') return;
-  handleEl.dataset.dragBound = '1';
-  handleEl.classList.add('cursor-move');
-
-  let dragging = false;
-  let activePointerId = null;
-  let offsetX = 0;
-  let offsetY = 0;
-
-  const stopDragging = () => {
-    dragging = false;
-    activePointerId = null;
-    document.body.classList.remove('dragging');
-  };
-
-  handleEl.addEventListener('pointerdown', (e) => {
-    if (e.pointerType !== 'touch' && e.button !== 0) return;
-    if (e.target.closest('.title-btn, .titlebar-btns, button, input, select, textarea, a, label')) return;
-
-    const rect = winEl.getBoundingClientRect();
-    dragging = true;
-    activePointerId = e.pointerId;
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
-
-    // Centered dialogs use transform translate; convert to explicit coords before dragging.
-    winEl.style.transform = 'none';
-    if (winEl.classList?.contains('dlg95')) {
-      // Keep dialog width stable while dragging; content should wrap instead of resizing the panel.
-      winEl.style.width = rect.width + 'px';
-      winEl.style.maxWidth = '94vw';
+    if (target.id === 'dlgTrace' || target.closest?.('#dlgTrace')) {
+      const overlay = document.getElementById('dlgTraceOverlay');
+      const dlgTrace = document.getElementById('dlgTrace');
+      if (overlay) overlay.style.zIndex = String(topZ);
+      if (dlgTrace) dlgTrace.style.zIndex = String(topZ + 1);
+      return;
     }
-    winEl.style.left = rect.left + 'px';
-    winEl.style.top = rect.top + 'px';
 
-    document.body.classList.add('dragging');
-    handleEl.setPointerCapture?.(e.pointerId);
-    e.preventDefault();
-  });
-
-  window.addEventListener('pointermove', (e) => {
-    if (!dragging || e.pointerId !== activePointerId) return;
-
-    const maxLeft = Math.max(0, window.innerWidth - winEl.offsetWidth);
-    const maxTop = Math.max(0, window.innerHeight - 28);
-    const nextLeft = Math.min(Math.max(0, e.clientX - offsetX), maxLeft);
-    const nextTop = Math.min(Math.max(0, e.clientY - offsetY), maxTop);
-
-    winEl.style.left = nextLeft + 'px';
-    winEl.style.top = nextTop + 'px';
-  });
-
-  window.addEventListener('pointerup', (e) => {
-    if (e.pointerId === activePointerId) stopDragging();
-  });
-
-  window.addEventListener('pointercancel', (e) => {
-    if (e.pointerId === activePointerId) stopDragging();
-  });
-}
-
-function initAllDialogDragging() {
-  makeWindowDraggable(
-    document.getElementById('notepadWin'),
-    document.querySelector('#notepadWin > div:first-child')
-  );
-
-  document.querySelectorAll('.dlg95').forEach((dlg) => {
-    makeWindowDraggable(dlg, dlg.querySelector('.dlg-title'));
-  });
-
-  // Handle all tool-win-shell windows (Speed, Proto, WiFi Radar, etc.)
-  document.querySelectorAll('.tool-win-shell').forEach((toolWin) => {
-    const titlebar = toolWin.querySelector('.titlebar');
-    if (titlebar) {
-      makeWindowDraggable(toolWin, titlebar);
+    if (target.classList?.contains('dlg-overlay')) {
+      target.style.zIndex = String(topZ);
+      return;
     }
-  });
 
-  makeWindowDraggable(
-    document.getElementById('dlgScanCountry'),
-    document.querySelector('#dlgScanCountry > .titlebar')
-  );
-
-  makeWindowDraggable(
-    document.getElementById('dlgTrace'),
-    document.querySelector('#dlgTrace > .titlebar')
-  );
-}
-
-function closeMainWindow() {
-  if (_toolMode) {
-    closeCurrentWindowImmediate();
-    return;
+    if (target.style) {
+      target.style.zIndex = String(topZ);
+    }
   }
-  requestAppCloseConfirmation();
-}
 
-let _closeConfirmInProgress = false;
+  window.bringToFront = bringToFront;
 
-function requestAppCloseConfirmation() {
-  if (_closeConfirmInProgress) return;
-  _closeConfirmInProgress = true;
+  function initWindowZStacking() {
+    const floatingWindowIds = [
+      'notepadWin',
+      'cmdWin',
+      'speedWin',
+      'protoWin',
+      'macroFolderWin',
+      'globeWin',
+      'topoWin',
+      'wifiRadarWin',
+      'btDetectorWin',
+      'snifferWin',
+      'gnssWin',
+      'lteWin',
+      'imgMetaWin',
+      'dlgScanCountry',
+      'dlgTrace'
+    ];
 
-  try {
-    const ok = window.confirm(t('closeConfirm'));
-    if (!ok) return;
-
-    invokeWindowAction('window_close').then(success => {
-      if (!success && !_isTauriDesktop) window.close();
+    floatingWindowIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el || el.dataset.zstackBound === '1') return;
+      el.dataset.zstackBound = '1';
+      el.addEventListener('pointerdown', () => bringToFront(el));
     });
-  } finally {
-    _closeConfirmInProgress = false;
+
+    document.querySelectorAll('.dlg95').forEach((dlg) => {
+      if (dlg.dataset.zstackBound === '1') return;
+      dlg.dataset.zstackBound = '1';
+      dlg.addEventListener('pointerdown', () => bringToFront(dlg));
+    });
   }
-}
 
-function closeCurrentWindowImmediate() {
-  invokeWindowAction('window_close').then(success => {
-    if (!success) window.close();
-  });
-}
+  function makeWindowDraggable(winEl, handleEl) {
+    if (!winEl || !handleEl || handleEl.dataset.dragBound === '1') return;
+    handleEl.dataset.dragBound = '1';
+    handleEl.classList.add('cursor-move');
 
-function getTauriCurrentWindow() {
-  const getCurrentWindow = window.__TAURI__?.window?.getCurrentWindow
-    ?? window.__TAURI__?.webviewWindow?.getCurrentWindow
-    ?? null;
-  if (!getCurrentWindow) return null;
-  try { return getCurrentWindow(); } catch { return null; }
-}
+    let dragging = false;
+    let activePointerId = null;
+    let offsetX = 0;
+    let offsetY = 0;
 
-async function invokeWindowAction(commandName) {
-  if (_tauriInvoke) {
+    const stopDragging = () => {
+      dragging = false;
+      activePointerId = null;
+      document.body.classList.remove('dragging');
+    };
+
+    handleEl.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch' && e.button !== 0) return;
+      if (e.target.closest('.title-btn, .titlebar-btns, button, input, select, textarea, a, label')) return;
+
+      const rect = winEl.getBoundingClientRect();
+      dragging = true;
+      activePointerId = e.pointerId;
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+
+      // Centered dialogs use transform translate; convert to explicit coords before dragging.
+      winEl.style.transform = 'none';
+      if (winEl.classList?.contains('dlg95')) {
+        // Keep dialog width stable while dragging; content should wrap instead of resizing the panel.
+        winEl.style.width = rect.width + 'px';
+        winEl.style.maxWidth = '94vw';
+      }
+      winEl.style.left = rect.left + 'px';
+      winEl.style.top = rect.top + 'px';
+
+      document.body.classList.add('dragging');
+      handleEl.setPointerCapture?.(e.pointerId);
+      e.preventDefault();
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!dragging || e.pointerId !== activePointerId) return;
+
+      const maxLeft = Math.max(0, window.innerWidth - winEl.offsetWidth);
+      const maxTop = Math.max(0, window.innerHeight - 28);
+      const nextLeft = Math.min(Math.max(0, e.clientX - offsetX), maxLeft);
+      const nextTop = Math.min(Math.max(0, e.clientY - offsetY), maxTop);
+
+      winEl.style.left = nextLeft + 'px';
+      winEl.style.top = nextTop + 'px';
+    });
+
+    window.addEventListener('pointerup', (e) => {
+      if (e.pointerId === activePointerId) stopDragging();
+    });
+
+    window.addEventListener('pointercancel', (e) => {
+      if (e.pointerId === activePointerId) stopDragging();
+    });
+  }
+
+  function initAllDialogDragging() {
+    makeWindowDraggable(
+      document.getElementById('notepadWin'),
+      document.querySelector('#notepadWin > div:first-child')
+    );
+
+    document.querySelectorAll('.dlg95').forEach((dlg) => {
+      makeWindowDraggable(dlg, dlg.querySelector('.dlg-title'));
+    });
+
+    // Handle all tool-win-shell windows (Speed, Proto, WiFi Radar, etc.)
+    document.querySelectorAll('.tool-win-shell').forEach((toolWin) => {
+      const titlebar = toolWin.querySelector('.titlebar');
+      if (titlebar) {
+        makeWindowDraggable(toolWin, titlebar);
+      }
+    });
+
+    makeWindowDraggable(
+      document.getElementById('dlgScanCountry'),
+      document.querySelector('#dlgScanCountry > .titlebar')
+    );
+
+    makeWindowDraggable(
+      document.getElementById('dlgTrace'),
+      document.querySelector('#dlgTrace > .titlebar')
+    );
+  }
+
+  function closeMainWindow() {
+    if (_toolMode) {
+      closeCurrentWindowImmediate();
+      return;
+    }
+    requestAppCloseConfirmation();
+  }
+
+  let _closeConfirmInProgress = false;
+
+  function requestAppCloseConfirmation() {
+    if (_closeConfirmInProgress) return;
+    _closeConfirmInProgress = true;
+
     try {
-      await _tauriInvoke(commandName);
-      return true;
-    } catch {}
+      const ok = window.confirm(t('closeConfirm'));
+      if (!ok) return;
+
+      invokeWindowAction('window_close').then(success => {
+        if (!success && !_isTauriDesktop) window.close();
+      });
+    } finally {
+      _closeConfirmInProgress = false;
+    }
   }
-  return false;
-}
 
-async function minimizeMainWindow() {
-  await invokeWindowAction('window_minimize');
-}
+  function closeCurrentWindowImmediate() {
+    invokeWindowAction('window_close').then(success => {
+      if (!success) window.close();
+    });
+  }
 
-async function toggleMaximizeMainWindow() {
-  await invokeWindowAction('window_toggle_maximize');
-}
+  function getTauriCurrentWindow() {
+    const getCurrentWindow = window.__TAURI__?.window?.getCurrentWindow
+      ?? window.__TAURI__?.webviewWindow?.getCurrentWindow
+      ?? null;
+    if (!getCurrentWindow) return null;
+    try { return getCurrentWindow(); } catch { return null; }
+  }
 
-async function startMainWindowDrag() {
-  await invokeWindowAction('window_start_dragging');
-}
+  async function invokeWindowAction(commandName) {
+    if (_tauriInvoke) {
+      try {
+        await _tauriInvoke(commandName);
+        return true;
+      } catch {}
+    }
+    return false;
+  }
 
-function openMainWindow() {
-  const win = document.getElementById('mainWin');
-  if (!win) return;
-  win.style.display = 'block';
-}
+  async function minimizeMainWindow() {
+    await invokeWindowAction('window_minimize');
+  }
+
+  async function toggleMaximizeMainWindow() {
+    await invokeWindowAction('window_toggle_maximize');
+  }
+
+  async function startMainWindowDrag() {
+    await invokeWindowAction('window_start_dragging');
+  }
+
+  function openMainWindow() {
+    const win = document.getElementById('mainWin');
+    if (!win) return;
+    win.style.display = 'block';
+  }
+const WINDOW_CONTEXT_ALLOW_SELECTOR = [
+  '#resultBody .result-row',
+  '#macroFolderList .macro-row',
+  'input',
+  'textarea',
+  'select',
+  '[contenteditable="true"]',
+].join(', ');
 
 const WINDOW_CONTEXT_BLOCK_SELECTOR = [
   '.titlebar',
@@ -342,15 +347,6 @@ const WINDOW_CONTEXT_BLOCK_SELECTOR = [
   '.menu-dd-sep',
   '.enrich-popup',
   '.enrich-popup-bar',
-].join(', ');
-
-const WINDOW_CONTEXT_ALLOW_SELECTOR = [
-  '#resultBody .result-row',      // PPM otwiera nasze własne menu kontekstowe
-  '#macroFolderList .macro-row',  // PPM otwiera menu akcji makra
-  'input',
-  'textarea',
-  'select',
-  '[contenteditable="true"]',
 ].join(', ');
 
 const WINDOW_ROOT_SELECTOR = [
@@ -701,10 +697,8 @@ bindClickToGlobal('btnPresetsCloseX', 'closePresetsDlg');
 bindClickToGlobal('btnPresetsCancel', 'closePresetsDlg');
 bindClickToGlobal('btnLangCloseX', 'closeLangDlg');
 bindClickToGlobal('btnDefaultsCloseX', 'closeDefaultsDlg');
-bindClickToGlobal('btnScanWatchCloseX', 'closeScanWatchDlg');
-bindClickToGlobal('btnScanWatchCloseBtn', 'closeScanWatchDlg');
-bindClickToGlobal('btnWifiDetectorCloseX', 'closeWifiDetectorDlg');
-bindClickToGlobal('btnWifiDetectorCloseBtn', 'closeWifiDetectorDlg');
+bindClickToGlobal('btnScanWatchClose', 'closeScanWatchDlg');
+bindClickToGlobal('btnWifiDetectorClose', 'closeWifiDetectorDlg');
 bindClickToGlobal('btnVersionsCloseX', 'closeVersionsDlg');
 bindClickToGlobal('btnCustomizeCancelX', 'cancelCustomizeDlg');
 bindClickToGlobal('btnCustomizeOk', 'closeCustomizeDlg');
@@ -841,7 +835,10 @@ function savePresetsStorage(arr) {
 let presets = loadPresets();
 let activePresetIdx = +( localStorage.getItem('netrecon_active_preset') || 0 );
 if (activePresetIdx >= presets.length) activePresetIdx = 0;
-let portsOverride = null;
+var portsOverride = null;
+
+window.__setPortsOverride = (value) => { portsOverride = value; };
+window.__clearPortsOverride = () => { portsOverride = null; };
 
 function getActivePorts() {
   if (portsOverride !== null) return portsOverride;
@@ -1041,6 +1038,13 @@ function setIP(prefix, ip) {
 let scanning=false, stopRequested=false;
 const activeControllers = new Set();
 var foundHostsMap={}, foundPingMap={}, totalFound=0, totalOpenPorts=0;
+window.__isScanInProgress = () => scanning;
+window.__scanRuntime = {
+  get scanning() { return scanning; },
+  get stopRequested() { return stopRequested; },
+  set stopRequested(value) { stopRequested = !!value; },
+  get activeControllers() { return activeControllers; }
+};
 
 // ── Scan History ──
 const SCAN_HISTORY_KEY = 'netrecon_scan_history';
@@ -1075,7 +1079,11 @@ function getStatusCountForFilter() {
 }
 
 let timerInterval=null, scanStart=0;
-let selectedRowEl=null, ctxTargetIp='', ctxTargetPorts=[];
+const previewContext = window.__previewContext || (window.__previewContext = {
+  selectedRowEl: null,
+  targetIp: '',
+  targetPorts: []
+});
 let focusedIp = localStorage.getItem('netrecon_focus_ip') || '';
 
 // ══════════════════════════════════════════════════
@@ -1095,14 +1103,13 @@ const statusMsg   = document.getElementById('statusMsg');
 const statusCount = document.getElementById('statusCount');
 const listBody    = document.getElementById('listBody');
 const emptyRow    = document.getElementById('emptyRow');
-const previewWrap = document.getElementById('previewWrap');
-const previewFrame= document.getElementById('previewFrame');
-const previewBlocked=document.getElementById('previewBlocked');
-const previewUrl  = document.getElementById('previewUrl');
-const btnPreviewOpen = document.getElementById('btnPreviewOpen');
-const btnPreviewClose= document.getElementById('btnPreviewClose');
-const previewExtLink = document.getElementById('previewExtLink');
 const ctxMenu     = document.getElementById('ctxMenu');
+window.__scanDom = {
+  listBody,
+  emptyRow,
+  statTime,
+  statChecked
+};
 
 // ══════════════════════════════════════════════════
 //  LIST FILTER
@@ -1553,48 +1560,6 @@ function isPrivateIp(num) {
 }
 
 
-function showExternalIpConfirm(startIp, endIp) {
-  return new Promise(resolve => {
-    const overlay = document.getElementById('dlgExternalIpOverlay');
-    document.getElementById('dlgExternalIpMsg').innerHTML = t('dlgExternalIpMsg', startIp, endIp);
-    overlay.classList.add('open');
-    if (typeof bringToFront === 'function') bringToFront(overlay.querySelector('.dlg95'));
-    const cleanup = (result) => {
-      overlay.classList.remove('open');
-      document.getElementById('btnExtIpOk').removeEventListener('click', onOk);
-      document.getElementById('btnExtIpCancelBtn').removeEventListener('click', onCancel);
-      document.getElementById('btnExtIpCancel').removeEventListener('click', onCancel);
-      resolve(result);
-    };
-    const onOk     = () => cleanup(true);
-    const onCancel = () => cleanup(false);
-    document.getElementById('btnExtIpOk').addEventListener('click', onOk);
-    document.getElementById('btnExtIpCancelBtn').addEventListener('click', onCancel);
-    document.getElementById('btnExtIpCancel').addEventListener('click', onCancel);
-  });
-}
-
-function showLargeRangeConfirm(count) {
-  return new Promise(resolve => {
-    const overlay = document.getElementById('dlgLargeRangeOverlay');
-    const msg = document.getElementById('dlgLargeRangeMsg');
-    msg.textContent = t('dlgLargeRangeMsg', count.toLocaleString());
-    overlay.classList.add('open');
-    if (typeof bringToFront === 'function') bringToFront(overlay.querySelector('.dlg95'));
-    const cleanup = (result) => {
-      overlay.classList.remove('open');
-      document.getElementById('btnLargeRangeOk').removeEventListener('click', onOk);
-      document.getElementById('btnLargeRangeCancelBtn').removeEventListener('click', onCancel);
-      document.getElementById('btnLargeRangeCancel').removeEventListener('click', onCancel);
-      resolve(result);
-    };
-    const onOk     = () => cleanup(true);
-    const onCancel = () => cleanup(false);
-    document.getElementById('btnLargeRangeOk').addEventListener('click', onOk);
-    document.getElementById('btnLargeRangeCancelBtn').addEventListener('click', onCancel);
-    document.getElementById('btnLargeRangeCancel').addEventListener('click', onCancel);
-  });
-}
 function setStatus(text, type='') {
   statusMsg.textContent = text;
   statusMsg.className = 'status-panel'+(type?' '+type:'');
@@ -1604,7 +1569,9 @@ function updateProgress(checked, total, fh, op) {
   progFill.style.width = pct+'%';
   progPct.textContent = pct+'%';
   statChecked.textContent = checked;
-  statFound.textContent   = fh;
+  const counts = getResultCounts();
+  statFound.textContent   = counts.activeHosts;
+  statFound.title = `Active: ${counts.activeHosts}`;
   statPorts.textContent   = op;
   statusCount.textContent = t('statusHosts', getStatusCountForFilter());
 }
@@ -1631,6 +1598,7 @@ const _tauriInvoke = (window.__TAURI_INTERNALS__?.invoke)
   ?? (window.__TAURI__?.invoke)
   ?? (window.__TAURI__?.core?.invoke)
   ?? null;
+window.__tauriInvoke = _tauriInvoke;
 
 const _tauriListen = window.__TAURI__?.event?.listen ?? null;
 const _toolMode = (new URLSearchParams((window.location.hash || '').replace(/^#/, ''))).get('tool');
@@ -1724,6 +1692,9 @@ function applyToolWindowMode() {
     sniffer: 'snifferWin',
     'imgmeta': 'imgMetaWin',
     'ai-assistant': 'aiAssistantWin',
+    'phone-lookup': 'phoneLookupWin',
+    'scan-watch': 'scanWatchWin',
+    'wifi-detector': 'wifiDetectorWin',
   };
 
   const targetId = toolToWindow[_toolMode];
@@ -2347,16 +2318,17 @@ function addResultRow(ip, openPorts, pingMs) {
     document.querySelectorAll('.lv-row.selected').forEach(r => r.classList.remove('selected'));
     if (!wasSelected) {
       row.classList.add('selected');
-      selectedRowEl = row;
+      previewContext.selectedRowEl = row;
     } else {
-      selectedRowEl = null;
+      previewContext.selectedRowEl = null;
     }
   });
 
   // Right click → context menu
   row.addEventListener('contextmenu', e=>{
     e.preventDefault();
-    ctxTargetIp=ip; ctxTargetPorts=openPorts;
+    previewContext.targetIp = ip;
+    previewContext.targetPorts = openPorts;
     const vw=window.innerWidth, vh=window.innerHeight;
     ctxMenu.style.left=Math.min(e.clientX, vw-175)+'px';
     ctxMenu.style.top=Math.min(e.clientY, vh-220)+'px';
@@ -2386,56 +2358,6 @@ function addResultRow(ip, openPorts, pingMs) {
 // ══════════════════════════════════════════════════
 //  RESULTS PERSISTENCE
 // ══════════════════════════════════════════════════
-let _saveResultsTimer = null;
-
-function saveResultsNow() {
-  try {
-    const data = Object.entries(foundHostsMap).map(([ip, ports]) => ({
-      ip, ports,
-      ping: foundPingMap[ip] ?? null,
-      hostname: hostnameCache[ip] ?? null,
-      geo: ipGeoCoords[ip] ?? null,
-    }));
-    localStorage.setItem('netrecon_results', JSON.stringify(data));
-    localStorage.setItem('netrecon_results_ts', Date.now());
-  } catch {}
-}
-
-function saveResults() {
-  if (_saveResultsTimer) clearTimeout(_saveResultsTimer);
-  _saveResultsTimer = setTimeout(() => {
-    _saveResultsTimer = null;
-    saveResultsNow();
-  }, 180);
-}
-
-function restoreResults() {
-  try {
-    const raw = localStorage.getItem('netrecon_results');
-    if (!raw) return;
-    const data = JSON.parse(raw);
-    if (!data.length) return;
-    const ts = +localStorage.getItem('netrecon_results_ts');
-    const age = ts ? Math.round((Date.now() - ts) / 60000) : null;
-
-    data.forEach(({ ip, ports, ping, hostname, geo }) => {
-      foundHostsMap[ip] = ports;
-      totalOpenPorts += ports.length;
-      if (ping !== null) foundPingMap[ip] = ping;
-      if (hostname !== null) hostnameCache[ip] = hostname;
-      if (geo) ipGeoCoords[ip] = geo;
-      addResultRow(ip, ports, ping);
-    });
-    const counts = getResultCounts();
-    totalFound = counts.activeHosts;
-    updateProgress(0, 0, totalFound, totalOpenPorts);
-    const ageStr = age !== null ? ` (${age} min ago)` : '';
-    setStatus(`Restored ${counts.totalHosts} results from last scan${ageStr}.`, 'ok');
-    statusCount.textContent = t('statusHosts', totalFound);
-    if (typeof appendCmdLog === 'function') appendCmdLog(`Restored ${counts.totalHosts} result${counts.totalHosts===1?'':'s'} from last scan${ageStr}. Active hosts: ${counts.activeHosts}.`, 'scan');
-  } catch {}
-}
-
 // ── Restore on load ──
 restoreResults();
 // Re-apply saved sort (pre-flip dir so sortListView flips it back to saved value)
@@ -2452,726 +2374,6 @@ foundExpandedSet.forEach(ip => {
   if (btn) { btn.textContent = '−'; btn.classList.add('open'); }
 });
 
-// ══════════════════════════════════════════════════
-//  PREVIEW
-// ══════════════════════════════════════════════════
-function openInBrowser(url) {
-  if (window.__TAURI__) {
-    window.__TAURI__.core.invoke('open_browser', { url });
-  } else {
-    window.open(url, '_blank', 'noopener');
-  }
-}
-
-function openPreview(url) {
-  previewUrl.textContent = url;
-  previewWrap.classList.remove('preview-blocked-active');
-  previewFrame.src = url;
-  previewExtLink.href = url;
-  btnPreviewOpen.onclick = ()=>openInBrowser(url);
-  previewWrap.classList.add('open');
-  previewFrame.onload = () => {
-    try { void previewFrame.contentDocument; }
-    catch { previewWrap.classList.add('preview-blocked-active'); }
-  };
-  setTimeout(()=>previewWrap.scrollIntoView({behavior:'smooth',block:'start'}),60);
-}
-btnPreviewClose.addEventListener('click',()=>{
-  previewWrap.classList.remove('open');
-  previewFrame.src='about:blank';
-  if(selectedRowEl){selectedRowEl.classList.remove('selected');selectedRowEl=null;}
-});
-
-// ══════════════════════════════════════════════════
-//  ENRICH POPUP (draggable retro-win-style info window)
-// ══════════════════════════════════════════════════
-function showEnrichPopup(popupId, label, asyncFn) {
-  // Toggle: clicking the same menu item again closes the popup
-  const existing = document.getElementById(popupId);
-  if (existing) { existing.remove(); return; }
-
-  const win = document.createElement('div');
-  win.id = popupId;
-  win.className = 'enrich-popup';
-  const offset = document.querySelectorAll('.enrich-popup').length * 24;
-  win.style.top  = (90 + offset) + 'px';
-  win.style.left = Math.max(10, (window.innerWidth / 2 - 160)) + 'px';
-
-  const bar = document.createElement('div');
-  bar.className = 'enrich-popup-bar';
-  bar.innerHTML = `<span class="enrich-bar-label">${label}</span>` +
-    `<span class="title-btn enrich-bar-close">✕</span>`;
-  bar.querySelector('.title-btn').addEventListener('click', () => win.remove());
-
-  const body = document.createElement('div');
-  body.className = 'enrich-popup-body';
-  body.innerHTML = '<span class="enrich-body-loading">Ładowanie…</span>';
-
-  win.append(bar, body);
-  document.body.appendChild(win);
-
-  // Draggable titlebar
-  let drag = false, ox = 0, oy = 0;
-  bar.addEventListener('mousedown', e => {
-    if (e.button !== 0) return;
-    if (e.target.classList.contains('title-btn')) return;
-    drag = true;
-    const r = win.getBoundingClientRect();
-    ox = e.clientX - r.left; oy = e.clientY - r.top;
-    e.preventDefault();
-  });
-  document.addEventListener('mousemove', e => {
-    if (!drag) return;
-    win.style.left = (e.clientX - ox) + 'px';
-    win.style.top  = (e.clientY - oy) + 'px';
-  });
-  document.addEventListener('mouseup', () => { drag = false; });
-
-  asyncFn()
-    .then(html  => { body.innerHTML = html || '<span class="enrich-body-empty">Brak danych</span>'; })
-    .catch(() => { body.innerHTML = '<span class="enrich-body-error">Błąd ładowania danych</span>'; });
-}
-
-// ══════════════════════════════════════════════════
-//  CONTEXT MENU
-// ══════════════════════════════════════════════════
-document.getElementById('ctxCopyIp').addEventListener('click',()=>{
-  navigator.clipboard?.writeText(ctxTargetIp);
-  ctxMenu.classList.remove('open');
-});
-document.getElementById('ctxCopyPorts').addEventListener('click',()=>{
-  navigator.clipboard?.writeText(ctxTargetPorts.join(', '));
-  ctxMenu.classList.remove('open');
-});
-document.getElementById('ctxHostname').addEventListener('click',()=>{
-  const ip = ctxTargetIp;
-  ctxMenu.classList.remove('open');
-  showEnrichPopup(`enrich-host-${ip}`, `🧭 Hostname — ${ip}`, async () => {
-    const name = await lookupHostname(ip);
-    return name
-      ? `<div><b>Hostname:</b> ${name}</div>`
-      : `<span class="detail-muted">Brak rekordu reverse DNS</span>`;
-  });
-});
-document.getElementById('ctxOpenBrowser').addEventListener('click',()=>{
-  const proto=(ctxTargetPorts[0]===443||ctxTargetPorts[0]===8443)?'https':'http';
-  openInBrowser(`${proto}://${ctxTargetIp}:${ctxTargetPorts[0]}/`);
-  ctxMenu.classList.remove('open');
-});
-document.getElementById('ctxPreview').addEventListener('click',()=>{
-  const proto=(ctxTargetPorts[0]===443||ctxTargetPorts[0]===8443)?'https':'http';
-  openPreview(`${proto}://${ctxTargetIp}:${ctxTargetPorts[0]}/`);
-  ctxMenu.classList.remove('open');
-});
-document.getElementById('ctxScanAllPorts').addEventListener('click',()=>{
-  if (!ctxTargetIp || scanning) {
-    ctxMenu.classList.remove('open');
-    return;
-  }
-  portsOverride = Array.from({length: 65535}, (_, i) => i + 1);
-  setIP('f', ctxTargetIp);
-  setIP('t', ctxTargetIp);
-  ctxMenu.classList.remove('open');
-  startScan()
-    .catch(e => { setStatus(`Error: ${e.message}`, 'err'); setScanState(false); })
-    .finally(() => { portsOverride = null; });
-});
-document.addEventListener('click',()=>ctxMenu.classList.remove('open'));
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') ctxMenu.classList.remove('open'); });
-
-// ── Detail enrichment handlers (right-click popup windows) ──
-document.getElementById('ctxDetailGeo').addEventListener('click', () => {
-  const ip = ctxTargetIp;
-  ctxMenu.classList.remove('open');
-  showEnrichPopup(`enrich-geo-${ip}`, `🌍 Geolokalizacja — ${ip}`, async () => {
-    const geo = await geoLookup(ip);
-    if (!geo) return isPrivateIP(ip)
-      ? `<span class="detail-muted">${t('geoLocal')}</span>`
-      : `<span class="status-error">${t('geoError')}</span>`;
-    const vpn = geo.proxy   ? `<span class="badge badge-vpn">VPN/Proxy</span>` : '';
-    const dc  = geo.hosting ? `<span class="badge badge-dc">DC</span>` : '';
-    return `<div class="geo-info-line">` +
-      `<b>${t('geoCountry')}</b> ${geo.country||'?'} — ${geo.city||'?'}${vpn}${dc}<br>` +
-      `<b>${t('geoIsp')}</b> ${geo.isp||'?'}<br>` +
-      `<b>${t('geoAs')}</b> ${geo.as||'?'}</div>`;
-  });
-});
-
-document.getElementById('ctxDetailDevice').addEventListener('click', () => {
-  const ip = ctxTargetIp, ports = ctxTargetPorts.slice();
-  ctxMenu.classList.remove('open');
-  showEnrichPopup(`enrich-dev-${ip}`, `🖥 Urządzenie — ${ip}`, async () => {
-    const [deviceLabel, hasFavicon] = await Promise.all([
-      fingerprintByImage(ip, ports),
-      checkFavicon(ip, ports[0]),
-    ]);
-    let html = '';
-    if (deviceLabel) html += `<div><b>${t('deviceType')}</b> ${deviceLabel} <span class="badge badge-recognized">${t('tagRecognized')}</span></div>`;
-    html += `<div><b>${t('deviceFavicon')}</b> ${hasFavicon ? t('deviceFaviconYes') : t('deviceFaviconNo')}</div>`;
-    const portGuess = ports.includes(554)?t('portRtsp'):ports.includes(631)?t('portIpp'):ports.includes(9100)?t('portRaw'):ports.includes(5000)||ports.includes(5001)?t('portSyn'):ports.includes(8006)?t('portProx'):null;
-    if (portGuess) html += `<div><b>${t('deviceSuggestion')}</b> ${portGuess}</div>`;
-    return html || `<span class="detail-muted">${t('deviceUnknown')}</span>`;
-  });
-});
-
-document.getElementById('ctxDetailTitle').addEventListener('click', () => {
-  const ip = ctxTargetIp, ports = ctxTargetPorts.slice();
-  ctxMenu.classList.remove('open');
-  showEnrichPopup(`enrich-title-${ip}`, `📄 Tytuł HTTP — ${ip}`, async () => {
-    if (isPrivateIP(ip)) return `<span class="detail-muted">${t('titleExtOnly')}</span>`;
-    const title = await fetchTitle(ip, ports[0]);
-    return title
-      ? `<b>${t('titleLabel')}</b> &ldquo;${title}&rdquo;`
-      : `<span class="detail-muted">${t('titleUnavailable')}</span>`;
-  });
-});
-
-document.getElementById('ctxDetailAccess').addEventListener('click', () => {
-  const ip = ctxTargetIp, ports = ctxTargetPorts.slice();
-  ctxMenu.classList.remove('open');
-  showEnrichPopup(`enrich-acc-${ip}`, `🔑 Dostęp — ${ip}`, async () => {
-    const isOpen = await checkAuth(ip, ports);
-    return isOpen
-      ? `<b>${t('accessLabel')}</b> <span class="text-ok">${t('accessOpen')}</span>`
-      : `<b>${t('accessLabel')}</b> ${t('accessClosed')}`;
-  });
-});
-
-// ══════════════════════════════════════════════════
-//  EXTERNAL IP
-// ══════════════════════════════════════════════════
-const btnMyIp      = document.getElementById('btnMyIp');
-const myIpResult   = document.getElementById('myIpResult');
-const btnCopyMyIp  = document.getElementById('btnCopyMyIp');
-const btnUseMyIp   = document.getElementById('btnUseMyIp');
-
-btnMyIp.addEventListener('click', async () => {
-  myIpResult.className = 'status-loading';
-  myIpResult.textContent = t('loading');
-  btnCopyMyIp.classList.add('initially-hidden');
-  btnUseMyIp.classList.add('initially-hidden');
-  btnMyIp.disabled = true;
-  try {
-    const res  = await fetch('https://api.ipify.org?format=json');
-    const data = await res.json();
-    myIpResult.className = 'status-ok';
-    myIpResult.textContent = data.ip;
-    btnCopyMyIp.classList.remove('initially-hidden');
-    btnCopyMyIp.onclick = () => {
-      navigator.clipboard?.writeText(data.ip);
-      btnCopyMyIp.textContent = '✔ OK';
-      setTimeout(() => { btnCopyMyIp.textContent = t('btnCopy'); }, 1500);
-    };
-    btnUseMyIp.classList.remove('initially-hidden');
-    btnUseMyIp.onclick = () => {
-      const parts = data.ip.split('.').map(Number);
-      setIP('f', `${parts[0]}.${parts[1]}.${parts[2]}.1`);
-      setIP('t', `${parts[0]}.${parts[1]}.${parts[2]}.254`);
-    };
-  } catch {
-    myIpResult.className = 'status-error';
-    myIpResult.textContent = t('geoError');
-  } finally {
-    btnMyIp.disabled = false;
-  }
-});
-
-// ══════════════════════════════════════════════════
-// Local IP Detection
-const btnMyLocalIp      = document.getElementById('btnMyLocalIp');
-const myLocalIpResult   = document.getElementById('myLocalIpResult');
-const btnCopyMyLocalIp  = document.getElementById('btnCopyMyLocalIp');
-const btnUseMyLocalIp   = document.getElementById('btnUseMyLocalIp');
-const btnLocalSubnets   = document.getElementById('btnLocalSubnets');
-const localSubnetsResult= document.getElementById('localSubnetsResult');
-const localSubnetSelect = document.getElementById('localSubnetSelect');
-const btnUseLocalSubnet = document.getElementById('btnUseLocalSubnet');
-
-async function detectLocalIP() {
-  if (_tauriInvoke) {
-    try {
-      const ip = await _tauriInvoke('get_local_ip');
-      if (ip && isPrivateIP(ip)) return ip;
-      throw new Error('No local private IPv4 found');
-    } catch (err) {
-      // Fall through to WebRTC fallback for browser mode / dev diagnostics.
-    }
-  }
-  return new Promise((resolve, reject) => {
-    if (!window.RTCPeerConnection) {
-      reject(new Error('RTCPeerConnection unavailable'));
-      return;
-    }
-    let pc;
-    try {
-      pc = new RTCPeerConnection({ iceServers: [] });
-    } catch (err) {
-      reject(err);
-      return;
-    }
-
-    let done = false;
-    const finish = (ip) => {
-      if (done) return;
-      done = true;
-      clearTimeout(timeoutId);
-      try { pc.close(); } catch {}
-      resolve(ip);
-    };
-
-    const fail = (err) => {
-      if (done) return;
-      done = true;
-      clearTimeout(timeoutId);
-      try { pc.close(); } catch {}
-      reject(err || new Error('Local IP not found'));
-    };
-
-    const checkCandidateText = (text) => {
-      const ip = extractIpv4(text);
-      if (ip && isPrivateIP(ip)) finish(ip);
-    };
-
-    pc.onicecandidate = (evt) => {
-      if (!evt || !evt.candidate) return;
-      checkCandidateText(evt.candidate.candidate);
-      if (evt.candidate.address) checkCandidateText(evt.candidate.address);
-    };
-
-    pc.onicecandidateerror = () => {
-      // Ignore transient ICE errors; timeout/fallback will handle final state.
-    };
-
-    const timeoutId = setTimeout(async () => {
-      try {
-        // Fallback for browsers that hide IP in candidate strings.
-        const stats = await pc.getStats();
-        for (const report of stats.values()) {
-          if (report.type === 'local-candidate' || report.type === 'candidate-pair') {
-            const ip = report.address || report.ip || extractIpv4(report.candidateType || '');
-            if (ip && isPrivateIP(ip)) {
-              finish(ip);
-              return;
-            }
-          }
-        }
-      } catch {}
-      fail(new Error('Timeout'));
-    }, 5000);
-
-    pc.createDataChannel('local-ip-probe');
-    pc.createOffer()
-      .then((offer) => pc.setLocalDescription(offer))
-      .catch((err) => fail(err));
-  });
-}
-
-function extractIpv4(text) {
-  if (!text) return null;
-  const m = text.match(/\b(\d{1,3}(?:\.\d{1,3}){3})\b/);
-  return m ? m[1] : null;
-}
-
-function ipToSubnetBase(ip) {
-  const parts = ip.split('.').map(Number);
-  if (parts.length !== 4 || parts.some(n => Number.isNaN(n) || n < 0 || n > 255)) return null;
-  return `${parts[0]}.${parts[1]}.${parts[2]}`;
-}
-
-async function detectLocalSubnets() {
-  if (_tauriInvoke) {
-    try {
-      const subnets = await _tauriInvoke('get_local_subnets');
-      if (Array.isArray(subnets)) {
-        return [...new Set(subnets.filter(Boolean))]
-          .sort((a, b) => ipToNum(a + '.0') - ipToNum(b + '.0'));
-      }
-    } catch (err) {
-      // Fall through to WebRTC fallback for browser mode / dev diagnostics.
-    }
-  }
-  return new Promise((resolve, reject) => {
-    if (!window.RTCPeerConnection) {
-      reject(new Error('RTCPeerConnection unavailable'));
-      return;
-    }
-    let pc;
-    try {
-      pc = new RTCPeerConnection({ iceServers: [] });
-    } catch (err) {
-      reject(err);
-      return;
-    }
-
-    const ips = new Set();
-    let done = false;
-
-    const addIp = (ip) => {
-      if (ip && isPrivateIP(ip)) ips.add(ip);
-    };
-
-    const addFromText = (text) => {
-      const ip = extractIpv4(text);
-      addIp(ip);
-    };
-
-    const finish = async () => {
-      if (done) return;
-      done = true;
-      clearTimeout(timeoutId);
-      try {
-        const stats = await pc.getStats();
-        for (const report of stats.values()) {
-          if (report.type === 'local-candidate' || report.type === 'candidate-pair') {
-            addIp(report.address || report.ip || null);
-          }
-        }
-      } catch {}
-      try { pc.close(); } catch {}
-
-      const subnets = [...new Set([...ips]
-        .map(ipToSubnetBase)
-        .filter(Boolean))]
-        .sort((a, b) => ipToNum(a + '.0') - ipToNum(b + '.0'));
-
-      resolve(subnets);
-    };
-
-    pc.onicecandidate = (evt) => {
-      if (evt && evt.candidate) {
-        addFromText(evt.candidate.candidate);
-        addFromText(evt.candidate.address);
-      }
-    };
-
-    pc.onicegatheringstatechange = () => {
-      if (pc.iceGatheringState === 'complete') {
-        finish();
-      }
-    };
-
-    pc.onicecandidateerror = () => {
-      // Ignore ICE transient errors.
-    };
-
-    const timeoutId = setTimeout(finish, 4500);
-    pc.createDataChannel('local-subnet-probe');
-    pc.createOffer()
-      .then((offer) => pc.setLocalDescription(offer))
-      .catch(() => finish());
-  });
-}
-
-btnMyLocalIp.addEventListener('click', async () => {
-  myLocalIpResult.className = 'status-loading';
-  myLocalIpResult.textContent = t('loading');
-  btnCopyMyLocalIp.classList.add('initially-hidden');
-  btnUseMyLocalIp.classList.add('initially-hidden');
-  btnMyLocalIp.disabled = true;
-  
-  try {
-    const localIP = await detectLocalIP();
-    myLocalIpResult.className = 'status-ok';
-    myLocalIpResult.textContent = localIP;
-    
-    btnCopyMyLocalIp.classList.remove('initially-hidden');
-    btnCopyMyLocalIp.onclick = () => {
-      navigator.clipboard?.writeText(localIP);
-      btnCopyMyLocalIp.textContent = '✔ OK';
-      setTimeout(() => { btnCopyMyLocalIp.textContent = t('btnCopy'); }, 1500);
-    };
-    
-    btnUseMyLocalIp.classList.remove('initially-hidden');
-    btnUseMyLocalIp.onclick = () => {
-      const parts = localIP.split('.').map(Number);
-      // Set range to scan local network
-      setIP('f', `${parts[0]}.${parts[1]}.${parts[2]}.1`);
-      setIP('t', `${parts[0]}.${parts[1]}.${parts[2]}.254`);
-    };
-  } catch (error) {
-    myLocalIpResult.className = 'status-error';
-    myLocalIpResult.textContent = /RTCPeerConnection unavailable/i.test(String(error && error.message || ''))
-      ? t('localDetectUnsupported')
-      : t('localIpDetectError');
-  } finally {
-    btnMyLocalIp.disabled = false;
-  }
-});
-
-btnLocalSubnets.addEventListener('click', async () => {
-  localSubnetsResult.className = 'status-loading';
-  localSubnetsResult.textContent = t('loading');
-  localSubnetSelect.classList.add('initially-hidden');
-  btnUseLocalSubnet.classList.add('initially-hidden');
-  btnLocalSubnets.disabled = true;
-
-  try {
-    const subnets = await detectLocalSubnets();
-    if (!subnets.length) {
-      localSubnetsResult.className = 'status-error';
-      localSubnetsResult.textContent = t('localSubnetsNone');
-      return;
-    }
-
-    localSubnetSelect.innerHTML = '';
-    subnets.forEach((base) => {
-      const opt = document.createElement('option');
-      opt.value = base;
-      opt.textContent = `${base}.0/24`;
-      localSubnetSelect.appendChild(opt);
-    });
-
-    localSubnetsResult.className = 'status-ok';
-    localSubnetsResult.textContent = t('localSubnetsFound', subnets.length);
-    localSubnetSelect.classList.remove('initially-hidden');
-    btnUseLocalSubnet.classList.remove('initially-hidden');
-
-    btnUseLocalSubnet.onclick = () => {
-      const base = localSubnetSelect.value;
-      if (!base) return;
-      setIP('f', `${base}.1`);
-      setIP('t', `${base}.254`);
-      setStatus(`Range set: ${base}.1 - ${base}.254`, 'ok');
-    };
-  } catch {
-    localSubnetsResult.className = 'status-error';
-    localSubnetsResult.textContent = t('localIpDetectError');
-  } finally {
-    btnLocalSubnets.disabled = false;
-  }
-});
-
-// ══════════════════════════════════════════════════
-async function startScan() {
-  window.__scanInvokeWarned = false;
-  const startIp=getIP('f'), endIp=getIP('t');
-  if (!isIPv4(startIp)||!isIPv4(endIp)) { setStatus(t('errInvalidIp'),'err'); return; }
-  const startNum=ipToNum(startIp), endNum=ipToNum(endIp);
-  if (startNum>endNum) { setStatus(t('errIpRange'),'err'); return; }
-
-  // Add to scan history
-  addToScanHistory(`${startIp} - ${endIp}`);
-
-  // Confirm if range > 256
-  if (endNum - startNum + 1 > 256) {
-    const confirmed = await showLargeRangeConfirm(endNum - startNum + 1);
-    if (!confirmed) return;
-  }
-
-  // Warn if any part of the range is external (public)
-  if (!isPrivateIp(startNum) || !isPrivateIp(endNum)) {
-    const confirmed = await showExternalIpConfirm(startIp, endIp);
-    if (!confirmed) return;
-  }
-
-  const selectedPorts = getActivePorts();
-  if (!selectedPorts.length) { setStatus(t('errNoPorts'),'err'); return; }
-
-  const total=endNum-startNum+1;
-  const concurrency = Math.min(+document.getElementById('concNum').value || 32, 64);
-  const delayMs = Math.max(0, Math.min(5000, +document.getElementById('delayMs').value || 0));
-  const _defs = loadScanDefaults();
-  const delayMsPerPort = (_defs.portScanMode === 'sequential') ? _defs.delayMsPerPort : 0;
-  const portChunkSize = _defs.chunkSize || 100;
-  const maxConcurrentProbes = Math.max(1, concurrency);
-  let inFlightProbes = 0;
-  const probeWaiters = [];
-
-  async function withProbeSlot(task) {
-    while (inFlightProbes >= maxConcurrentProbes) {
-      await new Promise(resolve => probeWaiters.push(resolve));
-    }
-    inFlightProbes++;
-    try {
-      return await task();
-    } finally {
-      inFlightProbes--;
-      const wake = probeWaiters.shift();
-      if (wake) wake();
-    }
-  }
-
-  function scanProbePort(ip, port, ms = 1400) {
-    return withProbeSlot(() => probePort(ip, port, ms));
-  }
-
-  // Warn if scanning "all ports" in sequential mode (extremely long time)
-  if (portsOverride !== null && _defs.portScanMode === 'sequential' && delayMsPerPort > 50) {
-    const estMs = selectedPorts.length * (delayMsPerPort + 1400);
-    const estHours = Math.ceil(estMs / 1000 / 3600);
-    const confirmed = await showLargeRangeConfirm(selectedPorts.length, `WARNING: Scanning all ${selectedPorts.length} ports sequentially with ${delayMsPerPort}ms/port delay = ~${estHours} hours per IP!`);
-    if (!confirmed) return;
-  }
-
-  foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
-  refreshTopologyFilterOptions();
-  stopRequested=false; statTime.textContent='0.0s';
-  updateProgress(0,total,0,0); setScanState(true);
-  if (typeof appendCmdLog === 'function') {
-    appendCmdLog(`Scan start: ${startIp} — ${endIp}  [${selectedPorts.length} port${selectedPorts.length===1?'':'s'}, conc: ${concurrency}]`, 'scan');
-    appendCmdLog(`IP delay: ${delayMs}ms  |  Port mode: ${_defs.portScanMode === 'sequential' ? `sequential, delay ${delayMsPerPort}ms/port` : 'parallel'}  |  Batch: ${portChunkSize}`, 'scan');
-  }
-
-  // For "all ports" mode, don't clear the list - keep existing results and update rows
-  // For normal scans, clear list
-  if (portsOverride === null) {
-    listBody.innerHTML='';
-    listBody.appendChild(emptyRow);
-  } else {
-    // "All ports" mode: remove emptyRow if present, but keep existing data
-    if (emptyRow.parentNode) emptyRow.remove();
-  }
-  emptyRow.textContent = t('emptyScanning');
-
-  if (total>500) {
-    const estSec=Math.round(total*(1500/concurrency)/1000);
-    const estStr=estSec>=60?`~${Math.ceil(estSec/60)} min`:`~${estSec}s`;
-    setStatus(t('statusLarge', total, selectedPorts.length, estStr),'warn');
-  } else {
-    setStatus(t('statusScanning', total, selectedPorts.length),'warn');
-  }
-
-  // Show/hide port progress bar
-  const portProgWrap  = document.getElementById('portProgWrap');
-  const portProgFill  = document.getElementById('portProgFill');
-  const portProgLabel = document.getElementById('portProgLabel');
-  function showPortProgress(current, total, ip) {
-    portProgWrap.classList.add('active');
-    const pct = total ? Math.round(current / total * 100) : 0;
-    portProgFill.style.width = pct + '%';
-    portProgLabel.textContent = `Porty: ${current + 1}–${Math.min(current + portChunkSize, total)} / ${total}  (${ip})`;
-  }
-  function hidePortProgress() {
-    portProgWrap.classList.remove('active');
-    portProgFill.style.width = '0%';
-  }
-
-  // Probe all ports for one IP — chunked to avoid freezing browser, optionally with per-port delay
-  // onBatchResult callback called after each batch with accumulated open ports so far
-  async function probeAllPorts(ip, ports, delayBetweenPorts = 0, onBatchResult = null) {
-    const CHUNK = portChunkSize;
-    const results = [];
-    for (let i = 0; i < ports.length && !stopRequested; i += CHUNK) {
-      showPortProgress(i, ports.length, ip);
-      const batch = ports.slice(i, i + CHUNK);
-      if (delayBetweenPorts > 0) {
-        // Sequential with delay
-        for (const port of batch) {
-          const r = await scanProbePort(ip, port, 1400);
-          results.push({ port, ok: r.ok, ms: r.ms });
-          if (delayBetweenPorts > 0 && !stopRequested) {
-            await new Promise(resolve => setTimeout(resolve, delayBetweenPorts));
-          }
-        }
-      } else {
-        // Parallel without delay
-        const batchRes = await Promise.all(
-          batch.map(port => scanProbePort(ip, port, 1400).then(r => ({ port, ok: r.ok, ms: r.ms })))
-        );
-        results.push(...batchRes);
-      }
-      // Live update after each batch
-      if (onBatchResult) onBatchResult(results);
-    }
-    hidePortProgress();
-    return results;
-  }
-
-  let nextIdx=0, checked=0;
-  const worker = async () => {
-    while (!stopRequested) {
-      const idx=nextIdx++; if(idx>=total) return;
-      const ip=numToIp(startNum+idx);
-      let lastLiveRowUiUpdateAt = 0;
-
-      // Live row update callback for "all ports" mode — fires after each batch of ports
-      let liveRowAdded = false;
-      let liveOpenCount = 0;
-      const onBatch = portsOverride !== null ? (partialResults) => {
-        const partialOpen = partialResults.filter(r=>r.ok).map(r=>r.port);
-        const bestMs = partialResults.filter(r=>r.ok).reduce((a,r)=>r.ms<a?r.ms:a, Infinity);
-        const pingMs = bestMs === Infinity ? null : bestMs;
-        // Only update row if we found new ports since last callback
-        if (partialOpen.length === liveOpenCount) return;
-        const now = Date.now();
-        // Avoid excessive DOM churn in all-ports mode while still keeping periodic live feedback.
-        if (now - lastLiveRowUiUpdateAt < 180 && partialOpen.length < selectedPorts.length) return;
-        lastLiveRowUiUpdateAt = now;
-        if (!liveRowAdded) liveRowAdded = true;
-        totalOpenPorts += partialOpen.length - liveOpenCount;
-        liveOpenCount = partialOpen.length;
-        foundHostsMap[ip] = partialOpen;
-        totalFound = getResultCounts().activeHosts;
-        if (pingMs !== null) foundPingMap[ip] = pingMs;
-        addResultRow(ip, partialOpen, pingMs);
-      } : null;
-
-      const res = selectedPorts.length > 200
-        ? await probeAllPorts(ip, selectedPorts, delayMsPerPort, onBatch)
-        : delayMsPerPort > 0
-          ? await probeAllPorts(ip, selectedPorts, delayMsPerPort, onBatch)
-          : await Promise.all(selectedPorts.map(port=>scanProbePort(ip,port,1400).then(r=>({port, ok:r.ok, ms:r.ms}))));
-      const openPorts=res.filter(r=>r.ok).map(r=>r.port);
-      const bestMs = res.filter(r=>r.ok).reduce((a,r)=>r.ms<a?r.ms:a, Infinity);
-      const pingMs = bestMs === Infinity ? null : bestMs;
-
-      if (liveRowAdded) {
-        // Final update — sync final open ports count and replace row with definitive data
-        totalOpenPorts += openPorts.length - liveOpenCount;
-        foundHostsMap[ip] = openPorts;
-        totalFound = getResultCounts().activeHosts;
-        if (pingMs !== null) foundPingMap[ip] = pingMs;
-        addResultRow(ip, openPorts, pingMs);
-        if (typeof appendCmdLog === 'function') {
-          if (openPorts.length) appendCmdLog(`>> HOST  ${ip}  ports: [${openPorts.join(', ')}]${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
-          else appendCmdLog(`>> IP  ${ip}  (no open ports)${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
-        }
-      } else if (openPorts.length) {
-        foundHostsMap[ip]=openPorts; totalOpenPorts+=openPorts.length;
-        totalFound = getResultCounts().activeHosts;
-        if (pingMs !== null) foundPingMap[ip] = pingMs;
-        addResultRow(ip, openPorts, pingMs);
-        if (typeof appendCmdLog === 'function') appendCmdLog(`>> HOST  ${ip}  ports: [${openPorts.join(', ')}]${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
-      } else {
-        // Dead host — no open ports, but still add to results
-        foundHostsMap[ip]=[];
-        totalFound = getResultCounts().activeHosts;
-        if (pingMs !== null) foundPingMap[ip] = pingMs;
-        addResultRow(ip, [], pingMs);
-        if (typeof appendCmdLog === 'function') appendCmdLog(`>> DEAD  ${ip}${pingMs !== null ? '  ping: '+pingMs+'ms' : ''}`, 'scan');
-      }
-      checked++;
-      if (checked%4===0||checked===total) updateProgress(checked,total,totalFound,totalOpenPorts);
-      if (delayMs > 0 && !stopRequested && nextIdx < total) {
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-      }
-    }
-  };
-
-  await Promise.all(Array.from({length:concurrency},worker));
-  setScanState(false);
-  totalFound = getResultCounts().activeHosts;
-  updateProgress(total,total,totalFound,totalOpenPorts);
-
-  if (totalFound===0 && emptyRow.parentNode) emptyRow.textContent = t('emptyNone');
-  if (stopRequested) setStatus(t('statusStopped', statChecked.textContent),'warn');
-  else if (totalFound>0) setStatus(t('statusDone', totalFound, totalOpenPorts),'ok');
-  else setStatus(t('statusNone'),'err');
-  if (typeof appendCmdLog === 'function') {
-    if (stopRequested) appendCmdLog(`Scan stopped. Checked: ${statChecked.textContent}, found: ${totalFound} host${totalFound===1?'':'s'}`, 'scan');
-    else if (totalFound>0) appendCmdLog(`Scan complete. Hosts: ${totalFound}, open ports: ${totalOpenPorts}`, 'scan');
-    else appendCmdLog('Scan complete. No hosts found.', 'scan');
-    appendCmdLog('─'.repeat(52), 'scan');
-  }
-}
-
-btnGo.addEventListener('click',()=>{
-  if(!scanning) startScan().catch(e=>{setStatus(`Error: ${e.message}`,'err');setScanState(false);});
-});
-btnStop.addEventListener('click',()=>{
-  stopRequested=true; activeControllers.forEach(c=>c.abort());
-  if (_tauriInvoke) _tauriInvoke('stop_scan').catch(()=>{});
-});
 btnClear.addEventListener('click',()=>{
   foundHostsMap={}; foundPingMap={}; totalFound=0; totalOpenPorts=0;
   traceRoutes = {};
@@ -3179,8 +2381,13 @@ btnClear.addEventListener('click',()=>{
   emptyRow.textContent = t('emptyRow');
   updateProgress(0,0,0,0); statTime.textContent='0.0s';
   setStatus(t('statusCleared'));
-  previewWrap.classList.remove('open');
-  previewFrame.src='about:blank'; selectedRowEl=null;
+  const previewWrapEl = document.getElementById('previewWrap');
+  const previewFrameEl = document.getElementById('previewFrame');
+  if (previewWrapEl) previewWrapEl.classList.remove('open');
+  if (previewFrameEl) previewFrameEl.src='about:blank';
+  previewContext.selectedRowEl = null;
+  previewContext.targetIp = '';
+  previewContext.targetPorts = [];
   localStorage.removeItem('netrecon_results');
   localStorage.removeItem('netrecon_results_ts');
   localStorage.removeItem('netrecon_trace_routes');

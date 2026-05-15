@@ -1321,7 +1321,6 @@ body.tool-window-mode #mainWin {
 #dlgCountriesOverlay .dlg95   { min-width: 500px; max-width: 96vw; }
 #dlgPresetsOverlay .dlg95     { min-width: 380px; }
 #dlgDefaultsOverlay .dlg95    { min-width: 290px; }
-#dlgWifiDetectorOverlay .dlg95 { min-width: 420px; max-width: 94vw; }
 #dlgVersionsOverlay .dlg95    { min-width: 470px; max-width: 94vw; }
 #dlgCustomizeOverlay .dlg95   { min-width: 300px; }
 
@@ -2031,6 +2030,66 @@ body.tool-window-mode #mainWin {
     font-size: 11px;
     color: #000080;
   }
+
+/* ── IP Scan Watch (tool-win-shell) ─────────────────── */
+.scanwatch-win {
+  position: absolute;
+  width: 680px;
+  height: 460px;
+  min-width: 480px;
+  min-height: 300px;
+  display: none;
+  flex-direction: column;
+  resize: both;
+  overflow: hidden;
+}
+
+.scanwatch-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 8px;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.scanwatch-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+}
+
+/* ── WiFi Detector (tool-win-shell) ─────────────────── */
+.wifi-detector-win {
+  position: absolute;
+  width: 780px;
+  height: 520px;
+  min-width: 500px;
+  min-height: 320px;
+  display: none;
+  flex-direction: column;
+  resize: both;
+  overflow: hidden;
+}
+
+.wifi-detector-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 8px;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.wifi-detector-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+}
 
 /* ── GNSS Monitor ───────────────────────────────────── */
 .gnss-win {

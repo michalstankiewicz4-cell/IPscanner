@@ -142,14 +142,28 @@ function stopScanWatch() {
 }
 
 function openScanWatchDlg() {
+  if (typeof openToolNativeWindow === 'function' && openToolNativeWindow('scan-watch')) return;
+  const win = document.getElementById('scanWatchWin');
+  if (!win) return;
   restoreScanWatchSettings();
-  openOverlay('dlgScanWatchOverlay');
+  win.style.display = 'flex';
+  if (!win.style.top) { win.style.top = '60px'; win.style.left = '100px'; }
+  if (typeof bringToFront === 'function') bringToFront(win);
+  if (typeof initDragForWindow === 'function') {
+    const tb = document.getElementById('scanWatchTitlebar');
+    if (tb) initDragForWindow(win, tb);
+  }
   runScanWatchCheck();
 }
 
 function closeScanWatchDlg() {
   stopScanWatch();
-  closeOverlay('dlgScanWatchOverlay');
+  if (typeof _toolMode !== 'undefined' && _toolMode === 'scan-watch') {
+    if (typeof closeMainWindow === 'function') closeMainWindow();
+    return;
+  }
+  const win = document.getElementById('scanWatchWin');
+  if (win) win.style.display = 'none';
 }
 
 window.openScanWatchDlg = openScanWatchDlg;
@@ -160,6 +174,14 @@ document.getElementById('menuToolScanWatch')?.addEventListener('click', () => {
   openScanWatchDlg();
 });
 
+document.getElementById('btnScanWatchClose')?.addEventListener('click', closeScanWatchDlg);
 document.getElementById('btnScanWatchCheckNow')?.addEventListener('click', runScanWatchCheck);
 document.getElementById('btnScanWatchStart')?.addEventListener('click', startScanWatch);
 document.getElementById('btnScanWatchStop')?.addEventListener('click', stopScanWatch);
+
+if (typeof _toolMode !== 'undefined' && _toolMode === 'scan-watch') {
+  const win = document.getElementById('scanWatchWin');
+  if (win) { win.style.display = 'flex'; win.style.top = '0'; win.style.left = '0'; win.style.width = '100vw'; win.style.height = '100vh'; }
+  restoreScanWatchSettings();
+  runScanWatchCheck();
+}

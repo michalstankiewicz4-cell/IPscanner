@@ -16,13 +16,17 @@ const AI_DEFAULT_MODELS = {
 let _aiBusy = false;
 let _aiRamKeys = {};
 
+function aiDefaultKeyMode() {
+  return _tauriInvoke ? AI_KEY_MODE_SECURE : AI_KEY_MODE_LOCAL;
+}
+
 function aiSelectedProvider() {
   return document.getElementById('aiProviderSelect')?.value || 'claude';
 }
 
 function aiSelectedKeyMode() {
-  const mode = document.getElementById('aiKeyStorageMode')?.value || AI_KEY_MODE_LOCAL;
-  return [AI_KEY_MODE_LOCAL, AI_KEY_MODE_RAM, AI_KEY_MODE_SECURE].includes(mode) ? mode : AI_KEY_MODE_LOCAL;
+  const mode = document.getElementById('aiKeyStorageMode')?.value || aiDefaultKeyMode();
+  return [AI_KEY_MODE_LOCAL, AI_KEY_MODE_RAM, AI_KEY_MODE_SECURE].includes(mode) ? mode : aiDefaultKeyMode();
 }
 
 function aiSanitizeProvider(provider) {
@@ -109,7 +113,7 @@ async function aiLoadPersistedConfig() {
   const savedMode = localStorage.getItem(AI_KEY_MODE_KEY);
   modeSel.value = [AI_KEY_MODE_LOCAL, AI_KEY_MODE_RAM, AI_KEY_MODE_SECURE].includes(savedMode)
     ? savedMode
-    : AI_KEY_MODE_LOCAL;
+    : aiDefaultKeyMode();
 
   if (!_tauriInvoke) {
     modeSel.querySelector('option[value="secure"]')?.setAttribute('disabled', 'disabled');
@@ -160,7 +164,7 @@ async function aiOnKeyModeChanged() {
   if (!modeSel || !keyInput) return;
 
   const provider = aiSelectedProvider();
-  const prevMode = localStorage.getItem(AI_KEY_MODE_KEY) || AI_KEY_MODE_LOCAL;
+  const prevMode = localStorage.getItem(AI_KEY_MODE_KEY) || aiDefaultKeyMode();
   const nextMode = aiSelectedKeyMode();
   const currentKey = keyInput.value.trim();
 

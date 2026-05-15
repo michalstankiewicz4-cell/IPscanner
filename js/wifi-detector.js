@@ -220,15 +220,29 @@ function stopWifiDetector() {
 }
 
 function openWifiDetectorDlg() {
+  if (typeof openToolNativeWindow === 'function' && openToolNativeWindow('wifi-detector')) return;
+  const win = document.getElementById('wifiDetectorWin');
+  if (!win) return;
   restoreWifiDetectorSettings();
-  openOverlay('dlgWifiDetectorOverlay');
+  win.style.display = 'flex';
+  if (!win.style.top) { win.style.top = '60px'; win.style.left = '100px'; }
+  if (typeof bringToFront === 'function') bringToFront(win);
+  if (typeof initDragForWindow === 'function') {
+    const tb = document.getElementById('wifiDetectorTitlebar');
+    if (tb) initDragForWindow(win, tb);
+  }
   _wifiSelectedSsid = null;
   runWifiDetectorCheck();
 }
 
 function closeWifiDetectorDlg() {
   stopWifiDetector();
-  closeOverlay('dlgWifiDetectorOverlay');
+  if (typeof _toolMode !== 'undefined' && _toolMode === 'wifi-detector') {
+    if (typeof closeMainWindow === 'function') closeMainWindow();
+    return;
+  }
+  const win = document.getElementById('wifiDetectorWin');
+  if (win) win.style.display = 'none';
 }
 
 window.openWifiDetectorDlg = openWifiDetectorDlg;
@@ -239,7 +253,16 @@ document.getElementById('menuToolWifiDetector')?.addEventListener('click', () =>
   openWifiDetectorDlg();
 });
 
+document.getElementById('btnWifiDetectorClose')?.addEventListener('click', closeWifiDetectorDlg);
 document.getElementById('btnWifiDetectorCheckNow')?.addEventListener('click', runWifiDetectorCheck);
 document.getElementById('btnWifiDetectorStart')?.addEventListener('click', startWifiDetector);
 document.getElementById('btnWifiDetectorStop')?.addEventListener('click', stopWifiDetector);
 document.getElementById('wifiDetectorPollSecs')?.addEventListener('change', saveWifiDetectorSettings);
+
+if (typeof _toolMode !== 'undefined' && _toolMode === 'wifi-detector') {
+  const win = document.getElementById('wifiDetectorWin');
+  if (win) { win.style.display = 'flex'; win.style.top = '0'; win.style.left = '0'; win.style.width = '100vw'; win.style.height = '100vh'; }
+  restoreWifiDetectorSettings();
+  _wifiSelectedSsid = null;
+  runWifiDetectorCheck();
+}

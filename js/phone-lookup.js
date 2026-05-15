@@ -36,6 +36,7 @@ function initPhoneLookup() {
 
   // Menu item click
   menuItem.addEventListener('click', () => {
+    if (typeof openToolNativeWindow === 'function' && openToolNativeWindow('phone-lookup')) return;
     if (win.style.display === 'none' || !win.style.display) {
       win.style.display = 'block';
       input.focus();
@@ -46,6 +47,10 @@ function initPhoneLookup() {
 
   // Close button
   closeBtn.addEventListener('click', () => {
+    if (typeof _toolMode !== 'undefined' && _toolMode === 'phone-lookup') {
+      if (typeof closeMainWindow === 'function') closeMainWindow();
+      return;
+    }
     win.style.display = 'none';
   });
 
@@ -329,4 +334,10 @@ function makeDraggable(titlebar, win) {
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   initPhoneLookup();
+  if (typeof _toolMode !== 'undefined' && _toolMode === 'phone-lookup') {
+    const win = document.getElementById('phoneLookupWin');
+    if (win) { win.style.display = 'block'; win.style.top = '0'; win.style.left = '0'; win.style.width = '100vw'; win.style.height = '100vh'; }
+    const input = document.getElementById('phoneLookupInput');
+    if (input) input.focus();
+  }
 });

@@ -217,6 +217,7 @@ function snInitOnce() {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 function openSnifferDlg() {
+  if (typeof openToolNativeWindow === 'function' && openToolNativeWindow('sniffer')) return;
   const win = document.getElementById('snifferWin');
   if (!win) return;
   win.style.display = 'flex';
@@ -229,6 +230,10 @@ function openSnifferDlg() {
 
 function closeSnifferDlg() {
   snStopLive();
+  if (typeof _toolMode !== 'undefined' && _toolMode === 'sniffer') {
+    if (typeof closeMainWindow === 'function') closeMainWindow();
+    return;
+  }
   const win = document.getElementById('snifferWin');
   if (win) win.style.display = 'none';
   const liveChk = document.getElementById('snifferLive');
@@ -237,3 +242,11 @@ function closeSnifferDlg() {
 
 window.openSnifferDlg  = openSnifferDlg;
 window.closeSnifferDlg = closeSnifferDlg;
+
+if (typeof _toolMode !== 'undefined' && _toolMode === 'sniffer') {
+  const win = document.getElementById('snifferWin');
+  if (win) { win.style.display = 'flex'; win.style.top = '0'; win.style.left = '0'; win.style.width = '100vw'; win.style.height = '100vh'; }
+  snInitOnce();
+  snUpdateSortUI();
+  snRefresh();
+}

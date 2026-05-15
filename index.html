@@ -775,95 +775,97 @@
 </div>
 
 <!-- IP scan watch dialog -->
-<div class="dlg-overlay" id="dlgScanWatchOverlay">
-  <div class="dlg95 scanwatch-dlg">
-    <div class="dlg-title">
-      <span>🛡</span>
-      <span class="title-fill">IP Scan Watch</span>
-      <div class="title-btn" id="btnScanWatchCloseX">✕</div>
+<div class="tool-win-shell scanwatch-win" id="scanWatchWin" style="display:none">
+  <div class="titlebar cursor-move" id="scanWatchTitlebar">
+    <span class="icon">🛡</span>
+    <span class="title" data-i18n="scanWatchTitle">IP Scan Watch</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnScanWatchClose">✕</button>
     </div>
-    <div class="dlg-body">
-      <div class="dlg-groupbox">
-        <span class="dlg-groupbox-legend">Detection settings</span>
-        <div class="dlg-row dlg-row-mb6">
-          <label class="dlg-label-98" for="scanWatchWindowSecs" title="Time window used to aggregate suspicious activity.">Window (sec):</label>
-          <input class="dlg-input95 dlg-num-input" id="scanWatchWindowSecs" type="number" min="5" max="3600" value="30" title="Longer window catches slower scans; shorter window catches burst scans."/>
-        </div>
-        <div class="dlg-row dlg-row-mb6">
-          <label class="dlg-label-98" for="scanWatchMinPorts" title="Minimum number of different local ports touched by one remote IP before it is flagged.">Min unique ports:</label>
-          <input class="dlg-input95 dlg-num-input" id="scanWatchMinPorts" type="number" min="2" max="128" value="8" title="Higher value reduces false positives; lower value is more sensitive."/>
-        </div>
-        <div class="dlg-row dlg-row-mb0">
-          <label class="dlg-label-98" for="scanWatchPollSecs" title="How often watcher checks current TCP activity.">Refresh (sec):</label>
-          <input class="dlg-input95 dlg-num-input" id="scanWatchPollSecs" type="number" min="1" max="60" value="2" title="Lower value updates faster but uses more system checks."/>
-        </div>
+  </div>
+
+  <div class="scanwatch-body">
+    <div class="dlg-groupbox">
+      <span class="dlg-groupbox-legend">Detection settings</span>
+      <div class="dlg-row dlg-row-mb6">
+        <label class="dlg-label-98" for="scanWatchWindowSecs" title="Time window used to aggregate suspicious activity.">Window (sec):</label>
+        <input class="dlg-input95 dlg-num-input" id="scanWatchWindowSecs" type="number" min="5" max="3600" value="30" title="Longer window catches slower scans; shorter window catches burst scans."/>
       </div>
-
-      <div class="dlg-sunken-box scanwatch-status" id="scanWatchStatus" title="Current detector state and latest summary.">Idle</div>
-
-      <div class="dlg-sunken-box scanwatch-table-wrap">
-        <table class="scanwatch-table">
-          <thead>
-            <tr>
-              <th title="Remote address that appears to probe multiple ports.">Remote IP</th>
-              <th class="scanwatch-num" title="Count of unique local ports touched by that address.">Ports</th>
-              <th class="scanwatch-num" title="Total connection events observed in current window.">Hits</th>
-              <th class="scanwatch-num" title="Seconds since last observed event from this address.">Last seen</th>
-            </tr>
-          </thead>
-          <tbody id="scanWatchTbody"></tbody>
-        </table>
+      <div class="dlg-row dlg-row-mb6">
+        <label class="dlg-label-98" for="scanWatchMinPorts" title="Minimum number of different local ports touched by one remote IP before it is flagged.">Min unique ports:</label>
+        <input class="dlg-input95 dlg-num-input" id="scanWatchMinPorts" type="number" min="2" max="128" value="8" title="Higher value reduces false positives; lower value is more sensitive."/>
+      </div>
+      <div class="dlg-row dlg-row-mb0">
+        <label class="dlg-label-98" for="scanWatchPollSecs" title="How often watcher checks current TCP activity.">Refresh (sec):</label>
+        <input class="dlg-input95 dlg-num-input" id="scanWatchPollSecs" type="number" min="1" max="60" value="2" title="Lower value updates faster but uses more system checks."/>
       </div>
     </div>
-    <div class="dlg-footer">
+
+    <div class="dlg-sunken-box scanwatch-status" id="scanWatchStatus" title="Current detector state and latest summary.">Idle</div>
+
+    <div class="dlg-sunken-box scanwatch-table-wrap">
+      <table class="scanwatch-table">
+        <thead>
+          <tr>
+            <th title="Remote address that appears to probe multiple ports.">Remote IP</th>
+            <th class="scanwatch-num" title="Count of unique local ports touched by that address.">Ports</th>
+            <th class="scanwatch-num" title="Total connection events observed in current window.">Hits</th>
+            <th class="scanwatch-num" title="Seconds since last observed event from this address.">Last seen</th>
+          </tr>
+        </thead>
+        <tbody id="scanWatchTbody"></tbody>
+      </table>
+    </div>
+
+    <div class="scanwatch-footer">
       <button class="btn95" id="btnScanWatchCheckNow" title="Run one immediate detection pass.">Check now</button>
       <button class="btn95" id="btnScanWatchStart" title="Start automatic periodic detection checks.">Start watch</button>
       <button class="btn95" id="btnScanWatchStop" disabled title="Stop automatic periodic checks.">Stop</button>
-      <button class="btn95" id="btnScanWatchCloseBtn" title="Close this window.">Close</button>
     </div>
   </div>
 </div>
 
 <!-- WiFi detector dialog -->
-<div class="dlg-overlay" id="dlgWifiDetectorOverlay">
-  <div class="dlg95 wifi-detector-dlg">
-    <div class="dlg-title">
-      <span>📡</span>
-      <span class="title-fill">WiFi Detector</span>
-      <div class="title-btn" id="btnWifiDetectorCloseX">✕</div>
+<div class="tool-win-shell wifi-detector-win" id="wifiDetectorWin" style="display:none">
+  <div class="titlebar cursor-move" id="wifiDetectorTitlebar">
+    <span class="icon">📡</span>
+    <span class="title" data-i18n="wifiDetectorTitle">WiFi Detector</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnWifiDetectorClose">✕</button>
     </div>
-    <div class="dlg-body">
-      <div class="dlg-groupbox">
-        <span class="dlg-groupbox-legend">Detection settings</span>
-        <div class="dlg-row dlg-row-mb0">
-          <label class="dlg-label-98" for="wifiDetectorPollSecs" title="Refresh interval used when detector watch is running.">Refresh (sec):</label>
-          <input class="dlg-input95 dlg-num-input" id="wifiDetectorPollSecs" type="number" min="1" max="60" value="5" title="Lower value updates faster but can use more CPU."/>
-        </div>
-      </div>
+  </div>
 
-      <div class="dlg-sunken-box wifi-detector-status" id="wifiDetectorStatus" title="Current detector state.">Idle</div>
-
-      <div class="wifi-detector-content">
-        <div class="wifi-detector-pane">
-          <div class="wifi-detector-pane-title">Available networks</div>
-          <div class="dlg-sunken-box wifi-detector-net-list" id="wifiDetectorNetworkList"></div>
-        </div>
-
-        <div class="wifi-detector-pane">
-          <div class="wifi-detector-pane-title" id="wifiDetectorDetailsTitle">Properties</div>
-          <div class="dlg-sunken-box wifi-detector-table-wrap">
-            <table class="wifi-detector-table">
-              <tbody id="wifiDetectorDetailsTbody"></tbody>
-            </table>
-          </div>
-        </div>
+  <div class="wifi-detector-body">
+    <div class="dlg-groupbox">
+      <span class="dlg-groupbox-legend">Detection settings</span>
+      <div class="dlg-row dlg-row-mb0">
+        <label class="dlg-label-98" for="wifiDetectorPollSecs" title="Refresh interval used when detector watch is running.">Refresh (sec):</label>
+        <input class="dlg-input95 dlg-num-input" id="wifiDetectorPollSecs" type="number" min="1" max="60" value="5" title="Lower value updates faster but can use more CPU."/>
       </div>
     </div>
-    <div class="dlg-footer">
+
+    <div class="dlg-sunken-box wifi-detector-status" id="wifiDetectorStatus" title="Current detector state.">Idle</div>
+
+    <div class="wifi-detector-content">
+      <div class="wifi-detector-pane">
+        <div class="wifi-detector-pane-title">Available networks</div>
+        <div class="dlg-sunken-box wifi-detector-net-list" id="wifiDetectorNetworkList"></div>
+      </div>
+
+      <div class="wifi-detector-pane">
+        <div class="wifi-detector-pane-title" id="wifiDetectorDetailsTitle">Properties</div>
+        <div class="dlg-sunken-box wifi-detector-table-wrap">
+          <table class="wifi-detector-table">
+            <tbody id="wifiDetectorDetailsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="wifi-detector-footer">
       <button class="btn95" id="btnWifiDetectorCheckNow" title="Run one immediate WiFi detection pass.">Check now</button>
       <button class="btn95" id="btnWifiDetectorStart" title="Start automatic periodic checks.">Start watch</button>
       <button class="btn95" id="btnWifiDetectorStop" disabled title="Stop automatic periodic checks.">Stop</button>
-      <button class="btn95" id="btnWifiDetectorCloseBtn" title="Close this window.">Close</button>
     </div>
   </div>
 </div>
@@ -1226,9 +1228,10 @@
         </select>
       </div>
       <form autocomplete="on" onsubmit="return false;">
+        <input type="text" name="username" autocomplete="username" class="initially-hidden" tabindex="-1" aria-hidden="true"/>
         <div class="dlg-row dlg-row-mb6">
           <label class="dlg-label-98" for="aiModelInput">Model:</label>
-          <input class="dlg-input95 ai-input-grow" id="aiModelInput" type="text" value="claude-3-5-sonnet-latest"/>
+          <input class="dlg-input95 ai-input-grow" id="aiModelInput" type="text" autocomplete="username" value="claude-3-5-sonnet-latest"/>
         </div>
         <div class="dlg-row dlg-row-mb0">
           <label class="dlg-label-98" for="aiApiKeyInput">API Key:</label>
@@ -1313,6 +1316,7 @@
     <div class="dlg-groupbox dlg-groupbox-mt12">
       <span class="dlg-groupbox-legend" data-i18n="phoneLookupApiKeys">API Keys Configuration</span>
       <form autocomplete="on" onsubmit="return false;">
+        <input type="text" name="username" autocomplete="username" class="initially-hidden" tabindex="-1" aria-hidden="true"/>
         <div class="dlg-row dlg-row-mb6">
           <label class="dlg-label-98" for="phoneLookupNumVerifyKey">NumVerify:</label>
           <input class="dlg-input95 ai-input-grow" id="phoneLookupNumVerifyKey" type="password" autocomplete="current-password" placeholder="Your NumVerify API key (free: 100/month)"/>
@@ -1693,7 +1697,12 @@
 <script src="js/lang-en.js"></script>
 <script src="js/lang-pl.js"></script>
 <script src="js/imgmeta.js"></script>
+<script src="js/scan-guards.js"></script>
+<script src="js/scan-results-persistence.js"></script>
+<script src="js/preview-context.js"></script>
 <script src="js/app.js"></script>
+<script src="js/scan-runner.js"></script>
+<script src="js/ip-detection.js"></script>
 <script src="js/scanwatch.js"></script>
 <script src="js/wifi-detector.js"></script>
 <script src="js/radar.js"></script>

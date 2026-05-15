@@ -308,7 +308,11 @@ fn stop_scan(app: AppHandle) {
 /// Geolocation via ip-api.com (no CORS constraints from Rust).
 #[tauri::command]
 async fn geo_lookup(ip: String) -> Option<GeoResult> {
-    let url = format!(
+    let https_url = format!(
+        "https://ip-api.com/json/{}?fields=status,country,city,isp,org,proxy,hosting,as,lat,lon",
+        ip
+    );
+    let http_url = format!(
         "http://ip-api.com/json/{}?fields=status,country,city,isp,org,proxy,hosting,as,lat,lon",
         ip
     );
@@ -316,26 +320,58 @@ async fn geo_lookup(ip: String) -> Option<GeoResult> {
         .timeout(Duration::from_secs(5))
         .build()
         .ok()?;
-    let geo: GeoResult = client.get(&url).send().await.ok()?.json().await.ok()?;
-    if geo.status == "success" { Some(geo) } else { None }
+
+    if let Ok(resp) = client.get(&https_url).send().await {
+        if let Ok(geo) = resp.json::<GeoResult>().await {
+            if geo.status == "success" {
+                return Some(geo);
+            }
+        }
+    }
+
+    if let Ok(resp) = client.get(&http_url).send().await {
+        if let Ok(geo) = resp.json::<GeoResult>().await {
+            if geo.status == "success" {
+                return Some(geo);
+            }
+        }
+    }
+
+    None
 }
 
 #[tauri::command]
 async fn hostname_lookup(ip: String) -> Option<String> {
-    let url = format!("http://ip-api.com/json/{}?fields=status,reverse", ip);
+    let https_url = format!("https://ip-api.com/json/{}?fields=status,reverse", ip);
+    let http_url = format!("http://ip-api.com/json/{}?fields=status,reverse", ip);
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
         .build()
         .ok()?;
-    let host: HostnameResult = client.get(&url).send().await.ok()?.json().await.ok()?;
-    if host.status == "success" {
-        host.reverse.and_then(|v| {
-            let trimmed = v.trim().to_string();
-            if trimmed.is_empty() { None } else { Some(trimmed) }
-        })
-    } else {
-        None
+
+    if let Ok(resp) = client.get(&https_url).send().await {
+        if let Ok(host) = resp.json::<HostnameResult>().await {
+            if host.status == "success" {
+                return host.reverse.and_then(|v| {
+                    let trimmed = v.trim().to_string();
+                    if trimmed.is_empty() { None } else { Some(trimmed) }
+                });
+            }
+        }
     }
+
+    if let Ok(resp) = client.get(&http_url).send().await {
+        if let Ok(host) = resp.json::<HostnameResult>().await {
+            if host.status == "success" {
+                return host.reverse.and_then(|v| {
+                    let trimmed = v.trim().to_string();
+                    if trimmed.is_empty() { None } else { Some(trimmed) }
+                });
+            }
+        }
+    }
+
+    None
 }
 
 /// Returns first detected private IPv4 on active non-loopback interfaces.
@@ -566,6 +602,9 @@ async fn open_tool_window(app: AppHandle, tool: String) -> Result<(), String> {
         "lte" => ("tool-lte", "NetRecon - LTE Monitor", 980.0, 700.0),
         "sniffer" => ("tool-sniffer", "NetRecon - Network Sniffer", 980.0, 620.0),
         "imgmeta" => ("tool-imgmeta", "NetRecon - Image Metadata Analyzer", 900.0, 680.0),
+        "phone-lookup" => ("tool-phone-lookup", "NetRecon - Phone Reverse Lookup", 680.0, 780.0),
+        "wifi-detector" => ("tool-wifi-detector", "NetRecon - WiFi Detector", 820.0, 600.0),
+        "scan-watch" => ("tool-scan-watch", "NetRecon - IP Scan Watch", 720.0, 520.0),
         "ai-assistant" => ("tool-ai-assistant", "NetRecon - AI Security Assistant", 880.0, 760.0),
         "bt-detector" => ("tool-bt-detector", "NetRecon - Bluetooth Detector", 820.0, 600.0),
         _ => return Err(format!("Unsupported tool window: {tool}")),
@@ -3217,12 +3256,21 @@ async fn phone_lookup_numverify(phone_number: &str, api_key: &str) -> Result<ser
         }));
     }
 
-    let url = format!(
+    let https_url = format!(
+        "https://api.numverify.com/validate?number={}&access_key={}",
+        phone_number, api_key
+    );
+    let http_url = format!(
         "http://api.numverify.com/validate?number={}&access_key={}",
         phone_number, api_key
     );
 
-    match client.get(&url).send().await {
+    let response = match client.get(&https_url).send().await {
+        Ok(resp) => Ok(resp),
+        Err(_) => client.get(&http_url).send().await,
+    };
+
+    match response {
         Ok(resp) => {
             match resp.json::<serde_json::Value>().await {
                 Ok(json) => {
