@@ -1371,7 +1371,13 @@
       <div class="dlg-sunken-box dlg-versions-card">
         <div class="version-head">v1.6.4</div>
         <div class="version-note">
-        <br>
+          Added system reverse DNS for local/private IPs (PTR via desktop backend), so Hostname can resolve LAN devices reliably.<br>
+          Refined extra result columns: Country now shown as a flag, ISP moved to a dedicated column, and new AS column added.
+          All three columns can be toggled in Columns menu.<br>
+          Improved geolocation reliability with backend fallback handling and better globe point placement when exact coordinates are unavailable.
+          Globe now shows only active hosts (not dead entries).<br>
+          Fixed Topology Trace action: Trace button now correctly opens trace dialog and starts traceroute for selected/available host.<br>
+          Fixed list rendering edge cases where extra columns could remain visually hidden despite being enabled.
         </div>
         <div class="version-head">v1.6.3</div>
         <div class="version-note">
