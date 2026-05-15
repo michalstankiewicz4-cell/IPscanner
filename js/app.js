@@ -1391,12 +1391,14 @@ try {
 // ══════════════════════════════════════════════════
 const EXTRA_COLS = [
   { key: 'hostname', width: '120px' },
-  { key: 'geo',      width: '170px' },
+  { key: 'geo',      width: '64px'  },
+  { key: 'isp',      width: '180px' },
+  { key: 'asn',      width: '100px' },
   { key: 'device',   width: '140px' },
   { key: 'title',    width: '200px' },
   { key: 'access',   width: '80px'  },
 ];
-const colsEnabled = { hostname: true, geo: true, device: false, title: false, access: false };
+const colsEnabled = { hostname: true, geo: true, isp: true, asn: false, device: false, title: false, access: false };
 const BASE_LV_COLS = '20px 18px 18px 87px 26px 56px';
 const ENRICH_QUEUE_CONCURRENCY = 4;
 const enrichQueue = [];
@@ -1439,7 +1441,7 @@ function updateColsGrid() {
     });
     document.querySelectorAll(`.lv-extra-cell[data-col="${key}"]`).forEach(el => {
       el.classList.toggle('is-hidden', !show);
-      el.style.display = show ? '' : 'none';
+      el.style.display = show ? 'block' : 'none';
     });
   });
 }
@@ -1450,38 +1452,42 @@ async function enrichRowCols(ip, ports, row) {
   const cell = key => row.querySelector(`.lv-extra-cell[data-col="${key}"]`);
   const tasks = [];
   if (colsEnabled.hostname) {
-    tasks.push(lookupHostname(ip).then(h => {
-      const c = cell('hostname');
-      if (!c) return;
-      if (h) {
-        c.textContent = h;
-      } else {
-        const msg = isPrivateIP(ip) ? t('hostnameLocal') : t('hostnameNone');
-        c.innerHTML = `<span class="detail-muted">${msg}</span>`;
-      }
-    }));
+    tasks.push(
+      lookupHostname(ip)
+        .then(h => {
+          const c = cell('hostname');
+          if (!c) return;
+          if (h) {
+            c.textContent = h;
+          } else {
+            c.textContent = isPrivateIP(ip) ? t('hostnameLocal') : t('hostnameNone');
+          }
+        })
+        .catch(() => {
+          const c = cell('hostname');
+          if (!c) return;
+          c.textContent = isPrivateIP(ip) ? t('hostnameLocal') : t('hostnameNone');
+        })
+    );
   }
-  if (colsEnabled.geo) {
+  if (colsEnabled.geo || colsEnabled.isp || colsEnabled.asn) {
     tasks.push(geoLookup(ip).then(geo => {
-      const c = cell('geo');
-      if (!c) return;
-      if (geo) {
-        const vpnTag = geo.proxy ? `<span class="detail-tag tag-vpn">${t('tagVpn')}</span>` : '';
-        const dcTag = geo.hosting ? `<span class="detail-tag tag-dc">${t('tagDc')}</span>` : '';
-        c.innerHTML =
-          `<div class="detail-line"><b>${t('geoCountry')}</b> ${geo.country || '?'} — ${geo.city || '?'}${vpnTag}${dcTag}</div>` +
-          `<div class="detail-line"><b>${t('geoIsp')}</b> ${geo.isp || '?'}</div>` +
-          `<div class="detail-line"><b>${t('geoAs')}</b> ${geo.as || '?'}</div>`;
-      } else {
-        c.innerHTML = isPrivateIP(ip)
-          ? `<div class="detail-line detail-muted">${t('geoLocal')}</div>`
-          : `<div class="detail-line status-error">${t('geoError')}</div>`;
+      if (colsEnabled.geo) {
+        const c = cell('geo');
+        if (c) renderGeoFlagCell(c, ip, geo);
+      }
+      if (colsEnabled.isp) {
+        const c = cell('isp');
+        if (c) renderIspCell(c, ip, geo);
+      }
+      if (colsEnabled.asn) {
+        const c = cell('asn');
+        if (c) renderAsnCell(c, ip, geo);
       }
     }));
   }
   if (colsEnabled.device || colsEnabled.title || colsEnabled.access) {
     tasks.push(enrichRow(ip, ports, {
-      cGeo:    cell('geo'),
       cDevice: cell('device'),
       cTitle:  cell('title'),
       cAccess: cell('access'),
@@ -1876,6 +1882,93 @@ function isPublicIpv4(ip) {
   return isIPv4(ip) && !isPrivateIP(ip);
 }
 
+function countryCodeToFlag(code) {
+  if (!code || typeof code !== 'string') return '🌐';
+  const cc = code.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) return '🌐';
+  const base = 127397;
+  return String.fromCodePoint(...cc.split('').map(ch => base + ch.charCodeAt(0)));
+}
+
+function renderGeoFlagCell(cellEl, ip, geo) {
+  if (!cellEl) return;
+  if (geo && typeof geo === 'object') {
+    const flag = countryCodeToFlag(geo.countryCode);
+    cellEl.textContent = flag;
+    const country = geo.country || '';
+    const city = geo.city || '';
+    cellEl.title = [country, city].filter(Boolean).join(' - ');
+    return;
+  }
+  if (isPrivateIP(ip)) {
+    cellEl.textContent = '🏠';
+    cellEl.title = t('geoLocal');
+    return;
+  }
+  cellEl.textContent = '❔';
+  cellEl.title = t('geoError');
+}
+
+function renderIspCell(cellEl, ip, geo) {
+  if (!cellEl) return;
+  if (geo && typeof geo === 'object') {
+    cellEl.textContent = geo.isp || geo.org || geo.as || '?';
+    cellEl.title = geo.as || '';
+    return;
+  }
+  cellEl.textContent = isPrivateIP(ip) ? t('geoLocal') : t('geoError');
+  cellEl.title = '';
+}
+
+function renderAsnCell(cellEl, ip, geo) {
+  if (!cellEl) return;
+  if (geo && typeof geo === 'object') {
+    const asn = geo.as || '';
+    cellEl.textContent = asn || '?';
+    cellEl.title = asn || '';
+    return;
+  }
+  cellEl.textContent = isPrivateIP(ip) ? t('geoLocal') : t('geoError');
+  cellEl.title = '';
+}
+
+function countryCodeFromGeo(geo) {
+  if (!geo || typeof geo !== 'object') return '';
+  const cc = geo.countryCode || geo.country_code || '';
+  return typeof cc === 'string' ? cc.trim().toUpperCase() : '';
+}
+
+const COUNTRY_CENTROIDS = {
+  PL: { lat: 52.1, lon: 19.4 }, DE: { lat: 51.2, lon: 10.4 }, FR: { lat: 46.2, lon: 2.2 },
+  GB: { lat: 54.5, lon: -2.5 }, ES: { lat: 40.3, lon: -3.7 }, IT: { lat: 42.8, lon: 12.8 },
+  NL: { lat: 52.2, lon: 5.3 }, BE: { lat: 50.8, lon: 4.5 }, PT: { lat: 39.7, lon: -8.1 },
+  CZ: { lat: 49.8, lon: 15.5 }, SK: { lat: 48.7, lon: 19.5 }, AT: { lat: 47.6, lon: 14.3 },
+  HU: { lat: 47.2, lon: 19.5 }, RO: { lat: 45.9, lon: 24.9 }, UA: { lat: 49.0, lon: 31.2 },
+  US: { lat: 39.8, lon: -98.6 }, CA: { lat: 56.1, lon: -106.3 }, MX: { lat: 23.6, lon: -102.5 },
+  BR: { lat: -10.8, lon: -52.9 }, AR: { lat: -38.4, lon: -63.6 }, CL: { lat: -35.7, lon: -71.5 },
+  RU: { lat: 61.5, lon: 105.3 }, TR: { lat: 39.1, lon: 35.2 }, IL: { lat: 31.0, lon: 35.0 },
+  SA: { lat: 23.8, lon: 45.1 }, AE: { lat: 24.4, lon: 54.3 }, IN: { lat: 21.1, lon: 78.0 },
+  CN: { lat: 35.9, lon: 104.2 }, JP: { lat: 36.2, lon: 138.3 }, KR: { lat: 36.5, lon: 127.9 },
+  AU: { lat: -25.3, lon: 133.8 }, NZ: { lat: -40.9, lon: 174.9 }, ZA: { lat: -30.6, lon: 22.9 },
+  EG: { lat: 26.8, lon: 30.8 }, NG: { lat: 9.1, lon: 8.7 }, SE: { lat: 60.1, lon: 18.6 },
+  NO: { lat: 60.5, lon: 8.5 }, FI: { lat: 64.5, lon: 26.0 }, DK: { lat: 56.1, lon: 10.0 },
+  IE: { lat: 53.1, lon: -8.2 }, CH: { lat: 46.8, lon: 8.2 }, GR: { lat: 39.1, lon: 22.9 },
+};
+
+function resolveGeoCoords(geo) {
+  if (!geo || typeof geo !== 'object') return null;
+  const lat = Number(geo.lat);
+  const lon = Number(geo.lon);
+  if (Number.isFinite(lat) && Number.isFinite(lon)) {
+    return { lat, lon };
+  }
+  const cc = countryCodeFromGeo(geo);
+  if (cc && COUNTRY_CENTROIDS[cc]) {
+    return COUNTRY_CENTROIDS[cc];
+  }
+  return null;
+}
+
 async function queueGeoApiCall(task) {
   const run = geoApiQueue.then(async () => {
     const now = Date.now();
@@ -1905,7 +1998,7 @@ async function geoLookup(ip) {
         return await _tauriInvoke('geo_lookup', { ip });
       }
       const r = await fetch(
-        `https://ip-api.com/json/${ip}?fields=status,country,city,isp,org,proxy,hosting,as,lat,lon`,
+        `https://ip-api.com/json/${ip}?fields=status,country,countryCode,city,isp,org,proxy,hosting,as,lat,lon`,
         { signal: AbortSignal.timeout(4000) }
       );
       if (r.status === 429) {
@@ -1921,8 +2014,9 @@ async function geoLookup(ip) {
     }
     if (d && d.status === 'success') {
       geoCache[ip] = d;
-      if (d.lat && d.lon) {
-        ipGeoCoords[ip] = { lat: d.lat, lon: d.lon, country: d.country };
+      const coords = resolveGeoCoords(d);
+      if (coords) {
+        ipGeoCoords[ip] = { lat: coords.lat, lon: coords.lon, country: d.country };
         updateGlobeDots();
       }
       return d;
@@ -2003,30 +2097,15 @@ async function fingerprintByImage(ip, ports) {
 
 // ── Full enrichment (runs async after row is added) ──
 async function enrichRow(ip, ports, cells) {
-  const { cGeo, cDevice, cTitle, cAccess } = cells;
+  const { cDevice, cTitle, cAccess } = cells;
 
-  // Run geo + fingerprint + favicon + title in parallel
-  const [ geo, deviceLabel, hasFavicon, isOpen, title ] = await Promise.all([
-    geoLookup(ip),
+  // Run enrichment tasks in parallel (geo is handled in enrichRowCols)
+  const [ deviceLabel, hasFavicon, isOpen, title ] = await Promise.all([
     fingerprintByImage(ip, ports),
     checkFavicon(ip, ports[0]),
     checkAuth(ip, ports),
     isPrivateIP(ip) ? Promise.resolve(null) : fetchTitle(ip, ports[0]),
   ]);
-
-  // Geo
-  if (geo) {
-    const vpnTag = geo.proxy   ? `<span class="detail-tag tag-vpn">${t('tagVpn')}</span>` : '';
-    const dcTag  = geo.hosting ? `<span class="detail-tag tag-dc">${t('tagDc')}</span>`   : '';
-    cGeo.innerHTML =
-      `<div class="detail-line"><b>${t('geoCountry')}</b> ${geo.country||'?'} — ${geo.city||'?'}${vpnTag}${dcTag}</div>`+
-      `<div class="detail-line"><b>${t('geoIsp')}</b> ${geo.isp||'?'}</div>`+
-      `<div class="detail-line"><b>${t('geoAs')}</b> ${geo.as||'?'}</div>`;
-  } else {
-    cGeo.innerHTML = isPrivateIP(ip)
-      ? `<div class="detail-line detail-muted">${t('geoLocal')}</div>`
-      : `<div class="detail-line status-error">${t('geoError')}</div>`;
-  }
 
   // Device
   let deviceHtml = '';
@@ -2057,17 +2136,15 @@ async function enrichRow(ip, ports, cells) {
     : `<div class="detail-line"><b>${t('accessLabel')}</b> ${t('accessClosed')}</div>`;
 }
 
-// ── Hostname lookup via ip-api (already used for geo, reuse) ──
+// ── Hostname lookup: system DNS for private IPs (via Tauri), ip-api for public ──
 async function lookupHostname(ip) {
-  if (!isPublicIpv4(ip)) {
-    hostnameCache[ip] = null;
-    return null;
-  }
+  if (!isIPv4(ip)) return null;
   if (hostnameCache[ip] !== undefined) return hostnameCache[ip];
   if (hostnamePending.has(ip)) return hostnamePending.get(ip);
 
   const run = (async () => {
   if (_tauriInvoke) {
+    // Rust handles both private (system PTR) and public (ip-api.com) IPs
     try {
       const result = await _tauriInvoke('hostname_lookup', { ip });
       hostnameCache[ip] = result || null;
@@ -2076,6 +2153,11 @@ async function lookupHostname(ip) {
       hostnameCache[ip] = null;
       return null;
     }
+  }
+  // Browser fallback: ip-api.com only works for public IPs
+  if (!isPublicIpv4(ip)) {
+    hostnameCache[ip] = null;
+    return null;
   }
   try {
     const d = await queueGeoApiCall(async () => {
@@ -2110,6 +2192,12 @@ async function lookupHostname(ip) {
 // ══════════════════════════════════════════════════
 function addResultRow(ip, openPorts, pingMs, skipEnrich = false) {
   if (emptyRow.parentNode) emptyRow.remove();
+
+  // On a real scan (not restore), evict stale cached nulls so Tauri is re-queried
+  if (!skipEnrich) {
+    if (hostnameCache[ip] === null) delete hostnameCache[ip];
+    if (geoCache[ip]      === null) delete geoCache[ip];
+  }
 
   // If re-scanning "all ports" - remove old row/pathsRow for this IP
   const existingRow = document.querySelector(`.lv-row[data-ip="${ip}"]`);
@@ -2229,7 +2317,44 @@ function addResultRow(ip, openPorts, pingMs, skipEnrich = false) {
     c.className = 'lv-cell lv-extra-cell';
     c.classList.toggle('is-hidden', !colsEnabled[key]);
     c.dataset.col = key;
-    c.style.display = colsEnabled[key] ? '' : 'none';
+    c.style.display = colsEnabled[key] ? 'block' : 'none';
+    if (key === 'hostname') {
+      const cached = hostnameCache[ip];
+      if (typeof cached === 'string' && cached.trim()) {
+        c.textContent = cached;
+      } else if (skipEnrich) {
+        c.textContent = isPrivateIP(ip) ? t('hostnameLocal') : t('hostnameNone');
+      } else {
+        c.textContent = 'loading...';
+      }
+    } else if (key === 'geo') {
+      const cached = geoCache[ip];
+      if (cached && typeof cached === 'object') {
+        renderGeoFlagCell(c, ip, cached);
+      } else if (!skipEnrich) {
+        c.textContent = 'loading...';
+      } else {
+        renderGeoFlagCell(c, ip, null);
+      }
+    } else if (key === 'isp') {
+      const cached = geoCache[ip];
+      if (cached && typeof cached === 'object') {
+        renderIspCell(c, ip, cached);
+      } else if (!skipEnrich) {
+        c.textContent = 'loading...';
+      } else {
+        renderIspCell(c, ip, null);
+      }
+    } else if (key === 'asn') {
+      const cached = geoCache[ip];
+      if (cached && typeof cached === 'object') {
+        renderAsnCell(c, ip, cached);
+      } else if (!skipEnrich) {
+        c.textContent = 'loading...';
+      } else {
+        renderAsnCell(c, ip, null);
+      }
+    }
     row.appendChild(c);
   });
 

@@ -233,7 +233,9 @@
         <button class="btn-cols ml-auto" id="btnBlurIp" title="Toggle IP blur">👁 Blur</button>
         <div class="cols-panel" id="colsPanel">
           <label class="cols-panel-item"><input type="checkbox" data-col="hostname" checked> 🧭 Hostname</label>
-          <label class="cols-panel-item"><input type="checkbox" data-col="geo" checked> 🌍 Geolocation / ISP</label>
+          <label class="cols-panel-item"><input type="checkbox" data-col="geo" checked> 🌍 Country Flag</label>
+          <label class="cols-panel-item"><input type="checkbox" data-col="isp" checked> 🏢 ISP</label>
+          <label class="cols-panel-item"><input type="checkbox" data-col="asn"> 🛰 AS</label>
           <label class="cols-panel-item"><input type="checkbox" data-col="device"> 🖥 Device Identification</label>
           <label class="cols-panel-item"><input type="checkbox" data-col="title"> 📄 HTTP Page Title</label>
           <label class="cols-panel-item"><input type="checkbox" data-col="access"> 🔑 Access / Snapshot</label>
@@ -247,7 +249,9 @@
         <div class="lv-col lv-col-center cursor-pointer" id="colExpandAll" title="Expand / collapse all">+</div>
         <div class="lv-col cursor-pointer" id="colSortPing" data-i18n="colPing" title="Sort by Ping">Ping</div>
         <div class="lv-col lv-extra-col" data-col="hostname">🧭 Hostname</div>
-        <div class="lv-col lv-extra-col" data-col="geo">🌍 Geo / ISP</div>
+        <div class="lv-col lv-extra-col" data-col="geo">🌍 Flag</div>
+        <div class="lv-col lv-extra-col" data-col="isp">🏢 ISP</div>
+        <div class="lv-col lv-extra-col is-hidden" data-col="asn">🛰 AS</div>
         <div class="lv-col lv-extra-col is-hidden" data-col="device">🖥 Device</div>
         <div class="lv-col lv-extra-col is-hidden" data-col="title">📄 Title</div>
         <div class="lv-col lv-extra-col is-hidden" data-col="access">🔑 Access</div>

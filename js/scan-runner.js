@@ -150,11 +150,10 @@
         const batch = ports.slice(i, i + chunk);
         if (delayBetweenPorts > 0) {
           for (const port of batch) {
-            // Check if stop requested before probing each port
             if (getStopRequested()) break;
             const r = await scanProbePort(ip, port, 1400);
             results.push({ port, ok: r.ok, ms: r.ms });
-            if (delayBetweenPorts > 0 && !getStopRequested()) {
+            if (!getStopRequested()) {
               await new Promise(resolve => setTimeout(resolve, delayBetweenPorts));
             }
           }
@@ -205,38 +204,24 @@
           addResultRow(ip, partialOpen, pingMs);
         } : null;
 
-        const res = selectedPorts.length > 200
+        const res = (selectedPorts.length > 200 || delayMsPerPort > 0 || onBatch !== null)
           ? await probeAllPorts(ip, selectedPorts, delayMsPerPort, onBatch)
-          : delayMsPerPort > 0
-            ? await probeAllPorts(ip, selectedPorts, delayMsPerPort, onBatch)
-            : await Promise.all(selectedPorts.map(port => scanProbePort(ip, port, 1400).then(r => ({ port, ok: r.ok, ms: r.ms }))));
+          : await Promise.all(selectedPorts.map(port => scanProbePort(ip, port, 1400).then(r => ({ port, ok: r.ok, ms: r.ms }))));
         const openPorts = res.filter(r => r.ok).map(r => r.port);
         const bestMs = res.filter(r => r.ok).reduce((a, r) => (r.ms < a ? r.ms : a), Infinity);
         const pingMs = bestMs === Infinity ? null : bestMs;
 
-        if (liveRowAdded) {
-          totalOpenPorts += openPorts.length - liveOpenCount;
-          foundHostsMap[ip] = openPorts;
-          totalFound = getResultCounts().activeHosts;
-          if (pingMs !== null) foundPingMap[ip] = pingMs;
-          addResultRow(ip, openPorts, pingMs);
-          if (typeof appendCmdLog === 'function') {
-            if (openPorts.length) appendCmdLog(`>> HOST  ${ip}  ports: [${openPorts.join(', ')}]${pingMs !== null ? `  ping: ${pingMs}ms` : ''}`, 'scan');
-            else appendCmdLog(`>> IP  ${ip}  (no open ports)${pingMs !== null ? `  ping: ${pingMs}ms` : ''}`, 'scan');
-          }
-        } else if (openPorts.length) {
-          foundHostsMap[ip] = openPorts;
-          totalOpenPorts += openPorts.length;
-          totalFound = getResultCounts().activeHosts;
-          if (pingMs !== null) foundPingMap[ip] = pingMs;
-          addResultRow(ip, openPorts, pingMs);
-          if (typeof appendCmdLog === 'function') appendCmdLog(`>> HOST  ${ip}  ports: [${openPorts.join(', ')}]${pingMs !== null ? `  ping: ${pingMs}ms` : ''}`, 'scan');
-        } else {
-          foundHostsMap[ip] = [];
-          totalFound = getResultCounts().activeHosts;
-          if (pingMs !== null) foundPingMap[ip] = pingMs;
-          addResultRow(ip, [], pingMs);
-          if (typeof appendCmdLog === 'function') appendCmdLog(`>> DEAD  ${ip}${pingMs !== null ? `  ping: ${pingMs}ms` : ''}`, 'scan');
+        // Adjust totalOpenPorts: liveRowAdded already counted partial ports, so apply delta
+        totalOpenPorts += liveRowAdded
+          ? openPorts.length - liveOpenCount
+          : openPorts.length;
+        foundHostsMap[ip] = openPorts;
+        totalFound = getResultCounts().activeHosts;
+        if (pingMs !== null) foundPingMap[ip] = pingMs;
+        addResultRow(ip, openPorts, pingMs);
+        if (typeof appendCmdLog === 'function') {
+          if (openPorts.length) appendCmdLog(`>> HOST  ${ip}  ports: [${openPorts.join(', ')}]${pingMs !== null ? `  ping: ${pingMs}ms` : ''}`, 'scan');
+          else appendCmdLog(`>> DEAD  ${ip}${pingMs !== null ? `  ping: ${pingMs}ms` : ''}`, 'scan');
         }
 
         checked++;

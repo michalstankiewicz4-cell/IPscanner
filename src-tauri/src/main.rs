@@ -79,6 +79,8 @@ struct HostFound {
 pub struct GeoResult {
     pub status: String,
     pub country: Option<String>,
+    #[serde(rename = "countryCode", alias = "country_code")]
+    pub country_code: Option<String>,
     pub city: Option<String>,
     pub isp: Option<String>,
     pub org: Option<String>,
@@ -88,6 +90,24 @@ pub struct GeoResult {
     pub hosting: Option<bool>,
     pub lat: Option<f64>,
     pub lon: Option<f64>,
+}
+
+#[derive(Deserialize)]
+struct IpWhoIsConnection {
+    isp: Option<String>,
+    org: Option<String>,
+    asn: Option<u32>,
+}
+
+#[derive(Deserialize)]
+struct IpWhoIsResult {
+    success: bool,
+    country: Option<String>,
+    country_code: Option<String>,
+    city: Option<String>,
+    latitude: Option<f64>,
+    longitude: Option<f64>,
+    connection: Option<IpWhoIsConnection>,
 }
 
 #[derive(Deserialize)]
@@ -311,19 +331,31 @@ fn stop_scan(app: AppHandle) {
 /// Geolocation via ip-api.com (no CORS constraints from Rust).
 #[tauri::command]
 async fn geo_lookup(ip: String) -> Option<GeoResult> {
-    let https_url = format!(
-        "https://ip-api.com/json/{}?fields=status,country,city,isp,org,proxy,hosting,as,lat,lon",
-        ip
-    );
     let http_url = format!(
-        "http://ip-api.com/json/{}?fields=status,country,city,isp,org,proxy,hosting,as,lat,lon",
+        "http://ip-api.com/json/{}?fields=status,country,countryCode,city,isp,org,proxy,hosting,as,lat,lon",
         ip
     );
+    let https_url = format!(
+        "https://ip-api.com/json/{}?fields=status,country,countryCode,city,isp,org,proxy,hosting,as,lat,lon",
+        ip
+    );
+    let ipwhois_url = format!("https://ipwho.is/{}", ip);
+
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
         .build()
         .ok()?;
 
+    // Free ip-api endpoint is HTTP-first (HTTPS may be unavailable without paid plan).
+    if let Ok(resp) = client.get(&http_url).send().await {
+        if let Ok(geo) = resp.json::<GeoResult>().await {
+            if geo.status == "success" {
+                return Some(geo);
+            }
+        }
+    }
+
+    // Keep HTTPS as secondary fallback for environments where it is available.
     if let Ok(resp) = client.get(&https_url).send().await {
         if let Ok(geo) = resp.json::<GeoResult>().await {
             if geo.status == "success" {
@@ -332,10 +364,28 @@ async fn geo_lookup(ip: String) -> Option<GeoResult> {
         }
     }
 
-    if let Ok(resp) = client.get(&http_url).send().await {
-        if let Ok(geo) = resp.json::<GeoResult>().await {
-            if geo.status == "success" {
-                return Some(geo);
+    // Fallback provider for better resilience when ip-api is unavailable/rate-limited.
+    if let Ok(resp) = client.get(&ipwhois_url).send().await {
+        if let Ok(geo) = resp.json::<IpWhoIsResult>().await {
+            if geo.success {
+                let conn = geo.connection;
+                let as_info = conn
+                    .as_ref()
+                    .and_then(|c| c.asn)
+                    .map(|asn| format!("AS{}", asn));
+                return Some(GeoResult {
+                    status: "success".to_string(),
+                    country: geo.country,
+                    country_code: geo.country_code,
+                    city: geo.city,
+                    isp: conn.as_ref().and_then(|c| c.isp.clone()),
+                    org: conn.as_ref().and_then(|c| c.org.clone()),
+                    as_info,
+                    proxy: None,
+                    hosting: None,
+                    lat: geo.latitude,
+                    lon: geo.longitude,
+                });
             }
         }
     }
@@ -345,6 +395,39 @@ async fn geo_lookup(ip: String) -> Option<GeoResult> {
 
 #[tauri::command]
 async fn hostname_lookup(ip: String) -> Option<String> {
+    let ip_addr: std::net::IpAddr = ip.parse().ok()?;
+
+    // For private/local IPs use system reverse DNS (PTR record via OS resolver)
+    let is_private = match ip_addr {
+        std::net::IpAddr::V4(v4) => {
+            let o = v4.octets();
+            o[0] == 10
+                || (o[0] == 172 && (16..=31).contains(&o[1]))
+                || (o[0] == 192 && o[1] == 168)
+                || o[0] == 127
+                || (o[0] == 169 && o[1] == 254)
+        }
+        _ => false,
+    };
+
+    if is_private {
+        let ip_str = ip.clone();
+        let lookup = tokio::task::spawn_blocking(move || {
+            let hostname = dns_lookup::lookup_addr(&ip_addr).ok()?;
+            // Some resolvers return the bare IP when there is no PTR record
+            if hostname.trim_end_matches('.') == ip_str {
+                None
+            } else {
+                Some(hostname)
+            }
+        });
+        return match tokio::time::timeout(std::time::Duration::from_secs(3), lookup).await {
+            Ok(Ok(result)) => result,
+            _ => None,
+        };
+    }
+
+    // Public IP: use ip-api.com reverse field
     let https_url = format!("https://ip-api.com/json/{}?fields=status,reverse", ip);
     let http_url = format!("http://ip-api.com/json/{}?fields=status,reverse", ip);
     let client = reqwest::Client::builder()

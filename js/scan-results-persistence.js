@@ -40,8 +40,9 @@
         hostnameCache[ip] = hostname ?? null;
         // Restore full geo to geoCache (prevents re-querying API on every restore)
         geoCache[ip] = geo ?? null;
-        if (geo && geo.lat && geo.lon) {
-          ipGeoCoords[ip] = { lat: geo.lat, lon: geo.lon, country: geo.country };
+        const coords = resolveGeoCoords(geo || null);
+        if (coords) {
+          ipGeoCoords[ip] = { lat: coords.lat, lon: coords.lon, country: geo?.country };
         }
         // skipEnrich=true: no async enrichment queue — populate cells directly below
         const row = addResultRow(ip, ports, ping, true);
@@ -62,17 +63,19 @@
           if (colsEnabled.geo) {
             const c = row.querySelector('.lv-extra-cell[data-col="geo"]');
             if (c) {
-              if (geo) {
-                const vpnTag = geo.proxy ? `<span class="detail-tag tag-vpn">${t('tagVpn')}</span>` : '';
-                const dcTag = geo.hosting ? `<span class="detail-tag tag-dc">${t('tagDc')}</span>` : '';
-                c.innerHTML =
-                  `<div class="detail-line"><b>${t('geoCountry')}</b> ${geo.country || '?'} — ${geo.city || '?'}${vpnTag}${dcTag}</div>` +
-                  `<div class="detail-line"><b>${t('geoIsp')}</b> ${geo.isp || '?'}</div>` +
-                  `<div class="detail-line"><b>${t('geoAs')}</b> ${geo.as || '?'}</div>`;
-              } else {
-                const msg = isPrivateIP(ip) ? t('geoLocal') : t('geoError');
-                c.innerHTML = `<div class="detail-line detail-muted">${msg}</div>`;
-              }
+              renderGeoFlagCell(c, ip, geo || null);
+            }
+          }
+          if (colsEnabled.isp) {
+            const c = row.querySelector('.lv-extra-cell[data-col="isp"]');
+            if (c) {
+              renderIspCell(c, ip, geo || null);
+            }
+          }
+          if (colsEnabled.asn) {
+            const c = row.querySelector('.lv-extra-cell[data-col="asn"]');
+            if (c) {
+              renderAsnCell(c, ip, geo || null);
             }
           }
         }
