@@ -54,6 +54,9 @@ const TOOL_WINDOW_LABELS: &[&str] = &[
     "tool-imgmeta",
     "tool-ai-assistant",
     "tool-bt-detector",
+    "tool-phone-lookup",
+    "tool-wifi-detector",
+    "tool-scan-watch",
     "clippy",
 ];
 

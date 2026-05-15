@@ -17,10 +17,12 @@ W trybie desktop każdy `tool-win-shell` może być otwarty jako **osobne natywn
 
 1. **Kontener HTML:** użyj `<div class="tool-win-shell" id="nazwaWin" style="display:none">` z tytelbarem `<div class="titlebar cursor-move" id="nazwaTitlebar">` i przyciskiem `<button id="btnNazwaClose">✕</button>`.
 
-2. **Rust `open_tool_window` (`src-tauri/src/main.rs`):** dodaj case:
-   ```rust
-   "nazwa-toola" => ("tool-label", "NetRecon - Tytuł", szerokość, wysokość),
-   ```
+2. **Rust — rejestracja okna (`src-tauri/src/main.rs`):**
+   - W `open_tool_window` dodaj case:
+     ```rust
+     "nazwa-toola" => ("tool-label", "NetRecon - Tytuł", szerokość, wysokość),
+     ```
+   - W `const TOOL_WINDOW_LABELS: &[&str]` dodaj `"tool-label"` — to zapewni zamknięcie okna wraz z głównym oknem aplikacji.
 
 3. **JS — funkcja open:** wywołaj `openToolNativeWindow('nazwa-toola')` przed fallbackiem DOM:
    ```js

@@ -108,9 +108,13 @@ body.dragging             { cursor: move !important; }
   z-index: 1;
 }
 
-.imgmeta-win.tool-fullscreen {
-  display: flex !important;
-}
+/* flex tool windows must restore flex display in fullscreen mode */
+.sniffer-win.tool-fullscreen,
+.scanwatch-win.tool-fullscreen,
+.wifi-detector-win.tool-fullscreen,
+.gnss-win.tool-fullscreen,
+.lte-win.tool-fullscreen,
+.imgmeta-win.tool-fullscreen { display: flex !important; }
 
 /* ── Flag emoji in country list ── */
 .flag-emoji { font-size: 16px; line-height: 1; }
@@ -763,6 +767,9 @@ body.dragging             { cursor: move !important; }
 .tool-win-shell {
   display: none;
   position: fixed;
+  flex-direction: column;
+  resize: both;
+  overflow: hidden;
   background: #c0c0c0;
   border-top: 2px solid #ffffff;
   border-left: 2px solid #ffffff;
@@ -1713,7 +1720,6 @@ body.tool-window-mode #mainWin {
   height: 580px;
   left: 130px;
   top: 40px;
-  display: none;
 }
 
 .bt-detector-body {
@@ -1882,18 +1888,13 @@ body.tool-window-mode #mainWin {
   color: #000080;
 }
 
-  /* ── Network Sniffer ─────────────────────────────────── */
-  .sniffer-win {
-    position: absolute;
-    width: 860px;
-    height: 480px;
-    min-width: 600px;
-    min-height: 320px;
-    display: none;
-    flex-direction: column;
-    resize: both;
-    overflow: hidden;
-  }
+/* ── Network Sniffer ─────────────────────────────────── */
+.sniffer-win {
+  width: 860px;
+  height: 480px;
+  min-width: 600px;
+  min-height: 320px;
+}
 
   .sniffer-body {
     display: flex;
@@ -2033,15 +2034,10 @@ body.tool-window-mode #mainWin {
 
 /* ── IP Scan Watch (tool-win-shell) ─────────────────── */
 .scanwatch-win {
-  position: absolute;
   width: 680px;
   height: 460px;
   min-width: 480px;
   min-height: 300px;
-  display: none;
-  flex-direction: column;
-  resize: both;
-  overflow: hidden;
 }
 
 .scanwatch-body {
@@ -2063,15 +2059,10 @@ body.tool-window-mode #mainWin {
 
 /* ── WiFi Detector (tool-win-shell) ─────────────────── */
 .wifi-detector-win {
-  position: absolute;
   width: 780px;
   height: 520px;
   min-width: 500px;
   min-height: 320px;
-  display: none;
-  flex-direction: column;
-  resize: both;
-  overflow: hidden;
 }
 
 .wifi-detector-body {
@@ -2093,15 +2084,10 @@ body.tool-window-mode #mainWin {
 
 /* ── GNSS Monitor ───────────────────────────────────── */
 .gnss-win {
-  position: absolute;
   width: 940px;
   height: 640px;
   min-width: 700px;
   min-height: 460px;
-  display: none;
-  flex-direction: column;
-  resize: both;
-  overflow: hidden;
 }
 
 .gnss-body {
@@ -2109,7 +2095,8 @@ body.tool-window-mode #mainWin {
   flex-direction: column;
   gap: 8px;
   padding: 8px;
-  height: calc(100% - 30px);
+  flex: 1;
+  min-height: 0;
   font-size: 11px;
 }
 
@@ -2211,15 +2198,10 @@ body.tool-window-mode #mainWin {
 
 /* ── LTE Monitor ───────────────────────────────────── */
 .lte-win {
-  position: absolute;
   width: 960px;
   height: 670px;
   min-width: 720px;
   min-height: 480px;
-  display: none;
-  flex-direction: column;
-  resize: both;
-  overflow: hidden;
 }
 
 .lte-body {
@@ -2227,7 +2209,8 @@ body.tool-window-mode #mainWin {
   flex-direction: column;
   gap: 8px;
   padding: 8px;
-  height: calc(100% - 30px);
+  flex: 1;
+  min-height: 0;
   font-size: 11px;
 }
 
@@ -2333,15 +2316,10 @@ body.tool-window-mode #mainWin {
    IMAGE METADATA ANALYZER
 ═══════════════════════════════════════════════════════════════ */
 .imgmeta-win {
-  position: absolute;
   width: 740px;
   height: 580px;
   min-width: 480px;
   min-height: 340px;
-  display: none;
-  flex-direction: column;
-  resize: both;
-  overflow: hidden;
 }
 
 .imgmeta-body {
