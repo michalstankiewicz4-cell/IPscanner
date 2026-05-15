@@ -2320,9 +2320,9 @@ function addResultRow(ip, openPorts, pingMs, skipEnrich = false, isAnomaly = fal
     if (geoCache[ip]      === null) delete geoCache[ip];
   }
 
-  // If re-scanning "all ports" - remove old row/pathsRow for this IP
+  // Replace existing row for this IP so repeated scans update instead of duplicating.
   const existingRow = document.querySelector(`.lv-row[data-ip="${ip}"]`);
-  if (existingRow && portsOverride !== null) {
+  if (existingRow) {
     const existingPaths = existingRow.nextElementSibling;
     if (existingPaths && existingPaths.classList.contains('paths-row')) {
       existingPaths.remove();

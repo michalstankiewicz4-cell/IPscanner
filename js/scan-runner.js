@@ -12,6 +12,13 @@
     scanRuntime.stopRequested = !!value;
   };
 
+  function recomputeScanTotals() {
+    totalFound = getResultCounts().activeHosts;
+    totalOpenPorts = Object.values(foundHostsMap).reduce((sum, ports) => {
+      return sum + (Array.isArray(ports) ? ports.length : 0);
+    }, 0);
+  }
+
   async function startScan() {
     window.__scanInvokeWarned = false;
     const startIp = getIP('f');
@@ -84,15 +91,11 @@
       if (!confirmed) return;
     }
 
-    foundHostsMap = {};
-    foundPingMap = {};
-    foundAnomalyMap = {};
-    totalFound = 0;
-    totalOpenPorts = 0;
     refreshTopologyFilterOptions();
     setStopRequested(false);
     if (scanDom.statTime) scanDom.statTime.textContent = '0.0s';
-    updateProgress(0, total, 0, 0);
+    recomputeScanTotals();
+    updateProgress(0, total, totalFound, totalOpenPorts);
     setScanState(true);
 
     if (typeof appendCmdLog === 'function') {
@@ -106,16 +109,13 @@
       );
     }
 
-    if (portsOverride === null) {
-      if (scanDom.listBody) {
-        scanDom.listBody.innerHTML = '';
-        if (scanDom.emptyRow) scanDom.listBody.appendChild(scanDom.emptyRow);
-      }
-    } else {
-      if (scanDom.emptyRow?.parentNode) scanDom.emptyRow.remove();
+    if (scanDom.emptyRow?.parentNode && Object.keys(foundHostsMap).length > 0) {
+      scanDom.emptyRow.remove();
     }
-
-    if (scanDom.emptyRow) scanDom.emptyRow.textContent = t('emptyScanning');
+    if (scanDom.emptyRow && !scanDom.emptyRow.parentNode && Object.keys(foundHostsMap).length === 0 && scanDom.listBody) {
+      scanDom.listBody.appendChild(scanDom.emptyRow);
+    }
+    if (scanDom.emptyRow?.parentNode) scanDom.emptyRow.textContent = t('emptyScanning');
 
     if (total > 500) {
       const estSec = Math.round(total * (1500 / concurrency) / 1000);
@@ -186,7 +186,6 @@
         const ip = numToIp(startNum + idx);
         let lastLiveRowUiUpdateAt = 0;
 
-        let liveRowAdded = false;
         let liveOpenCount = 0;
         const onBatch = portsOverride !== null ? (partialResults) => {
           const partialOpen = partialResults.filter(r => r.ok).map(r => r.port);
@@ -198,13 +197,12 @@
           const now = Date.now();
           if (now - lastLiveRowUiUpdateAt < 180 && partialOpen.length < selectedPorts.length) return;
           lastLiveRowUiUpdateAt = now;
-          if (!liveRowAdded) liveRowAdded = true;
-          totalOpenPorts += partialOpen.length - liveOpenCount;
           liveOpenCount = partialOpen.length;
           foundHostsMap[ip] = partialOpen;
           foundAnomalyMap[ip] = isAnomaly;
-          totalFound = getResultCounts().activeHosts;
           if (pingMs !== null) foundPingMap[ip] = pingMs;
+          else delete foundPingMap[ip];
+          recomputeScanTotals();
           addResultRow(ip, partialOpen, pingMs, false, isAnomaly);
         } : null;
 
@@ -217,14 +215,11 @@
         const hasAnyResponse = res.some(r => r.ms !== null);
         const isAnomaly = openPorts.length === 0 && hasAnyResponse;
 
-        // Adjust totalOpenPorts: liveRowAdded already counted partial ports, so apply delta
-        totalOpenPorts += liveRowAdded
-          ? openPorts.length - liveOpenCount
-          : openPorts.length;
         foundHostsMap[ip] = openPorts;
         foundAnomalyMap[ip] = isAnomaly;
-        totalFound = getResultCounts().activeHosts;
         if (pingMs !== null) foundPingMap[ip] = pingMs;
+        else delete foundPingMap[ip];
+        recomputeScanTotals();
         addResultRow(ip, openPorts, pingMs, false, isAnomaly);
         if (typeof appendCmdLog === 'function') {
           if (openPorts.length) appendCmdLog(`>> HOST  ${ip}  ports: [${openPorts.join(', ')}]${pingMs !== null ? `  ping: ${pingMs}ms` : ''}`, 'scan');
@@ -241,7 +236,7 @@
 
     await Promise.all(Array.from({ length: concurrency }, worker));
     setScanState(false);
-    totalFound = getResultCounts().activeHosts;
+    recomputeScanTotals();
     updateProgress(checked, total, totalFound, totalOpenPorts);
 
     if (totalFound === 0 && scanDom.emptyRow?.parentNode) scanDom.emptyRow.textContent = t('emptyNone');
