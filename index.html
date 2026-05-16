@@ -59,7 +59,12 @@
 
   <!-- Menu bar -->
   <div class="menubar" id="menubar">
-    <div class="menu-item" id="menuFile"><span data-i18n="menuFile">File</span></div>
+    <div class="menu-item" id="menuFile"><span data-i18n="menuFile">File</span>
+      <div class="menu-dropdown">
+        <div class="menu-dd-item" id="menuExportResults" data-i18n="menuExportResults">💾 Export results...</div>
+        <div class="menu-dd-item" id="menuImportResults" data-i18n="menuImportResults">📂 Import results...</div>
+      </div>
+    </div>
     <div class="menu-item" id="menuOptions"><span data-i18n="menuOptions">Options</span>
       <div class="menu-dropdown">
         <div class="menu-dd-item" id="menuCountries" data-i18n="menuCountries">Country IP Library...</div>
@@ -101,6 +106,8 @@
       </div>
     </div>
   </div>
+
+  <input type="file" id="scanResultsImportInput" accept="application/json,.json" style="display:none" />
 
   <div class="win-body">
 
@@ -1385,7 +1392,9 @@
         <div class="version-note">
           Added intermediate host status (blue light) for unusual responses: IPs with no open ports but with detectable network response.<br>
           Added a dedicated Intermediate filter button between Active and Dead in the results toolbar.<br>
-          Improved results filtering so Dead now shows only typical dead hosts, while intermediate hosts are grouped in their own view.
+          Improved results filtering so Dead now shows only typical dead hosts, while intermediate hosts are grouped in their own view.<br>
+          Added scan results Export/Import actions in File menu (JSON format), including scan range history in exported files and restoring history on import.<br>
+          Improved Globe visualization: elevated arc routes with animated flow and thinner 1px styling aligned to globe route animation behavior.
         </div>
         <div class="version-head">v1.6.4</div>
         <div class="version-note">

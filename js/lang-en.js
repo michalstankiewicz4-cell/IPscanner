@@ -1,6 +1,7 @@
 /* ── English language strings ── */
 window.LANG_EN = {
   menuFile:'File', menuOptions:'Options', menuTools:'Tools', menuHelp:'Help',
+  menuExportResults:'💾 Export results...', menuImportResults:'📂 Import results...',
   menuLanguage:'Language...', menuAbout:'About', menuVersions:'Versions', menuDownload:'📥 Download', menuPresets:'Port Presets...', menuCountries:'Country IP Library...', menuDefaults:'Default Scan Values...',
   btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Clear', btnFactoryReset:'⟲ Reset All', btnFactoryResetTip:'Factory reset: clear all saved app data and reload.', btnGlobe:'🌍 Globe',
   btnConsole:'⌨ Console', btnMacro:'📁 Macro', btnSpeed:'📶 Speed', btnProto:'🧩 Prototype', btnTopology:'🕸 Topology', btnWifiRadar:'📍 WiFi Radar',
@@ -65,6 +66,9 @@ window.LANG_EN = {
   statusDone:(h,p)=>`Done. Found ${h} hosts (${p} ports).`,
   statusNone:'Scan complete — no active hosts.',
   statusHosts:(n)=>`${n} hosts`,
+  scanResultsExported:(n)=>`Exported ${n} scan result${n === 1 ? '' : 's'}.`,
+  scanResultsImported:(n)=>`Imported ${n} scan result${n === 1 ? '' : 's'}.`,
+  scanResultsImportFailed:(msg)=>`Could not import results: ${msg}`,
   ctxCopyIp:'Copy IP Address', ctxCopyPorts:'Copy Ports', ctxHostname:'Hostname (reverse DNS)', ctxScanAllPorts:'Scan this IP (all ports)',
   ctxOpenBrowser:'Open in Browser', ctxPreview:'Preview here',
   labelPreset:'Preset:', labelPorts2:'Ports:',

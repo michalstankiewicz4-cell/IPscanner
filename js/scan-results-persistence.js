@@ -1,16 +1,30 @@
 (function () {
   let saveResultsTimer = null;
 
+  function collectResultsExportData() {
+    return Object.entries(foundHostsMap).map(([ip, ports]) => ({
+      ip,
+      ports,
+      ping: foundPingMap[ip] ?? null,
+      anomaly: foundAnomalyMap[ip] === true,
+      hostname: hostnameCache[ip] ?? null,
+      geo: geoCache[ip] ?? null,
+    }));
+  }
+
+  function downloadJsonFile(filename, payload) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   function saveResultsNow() {
     try {
-      const data = Object.entries(foundHostsMap).map(([ip, ports]) => ({
-        ip,
-        ports,
-        ping: foundPingMap[ip] ?? null,
-        anomaly: foundAnomalyMap[ip] === true,
-        hostname: hostnameCache[ip] ?? null,
-        geo: geoCache[ip] ?? null,  // Save full geo object to restore cache on reload
-      }));
+      const data = collectResultsExportData();
       localStorage.setItem('netrecon_results', JSON.stringify(data));
       localStorage.setItem('netrecon_results_ts', Date.now());
     } catch {}
@@ -99,7 +113,56 @@
     } catch {}
   }
 
+  function exportResultsToJson() {
+    saveResultsNow();
+    const results = collectResultsExportData();
+    const scanHistory = typeof window.getScanHistoryForExport === 'function'
+      ? window.getScanHistoryForExport()
+      : JSON.parse(localStorage.getItem('netrecon_scan_history') || '[]');
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      results,
+      scanHistory: Array.isArray(scanHistory) ? scanHistory : [],
+    };
+    const ts = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+    downloadJsonFile(`netrecon-results-${ts}.json`, payload);
+    return results.length;
+  }
+
+  async function importResultsFromFile(file) {
+    const raw = await file.text();
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      throw new Error('Invalid JSON');
+    }
+
+    const results = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.results) ? parsed.results : null;
+    if (!Array.isArray(results)) {
+      throw new Error('Unexpected file format');
+    }
+
+    const importedHistory = Array.isArray(parsed?.scanHistory) ? parsed.scanHistory : null;
+
+    document.getElementById('btnClear')?.click();
+    localStorage.setItem('netrecon_results', JSON.stringify(results));
+    localStorage.setItem('netrecon_results_ts', Date.now());
+    if (importedHistory) {
+      if (typeof window.setScanHistoryFromImport === 'function') {
+        window.setScanHistoryFromImport(importedHistory);
+      } else {
+        localStorage.setItem('netrecon_scan_history', JSON.stringify(importedHistory));
+      }
+    }
+    restoreResults();
+    return results.length;
+  }
+
   window.saveResultsNow = saveResultsNow;
   window.saveResults = saveResults;
   window.restoreResults = restoreResults;
+  window.exportScanResults = exportResultsToJson;
+  window.importScanResultsFromFile = importResultsFromFile;
 })();

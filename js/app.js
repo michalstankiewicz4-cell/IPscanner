@@ -660,6 +660,45 @@ document.getElementById('menuDownload').addEventListener('click', () => {
   closeAllMenus();
   openInBrowser('https://github.com/michalstankiewicz4-cell/IPscanner/releases');
 });
+const menuExportResultsEl = document.getElementById('menuExportResults');
+const menuImportResultsEl = document.getElementById('menuImportResults');
+const scanResultsImportInputEl = document.getElementById('scanResultsImportInput');
+
+menuExportResultsEl?.addEventListener('click', () => {
+  closeAllMenus();
+  try {
+    const exported = window.exportScanResults?.();
+    if (Number.isFinite(exported)) {
+      setStatus(t('scanResultsExported', exported), 'ok');
+      appendCmdLog(`Exported ${exported} scan result${exported === 1 ? '' : 's'}.`, 'scan');
+    }
+  } catch (err) {
+    const msg = err?.message || 'Export failed.';
+    setStatus(msg, 'err');
+    appendCmdLog(`Export results failed: ${msg}`, 'scan');
+  }
+});
+menuImportResultsEl?.addEventListener('click', () => {
+  closeAllMenus();
+  scanResultsImportInputEl?.click();
+});
+scanResultsImportInputEl?.addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    const imported = await window.importScanResultsFromFile?.(file);
+    if (Number.isFinite(imported)) {
+      setStatus(t('scanResultsImported', imported), 'ok');
+      appendCmdLog(`Imported ${imported} scan result${imported === 1 ? '' : 's'} from ${file.name}.`, 'scan');
+    }
+  } catch (err) {
+    const msg = err?.message || 'Import failed.';
+    setStatus(t('scanResultsImportFailed', msg), 'err');
+    appendCmdLog(`Import results failed: ${msg}`, 'scan');
+  } finally {
+    e.target.value = '';
+  }
+});
 document.getElementById('menuAbout').addEventListener('click', () => { closeAllMenus(); openNotepad(); });
 document.getElementById('menuClippy').addEventListener('click', () => {
   closeAllMenus();
@@ -1105,6 +1144,9 @@ const btnGo       = document.getElementById('btnGo');
 const btnStop     = document.getElementById('btnStop');
 const btnClear    = document.getElementById('btnClear');
 const btnFactoryReset = document.getElementById('btnFactoryReset');
+const menuExportResults = document.getElementById('menuExportResults');
+const menuImportResults = document.getElementById('menuImportResults');
+const scanResultsImportInput = document.getElementById('scanResultsImportInput');
 const progFill    = document.getElementById('progFill');
 const progPct     = document.getElementById('progPct');
 const statChecked = document.getElementById('statChecked');
@@ -2796,6 +2838,20 @@ function removeFromScanHistory(rangeStr) {
   renderScanHistory();
 }
 
+function getScanHistoryForExport() {
+  return Array.isArray(scanHistory) ? scanHistory.slice() : [];
+}
+
+function setScanHistoryFromImport(importedHistory) {
+  if (!Array.isArray(importedHistory)) return;
+  scanHistory = importedHistory
+    .map(v => String(v || '').trim())
+    .filter(Boolean)
+    .slice(0, MAX_HISTORY_ITEMS);
+  localStorage.setItem(SCAN_HISTORY_KEY, JSON.stringify(scanHistory));
+  renderScanHistory();
+}
+
 function buildHistoryIpNode(ip) {
   const ipWrap = document.createElement('span');
   ipWrap.className = 'scan-history-ip';
@@ -2916,3 +2972,5 @@ function loadRangeFromHistory(rangeStr) {
 
 // Initialize history rendering on page load
 renderScanHistory();
+window.getScanHistoryForExport = getScanHistoryForExport;
+window.setScanHistoryFromImport = setScanHistoryFromImport;

@@ -1,6 +1,7 @@
 /* ── Polish language strings ── */
 window.LANG_PL = {
   menuFile:'Plik', menuOptions:'Opcje', menuTools:'Narzędzia', menuHelp:'Pomoc',
+  menuExportResults:'💾 Eksport wyników...', menuImportResults:'📂 Import wyników...',
   menuLanguage:'Język...', menuAbout:'O programie', menuVersions:'Wersje', menuDownload:'📥 Pobierz', menuPresets:'Presety portów...', menuCountries:'Biblioteka krajów IP...', menuDefaults:'Domyślne wartości skanowania...',
   btnStart:'▶ Start', btnStop:'■ Stop', btnClear:'✕ Wyczyść', btnFactoryReset:'⟲ Resetuj wszystko', btnFactoryResetTip:'Reset całej aplikacji: usuwa zapisane dane i przeładowuje okno.', btnGlobe:'🌍 Mapa',
   btnConsole:'⌨ Konsola', btnMacro:'📁 Makro', btnSpeed:'📶 Prędkość', btnProto:'🧩 Prototyp', btnTopology:'🕸 Topologia', btnWifiRadar:'📍 WiFi Radar',
@@ -65,6 +66,9 @@ window.LANG_PL = {
   statusDone:(h,p)=>`Zakończono. Znaleziono ${h} hostów (${p} portów).`,
   statusNone:'Skan zakończony — brak aktywnych hostów.',
   statusHosts:(n)=>`${n} hostów`,
+  scanResultsExported:(n)=>`Wyeksportowano ${n} wynik${n === 1 ? '' : (n < 5 ? 'i' : 'ów')} skanowania.`,
+  scanResultsImported:(n)=>`Zaimportowano ${n} wynik${n === 1 ? '' : (n < 5 ? 'i' : 'ów')} skanowania.`,
+  scanResultsImportFailed:(msg)=>`Nie udało się zaimportować wyników: ${msg}`,
   ctxCopyIp:'Kopiuj adres IP', ctxCopyPorts:'Kopiuj porty', ctxHostname:'Hostname (reverse DNS)', ctxScanAllPorts:'Skanuj to IP (wszystkie porty)',
   ctxOpenBrowser:'Otwórz w przeglądarce', ctxPreview:'Podgląd tutaj',
   labelPreset:'Preset:', labelPorts2:'Porty:',
