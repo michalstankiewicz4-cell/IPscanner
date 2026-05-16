@@ -203,6 +203,15 @@
   const btnCopyMyIp = document.getElementById('btnCopyMyIp');
   const btnUseMyIp = document.getElementById('btnUseMyIp');
 
+    function persistSelfIpState(ip, geo) {
+      try {
+        if (ip) localStorage.setItem('netrecon_self_public_ip', ip);
+        if (geo && typeof geo === 'object') {
+          localStorage.setItem('netrecon_self_public_geo', JSON.stringify(geo));
+        }
+      } catch {}
+    }
+
   const btnMyLocalIp = document.getElementById('btnMyLocalIp');
   const myLocalIpResult = document.getElementById('myLocalIpResult');
   const btnCopyMyLocalIp = document.getElementById('btnCopyMyLocalIp');
@@ -219,22 +228,73 @@
     btnUseMyIp.classList.add('initially-hidden');
     btnMyIp.disabled = true;
     try {
-      const res = await fetch('https://api.ipify.org?format=json');
-      const data = await res.json();
+      let data = null;
+      try {
+        const resAny = await fetch('https://api64.ipify.org?format=json');
+        data = await resAny.json();
+      } catch {
+        const resLegacy = await fetch('https://api.ipify.org?format=json');
+        data = await resLegacy.json();
+      }
+
+      let chosenIp = String(data?.ip || '').trim();
+      if (!(typeof isIPv4 === 'function' && isIPv4(chosenIp))) {
+        try {
+          const res4 = await fetch('https://api4.ipify.org?format=json');
+          const data4 = await res4.json();
+          const ip4 = String(data4?.ip || '').trim();
+          if (typeof isIPv4 === 'function' && isIPv4(ip4)) {
+            chosenIp = ip4;
+          }
+        } catch {
+          // Keep previously detected IP when IPv4 endpoint is unavailable.
+        }
+      }
+
+      window.__selfPublicIp = chosenIp;
+      persistSelfIpState(chosenIp, null);
       myIpResult.className = 'status-ok';
-      myIpResult.textContent = data.ip;
+      myIpResult.textContent = chosenIp;
       btnCopyMyIp.classList.remove('initially-hidden');
       btnCopyMyIp.onclick = () => {
-        navigator.clipboard?.writeText(data.ip);
+        navigator.clipboard?.writeText(chosenIp);
         btnCopyMyIp.textContent = '✔ OK';
         setTimeout(() => { btnCopyMyIp.textContent = t('btnCopy'); }, 1500);
       };
       btnUseMyIp.classList.remove('initially-hidden');
       btnUseMyIp.onclick = () => {
-        const parts = data.ip.split('.').map(Number);
+        const parts = chosenIp.split('.').map(Number);
+        if (parts.length !== 4 || parts.some(v => !Number.isFinite(v))) return;
         setIP('f', `${parts[0]}.${parts[1]}.${parts[2]}.1`);
         setIP('t', `${parts[0]}.${parts[1]}.${parts[2]}.254`);
       };
+      if (typeof geoLookup === 'function') {
+        const geo = await geoLookup(chosenIp).catch(() => null);
+        persistSelfIpState(chosenIp, geo);
+        if (!geo && _tauriInvoke && chosenIp) {
+          try {
+            const d = await _tauriInvoke('geo_lookup', { ip: chosenIp });
+            if (d && d.status === 'success') {
+              const coords = typeof resolveGeoCoords === 'function'
+                ? resolveGeoCoords(d)
+                : (Number.isFinite(Number(d.lat)) && Number.isFinite(Number(d.lon))
+                  ? { lat: Number(d.lat), lon: Number(d.lon) }
+                  : null);
+              if (coords && typeof ipGeoCoords !== 'undefined') {
+                ipGeoCoords[chosenIp] = {
+                  lat: coords.lat,
+                  lon: coords.lon,
+                  country: d.country || ''
+                };
+                persistSelfIpState(chosenIp, d);
+                if (typeof updateGlobeDots === 'function') updateGlobeDots();
+              }
+            }
+          } catch {
+            // Ignore fallback failures.
+          }
+        }
+      }
     } catch {
       myIpResult.className = 'status-error';
       myIpResult.textContent = t('geoError');

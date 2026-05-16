@@ -9,6 +9,7 @@
 // Replicated from app.js — globe.js loads before app.js
 var _isTauriDesktop = !!(window.__TAURI__ || window.__TAURI_INTERNALS__ || navigator.userAgent.toLowerCase().includes('tauri'));
 const ipGeoCoords = {}; // ip → { lat, lon, country }
+window.__selfPublicIp = window.__selfPublicIp || '';
 let globeReady = false;
 let globeCtx, globeProjection, globePath;
 let globeCountries = null, globeBorders = null, globeLand = null;
@@ -22,6 +23,7 @@ let currentLambda = 20, currentPhi = -15; // rotation angles
 let globeZoom = 1.0; // scroll zoom multiplier
 let hoveredCountryName = null;
 let clickedDotIp = null;
+let globeSelfFocusKey = '';
 let mapMode = 'globe';
 let topologyHitTargets = [];
 let traceRoutes = {};
@@ -33,6 +35,54 @@ function maskIp(ip) {
   if (!document.body.classList.contains('ip-blur-active')) return ip;
   const parts = ip.split('.');
   return parts[0] + '.' + parts[1] + '.x.x';
+}
+
+function resolveSelfPublicIpForGlobe() {
+  const direct = String(window.__selfPublicIp || '').trim();
+  if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(direct)) return direct;
+
+  const storedIp = String(localStorage.getItem('netrecon_self_public_ip') || '').trim();
+  if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(storedIp)) {
+    window.__selfPublicIp = storedIp;
+    return storedIp;
+  }
+
+  const labelIp = String(document.getElementById('myIpResult')?.textContent || '').trim();
+  if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(labelIp)) {
+    window.__selfPublicIp = labelIp;
+    return labelIp;
+  }
+
+  return '';
+}
+
+function restoreSelfGeoForGlobe(selfIp) {
+  if (!selfIp || ipGeoCoords[selfIp]) return;
+  try {
+    const raw = localStorage.getItem('netrecon_self_public_geo');
+    if (!raw) return;
+    const geo = JSON.parse(raw);
+    const lat = Number(geo?.lat);
+    const lon = Number(geo?.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+    ipGeoCoords[selfIp] = {
+      lat,
+      lon,
+      country: geo?.country || ''
+    };
+  } catch {}
+}
+
+function focusGlobeOnSelf(selfIp, selfGeo) {
+  if (!selfIp || !selfGeo) return;
+  const lat = Number(selfGeo.lat);
+  const lon = Number(selfGeo.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+  const focusKey = `${selfIp}|${lat.toFixed(3)}|${lon.toFixed(3)}`;
+  if (globeSelfFocusKey === focusKey) return;
+  currentLambda = -lon;
+  currentPhi = -lat;
+  globeSelfFocusKey = focusKey;
 }
 
 // ══════════════════════════════════════════════════
@@ -361,12 +411,12 @@ function updateTopologyStatus(hosts, traceCount) {
     : `${t('topologyStatus', hosts.length)}${traceLabel}`;
 }
 
-function getProjection() {
-  return d3.geoOrthographic()
+function getProjection(clip = true) {
+  const proj = d3.geoOrthographic()
     .scale(Math.min(globeWidth, globeHeight) * 0.46 * globeZoom)
     .translate([globeWidth/2, globeHeight/2])
-    .rotate([currentLambda, currentPhi, 0])
-    .clipAngle(90);
+    .rotate([currentLambda, currentPhi, 0]);
+  return clip ? proj.clipAngle(90) : proj.clipAngle(179.999);
 }
 
 function drawGlobe() {
@@ -387,6 +437,7 @@ function drawGlobe() {
     return;
   }
   const proj = getProjection();
+  const projOverlay = getProjection(false);
   const path = d3.geoPath(proj, globeCtx);
   const ctx  = globeCtx;
 
@@ -444,14 +495,42 @@ function drawGlobe() {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
+  const selfIp = resolveSelfPublicIpForGlobe();
+  restoreSelfGeoForGlobe(selfIp);
+  const selfGeo = selfIp ? ipGeoCoords[selfIp] : null;
+  focusGlobeOnSelf(selfIp, selfGeo);
+  const selfProjected = selfGeo ? projOverlay([selfGeo.lon, selfGeo.lat]) : null;
+  const pulse = (Math.sin(Date.now() / 220) + 1) / 2;
+
+  if (selfProjected) {
+    const [selfX, selfY] = selfProjected;
+    const lineTargets = Object.entries(ipGeoCoords).filter(([ip]) => {
+      if (ip === selfIp) return false;
+      return Object.prototype.hasOwnProperty.call(foundHostsMap || {}, ip);
+    });
+    const drawableTargets = lineTargets.length
+      ? lineTargets
+      : Object.entries(ipGeoCoords).filter(([ip]) => ip !== selfIp);
+
+    drawableTargets.forEach(([ip, geo]) => {
+      if (ip === selfIp) return;
+      drawElevatedArcLine(ctx, projOverlay, selfGeo, geo, {
+        key: ip,
+        width: 1,
+        opacity: 0.3,
+        dashAnimateMs: 1500
+      });
+    });
+  }
+
   // IP dots
-  const proj2 = proj;
   Object.entries(ipGeoCoords).forEach(([ip, geo]) => {
+    if (ip === selfIp) return;
     if (!isActiveHostForGlobe(ip)) return;
-    const [x, y] = proj2([geo.lon, geo.lat]);
+    const [x, y] = proj([geo.lon, geo.lat]);
     if (x === undefined || isNaN(x)) return;
     // Check if point is on visible hemisphere
-    const angle = d3.geoDistance([geo.lon, geo.lat], proj2.invert([globeWidth/2, globeHeight/2]));
+    const angle = d3.geoDistance([geo.lon, geo.lat], proj.invert([globeWidth/2, globeHeight/2]));
     if (angle > Math.PI/2) return; // behind globe
 
     // Glow
@@ -468,6 +547,11 @@ function drawGlobe() {
     ctx.lineWidth   = 1;
     ctx.fill(); ctx.stroke();
   });
+
+  if (selfProjected) {
+    const [selfX, selfY] = selfProjected;
+    drawSelfGlobeMarker(ctx, selfX, selfY, pulse);
+  }
 }
 
 function buildTopologyModel() {
@@ -504,6 +588,124 @@ function hexToRgba(hex, alpha) {
   const g = (value >> 8) & 255;
   const b = value & 255;
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function isPointVisibleOnGlobe(proj, lon, lat) {
+  try {
+    const center = proj.invert([globeWidth / 2, globeHeight / 2]);
+    if (!center) return false;
+    return d3.geoDistance([lon, lat], center) <= Math.PI / 2;
+  } catch {
+    return false;
+  }
+}
+
+function drawElevatedArcLine(ctx, projOverlay, fromGeo, toGeo, opts = {}) {
+  if (!fromGeo || !toGeo) return;
+  const fromLL = [Number(fromGeo.lon), Number(fromGeo.lat)];
+  const toLL = [Number(toGeo.lon), Number(toGeo.lat)];
+  if (!fromLL.every(Number.isFinite) || !toLL.every(Number.isFinite)) return;
+
+  const geoDist = d3.geoDistance(fromLL, toLL);
+  const distN = Math.max(0, Math.min(1, geoDist / Math.PI));
+  const lift = Math.max(16, Math.min(122, 16 + distN * 108));
+  const segments = Math.max(22, Math.min(72, Math.floor(24 + distN * 48)));
+  const interpolate = d3.geoInterpolate(fromLL, toLL);
+  const cx = globeWidth * 0.5;
+  const cy = globeHeight * 0.5;
+
+  const points = [];
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const ll = interpolate(t);
+    const pt = projOverlay(ll);
+    if (!pt || !Number.isFinite(pt[0]) || !Number.isFinite(pt[1])) continue;
+    const bulge = Math.sin(Math.PI * t) * lift;
+    let nx = pt[0] - cx;
+    let ny = pt[1] - cy;
+    const nLen = Math.hypot(nx, ny) || 1;
+    nx /= nLen;
+    ny /= nLen;
+    points.push([pt[0] + nx * bulge, pt[1] + ny * bulge]);
+  }
+
+  if (points.length < 2) return;
+
+  const baseOpacity = Number.isFinite(Number(opts.opacity)) ? Number(opts.opacity) : 0.3;
+  const strokeWidth = Number.isFinite(Number(opts.width)) ? Number(opts.width) : 1;
+  const startColor = `rgba(0, 255, 0, ${baseOpacity})`;
+  const endColor = `rgba(255, 0, 0, ${baseOpacity})`;
+
+  const grad = ctx.createLinearGradient(points[0][0], points[0][1], points[points.length - 1][0], points[points.length - 1][1]);
+  grad.addColorStop(0, startColor);
+  grad.addColorStop(1, endColor);
+
+  // Base arc body (airline-routes style low-opacity trail)
+  ctx.beginPath();
+  ctx.moveTo(points[0][0], points[0][1]);
+  for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = strokeWidth;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Animated segment tuned to globe.gl highlight-links (0.4 / 0.2 / 1500ms).
+  let totalLen = 0;
+  for (let i = 1; i < points.length; i++) {
+    totalLen += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
+  }
+  const dashLen = totalLen * 0.4;
+  const dashGap = totalLen * 0.2;
+  const animMs = Math.max(400, Number(opts.dashAnimateMs) || 1500);
+  const phase = ((Date.now() % animMs) / animMs) * (dashLen + dashGap);
+
+  ctx.beginPath();
+  ctx.moveTo(points[0][0], points[0][1]);
+  for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
+  ctx.setLineDash([dashLen, dashGap]);
+  ctx.lineDashOffset = -phase;
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = strokeWidth;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.lineDashOffset = 0;
+}
+
+function drawSelfGlobeMarker(ctx, x, y, pulse) {
+  const glowRadius = 20 + pulse * 14;
+  const dotRadius = 5.5 + pulse * 2.8;
+  const glow = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
+  glow.addColorStop(0, `rgba(0, 255, 220, ${0.98 - pulse * 0.08})`);
+  glow.addColorStop(0.3, `rgba(0, 220, 255, ${0.72 - pulse * 0.14})`);
+  glow.addColorStop(1, 'rgba(0, 255, 220, 0)');
+
+  ctx.beginPath();
+  ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+  ctx.fillStyle = glow;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+  ctx.fillStyle = '#00ffd5';
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(x, y, dotRadius + 5 + pulse * 2, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(255,255,255,${0.55 - pulse * 0.2})`;
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(x, y, dotRadius + 12 + pulse * 6, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(0,255,220,${0.5 - pulse * 0.2})`;
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
 }
 
 function drawTopology() {
