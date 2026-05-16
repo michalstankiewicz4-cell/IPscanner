@@ -1,6 +1,13 @@
 (function () {
   let saveResultsTimer = null;
 
+  function getTauriInvoke() {
+    return window.__TAURI_INTERNALS__?.invoke
+      ?? window.__TAURI__?.invoke
+      ?? window.__TAURI__?.core?.invoke
+      ?? null;
+  }
+
   function collectResultsExportData() {
     return Object.entries(foundHostsMap).map(([ip, ports]) => ({
       ip,
@@ -12,8 +19,8 @@
     }));
   }
 
-  function downloadJsonFile(filename, payload) {
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8;' });
+  function downloadJsonFile(filename, content) {
+    const blob = new Blob([content], { type: 'application/json;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -113,7 +120,7 @@
     } catch {}
   }
 
-  function exportResultsToJson() {
+  async function exportResultsToJson() {
     saveResultsNow();
     const results = collectResultsExportData();
     const scanHistory = typeof window.getScanHistoryForExport === 'function'
@@ -126,12 +133,68 @@
       scanHistory: Array.isArray(scanHistory) ? scanHistory : [],
     };
     const ts = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
-    downloadJsonFile(`netrecon-results-${ts}.json`, payload);
+    const filename = `netrecon-results-${ts}.json`;
+    const content = JSON.stringify(payload, null, 2);
+    const invoke = getTauriInvoke();
+
+    if (invoke) {
+      try {
+        await invoke('save_scan_results_dialog', {
+          defaultFilename: filename,
+          content,
+        });
+      } catch (err) {
+        if (String(err || '').toLowerCase().includes('cancelled')) return null;
+        throw err;
+      }
+    } else if (typeof window.showSaveFilePicker === 'function') {
+      try {
+        const fileHandle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+        });
+        const writable = await fileHandle.createWritable();
+        await writable.write(content);
+        await writable.close();
+      } catch (err) {
+        if (err?.name === 'AbortError') return null;
+        throw err;
+      }
+    } else {
+      downloadJsonFile(filename, content);
+    }
     return results.length;
   }
 
   async function importResultsFromFile(file) {
-    const raw = await file.text();
+    const invoke = getTauriInvoke();
+    let raw = '';
+
+    if (file) {
+      raw = await file.text();
+    } else if (invoke) {
+      try {
+        raw = await invoke('open_scan_results_dialog');
+      } catch (err) {
+        if (String(err || '').toLowerCase().includes('cancelled')) return null;
+        throw err;
+      }
+    } else if (typeof window.showOpenFilePicker === 'function') {
+      try {
+        const [fileHandle] = await window.showOpenFilePicker({
+          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+          multiple: false,
+        });
+        const f = await fileHandle.getFile();
+        raw = await f.text();
+      } catch (err) {
+        if (err?.name === 'AbortError') return null;
+        throw err;
+      }
+    } else {
+      throw new Error('No file selected');
+    }
+
     let parsed;
     try {
       parsed = JSON.parse(raw);

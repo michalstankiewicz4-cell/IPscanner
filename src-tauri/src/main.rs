@@ -3,6 +3,7 @@
 
 use std::net::{IpAddr, SocketAddr};
 use std::io::Read;
+use std::fs;
 use std::process::Command;
 use std::str::FromStr;
 use std::collections::{HashMap, HashSet};
@@ -562,6 +563,38 @@ fn open_browser(url: String) {
     let _ = std::process::Command::new("cmd")
         .args(["/c", "start", "", url.as_str()])
         .spawn();
+}
+
+#[tauri::command]
+fn save_scan_results_dialog(default_filename: String, content: String) -> Result<String, String> {
+    let picked = rfd::FileDialog::new()
+        .set_title("Export scan results")
+        .set_file_name(&default_filename)
+        .add_filter("JSON", &["json"])
+        .save_file();
+
+    let path = match picked {
+        Some(path) => path,
+        None => return Err("cancelled".into()),
+    };
+
+    fs::write(&path, content).map_err(|e| format!("Failed to save file: {}", e))?;
+    Ok(path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn open_scan_results_dialog() -> Result<String, String> {
+    let picked = rfd::FileDialog::new()
+        .set_title("Import scan results")
+        .add_filter("JSON", &["json"])
+        .pick_file();
+
+    let path = match picked {
+        Some(path) => path,
+        None => return Err("cancelled".into()),
+    };
+
+    fs::read_to_string(&path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
 #[tauri::command]
@@ -3457,6 +3490,8 @@ fn main() {
             window_toggle_maximize,
             window_start_dragging,
             window_close,
+            save_scan_results_dialog,
+            open_scan_results_dialog,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -664,10 +664,10 @@ const menuExportResultsEl = document.getElementById('menuExportResults');
 const menuImportResultsEl = document.getElementById('menuImportResults');
 const scanResultsImportInputEl = document.getElementById('scanResultsImportInput');
 
-menuExportResultsEl?.addEventListener('click', () => {
+menuExportResultsEl?.addEventListener('click', async () => {
   closeAllMenus();
   try {
-    const exported = window.exportScanResults?.();
+    const exported = await window.exportScanResults?.();
     if (Number.isFinite(exported)) {
       setStatus(t('scanResultsExported', exported), 'ok');
       appendCmdLog(`Exported ${exported} scan result${exported === 1 ? '' : 's'}.`, 'scan');
@@ -678,26 +678,37 @@ menuExportResultsEl?.addEventListener('click', () => {
     appendCmdLog(`Export results failed: ${msg}`, 'scan');
   }
 });
-menuImportResultsEl?.addEventListener('click', () => {
-  closeAllMenus();
-  scanResultsImportInputEl?.click();
-});
-scanResultsImportInputEl?.addEventListener('change', async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+
+async function runScanResultsImport(file = null, sourceName = 'dialog') {
   try {
     const imported = await window.importScanResultsFromFile?.(file);
     if (Number.isFinite(imported)) {
       setStatus(t('scanResultsImported', imported), 'ok');
-      appendCmdLog(`Imported ${imported} scan result${imported === 1 ? '' : 's'} from ${file.name}.`, 'scan');
+      appendCmdLog(`Imported ${imported} scan result${imported === 1 ? '' : 's'} from ${sourceName}.`, 'scan');
     }
   } catch (err) {
     const msg = err?.message || 'Import failed.';
     setStatus(t('scanResultsImportFailed', msg), 'err');
     appendCmdLog(`Import results failed: ${msg}`, 'scan');
-  } finally {
-    e.target.value = '';
   }
+}
+
+menuImportResultsEl?.addEventListener('click', async () => {
+  closeAllMenus();
+  const hasNativeDialog = !!(window.__TAURI__ || window.__TAURI_INTERNALS__ || navigator.userAgent.toLowerCase().includes('tauri'))
+    || typeof window.showOpenFilePicker === 'function';
+  if (hasNativeDialog) {
+    await runScanResultsImport(null, 'dialog');
+    return;
+  }
+  scanResultsImportInputEl?.click();
+});
+
+scanResultsImportInputEl?.addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  await runScanResultsImport(file, file.name);
+  e.target.value = '';
 });
 document.getElementById('menuAbout').addEventListener('click', () => { closeAllMenus(); openNotepad(); });
 document.getElementById('menuClippy').addEventListener('click', () => {
