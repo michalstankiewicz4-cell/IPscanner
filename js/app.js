@@ -883,7 +883,8 @@ function savePresetsStorage(arr) {
 }
 
 let presets = loadPresets();
-let activePresetIdx = +( localStorage.getItem('netrecon_active_preset') || 0 );
+const _savedPreset = localStorage.getItem('netrecon_active_preset');
+let activePresetIdx = _savedPreset !== null ? +_savedPreset : findAllPortsPresetIndex();
 if (activePresetIdx >= presets.length) activePresetIdx = 0;
 var portsOverride = null;
 
@@ -966,7 +967,7 @@ function renderPresetListBox() {
   presets.forEach((p, i) => {
     const row = document.createElement('div');
     row.className = 'preset-row' + (i === dlgSelectedPreset ? ' selected' : '');
-    row.textContent = p.name;
+    row.textContent = (i === activePresetIdx ? '★ ' : '') + p.name;
     row.addEventListener('click', () => {
       dlgSelectedPreset = i;
       renderPresetListBox();
@@ -976,6 +977,8 @@ function renderPresetListBox() {
   });
   const editBox = document.getElementById('presetEditBox');
   editBox.classList.toggle('disabled', dlgSelectedPreset < 0);
+  const setDefaultBtn = document.getElementById('btnPresetSetDefault');
+  if (setDefaultBtn) setDefaultBtn.disabled = dlgSelectedPreset < 0;
 }
 
 function loadPresetIntoEditor(i) {
@@ -1018,6 +1021,12 @@ document.getElementById('btnPresetDown').addEventListener('click', () => {
   dlgSelectedPreset++;
   renderPresetListBox();
   loadPresetIntoEditor(dlgSelectedPreset);
+});
+
+document.getElementById('btnPresetSetDefault').addEventListener('click', () => {
+  if (dlgSelectedPreset < 0) return;
+  activatePresetByIndex(dlgSelectedPreset);
+  renderPresetListBox();
 });
 
 document.getElementById('btnPresetSave').addEventListener('click', () => {

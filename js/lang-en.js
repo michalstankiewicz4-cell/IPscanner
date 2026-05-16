@@ -72,7 +72,7 @@ window.LANG_EN = {
   ctxCopyIp:'Copy IP Address', ctxCopyPorts:'Copy Ports', ctxHostname:'Hostname (reverse DNS)', ctxScanAllPorts:'Scan this IP (all ports)',
   ctxOpenBrowser:'Open in Browser', ctxPreview:'Preview here',
   labelPreset:'Preset:', labelPorts2:'Ports:',
-  presetAdd:'+ Add', presetDel:'✕ Delete',
+  presetAdd:'+ Add', presetDel:'✕ Delete', presetSetDefault:'⭐ Set as default',
   presetEdit:'Edit preset', presetName:'Name:',
   presetPorts:'Ports:', presetSave:'💾 Save',
   presetHint:'Enter port numbers separated by commas, e.g.: 80, 443, 8080, 554',

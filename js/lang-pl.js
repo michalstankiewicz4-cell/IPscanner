@@ -72,7 +72,7 @@ window.LANG_PL = {
   ctxCopyIp:'Kopiuj adres IP', ctxCopyPorts:'Kopiuj porty', ctxHostname:'Hostname (reverse DNS)', ctxScanAllPorts:'Skanuj to IP (wszystkie porty)',
   ctxOpenBrowser:'Otwórz w przeglądarce', ctxPreview:'Podgląd tutaj',
   labelPreset:'Preset:', labelPorts2:'Porty:',
-  presetAdd:'+ Dodaj', presetDel:'✕ Usuń',
+  presetAdd:'+ Dodaj', presetDel:'✕ Usuń', presetSetDefault:'⭐ Ustaw jako domyślny',
   presetEdit:'Edytuj preset', presetName:'Nazwa:',
   presetPorts:'Porty:', presetSave:'💾 Zapisz',
   presetHint:'Wpisz numery portów po przecinku, np.: 80, 443, 8080, 554',
