@@ -2330,6 +2330,15 @@ async fn resolve_target_ipv4(target: &str) -> Result<String, String> {
     Err("No IPv4 address found for this hostname".into())
 }
 
+#[tauri::command]
+async fn resolve_domain_ipv4(target: String) -> Result<String, String> {
+    let trimmed = target.trim();
+    if trimmed.is_empty() {
+        return Err("Empty hostname".into());
+    }
+    resolve_target_ipv4(trimmed).await
+}
+
 // ─── Image Metadata ──────────────────────────────────────────────────────────
 
 #[derive(Serialize, Clone)]
@@ -3420,6 +3429,7 @@ fn main() {
             stop_scan,
             geo_lookup,
             hostname_lookup,
+            resolve_domain_ipv4,
             get_local_ip,
             get_local_subnets,
             run_traceroute,

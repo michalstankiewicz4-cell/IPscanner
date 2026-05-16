@@ -1116,6 +1116,8 @@ const statusCount = document.getElementById('statusCount');
 const listBody    = document.getElementById('listBody');
 const emptyRow    = document.getElementById('emptyRow');
 const ctxMenu     = document.getElementById('ctxMenu');
+const btnAddExtractedIp = document.getElementById('btnAddExtractedIp');
+const ipExtractorInput = document.getElementById('ipExtractorInput');
 window.__scanDom = {
   listBody,
   emptyRow,
@@ -1603,6 +1605,88 @@ function updateProgress(checked, total, fh, op) {
   statPorts.textContent   = op;
   statusCount.textContent = t('statusHosts', getStatusCountForFilter());
 }
+
+function recomputeResultTotals() {
+  totalFound = getResultCounts().activeHosts;
+  totalOpenPorts = Object.values(foundHostsMap).reduce((sum, ports) => {
+    return sum + (Array.isArray(ports) ? ports.length : 0);
+  }, 0);
+}
+
+function normalizeExtractorTarget(line) {
+  let target = String(line || '').trim();
+  if (!target) return '';
+
+  try {
+    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(target)) {
+      target = new URL(target).hostname || '';
+    }
+  } catch {}
+
+  target = target.split(/\s+/)[0] || '';
+  target = target.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '');
+  if (target.includes('@')) target = target.split('@').pop() || '';
+  target = target.split('/')[0].split('?')[0].split('#')[0];
+
+  if (!isIPv4(target) && target.includes(':')) {
+    target = target.split(':')[0];
+  }
+
+  return target.trim().replace(/\.$/, '');
+}
+
+async function addIpsFromExtractor() {
+  if (!_tauriInvoke) {
+    setStatus(t('extractorDesktopOnly'), 'warn');
+    return;
+  }
+
+  const raw = ipExtractorInput?.value || '';
+  const targets = [...new Set(raw.split(/\r?\n/).map(normalizeExtractorTarget).filter(Boolean))];
+  if (!targets.length) {
+    setStatus(t('extractorEmpty'), 'warn');
+    return;
+  }
+
+  btnAddExtractedIp.disabled = true;
+  setStatus(t('extractorResolving', targets.length), 'warn');
+
+  let added = 0;
+  let failed = 0;
+
+  try {
+    for (const target of targets) {
+      try {
+        const ip = await _tauriInvoke('resolve_domain_ipv4', { target });
+        if (!isIPv4(ip)) throw new Error('No IPv4');
+
+        if (target !== ip) {
+          hostnameCache[ip] = target;
+        }
+
+        foundHostsMap[ip] = [];
+        foundAnomalyMap[ip] = true;
+        delete foundPingMap[ip];
+        addResultRow(ip, [], null, false, true);
+        added++;
+      } catch {
+        failed++;
+      }
+    }
+
+    recomputeResultTotals();
+    updateProgress(Number(statChecked.textContent) || 0, 0, totalFound, totalOpenPorts);
+    refreshTopologyFilterOptions();
+    updateGlobeDots();
+    setStatus(t('extractorDone', added, failed), added ? 'ok' : 'warn');
+  } finally {
+    btnAddExtractedIp.disabled = false;
+  }
+}
+
+btnAddExtractedIp?.addEventListener('click', () => {
+  addIpsFromExtractor().catch(e => setStatus(`Error: ${e.message}`, 'err'));
+});
 function setScanState(on) {
   scanning=on; btnGo.disabled=on; btnStop.disabled=!on;
   if (on) {
