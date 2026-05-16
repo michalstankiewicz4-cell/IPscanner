@@ -46,6 +46,7 @@ www is clean atm (2026.05.13):
 
 https://www.virustotal.com/gui/domain/ipscanner.pl
 
+Soon: pdf censored text checker and file mail analyser.
 ---
 
 <img width="1042" height="852" alt="image" src="https://github.com/user-attachments/assets/c7b0f7dd-f0b3-4882-aaed-b8c919045ea1" />
