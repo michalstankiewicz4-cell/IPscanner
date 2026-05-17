@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NetRecon Text UI</title>
+  <style>
+    /* ── Base tokens ──────────────────────────── */
+    :root {
+      --bg:      #00007f;
+      --line:    #7fbfff;
+      --text:    #cfe9ff;
+      --dim:     #8aaccc;
+      --hi:      #ffffff;
+      --accent:  #ffff7f;
+      --sel-bg:  #7fbfff;
+      --sel-fg:  #000046;
+      --ok:      #7fff7f;
+      --err:     #ff7f7f;
+      --info:    #bfffff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Consolas", "Lucida Console", "Courier New", monospace;
+      font-size: 15px;
+      line-height: 1.25;
+    }
+
+    /* ── App scaffold ─────────────────────────── */
+    #app {
+      display: grid;
+      grid-template-rows: 1.4em minmax(140px, 1fr) 4px minmax(96px, 156px);
+      width: 100%; height: 100%;
+      padding: 4px 6px;
+      gap: 2px;
+      position: relative;
+    }
+
+    /* ── Menu bar ─────────────────────────────── */
+    #menubar {
+      display: flex;
+      gap: 0;
+      white-space: pre;
+    }
+    .menu-item {
+      padding: 0 10px;
+      cursor: pointer;
+      color: var(--dim);
+    }
+    .menu-item b { color: var(--hi); }
+    .menu-item:hover { background: var(--sel-bg); color: var(--sel-fg); }
+    .menu-item:hover b { color: var(--sel-fg); }
+    .menu-item.active { background: var(--sel-bg); color: var(--sel-fg); }
+    .menu-item.active b { color: var(--sel-fg); }
+
+    #menuPopup {
+      position: absolute;
+      z-index: 40;
+      display: none;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+    }
+    #menuPopup.open { display: block; }
+
+    /* ── Workspace: two panels side by side ────── */
+    #workspace {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) 4px minmax(180px, 1fr);
+      gap: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    #panelResizeV {
+      width: 4px;
+      cursor: ew-resize;
+      background: linear-gradient(to right, transparent 1px, var(--line) 1px, var(--line) 2px, transparent 2px);
+      opacity: 0.55;
+      user-select: none;
+    }
+    #panelResizeV:hover,
+    #panelResizeV.dragging {
+      opacity: 1;
+    }
+
+    #panelResizeH {
+      height: 4px;
+      cursor: ns-resize;
+      background: linear-gradient(to bottom, transparent 1px, var(--line) 1px, var(--line) 2px, transparent 2px);
+      opacity: 0.55;
+      user-select: none;
+    }
+    #panelResizeH:hover,
+    #panelResizeH.dragging {
+      opacity: 1;
+    }
+
+    #bottomPanel {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 2px;
+    }
+    #consoleBody {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 1.25em minmax(0, 1fr) 1.25em;
+      gap: 0;
+      line-height: 1.2;
+    }
+    .console-top,
+    .console-bot {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      white-space: pre;
+      overflow: hidden;
+    }
+    .console-top { color: var(--accent); }
+    .console-bot { color: var(--dim); }
+    #consoleLog {
+      min-height: 0;
+      overflow: auto;
+      scrollbar-width: thin;
+    }
+    .console-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      white-space: pre;
+      overflow: hidden;
+    }
+    .console-mid {
+      min-width: 0;
+      overflow: hidden;
+      white-space: pre;
+      color: inherit;
+    }
+    .console-row.msg .console-mid { color: var(--text); }
+    .console-row.ok .console-mid { color: var(--ok); }
+    .console-row.info .console-mid { color: var(--info); }
+    .console-row.err .console-mid { color: var(--err); }
+    .console-row .ts {
+      color: var(--dim);
+    }
+    .console-row .prompt {
+      color: var(--accent);
+    }
+
+    /* ── Panel columns ─────────────────────────── */
+    .nc-panel {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .nc-top, .nc-bot {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      white-space: pre;
+      overflow: hidden;
+      color: var(--accent);
+      flex-shrink: 0;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+    .nc-top.active { color: var(--hi); }
+    .nc-bot { color: var(--dim); }
+
+    /* ── Scrollable row list ───────────────────── */
+    .nc-list {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      list-style: none;
+      margin: 0; padding: 0;
+    }
+    .nc-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      white-space: pre;
+      overflow: hidden;
+      color: var(--text);
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+    .nc-mid {
+      min-width: 0;
+      overflow: hidden;
+      white-space: pre;
+      color: inherit;
+    }
+    .nc-row.selected { color: var(--text); }
+    .nc-row.selected .nc-mid { background: var(--sel-bg); color: var(--sel-fg); }
+    .nc-row.hovered .nc-mid { background: var(--sel-bg); color: var(--sel-fg); }
+    .nc-row.dim .nc-mid { color: var(--dim); }
+    #listL .nc-row { cursor: pointer; }
+    #listL .nc-row.dim { cursor: default; }
+
+    /* ── Vertical border chars: always visible over selection ─ */
+    .vb {
+      display: inline;
+      font-style: normal;
+      color: var(--line);
+      background: var(--bg);
+      user-select: none;
+    }
+    .nc-row.selected .vb { color: var(--line); background: var(--bg); }
+
+    /* ── Message tones ────────────────────────── */
+    .msg  { color: var(--hi); }
+    .ok   { color: var(--ok); }
+    .err  { color: var(--err); }
+    .info { color: var(--info); }
+
+    /* ── F-key bar ────────────────────────────── */
+    #keybar {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0,1fr));
+      gap: 2px;
+      align-items: stretch;
+    }
+    .key-btn {
+      display: flex; gap: 2px;
+      align-items: center; justify-content: center;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      padding: 0 2px;
+      height: 1.6em;
+      font-size: 12px;
+      font-family: inherit;
+      color: var(--dim);
+      cursor: pointer;
+      user-select: none;
+      min-width: 0; overflow: hidden; white-space: nowrap;
+    }
+    .key-btn b { color: var(--accent); font-weight: 700; flex-shrink: 0; }
+    .key-btn span { color: var(--text); overflow: hidden; }
+    .key-btn:hover  { background: var(--sel-bg); color: var(--sel-fg); border-color: var(--hi); }
+    .key-btn:hover b, .key-btn:hover span { color: var(--sel-fg); }
+    .key-btn:active { background: var(--hi); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="menubar">
+      <div class="menu-item" data-menu="file" tabindex="-1"><b>F</b>ile</div>
+      <div class="menu-item" data-menu="options" tabindex="-1"><b>O</b>ptions</div>
+      <div class="menu-item" data-menu="tools" tabindex="-1"><b>T</b>ools</div>
+      <div class="menu-item" data-menu="scan" tabindex="-1"><b>S</b>can</div>
+      <div class="menu-item" data-menu="help" tabindex="-1"><b>H</b>elp</div>
+    </div>
+    <div id="menuPopup" aria-hidden="true"></div>
+
+    <div id="workspace">
+      <div class="nc-panel" id="panelL">
+        <div class="nc-top" id="topL"></div>
+        <ul class="nc-list" id="listL"></ul>
+        <div class="nc-bot" id="botL"></div>
+      </div>
+      <div id="panelResizeV" aria-label="Resize side panels" role="separator"></div>
+      <div class="nc-panel" id="panelR">
+        <div class="nc-top" id="topR"></div>
+        <ul class="nc-list" id="listR"></ul>
+        <div class="nc-bot" id="botR"></div>
+      </div>
+    </div>
+
+    <div id="panelResizeH" aria-label="Resize panels" role="separator"></div>
+
+    <div id="bottomPanel">
+      <div id="consoleBody" aria-label="Console output">
+        <div class="console-top" id="consoleTop"></div>
+        <div id="consoleLog"></div>
+        <div class="console-bot" id="consoleBot"></div>
+      </div>
+      <div id="keybar">
+        <button class="key-btn" data-fn="F1" ><b>F1</b>  <span>Pomoc</span></button>
+        <button class="key-btn" data-fn="F2" ><b>F2</b>  <span>Widok</span></button>
+        <button class="key-btn" data-fn="F3" ><b>F3</b>  <span>Szczeg</span></button>
+        <button class="key-btn" data-fn="F4" ><b>F4</b>  <span>Konsol</span></button>
+        <button class="key-btn" data-fn="F5" ><b>F5</b>  <span>Skan</span></button>
+        <button class="key-btn" data-fn="F6" ><b>F6</b>  <span>Eksport</span></button>
+        <button class="key-btn" data-fn="F7" ><b>F7</b>  <span>Import</span></button>
+        <button class="key-btn" data-fn="F8" ><b>F8</b>  <span>AI</span></button>
+        <button class="key-btn" data-fn="F9" ><b>F9</b>  <span>Menu</span></button>
+        <button class="key-btn" data-fn="F10"><b>F10</b> <span>Wyjdz</span></button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    // ── Tool data (mirrors newUI.html toolInfo) ──────────────────────────────
+    const tools = [
+      { id: "scan-runner",   label: "scan-runner",   title: "Scan Runner",           category: "CORE", desc: "Zakres IP, port presets, rownolegly probing i zapis wynikow.",      points: ["IP range + presets", "Concurrency control", "Export/import results"] },
+      { id: "topology",      label: "topology",      title: "Topology Map",          category: "NET",  desc: "Widok relacji hostow, filtrowanie po porcie i czasie odpowiedzi.",  points: ["Canvas graph", "Live filters", "Node hover telemetry"] },
+      { id: "globe",         label: "globe",         title: "Globe Geolocation",     category: "NET",  desc: "Mapa geolokalizacji hostow i punktow komunikacji.",                 points: ["D3 globe", "Country markers", "Geo enrichment"] },
+      { id: "console",       label: "console",       title: "Command Console",       category: "CORE", desc: "Szybkie komendy ping/traceroute i makra diagnostyczne.",            points: ["Command templates", "Output panel", "Macro execution"] },
+      { id: "wifi-detector", label: "wifi-detector", title: "WiFi Detector",         category: "RF",   desc: "Lista sieci, profile i szczegoly parametrow WLAN.",                points: ["SSID scan", "Profile fallback", "Signal metrics"] },
+      { id: "wifi-radar",    label: "wifi-radar",    title: "WiFi Radar",            category: "RF",   desc: "Radar sily sygnalu i rozmieszczenia sieci.",                       points: ["Polar view", "Signal trend", "Network focus"] },
+      { id: "bt-detector",   label: "bt-detector",   title: "Bluetooth Detector",    category: "RF",   desc: "Skan BLE i klasycznych urzadzen Bluetooth.",                       points: ["BLE + Classic", "RSSI sorting", "Address parse"] },
+      { id: "gnss",          label: "gnss",          title: "GNSS Monitor",          category: "RF",   desc: "Podglad NMEA: satelity, fix type, polozenie i HDOP.",              points: ["Serial sampling", "NMEA parse", "Satellite table"] },
+      { id: "lte",           label: "lte",           title: "LTE Monitor",           category: "RF",   desc: "AT snapshot modemu: RSRP, RSRQ, SINR, band i operator.",          points: ["Auto modem detect", "AT command profile", "Signal KPIs"] },
+      { id: "sniffer",       label: "sniffer",       title: "Network Sniffer",       category: "NET",  desc: "Przeglad aktywnych polaczen TCP/UDP i mapowania procesow.",        points: ["PID mapping", "State filters", "Connection timeline"] },
+      { id: "imgmeta",       label: "imgmeta",       title: "Image Metadata",        category: "TOOL", desc: "EXIF/XMP/IPTC parser i inspekcja kontenera plikow obrazu.",       points: ["Metadata extraction", "GPS decoding", "Container boundary"] },
+      { id: "phone-lookup",  label: "phone-lookup",  title: "Phone Lookup",          category: "TOOL", desc: "Agregacja danych numeru telefonu i zrodel API.",                   points: ["NumVerify bridge", "OpenCell placeholders", "Result export"] },
+      { id: "ai-assistant",  label: "ai-assistant",  title: "AI Security Assistant", category: "AI",   desc: "Prompt presets i analiza bezpieczenstwa przez multi-provider AI.", points: ["Provider switch", "Secure key mode", "Preset prompts"] },
+      { id: "scan-watch",    label: "scan-watch",    title: "IP Scan Watch",         category: "SEC",  desc: "Heurystyka wykrywania podejrzanych skanow na podstawie netstat.",  points: ["Sliding window", "Remote IP scoring", "Alert shortlist"] },
+      { id: "macro",         label: "macro",         title: "Macro Folder",          category: "CORE", desc: "Przechowywanie i uruchamianie gotowych sekwencji komend.",          points: ["Macro list", "Template actions", "Fast replay"] },
+      { id: "speed",         label: "speed",         title: "Speed Test",            category: "NET",  desc: "Panel testow przepustowosci i latencji lacza.",                    points: ["Download ping", "Upload ping", "Session compare"] },
+      { id: "proto",         label: "proto",         title: "Prototype",             category: "DEV",  desc: "Eksperymentalna przestrzen testowa dla nowych modulow UI.",         points: ["Sandbox view", "Feature spikes", "Design probes"] },
+      { id: "settings",      label: "settings",      title: "Options",               category: "SYS",  desc: "Ustawienia aplikacji, domyslne wartosci skanowania i preferencje.", points: ["Default scan values", "Language and presets", "Customization"] },
+    ];
+
+    // ── State ────────────────────────────────────────────────────────────────
+    const S = { focus: "left", li: 0, ri: 0, ls: 0, rs: 0, vis: 10 };
+    let cachedCharW = 0;
+
+    // ── DOM refs ─────────────────────────────────────────────────────────────
+    const topL  = document.getElementById("topL");
+    const topR  = document.getElementById("topR");
+    const listL = document.getElementById("listL");
+    const listR = document.getElementById("listR");
+    const botL  = document.getElementById("botL");
+    const botR  = document.getElementById("botR");
+    const panelL = document.getElementById("panelL");
+    const panelR = document.getElementById("panelR");
+    const appRoot = document.getElementById("app");
+    const menubar = document.getElementById("menubar");
+    const menuPopup = document.getElementById("menuPopup");
+    const menuItems = Array.from(document.querySelectorAll(".menu-item"));
+    const workspace = document.getElementById("workspace");
+    const panelResizeV = document.getElementById("panelResizeV");
+    const panelResizeH = document.getElementById("panelResizeH");
+    const keybar = document.getElementById("keybar");
+    const consoleBody = document.getElementById("consoleBody");
+    const consoleTop = document.getElementById("consoleTop");
+    const consoleLog = document.getElementById("consoleLog");
+    const consoleBot = document.getElementById("consoleBot");
+
+    const menuData = {
+      file: ["Nowy skan", "Otworz zapis", "Zapisz wynik", "---", "Wyjdz"],
+      options: ["Ustawienia UI", "Jezyk: PL", "Domyslny zakres", "Tryb ASCII"],
+      tools: ["Scan Runner", "Console", "Sniffer", "WiFi Detector", "AI Assistant"],
+      scan: ["Szybki skan", "Pelny skan", "Skan wybranego hosta", "Anuluj"],
+      help: ["Pomoc klawiszy", "O aplikacji", "Dokumentacja"],
+    };
+    let openMenuId = null;
+    const split = { workspacePx: 0, minWorkspace: 140, minBottom: 96, leftPx: 0, ratio: 0.5, minLeft: 140, minRight: 140, hardMin: 60 };
+    const consoleLines = [];
+    let hoverLi = -1;
+    let lastClickLi = -1;
+    let lastClickAt = 0;
+
+    // ── ASCII box-drawing helpers ─────────────────────────────────────────────
+    // Returns a string of n copies of ch, or "" if n <= 0
+    function rep(n, c) { return n > 0 ? c.repeat(n) : ""; }
+
+    // Mid part between frame corners.
+    function boxMid(label, w, fill) {
+      const tag = " " + label + " ";
+      const inner = Math.max(1, w - 2);
+      if (tag.length >= inner) return tag.slice(0, inner);
+      const rem = inner - tag.length;
+      return tag + rep(rem, fill);
+    }
+
+    // Middle content between two fixed vertical borders.
+    function boxRow(left, right, w) {
+      const rStr   = right ? " " + right : "";
+      const inner  = w - 2;  // chars between the two ║
+      const maxL   = inner - rStr.length - 1;
+      const lStr   = left.length > maxL
+        ? left.slice(0, maxL - 1) + "…"
+        : left.padEnd(maxL);
+      return esc(lStr + " " + rStr.padEnd(right ? right.length : 0));
+    }
+
+    // ── Measure visible rows per panel ───────────────────────────────────────
+    function measureVis() {
+      const lh = parseFloat(getComputedStyle(document.body).fontSize) * 1.25;
+      const ws = document.getElementById("workspace");
+      const h  = ws ? ws.getBoundingClientRect().height : 300;
+      S.vis = Math.max(4, Math.floor(h / lh) - 2); // -2 for top+bot bar lines
+    }
+
+    function measureCharWidth() {
+      const probe = document.createElement("span");
+      probe.style.position = "absolute";
+      probe.style.visibility = "hidden";
+      probe.style.whiteSpace = "pre";
+      probe.style.font = getComputedStyle(document.body).font;
+      probe.textContent = "M".repeat(64);
+      document.body.appendChild(probe);
+      const width = probe.getBoundingClientRect().width / 64;
+      probe.remove();
+      return width > 0 ? width : 8;
+    }
+
+    function getCharWidth() {
+      if (!cachedCharW) cachedCharW = measureCharWidth();
+      return cachedCharW;
+    }
+
+    // Estimate panel char width from pixel width
+    function colW(el) {
+      const cw = getCharWidth();
+      const px = el ? el.clientWidth : 400;
+      return Math.max(30, Math.floor((px - 1) / cw));
+    }
+
+    // ── Scroll helper: keep idx visible ──────────────────────────────────────
+    function ensureVis(idx, scroll) {
+      if (idx < scroll) return idx;
+      if (idx >= scroll + S.vis) return idx - S.vis + 1;
+      return scroll;
+    }
+
+    // ── Right-panel detail rows for a given tool ──────────────────────────────
+    function detailRows(t) {
+      const divider = ["───────", rep(26, "─")];
+      const head = [
+        ["title", t.title],
+        ["category", t.category],
+        ["id", t.id],
+        divider,
+        ["opis", t.desc],
+        divider,
+      ];
+      const points = t.points.map((p, i) => [" " + (i + 1) + ".", p]);
+      const footer = [
+        divider,
+        ["Enter", "otwórz szczegóły"],
+        ["F5", "uruchom skan"],
+        ["F8", "zapytaj AI"],
+      ];
+      return [...head, ...points, ...footer];
+    }
+
+    function currentDetailRows() {
+      return detailRows(tools[S.li]);
+    }
+
+    function applyVerticalSplit(workspacePx) {
+      const total = appRoot.clientHeight - 8;
+      const menuH = menubar.getBoundingClientRect().height;
+      const handleH = panelResizeH.getBoundingClientRect().height || 4;
+      const minW = split.minWorkspace;
+      const minB = split.minBottom;
+      const maxW = Math.max(minW, total - menuH - handleH - minB);
+      split.workspacePx = Math.max(minW, Math.min(maxW, workspacePx));
+      const bottomPx = Math.max(minB, total - menuH - handleH - split.workspacePx);
+      appRoot.style.gridTemplateRows = menuH + "px " + split.workspacePx + "px " + handleH + "px " + bottomPx + "px";
+      renderConsole();
+    }
+
+    function applyHorizontalSplit(leftPx) {
+      const total = workspace.clientWidth;
+      const handleW = panelResizeV.getBoundingClientRect().width || 4;
+      const available = Math.max(0, total - handleW);
+      const hard = split.hardMin;
+
+      // Adaptive minima: keep preferred minimums, but never exceed available width.
+      const minL = Math.min(split.minLeft, Math.max(hard, available - hard));
+      const minR = Math.min(split.minRight, Math.max(hard, available - hard));
+
+      let left;
+      let right;
+      if (available < minL + minR) {
+        // Very narrow viewport: split evenly to avoid overflow outside window.
+        left = Math.floor(available / 2);
+        right = available - left;
+      } else {
+        const maxL = available - minR;
+        left = Math.max(minL, Math.min(maxL, leftPx));
+        right = available - left;
+      }
+
+      split.leftPx = left;
+      split.ratio = available > 0 ? left / available : 0.5;
+      workspace.style.gridTemplateColumns = left + "px " + handleW + "px " + right + "px";
+      render();
+    }
+
+    function initVerticalResizer() {
+      const total = appRoot.clientHeight - 8;
+      const menuH = menubar.getBoundingClientRect().height;
+      const handleH = panelResizeH.getBoundingClientRect().height || 4;
+      split.workspacePx = Math.max(split.minWorkspace, Math.floor(total - menuH - handleH - split.minBottom));
+      applyVerticalSplit(split.workspacePx);
+
+      let dragStartY = 0;
+      let dragStartWorkspace = 0;
+      panelResizeH.addEventListener("pointerdown", (e) => {
+        dragStartY = e.clientY;
+        dragStartWorkspace = split.workspacePx;
+        panelResizeH.classList.add("dragging");
+        panelResizeH.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      });
+
+      panelResizeH.addEventListener("pointermove", (e) => {
+        if (!panelResizeH.hasPointerCapture(e.pointerId)) return;
+        const delta = e.clientY - dragStartY;
+        applyVerticalSplit(dragStartWorkspace + delta);
+      });
+
+      panelResizeH.addEventListener("pointerup", (e) => {
+        if (panelResizeH.hasPointerCapture(e.pointerId)) panelResizeH.releasePointerCapture(e.pointerId);
+        panelResizeH.classList.remove("dragging");
+      });
+
+      panelResizeH.addEventListener("pointercancel", (e) => {
+        if (panelResizeH.hasPointerCapture(e.pointerId)) panelResizeH.releasePointerCapture(e.pointerId);
+        panelResizeH.classList.remove("dragging");
+      });
+    }
+
+    function initHorizontalResizer() {
+      const total = workspace.clientWidth;
+      const handleW = panelResizeV.getBoundingClientRect().width || 4;
+      split.ratio = 0.5;
+      split.leftPx = Math.floor((total - handleW) * split.ratio);
+      applyHorizontalSplit(split.leftPx);
+
+      let dragStartX = 0;
+      let dragStartLeft = 0;
+      panelResizeV.addEventListener("pointerdown", (e) => {
+        dragStartX = e.clientX;
+        dragStartLeft = split.leftPx;
+        panelResizeV.classList.add("dragging");
+        panelResizeV.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      });
+
+      panelResizeV.addEventListener("pointermove", (e) => {
+        if (!panelResizeV.hasPointerCapture(e.pointerId)) return;
+        const delta = e.clientX - dragStartX;
+        applyHorizontalSplit(dragStartLeft + delta);
+      });
+
+      panelResizeV.addEventListener("pointerup", (e) => {
+        if (panelResizeV.hasPointerCapture(e.pointerId)) panelResizeV.releasePointerCapture(e.pointerId);
+        panelResizeV.classList.remove("dragging");
+      });
+
+      panelResizeV.addEventListener("pointercancel", (e) => {
+        if (panelResizeV.hasPointerCapture(e.pointerId)) panelResizeV.releasePointerCapture(e.pointerId);
+        panelResizeV.classList.remove("dragging");
+      });
+
+      // Watch workspace for resize (fires after layout reflow)
+      let resizeTimeout = null;
+      const resizeObs = new ResizeObserver((entries) => {
+        if (resizeTimeout) return;
+        resizeTimeout = setTimeout(() => {
+          const entry = entries[0];
+          const newWidth = entry.contentRect.width;
+          const handleW = panelResizeV.getBoundingClientRect().width || 4;
+          const available = Math.max(0, newWidth - handleW);
+          // Test: always reset to 50/50 on window resize
+          applyHorizontalSplit(Math.round(available / 2));
+          resizeTimeout = null;
+        }, 0);
+      });
+      resizeObs.observe(workspace);
+    }
+
+    // ── HTML escape ───────────────────────────────────────────────────────────
+    function esc(s) {
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function renderConsole() {
+      const px = consoleLog ? consoleLog.clientWidth : 400;
+      const w = Math.max(30, Math.floor((px - 1) / getCharWidth()));
+      const topText = boxMid(" Console ", w, "═");
+      const botText = boxMid(" wpisow: " + consoleLines.length, w, "═");
+
+      consoleTop.innerHTML = '<i class="vb">╔</i><span class="nc-mid">' + esc(topText) + '</span><i class="vb">╗</i>';
+      consoleBot.innerHTML = '<i class="vb">╚</i><span class="nc-mid">' + esc(botText) + '</span><i class="vb">╝</i>';
+
+      const rowsHtml = consoleLines
+        .map((row) => '<div class="console-row ' + row.cls + '"><i class="vb">║</i><span class="console-mid"><span class="ts">[' + esc(row.stamp) + ']</span> <span class="prompt">C:\\NETRECON&gt;</span> ' + esc(row.text) + '</span><i class="vb">║</i></div>')
+        .join("");
+
+      const lineH = parseFloat(getComputedStyle(document.body).fontSize) * 1.2;
+      const visibleRows = Math.max(1, Math.floor(consoleLog.clientHeight / lineH));
+      const padRows = Math.max(0, visibleRows - consoleLines.length);
+      const emptyMid = esc(rep(w - 2, " "));
+      const fillerHtml = rep(padRows, '<div class="console-row msg"><i class="vb">║</i><span class="console-mid">' + emptyMid + '</span><i class="vb">║</i></div>');
+
+      consoleLog.innerHTML = rowsHtml + fillerHtml;
+      consoleLog.scrollTop = consoleLog.scrollHeight;
+    }
+
+    // ── Render panels ─────────────────────────────────────────────────────────
+    function render() {
+      measureVis();
+      const wL = colW(panelL);
+      const wR = colW(panelR);
+      const t  = tools[S.li];
+
+      // ── LEFT panel ──────────────────────────────────────────────
+      topL.innerHTML = '<i class="vb">╔</i><span class="nc-mid">' + esc(boxMid("Narzedzia  " + (S.li + 1) + "/" + tools.length, wL, "═")) + '</span><i class="vb">╗</i>';
+      topL.classList.toggle("active", S.focus === "left");
+      S.ls = ensureVis(S.li, S.ls);
+
+      const sliceL = tools.slice(S.ls, S.ls + S.vis);
+      let rowsL = sliceL.map((tool, i) => {
+        const ri  = i + S.ls;
+        const sel = ri === S.li;
+        const hov = ri === hoverLi;
+        const mid = boxRow(tool.label, tool.category.padStart(4), wL);
+        return '<li class="nc-row' + (sel ? " selected" : "") + (hov && !sel ? " hovered" : "") + '" data-li="' + ri + '"><i class="vb">║</i><span class="nc-mid">' + mid + '</span><i class="vb">║</i></li>';
+      }).join("");
+      for (let i = sliceL.length; i < S.vis; i++) {
+        rowsL += '<li class="nc-row dim"><i class="vb">║</i><span class="nc-mid">' + esc(rep(wL - 2, " ")) + '</span><i class="vb">║</i></li>';
+      }
+      listL.innerHTML = rowsL;
+      botL.innerHTML = '<i class="vb">╚</i><span class="nc-mid">' + esc(boxMid(t.id + "  [" + t.category + "]", wL, "═")) + '</span><i class="vb">╝</i>';
+
+      // ── RIGHT panel ─────────────────────────────────────────────
+      const dRows = currentDetailRows();
+      topR.innerHTML = '<i class="vb">╔</i><span class="nc-mid">' + esc(boxMid("Detail: " + t.title, wR, "═")) + '</span><i class="vb">╗</i>';
+      topR.classList.toggle("active", S.focus === "right");
+      S.rs = ensureVis(S.ri, S.rs);
+
+      const sliceR = dRows.slice(S.rs, S.rs + S.vis);
+      let rowsR = sliceR.map((r, i) => {
+        const ri  = i + S.rs;
+        const sel = ri === S.ri && S.focus === "right";
+        const isDivider = r[0].startsWith("───");
+        const label = r[0] + (r[0] && !isDivider ? ": " : "  ");
+        const mid   = boxRow(label + r[1], "", wR);
+        return '<li class="nc-row' + (sel ? " selected" : isDivider ? " dim" : "") + '"><i class="vb">║</i><span class="nc-mid">' + mid + '</span><i class="vb">║</i></li>';
+      }).join("");
+      for (let i = sliceR.length; i < S.vis; i++) {
+        rowsR += '<li class="nc-row dim"><i class="vb">║</i><span class="nc-mid">' + esc(rep(wR - 2, " ")) + '</span><i class="vb">║</i></li>';
+      }
+      listR.innerHTML = rowsR;
+      botR.innerHTML = '<i class="vb">╚</i><span class="nc-mid">' + esc(boxMid("Tab:panel  Home/End  PgUp/PgDn  litera:skocz", wR, "═")) + '</span><i class="vb">╝</i>';
+      renderConsole();
+    }
+
+    function logConsole(text, cls) {
+      const stamp = new Date().toLocaleTimeString("pl-PL", { hour12: false });
+      consoleLines.push({ stamp, text, cls: cls || "msg" });
+      if (consoleLines.length > 120) consoleLines.shift();
+      renderConsole();
+    }
+
+    // ── Cmd bar helper ────────────────────────────────────────────────────────
+    function cmd(text, cls) {
+      logConsole(text, cls || "msg");
+    }
+
+    function closeMenu() {
+      openMenuId = null;
+      menuPopup.classList.remove("open");
+      menuPopup.setAttribute("aria-hidden", "true");
+      menuPopup.innerHTML = "";
+      menuItems.forEach((m) => m.classList.remove("active"));
+    }
+
+    function openMenu(menuId) {
+      const anchor = menubar.querySelector('[data-menu="' + menuId + '"]');
+      if (!anchor || !menuData[menuId]) return;
+
+      openMenuId = menuId;
+      menuItems.forEach((m) => m.classList.toggle("active", m === anchor));
+
+      const items = menuData[menuId];
+      const maxLen = Math.max(...items.filter(i => i !== "---").map(i => i.length)) || 10;
+      const w = Math.max(maxLen + 2, 14);  // +2 for padding spaces
+      
+      const topLine = '╔' + rep(w, '═') + '╗';
+      const botLine = '╚' + rep(w, '═') + '╝';
+      
+      // Build visible buttons for each menu item with ASCII styling
+      let html = '<div style="background:var(--bg);display:flex;flex-direction:column;font-family:Consolas,monospace;font-size:15px;line-height:1.25;">';
+      html += '<div style="color:var(--text);">' + esc(topLine) + '</div>';
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item === "---") {
+          html += '<div style="color:var(--dim);">╠' + rep(w, '─') + '╣</div>';
+        } else {
+          const padded = (' ' + item).padEnd(w, ' ');
+          html += '<button type="button" data-menu-item="' + esc(item) + '" style="background:transparent;border:0;color:var(--text);font-family:Consolas,monospace;font-size:15px;line-height:1.25;cursor:pointer;padding:0;margin:0;text-align:left;white-space:pre;transition:all 0.1s;">║' + esc(padded) + '║</button>';
+        }
+      }
+      html += '<div style="color:var(--text);">' + esc(botLine) + '</div>';
+      html += '</div>';
+      
+      menuPopup.innerHTML = html;
+      menuPopup.dataset.menuItems = JSON.stringify(items);
+
+      const appRect = appRoot.getBoundingClientRect();
+      const aRect = anchor.getBoundingClientRect();
+      menuPopup.style.left = Math.max(0, aRect.left - appRect.left) + "px";
+      menuPopup.style.top = Math.max(0, aRect.bottom - appRect.top + 1) + "px";
+      menuPopup.classList.add("open");
+      menuPopup.setAttribute("aria-hidden", "false");
+    }
+
+    function toggleMenu(menuId) {
+      if (openMenuId === menuId) {
+        closeMenu();
+        return;
+      }
+      openMenu(menuId);
+    }
+
+    // ── Actions: Enter ────────────────────────────────────────────────────────
+    function doEnter() {
+      const t = tools[S.li];
+      if (S.focus === "left") {
+        S.focus = "right"; S.ri = 0; S.rs = 0;
+        render();
+        cmd("Otwarto: " + t.title + " — " + t.desc.slice(0, 60), "ok");
+      } else {
+        const dRows = currentDetailRows();
+        const r = dRows[S.ri];
+        cmd("Wybrano: " + r[0] + (r[0] ? ": " : "") + r[1], "info");
+      }
+    }
+
+    // ── Actions: F-keys ───────────────────────────────────────────────────────
+    const fn = {
+      F1:  () => cmd("Pomoc: Tab=focus  ↑↓=lista  Home/End  PgUp/PgDn  Enter=akcja  litera=skocz  F1-F10", "info"),
+      F2:  () => { S.focus = "right"; S.ri = 0; S.rs = 0; render(); cmd("Widok szczegolowy: " + tools[S.li].title, "ok"); },
+      F3:  () => cmd("Opis: " + tools[S.li].desc, "info"),
+      F4:  () => jumpTo("console",      "Otwarto: Command Console"),
+      F5:  () => cmd("Uruchamiam skan: " + tools[S.li].title + " (mock)", "ok"),
+      F6:  () => cmd("Eksport wynikow (mock)", "ok"),
+      F7:  () => cmd("Import wynikow (mock)", "ok"),
+      F8:  () => jumpTo("ai-assistant", "AI Security Assistant gotowy (mock)"),
+      F9:  () => { toggleMenu("file"); cmd("Menu: File/Options/Tools/Scan/Help", "info"); },
+      F10: () => cmd("Zamykanie aplikacji... (mock)", "err"),
+    };
+
+    function jumpTo(id, msg) {
+      const idx = tools.findIndex(t => t.id === id);
+      if (idx < 0) return;
+      S.focus = "left"; S.li = idx; S.ls = ensureVis(idx, S.ls);
+      render(); cmd(msg, "ok");
+    }
+
+    // ── Letter quick-jump (left panel) ───────────────────────────────────────
+    function letterJump(ch) {
+      if (S.focus !== "left") return;
+      const lc  = ch.toLowerCase();
+      // Try wrapping search: start from current+1, wrap to beginning
+      let found = -1;
+      for (let i = S.li + 1; i < tools.length; i++) {
+        if (tools[i].id.startsWith(lc)) { found = i; break; }
+      }
+      if (found < 0) {
+        for (let i = 0; i <= S.li; i++) {
+          if (tools[i].id.startsWith(lc)) { found = i; break; }
+        }
+      }
+      if (found >= 0) {
+        S.li = found; S.ls = ensureVis(found, S.ls);
+        render(); cmd("Skocz: " + tools[found].label, "info");
+      }
+    }
+
+    // ── Keyboard handler ─────────────────────────────────────────────────────
+    document.addEventListener("keydown", (e) => {
+      const k = e.key;
+
+      if (["Tab","ArrowUp","ArrowDown","Home","End","PageUp","PageDown","Enter"].includes(k)) {
+        e.preventDefault();
+      }
+
+      const isL   = S.focus === "left";
+
+      switch (k) {
+        case "Tab":       S.focus = isL ? "right" : "left"; closeMenu(); render(); cmd("Focus: " + S.focus, "info"); break;
+        case "Escape":    if (openMenuId) { closeMenu(); cmd("Menu zamkniete", "info"); break; } S.focus = "left"; render(); cmd("gotowy", "msg"); break;
+        case "ArrowUp":   if (isL) { S.li = Math.max(0, S.li - 1); } else { S.ri = Math.max(0, S.ri - 1); } render(); break;
+        case "ArrowDown": if (isL) { S.li = Math.min(tools.length - 1, S.li + 1); } else { const maxR = currentDetailRows().length - 1; S.ri = Math.min(maxR, S.ri + 1); } render(); break;
+        case "Home":      if (isL) { S.li = 0; S.ls = 0; } else { S.ri = 0; S.rs = 0; } render(); break;
+        case "End":       if (isL) { S.li = tools.length - 1; } else { const maxR = currentDetailRows().length - 1; S.ri = maxR; } render(); break;
+        case "PageUp":    if (isL) { S.li = Math.max(0, S.li - S.vis); } else { S.ri = Math.max(0, S.ri - S.vis); } render(); break;
+        case "PageDown":  if (isL) { S.li = Math.min(tools.length - 1, S.li + S.vis); } else { const maxR = currentDetailRows().length - 1; S.ri = Math.min(maxR, S.ri + S.vis); } render(); break;
+        case "Enter":     doEnter(); break;
+        default:
+          if (openMenuId && (k === "ArrowLeft" || k === "ArrowRight")) {
+            const order = ["file", "options", "tools", "scan", "help"];
+            const idx = order.indexOf(openMenuId);
+            const next = k === "ArrowRight"
+              ? order[(idx + 1) % order.length]
+              : order[(idx - 1 + order.length) % order.length];
+            openMenu(next);
+            e.preventDefault();
+            break;
+          }
+          if (/^F([1-9]|10)$/.test(k)) { e.preventDefault(); if (fn[k]) fn[k](); break; }
+          if (k.length === 1 && /[a-zA-Z]/.test(k)) {
+            const c = k.toLowerCase();
+            if (c === "f" || c === "o" || c === "t" || c === "s" || c === "h") {
+              const map = { f: "file", o: "options", t: "tools", s: "scan", h: "help" };
+              toggleMenu(map[c]);
+              e.preventDefault();
+              break;
+            }
+            if (!openMenuId) letterJump(k);
+          }
+      }
+    });
+
+    menubar.addEventListener("click", (e) => {
+      const item = e.target.closest(".menu-item");
+      if (!item) return;
+      toggleMenu(item.getAttribute("data-menu"));
+    });
+
+    menubar.addEventListener("mouseenter", (e) => {
+      const item = e.target.closest(".menu-item");
+      if (!item || !openMenuId) return;
+      openMenu(item.getAttribute("data-menu"));
+    }, true);
+
+    menuPopup.addEventListener("click", (e) => {
+      const item = e.target.getAttribute("data-menu-item");
+      if (!item) return;
+      cmd("Menu > " + item + " (mock)", "ok");
+      closeMenu();
+    });
+
+    // ── Left panel mouse support ─────────────────────────────────────────────
+    listL.addEventListener("pointermove", (e) => {
+      const target = e.target instanceof Element ? e.target : null;
+      const row = target ? target.closest("li[data-li]") : null;
+      const next = row ? Number(row.getAttribute("data-li")) : -1;
+      if (next < 0 || next >= tools.length || next === hoverLi) return;
+      hoverLi = next;
+      S.li = next;
+      S.focus = "left";
+      render();
+    });
+
+    listL.addEventListener("pointerleave", () => {
+      if (hoverLi < 0) return;
+      hoverLi = -1;
+      render();
+    });
+
+    listL.addEventListener("pointerdown", (e) => {
+      const target = e.target instanceof Element ? e.target : null;
+      const row = target ? target.closest("li[data-li]") : null;
+      if (!row) return;
+      const idx = Number(row.getAttribute("data-li"));
+      if (idx < 0 || idx >= tools.length) return;
+
+      const now = Date.now();
+      const isDouble = idx === lastClickLi && (now - lastClickAt) <= 350;
+      lastClickLi = idx;
+      lastClickAt = now;
+
+      S.li = idx;
+      S.focus = "left";
+      hoverLi = idx;
+
+      if (isDouble) {
+        lastClickLi = -1;
+        lastClickAt = 0;
+        doEnter();
+        return;
+      }
+
+      render();
+      cmd("Wybrano: " + tools[idx].title, "info");
+    });
+
+    // Add hover styling to buttons
+    menuPopup.addEventListener("mouseover", (e) => {
+      const target = e.target instanceof Element ? e.target : null;
+      if (target && target.hasAttribute("data-menu-item")) {
+        target.style.background = 'var(--sel-bg)';
+        target.style.color = 'var(--sel-fg)';
+      }
+    });
+
+    menuPopup.addEventListener("mouseout", (e) => {
+      const target = e.target instanceof Element ? e.target : null;
+      if (target && target.hasAttribute("data-menu-item")) {
+        target.style.background = 'transparent';
+        target.style.color = 'var(--text)';
+      }
+    });
+
+    document.addEventListener("mousedown", (e) => {
+      if (!openMenuId) return;
+      if (menubar.contains(e.target) || menuPopup.contains(e.target)) return;
+      closeMenu();
+    });
+
+    // ── F-key bar click ───────────────────────────────────────────────────────
+    keybar.addEventListener("click", (e) => {
+      const key = e.target.closest(".key-btn")?.getAttribute("data-fn");
+      if (key && fn[key]) fn[key]();
+    });
+
+    // ── Resize ────────────────────────────────────────────────────────────────
+    window.addEventListener("resize", () => {
+      cachedCharW = 0;
+      closeMenu();
+      applyVerticalSplit(split.workspacePx || workspace.clientHeight);
+      // Horizontal split is handled by ResizeObserver on workspace
+    });
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    initVerticalResizer();
+    initHorizontalResizer();
+    render();
+    cmd("NetRecon Text UI gotowy.  F1 = pomoc", "ok");
+  })();
+  </script>
+</body>
+</html>
