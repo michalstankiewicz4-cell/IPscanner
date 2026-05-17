@@ -9,6 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
   <style>
+    /* =========================
+       1) Base + Theme Tokens
+       ========================= */
     :root {
       --bg: #1e1e1e;
       --bg-elev: #252526;
@@ -29,13 +32,15 @@
       box-sizing: border-box;
     }
 
-    /* Flat VS-like look: no rounding anywhere in the app shell */
+    /* Flat shell: disable rounding globally in this mock */
     .v1-shell,
     .v1-shell * {
       border-radius: 0 !important;
     }
 
-    /* VS Code inspired scrollbars */
+    /* =========================
+       2) Scrollbars
+       ========================= */
     .v1-shell,
     .v1-shell * {
       scrollbar-width: thin;
@@ -162,6 +167,9 @@
       background: #737373;
     }
 
+    /* =========================
+       3) App Layout
+       ========================= */
     body {
       margin: 0;
       height: 100vh;
@@ -173,12 +181,15 @@
 
     .v1-shell {
       display: grid;
-      grid-template-rows: 30px 1fr 24px;
+      grid-template-rows: 30px minmax(0, 1fr) 24px;
       height: 100vh;
       min-height: 100vh;
       overflow: hidden;
     }
 
+    /* =========================
+       4) Top Menu Bar
+       ========================= */
     .v1-menubar {
       border-bottom: 0;
       background: #2d2d30;
@@ -317,11 +328,15 @@
       background: #3c3c3c;
     }
 
+    /* =========================
+       5) Main Grid + Resizers
+       ========================= */
     .v1-main {
       display: grid;
       grid-template-columns: 48px 260px 6px minmax(0, 1fr) 6px 320px;
       min-height: 0;
       overflow: hidden;
+      height: 100%;
     }
 
     .v1-resizer-v {
@@ -336,6 +351,9 @@
       background: #2f2f31;
     }
 
+    /* =========================
+       6) Left Activity Bar
+       ========================= */
     .v1-activity {
       border-right: 0;
       background: #191919;
@@ -372,6 +390,9 @@
       color: #ffffff;
     }
 
+    /* =========================
+       7) Left Section (Explorer)
+       ========================= */
     .v1-sidebar {
       border-right: 0;
       background: var(--bg-elev);
@@ -388,7 +409,38 @@
       color: var(--txt-dim);
       display: flex;
       align-items: center;
-      padding: 0 10px;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 0 6px 0 10px;
+    }
+
+    .v1-head-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .v1-panel-toggle {
+      border: 0;
+      background: transparent;
+      color: #aeb2b9;
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 11px;
+      font-family: var(--font-ui);
+      line-height: 1;
+      padding: 0;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    .v1-panel-toggle:hover {
+      background: #2f3338;
+      color: #ffffff;
     }
 
     .v1-tool-list {
@@ -422,6 +474,31 @@
       background: #2a2d31;
     }
 
+    .v1-sidebar.collapsed,
+    .v1-rightbar.collapsed {
+      grid-template-rows: 34px 0;
+      overflow: hidden;
+    }
+
+    .v1-sidebar.collapsed .v1-tool-list,
+    .v1-rightbar.collapsed .v1-right-content {
+      display: none;
+    }
+
+    .v1-sidebar.collapsed .v1-side-head,
+    .v1-rightbar.collapsed .v1-side-head {
+      justify-content: center;
+      padding: 0;
+    }
+
+    .v1-sidebar.collapsed .v1-head-title,
+    .v1-rightbar.collapsed .v1-head-title {
+      display: none;
+    }
+
+    /* =========================
+       8) Central Section
+       ========================= */
     .v1-editor {
       min-width: 0;
       display: grid;
@@ -429,6 +506,7 @@
       background: var(--bg);
       min-height: 0;
       overflow: hidden;
+      position: relative;
     }
 
     .v1-resizer-h {
@@ -499,7 +577,6 @@
 
     .v1-card {
       border: 0;
-      border-radius: 10px;
       background: #232325;
       box-shadow: none;
       padding: 12px;
@@ -520,7 +597,6 @@
 
     .v1-pill {
       border: 0;
-      border-radius: 8px;
       padding: 7px;
       font-size: 11px;
       color: var(--txt-dim);
@@ -536,7 +612,6 @@
 
     .tool-detail {
       border: 0;
-      border-radius: 10px;
       padding: 10px;
       color: var(--txt-dim);
       font-size: 12px;
@@ -565,7 +640,6 @@
 
     .v1-actions button {
       border: 0;
-      border-radius: 8px;
       background: #2f2f33;
       color: var(--txt);
       font-size: 12px;
@@ -576,10 +650,12 @@
 
     .v1-actions button:hover {
       background: color-mix(in oklab, var(--bg-soft) 70%, var(--brand) 30%);
-      border-color: #4f6f9f;
       color: #ffffff;
     }
 
+    /* =========================
+       9) Right Section (Assistant)
+       ========================= */
     .v1-ai-panel {
       display: grid;
       grid-template-rows: auto auto 1fr auto;
@@ -597,7 +673,6 @@
 
     .v1-ai-badge {
       border: 0;
-      border-radius: 999px;
       padding: 3px 8px;
       font-size: 11px;
       color: var(--txt-dim);
@@ -607,7 +682,6 @@
 
     .v1-ai-threadlist {
       border: 0;
-      border-radius: 8px;
       background: #1f1f21;
       padding: 6px;
       display: grid;
@@ -618,7 +692,6 @@
 
     .v1-ai-thread {
       border: 0;
-      border-radius: 7px;
       background: transparent;
       color: var(--txt-dim);
       text-align: left;
@@ -640,7 +713,6 @@
 
     .v1-ai-chat {
       border: 0;
-      border-radius: 8px;
       background: #1a1a1c;
       padding: 8px;
       overflow: auto;
@@ -652,7 +724,6 @@
 
     .v1-ai-msg {
       border: 0;
-      border-radius: 8px;
       padding: 7px 8px;
       font-size: 12px;
       line-height: 1.45;
@@ -672,7 +743,6 @@
 
     .v1-ai-input {
       border: 0;
-      border-radius: 8px;
       background: #232326;
       display: grid;
       grid-template-columns: 1fr auto;
@@ -691,7 +761,6 @@
 
     .v1-ai-input button {
       border: 0;
-      border-radius: 7px;
       background: color-mix(in oklab, var(--brand) 20%, var(--bg-soft));
       color: var(--txt);
       padding: 6px 10px;
@@ -702,10 +771,12 @@
 
     .v1-ai-input button:hover {
       background: color-mix(in oklab, var(--brand) 34%, var(--bg-soft));
-      border-color: #4f6f9f;
       color: #ffffff;
     }
 
+    /* =========================
+       10) Bottom Section (Console)
+       ========================= */
     .v1-console-zone {
       border-top: 0;
       background: #1a1a1c;
@@ -722,6 +793,21 @@
       padding: 0 10px;
       border-bottom: 0;
       background: #181818;
+    }
+
+    .v1-console-tabs .v1-panel-toggle {
+      margin-left: auto;
+      width: auto;
+      min-width: 28px;
+      padding: 0 8px;
+      height: 22px;
+      font-size: 12px;
+      color: #c8c9ce;
+    }
+
+    .v1-console-tabs .v1-panel-toggle:hover {
+      background: #2f3338;
+      color: #ffffff;
     }
 
     .v1-console-tab {
@@ -757,7 +843,8 @@
     .v1-shell button,
     .v1-shell [data-tool],
     .v1-shell [data-menu-action],
-    .v1-shell [data-v1-console-tab] {
+    .v1-shell [data-v1-console-tab],
+    .v1-shell [data-panel-toggle] {
       transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
     }
 
@@ -775,7 +862,6 @@
     .v1-console-pane {
       display: none;
       border: 0;
-      border-radius: 8px;
       background: #151517;
       padding: 8px;
       white-space: pre-wrap;
@@ -788,6 +874,41 @@
       display: block;
     }
 
+    .v1-editor.console-collapsed {
+      grid-template-rows: 38px minmax(120px, 1fr) 0 28px;
+    }
+
+    .v1-editor.console-collapsed .v1-resizer-h,
+    .v1-editor.console-collapsed .v1-console-body {
+      display: none;
+    }
+
+    .v1-editor.console-collapsed .v1-console-zone {
+      min-height: 28px;
+      grid-template-rows: 28px 0;
+    }
+
+    .v1-editor.console-collapsed .v1-console-tabs {
+      justify-content: center;
+      padding: 0;
+    }
+
+    .v1-editor.console-collapsed .v1-console-tab {
+      display: none;
+    }
+
+    .v1-editor.console-collapsed .v1-console-tabs .v1-panel-toggle {
+      margin-left: 0;
+      min-width: 24px;
+      width: 24px;
+      height: 20px;
+      padding: 0;
+      font-size: 11px;
+    }
+
+    /* =========================
+       11) Bottom Info Bar
+       ========================= */
     .status-line {
       color: var(--txt-dim);
       font-size: 11px;
@@ -799,12 +920,19 @@
       background: var(--activity);
       color: #fff;
       font-size: 11px;
-      padding: 5px 10px;
+      height: 24px;
+      padding: 0 10px;
       display: flex;
+      align-items: center;
       justify-content: space-between;
+      overflow: hidden;
+      box-sizing: border-box;
       font-family: var(--font-mono);
     }
 
+    /* =========================
+       12) Responsive Rules
+       ========================= */
     @media (max-width: 1250px) {
       .v1-main {
         grid-template-columns: 48px 1fr;
@@ -832,6 +960,7 @@
 </head>
 <body>
   <div class="v1-shell">
+    <!-- Top menu -->
     <nav class="v1-menubar" id="v1Menubar">
       <div class="v1-menu-group" data-menu="file">
         <button class="v1-menu-trigger">File</button>
@@ -895,7 +1024,9 @@
       </div>
     </nav>
 
+    <!-- Main work area -->
     <main class="v1-main">
+      <!-- Left icon bar -->
       <aside class="v1-activity">
         <button data-tool="scan-runner" class="active">▦</button>
         <button data-tool="topology">🕸</button>
@@ -906,8 +1037,12 @@
         <button data-tool="settings">⚙</button>
       </aside>
 
+      <!-- Left section -->
       <aside class="v1-sidebar">
-        <div class="v1-side-head">Explorer</div>
+        <div class="v1-side-head">
+          <span class="v1-head-title">Explorer</span>
+          <button class="v1-panel-toggle" data-panel-toggle="left" title="Hide left section" aria-label="Hide left section">◀</button>
+        </div>
         <ul class="v1-tool-list">
           <li data-tool="scan-runner" class="active">Dashboard / Scan Runner</li>
           <li data-tool="topology">Topology Map</li>
@@ -931,6 +1066,7 @@
 
       <div class="v1-resizer-v" data-resize="left" title="Resize left panel"></div>
 
+      <!-- Central section -->
       <section class="v1-editor">
         <div class="v1-tabs">
           <button class="v1-tab active" data-tool="scan-runner">Overview</button>
@@ -971,6 +1107,7 @@
           <div class="v1-console-tabs">
             <button class="v1-console-tab active" data-v1-console-tab="console">Console</button>
             <button class="v1-console-tab" data-v1-console-tab="macro">Macro</button>
+            <button class="v1-panel-toggle" data-panel-toggle="bottom" title="Hide bottom section" aria-label="Hide bottom section">▼</button>
           </div>
           <div class="v1-console-body">
             <div class="v1-console-pane active" data-v1-console-pane="console">[12:14:01] ping 192.168.1.1 -> 1 ms
@@ -991,8 +1128,12 @@ macro://stealth-check
 
       <div class="v1-resizer-v" data-resize="right" title="Resize right panel"></div>
 
+      <!-- Right section -->
       <aside class="v1-rightbar">
-        <div class="v1-side-head">Assistant</div>
+        <div class="v1-side-head">
+          <span class="v1-head-title">Assistant</span>
+          <button class="v1-panel-toggle" data-panel-toggle="right" title="Hide right section" aria-label="Hide right section">▶</button>
+        </div>
         <div class="v1-right-content">
           <article class="v1-ai-panel">
             <div class="v1-ai-head">
@@ -1023,6 +1164,7 @@ macro://stealth-check
       </aside>
     </main>
 
+    <!-- Bottom info bar -->
     <footer class="v1-status">
       <span>main • tauri-desktop • UI mock only</span>
       <span id="v1StatusRight">active: scan-runner</span>
@@ -1031,6 +1173,9 @@ macro://stealth-check
 
   <script>
     (function () {
+      // =========================
+      // 1) Tool metadata + routing
+      // =========================
       const toolInfo = {
         "scan-runner": {
           title: "Scan Runner",
@@ -1202,6 +1347,9 @@ macro://stealth-check
         });
       });
 
+      // =========================
+      // 2) Top menu behavior
+      // =========================
       function initMenuBar() {
         const menubar = document.getElementById("v1Menubar");
         if (!menubar) return;
@@ -1263,8 +1411,7 @@ macro://stealth-check
           versions: "Versions (mock)",
           download: "Download (mock)",
           about: "About (mock)",
-          assistant: "Assistant (mock)"
-          ,
+          assistant: "Assistant (mock)",
           "window-min": "Window minimize (mock)",
           "window-max": "Window maximize (mock)",
           "window-close": "Window close (mock)"
@@ -1281,13 +1428,21 @@ macro://stealth-check
         });
       }
 
+      // =========================
+      // 3) Splitter resizing
+      // =========================
       function initResizableLayout() {
         const main = document.querySelector(".v1-main");
         const editor = document.querySelector(".v1-editor");
+        const sidebar = document.querySelector(".v1-sidebar");
+        const rightbar = document.querySelector(".v1-rightbar");
         const leftHandle = document.querySelector('[data-resize="left"]');
         const rightHandle = document.querySelector('[data-resize="right"]');
         const consoleHandle = document.querySelector('[data-resize="console"]');
-        if (!main || !editor || !leftHandle || !rightHandle || !consoleHandle) return;
+        const leftToggle = document.querySelector('[data-panel-toggle="left"]');
+        const rightToggle = document.querySelector('[data-panel-toggle="right"]');
+        const bottomToggle = document.querySelector('[data-panel-toggle="bottom"]');
+        if (!main || !editor || !sidebar || !rightbar || !leftHandle || !rightHandle || !consoleHandle || !leftToggle || !rightToggle || !bottomToggle) return;
 
         const size = {
           left: 260,
@@ -1295,14 +1450,52 @@ macro://stealth-check
           console: 126
         };
 
+        const panelState = {
+          leftCollapsed: false,
+          rightCollapsed: false,
+          bottomCollapsed: false
+        };
+
+        function syncToggleLabels() {
+          leftToggle.textContent = panelState.leftCollapsed ? "▶" : "◀";
+          leftToggle.setAttribute("title", panelState.leftCollapsed ? "Restore left section" : "Hide left section");
+          leftToggle.setAttribute("aria-label", panelState.leftCollapsed ? "Restore left section" : "Hide left section");
+
+          rightToggle.textContent = panelState.rightCollapsed ? "◀" : "▶";
+          rightToggle.setAttribute("title", panelState.rightCollapsed ? "Restore right section" : "Hide right section");
+          rightToggle.setAttribute("aria-label", panelState.rightCollapsed ? "Restore right section" : "Hide right section");
+
+          bottomToggle.textContent = panelState.bottomCollapsed ? "▲" : "▼";
+          bottomToggle.setAttribute("title", panelState.bottomCollapsed ? "Restore bottom section" : "Hide bottom section");
+          bottomToggle.setAttribute("aria-label", panelState.bottomCollapsed ? "Restore bottom section" : "Hide bottom section");
+        }
+
         function applySizes() {
           if (window.matchMedia("(max-width: 1250px)").matches) {
             main.style.gridTemplateColumns = "";
             editor.style.gridTemplateRows = "";
+            sidebar.classList.remove("collapsed");
+            rightbar.classList.remove("collapsed");
+            editor.classList.remove("console-collapsed");
             return;
           }
-          main.style.gridTemplateColumns = "48px " + size.left + "px 6px minmax(0, 1fr) 6px " + size.right + "px";
-          editor.style.gridTemplateRows = "38px minmax(120px, 1fr) 6px " + size.console + "px";
+
+          const leftWidth = panelState.leftCollapsed ? 26 : size.left;
+          const rightWidth = panelState.rightCollapsed ? 26 : size.right;
+          main.style.gridTemplateColumns = "48px " + leftWidth + "px 6px minmax(0, 1fr) 6px " + rightWidth + "px";
+
+          sidebar.classList.toggle("collapsed", panelState.leftCollapsed);
+          rightbar.classList.toggle("collapsed", panelState.rightCollapsed);
+
+          if (panelState.bottomCollapsed) {
+            editor.classList.add("console-collapsed");
+            editor.style.gridTemplateRows = "";
+          } else {
+            editor.classList.remove("console-collapsed");
+            editor.style.gridTemplateRows = "38px minmax(120px, 1fr) 6px " + size.console + "px";
+          }
+
+          syncToggleLabels();
         }
 
         let drag = null;
@@ -1334,6 +1527,10 @@ macro://stealth-check
         window.addEventListener("pointermove", (event) => {
           if (!drag || window.matchMedia("(max-width: 1250px)").matches) return;
 
+          if ((drag.type === "left" && panelState.leftCollapsed) || (drag.type === "right" && panelState.rightCollapsed) || (drag.type === "console" && panelState.bottomCollapsed)) {
+            return;
+          }
+
           if (drag.type === "left") {
             size.left = Math.max(180, Math.min(460, drag.left + (event.clientX - drag.startX)));
           }
@@ -1356,10 +1553,32 @@ macro://stealth-check
         rightHandle.addEventListener("pointerdown", (event) => startDrag("right", event));
         consoleHandle.addEventListener("pointerdown", (event) => startDrag("console", event));
 
+        leftToggle.addEventListener("click", () => {
+          panelState.leftCollapsed = !panelState.leftCollapsed;
+          applySizes();
+          refreshCustomScrollbars();
+        });
+
+        rightToggle.addEventListener("click", () => {
+          panelState.rightCollapsed = !panelState.rightCollapsed;
+          applySizes();
+          refreshCustomScrollbars();
+        });
+
+        bottomToggle.addEventListener("click", () => {
+          panelState.bottomCollapsed = !panelState.bottomCollapsed;
+          applySizes();
+          refreshCustomScrollbars();
+        });
+
         window.addEventListener("resize", applySizes);
+        syncToggleLabels();
         applySizes();
       }
 
+      // =========================
+      // 4) Custom scrollbars
+      // =========================
       let refreshCustomScrollbars = function () {};
 
       function initCustomScrollbars() {
