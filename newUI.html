@@ -1,0 +1,1489 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NetRecon VS UI</title>
+  <link rel="icon" type="image/png" href="zebrus.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #1e1e1e;
+      --bg-elev: #252526;
+      --bg-soft: #333337;
+      --line: #3c3c3c;
+      --txt: #d4d4d4;
+      --txt-dim: #9da0a6;
+      --brand: #3794ff;
+      --activity: #007acc;
+      --font-ui: "IBM Plex Sans", "Segoe UI", sans-serif;
+      --font-head: "Space Grotesk", "Segoe UI", sans-serif;
+      --font-mono: "IBM Plex Mono", Consolas, monospace;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    /* Flat VS-like look: no rounding anywhere in the app shell */
+    .v1-shell,
+    .v1-shell * {
+      border-radius: 0 !important;
+    }
+
+    /* VS Code inspired scrollbars */
+    .v1-shell,
+    .v1-shell * {
+      scrollbar-width: thin;
+      scrollbar-color: #4f4f4f #1e1e1e;
+    }
+
+    .v1-shell::-webkit-scrollbar,
+    .v1-shell *::-webkit-scrollbar {
+      -webkit-appearance: none;
+      width: 10px !important;
+      height: 10px !important;
+      background: #1e1e1e !important;
+    }
+
+    .v1-shell::-webkit-scrollbar-button,
+    .v1-shell *::-webkit-scrollbar-button {
+      -webkit-appearance: none;
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
+      max-width: 0 !important;
+      max-height: 0 !important;
+      background: transparent !important;
+      border: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    .v1-shell::-webkit-scrollbar-button:single-button,
+    .v1-shell *::-webkit-scrollbar-button:single-button,
+    .v1-shell::-webkit-scrollbar-button:double-button,
+    .v1-shell *::-webkit-scrollbar-button:double-button,
+    .v1-shell::-webkit-scrollbar-button:single-button:vertical:decrement,
+    .v1-shell *::-webkit-scrollbar-button:single-button:vertical:decrement,
+    .v1-shell::-webkit-scrollbar-button:single-button:vertical:increment,
+    .v1-shell *::-webkit-scrollbar-button:single-button:vertical:increment,
+    .v1-shell::-webkit-scrollbar-button:single-button:horizontal:decrement,
+    .v1-shell *::-webkit-scrollbar-button:single-button:horizontal:decrement,
+    .v1-shell::-webkit-scrollbar-button:single-button:horizontal:increment,
+    .v1-shell *::-webkit-scrollbar-button:single-button:horizontal:increment,
+    .v1-shell::-webkit-scrollbar-button:start:decrement,
+    .v1-shell *::-webkit-scrollbar-button:start:decrement,
+    .v1-shell::-webkit-scrollbar-button:end:increment,
+    .v1-shell *::-webkit-scrollbar-button:end:increment,
+    .v1-shell::-webkit-scrollbar-button:start:increment,
+    .v1-shell *::-webkit-scrollbar-button:start:increment,
+    .v1-shell::-webkit-scrollbar-button:end:decrement,
+    .v1-shell *::-webkit-scrollbar-button:end:decrement {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      background: transparent !important;
+      border: 0 !important;
+    }
+
+    .v1-shell::-webkit-scrollbar-track,
+    .v1-shell *::-webkit-scrollbar-track {
+      border-radius: 0 !important;
+      background: #1e1e1e !important;
+      border: 0 !important;
+    }
+
+    .v1-shell::-webkit-scrollbar-thumb,
+    .v1-shell *::-webkit-scrollbar-thumb {
+      -webkit-appearance: none;
+      background: #4f4f4f !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .v1-shell::-webkit-scrollbar-thumb:hover,
+    .v1-shell *::-webkit-scrollbar-thumb:hover {
+      background: #5f5f5f !important;
+    }
+
+    .v1-shell::-webkit-scrollbar-corner,
+    .v1-shell *::-webkit-scrollbar-corner {
+      background: #1e1e1e !important;
+      border-radius: 0 !important;
+    }
+
+    /* Force custom scrollbars in key panels where native arrows persist on Windows */
+    .v1-custom-scroll-host {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none;
+    }
+
+    .v1-custom-scroll-host::-webkit-scrollbar,
+    .v1-custom-scroll-host::-webkit-scrollbar-button,
+    .v1-custom-scroll-host::-webkit-scrollbar-thumb,
+    .v1-custom-scroll-host::-webkit-scrollbar-track,
+    .v1-custom-scroll-host::-webkit-scrollbar-corner {
+      width: 0 !important;
+      height: 0 !important;
+      display: none !important;
+      background: transparent !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+    }
+
+    .v1-faux-scrollbar {
+      position: fixed;
+      width: 10px;
+      background: #1e1e1e;
+      z-index: 20;
+      pointer-events: auto;
+    }
+
+    .v1-faux-scrollbar-thumb {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 24px;
+      background: #5f5f5f;
+      cursor: pointer;
+    }
+
+    .v1-faux-scrollbar-thumb:hover,
+    .v1-faux-scrollbar-thumb.dragging {
+      background: #737373;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      font-family: var(--font-ui);
+      color: var(--txt);
+      background: linear-gradient(165deg, #1e1e1e 0%, #171717 100%);
+    }
+
+    .v1-shell {
+      display: grid;
+      grid-template-rows: 30px 1fr 24px;
+      height: 100vh;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .v1-menubar {
+      border-bottom: 0;
+      background: #2d2d30;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 0 4px;
+      overflow: visible;
+      position: relative;
+      z-index: 50;
+    }
+
+    .v1-menu-group {
+      position: relative;
+    }
+
+    .v1-menu-spacer {
+      margin-left: auto;
+      flex: 1 1 auto;
+      min-width: 12px;
+    }
+
+    .v1-window-controls {
+      display: flex;
+      align-items: stretch;
+      height: 100%;
+      margin-right: -4px;
+    }
+
+    .v1-window-btn {
+      width: 46px;
+      border: 0;
+      background: transparent;
+      color: #c7c7c7;
+      font-size: 13px;
+      font-family: var(--font-ui);
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .v1-window-btn:hover {
+      background: #46484c;
+      color: #ffffff;
+    }
+
+    .v1-window-btn.close:hover {
+      background: #c42b1c;
+      color: #ffffff;
+    }
+
+    .v1-menu-trigger {
+      border: 0;
+      background: transparent;
+      color: #cccccc;
+      font-size: 12px;
+      padding: 5px 11px;
+      font-family: var(--font-ui);
+      cursor: pointer;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    .v1-menu-group.open .v1-menu-trigger,
+    .v1-menu-trigger:hover {
+      background: #094771;
+      color: #ffffff;
+    }
+
+    .v1-menu-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 320px;
+      background: #252526;
+      border: 1px solid #3c3c3c;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+      padding: 6px 0;
+      z-index: 500;
+    }
+
+    .v1-menu-group.open .v1-menu-dropdown {
+      display: block;
+    }
+
+    .v1-menu-dd-item {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: #cccccc;
+      text-align: left;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      font-size: 13px;
+      font-family: var(--font-ui);
+      line-height: 1.3;
+      padding: 6px 16px;
+      cursor: pointer;
+    }
+
+    .v1-menu-dd-item:hover,
+    .v1-menu-dd-item.active {
+      background: #094771;
+      color: #ffffff;
+    }
+
+    .v1-menu-dd-item[aria-disabled="true"] {
+      color: #7a7d82;
+      cursor: default;
+    }
+
+    .v1-menu-dd-item[aria-disabled="true"]:hover {
+      background: transparent;
+      color: #7a7d82;
+    }
+
+    .v1-menu-dd-item .shortcut {
+      color: #9da0a6;
+      font-family: var(--font-ui);
+      letter-spacing: 0.01em;
+    }
+
+    .v1-menu-dd-item:hover .shortcut {
+      color: #d7e5f8;
+    }
+
+    .v1-menu-dd-sep {
+      height: 1px;
+      margin: 6px 0;
+      background: #3c3c3c;
+    }
+
+    .v1-main {
+      display: grid;
+      grid-template-columns: 48px 260px 6px minmax(0, 1fr) 6px 320px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .v1-resizer-v {
+      background: #252526;
+      border-left: 0;
+      border-right: 0;
+      cursor: col-resize;
+    }
+
+    .v1-resizer-v:hover,
+    .v1-resizer-v.dragging {
+      background: #2f2f31;
+    }
+
+    .v1-activity {
+      border-right: 0;
+      background: #191919;
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .v1-activity-spacer {
+      flex: 1 1 auto;
+    }
+
+    .v1-activity button {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--txt-dim);
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .v1-activity button.active {
+      background: rgba(55, 148, 255, 0.28);
+      border-color: rgba(55, 148, 255, 0.7);
+      color: #fff;
+    }
+
+    .v1-activity button:hover:not(.active) {
+      background: #2a2d31;
+      border-color: #3f3f46;
+      color: #ffffff;
+    }
+
+    .v1-sidebar {
+      border-right: 0;
+      background: var(--bg-elev);
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 34px 1fr;
+    }
+
+    .v1-side-head {
+      border-bottom: 0;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--txt-dim);
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+    }
+
+    .v1-tool-list {
+      list-style: none;
+      margin: 0;
+      padding: 8px;
+      overflow: auto;
+      display: grid;
+      gap: 5px;
+    }
+
+    .v1-tool-list li {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      color: var(--txt-dim);
+      cursor: pointer;
+      background: transparent;
+    }
+
+    .v1-tool-list li.active {
+      color: var(--txt);
+      border-color: var(--line);
+      background: color-mix(in oklab, var(--bg-soft) 82%, var(--brand) 18%);
+    }
+
+    .v1-tool-list li:hover:not(.active) {
+      color: #ffffff;
+      border-color: #3f3f46;
+      background: #2a2d31;
+    }
+
+    .v1-editor {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: 38px minmax(120px, 1fr) 6px 126px;
+      background: var(--bg);
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .v1-resizer-h {
+      background: #252526;
+      border-top: 0;
+      border-bottom: 0;
+      cursor: row-resize;
+    }
+
+    .v1-resizer-h:hover,
+    .v1-resizer-h.dragging {
+      background: #2f2f31;
+    }
+
+    .v1-tabs {
+      display: flex;
+      border-bottom: 0;
+      background: #181818;
+    }
+
+    .v1-tab {
+      border: 0;
+      border-right: 0;
+      background: transparent;
+      color: var(--txt-dim);
+      padding: 9px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--font-ui);
+    }
+
+    .v1-tab.active {
+      color: var(--txt);
+      background: var(--bg-elev);
+      box-shadow: inset 0 2px 0 var(--brand);
+    }
+
+    .v1-tab:hover:not(.active) {
+      color: #ffffff;
+      background: #222326;
+    }
+
+    .v1-content {
+      overflow: auto;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(0, 1fr);
+      align-content: start;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .v1-rightbar {
+      border-left: 0;
+      background: var(--bg-elev);
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 34px 1fr;
+      overflow: hidden;
+    }
+
+    .v1-right-content {
+      padding: 10px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .v1-card {
+      border: 0;
+      border-radius: 10px;
+      background: #232325;
+      box-shadow: none;
+      padding: 12px;
+    }
+
+    .v1-card h3 {
+      margin: 0 0 8px;
+      font-family: var(--font-head);
+      font-size: 16px;
+    }
+
+    .v1-meta {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .v1-pill {
+      border: 0;
+      border-radius: 8px;
+      padding: 7px;
+      font-size: 11px;
+      color: var(--txt-dim);
+      background: #2b2b2e;
+    }
+
+    .v1-pill b {
+      display: block;
+      margin-top: 2px;
+      color: var(--txt);
+      font-size: 13px;
+    }
+
+    .tool-detail {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px;
+      color: var(--txt-dim);
+      font-size: 12px;
+      line-height: 1.5;
+      background: #1f1f21;
+    }
+
+    .tool-detail h4 {
+      margin: 0 0 6px;
+      color: var(--txt);
+      font-size: 14px;
+      font-family: var(--font-head);
+    }
+
+    .tool-detail ul {
+      margin: 6px 0 0;
+      padding-left: 18px;
+    }
+
+    .v1-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .v1-actions button {
+      border: 0;
+      border-radius: 8px;
+      background: #2f2f33;
+      color: var(--txt);
+      font-size: 12px;
+      font-family: var(--font-ui);
+      padding: 8px 11px;
+      cursor: pointer;
+    }
+
+    .v1-actions button:hover {
+      background: color-mix(in oklab, var(--bg-soft) 70%, var(--brand) 30%);
+      border-color: #4f6f9f;
+      color: #ffffff;
+    }
+
+    .v1-ai-panel {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 10px;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .v1-ai-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .v1-ai-badge {
+      border: 0;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: var(--txt-dim);
+      background: #2f2f33;
+      font-family: var(--font-mono);
+    }
+
+    .v1-ai-threadlist {
+      border: 0;
+      border-radius: 8px;
+      background: #1f1f21;
+      padding: 6px;
+      display: grid;
+      gap: 6px;
+      overflow: auto;
+      max-height: 140px;
+    }
+
+    .v1-ai-thread {
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--txt-dim);
+      text-align: left;
+      font-size: 12px;
+      font-family: var(--font-ui);
+      padding: 7px 8px;
+      cursor: pointer;
+    }
+
+    .v1-ai-thread.active {
+      background: color-mix(in oklab, var(--bg-soft) 74%, var(--brand) 26%);
+      color: var(--txt);
+    }
+
+    .v1-ai-thread:hover:not(.active) {
+      background: #2a2d31;
+      color: #ffffff;
+    }
+
+    .v1-ai-chat {
+      border: 0;
+      border-radius: 8px;
+      background: #1a1a1c;
+      padding: 8px;
+      overflow: auto;
+      min-height: 0;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .v1-ai-msg {
+      border: 0;
+      border-radius: 8px;
+      padding: 7px 8px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #d7d9de;
+      background: #202024;
+    }
+
+    .v1-ai-msg.user {
+      background: #212b3b;
+      color: #d8e6ff;
+    }
+
+    .v1-ai-msg.assistant {
+      background: #1a2a27;
+      color: #cff3ec;
+    }
+
+    .v1-ai-input {
+      border: 0;
+      border-radius: 8px;
+      background: #232326;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 8px;
+      align-items: center;
+    }
+
+    .v1-ai-input span {
+      color: var(--txt-dim);
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .v1-ai-input button {
+      border: 0;
+      border-radius: 7px;
+      background: color-mix(in oklab, var(--brand) 20%, var(--bg-soft));
+      color: var(--txt);
+      padding: 6px 10px;
+      font-size: 12px;
+      font-family: var(--font-ui);
+      cursor: pointer;
+    }
+
+    .v1-ai-input button:hover {
+      background: color-mix(in oklab, var(--brand) 34%, var(--bg-soft));
+      border-color: #4f6f9f;
+      color: #ffffff;
+    }
+
+    .v1-console-zone {
+      border-top: 0;
+      background: #1a1a1c;
+      display: grid;
+      grid-template-rows: 34px 1fr;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .v1-console-tabs {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 0 10px;
+      border-bottom: 0;
+      background: #181818;
+    }
+
+    .v1-console-tab {
+      border: 0;
+      border-bottom: 1px solid transparent;
+      background: transparent;
+      color: #8f8f92;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      padding: 0;
+      margin-right: 24px;
+      height: 100%;
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      font-family: var(--font-ui);
+      cursor: pointer;
+    }
+
+    .v1-console-tab.active {
+      color: #ffffff;
+      border-bottom-color: #e5e5e5;
+      background: transparent;
+    }
+
+    .v1-console-tab:hover:not(.active) {
+      color: #cfcfd2;
+      border-bottom-color: #6e6e72;
+      background: transparent;
+    }
+
+    .v1-shell button,
+    .v1-shell [data-tool],
+    .v1-shell [data-menu-action],
+    .v1-shell [data-v1-console-tab] {
+      transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+    }
+
+    .v1-console-body {
+      min-height: 0;
+      padding: 8px;
+      overflow: auto;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #9fd5a8;
+      line-height: 1.45;
+      display: grid;
+    }
+
+    .v1-console-pane {
+      display: none;
+      border: 0;
+      border-radius: 8px;
+      background: #151517;
+      padding: 8px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .v1-console-pane.active {
+      display: block;
+    }
+
+    .status-line {
+      color: var(--txt-dim);
+      font-size: 11px;
+      font-family: var(--font-mono);
+    }
+
+    .v1-status {
+      border-top: 0;
+      background: var(--activity);
+      color: #fff;
+      font-size: 11px;
+      padding: 5px 10px;
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+    }
+
+    @media (max-width: 1250px) {
+      .v1-main {
+        grid-template-columns: 48px 1fr;
+      }
+
+      .v1-sidebar {
+        display: none;
+      }
+
+       .v1-rightbar,
+      .v1-resizer-v,
+      .v1-resizer-h {
+        display: none;
+      }
+
+      .v1-content {
+        grid-template-columns: 1fr;
+      }
+
+      .v1-editor {
+        grid-template-rows: 38px minmax(0, 1fr) 126px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="v1-shell">
+    <nav class="v1-menubar" id="v1Menubar">
+      <div class="v1-menu-group" data-menu="file">
+        <button class="v1-menu-trigger">File</button>
+        <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-menu-action="export-results"><span>Export results...</span><span class="shortcut">Ctrl+E</span></button>
+          <button class="v1-menu-dd-item" data-menu-action="import-results"><span>Import results...</span><span class="shortcut">Ctrl+I</span></button>
+        </div>
+      </div>
+
+      <div class="v1-menu-group" data-menu="options">
+        <button class="v1-menu-trigger">Options</button>
+        <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-menu-action="countries"><span>Country IP Library...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="presets"><span>Port Presets...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="defaults"><span>Default Scan Values...</span><span class="shortcut"></span></button>
+          <div class="v1-menu-dd-sep"></div>
+          <button class="v1-menu-dd-item" data-menu-action="language"><span>Language...</span><span class="shortcut"></span></button>
+          <div class="v1-menu-dd-sep"></div>
+          <button class="v1-menu-dd-item" data-menu-action="customization"><span>Customization...</span><span class="shortcut"></span></button>
+        </div>
+      </div>
+
+      <div class="v1-menu-group" data-menu="tools">
+        <button class="v1-menu-trigger">Tools</button>
+        <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-tool="topology"><span>Topology</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="globe"><span>Globe</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="proto"><span>Prototype</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="macro"><span>Macro</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="speed"><span>Speed</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="console"><span>Console</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="scan-watch"><span>IP Scan Watch...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="wifi-detector"><span>WiFi Detector...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="wifi-radar"><span>WiFi Radar</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="bt-detector"><span>Bluetooth Detector...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="gnss"><span>GNSS Monitor...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="lte"><span>LTE Monitor...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="sniffer"><span>Network Sniffer...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="imgmeta"><span>Image Metadata...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="phone-lookup"><span>Phone Reverse Lookup...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="ai-assistant"><span>AI Security Assistant...</span><span class="shortcut"></span></button>
+        </div>
+      </div>
+
+      <div class="v1-menu-group" data-menu="help">
+        <button class="v1-menu-trigger">Help</button>
+        <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-menu-action="versions"><span>Versions</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="download"><span>Download</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="about"><span>About</span><span class="shortcut"></span></button>
+          <div class="v1-menu-dd-sep"></div>
+          <button class="v1-menu-dd-item" data-menu-action="assistant"><span>Assistant</span><span class="shortcut"></span></button>
+        </div>
+      </div>
+
+      <div class="v1-menu-spacer"></div>
+      <div class="v1-window-controls" aria-label="Window controls">
+        <button class="v1-window-btn" data-menu-action="window-min" title="Minimize" aria-label="Minimize">&#8211;</button>
+        <button class="v1-window-btn" data-menu-action="window-max" title="Maximize" aria-label="Maximize">&#9633;</button>
+        <button class="v1-window-btn close" data-menu-action="window-close" title="Close" aria-label="Close">&#10005;</button>
+      </div>
+    </nav>
+
+    <main class="v1-main">
+      <aside class="v1-activity">
+        <button data-tool="scan-runner" class="active">▦</button>
+        <button data-tool="topology">🕸</button>
+        <button data-tool="globe">🌍</button>
+        <button data-tool="sniffer">🔎</button>
+        <button data-tool="ai-assistant">🤖</button>
+        <div class="v1-activity-spacer"></div>
+        <button data-tool="settings">⚙</button>
+      </aside>
+
+      <aside class="v1-sidebar">
+        <div class="v1-side-head">Explorer</div>
+        <ul class="v1-tool-list">
+          <li data-tool="scan-runner" class="active">Dashboard / Scan Runner</li>
+          <li data-tool="topology">Topology Map</li>
+          <li data-tool="globe">Globe Geolocation</li>
+          <li data-tool="console">Command Console</li>
+          <li data-tool="wifi-detector">WiFi Detector</li>
+          <li data-tool="wifi-radar">WiFi Radar</li>
+          <li data-tool="bt-detector">Bluetooth Detector</li>
+          <li data-tool="gnss">GNSS Monitor</li>
+          <li data-tool="lte">LTE Monitor</li>
+          <li data-tool="sniffer">Network Sniffer</li>
+          <li data-tool="imgmeta">Image Metadata</li>
+          <li data-tool="phone-lookup">Phone Lookup</li>
+          <li data-tool="ai-assistant">AI Security Assistant</li>
+          <li data-tool="scan-watch">IP Scan Watch</li>
+          <li data-tool="macro">Macro Folder</li>
+          <li data-tool="speed">Speed Test</li>
+          <li data-tool="proto">Prototype</li>
+        </ul>
+      </aside>
+
+      <div class="v1-resizer-v" data-resize="left" title="Resize left panel"></div>
+
+      <section class="v1-editor">
+        <div class="v1-tabs">
+          <button class="v1-tab active" data-tool="scan-runner">Overview</button>
+          <button class="v1-tab" data-tool="console">Live Console</button>
+          <button class="v1-tab" data-tool="scan-watch">Threat Signals</button>
+        </div>
+
+        <div class="v1-content">
+          <article class="v1-card">
+            <h3 id="v1ToolTitle">Scan Runner</h3>
+
+            <div class="v1-meta">
+              <div class="v1-pill">Checked hosts<b>152</b></div>
+              <div class="v1-pill">Active hosts<b>29</b></div>
+              <div class="v1-pill">Open ports<b>188</b></div>
+              <div class="v1-pill">Elapsed<b>00:01:18</b></div>
+            </div>
+
+            <div class="tool-detail" id="v1ToolDetail">
+              <h4>IP Range Scan Control</h4>
+              <div>Tryb bazowy do skanowania hostow, portow i enrichmentu wynikow.</div>
+            </div>
+
+            <div class="v1-actions">
+              <button data-tool="scan-runner">▶ Start Scan</button>
+              <button data-tool="scan-watch">■ Stop</button>
+              <button data-tool="scan-runner">✕ Clear</button>
+              <button data-tool="scan-runner">⚙ Default Scan Values</button>
+              <button data-tool="scan-runner">📤 Export JSON</button>
+              <button data-tool="scan-runner">📥 Import JSON</button>
+            </div>
+          </article>
+        </div>
+
+        <div class="v1-resizer-h" data-resize="console" title="Resize editor and terminal"></div>
+
+        <section class="v1-console-zone">
+          <div class="v1-console-tabs">
+            <button class="v1-console-tab active" data-v1-console-tab="console">Console</button>
+            <button class="v1-console-tab" data-v1-console-tab="macro">Macro</button>
+          </div>
+          <div class="v1-console-body">
+            <div class="v1-console-pane active" data-v1-console-pane="console">[12:14:01] ping 192.168.1.1 -> 1 ms
+[12:14:03] traceroute 8.8.8.8 -> 11 hops
+[12:14:07] scan status -> 29 active hosts, 188 open ports</div>
+            <div class="v1-console-pane" data-v1-console-pane="macro">macro://quick-lan-scan
+  - set range 192.168.1.1-192.168.1.254
+  - set preset common-lan+iot
+  - run scan
+
+macro://stealth-check
+  - delay 150ms
+  - sequential ports
+  - run lightweight sweep</div>
+          </div>
+        </section>
+      </section>
+
+      <div class="v1-resizer-v" data-resize="right" title="Resize right panel"></div>
+
+      <aside class="v1-rightbar">
+        <div class="v1-side-head">Assistant</div>
+        <div class="v1-right-content">
+          <article class="v1-ai-panel">
+            <div class="v1-ai-head">
+              <h3 style="margin:0;">AI Assistant</h3>
+              <span class="v1-ai-badge">GPT-5.3-Codex</span>
+            </div>
+
+            <div class="v1-ai-threadlist">
+              <button class="v1-ai-thread active" data-tool="ai-assistant">Security review - LAN scan findings</button>
+              <button class="v1-ai-thread" data-tool="ai-assistant">Port profile optimization</button>
+              <button class="v1-ai-thread" data-tool="ai-assistant">WiFi hardening checklist</button>
+            </div>
+
+            <div class="v1-ai-chat">
+              <div class="v1-ai-msg user">Przeanalizuj aktywne hosty i zaznacz podejrzane endpointy.</div>
+              <div class="v1-ai-msg assistant">Wykryto 3 hosty z nietypowym zestawem portow. Priorytet: 192.168.1.54 (554,8000) oraz 192.168.1.73 (23,2323).</div>
+              <div class="v1-ai-msg assistant">Sugerowana akcja: uruchom Scan Watch i porownaj z logiem sniffera.</div>
+            </div>
+
+            <div class="v1-ai-input">
+              <span>Wpisz prompt... np. "zrob threat model dla hosta 192.168.1.54"</span>
+              <button data-tool="ai-assistant">Send</button>
+            </div>
+
+            <p class="status-line" id="v1StatusLine">Tool route: scan-runner</p>
+          </article>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="v1-status">
+      <span>main • tauri-desktop • UI mock only</span>
+      <span id="v1StatusRight">active: scan-runner</span>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      const toolInfo = {
+        "scan-runner": {
+          title: "Scan Runner",
+          text: "Zakres IP, port presets, rownolegly probing i zapis wynikow.",
+          points: ["IP range + presets", "Concurrency control", "Export/import results"]
+        },
+        topology: {
+          title: "Topology Map",
+          text: "Widok relacji hostow, filtrowanie po porcie i czasie odpowiedzi.",
+          points: ["Canvas graph", "Live filters", "Node hover telemetry"]
+        },
+        globe: {
+          title: "World Globe",
+          text: "Mapa geolokalizacji hostow i punktow komunikacji.",
+          points: ["D3 globe", "Country markers", "Geo enrichment"]
+        },
+        console: {
+          title: "Command Console",
+          text: "Szybkie komendy typu ping/traceroute i makra diagnostyczne.",
+          points: ["Command templates", "Output panel", "Macro execution"]
+        },
+        "wifi-detector": {
+          title: "WiFi Detector",
+          text: "Lista sieci, profile i szczegoly parametrow WLAN.",
+          points: ["SSID scan", "Profile fallback", "Signal metrics"]
+        },
+        "wifi-radar": {
+          title: "WiFi Radar",
+          text: "Radar sily sygnalu i rozmieszczenia sieci lokalnych.",
+          points: ["Polar view", "Signal trend", "Network focus"]
+        },
+        "bt-detector": {
+          title: "Bluetooth Detector",
+          text: "Skan BLE i klasycznych urzadzen BT z podstawowa telemetria.",
+          points: ["BLE + Classic", "RSSI sorting", "Address parse"]
+        },
+        gnss: {
+          title: "GNSS Monitor",
+          text: "Podglad NMEA: satelity, fix type, polozenie i HDOP.",
+          points: ["Serial sampling", "NMEA parse", "Satellite table"]
+        },
+        lte: {
+          title: "LTE Monitor",
+          text: "AT snapshot modemu: RSRP, RSRQ, SINR, band i operator.",
+          points: ["Auto modem detect", "AT command profile", "Signal KPIs"]
+        },
+        sniffer: {
+          title: "Network Sniffer",
+          text: "Przeglad aktywnych polaczen TCP/UDP i mapowania procesow.",
+          points: ["PID mapping", "State filters", "Connection timeline"]
+        },
+        imgmeta: {
+          title: "Image Metadata",
+          text: "EXIF/XMP/IPTC parser i inspekcja kontenera plikow obrazu.",
+          points: ["Metadata extraction", "GPS decoding", "Container boundary"]
+        },
+        "phone-lookup": {
+          title: "Phone Lookup",
+          text: "Agregacja danych numeru telefonu i zrodel API.",
+          points: ["NumVerify bridge", "OpenCell placeholders", "Result export"]
+        },
+        "ai-assistant": {
+          title: "AI Security Assistant",
+          text: "Prompt presets i analiza bezpieczenstwa przez multi-provider AI.",
+          points: ["Provider switch", "Secure key mode", "Preset prompts"]
+        },
+        "scan-watch": {
+          title: "IP Scan Watch",
+          text: "Heurystyka wykrywania podejrzanych skanow na podstawie netstat.",
+          points: ["Sliding window", "Remote IP scoring", "Alert shortlist"]
+        },
+        macro: {
+          title: "Macro Folder",
+          text: "Przechowywanie i uruchamianie gotowych sekwencji komend.",
+          points: ["Macro list", "Template actions", "Fast replay"]
+        },
+        speed: {
+          title: "Speed Test",
+          text: "Panel testow przepustowosci i latencji lacza.",
+          points: ["Download ping", "Upload ping", "Session compare"]
+        },
+        proto: {
+          title: "Prototype",
+          text: "Eksperymentalna przestrzen testowa dla nowych modulow UI.",
+          points: ["Sandbox view", "Feature spikes", "Design probes"]
+        },
+        settings: {
+          title: "Options",
+          text: "Ustawienia aplikacji, domyslne wartosci skanowania i preferencje UI.",
+          points: ["Default scan values", "Language and presets", "Customization"]
+        }
+      };
+
+      let activeTool = "scan-runner";
+
+      function infoFor(tool) {
+        return toolInfo[tool] || toolInfo["scan-runner"];
+      }
+
+      function setTooltips() {
+        document.querySelectorAll("[data-tool]").forEach((el) => {
+          const tool = el.getAttribute("data-tool");
+          if (!tool) return;
+          const info = infoFor(tool);
+          const tip = info.title + " - " + info.text;
+          el.setAttribute("title", tip);
+          el.setAttribute("aria-label", tip);
+        });
+
+        document.querySelectorAll(".v1-tab").forEach((el) => {
+          const txt = (el.textContent || "").trim();
+          if (!txt) return;
+          if (!el.getAttribute("title")) {
+            el.setAttribute("title", "Zakladka: " + txt);
+          }
+        });
+      }
+
+      function buildDetailHtml(tool) {
+        const info = infoFor(tool);
+        const points = info.points.map((p) => "<li>" + p + "</li>").join("");
+        return "<h4>" + info.title + "</h4><div>" + info.text + "</div><ul>" + points + "</ul>";
+      }
+
+      function refreshActiveUI() {
+        document.querySelectorAll("[data-tool]").forEach((el) => {
+          const isActive = el.getAttribute("data-tool") === activeTool;
+          el.classList.toggle("active", isActive);
+          if (el.tagName === "BUTTON") {
+            el.setAttribute("aria-pressed", isActive ? "true" : "false");
+          }
+        });
+
+        const v1Title = document.getElementById("v1ToolTitle");
+        const v1Detail = document.getElementById("v1ToolDetail");
+        const v1StatusLine = document.getElementById("v1StatusLine");
+        const v1StatusRight = document.getElementById("v1StatusRight");
+        const info = infoFor(activeTool);
+
+        if (v1Title) v1Title.textContent = info.title;
+        if (v1Detail) v1Detail.innerHTML = buildDetailHtml(activeTool);
+        if (v1StatusLine) v1StatusLine.textContent = "Tool route: " + activeTool;
+        if (v1StatusRight) v1StatusRight.textContent = "active: " + activeTool;
+      }
+
+      function switchTool(tool) {
+        activeTool = tool;
+        refreshActiveUI();
+      }
+
+      document.addEventListener("click", (e) => {
+        const target = e.target.closest("[data-tool]");
+        if (!target) return;
+        const tool = target.getAttribute("data-tool");
+        if (!tool) return;
+        switchTool(tool);
+      });
+
+      document.querySelectorAll(".v1-console-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const next = tab.getAttribute("data-v1-console-tab");
+          if (!next) return;
+          document.querySelectorAll(".v1-console-tab").forEach((t) => {
+            t.classList.toggle("active", t === tab);
+          });
+          document.querySelectorAll(".v1-console-pane").forEach((pane) => {
+            pane.classList.toggle("active", pane.getAttribute("data-v1-console-pane") === next);
+          });
+        });
+      });
+
+      function initMenuBar() {
+        const menubar = document.getElementById("v1Menubar");
+        if (!menubar) return;
+
+        const groups = Array.from(menubar.querySelectorAll(".v1-menu-group"));
+
+        function closeAllMenus() {
+          groups.forEach((group) => group.classList.remove("open"));
+        }
+
+        function openMenu(group) {
+          closeAllMenus();
+          group.classList.add("open");
+        }
+
+        groups.forEach((group) => {
+          const trigger = group.querySelector(".v1-menu-trigger");
+          if (!trigger) return;
+
+          trigger.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const willOpen = !group.classList.contains("open");
+            closeAllMenus();
+            if (willOpen) group.classList.add("open");
+          });
+
+          group.addEventListener("mouseenter", () => {
+            const opened = groups.some((g) => g.classList.contains("open"));
+            if (!opened) return;
+            openMenu(group);
+          });
+        });
+
+        document.addEventListener("click", (event) => {
+          if (menubar.contains(event.target)) return;
+          closeAllMenus();
+        });
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") closeAllMenus();
+        });
+
+        menubar.querySelectorAll(".v1-menu-dd-item").forEach((item) => {
+          item.addEventListener("click", () => {
+            closeAllMenus();
+          });
+        });
+      }
+
+      function initMenuActions() {
+        const actionMap = {
+          "export-results": "Export results (mock)",
+          "import-results": "Import results (mock)",
+          countries: "Country IP Library (mock)",
+          presets: "Port Presets (mock)",
+          defaults: "Default Scan Values (mock)",
+          language: "Language (mock)",
+          customization: "Customization (mock)",
+          versions: "Versions (mock)",
+          download: "Download (mock)",
+          about: "About (mock)",
+          assistant: "Assistant (mock)"
+          ,
+          "window-min": "Window minimize (mock)",
+          "window-max": "Window maximize (mock)",
+          "window-close": "Window close (mock)"
+        };
+
+        document.querySelectorAll("[data-menu-action]").forEach((item) => {
+          item.addEventListener("click", () => {
+            const action = item.getAttribute("data-menu-action");
+            const v1StatusLine = document.getElementById("v1StatusLine");
+            if (v1StatusLine && action && actionMap[action]) {
+              v1StatusLine.textContent = "Menu: " + actionMap[action];
+            }
+          });
+        });
+      }
+
+      function initResizableLayout() {
+        const main = document.querySelector(".v1-main");
+        const editor = document.querySelector(".v1-editor");
+        const leftHandle = document.querySelector('[data-resize="left"]');
+        const rightHandle = document.querySelector('[data-resize="right"]');
+        const consoleHandle = document.querySelector('[data-resize="console"]');
+        if (!main || !editor || !leftHandle || !rightHandle || !consoleHandle) return;
+
+        const size = {
+          left: 260,
+          right: 320,
+          console: 126
+        };
+
+        function applySizes() {
+          if (window.matchMedia("(max-width: 1250px)").matches) {
+            main.style.gridTemplateColumns = "";
+            editor.style.gridTemplateRows = "";
+            return;
+          }
+          main.style.gridTemplateColumns = "48px " + size.left + "px 6px minmax(0, 1fr) 6px " + size.right + "px";
+          editor.style.gridTemplateRows = "38px minmax(120px, 1fr) 6px " + size.console + "px";
+        }
+
+        let drag = null;
+
+        function startDrag(type, event) {
+          drag = {
+            type,
+            startX: event.clientX,
+            startY: event.clientY,
+            left: size.left,
+            right: size.right,
+            console: size.console
+          };
+
+          if (type === "left") leftHandle.classList.add("dragging");
+          if (type === "right") rightHandle.classList.add("dragging");
+          if (type === "console") consoleHandle.classList.add("dragging");
+          document.body.style.userSelect = "none";
+        }
+
+        function stopDrag() {
+          drag = null;
+          leftHandle.classList.remove("dragging");
+          rightHandle.classList.remove("dragging");
+          consoleHandle.classList.remove("dragging");
+          document.body.style.userSelect = "";
+        }
+
+        window.addEventListener("pointermove", (event) => {
+          if (!drag || window.matchMedia("(max-width: 1250px)").matches) return;
+
+          if (drag.type === "left") {
+            size.left = Math.max(180, Math.min(460, drag.left + (event.clientX - drag.startX)));
+          }
+
+          if (drag.type === "right") {
+            size.right = Math.max(220, Math.min(520, drag.right - (event.clientX - drag.startX)));
+          }
+
+          if (drag.type === "console") {
+            size.console = Math.max(90, Math.min(360, drag.console - (event.clientY - drag.startY)));
+          }
+
+          applySizes();
+        });
+
+        window.addEventListener("pointerup", stopDrag);
+        window.addEventListener("pointercancel", stopDrag);
+
+        leftHandle.addEventListener("pointerdown", (event) => startDrag("left", event));
+        rightHandle.addEventListener("pointerdown", (event) => startDrag("right", event));
+        consoleHandle.addEventListener("pointerdown", (event) => startDrag("console", event));
+
+        window.addEventListener("resize", applySizes);
+        applySizes();
+      }
+
+      let refreshCustomScrollbars = function () {};
+
+      function initCustomScrollbars() {
+        const targets = Array.from(document.querySelectorAll(
+          ".v1-tool-list, .v1-content, .v1-ai-threadlist, .v1-ai-chat, .v1-console-body, .v1-console-pane"
+        ));
+
+        const items = targets.map((el) => {
+          el.classList.add("v1-custom-scroll-host");
+
+          const rail = document.createElement("div");
+          rail.className = "v1-faux-scrollbar";
+
+          const thumb = document.createElement("div");
+          thumb.className = "v1-faux-scrollbar-thumb";
+          rail.appendChild(thumb);
+          document.body.appendChild(rail);
+
+          return { el, rail, thumb, dragging: false, dragOffset: 0 };
+        });
+
+        function updateOne(item) {
+          const { el, rail, thumb } = item;
+          const rect = el.getBoundingClientRect();
+          const isVisible = rect.width > 0 && rect.height > 0 && getComputedStyle(el).display !== "none";
+          const scrollable = el.scrollHeight > el.clientHeight + 1;
+
+          if (!isVisible || !scrollable) {
+            rail.style.display = "none";
+            return;
+          }
+
+          const railWidth = 10;
+          const thumbMin = 24;
+          const railHeight = rect.height;
+          const ratio = el.clientHeight / el.scrollHeight;
+          const thumbHeight = Math.max(thumbMin, Math.floor(railHeight * ratio));
+          const maxThumbTop = Math.max(0, railHeight - thumbHeight);
+          const scrollRange = Math.max(1, el.scrollHeight - el.clientHeight);
+          const thumbTop = Math.floor((el.scrollTop / scrollRange) * maxThumbTop);
+
+          rail.style.display = "block";
+          rail.style.top = rect.top + "px";
+          rail.style.left = rect.right - railWidth + "px";
+          rail.style.height = railHeight + "px";
+
+          thumb.style.height = thumbHeight + "px";
+          thumb.style.top = thumbTop + "px";
+        }
+
+        function updateAll() {
+          items.forEach(updateOne);
+        }
+
+        items.forEach((item) => {
+          const { el, rail, thumb } = item;
+
+          el.addEventListener("scroll", () => updateOne(item), { passive: true });
+
+          thumb.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            item.dragging = true;
+            item.dragOffset = event.clientY - thumb.getBoundingClientRect().top;
+            thumb.classList.add("dragging");
+            thumb.setPointerCapture(event.pointerId);
+          });
+
+          thumb.addEventListener("pointermove", (event) => {
+            if (!item.dragging) return;
+            const railRect = rail.getBoundingClientRect();
+            const thumbRect = thumb.getBoundingClientRect();
+            const nextTop = Math.max(0, Math.min(railRect.height - thumbRect.height, event.clientY - railRect.top - item.dragOffset));
+            const ratio = nextTop / Math.max(1, railRect.height - thumbRect.height);
+            el.scrollTop = ratio * Math.max(1, el.scrollHeight - el.clientHeight);
+            updateOne(item);
+          });
+
+          thumb.addEventListener("pointerup", (event) => {
+            item.dragging = false;
+            thumb.classList.remove("dragging");
+            thumb.releasePointerCapture(event.pointerId);
+          });
+
+          thumb.addEventListener("pointercancel", () => {
+            item.dragging = false;
+            thumb.classList.remove("dragging");
+          });
+
+          rail.addEventListener("pointerdown", (event) => {
+            if (event.target === thumb) return;
+            const railRect = rail.getBoundingClientRect();
+            const thumbRect = thumb.getBoundingClientRect();
+            const clickCenter = event.clientY - railRect.top - thumbRect.height / 2;
+            const nextTop = Math.max(0, Math.min(railRect.height - thumbRect.height, clickCenter));
+            const ratio = nextTop / Math.max(1, railRect.height - thumbRect.height);
+            el.scrollTop = ratio * Math.max(1, el.scrollHeight - el.clientHeight);
+            updateOne(item);
+          });
+        });
+
+        const ro = new ResizeObserver(updateAll);
+        items.forEach((item) => ro.observe(item.el));
+
+        window.addEventListener("resize", updateAll);
+        document.addEventListener("scroll", updateAll, true);
+
+        refreshCustomScrollbars = updateAll;
+        updateAll();
+      }
+
+      setTooltips();
+      initMenuBar();
+      initMenuActions();
+      initResizableLayout();
+      initCustomScrollbars();
+      refreshActiveUI();
+
+      document.addEventListener("click", () => {
+        requestAnimationFrame(() => {
+          refreshCustomScrollbars();
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
