@@ -1633,12 +1633,18 @@
   </div>
   <div class="globe-toolbar">
     <div class="flex-spacer"></div>
+    <button class="btn95" id="btnGlobeCameraMode" title="Camera view — show only cameras">📹</button>
     <label class="globe-rotate-label" id="globeAutoRotateWrap">
       <input type="checkbox" id="globeAutoRotate" checked/> <span data-i18n="globeAutoRotate">Auto-rotate</span>
     </label>
   </div>
   <canvas id="globeCanvas" width="680" height="440"></canvas>
   <div id="globeTooltip"></div>
+  <div id="globeCamPreview" class="globe-cam-preview">
+    <div class="cam-preview-title" id="globeCamPreviewTitle">📹</div>
+    <img id="globeCamPreviewImg" src="" alt="Camera preview" />
+    <div class="cam-preview-hint">Click to open</div>
+  </div>
   <div class="globe-statusbar">
     <div class="globe-panel" id="globeStatusText" data-i18n="globeStatusDefault">Drag to rotate · Click country to scan · Click dot to preview</div>
   </div>

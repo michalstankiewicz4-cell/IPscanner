@@ -8,10 +8,52 @@
   border-right: 2px solid #808080; border-bottom: 2px solid #808080;
   box-shadow: 2px 2px 4px rgba(0,0,0,.5);
   z-index: 700;
-  overflow: hidden;
 }
 #globeCanvas { display: block; width: 100%; background: #0a1628; cursor: grab; }
 #globeCanvas:active { cursor: grabbing; }
+
+/* Camera mode button active state */
+.globe-toolbar .btn95.active {
+  border-top-color: #808080;
+  border-left-color: #808080;
+  border-right-color: #fff;
+  border-bottom-color: #fff;
+  background: #b0b0b0;
+}
+
+/* Camera preview popup */
+.globe-cam-preview {
+  display: none;
+  position: absolute;
+  background: rgba(10, 22, 40, 0.96);
+  border: 1px solid #4a7abf;
+  border-radius: 3px;
+  padding: 5px 6px;
+  pointer-events: none;
+  z-index: 20;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+  min-width: 162px;
+}
+.globe-cam-preview.visible { display: block; }
+.cam-preview-title {
+  color: #d8e7ff;
+  font-size: 10px;
+  padding: 0 0 4px;
+}
+.globe-cam-preview img {
+  width: 150px;
+  height: 100px;
+  object-fit: cover;
+  background: #0a1628;
+  display: block;
+  border: 1px solid #2a3a5a;
+}
+.cam-preview-hint {
+  color: #8fb3ff;
+  font-size: 9px;
+  padding-top: 3px;
+  text-align: center;
+}
 
 /* ── Topology window ── */
 #topoWin {

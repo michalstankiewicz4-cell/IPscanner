@@ -16,6 +16,8 @@ let globeCountries = null, globeBorders = null, globeLand = null;
 let globeWidth = 680, globeHeight = 440;
 let globeMapDataReady = false;
 let autoRotateOn = true;
+let globeCameraMode = false;
+let globeCameraHitTargets = [];
 let rafId = null;
 let isDragging = false, lastDragX = 0, lastDragY = 0;
 let wasDragged = false;
@@ -524,6 +526,7 @@ function drawGlobe() {
   }
 
   // IP dots
+  globeCameraHitTargets = [];
   Object.entries(ipGeoCoords).forEach(([ip, geo]) => {
     if (ip === selfIp) return;
     if (!isActiveHostForGlobe(ip)) return;
@@ -533,19 +536,28 @@ function drawGlobe() {
     const angle = d3.geoDistance([geo.lon, geo.lat], proj.invert([globeWidth/2, globeHeight/2]));
     if (angle > Math.PI/2) return; // behind globe
 
-    // Glow
-    const glow = ctx.createRadialGradient(x,y,0,x,y,10);
-    glow.addColorStop(0,'rgba(255,80,80,0.8)');
-    glow.addColorStop(1,'rgba(255,80,80,0)');
-    ctx.beginPath(); ctx.arc(x,y,10,0,2*Math.PI);
-    ctx.fillStyle = glow; ctx.fill();
+    if (globeCameraMode) {
+      if (!isCameraHost(ip)) return;
+      ctx.font = '20px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('\uD83D\uDCF9', x, y);
+      globeCameraHitTargets.push({ ip, x, y });
+    } else {
+      // Glow
+      const glow = ctx.createRadialGradient(x,y,0,x,y,10);
+      glow.addColorStop(0,'rgba(255,80,80,0.8)');
+      glow.addColorStop(1,'rgba(255,80,80,0)');
+      ctx.beginPath(); ctx.arc(x,y,10,0,2*Math.PI);
+      ctx.fillStyle = glow; ctx.fill();
 
-    // Dot
-    ctx.beginPath(); ctx.arc(x,y,4,0,2*Math.PI);
-    ctx.fillStyle   = '#ff5050';
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth   = 1;
-    ctx.fill(); ctx.stroke();
+      // Dot
+      ctx.beginPath(); ctx.arc(x,y,4,0,2*Math.PI);
+      ctx.fillStyle   = '#ff5050';
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth   = 1;
+      ctx.fill(); ctx.stroke();
+    }
   });
 
   if (selfProjected) {
@@ -588,6 +600,24 @@ function hexToRgba(hex, alpha) {
   const g = (value >> 8) & 255;
   const b = value & 255;
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function isCameraHost(ip) {
+  const ports = foundHostsMap?.[ip];
+  if (!Array.isArray(ports)) return false;
+  return ports.some(p => [554, 8081, 9000, 37777, 34567].includes(p));
+}
+
+function getCameraPreviewUrl(ip) {
+  const ports = foundHostsMap?.[ip] || [];
+  for (const p of [8081, 8080, 80, 9000, 8000, 443]) {
+    if (ports.includes(p)) {
+      const proto = (p === 443) ? 'https' : 'http';
+      return `${proto}://${ip}:${p}/`;
+    }
+  }
+  const p = ports[0] || 80;
+  return `http://${ip}:${p}/`;
 }
 
 function isPointVisibleOnGlobe(proj, lon, lat) {
@@ -1145,15 +1175,43 @@ function setupGlobeEvents(canvas) {
 
       const proj = getProjection();
       const found = pickCountryAt(mx, my, proj);
-      // Check IP dots
+      // Check IP dots / camera hit targets
       let foundIp = null;
-      Object.entries(ipGeoCoords).forEach(([ip, geo]) => {
-        if (!isActiveHostForGlobe(ip)) return;
-        const [x,y] = proj([geo.lon, geo.lat]);
-        if (Math.hypot(mx-x, my-y) < 8) foundIp = ip;
-      });
+      if (globeCameraMode) {
+        for (const t of globeCameraHitTargets) {
+          if (Math.hypot(mx - t.x, my - t.y) < 14) { foundIp = t.ip; break; }
+        }
+      } else {
+        Object.entries(ipGeoCoords).forEach(([ip, geo]) => {
+          if (!isActiveHostForGlobe(ip)) return;
+          const [x,y] = proj([geo.lon, geo.lat]);
+          if (Math.hypot(mx-x, my-y) < 8) foundIp = ip;
+        });
+      }
 
-      if (foundIp) {
+      const camPreview = document.getElementById('globeCamPreview');
+      if (globeCameraMode && foundIp) {
+        tooltip.classList.remove('visible');
+        camPreview.classList.add('visible');
+        const wr = win.getBoundingClientRect();
+        camPreview.style.left = (e.clientX - wr.left + 12) + 'px';
+        camPreview.style.top  = (e.clientY - wr.top  + 12) + 'px';
+        document.getElementById('globeCamPreviewTitle').textContent = '\uD83D\uDCF9 ' + foundIp;
+        const previewImg = document.getElementById('globeCamPreviewImg');
+        const url = getCameraPreviewUrl(foundIp);
+        if (previewImg.dataset.src !== url) {
+          previewImg.dataset.src = url;
+          previewImg.src = url;
+        }
+        canvas.style.cursor = 'pointer';
+        hoveredCountryName = null;
+      } else if (globeCameraMode) {
+        if (camPreview) camPreview.classList.remove('visible');
+        tooltip.classList.remove('visible');
+        hoveredCountryName = null;
+        canvas.style.cursor = isDragging ? 'grabbing' : 'grab';
+      } else if (foundIp) {
+        if (camPreview) camPreview.classList.remove('visible');
         tooltip.classList.add('visible');
         positionTooltip(e.clientX, e.clientY);
         const ports = foundHostsMap[foundIp]?.join(', ') || '';
@@ -1161,6 +1219,7 @@ function setupGlobeEvents(canvas) {
         canvas.style.cursor = 'pointer';
         hoveredCountryName = null;
       } else if (found) {
+        if (camPreview) camPreview.classList.remove('visible');
         tooltip.classList.add('visible');
         positionTooltip(e.clientX, e.clientY);
         const inDb = COUNTRY_DB.find(c=>c.name===found);
@@ -1168,6 +1227,7 @@ function setupGlobeEvents(canvas) {
         canvas.style.cursor = 'pointer';
         hoveredCountryName = found;
       } else {
+        if (camPreview) camPreview.classList.remove('visible');
         tooltip.classList.remove('visible');
         hoveredCountryName = null;
         canvas.style.cursor = isDragging ? 'grabbing' : 'grab';
@@ -1180,6 +1240,8 @@ function setupGlobeEvents(canvas) {
   });
   canvas.addEventListener('mouseleave', () => {
     tooltip.classList.remove('visible');
+    const camPreview = document.getElementById('globeCamPreview');
+    if (camPreview) camPreview.classList.remove('visible');
     hoveredCountryName = null;
   });
 
@@ -1200,6 +1262,18 @@ function setupGlobeEvents(canvas) {
 
     const proj = getProjection();
 
+    // In camera mode, click on camera icon to open preview
+    if (globeCameraMode) {
+      let clickedCam = null;
+      for (const t of globeCameraHitTargets) {
+        if (Math.hypot(mx - t.x, my - t.y) < 14) { clickedCam = t.ip; break; }
+      }
+      if (clickedCam) {
+        openPreview(getCameraPreviewUrl(clickedCam));
+        document.getElementById('globeWin').style.zIndex = 699;
+      }
+      return; // in camera mode, don't check countries
+    }
     // Check IP dots first
     let clickedIp = null;
     Object.entries(ipGeoCoords).forEach(([ip, geo]) => {
@@ -1284,6 +1358,18 @@ function updateGlobeDots() {
 
 // ── Globe button ──
 document.getElementById('btnGlobe').addEventListener('click', openGlobe);
+document.getElementById('btnGlobeCameraMode').addEventListener('click', function() {
+  globeCameraMode = !globeCameraMode;
+  this.classList.toggle('active', globeCameraMode);
+  if (globeCameraMode) {
+    autoRotateOn = false;
+    const cb = document.getElementById('globeAutoRotate');
+    if (cb) cb.checked = false;
+  }
+  const preview = document.getElementById('globeCamPreview');
+  if (preview) preview.classList.remove('visible');
+  drawGlobe();
+});
 document.getElementById('btnTopologyToolbar').addEventListener('click', openTopology);
 document.getElementById('btnAutoTraceTopology').addEventListener('click', () => {
   const selectedIp = window.previewContext?.selectedRowEl?.dataset?.ip || '';
