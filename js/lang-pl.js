@@ -69,7 +69,7 @@ window.LANG_PL = {
   scanResultsExported:(n)=>`Wyeksportowano ${n} wynik${n === 1 ? '' : (n < 5 ? 'i' : 'ów')} skanowania.`,
   scanResultsImported:(n)=>`Zaimportowano ${n} wynik${n === 1 ? '' : (n < 5 ? 'i' : 'ów')} skanowania.`,
   scanResultsImportFailed:(msg)=>`Nie udało się zaimportować wyników: ${msg}`,
-  ctxCopyIp:'Kopiuj adres IP', ctxCopyPorts:'Kopiuj porty', ctxHostname:'Hostname (reverse DNS)', ctxScanAllPorts:'Skanuj to IP (wszystkie porty)',
+  ctxCopyIp:'Kopiuj adres IP', ctxCopyPorts:'Kopiuj porty', ctxHostname:'Hostname (reverse DNS)', ctxKnock:'Port Knock', ctxScanAllPorts:'Skanuj to IP (wszystkie porty)',
   ctxOpenBrowser:'Otwórz w przeglądarce', ctxPreview:'Podgląd tutaj',
   labelPreset:'Preset:', labelPorts2:'Porty:',
   presetAdd:'+ Dodaj', presetDel:'✕ Usuń', presetSetDefault:'⭐ Ustaw jako domyślny',

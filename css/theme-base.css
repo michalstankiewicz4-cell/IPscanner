@@ -949,6 +949,8 @@ body.dragging             { cursor: move !important; }
   font-size: 11px; cursor: default;
 }
 .ctx-item:hover { background: #000080; color: #fff; }
+.ctx-item.ctx-disabled { color: #808080; pointer-events: none; }
+.ctx-item.ctx-disabled:hover { background: transparent; color: #808080; }
 .ctx-sep { height: 1px; background: #808080; margin: 2px 0; box-shadow: 0 1px 0 #fff; }
 
 .country-item {
