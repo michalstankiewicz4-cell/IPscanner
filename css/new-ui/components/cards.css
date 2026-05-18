@@ -1,8 +1,12 @@
 .v1-card {
   border: 0;
-  background: #232325;
+  background: var(--bg-elev);
   box-shadow: none;
   padding: 12px;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  overflow: hidden;
 }
 
 .v1-card h3 {
@@ -39,7 +43,7 @@
   color: var(--txt-dim);
   font-size: 12px;
   line-height: 1.5;
-  background: #1f1f21;
+  background: var(--bg-elev);
 }
 
 .tool-detail h4 {
@@ -52,6 +56,35 @@
 .tool-detail ul {
   margin: 6px 0 0;
   padding-left: 18px;
+}
+
+.v1-versions-list {
+  display: grid;
+  gap: 10px;
+}
+
+.v1-version-entry {
+  border: 1px solid #32343a;
+  background: var(--bg-elev);
+  padding: 10px;
+}
+
+.v1-version-entry h4 {
+  margin: 0 0 6px;
+  font-family: var(--font-head);
+  font-size: 14px;
+  color: #d9e3ff;
+}
+
+.v1-version-entry ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--txt-dim);
+}
+
+.v1-version-entry li {
+  margin: 3px 0;
+  line-height: 1.4;
 }
 
 .v1-actions {

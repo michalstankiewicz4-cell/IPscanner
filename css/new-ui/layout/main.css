@@ -161,10 +161,22 @@
   min-width: 0;
   display: grid;
   grid-template-rows: 38px minmax(120px, 1fr) 6px 126px;
-  background: var(--bg);
+  background: var(--bg-elev);
   min-height: 0;
   overflow: hidden;
   position: relative;
+}
+
+.v1-editor.console-collapsed {
+  grid-template-rows: 38px 1fr 0 34px;
+}
+
+.v1-editor.console-collapsed .v1-resizer-h {
+  display: none;
+}
+
+.v1-editor.console-collapsed .v1-console-body {
+  display: none;
 }
 
 .v1-resizer-h {
@@ -182,18 +194,64 @@
 .v1-tabs {
   display: flex;
   border-bottom: 0;
-  background: #181818;
+  background: var(--bg-elev);
 }
 
 .v1-tab {
   border: 0;
   border-right: 0;
-  background: transparent;
+  background: var(--bg-elev);
   color: var(--txt-dim);
-  padding: 9px 12px;
+  padding: 7px 10px;
   font-size: 12px;
   cursor: pointer;
   font-family: var(--font-ui);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 240px;
+}
+
+.v1-tab-icon {
+  width: 14px;
+  text-align: center;
+  opacity: 0.95;
+  flex: 0 0 auto;
+}
+
+.v1-tab-title {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.v1-tab-close {
+  display: none;
+  margin-left: 2px;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  color: #c6c9d0;
+  font-size: 12px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.v1-tab-close:hover {
+  border-color: #4a4f58;
+  background: #2c3139;
+  color: #ffffff;
+}
+
+.v1-tab.active .v1-tab-close {
+  display: inline-flex;
+}
+
+.v1-tab.tab-closed {
+  display: none;
 }
 
 .v1-tab.active {
@@ -208,14 +266,43 @@
 }
 
 .v1-content {
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 14px;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  grid-template-columns: minmax(0, 1fr);
-  align-content: start;
   min-width: 0;
   min-height: 0;
+  height: 100%;
+  position: relative;
+  background: var(--bg-elev);
+}
+
+.v1-empty-state {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 14px;
+  bottom: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.v1-empty-logo {
+  width: min(320px, 62vw);
+  max-width: 100%;
+  height: auto;
+  opacity: 0.2;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.35));
+}
+
+#v1MainCard {
+  position: relative;
+  z-index: 1;
 }
 
 .v1-rightbar {
