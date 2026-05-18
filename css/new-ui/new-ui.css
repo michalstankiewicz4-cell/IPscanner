@@ -1,0 +1,9 @@
+@import url("./skins/default.css");
+@import url("./base/tokens.css");
+@import url("./base/scrollbars.css");
+@import url("./components/menubar.css");
+@import url("./layout/main.css");
+@import url("./components/cards.css");
+@import url("./components/assistant.css");
+@import url("./components/console.css");
+@import url("./components/statusbar.css");

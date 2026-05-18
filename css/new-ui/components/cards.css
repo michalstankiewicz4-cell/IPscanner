@@ -1,0 +1,77 @@
+.v1-card {
+  border: 0;
+  background: #232325;
+  box-shadow: none;
+  padding: 12px;
+}
+
+.v1-card h3 {
+  margin: 0 0 8px;
+  font-family: var(--font-head);
+  font-size: 16px;
+}
+
+.v1-meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.v1-pill {
+  border: 0;
+  padding: 7px;
+  font-size: 11px;
+  color: var(--txt-dim);
+  background: #2b2b2e;
+}
+
+.v1-pill b {
+  display: block;
+  margin-top: 2px;
+  color: var(--txt);
+  font-size: 13px;
+}
+
+.tool-detail {
+  border: 0;
+  padding: 10px;
+  color: var(--txt-dim);
+  font-size: 12px;
+  line-height: 1.5;
+  background: #1f1f21;
+}
+
+.tool-detail h4 {
+  margin: 0 0 6px;
+  color: var(--txt);
+  font-size: 14px;
+  font-family: var(--font-head);
+}
+
+.tool-detail ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.v1-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.v1-actions button {
+  border: 0;
+  background: #2f2f33;
+  color: var(--txt);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  padding: 8px 11px;
+  cursor: pointer;
+}
+
+.v1-actions button:hover {
+  background: color-mix(in oklab, var(--bg-soft) 70%, var(--brand) 30%);
+  color: #ffffff;
+}

@@ -1,0 +1,117 @@
+.v1-ai-panel {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 10px;
+  min-height: 0;
+  height: 100%;
+}
+
+.v1-ai-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.v1-ai-badge {
+  border: 0;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--txt-dim);
+  background: #2f2f33;
+  font-family: var(--font-mono);
+}
+
+.v1-ai-threadlist {
+  border: 0;
+  background: #1f1f21;
+  padding: 6px;
+  display: grid;
+  gap: 6px;
+  overflow: auto;
+  max-height: 140px;
+}
+
+.v1-ai-thread {
+  border: 0;
+  background: transparent;
+  color: var(--txt-dim);
+  text-align: left;
+  font-size: 12px;
+  font-family: var(--font-ui);
+  padding: 7px 8px;
+  cursor: pointer;
+}
+
+.v1-ai-thread.active {
+  background: color-mix(in oklab, var(--bg-soft) 74%, var(--brand) 26%);
+  color: var(--txt);
+}
+
+.v1-ai-thread:hover:not(.active) {
+  background: #2a2d31;
+  color: #ffffff;
+}
+
+.v1-ai-chat {
+  border: 0;
+  background: #1a1a1c;
+  padding: 8px;
+  overflow: auto;
+  min-height: 0;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.v1-ai-msg {
+  border: 0;
+  padding: 7px 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #d7d9de;
+  background: #202024;
+}
+
+.v1-ai-msg.user {
+  background: #212b3b;
+  color: #d8e6ff;
+}
+
+.v1-ai-msg.assistant {
+  background: #1a2a27;
+  color: #cff3ec;
+}
+
+.v1-ai-input {
+  border: 0;
+  background: #232326;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 8px;
+  align-items: center;
+}
+
+.v1-ai-input span {
+  color: var(--txt-dim);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v1-ai-input button {
+  border: 0;
+  background: color-mix(in oklab, var(--brand) 20%, var(--bg-soft));
+  color: var(--txt);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+}
+
+.v1-ai-input button:hover {
+  background: color-mix(in oklab, var(--brand) 34%, var(--bg-soft));
+  color: #ffffff;
+}

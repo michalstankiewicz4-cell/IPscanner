@@ -1,0 +1,50 @@
+:root {
+  --bg: #1e1e1e;
+  --bg-elev: #252526;
+  --bg-soft: #333337;
+  --line: #3c3c3c;
+  --txt: #d4d4d4;
+  --txt-dim: #9da0a6;
+  --brand: #3794ff;
+  --activity: #007acc;
+  --font-ui: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-head: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  font-family: var(--font-ui);
+  color: var(--txt);
+  background: linear-gradient(165deg, #1e1e1e 0%, #171717 100%);
+}
+
+.v1-shell {
+  display: grid;
+  grid-template-rows: 30px minmax(0, 1fr) 24px;
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Flat shell: disable rounding globally in this UI */
+.v1-shell,
+.v1-shell * {
+  border-radius: 0 !important;
+}
+
+.v1-shell button,
+.v1-shell [data-tool],
+.v1-shell [data-menu-action],
+.v1-shell [data-v1-console-tab],
+.v1-shell [data-panel-toggle] {
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}

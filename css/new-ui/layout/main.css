@@ -1,0 +1,258 @@
+.v1-main {
+  display: grid;
+  grid-template-columns: 48px 260px 6px minmax(0, 1fr) 6px 320px;
+  min-height: 0;
+  overflow: hidden;
+  height: 100%;
+}
+
+.v1-resizer-v {
+  background: #252526;
+  border-left: 0;
+  border-right: 0;
+  cursor: col-resize;
+}
+
+.v1-resizer-v:hover,
+.v1-resizer-v.dragging {
+  background: #2f2f31;
+}
+
+.v1-activity {
+  border-right: 0;
+  background: #191919;
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.v1-activity-spacer {
+  flex: 1 1 auto;
+}
+
+.v1-activity button {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--txt-dim);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.v1-activity button.active {
+  background: rgba(55, 148, 255, 0.28);
+  border-color: rgba(55, 148, 255, 0.7);
+  color: #fff;
+}
+
+.v1-activity button:hover:not(.active) {
+  background: #2a2d31;
+  border-color: #3f3f46;
+  color: #ffffff;
+}
+
+.v1-sidebar {
+  border-right: 0;
+  background: var(--bg-elev);
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 34px 1fr;
+}
+
+.v1-side-head {
+  border-bottom: 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--txt-dim);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 6px 0 10px;
+}
+
+.v1-head-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v1-panel-toggle {
+  border: 0;
+  background: transparent;
+  color: #aeb2b9;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: var(--font-ui);
+  line-height: 1;
+  padding: 0;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.v1-panel-toggle:hover {
+  background: #2f3338;
+  color: #ffffff;
+}
+
+.v1-tool-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  display: grid;
+  gap: 5px;
+}
+
+.v1-tool-list li {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--txt-dim);
+  cursor: pointer;
+  background: transparent;
+}
+
+.v1-tool-list li.active {
+  color: var(--txt);
+  border-color: var(--line);
+  background: color-mix(in oklab, var(--bg-soft) 82%, var(--brand) 18%);
+}
+
+.v1-tool-list li:hover:not(.active) {
+  color: #ffffff;
+  border-color: #3f3f46;
+  background: #2a2d31;
+}
+
+.v1-sidebar.collapsed,
+.v1-rightbar.collapsed {
+  grid-template-rows: 34px 0;
+  overflow: hidden;
+}
+
+.v1-sidebar.collapsed .v1-tool-list,
+.v1-rightbar.collapsed .v1-right-content {
+  display: none;
+}
+
+.v1-sidebar.collapsed .v1-side-head,
+.v1-rightbar.collapsed .v1-side-head {
+  justify-content: center;
+  padding: 0;
+}
+
+.v1-sidebar.collapsed .v1-head-title,
+.v1-rightbar.collapsed .v1-head-title {
+  display: none;
+}
+
+.v1-editor {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: 38px minmax(120px, 1fr) 6px 126px;
+  background: var(--bg);
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.v1-resizer-h {
+  background: #252526;
+  border-top: 0;
+  border-bottom: 0;
+  cursor: row-resize;
+}
+
+.v1-resizer-h:hover,
+.v1-resizer-h.dragging {
+  background: #2f2f31;
+}
+
+.v1-tabs {
+  display: flex;
+  border-bottom: 0;
+  background: #181818;
+}
+
+.v1-tab {
+  border: 0;
+  border-right: 0;
+  background: transparent;
+  color: var(--txt-dim);
+  padding: 9px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+
+.v1-tab.active {
+  color: var(--txt);
+  background: var(--bg-elev);
+  box-shadow: inset 0 2px 0 var(--brand);
+}
+
+.v1-tab:hover:not(.active) {
+  color: #ffffff;
+  background: #222326;
+}
+
+.v1-content {
+  overflow: auto;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  min-width: 0;
+  min-height: 0;
+}
+
+.v1-rightbar {
+  border-left: 0;
+  background: var(--bg-elev);
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 34px 1fr;
+  overflow: hidden;
+}
+
+.v1-right-content {
+  padding: 10px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 1250px) {
+  .v1-main {
+    grid-template-columns: 48px 1fr;
+  }
+
+  .v1-sidebar {
+    display: none;
+  }
+
+  .v1-rightbar,
+  .v1-resizer-v,
+  .v1-resizer-h {
+    display: none;
+  }
+
+  .v1-content {
+    grid-template-columns: 1fr;
+  }
+
+  .v1-editor {
+    grid-template-rows: 38px minmax(0, 1fr) 126px;
+  }
+}
