@@ -35,24 +35,26 @@
       });
     }
 
+    function updateEmptyState() {
+      var tabs = Array.from(document.querySelectorAll(".v1-tab"));
+      var hasOpenTabs = tabs.some(function (t) { return !t.classList.contains("tab-closed"); });
+      var emptyState = document.getElementById("v1NoTabsState");
+      var mainCard = document.getElementById("v1MainCard");
+
+      if (emptyState) {
+        if (hasOpenTabs) emptyState.setAttribute("hidden", "hidden");
+        else emptyState.removeAttribute("hidden");
+      }
+
+      if (mainCard) {
+        if (hasOpenTabs) mainCard.removeAttribute("hidden");
+        else mainCard.setAttribute("hidden", "hidden");
+      }
+    }
+
     function initWorkbenchTabs() {
       var tabs = Array.from(document.querySelectorAll(".v1-tab"));
       if (!tabs.length) return;
-
-      function updateEmptyState() {
-        var hasOpenTabs = tabs.some(function (t) { return !t.classList.contains("tab-closed"); });
-        var emptyState = document.getElementById("v1NoTabsState");
-        var mainCard = document.getElementById("v1MainCard");
-
-        if (emptyState) {
-          emptyState.removeAttribute("hidden");
-        }
-
-        if (mainCard) {
-          if (hasOpenTabs) mainCard.removeAttribute("hidden");
-          else mainCard.setAttribute("hidden", "hidden");
-        }
-      }
 
       function closeTab(tabEl) {
         if (!tabEl) return;
@@ -110,8 +112,58 @@
       return "<div class=\"v1-versions-list\">" + entriesHtml + "</div>";
     }
 
+    function renderResultsManage() {
+      return [
+        "<div class=\"v1-results-actions\">",
+        "<button class=\"v1-res-btn\">📤 Export JSON</button>",
+        "<button class=\"v1-res-btn\">📥 Import JSON</button>",
+        "<button class=\"v1-res-btn v1-res-btn--danger\">🗑 Wyczyść wyniki</button>",
+        "</div>",
+        "<h4 style=\"margin:14px 0 8px\">Ostatnie operacje</h4>",
+        "<table class=\"v1-results-table\">",
+        "<thead><tr><th>Czas</th><th>Operacja</th><th>Plik</th></tr></thead>",
+        "<tbody><tr><td colspan=\"3\" class=\"v1-results-empty\">Brak zapisanych operacji.</td></tr></tbody>",
+        "</table>"
+      ].join("");
+    }
+
+    function renderResultsIp() {
+      return [
+        "<div class=\"v1-results-meta-row\">",
+        "<span>Hosty: <b id=\"resIpHostCount\">–</b></span>",
+        "<span>Otwarte porty: <b id=\"resIpPortCount\">–</b></span>",
+        "</div>",
+        "<table class=\"v1-results-table\">",
+        "<thead><tr><th>IP</th><th>Nazwa hosta</th><th>Otwarte porty</th><th>Status</th></tr></thead>",
+        "<tbody><tr><td colspan=\"4\" class=\"v1-results-empty\">Brak wyników skanowania IP.</td></tr></tbody>",
+        "</table>"
+      ].join("");
+    }
+
+    function renderResultsWifi() {
+      return [
+        "<table class=\"v1-results-table\">",
+        "<thead><tr><th>SSID</th><th>BSSID</th><th>Sygnał (dBm)</th><th>Kanał</th></tr></thead>",
+        "<tbody><tr><td colspan=\"4\" class=\"v1-results-empty\">Brak wykrytych sieci WiFi.</td></tr></tbody>",
+        "</table>"
+      ].join("");
+    }
+
+    function renderResultsBt() {
+      return [
+        "<table class=\"v1-results-table\">",
+        "<thead><tr><th>Nazwa</th><th>Adres</th><th>RSSI</th><th>Typ</th></tr></thead>",
+        "<tbody><tr><td colspan=\"4\" class=\"v1-results-empty\">Brak wykrytych urządzeń Bluetooth.</td></tr></tbody>",
+        "</table>"
+      ].join("");
+    }
+
     var toolRenderers = {
       versions: renderVersionsTool,
+      "results-manage": renderResultsManage,
+      "results-ip": renderResultsIp,
+      "results-wifi": renderResultsWifi,
+      "results-bt": renderResultsBt,
     };
 
     function buildDetailHtml(tool) {
@@ -120,6 +172,8 @@
     }
 
     function refreshActiveUI() {
+      updateEmptyState();
+
       document.querySelectorAll("[data-tool]").forEach(function (el) {
         var isActive = el.getAttribute("data-tool") === activeTool;
         el.classList.toggle("active", isActive);
@@ -175,6 +229,7 @@
       activeTool = tool;
       if (store && store.setState) store.setState({ activeTool: tool });
       refreshActiveUI();
+      updateEmptyState();
     }
 
     function getActiveTool() {
