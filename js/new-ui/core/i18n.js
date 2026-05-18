@@ -9,6 +9,24 @@
       menuTools: "Tools",
       menuHelp: "Help",
       explorer: "Explorer",
+      resultsSidebarTitle: "Results",
+      resultsBrowser: "Results Browser",
+      resultsManage: "Manage Results",
+      resultsIp: "IP Scan Results",
+      resultsWifi: "WiFi Devices",
+      resultsBt: "Bluetooth Devices",
+      tabResultsManage: "Manage",
+      tabResultsIp: "IP Results",
+      tabResultsWifi: "WiFi",
+      tabResultsBt: "Bluetooth",
+      toolResultsManageTitle: "Manage Results",
+      toolResultsManageText: "Export, import, and clear saved scan results.",
+      toolResultsIpTitle: "IP Scan Results",
+      toolResultsIpText: "Table of discovered hosts, open ports, and enrichment data.",
+      toolResultsWifiTitle: "WiFi Devices",
+      toolResultsWifiText: "List of discovered WiFi networks with signal details.",
+      toolResultsBtTitle: "Bluetooth Devices",
+      toolResultsBtText: "List of discovered BLE and Classic Bluetooth devices.",
       assistant: "Assistant",
       toolRoute: "Tool route",
       active: "active",
@@ -56,6 +74,24 @@
       menuTools: "Narzędzia",
       menuHelp: "Pomoc",
       explorer: "Eksplorator",
+      resultsSidebarTitle: "Wyniki",
+      resultsBrowser: "Przeglądanie wyników",
+      resultsManage: "Zarządzanie wynikami",
+      resultsIp: "Wyniki IP Scan",
+      resultsWifi: "Urządzenia WiFi",
+      resultsBt: "Urządzenia Bluetooth",
+      tabResultsManage: "Zarządzanie",
+      tabResultsIp: "Wyniki IP",
+      tabResultsWifi: "WiFi",
+      tabResultsBt: "Bluetooth",
+      toolResultsManageTitle: "Zarządzanie wynikami",
+      toolResultsManageText: "Eksport, import i czyszczenie zapisanych wyników skanowania.",
+      toolResultsIpTitle: "Wyniki IP Scan",
+      toolResultsIpText: "Tabela wykrytych hostów, portów i wzbogaconych danych.",
+      toolResultsWifiTitle: "Urządzenia WiFi",
+      toolResultsWifiText: "Lista wykrytych sieci WiFi z parametrami sygnałów.",
+      toolResultsBtTitle: "Urządzenia Bluetooth",
+      toolResultsBtText: "Lista wykrytych urządzeń BLE i Classic Bluetooth.",
       assistant: "Asystent",
       toolRoute: "Trasa narzędzia",
       active: "aktywne",
@@ -157,8 +193,8 @@
   }
 
   function getCurrentLang() {
-    var raw = localStorage.getItem(LANG_KEY) || "pl";
-    return dictionaries[raw] ? raw : "pl";
+    var raw = localStorage.getItem(LANG_KEY) || "en";
+    return dictionaries[raw] ? raw : "en";
   }
 
   function addLanguage(code, dictionary, persist) {

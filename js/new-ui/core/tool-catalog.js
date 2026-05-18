@@ -94,6 +94,26 @@
       title: "Versions",
       text: "Historia zmian i wydan aplikacji.",
       points: ["Release history", "Major updates", "Quality fixes"]
+    },
+    "results-manage": {
+      title: "Manage Results",
+      text: "Export, import, and clear saved scan results.",
+      points: ["Export JSON", "Import JSON", "Clear results"]
+    },
+    "results-ip": {
+      title: "IP Scan Results",
+      text: "Table of discovered hosts, open ports, and enrichment data.",
+      points: ["IP + hostname", "Open ports", "Enrichment data"]
+    },
+    "results-wifi": {
+      title: "WiFi Devices",
+      text: "List of discovered WiFi networks with signal details.",
+      points: ["SSID + BSSID", "Signal strength", "Channel info"]
+    },
+    "results-bt": {
+      title: "Bluetooth Devices",
+      text: "List of discovered BLE and Classic Bluetooth devices.",
+      points: ["BLE + Classic", "RSSI values", "Device address"]
     }
   };
 

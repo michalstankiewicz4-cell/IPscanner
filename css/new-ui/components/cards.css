@@ -108,3 +108,75 @@
   background: color-mix(in oklab, var(--bg-soft) 70%, var(--brand) 30%);
   color: #ffffff;
 }
+
+/* Results views */
+.v1-results-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.v1-res-btn {
+  border: 0;
+  background: #2f2f33;
+  color: var(--txt);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.v1-res-btn:hover {
+  background: color-mix(in oklab, var(--bg-soft) 70%, var(--brand) 30%);
+  color: #ffffff;
+}
+
+.v1-res-btn--danger:hover {
+  background: color-mix(in oklab, var(--bg-soft) 60%, #c0392b 40%);
+}
+
+.v1-results-meta-row {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--txt-dim);
+  margin-bottom: 10px;
+}
+
+.v1-results-meta-row b {
+  color: var(--txt);
+}
+
+.v1-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  color: var(--txt-dim);
+}
+
+.v1-results-table th {
+  text-align: left;
+  padding: 6px 10px;
+  background: #1f1f23;
+  color: var(--txt);
+  font-weight: 600;
+  border-bottom: 1px solid var(--line);
+}
+
+.v1-results-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #2a2a2e;
+}
+
+.v1-results-table tr:hover td {
+  background: #2a2d31;
+  color: var(--txt);
+}
+
+.v1-results-empty {
+  color: var(--txt-dim);
+  font-style: italic;
+  padding: 16px 10px;
+}

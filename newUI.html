@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -81,7 +81,8 @@
     <main class="v1-main">
       <!-- Left icon bar -->
       <aside class="v1-activity">
-        <button data-tool="scan-runner" class="active">▦</button>
+        <button id="v1ActivityResults" data-activity="results" title="Results Browser" aria-label="Results Browser">📊</button>
+        <button data-activity="explorer" data-tool="scan-runner" class="active">▦</button>
         <button data-tool="topology">🕸</button>
         <button data-tool="globe">🌍</button>
         <button data-tool="sniffer">🔎</button>
@@ -93,9 +94,18 @@
       <!-- Left section -->
       <aside class="v1-sidebar">
         <div class="v1-side-head">
-          <span class="v1-head-title">Explorer</span>
+          <span class="v1-head-title" id="v1SidebarTitle">Explorer</span>
           <button class="v1-panel-toggle" data-panel-toggle="left" title="Hide left section" aria-label="Hide left section">◀</button>
         </div>
+        <div data-sidebar-view="results" hidden>
+          <ul class="v1-tool-list">
+            <li id="v1ResultNavManage" data-result-tab="results-manage" class="v1-result-nav-item">📋 Manage Results</li>
+            <li id="v1ResultNavIp" data-result-tab="results-ip" class="v1-result-nav-item">🖥 IP Scan Results</li>
+            <li id="v1ResultNavWifi" data-result-tab="results-wifi" class="v1-result-nav-item">📶 WiFi Devices</li>
+            <li id="v1ResultNavBt" data-result-tab="results-bt" class="v1-result-nav-item">🔵 Bluetooth Devices</li>
+          </ul>
+        </div>
+        <div data-sidebar-view="explorer">
         <ul class="v1-tool-list">
           <li data-tool="scan-runner" class="active">Dashboard / Scan Runner</li>
           <li data-tool="topology">Topology Map</li>
@@ -115,6 +125,7 @@
           <li data-tool="speed">Speed Test</li>
           <li data-tool="proto">Prototype</li>
         </ul>
+        </div>
       </aside>
 
       <div class="v1-resizer-v" data-resize="left" title="Resize left panel"></div>
@@ -140,6 +151,26 @@
           <button class="v1-tab tab-closed" data-tool="versions" type="button" hidden>
             <span class="v1-tab-icon" aria-hidden="true">📘</span>
             <span class="v1-tab-title">Versions</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="results-manage" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">📋</span>
+            <span class="v1-tab-title" id="v1TabTitleResultsManage">Manage</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="results-ip" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🖥</span>
+            <span class="v1-tab-title" id="v1TabTitleResultsIp">IP Results</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="results-wifi" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">📶</span>
+            <span class="v1-tab-title" id="v1TabTitleResultsWifi">WiFi</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="results-bt" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🔵</span>
+            <span class="v1-tab-title" id="v1TabTitleResultsBt">Bluetooth</span>
             <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
           </button>
         </div>
@@ -301,7 +332,7 @@ macro://stealth-check
       const core = window.NetReconNewUICore || {};
       const i18n = core.i18n && core.i18n.createI18n
         ? core.i18n.createI18n()
-        : { t: function (k) { return k; }, getLang: function () { return document.documentElement.getAttribute("lang") || "pl"; } };
+        : { t: function (k) { return k; }, getLang: function () { return document.documentElement.getAttribute("lang") || "en"; } };
 
       if (core.theme && core.theme.applySkin && core.theme.getCurrentSkin) {
         core.theme.applySkin(core.theme.getCurrentSkin());
@@ -329,7 +360,7 @@ macro://stealth-check
         const optionsTrigger = document.querySelector('[data-menu="options"] .v1-menu-trigger');
         const toolsTrigger = document.querySelector('[data-menu="tools"] .v1-menu-trigger');
         const helpTrigger = document.querySelector('[data-menu="help"] .v1-menu-trigger');
-        const explorerHead = document.querySelector('.v1-sidebar .v1-head-title');
+        const explorerHead = document.getElementById("v1SidebarTitle");
         const assistantHead = document.querySelector('.v1-rightbar .v1-head-title');
         const extTitle = document.getElementById("v1ExtTitle");
         const extManifestLabel = document.getElementById("v1ExtManifestLabel");
@@ -348,6 +379,15 @@ macro://stealth-check
         const langListBtn = document.getElementById("v1LangListBtn");
         const extCloseBtn = document.getElementById("v1ExtCloseBtn");
         const extClose = document.getElementById("v1ExtClose");
+        const activityResultsBtn = document.getElementById("v1ActivityResults");
+        const resultNavManage = document.getElementById("v1ResultNavManage");
+        const resultNavIp = document.getElementById("v1ResultNavIp");
+        const resultNavWifi = document.getElementById("v1ResultNavWifi");
+        const resultNavBt = document.getElementById("v1ResultNavBt");
+        const tabResultsManage = document.getElementById("v1TabTitleResultsManage");
+        const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
+        const tabResultsWifi = document.getElementById("v1TabTitleResultsWifi");
+        const tabResultsBt = document.getElementById("v1TabTitleResultsBt");
 
         if (fileTrigger) fileTrigger.textContent = tr("menuFile");
         if (optionsTrigger) optionsTrigger.textContent = tr("menuOptions");
@@ -372,6 +412,19 @@ macro://stealth-check
         if (langListBtn) langListBtn.textContent = tr("langListBtn");
         if (extCloseBtn) extCloseBtn.textContent = tr("extCloseBtn");
         if (extClose) extClose.setAttribute("aria-label", tr("extCloseBtn"));
+
+        if (activityResultsBtn) {
+          activityResultsBtn.setAttribute("title", tr("resultsBrowser"));
+          activityResultsBtn.setAttribute("aria-label", tr("resultsBrowser"));
+        }
+        if (resultNavManage) resultNavManage.textContent = "📋 " + tr("resultsManage");
+        if (resultNavIp) resultNavIp.textContent = "🖥 " + tr("resultsIp");
+        if (resultNavWifi) resultNavWifi.textContent = "📶 " + tr("resultsWifi");
+        if (resultNavBt) resultNavBt.textContent = "🔵 " + tr("resultsBt");
+        if (tabResultsManage) tabResultsManage.textContent = tr("tabResultsManage");
+        if (tabResultsIp) tabResultsIp.textContent = tr("tabResultsIp");
+        if (tabResultsWifi) tabResultsWifi.textContent = tr("tabResultsWifi");
+        if (tabResultsBt) tabResultsBt.textContent = tr("tabResultsBt");
       }
 
       // =========================
@@ -725,7 +778,32 @@ macro://stealth-check
 
       function infoFor(tool) {
         const tools = getToolInfoMap();
-        return tools[tool] || tools["scan-runner"] || baseToolInfo["scan-runner"];
+        const info = tools[tool] || tools["scan-runner"] || baseToolInfo["scan-runner"];
+        if (tool === "results-manage") {
+          return Object.assign({}, info, {
+            title: tr("toolResultsManageTitle"),
+            text: tr("toolResultsManageText"),
+          });
+        }
+        if (tool === "results-ip") {
+          return Object.assign({}, info, {
+            title: tr("toolResultsIpTitle"),
+            text: tr("toolResultsIpText"),
+          });
+        }
+        if (tool === "results-wifi") {
+          return Object.assign({}, info, {
+            title: tr("toolResultsWifiTitle"),
+            text: tr("toolResultsWifiText"),
+          });
+        }
+        if (tool === "results-bt") {
+          return Object.assign({}, info, {
+            title: tr("toolResultsBtTitle"),
+            text: tr("toolResultsBtText"),
+          });
+        }
+        return info;
       }
 
       function setTooltips() {
@@ -780,11 +858,57 @@ macro://stealth-check
         refreshActiveUI();
       }
 
+      // =========================
+      // Activity bar + sidebar views
+      // =========================
+      let sidebarView = "explorer";
+
+      function switchSidebarView(view) {
+        sidebarView = view;
+        document.querySelectorAll("[data-sidebar-view]").forEach((el) => {
+          el.hidden = el.getAttribute("data-sidebar-view") !== view;
+        });
+        const titleEl = document.getElementById("v1SidebarTitle");
+        if (titleEl) titleEl.textContent = view === "results" ? tr("resultsSidebarTitle") : tr("explorer");
+        // activity bar active state
+        document.querySelectorAll(".v1-activity [data-activity]").forEach((btn) => {
+          btn.classList.toggle("active", btn.getAttribute("data-activity") === view);
+        });
+      }
+
+      document.querySelectorAll("[data-result-tab]").forEach((item) => {
+        item.addEventListener("click", () => {
+          const tool = item.getAttribute("data-result-tab");
+          if (tool) switchTool(tool);
+          // mark active in sidebar
+          document.querySelectorAll("[data-result-tab]").forEach((el) => {
+            el.classList.toggle("active", el === item);
+          });
+        });
+      });
+
+      document.querySelectorAll(".v1-activity [data-activity]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const view = btn.getAttribute("data-activity");
+          switchSidebarView(view);
+          // if also has data-tool (explorer button), switch tool too
+          const tool = btn.getAttribute("data-tool");
+          if (tool) switchTool(tool);
+        });
+      });
+
       document.addEventListener("click", (e) => {
+        // skip activity bar buttons (handled above)
+        if (e.target.closest(".v1-activity [data-activity]")) return;
         const target = e.target.closest("[data-tool]");
         if (!target) return;
         const tool = target.getAttribute("data-tool");
         if (!tool) return;
+        // clicking tool in explorer sidebar → ensure explorer view is active
+        if (target.closest("[data-sidebar-view='explorer']")) {
+          switchSidebarView("explorer");
+        }
         switchTool(tool);
       });
 
