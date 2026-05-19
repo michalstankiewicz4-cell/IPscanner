@@ -362,6 +362,11 @@ macro://stealth-check
   <script src="js/new-ui/core/versions-data.js"></script>
   <script src="js/new-ui/core/extensions.js"></script>
   <script src="js/new-ui/core/ui-definitions.js"></script>
+  <script src="js/new-ui/core/runtimes/status-log-runtime.js"></script>
+  <script src="js/new-ui/core/runtimes/layout-runtime.js"></script>
+  <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js"></script>
+  <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js"></script>
+  <script src="js/new-ui/core/runtimes/navigation-runtime.js"></script>
   <script src="js/new-ui/core/panels-runtime.js"></script>
   <script src="js/new-ui/core/extension-manager-runtime.js"></script>
   <script src="js/new-ui/core/menu-runtime.js"></script>
@@ -390,28 +395,22 @@ macro://stealth-check
         return i18n && i18n.t ? i18n.t(key) : key;
       }
 
-      function nowStamp() {
-        const d = new Date();
-        return d.toLocaleTimeString();
-      }
-
-      function appendInfoLog(text) {
-        const infoLog = document.getElementById("v1InfoLog");
-        if (!infoLog || !text) return;
-        const line = "[" + nowStamp() + "] " + text;
-        const next = (infoLog.textContent ? infoLog.textContent + "\n" : "") + line;
-        const rows = next.split("\n");
-        const keep = 400;
-        infoLog.textContent = rows.length > keep ? rows.slice(rows.length - keep).join("\n") : next;
-        infoLog.scrollTop = infoLog.scrollHeight;
-      }
+      const statusLogRuntime = core.newUiRuntimes && core.newUiRuntimes.createStatusLogRuntime
+        ? core.newUiRuntimes.createStatusLogRuntime({ maxLines: 400 })
+        : null;
 
       function setStatusLine(text) {
-        appendInfoLog(String(text || ""));
+        if (statusLogRuntime && statusLogRuntime.append) {
+          statusLogRuntime.append(String(text || ""));
+        }
       }
 
       let scannerSidebarRuntime = null;
       let powerShellConsoleRuntime = null;
+      let layoutRuntime = null;
+      let customScrollbarRuntime = null;
+      let ipInputsRuntime = null;
+      let navigationRuntime = null;
 
       function applyStaticTranslations() {
         const fileTrigger = document.querySelector('[data-menu="file"] .v1-menu-trigger');
@@ -935,91 +934,10 @@ macro://stealth-check
       // =========================
       // Activity bar + sidebar views
       // =========================
-      let sidebarView = "scanner";
-
       function switchSidebarView(view) {
-        sidebarView = view;
-        document.querySelectorAll("[data-sidebar-view]").forEach((el) => {
-          el.hidden = el.getAttribute("data-sidebar-view") !== view;
-        });
-        const titleEl = document.getElementById("v1SidebarTitle");
-        if (titleEl) {
-          if (view === "results") titleEl.textContent = tr("resultsSidebarTitle");
-          else if (view === "scanner") titleEl.textContent = tr("ipScanner");
-          else titleEl.textContent = tr("explorer");
-        }
-        // activity bar active state
-        document.querySelectorAll(".v1-activity [data-activity]").forEach((btn) => {
-          btn.classList.toggle("active", btn.getAttribute("data-activity") === view);
-        });
+        if (!navigationRuntime || !navigationRuntime.switchSidebarView) return;
+        navigationRuntime.switchSidebarView(view);
       }
-
-      document.querySelectorAll("[data-scanner-action]").forEach((item) => {
-        item.addEventListener("click", () => {
-          const action = item.getAttribute("data-scanner-action");
-          if (!action) return;
-          if (action === "start") {
-            const range = scannerSidebarRuntime && scannerSidebarRuntime.addCurrentRangeFromInputs
-              ? scannerSidebarRuntime.addCurrentRangeFromInputs()
-              : { from: (document.getElementById("v1ScanFrom") || {}).value || "0.0.0.0", to: (document.getElementById("v1ScanTo") || {}).value || "0.0.0.0" };
-            setStatusLine(tr("statusScanStart") + " " + range.from + " - " + range.to);
-          }
-          if (action === "stop") setStatusLine(tr("statusScanStop"));
-          if (action === "clear") setStatusLine(tr("statusScanClear"));
-          if (action === "scan-speed") setStatusLine(tr("statusScanSpeed"));
-          if (action === "ext-ip") { const el = document.getElementById("v1DetectExtIp"); const btn = document.getElementById("v1UseExtIp"); if(el){ el.textContent = "..."; if(btn) btn.hidden = true; setTimeout(()=>{ const ip="203.0.113.42"; el.textContent=ip; if(btn){ btn.hidden=false; btn.onclick=()=>scannerSidebarRuntime && scannerSidebarRuntime.applyDetectedRange && scannerSidebarRuntime.applyDetectedRange(ip); } setStatusLine(tr("statusExternalIp") + " " + ip); },600); } }
-          if (action === "local-ip") { const el = document.getElementById("v1DetectLocalIp"); const btn = document.getElementById("v1UseLocalIp"); if(el){ el.textContent = "..."; if(btn) btn.hidden = true; setTimeout(()=>{ const ip="192.168.1.5"; el.textContent=ip; if(btn){ btn.hidden=false; btn.onclick=()=>scannerSidebarRuntime && scannerSidebarRuntime.applyDetectedRange && scannerSidebarRuntime.applyDetectedRange(ip); } setStatusLine(tr("statusLocalIp") + " " + ip); },400); } }
-          if (action === "subnets") { const el = document.getElementById("v1DetectSubnets"); const btn = document.getElementById("v1UseSubnets"); if(el){ el.textContent = "..."; if(btn) btn.hidden = true; setTimeout(()=>{ const ip="192.168.1.0/24"; el.textContent=ip; if(btn){ btn.hidden=false; btn.onclick=()=>scannerSidebarRuntime && scannerSidebarRuntime.applyDetectedRange && scannerSidebarRuntime.applyDetectedRange(ip); } setStatusLine(tr("statusSubnet") + " " + ip); },400); } }
-          if (action === "save") runMenuAction("save-session");
-          if (action === "load") runMenuAction("load-session");
-          if (!["ext-ip","local-ip","subnets","scan-speed"].includes(action)) switchTool("results-ip");
-        });
-      });
-
-      document.querySelectorAll("[data-result-tab]").forEach((item) => {
-        item.addEventListener("click", () => {
-          const tool = item.getAttribute("data-result-tab");
-          if (tool) switchTool(tool);
-          // mark active in sidebar
-          document.querySelectorAll("[data-result-tab]").forEach((el) => {
-            el.classList.toggle("active", el === item);
-          });
-        });
-      });
-
-      document.querySelectorAll(".v1-activity [data-activity]").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const view = btn.getAttribute("data-activity");
-          switchSidebarView(view);
-          // if also has data-tool (explorer button), switch tool too
-          const tool = btn.getAttribute("data-tool");
-          if (tool) switchTool(tool);
-        });
-      });
-
-      document.addEventListener("click", (e) => {
-        // skip activity bar buttons (handled above)
-        if (e.target.closest(".v1-activity [data-activity]")) return;
-        const target = e.target.closest("[data-tool]");
-        if (!target) return;
-        const tool = target.getAttribute("data-tool");
-        if (!tool) return;
-        switchTool(tool);
-      });
-
-      document.querySelectorAll(".v1-console-tab").forEach((tab) => {
-        tab.addEventListener("click", () => {
-          const next = tab.getAttribute("data-v1-console-tab");
-          if (!next) return;
-          document.querySelectorAll(".v1-console-tab").forEach((t) => {
-            t.classList.toggle("active", t === tab);
-          });
-          document.querySelectorAll(".v1-console-pane").forEach((pane) => {
-            pane.classList.toggle("active", pane.getAttribute("data-v1-console-pane") === next);
-          });
-        });
-      });
 
       // =========================
       // 2) Top menu behavior
@@ -1098,263 +1016,32 @@ macro://stealth-check
         }, true);
       }
 
-      function isValidIpv4(value) {
-        const parts = String(value || "").trim().split(".");
-        if (parts.length !== 4) return false;
-        return parts.every((part) => /^\d{1,3}$/.test(part) && Number(part) >= 0 && Number(part) <= 255);
-      }
-
       function setRangeInputs(fromIp, toIp) {
-        if (!isValidIpv4(fromIp) || !isValidIpv4(toIp)) return false;
-        const fromHidden = document.getElementById("v1ScanFrom");
-        const toHidden = document.getElementById("v1ScanTo");
-        if (fromHidden) fromHidden.value = fromIp;
-        if (toHidden) toHidden.value = toIp;
-
-        document.querySelectorAll("[data-ip-box]").forEach((box) => {
-          const type = box.getAttribute("data-ip-box");
-          const val = type === "from" ? fromIp : toIp;
-          const octets = Array.from(box.querySelectorAll(".v1-octet"));
-          val.split(".").forEach((part, i) => {
-            if (octets[i]) octets[i].value = part;
-          });
-        });
-        return true;
+        if (!ipInputsRuntime || !ipInputsRuntime.setRangeInputs) return false;
+        return ipInputsRuntime.setRangeInputs(fromIp, toIp);
       }
 
       function initSegmentedIpInputs() {
-        document.querySelectorAll("[data-ip-box]").forEach((box) => {
-          const type = box.getAttribute("data-ip-box");
-          const hiddenId = type === "from" ? "v1ScanFrom" : "v1ScanTo";
-          const hidden = document.getElementById(hiddenId);
-          const octets = Array.from(box.querySelectorAll(".v1-octet"));
-          if (!hidden || octets.length !== 4) return;
-
-          function fillFromHidden() {
-            const parts = String(hidden.value || "0.0.0.0").split(".");
-            for (let i = 0; i < 4; i += 1) {
-              const part = parts[i] || "0";
-              octets[i].value = part.replace(/\D+/g, "").slice(0, 3);
-            }
-          }
-
-          function syncHidden() {
-            const parts = octets.map((input) => {
-              const raw = String(input.value || "").replace(/\D+/g, "").slice(0, 3);
-              if (!raw) return "0";
-              const n = Math.max(0, Math.min(255, Number(raw)));
-              return String(n);
-            });
-            hidden.value = parts.join(".");
-          }
-
-          octets.forEach((input, index) => {
-            input.addEventListener("input", () => {
-              input.value = String(input.value || "").replace(/\D+/g, "").slice(0, 3);
-              if (input.value.length === 3 && index < octets.length - 1) {
-                octets[index + 1].focus();
-                octets[index + 1].select();
-              }
-              syncHidden();
-            });
-
-            input.addEventListener("blur", () => {
-              const raw = String(input.value || "").replace(/\D+/g, "").slice(0, 3);
-              if (!raw) {
-                input.value = "0";
-              } else {
-                input.value = String(Math.max(0, Math.min(255, Number(raw))));
-              }
-              syncHidden();
-            });
-
-            input.addEventListener("keydown", (event) => {
-              if (event.key === "Backspace" && !input.value && index > 0) {
-                octets[index - 1].focus();
-                octets[index - 1].select();
-              }
-            });
-          });
-
-          fillFromHidden();
-          syncHidden();
-        });
+        if (!ipInputsRuntime || !ipInputsRuntime.initSegmentedIpInputs) return;
+        ipInputsRuntime.initSegmentedIpInputs();
       }
 
       // =========================
       // 3) Splitter resizing
       // =========================
       function initResizableLayout() {
-        const main = document.querySelector(".v1-main");
-        const editor = document.querySelector(".v1-editor");
-        const sidebar = document.querySelector(".v1-sidebar");
-        const rightbar = document.querySelector(".v1-rightbar");
-        const leftHandle = document.querySelector('[data-resize="left"]');
-        const rightHandle = document.querySelector('[data-resize="right"]');
-        const consoleHandle = document.querySelector('[data-resize="console"]');
-        const leftToggle = document.querySelector('[data-panel-toggle="left"]');
-        const rightToggle = document.querySelector('[data-panel-toggle="right"]');
-        const bottomToggle = document.querySelector('[data-panel-toggle="bottom"]');
-        const statusRight = document.getElementById("v1StatusRight");
-        if (!main || !editor || !sidebar || !rightbar || !leftHandle || !rightHandle || !consoleHandle || !leftToggle || !rightToggle || !bottomToggle) return;
-
-        const size = {
-          left: 320,
-          right: 300,
-          console: 200
-        };
-
-        const panelState = {
-          leftCollapsed: false,
-          rightCollapsed: false,
-          bottomCollapsed: false
-        };
-
-        function syncToggleLabels() {
-          leftToggle.textContent = panelState.leftCollapsed ? "▶" : "◀";
-          leftToggle.setAttribute("title", panelState.leftCollapsed ? "Restore left section" : "Hide left section");
-          leftToggle.setAttribute("aria-label", panelState.leftCollapsed ? "Restore left section" : "Hide left section");
-
-          rightToggle.textContent = panelState.rightCollapsed ? "◀" : "▶";
-          rightToggle.setAttribute("title", panelState.rightCollapsed ? "Restore right section" : "Hide right section");
-          rightToggle.setAttribute("aria-label", panelState.rightCollapsed ? "Restore right section" : "Hide right section");
-
-          bottomToggle.textContent = panelState.bottomCollapsed ? "▲" : "▼";
-          bottomToggle.setAttribute("title", panelState.bottomCollapsed ? "Restore bottom section" : "Hide bottom section");
-          bottomToggle.setAttribute("aria-label", panelState.bottomCollapsed ? "Restore bottom section" : "Hide bottom section");
+        const runtimes = window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes
+          ? window.NetReconNewUICore.newUiRuntimes
+          : {};
+        if (!runtimes.createLayoutRuntime) return;
+        layoutRuntime = runtimes.createLayoutRuntime({
+          refreshCustomScrollbars: function () {
+            refreshCustomScrollbars();
+          },
+        });
+        if (layoutRuntime && layoutRuntime.init) {
+          layoutRuntime.init();
         }
-
-        function applySizes() {
-          if (window.matchMedia("(max-width: 1250px)").matches) {
-            main.style.gridTemplateColumns = "";
-            editor.style.gridTemplateRows = "";
-            sidebar.classList.remove("collapsed");
-            rightbar.classList.remove("collapsed");
-            editor.classList.remove("console-collapsed");
-            return;
-          }
-
-          const leftWidth = panelState.leftCollapsed ? 26 : size.left;
-          const rightWidth = panelState.rightCollapsed ? 26 : size.right;
-          main.style.gridTemplateColumns = "48px " + leftWidth + "px 6px minmax(0, 1fr) 6px " + rightWidth + "px";
-
-          sidebar.classList.toggle("collapsed", panelState.leftCollapsed);
-          rightbar.classList.toggle("collapsed", panelState.rightCollapsed);
-
-          if (panelState.bottomCollapsed) {
-            editor.classList.add("console-collapsed");
-            editor.style.gridTemplateRows = "";
-          } else {
-            editor.classList.remove("console-collapsed");
-            editor.style.gridTemplateRows = "38px minmax(120px, 1fr) 6px " + size.console + "px";
-          }
-
-          syncToggleLabels();
-        }
-
-        let drag = null;
-        let statusRightBeforeDrag = "";
-
-        function startDrag(type, event) {
-          drag = {
-            type,
-            startX: event.clientX,
-            startY: event.clientY,
-            left: size.left,
-            right: size.right,
-            console: size.console
-          };
-
-          if (type === "left") leftHandle.classList.add("dragging");
-          if (type === "right") rightHandle.classList.add("dragging");
-          if (type === "console") consoleHandle.classList.add("dragging");
-
-          if ((type === "left" || type === "console") && statusRight) {
-            statusRightBeforeDrag = statusRight.textContent || "";
-            if (type === "left") statusRight.textContent = "left width: " + size.left + "px";
-            if (type === "console") statusRight.textContent = "console height: " + size.console + "px";
-          }
-
-          document.body.style.userSelect = "none";
-        }
-
-        function stopDrag() {
-          const currentDrag = drag;
-          drag = null;
-          leftHandle.classList.remove("dragging");
-          rightHandle.classList.remove("dragging");
-          consoleHandle.classList.remove("dragging");
-
-          if (currentDrag && (currentDrag.type === "left" || currentDrag.type === "console") && statusRight) {
-            statusRight.textContent = statusRightBeforeDrag || statusRight.textContent;
-          }
-
-          document.body.style.userSelect = "";
-        }
-
-        window.addEventListener("pointermove", (event) => {
-          if (!drag || window.matchMedia("(max-width: 1250px)").matches) return;
-
-          if ((drag.type === "left" && panelState.leftCollapsed) || (drag.type === "right" && panelState.rightCollapsed) || (drag.type === "console" && panelState.bottomCollapsed)) {
-            return;
-          }
-
-          if (drag.type === "left") {
-            size.left = Math.max(180, Math.min(460, drag.left + (event.clientX - drag.startX)));
-            if (statusRight) {
-              statusRight.textContent = "left width: " + size.left + "px";
-            }
-          }
-
-          if (drag.type === "right") {
-            size.right = Math.max(220, Math.min(520, drag.right - (event.clientX - drag.startX)));
-          }
-
-          if (drag.type === "console") {
-            size.console = Math.max(90, Math.min(360, drag.console - (event.clientY - drag.startY)));
-            if (statusRight) {
-              statusRight.textContent = "console height: " + size.console + "px";
-            }
-          }
-
-          applySizes();
-        });
-
-        window.addEventListener("pointerup", stopDrag);
-        window.addEventListener("pointercancel", stopDrag);
-
-        leftHandle.addEventListener("pointerdown", (event) => startDrag("left", event));
-        rightHandle.addEventListener("pointerdown", (event) => startDrag("right", event));
-        consoleHandle.addEventListener("pointerdown", (event) => startDrag("console", event));
-
-        leftHandle.addEventListener("dblclick", () => {
-          panelState.leftCollapsed = false;
-          size.left = 320;
-          applySizes();
-          refreshCustomScrollbars();
-        });
-
-        leftToggle.addEventListener("click", () => {
-          panelState.leftCollapsed = !panelState.leftCollapsed;
-          applySizes();
-          refreshCustomScrollbars();
-        });
-
-        rightToggle.addEventListener("click", () => {
-          panelState.rightCollapsed = !panelState.rightCollapsed;
-          applySizes();
-          refreshCustomScrollbars();
-        });
-
-        bottomToggle.addEventListener("click", () => {
-          panelState.bottomCollapsed = !panelState.bottomCollapsed;
-          applySizes();
-          refreshCustomScrollbars();
-        });
-
-        window.addEventListener("resize", applySizes);
-        syncToggleLabels();
-        applySizes();
       }
 
       // =========================
@@ -1363,118 +1050,31 @@ macro://stealth-check
       let refreshCustomScrollbars = function () {};
 
       function initCustomScrollbars() {
-        const targets = Array.from(document.querySelectorAll(
-          ".v1-tool-list, .v1-card, .v1-ai-threadlist, .v1-ai-chat, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log"
-        ));
-
-        const items = targets.map((el) => {
-          el.classList.add("v1-custom-scroll-host");
-
-          const rail = document.createElement("div");
-          rail.className = "v1-faux-scrollbar";
-
-          const thumb = document.createElement("div");
-          thumb.className = "v1-faux-scrollbar-thumb";
-          rail.appendChild(thumb);
-          document.body.appendChild(rail);
-
-          return { el, rail, thumb, dragging: false, dragOffset: 0 };
-        });
-
-        function updateOne(item) {
-          const { el, rail, thumb } = item;
-          const rect = el.getBoundingClientRect();
-          const isVisible = rect.width > 0 && rect.height > 0 && getComputedStyle(el).display !== "none";
-          const scrollable = el.scrollHeight > el.clientHeight + 1;
-
-          if (!isVisible || !scrollable) {
-            rail.style.display = "none";
-            return;
-          }
-
-          const railWidth = 10;
-          const thumbMin = 24;
-          const railHeight = rect.height;
-          const ratio = el.clientHeight / el.scrollHeight;
-          const thumbHeight = Math.max(thumbMin, Math.floor(railHeight * ratio));
-          const maxThumbTop = Math.max(0, railHeight - thumbHeight);
-          const scrollRange = Math.max(1, el.scrollHeight - el.clientHeight);
-          const thumbTop = Math.floor((el.scrollTop / scrollRange) * maxThumbTop);
-
-          rail.style.display = "block";
-          rail.style.top = rect.top + "px";
-          rail.style.left = rect.right - railWidth + "px";
-          rail.style.height = railHeight + "px";
-
-          thumb.style.height = thumbHeight + "px";
-          thumb.style.top = thumbTop + "px";
-        }
-
-        function updateAll() {
-          items.forEach(updateOne);
-        }
-
-        items.forEach((item) => {
-          const { el, rail, thumb } = item;
-
-          el.addEventListener("scroll", () => updateOne(item), { passive: true });
-
-          thumb.addEventListener("pointerdown", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            item.dragging = true;
-            item.dragOffset = event.clientY - thumb.getBoundingClientRect().top;
-            thumb.classList.add("dragging");
-            thumb.setPointerCapture(event.pointerId);
-          });
-
-          thumb.addEventListener("pointermove", (event) => {
-            if (!item.dragging) return;
-            const railRect = rail.getBoundingClientRect();
-            const thumbRect = thumb.getBoundingClientRect();
-            const nextTop = Math.max(0, Math.min(railRect.height - thumbRect.height, event.clientY - railRect.top - item.dragOffset));
-            const ratio = nextTop / Math.max(1, railRect.height - thumbRect.height);
-            el.scrollTop = ratio * Math.max(1, el.scrollHeight - el.clientHeight);
-            updateOne(item);
-          });
-
-          thumb.addEventListener("pointerup", (event) => {
-            item.dragging = false;
-            thumb.classList.remove("dragging");
-            thumb.releasePointerCapture(event.pointerId);
-          });
-
-          thumb.addEventListener("pointercancel", () => {
-            item.dragging = false;
-            thumb.classList.remove("dragging");
-          });
-
-          rail.addEventListener("pointerdown", (event) => {
-            if (event.target === thumb) return;
-            const railRect = rail.getBoundingClientRect();
-            const thumbRect = thumb.getBoundingClientRect();
-            const clickCenter = event.clientY - railRect.top - thumbRect.height / 2;
-            const nextTop = Math.max(0, Math.min(railRect.height - thumbRect.height, clickCenter));
-            const ratio = nextTop / Math.max(1, railRect.height - thumbRect.height);
-            el.scrollTop = ratio * Math.max(1, el.scrollHeight - el.clientHeight);
-            updateOne(item);
-          });
-        });
-
-        const ro = new ResizeObserver(updateAll);
-        items.forEach((item) => ro.observe(item.el));
-
-        window.addEventListener("resize", updateAll);
-        document.addEventListener("scroll", updateAll, true);
-
-        refreshCustomScrollbars = updateAll;
-        updateAll();
+        const runtimes = window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes
+          ? window.NetReconNewUICore.newUiRuntimes
+          : {};
+        if (!runtimes.createCustomScrollbarRuntime) return;
+        customScrollbarRuntime = runtimes.createCustomScrollbarRuntime();
+        const instance = customScrollbarRuntime && customScrollbarRuntime.init
+          ? customScrollbarRuntime.init()
+          : null;
+        refreshCustomScrollbars = instance && instance.refresh
+          ? instance.refresh
+          : function () {};
       }
 
       // =========================
       // 5) Runtime delegation (incremental cleanup)
       // =========================
       const runtimeFactory = core.newUiRuntimes || {};
+
+      const ipInputsRuntimeFactory = runtimeFactory.createIpInputsRuntime
+        ? runtimeFactory.createIpInputsRuntime()
+        : null;
+
+      if (ipInputsRuntimeFactory && ipInputsRuntimeFactory.init) {
+        ipInputsRuntime = ipInputsRuntimeFactory.init();
+      }
 
       const panelsRuntime = runtimeFactory.createPanelsRuntime
         ? runtimeFactory.createPanelsRuntime({
@@ -1539,6 +1139,21 @@ macro://stealth-check
         initMenuBar = menuRuntime.initMenuBar;
         initMenuActions = menuRuntime.initMenuActions;
         applyMenuAndPanelDefinitions = menuRuntime.applyMenuAndPanelDefinitions;
+      }
+
+      const navigationRuntimeFactory = runtimeFactory.createNavigationRuntime
+        ? runtimeFactory.createNavigationRuntime({
+            tr,
+            switchTool,
+            setStatusLine,
+            runMenuAction,
+            getScannerSidebarRuntime: function () { return scannerSidebarRuntime; },
+          })
+        : null;
+
+      if (navigationRuntimeFactory && navigationRuntimeFactory.init) {
+        navigationRuntime = navigationRuntimeFactory;
+        navigationRuntime.init();
       }
 
       scannerSidebarRuntime = runtimeFactory.createScannerSidebarRuntime

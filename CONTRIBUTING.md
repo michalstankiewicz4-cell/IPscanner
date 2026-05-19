@@ -18,6 +18,7 @@ W praktyce: zmiany w warstwie UI powinny byc izolowane od logiki skanowania.
 - W new UI preferuj male moduly w js/new-ui/core zamiast rozbudowy inline script.
 - Zanim dodasz nowy tekst UI, dodaj klucze do i18n.
 - Zachowuj backward compatibility danych i stanu (localStorage keys, nazwy akcji itp.).
+- Kazdy nowy przewijalny obszar New UI musi byc zgodny z systemem custom scrollbar (faux scrollbar).
 
 ## 3. Architektura New UI (stan docelowy)
 
@@ -32,6 +33,13 @@ Minimalny podzial odpowiedzialnosci:
 - menu-runtime.js - obsluga menubar i akcji menu.
 - panels-runtime.js - routing aktywnego narzedzia i odswiezanie panelu glownego.
 - extension-manager-runtime.js - obsluga panelu rozszerzen i jezykow.
+- scanner-sidebar-runtime.js - obsluga sidebaru skanera (wykrywanie IP, historia zakresow, extractor).
+- powershell-console-runtime.js - obsluga zintegrowanej konsoli PowerShell.
+- runtimes/status-log-runtime.js - centralny log statusow (zakladka Logs).
+- runtimes/layout-runtime.js - resizery i zachowanie paneli (left/right/bottom).
+- runtimes/custom-scrollbar-runtime.js - faux scrollbar i odswiezanie hostow przewijania.
+- runtimes/ip-inputs-runtime.js - segmentowane pola IP oraz synchronizacja hidden inputow zakresu.
+- runtimes/navigation-runtime.js - obsluga aktywnosci sidebar/results, zakladek dolnego panelu i routingu klikniec data-tool.
 
 newUI.html powinien byc glownie adapterem DOM i eventow.
 
@@ -39,14 +47,15 @@ Mapa odpowiedzialnosci jest utrzymywana centralnie i nie powinna byc dublowana w
 
 - definicje menu i akcji: `js/new-ui/core/ui-definitions.js`,
 - definicje paneli: `js/new-ui/core/ui-definitions.js`,
-- wykonanie zachowan akcji: `newUI.html` (adapter runtime).
+- wykonanie zachowan akcji: runtime modules + `newUI.html` jako bootstrap/adaptor.
 
 ## 4. Rozszerzenia (plugin-like)
 
 System rozszerzen jest oparty o manifest JSON. Dopuszczone contributions:
 
 - contributions.tools - dodanie lub nadpisanie wpisow katalogu narzedzi,
-- contributions.menuActions - dodanie lub nadpisanie etykiet akcji menu.
+- contributions.menuActions - dodanie lub nadpisanie etykiet akcji menu,
+- contributions.i18n - dodanie slownikow jezykowych (key -> text).
 
 Przykladowy manifest:
 
@@ -107,7 +116,13 @@ Zasady:
 
 - kod jezyka: lowercase (np. `de`, `es`, `pt-br`),
 - nie usuwaj kluczy bazowych - brakujace wpisy fallbackuja do EN,
-- po dodaniu jezyka sprawdz menu, status line i panel rozszerzen.
+- po dodaniu jezyka sprawdz menu, zakladke Logs i panel rozszerzen.
+
+## 6.1. Scrollbar policy (New UI)
+
+- W New UI nie mieszamy natywnych i custom scrollbar w tym samym przeplywie widoku.
+- Jezeli nowy kontener ma `overflow: auto`, upewnij sie, ze jest hostem custom scrollbar albo jest wewnatrz hosta obslugujacego przewijanie.
+- Po zmianie layoutu i po renderze dynamicznej zawartosci odswiez `refreshCustomScrollbars()`.
 
 ## 6. Build i release
 

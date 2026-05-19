@@ -36,6 +36,13 @@
       function append(line) {
         out.textContent += line + "\n";
         out.scrollTop = out.scrollHeight;
+        document.dispatchEvent(new CustomEvent("newui:console-pane-update", {
+          detail: {
+            pane: "console",
+            source: "powershell-console",
+            text: String(line || ""),
+          },
+        }));
       }
 
       function setBusy(busy) {
