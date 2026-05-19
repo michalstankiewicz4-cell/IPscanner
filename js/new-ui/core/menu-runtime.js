@@ -42,27 +42,30 @@
       Object.keys(uiDefinitions.menuGroups || {}).forEach(function (menuKey) {
         var trigger = document.querySelector('[data-menu="' + menuKey + '"] .v1-menu-trigger');
         var def = uiDefinitions.menuGroups[menuKey];
-        if (!trigger || !def || !def.purpose) return;
-        trigger.setAttribute("title", def.purpose);
-        trigger.setAttribute("aria-label", trigger.textContent + " - " + def.purpose);
+        var purpose = def && (def.purposeKey ? tr(def.purposeKey) : def.purpose);
+        if (!trigger || !purpose) return;
+        trigger.setAttribute("title", purpose);
+        trigger.setAttribute("aria-label", trigger.textContent + " - " + purpose);
       });
 
       Object.keys(uiDefinitions.menuActions || {}).forEach(function (actionKey) {
         var def = uiDefinitions.menuActions[actionKey];
-        if (!def || !def.purpose) return;
+        var purpose = def && (def.purposeKey ? tr(def.purposeKey) : def.purpose);
+        if (!purpose) return;
         document.querySelectorAll('[data-menu-action="' + actionKey + '"]').forEach(function (item) {
-          item.setAttribute("title", def.purpose);
-          item.setAttribute("aria-label", def.purpose);
+          item.setAttribute("title", purpose);
+          item.setAttribute("aria-label", purpose);
         });
       });
 
       Object.keys(uiDefinitions.panelDefinitions || {}).forEach(function (panelKey) {
         var panelDef = uiDefinitions.panelDefinitions[panelKey];
-        if (!panelDef || !panelDef.selector || !panelDef.purpose) return;
+        var purpose = panelDef && (panelDef.purposeKey ? tr(panelDef.purposeKey) : panelDef.purpose);
+        if (!panelDef || !panelDef.selector || !purpose) return;
         var panel = document.querySelector(panelDef.selector);
         if (!panel) return;
-        panel.setAttribute("title", panelDef.purpose);
-        panel.setAttribute("aria-label", panelDef.purpose);
+        panel.setAttribute("title", purpose);
+        panel.setAttribute("aria-label", purpose);
       });
     }
 
