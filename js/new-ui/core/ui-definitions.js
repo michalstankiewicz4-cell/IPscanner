@@ -1,7 +1,7 @@
 (function () {
   var menuGroups = {
     file: {
-      purpose: "Operacje na wynikach: import i eksport sesji.",
+      purpose: "Operacje sesji: zapis, odczyt, domkniecie, import i wyjscie.",
     },
     options: {
       purpose: "Konfiguracja skanowania, jezyka interfejsu i rozszerzen.",
@@ -15,14 +15,29 @@
   };
 
   var menuActions = {
-    "export-results": {
-      label: "Export results (mock)",
-      purpose: "Eksport aktualnych wynikow skanowania.",
+    "save-session": {
+      label: "Save session (mock)",
+      purpose: "Zapis aktualnej sesji.",
       behavior: "status",
     },
-    "import-results": {
-      label: "Import results (mock)",
-      purpose: "Import wynikow skanowania z pliku.",
+    "load-session": {
+      label: "Load session (mock)",
+      purpose: "Wczytanie zapisanej sesji.",
+      behavior: "status",
+    },
+    "close-session": {
+      label: "Close session (mock)",
+      purpose: "Zamkniecie aktywnej sesji.",
+      behavior: "status",
+    },
+    "import-another-session": {
+      label: "Import another session data (mock)",
+      purpose: "Import danych z innej sesji.",
+      behavior: "status",
+    },
+    exit: {
+      label: "Exit (mock)",
+      purpose: "Wyjscie z aplikacji.",
       behavior: "status",
     },
     countries: {

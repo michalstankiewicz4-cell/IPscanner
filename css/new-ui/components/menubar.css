@@ -10,6 +10,24 @@
   z-index: 50;
 }
 
+.v1-menu-brand {
+  width: 34px;
+  height: 28px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 6px 0 2px;
+  flex: 0 0 auto;
+}
+
+.v1-menu-brand-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  opacity: 0.95;
+}
+
 .v1-menu-group {
   position: relative;
 }

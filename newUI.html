@@ -15,11 +15,19 @@
   <div class="v1-shell">
     <!-- Top menu -->
     <nav class="v1-menubar" id="v1Menubar">
+      <div class="v1-menu-brand" aria-label="OSINT NET Auditor v1.6.5" title="OSINT NET Auditor v1.6.5">
+        <img src="zebrus.png" alt="Zebrus logo" class="v1-menu-brand-logo" />
+      </div>
+
       <div class="v1-menu-group" data-menu="file">
         <button class="v1-menu-trigger">File</button>
         <div class="v1-menu-dropdown">
-          <button class="v1-menu-dd-item" data-menu-action="export-results"><span>Export results...</span><span class="shortcut">Ctrl+E</span></button>
-          <button class="v1-menu-dd-item" data-menu-action="import-results"><span>Import results...</span><span class="shortcut">Ctrl+I</span></button>
+          <button class="v1-menu-dd-item" data-menu-action="save-session"><span>Save session</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="load-session"><span>Load session</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="close-session"><span>Close session</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="import-another-session"><span>Import another session data</span><span class="shortcut"></span></button>
+          <div class="v1-menu-dd-sep"></div>
+          <button class="v1-menu-dd-item" data-menu-action="exit"><span>Exit</span><span class="shortcut"></span></button>
         </div>
       </div>
 
@@ -82,11 +90,9 @@
       <!-- Left icon bar -->
       <aside class="v1-activity">
         <button id="v1ActivityResults" data-activity="results" title="Results Browser" aria-label="Results Browser">📊</button>
-        <button data-activity="explorer" data-tool="scan-runner" class="active">▦</button>
+        <button id="v1ActivityScanner" data-activity="scanner" data-tool="results-ip" class="active" title="IP Scanner" aria-label="IP Scanner">▦</button>
         <button data-tool="topology">🕸</button>
         <button data-tool="globe">🌍</button>
-        <button data-tool="sniffer">🔎</button>
-        <button data-tool="ai-assistant">🤖</button>
         <div class="v1-activity-spacer"></div>
         <button data-tool="settings">⚙</button>
       </aside>
@@ -94,8 +100,54 @@
       <!-- Left section -->
       <aside class="v1-sidebar">
         <div class="v1-side-head">
-          <span class="v1-head-title" id="v1SidebarTitle">Explorer</span>
+          <span class="v1-head-title" id="v1SidebarTitle">IP Scanner</span>
           <button class="v1-panel-toggle" data-panel-toggle="left" title="Hide left section" aria-label="Hide left section">◀</button>
+        </div>
+        <div data-sidebar-view="scanner">
+          <ul class="v1-tool-list">
+            <li>
+              <strong>Detect IP</strong>
+              <div class="v1-scanner-actions" style="margin-top:8px;flex-direction:column;gap:5px;">
+                <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="ext-ip"><span class="v1-detect-icon">🌐</span>External IP</button><span class="v1-detect-result" id="v1DetectExtIp"></span></div>
+                <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="local-ip"><span class="v1-detect-icon">🖥</span>Local IP</button><span class="v1-detect-result" id="v1DetectLocalIp"></span></div>
+                <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="subnets"><span class="v1-detect-icon">🔗</span>Subnets</button><span class="v1-detect-result" id="v1DetectSubnets"></span></div>
+              </div>
+            </li>
+            <li>
+              <strong>IP Range</strong><br />
+              <div class="v1-ip-row">
+                <span class="v1-ip-label">From</span>
+                <div class="v1-ip-box" data-ip-box="from">
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="From IP octet 1" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="From IP octet 2" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="From IP octet 3" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="From IP octet 4" />
+                </div>
+                <input id="v1ScanFrom" type="hidden" value="192.168.1.1" />
+              </div>
+              <div class="v1-ip-row">
+                <span class="v1-ip-label">To</span>
+                <div class="v1-ip-box" data-ip-box="to">
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="To IP octet 1" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="To IP octet 2" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="To IP octet 3" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="To IP octet 4" />
+                </div>
+                <input id="v1ScanTo" type="hidden" value="192.168.1.254" />
+              </div>
+              <div class="v1-scanner-actions" style="margin-top:10px;">
+                <button type="button" data-scanner-action="start">▶ Start</button>
+                <button type="button" data-scanner-action="stop">■ Stop</button>
+                <button type="button" data-scanner-action="clear">✕ Clear</button>
+              </div>
+            </li>
+          </ul>
         </div>
         <div data-sidebar-view="results" hidden>
           <ul class="v1-tool-list">
@@ -105,7 +157,7 @@
             <li id="v1ResultNavBt" data-result-tab="results-bt" class="v1-result-nav-item">🔵 Bluetooth Devices</li>
           </ul>
         </div>
-        <div data-sidebar-view="explorer">
+        <div data-sidebar-view="explorer" hidden>
         <ul class="v1-tool-list">
           <li data-tool="scan-runner" class="active">Dashboard / Scan Runner</li>
           <li data-tool="topology">Topology Map</li>
@@ -116,10 +168,10 @@
           <li data-tool="bt-detector">Bluetooth Detector</li>
           <li data-tool="gnss">GNSS Monitor</li>
           <li data-tool="lte">LTE Monitor</li>
-          <li data-tool="sniffer">Network Sniffer</li>
-          <li data-tool="imgmeta">Image Metadata</li>
-          <li data-tool="phone-lookup">Phone Lookup</li>
-          <li data-tool="ai-assistant">AI Security Assistant</li>
+            <li data-tool="sniffer">Network Sniffer</li>
+            <li data-tool="imgmeta">Image Metadata</li>
+            <li data-tool="phone-lookup">Phone Lookup</li>
+            <li data-tool="ai-assistant">AI Security Assistant</li>
           <li data-tool="scan-watch">IP Scan Watch</li>
           <li data-tool="macro">Macro Folder</li>
           <li data-tool="speed">Speed Test</li>
@@ -380,6 +432,7 @@ macro://stealth-check
         const extCloseBtn = document.getElementById("v1ExtCloseBtn");
         const extClose = document.getElementById("v1ExtClose");
         const activityResultsBtn = document.getElementById("v1ActivityResults");
+        const activityScannerBtn = document.getElementById("v1ActivityScanner");
         const resultNavManage = document.getElementById("v1ResultNavManage");
         const resultNavIp = document.getElementById("v1ResultNavIp");
         const resultNavWifi = document.getElementById("v1ResultNavWifi");
@@ -417,6 +470,10 @@ macro://stealth-check
           activityResultsBtn.setAttribute("title", tr("resultsBrowser"));
           activityResultsBtn.setAttribute("aria-label", tr("resultsBrowser"));
         }
+        if (activityScannerBtn) {
+          activityScannerBtn.setAttribute("title", tr("ipScanner"));
+          activityScannerBtn.setAttribute("aria-label", tr("ipScanner"));
+        }
         if (resultNavManage) resultNavManage.textContent = "📋 " + tr("resultsManage");
         if (resultNavIp) resultNavIp.textContent = "🖥 " + tr("resultsIp");
         if (resultNavWifi) resultNavWifi.textContent = "📶 " + tr("resultsWifi");
@@ -445,8 +502,11 @@ macro://stealth-check
       };
 
       const fallbackActionMap = {
-        "export-results": "Export results (mock)",
-        "import-results": "Import results (mock)",
+        "save-session": "Save session (mock)",
+        "load-session": "Load session (mock)",
+        "close-session": "Close session (mock)",
+        "import-another-session": "Import another session data (mock)",
+        exit: "Exit (mock)",
         countries: "Country IP Library (mock)",
         presets: "Port Presets (mock)",
         defaults: "Default Scan Values (mock)",
@@ -861,7 +921,7 @@ macro://stealth-check
       // =========================
       // Activity bar + sidebar views
       // =========================
-      let sidebarView = "explorer";
+      let sidebarView = "scanner";
 
       function switchSidebarView(view) {
         sidebarView = view;
@@ -869,12 +929,32 @@ macro://stealth-check
           el.hidden = el.getAttribute("data-sidebar-view") !== view;
         });
         const titleEl = document.getElementById("v1SidebarTitle");
-        if (titleEl) titleEl.textContent = view === "results" ? tr("resultsSidebarTitle") : tr("explorer");
+        if (titleEl) {
+          if (view === "results") titleEl.textContent = tr("resultsSidebarTitle");
+          else if (view === "scanner") titleEl.textContent = tr("ipScanner");
+          else titleEl.textContent = tr("explorer");
+        }
         // activity bar active state
         document.querySelectorAll(".v1-activity [data-activity]").forEach((btn) => {
           btn.classList.toggle("active", btn.getAttribute("data-activity") === view);
         });
       }
+
+      document.querySelectorAll("[data-scanner-action]").forEach((item) => {
+        item.addEventListener("click", () => {
+          const action = item.getAttribute("data-scanner-action");
+          if (!action) return;
+          if (action === "start") setStatusLine("Scan: Start (mock)");
+          if (action === "stop") setStatusLine("Scan: Stop (mock)");
+          if (action === "clear") setStatusLine("Scan: Clear (mock)");
+          if (action === "ext-ip") { const el = document.getElementById("v1DetectExtIp"); if(el){ el.textContent = "…"; setTimeout(()=>{ el.textContent="203.0.113.42"; setStatusLine("External IP: 203.0.113.42"); },600); } }
+          if (action === "local-ip") { const el = document.getElementById("v1DetectLocalIp"); if(el){ el.textContent = "…"; setTimeout(()=>{ el.textContent="192.168.1.5"; setStatusLine("Local IP: 192.168.1.5"); },400); } }
+          if (action === "subnets") { const el = document.getElementById("v1DetectSubnets"); if(el){ el.textContent = "…"; setTimeout(()=>{ el.textContent="192.168.1.0/24"; setStatusLine("Subnet: 192.168.1.0/24"); },400); } }
+          if (action === "save") runMenuAction("save-session");
+          if (action === "load") runMenuAction("load-session");
+          if (!["ext-ip","local-ip","subnets"].includes(action)) switchTool("results-ip");
+        });
+      });
 
       document.querySelectorAll("[data-result-tab]").forEach((item) => {
         item.addEventListener("click", () => {
@@ -984,6 +1064,80 @@ macro://stealth-check
             if (!action) return;
             runMenuAction(action);
           });
+        });
+      }
+
+      function initDisabledShortcuts() {
+        document.addEventListener("keydown", (event) => {
+          const key = (event.key || "").toLowerCase();
+          const blockCtrl = event.ctrlKey && !event.altKey && !event.metaKey && (
+            key === "s" || key === "l" || key === "w" || (event.shiftKey && key === "i")
+          );
+          const blockAltF4 = event.altKey && !event.ctrlKey && !event.metaKey && key === "f4";
+
+          if (blockCtrl || blockAltF4) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }, true);
+      }
+
+      function initSegmentedIpInputs() {
+        document.querySelectorAll("[data-ip-box]").forEach((box) => {
+          const type = box.getAttribute("data-ip-box");
+          const hiddenId = type === "from" ? "v1ScanFrom" : "v1ScanTo";
+          const hidden = document.getElementById(hiddenId);
+          const octets = Array.from(box.querySelectorAll(".v1-octet"));
+          if (!hidden || octets.length !== 4) return;
+
+          function fillFromHidden() {
+            const parts = String(hidden.value || "0.0.0.0").split(".");
+            for (let i = 0; i < 4; i += 1) {
+              const part = parts[i] || "0";
+              octets[i].value = part.replace(/\D+/g, "").slice(0, 3);
+            }
+          }
+
+          function syncHidden() {
+            const parts = octets.map((input) => {
+              const raw = String(input.value || "").replace(/\D+/g, "").slice(0, 3);
+              if (!raw) return "0";
+              const n = Math.max(0, Math.min(255, Number(raw)));
+              return String(n);
+            });
+            hidden.value = parts.join(".");
+          }
+
+          octets.forEach((input, index) => {
+            input.addEventListener("input", () => {
+              input.value = String(input.value || "").replace(/\D+/g, "").slice(0, 3);
+              if (input.value.length === 3 && index < octets.length - 1) {
+                octets[index + 1].focus();
+                octets[index + 1].select();
+              }
+              syncHidden();
+            });
+
+            input.addEventListener("blur", () => {
+              const raw = String(input.value || "").replace(/\D+/g, "").slice(0, 3);
+              if (!raw) {
+                input.value = "0";
+              } else {
+                input.value = String(Math.max(0, Math.min(255, Number(raw))));
+              }
+              syncHidden();
+            });
+
+            input.addEventListener("keydown", (event) => {
+              if (event.key === "Backspace" && !input.value && index > 0) {
+                octets[index - 1].focus();
+                octets[index - 1].select();
+              }
+            });
+          });
+
+          fillFromHidden();
+          syncHidden();
         });
       }
 
@@ -1319,9 +1473,13 @@ macro://stealth-check
       setTooltips();
       initMenuBar();
       initMenuActions();
+      initDisabledShortcuts();
+      initSegmentedIpInputs();
       initResizableLayout();
       initCustomScrollbars();
       refreshActiveUI();
+      switchSidebarView("scanner");
+      switchTool("results-ip");
 
       window.NetReconNewUI = window.NetReconNewUI || {};
       window.NetReconNewUI.extensions = extensionHost;
