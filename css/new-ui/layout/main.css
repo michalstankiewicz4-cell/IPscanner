@@ -123,6 +123,7 @@
   overflow-x: hidden;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  align-content: start;
   gap: 5px;
   height: 100%;
 }
@@ -190,7 +191,7 @@
 }
 
 .v1-detect-btn {
-  width: 96px !important;
+  width: 120px !important;
   display: inline-flex;
   align-items: center;
   gap: 0;
@@ -531,8 +532,7 @@
 }
 
 .v1-content {
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   padding: 14px;
   display: flex;
   flex-direction: column;

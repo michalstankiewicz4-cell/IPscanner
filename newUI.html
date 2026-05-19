@@ -189,44 +189,14 @@
       <!-- Central section -->
       <section class="v1-editor">
         <div class="v1-tabs">
-          <button class="v1-tab active" data-tool="scan-runner" type="button">
-            <span class="v1-tab-icon" aria-hidden="true">▦</span>
-            <span class="v1-tab-title">Overview</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab" data-tool="console" type="button">
-            <span class="v1-tab-icon" aria-hidden="true">⌘</span>
-            <span class="v1-tab-title">Live Console</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab" data-tool="scan-watch" type="button">
-            <span class="v1-tab-icon" aria-hidden="true">⚠</span>
-            <span class="v1-tab-title">Threat Signals</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
           <button class="v1-tab tab-closed" data-tool="versions" type="button" hidden>
             <span class="v1-tab-icon" aria-hidden="true">📘</span>
             <span class="v1-tab-title">Versions</span>
             <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
           </button>
-          <button class="v1-tab tab-closed" data-tool="results-manage" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">📋</span>
-            <span class="v1-tab-title" id="v1TabTitleResultsManage">Manage</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
           <button class="v1-tab tab-closed" data-tool="results-ip" type="button" hidden>
             <span class="v1-tab-icon" aria-hidden="true">🖥</span>
             <span class="v1-tab-title" id="v1TabTitleResultsIp">IP Results</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="results-wifi" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">📶</span>
-            <span class="v1-tab-title" id="v1TabTitleResultsWifi">WiFi</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="results-bt" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">🔵</span>
-            <span class="v1-tab-title" id="v1TabTitleResultsBt">Bluetooth</span>
             <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
           </button>
         </div>
@@ -268,6 +238,7 @@
           <div class="v1-console-tabs">
             <button class="v1-console-tab active" data-v1-console-tab="console">Console</button>
             <button class="v1-console-tab" data-v1-console-tab="macro">Macro</button>
+            <button class="v1-console-tab" data-v1-console-tab="info" id="v1ConsoleInfoTab">Logs</button>
             <button class="v1-panel-toggle" data-panel-toggle="bottom" title="Hide bottom section" aria-label="Hide bottom section">▼</button>
           </div>
           <div class="v1-console-body">
@@ -289,6 +260,11 @@ macro://stealth-check
   - delay 150ms
   - sequential ports
   - run lightweight sweep</div>
+            <div class="v1-console-pane" data-v1-console-pane="info">
+              <div class="v1-ps-shell v1-log-shell">
+                <pre class="v1-info-log" id="v1InfoLog" tabindex="0" role="textbox" aria-label="System information log" aria-multiline="true"></pre>
+              </div>
+            </div>
           </div>
         </section>
       </section>
@@ -325,7 +301,7 @@ macro://stealth-check
               <button data-tool="ai-assistant">Send</button>
             </div>
 
-            <p class="status-line" id="v1StatusLine">Tool route: scan-runner</p>
+            <p class="status-line" id="v1StatusLine" hidden></p>
           </article>
         </div>
       </aside>
@@ -414,9 +390,24 @@ macro://stealth-check
         return i18n && i18n.t ? i18n.t(key) : key;
       }
 
+      function nowStamp() {
+        const d = new Date();
+        return d.toLocaleTimeString();
+      }
+
+      function appendInfoLog(text) {
+        const infoLog = document.getElementById("v1InfoLog");
+        if (!infoLog || !text) return;
+        const line = "[" + nowStamp() + "] " + text;
+        const next = (infoLog.textContent ? infoLog.textContent + "\n" : "") + line;
+        const rows = next.split("\n");
+        const keep = 400;
+        infoLog.textContent = rows.length > keep ? rows.slice(rows.length - keep).join("\n") : next;
+        infoLog.scrollTop = infoLog.scrollHeight;
+      }
+
       function setStatusLine(text) {
-        const v1StatusLine = document.getElementById("v1StatusLine");
-        if (v1StatusLine) v1StatusLine.textContent = text;
+        appendInfoLog(String(text || ""));
       }
 
       let scannerSidebarRuntime = null;
@@ -456,6 +447,7 @@ macro://stealth-check
         const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
         const tabResultsWifi = document.getElementById("v1TabTitleResultsWifi");
         const tabResultsBt = document.getElementById("v1TabTitleResultsBt");
+        const consoleInfoTab = document.getElementById("v1ConsoleInfoTab");
 
         if (fileTrigger) fileTrigger.textContent = tr("menuFile");
         if (optionsTrigger) optionsTrigger.textContent = tr("menuOptions");
@@ -497,6 +489,7 @@ macro://stealth-check
         if (tabResultsIp) tabResultsIp.textContent = tr("tabResultsIp");
         if (tabResultsWifi) tabResultsWifi.textContent = tr("tabResultsWifi");
         if (tabResultsBt) tabResultsBt.textContent = tr("tabResultsBt");
+        if (consoleInfoTab) consoleInfoTab.textContent = tr("consoleInfoTab");
         if (scannerSidebarRuntime && scannerSidebarRuntime.applyStaticTranslations) {
           scannerSidebarRuntime.applyStaticTranslations();
         }
@@ -1371,7 +1364,7 @@ macro://stealth-check
 
       function initCustomScrollbars() {
         const targets = Array.from(document.querySelectorAll(
-          ".v1-tool-list, .v1-content, .v1-ai-threadlist, .v1-ai-chat, .v1-console-body, .v1-console-pane, .v1-ps-output"
+          ".v1-tool-list, .v1-card, .v1-ai-threadlist, .v1-ai-chat, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log"
         ));
 
         const items = targets.map((el) => {
@@ -1489,6 +1482,12 @@ macro://stealth-check
             getToolInfoMap,
             versionsData: core.versionsData || [],
             store,
+            setStatusLine,
+            onAfterRender: function () {
+              requestAnimationFrame(function () {
+                refreshCustomScrollbars();
+              });
+            },
             initialActiveTool: activeTool,
           })
         : null;
@@ -1575,7 +1574,6 @@ macro://stealth-check
       initCustomScrollbars();
       refreshActiveUI();
       switchSidebarView("scanner");
-      switchTool("results-ip");
 
       window.NetReconNewUI = window.NetReconNewUI || {};
       window.NetReconNewUI.extensions = extensionHost;

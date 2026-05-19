@@ -90,7 +90,6 @@
       var fromIp = prefix + ".0";
       var toIp = prefix + ".255";
       if (typeof setRangeInputs === "function" && setRangeInputs(fromIp, toIp)) {
-        addRangeHistory(fromIp, toIp);
         if (typeof setStatusLine === "function") {
           setStatusLine(t("statusRangeSet") + " " + fromIp + " - " + toIp);
         }

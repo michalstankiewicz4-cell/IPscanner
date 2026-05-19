@@ -4,6 +4,8 @@
     var getToolInfoMap = deps.getToolInfoMap;
     var versionsData = Array.isArray(deps.versionsData) ? deps.versionsData : [];
     var store = deps.store;
+    var onAfterRender = deps.onAfterRender;
+    var setStatusLine = deps.setStatusLine;
     var activeTool = deps.initialActiveTool || "scan-runner";
 
     function infoFor(tool) {
@@ -184,7 +186,6 @@
 
       var v1Title = document.getElementById("v1ToolTitle");
       var v1Detail = document.getElementById("v1ToolDetail");
-      var v1StatusLine = document.getElementById("v1StatusLine");
       var v1StatusRight = document.getElementById("v1StatusRight");
       var v1ScanMeta = document.getElementById("v1ScanMeta");
       var v1ScanActions = document.getElementById("v1ScanActions");
@@ -215,8 +216,9 @@
           v1ScanActions.setAttribute("aria-hidden", "true");
         }
       }
-      if (v1StatusLine) v1StatusLine.textContent = tr("toolRoute") + ": " + activeTool;
+      if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + activeTool);
       if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + activeTool;
+      if (typeof onAfterRender === "function") onAfterRender(activeTool);
     }
 
     function switchTool(tool) {
