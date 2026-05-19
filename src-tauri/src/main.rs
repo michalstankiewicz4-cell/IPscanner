@@ -124,6 +124,13 @@ struct TraceRunResult {
 }
 
 #[derive(Serialize, Clone)]
+struct PowerShellExecResult {
+    stdout: String,
+    stderr: String,
+    exit_code: i32,
+}
+
+#[derive(Serialize, Clone)]
 struct ScanWatchSuspect {
     ip: String,
     unique_ports: usize,
@@ -563,6 +570,48 @@ fn open_browser(url: String) {
     let _ = std::process::Command::new("cmd")
         .args(["/c", "start", "", url.as_str()])
         .spawn();
+}
+
+#[tauri::command]
+async fn run_powershell(command: String) -> Result<PowerShellExecResult, String> {
+    let cmd = command.trim().to_string();
+    if cmd.is_empty() {
+        return Err("Command is empty".into());
+    }
+
+    let output = tokio::task::spawn_blocking(move || {
+        #[cfg(target_os = "windows")]
+        {
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            Command::new("powershell")
+                .creation_flags(CREATE_NO_WINDOW)
+                .args([
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-Command",
+                    cmd.as_str(),
+                ])
+                .output()
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            Command::new("sh")
+                .args(["-lc", cmd.as_str()])
+                .output()
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())
+    .and_then(|res| res.map_err(|e| e.to_string()))?;
+
+    Ok(PowerShellExecResult {
+        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+        exit_code: output.status.code().unwrap_or(-1),
+    })
 }
 
 #[tauri::command]
@@ -3492,6 +3541,7 @@ fn main() {
             window_close,
             save_scan_results_dialog,
             open_scan_results_dialog,
+            run_powershell,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

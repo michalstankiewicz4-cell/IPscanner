@@ -271,9 +271,15 @@
             <button class="v1-panel-toggle" data-panel-toggle="bottom" title="Hide bottom section" aria-label="Hide bottom section">▼</button>
           </div>
           <div class="v1-console-body">
-            <div class="v1-console-pane active" data-v1-console-pane="console">[12:14:01] ping 192.168.1.1 -> 1 ms
-[12:14:03] traceroute 8.8.8.8 -> 11 hops
-[12:14:07] scan status -> 29 active hosts, 188 open ports</div>
+            <div class="v1-console-pane active" data-v1-console-pane="console">
+              <div class="v1-ps-shell">
+                <pre class="v1-ps-output" id="v1PsOutput" tabindex="0" role="textbox" aria-label="PowerShell output" aria-multiline="true"></pre>
+                <div class="v1-ps-input-row">
+                  <span class="v1-ps-prompt">PS&gt;</span>
+                  <input type="text" id="v1PsInput" class="v1-ps-input" autocomplete="off" spellcheck="false" placeholder="Type PowerShell command and press Enter" />
+                </div>
+              </div>
+            </div>
             <div class="v1-console-pane" data-v1-console-pane="macro">macro://quick-lan-scan
   - set range 192.168.1.1-192.168.1.254
   - set preset common-lan+iot
@@ -384,6 +390,7 @@ macro://stealth-check
   <script src="js/new-ui/core/extension-manager-runtime.js"></script>
   <script src="js/new-ui/core/menu-runtime.js"></script>
   <script src="js/new-ui/core/scanner-sidebar-runtime.js"></script>
+  <script src="js/new-ui/core/powershell-console-runtime.js"></script>
   <script>
     (function () {
       const core = window.NetReconNewUICore || {};
@@ -413,6 +420,7 @@ macro://stealth-check
       }
 
       let scannerSidebarRuntime = null;
+      let powerShellConsoleRuntime = null;
 
       function applyStaticTranslations() {
         const fileTrigger = document.querySelector('[data-menu="file"] .v1-menu-trigger');
@@ -491,6 +499,9 @@ macro://stealth-check
         if (tabResultsBt) tabResultsBt.textContent = tr("tabResultsBt");
         if (scannerSidebarRuntime && scannerSidebarRuntime.applyStaticTranslations) {
           scannerSidebarRuntime.applyStaticTranslations();
+        }
+        if (powerShellConsoleRuntime && powerShellConsoleRuntime.applyStaticTranslations) {
+          powerShellConsoleRuntime.applyStaticTranslations();
         }
       }
 
@@ -1196,8 +1207,8 @@ macro://stealth-check
 
         const size = {
           left: 320,
-          right: 320,
-          console: 126
+          right: 300,
+          console: 200
         };
 
         const panelState = {
@@ -1249,7 +1260,7 @@ macro://stealth-check
         }
 
         let drag = null;
-        let statusRightBeforeLeftDrag = "";
+        let statusRightBeforeDrag = "";
 
         function startDrag(type, event) {
           drag = {
@@ -1265,9 +1276,10 @@ macro://stealth-check
           if (type === "right") rightHandle.classList.add("dragging");
           if (type === "console") consoleHandle.classList.add("dragging");
 
-          if (type === "left" && statusRight) {
-            statusRightBeforeLeftDrag = statusRight.textContent || "";
-            statusRight.textContent = "left width: " + size.left + "px";
+          if ((type === "left" || type === "console") && statusRight) {
+            statusRightBeforeDrag = statusRight.textContent || "";
+            if (type === "left") statusRight.textContent = "left width: " + size.left + "px";
+            if (type === "console") statusRight.textContent = "console height: " + size.console + "px";
           }
 
           document.body.style.userSelect = "none";
@@ -1280,8 +1292,8 @@ macro://stealth-check
           rightHandle.classList.remove("dragging");
           consoleHandle.classList.remove("dragging");
 
-          if (currentDrag && currentDrag.type === "left" && statusRight) {
-            statusRight.textContent = statusRightBeforeLeftDrag || statusRight.textContent;
+          if (currentDrag && (currentDrag.type === "left" || currentDrag.type === "console") && statusRight) {
+            statusRight.textContent = statusRightBeforeDrag || statusRight.textContent;
           }
 
           document.body.style.userSelect = "";
@@ -1307,6 +1319,9 @@ macro://stealth-check
 
           if (drag.type === "console") {
             size.console = Math.max(90, Math.min(360, drag.console - (event.clientY - drag.startY)));
+            if (statusRight) {
+              statusRight.textContent = "console height: " + size.console + "px";
+            }
           }
 
           applySizes();
@@ -1356,7 +1371,7 @@ macro://stealth-check
 
       function initCustomScrollbars() {
         const targets = Array.from(document.querySelectorAll(
-          ".v1-tool-list, .v1-content, .v1-ai-threadlist, .v1-ai-chat, .v1-console-body, .v1-console-pane"
+          ".v1-tool-list, .v1-content, .v1-ai-threadlist, .v1-ai-chat, .v1-console-body, .v1-console-pane, .v1-ps-output"
         ));
 
         const items = targets.map((el) => {
@@ -1535,6 +1550,13 @@ macro://stealth-check
           })
         : null;
 
+      const powerShellConsoleRuntimeFactory = runtimeFactory.createPowerShellConsoleRuntime
+        ? runtimeFactory.createPowerShellConsoleRuntime({
+            tr,
+            setStatusLine,
+          })
+        : null;
+
       applyStaticTranslations();
       applyMenuAndPanelDefinitions();
       initExtensionManagerUi();
@@ -1545,6 +1567,9 @@ macro://stealth-check
       initSegmentedIpInputs();
       if (scannerSidebarRuntime && scannerSidebarRuntime.init) {
         scannerSidebarRuntime.init();
+      }
+      if (powerShellConsoleRuntimeFactory && powerShellConsoleRuntimeFactory.init) {
+        powerShellConsoleRuntime = powerShellConsoleRuntimeFactory.init();
       }
       initResizableLayout();
       initCustomScrollbars();

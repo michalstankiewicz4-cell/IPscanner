@@ -1,6 +1,6 @@
 .v1-main {
   display: grid;
-  grid-template-columns: 48px 260px 6px minmax(0, 1fr) 6px 320px;
+  grid-template-columns: 48px 260px 6px minmax(0, 1fr) 6px 300px;
   min-height: 0;
   overflow: hidden;
   height: 100%;
@@ -425,7 +425,7 @@
 .v1-editor {
   min-width: 0;
   display: grid;
-  grid-template-rows: 38px minmax(120px, 1fr) 6px 126px;
+  grid-template-rows: 38px minmax(120px, 1fr) 6px 200px;
   background: var(--bg-elev);
   min-height: 0;
   overflow: hidden;
@@ -605,6 +605,6 @@
   }
 
   .v1-editor {
-    grid-template-rows: 38px minmax(0, 1fr) 126px;
+    grid-template-rows: 38px minmax(0, 1fr) 200px;
   }
 }
