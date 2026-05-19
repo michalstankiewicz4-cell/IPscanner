@@ -8,4 +8,4 @@ native-ui/**/bin/
 native-ui/**/obj/
 release/
 release-*/
-Pre-Flight Security Audit.txt
+pre-flight-security-audit.txt

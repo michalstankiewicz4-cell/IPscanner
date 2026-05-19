@@ -41,13 +41,13 @@ Minimalny podzial odpowiedzialnosci:
 - runtimes/ip-inputs-runtime.js - segmentowane pola IP oraz synchronizacja hidden inputow zakresu.
 - runtimes/navigation-runtime.js - obsluga aktywnosci sidebar/results, zakladek dolnego panelu i routingu klikniec data-tool.
 
-newUI.html powinien byc glownie adapterem DOM i eventow.
+new-ui.html powinien byc glownie adapterem DOM i eventow.
 
 Mapa odpowiedzialnosci jest utrzymywana centralnie i nie powinna byc dublowana w wielu miejscach.
 
 - definicje menu i akcji: `js/new-ui/core/ui-definitions.js`,
 - definicje paneli: `js/new-ui/core/ui-definitions.js`,
-- wykonanie zachowan akcji: runtime modules + `newUI.html` jako bootstrap/adaptor.
+- wykonanie zachowan akcji: runtime modules + `new-ui.html` jako bootstrap/adaptor.
 
 ## 4. Rozszerzenia (plugin-like)
 
@@ -142,3 +142,4 @@ Zasady:
 - Nie przepinamy calej aplikacji na new UI w jednym kroku.
 - Nie usuwamy legacy UI bez uzgodnionego planu migracji.
 - Nie dokladamy nowego dlugu technicznego przez kolejne duze skrypty inline.
+
