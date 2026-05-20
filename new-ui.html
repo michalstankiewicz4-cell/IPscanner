@@ -597,10 +597,10 @@ macro://stealth-check
         about: "About (mock)",
         license: "License",
         assistant: "Assistant",
-        "window-min": "Window minimize (mock)",
-        "window-max": "Window maximize (mock)",
+        "window-min": "Window minimize",
+        "window-max": "Window maximize",
         "window-fullscreen": "Window fullscreen",
-        "window-close": "Window close (mock)"
+        "window-close": "Window close"
       };
 
       const baseActionMap = Object.keys(fallbackActionMap).reduce((acc, actionKey) => {
@@ -1030,7 +1030,10 @@ macro://stealth-check
         }
 
         if (behavior === "window-close") {
-          runNativeWindowAction("close").then(function () {
+          runNativeWindowAction("close").then(function (handled) {
+            if (!handled) {
+              try { window.close(); } catch (_) {}
+            }
             setStatusLine(tr("menuPrefix") + ": " + label);
           });
           return;
@@ -1530,7 +1533,7 @@ macro://stealth-check
             tr,
             switchTool,
             setStatusLine,
-            runMenuAction,
+            runMenuAction: (menuRuntime && menuRuntime.runMenuAction) ? menuRuntime.runMenuAction : runMenuAction,
             getScannerSidebarRuntime: function () { return scannerSidebarRuntime; },
           })
         : null;
