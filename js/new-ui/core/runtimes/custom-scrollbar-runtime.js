@@ -1,11 +1,94 @@
 (function () {
   function createCustomScrollbarRuntime() {
     var items = [];
+    var itemMap = new WeakMap();
+    var resizeObserver = null;
 
     function targets() {
       return Array.from(document.querySelectorAll(
-        ".v1-tool-list, .v1-card, .v1-ai-threadlist, .v1-ai-chat, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log"
+        ".v1-tool-list, .v1-card, .v1-ai-threadlist, .v1-ai-chat, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log, .v1-ip-extractor-input, .v1-ip-extractor-output, .v1-lang-manager-grid textarea, .v1-import-manager-grid textarea, .v1-lang-manager-output, .v1-import-output"
       ));
+    }
+
+    function cleanupRemovedItems() {
+      items = items.filter(function (item) {
+        if (document.body && document.body.contains(item.el)) return true;
+        if (item.rail && item.rail.parentNode) {
+          item.rail.parentNode.removeChild(item.rail);
+        }
+        itemMap.delete(item.el);
+        return false;
+      });
+    }
+
+    function attachItem(el) {
+      if (!el || itemMap.has(el)) return itemMap.get(el) || null;
+
+      el.classList.add("v1-custom-scroll-host");
+
+      var rail = document.createElement("div");
+      rail.className = "v1-faux-scrollbar";
+
+      var thumb = document.createElement("div");
+      thumb.className = "v1-faux-scrollbar-thumb";
+      rail.appendChild(thumb);
+      document.body.appendChild(rail);
+
+      var item = { el: el, rail: rail, thumb: thumb, dragging: false, dragOffset: 0 };
+
+      el.addEventListener("scroll", function () { updateOne(item); }, { passive: true });
+
+      thumb.addEventListener("pointerdown", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        item.dragging = true;
+        item.dragOffset = event.clientY - thumb.getBoundingClientRect().top;
+        thumb.classList.add("dragging");
+        thumb.setPointerCapture(event.pointerId);
+      });
+
+      thumb.addEventListener("pointermove", function (event) {
+        if (!item.dragging) return;
+        var railRect = rail.getBoundingClientRect();
+        var thumbRect = thumb.getBoundingClientRect();
+        var nextTop = Math.max(0, Math.min(railRect.height - thumbRect.height, event.clientY - railRect.top - item.dragOffset));
+        var ratio = nextTop / Math.max(1, railRect.height - thumbRect.height);
+        el.scrollTop = ratio * Math.max(1, el.scrollHeight - el.clientHeight);
+        updateOne(item);
+      });
+
+      thumb.addEventListener("pointerup", function (event) {
+        item.dragging = false;
+        thumb.classList.remove("dragging");
+        thumb.releasePointerCapture(event.pointerId);
+      });
+
+      thumb.addEventListener("pointercancel", function () {
+        item.dragging = false;
+        thumb.classList.remove("dragging");
+      });
+
+      rail.addEventListener("pointerdown", function (event) {
+        if (event.target === thumb) return;
+        var railRect = rail.getBoundingClientRect();
+        var thumbRect = thumb.getBoundingClientRect();
+        var clickCenter = event.clientY - railRect.top - thumbRect.height / 2;
+        var nextTop = Math.max(0, Math.min(railRect.height - thumbRect.height, clickCenter));
+        var ratio = nextTop / Math.max(1, railRect.height - thumbRect.height);
+        el.scrollTop = ratio * Math.max(1, el.scrollHeight - el.clientHeight);
+        updateOne(item);
+      });
+
+      if (resizeObserver) resizeObserver.observe(el);
+
+      itemMap.set(el, item);
+      items.push(item);
+      return item;
+    }
+
+    function ensureItems() {
+      targets().forEach(attachItem);
+      cleanupRemovedItems();
     }
 
     function updateOne(item) {
@@ -40,72 +123,13 @@
     }
 
     function refresh() {
+      ensureItems();
       items.forEach(updateOne);
     }
 
     function init() {
-      var list = targets();
-      items = list.map(function (el) {
-        el.classList.add("v1-custom-scroll-host");
-
-        var rail = document.createElement("div");
-        rail.className = "v1-faux-scrollbar";
-
-        var thumb = document.createElement("div");
-        thumb.className = "v1-faux-scrollbar-thumb";
-        rail.appendChild(thumb);
-        document.body.appendChild(rail);
-
-        var item = { el: el, rail: rail, thumb: thumb, dragging: false, dragOffset: 0 };
-
-        el.addEventListener("scroll", function () { updateOne(item); }, { passive: true });
-
-        thumb.addEventListener("pointerdown", function (event) {
-          event.preventDefault();
-          event.stopPropagation();
-          item.dragging = true;
-          item.dragOffset = event.clientY - thumb.getBoundingClientRect().top;
-          thumb.classList.add("dragging");
-          thumb.setPointerCapture(event.pointerId);
-        });
-
-        thumb.addEventListener("pointermove", function (event) {
-          if (!item.dragging) return;
-          var railRect = rail.getBoundingClientRect();
-          var thumbRect = thumb.getBoundingClientRect();
-          var nextTop = Math.max(0, Math.min(railRect.height - thumbRect.height, event.clientY - railRect.top - item.dragOffset));
-          var ratio = nextTop / Math.max(1, railRect.height - thumbRect.height);
-          el.scrollTop = ratio * Math.max(1, el.scrollHeight - el.clientHeight);
-          updateOne(item);
-        });
-
-        thumb.addEventListener("pointerup", function (event) {
-          item.dragging = false;
-          thumb.classList.remove("dragging");
-          thumb.releasePointerCapture(event.pointerId);
-        });
-
-        thumb.addEventListener("pointercancel", function () {
-          item.dragging = false;
-          thumb.classList.remove("dragging");
-        });
-
-        rail.addEventListener("pointerdown", function (event) {
-          if (event.target === thumb) return;
-          var railRect = rail.getBoundingClientRect();
-          var thumbRect = thumb.getBoundingClientRect();
-          var clickCenter = event.clientY - railRect.top - thumbRect.height / 2;
-          var nextTop = Math.max(0, Math.min(railRect.height - thumbRect.height, clickCenter));
-          var ratio = nextTop / Math.max(1, railRect.height - thumbRect.height);
-          el.scrollTop = ratio * Math.max(1, el.scrollHeight - el.clientHeight);
-          updateOne(item);
-        });
-
-        return item;
-      });
-
-      var ro = new ResizeObserver(refresh);
-      items.forEach(function (item) { ro.observe(item.el); });
+      resizeObserver = new ResizeObserver(refresh);
+      ensureItems();
 
       window.addEventListener("resize", refresh);
       document.addEventListener("scroll", refresh, true);

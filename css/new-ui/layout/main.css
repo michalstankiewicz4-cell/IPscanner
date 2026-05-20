@@ -296,7 +296,7 @@
   max-width: 100%;
   box-sizing: border-box;
   margin-top: 8px;
-  resize: vertical;
+  resize: none;
   min-height: 58px;
   background: #1f1f23;
   border: 1px solid #3f3f46;

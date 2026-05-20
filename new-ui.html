@@ -7,7 +7,7 @@
   <link rel="icon" type="image/png" href="zebrus.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=optional" rel="stylesheet" />
   <link id="newUiSkinLink" rel="stylesheet" href="css/new-ui/skins/default.css" />
   <link rel="stylesheet" href="css/new-ui/new-ui.css" />
 </head>
@@ -1280,12 +1280,24 @@ macro://stealth-check
       switchTool(initialActiveTool);
       switchSidebarView("scanner");
 
-      requestAnimationFrame(function () {
-        if (document.body) {
-          document.body.style.visibility = "visible";
-          document.body.setAttribute("data-v1-ready", "true");
-        }
-      });
+      function revealUi() {
+        if (!document.body) return;
+        document.body.style.visibility = "visible";
+        document.body.setAttribute("data-v1-ready", "true");
+      }
+
+      function revealUiNextFrame() {
+        requestAnimationFrame(revealUi);
+      }
+
+      if (document.fonts && document.fonts.ready) {
+        Promise.race([
+          document.fonts.ready,
+          new Promise(function (resolve) { setTimeout(resolve, 220); })
+        ]).then(revealUiNextFrame).catch(revealUiNextFrame);
+      } else {
+        revealUiNextFrame();
+      }
 
       window.NetReconNewUI = window.NetReconNewUI || {};
       window.NetReconNewUI.extensions = extensionHost;
