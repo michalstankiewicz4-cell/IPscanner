@@ -611,26 +611,3 @@
   overflow: hidden;
 }
 
-@media (max-width: 1250px) {
-  .v1-main {
-    grid-template-columns: 48px 1fr;
-  }
-
-  .v1-sidebar {
-    display: none;
-  }
-
-  .v1-rightbar,
-  .v1-resizer-v,
-  .v1-resizer-h {
-    display: none;
-  }
-
-  .v1-content {
-    grid-template-columns: 1fr;
-  }
-
-  .v1-editor {
-    grid-template-rows: 38px minmax(0, 1fr) 200px;
-  }
-}

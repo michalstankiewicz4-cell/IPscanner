@@ -5,6 +5,7 @@
     function init() {
       var main = document.querySelector(".v1-main");
       var editor = document.querySelector(".v1-editor");
+      var menubar = document.querySelector(".v1-menubar");
       var sidebar = document.querySelector(".v1-sidebar");
       var rightbar = document.querySelector(".v1-rightbar");
       var leftHandle = document.querySelector('[data-resize="left"]');
@@ -15,6 +16,23 @@
       var bottomToggle = document.querySelector('[data-panel-toggle="bottom"]');
       var statusRight = document.getElementById("v1StatusRight");
       if (!main || !editor || !sidebar || !rightbar || !leftHandle || !rightHandle || !consoleHandle || !leftToggle || !rightToggle || !bottomToggle) return;
+
+      function getTauriInvoke() {
+        return (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
+          || (window.__TAURI__ && window.__TAURI__.invoke)
+          || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
+          || null;
+      }
+
+      if (menubar) {
+        menubar.addEventListener("pointerdown", function (event) {
+          if (event.button !== 0) return;
+          if (event.target.closest(".v1-window-btn, .v1-menu-trigger, .v1-menu-dd-item, .v1-menu-group")) return;
+          var invoke = getTauriInvoke();
+          if (!invoke) return;
+          invoke("window_start_dragging").catch(function () {});
+        });
+      }
 
       var size = {
         left: 320,
@@ -43,15 +61,6 @@
       }
 
       function applySizes() {
-        if (window.matchMedia("(max-width: 1250px)").matches) {
-          main.style.gridTemplateColumns = "";
-          editor.style.gridTemplateRows = "";
-          sidebar.classList.remove("collapsed");
-          rightbar.classList.remove("collapsed");
-          editor.classList.remove("console-collapsed");
-          return;
-        }
-
         var leftWidth = panelState.leftCollapsed ? 26 : size.left;
         var rightWidth = panelState.rightCollapsed ? 26 : size.right;
         main.style.gridTemplateColumns = "48px " + leftWidth + "px 6px minmax(0, 1fr) 6px " + rightWidth + "px";
@@ -111,7 +120,7 @@
       }
 
       window.addEventListener("pointermove", function (event) {
-        if (!drag || window.matchMedia("(max-width: 1250px)").matches) return;
+        if (!drag) return;
 
         if ((drag.type === "left" && panelState.leftCollapsed) || (drag.type === "right" && panelState.rightCollapsed) || (drag.type === "console" && panelState.bottomCollapsed)) {
           return;
