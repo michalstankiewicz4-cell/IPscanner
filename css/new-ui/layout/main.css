@@ -152,6 +152,32 @@
   background: #2a2d31;
 }
 
+/* ── Collapsible sections ── */
+.v1-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+.v1-collapse-arrow {
+  font-size: 9px;
+  color: var(--txt-dim);
+  transition: transform 0.15s;
+  flex-shrink: 0;
+  padding-left: 4px;
+  transform: rotate(-180deg);
+}
+.v1-tool-list li.v1-collapsed .v1-collapse-arrow {
+  transform: rotate(0deg);
+}
+.v1-section-body {
+  overflow: hidden;
+}
+.v1-tool-list li.v1-collapsed .v1-section-body {
+  display: none;
+}
+
 .v1-scanner-actions {
   display: flex;
   gap: 6px;

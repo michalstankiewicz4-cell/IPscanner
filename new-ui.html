@@ -106,15 +106,24 @@
         <div data-sidebar-view="scanner">
           <ul class="v1-tool-list">
             <li>
-              <strong id="v1DetectIpTitle">Detect IP</strong>
-              <div class="v1-scanner-actions" style="margin-top:8px;flex-direction:column;gap:5px;">
-                <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="ext-ip"><span class="v1-detect-icon">🌐</span><span id="v1DetectBtnExtLabel">External IP</span></button><span class="v1-detect-result" id="v1DetectExtIp"></span><button type="button" class="v1-use-btn" id="v1UseExtIp" hidden aria-label="Use range">&gt;</button></div>
-                <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="local-ip"><span class="v1-detect-icon">🖥</span><span id="v1DetectBtnLocalLabel">Local IP</span></button><span class="v1-detect-result" id="v1DetectLocalIp"></span><button type="button" class="v1-use-btn" id="v1UseLocalIp" hidden aria-label="Use range">&gt;</button></div>
-                <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="subnets"><span class="v1-detect-icon">🔗</span><span id="v1DetectBtnSubnetsLabel">Subnets</span></button><span class="v1-detect-result" id="v1DetectSubnets"></span><button type="button" class="v1-use-btn" id="v1UseSubnets" hidden aria-label="Use range">&gt;</button></div>
+              <div class="v1-section-header">
+                <strong id="v1DetectIpTitle">Detect IP</strong>
+                <span class="v1-collapse-arrow">▼</span>
+              </div>
+              <div class="v1-section-body">
+                <div class="v1-scanner-actions" style="margin-top:8px;flex-direction:column;gap:5px;">
+                  <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="ext-ip"><span class="v1-detect-icon">🌐</span><span id="v1DetectBtnExtLabel">External IP</span></button><span class="v1-detect-result" id="v1DetectExtIp"></span><button type="button" class="v1-use-btn" id="v1UseExtIp" hidden aria-label="Use range">&gt;</button></div>
+                  <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="local-ip"><span class="v1-detect-icon">🖥</span><span id="v1DetectBtnLocalLabel">Local IP</span></button><span class="v1-detect-result" id="v1DetectLocalIp"></span><button type="button" class="v1-use-btn" id="v1UseLocalIp" hidden aria-label="Use range">&gt;</button></div>
+                  <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="subnets"><span class="v1-detect-icon">🔗</span><span id="v1DetectBtnSubnetsLabel">Subnets</span></button><span class="v1-detect-result" id="v1DetectSubnets"></span><button type="button" class="v1-use-btn" id="v1UseSubnets" hidden aria-label="Use range">&gt;</button></div>
+                </div>
               </div>
             </li>
             <li>
-              <strong id="v1IpRangeTitle">IP Range</strong><br />
+              <div class="v1-section-header">
+                <strong id="v1IpRangeTitle">IP Range</strong>
+                <span class="v1-collapse-arrow">▼</span>
+              </div>
+              <div class="v1-section-body">
               <div class="v1-ip-row">
                 <span class="v1-ip-label" id="v1IpLabelFrom">From</span>
                 <div class="v1-ip-box" data-ip-box="from">
@@ -159,18 +168,29 @@
                 <button type="button" data-scanner-action="clear">✕ Clear</button>
                 <button type="button" data-scanner-action="scan-speed">⏱ Scan Speed</button>
               </div>
+              </div>
             </li>
             <li>
-              <strong id="v1IpExtractorTitle">IP Extractor</strong>
+              <div class="v1-section-header">
+                <strong id="v1IpExtractorTitle">IP Extractor</strong>
+                <span class="v1-collapse-arrow">▼</span>
+              </div>
+              <div class="v1-section-body">
               <textarea id="v1IpExtractorInput" class="v1-ip-extractor-input" rows="3" placeholder="example.com 192.168.1.10"></textarea>
               <div class="v1-scanner-actions" style="margin-top:6px;">
                 <button type="button" id="v1IpExtractBtn">＋ Add / Extract</button>
               </div>
               <textarea id="v1IpExtractorOutput" class="v1-ip-extractor-output" rows="4" readonly placeholder="Extracted IPs..."></textarea>
+              </div>
             </li>
             <li>
-              <strong id="v1RangeHistoryTitle">Range History</strong>
-              <div id="v1RangeHistory" class="v1-range-history"></div>
+              <div class="v1-section-header">
+                <strong id="v1RangeHistoryTitle">Range History</strong>
+                <span class="v1-collapse-arrow">▼</span>
+              </div>
+              <div class="v1-section-body">
+                <div id="v1RangeHistory" class="v1-range-history"></div>
+              </div>
             </li>
           </ul>
         </div>
@@ -1203,6 +1223,14 @@ macro://stealth-check
         if (event.key === "Escape" && isExtModalOpen()) {
           closeExtensionManager();
         }
+      });
+
+      // Collapsible sidebar sections
+      document.querySelectorAll('.v1-section-header').forEach(function (header) {
+        header.addEventListener('click', function (e) {
+          if (e.target.closest('button, input, select, textarea, a')) return;
+          header.closest('li').classList.toggle('v1-collapsed');
+        });
       });
     })();
   </script>
