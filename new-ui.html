@@ -82,6 +82,7 @@
       <div class="v1-window-controls" aria-label="Window controls">
         <button class="v1-window-btn" data-menu-action="window-min" title="Minimize" aria-label="Minimize">&#8211;</button>
         <button class="v1-window-btn" data-menu-action="window-max" title="Maximize" aria-label="Maximize">&#9633;</button>
+        <button class="v1-window-btn" data-menu-action="window-fullscreen" title="Fullscreen" aria-label="Fullscreen">&#9974;</button>
         <button class="v1-window-btn close" data-menu-action="window-close" title="Close" aria-label="Close">&#10005;</button>
       </div>
     </nav>
@@ -598,6 +599,7 @@ macro://stealth-check
         assistant: "Assistant",
         "window-min": "Window minimize (mock)",
         "window-max": "Window maximize (mock)",
+        "window-fullscreen": "Window fullscreen",
         "window-close": "Window close (mock)"
       };
 
@@ -901,6 +903,97 @@ macro://stealth-check
         const def = actionDefinition(action);
         const behavior = def && def.behavior ? def.behavior : "status";
 
+        async function runNativeWindowAction(kind) {
+          const invoke =
+            (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
+            || (window.__TAURI__ && window.__TAURI__.invoke)
+            || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
+            || null;
+
+          if (invoke) {
+            try {
+              if (kind === "minimize") {
+                await invoke("window_minimize");
+                return true;
+              }
+              if (kind === "maximize") {
+                await invoke("window_toggle_maximize");
+                return true;
+              }
+              if (kind === "fullscreen") {
+                await invoke("window_toggle_fullscreen");
+                return true;
+              }
+              if (kind === "close") {
+                await invoke("window_close");
+                return true;
+              }
+            } catch (_) {
+              // Fallback to window object API below.
+            }
+          }
+
+          const tauri = window.__TAURI__;
+          const winApi = tauri && (tauri.window || tauri.webviewWindow)
+            ? (tauri.window || tauri.webviewWindow)
+            : null;
+          if (!winApi) return false;
+
+          let currentWindow = null;
+          if (typeof winApi.getCurrentWindow === "function") {
+            currentWindow = winApi.getCurrentWindow();
+          } else if (typeof winApi.getCurrentWebviewWindow === "function") {
+            currentWindow = winApi.getCurrentWebviewWindow();
+          } else {
+            currentWindow = winApi.appWindow || null;
+          }
+          if (!currentWindow) return false;
+
+          try {
+            if (kind === "minimize" && typeof currentWindow.minimize === "function") {
+              await currentWindow.minimize();
+              return true;
+            }
+            if (kind === "maximize" && typeof currentWindow.toggleMaximize === "function") {
+              await currentWindow.toggleMaximize();
+              return true;
+            }
+            if (kind === "close" && typeof currentWindow.close === "function") {
+              await currentWindow.close();
+              return true;
+            }
+            if (kind === "fullscreen" && typeof currentWindow.setFullscreen === "function") {
+              var isFullscreen = false;
+              if (typeof currentWindow.isFullscreen === "function") {
+                isFullscreen = await currentWindow.isFullscreen();
+              }
+              await currentWindow.setFullscreen(!isFullscreen);
+              return true;
+            }
+          } catch (_) {
+            return false;
+          }
+
+          return false;
+        }
+
+        async function runWebFullscreenToggle() {
+          try {
+            if (document.fullscreenElement && document.exitFullscreen) {
+              await document.exitFullscreen();
+              return true;
+            }
+            const root = document.documentElement;
+            if (root && root.requestFullscreen) {
+              await root.requestFullscreen();
+              return true;
+            }
+          } catch (_) {
+            return false;
+          }
+          return false;
+        }
+
         if (behavior === "open-extension-manager") {
           openExtensionManager("extensions");
           return;
@@ -915,6 +1008,44 @@ macro://stealth-check
           const tool = behavior.slice("switch-tool:".length);
           if (tool) switchTool(tool);
           setStatusLine(tr("menuPrefix") + ": " + label);
+          return;
+        }
+
+        if (behavior === "window-minimize") {
+          runNativeWindowAction("minimize").then(function (handled) {
+            setStatusLine(
+              tr("menuPrefix") + ": " + label + (handled ? "" : " (desktop only)")
+            );
+          });
+          return;
+        }
+
+        if (behavior === "window-maximize") {
+          runNativeWindowAction("maximize").then(function (handled) {
+            setStatusLine(
+              tr("menuPrefix") + ": " + label + (handled ? "" : " (desktop only)")
+            );
+          });
+          return;
+        }
+
+        if (behavior === "window-close") {
+          runNativeWindowAction("close").then(function () {
+            setStatusLine(tr("menuPrefix") + ": " + label);
+          });
+          return;
+        }
+
+        if (behavior === "window-fullscreen") {
+          runNativeWindowAction("fullscreen").then(function (handled) {
+            if (handled) {
+              setStatusLine(tr("menuPrefix") + ": " + label);
+              return;
+            }
+            runWebFullscreenToggle().then(function () {
+              setStatusLine(tr("menuPrefix") + ": " + label);
+            });
+          });
           return;
         }
 

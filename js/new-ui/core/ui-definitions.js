@@ -110,22 +110,28 @@
       behavior: "toggle-clippy",
     },
     "window-min": {
-      label: "Window minimize (mock)",
+      label: "Window minimize",
       purposeKey: "tipActionWindowMin",
       purpose: "Minimalizacja okna aplikacji.",
-      behavior: "status",
+      behavior: "window-minimize",
     },
     "window-max": {
-      label: "Window maximize (mock)",
+      label: "Window maximize",
       purposeKey: "tipActionWindowMax",
       purpose: "Maksymalizacja okna aplikacji.",
-      behavior: "status",
+      behavior: "window-maximize",
+    },
+    "window-fullscreen": {
+      label: "Window fullscreen",
+      purposeKey: "tipActionWindowFullscreen",
+      purpose: "Przelaczenie trybu pelnoekranowego.",
+      behavior: "window-fullscreen",
     },
     "window-close": {
-      label: "Window close (mock)",
+      label: "Window close",
       purposeKey: "tipActionWindowClose",
       purpose: "Zamykanie okna aplikacji.",
-      behavior: "status",
+      behavior: "window-close",
     },
   };
 

@@ -19,6 +19,97 @@
       var def = actionDefinition(action);
       var behavior = def && def.behavior ? def.behavior : "status";
 
+      function getInvoke() {
+        return (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
+          || (window.__TAURI__ && window.__TAURI__.invoke)
+          || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
+          || null;
+      }
+
+      async function runNativeWindowAction(kind) {
+        var invoke = getInvoke();
+        if (invoke) {
+          try {
+            if (kind === "minimize") {
+              await invoke("window_minimize");
+              return true;
+            }
+            if (kind === "maximize") {
+              await invoke("window_toggle_maximize");
+              return true;
+            }
+            if (kind === "fullscreen") {
+              await invoke("window_toggle_fullscreen");
+              return true;
+            }
+            if (kind === "close") {
+              await invoke("window_close");
+              return true;
+            }
+          } catch (_) {}
+        }
+
+        var tauri = window.__TAURI__;
+        var winApi = tauri && (tauri.window || tauri.webviewWindow)
+          ? (tauri.window || tauri.webviewWindow)
+          : null;
+        if (!winApi) return false;
+
+        var currentWindow = null;
+        if (typeof winApi.getCurrentWindow === "function") {
+          currentWindow = winApi.getCurrentWindow();
+        } else if (typeof winApi.getCurrentWebviewWindow === "function") {
+          currentWindow = winApi.getCurrentWebviewWindow();
+        } else {
+          currentWindow = winApi.appWindow || null;
+        }
+        if (!currentWindow) return false;
+
+        try {
+          if (kind === "minimize" && typeof currentWindow.minimize === "function") {
+            await currentWindow.minimize();
+            return true;
+          }
+          if (kind === "maximize" && typeof currentWindow.toggleMaximize === "function") {
+            await currentWindow.toggleMaximize();
+            return true;
+          }
+          if (kind === "close" && typeof currentWindow.close === "function") {
+            await currentWindow.close();
+            return true;
+          }
+          if (kind === "fullscreen" && typeof currentWindow.setFullscreen === "function") {
+            var isFullscreen = false;
+            if (typeof currentWindow.isFullscreen === "function") {
+              isFullscreen = await currentWindow.isFullscreen();
+            }
+            await currentWindow.setFullscreen(!isFullscreen);
+            return true;
+          }
+        } catch (_) {
+          return false;
+        }
+
+        return false;
+      }
+
+      async function runWebFullscreenToggle() {
+        try {
+          if (document.fullscreenElement && document.exitFullscreen) {
+            await document.exitFullscreen();
+            return true;
+          }
+          var root = document.documentElement;
+          if (root && root.requestFullscreen) {
+            await root.requestFullscreen();
+            return true;
+          }
+        } catch (_) {
+          return false;
+        }
+        return false;
+      }
+
       if (behavior === "open-extension-manager") {
         if (onOpenExtensionManager) onOpenExtensionManager("extensions");
         return;
@@ -39,6 +130,51 @@
       if (behavior === "toggle-clippy") {
         if (onToggleClippy) onToggleClippy();
         if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
+        return;
+      }
+
+      if (behavior === "window-minimize") {
+        runNativeWindowAction("minimize").then(function (handled) {
+          if (setStatusLine) {
+            setStatusLine(
+              tr("menuPrefix") + ": " + label + (handled ? "" : " (desktop only)")
+            );
+          }
+        });
+        return;
+      }
+
+      if (behavior === "window-maximize") {
+        runNativeWindowAction("maximize").then(function (handled) {
+          if (setStatusLine) {
+            setStatusLine(
+              tr("menuPrefix") + ": " + label + (handled ? "" : " (desktop only)")
+            );
+          }
+        });
+        return;
+      }
+
+      if (behavior === "window-fullscreen") {
+        runNativeWindowAction("fullscreen").then(function (handled) {
+          if (handled) {
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
+            return;
+          }
+          runWebFullscreenToggle().then(function () {
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
+          });
+        });
+        return;
+      }
+
+      if (behavior === "window-close") {
+        runNativeWindowAction("close").then(function (handled) {
+          if (!handled) {
+            try { window.close(); } catch (_) {}
+          }
+          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
+        });
         return;
       }
 

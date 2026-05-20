@@ -17,6 +17,7 @@
         "url": "new-ui.html",
         "width": 900,
         "height": 620,
+        "maximized": true,
         "center": true,
         "resizable": true,
         "decorations": false

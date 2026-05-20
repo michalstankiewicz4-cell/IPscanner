@@ -661,6 +661,14 @@ fn window_toggle_maximize(window: WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn window_toggle_fullscreen(window: WebviewWindow) -> Result<(), String> {
+    let is_fullscreen = window.is_fullscreen().map_err(|e| e.to_string())?;
+    window
+        .set_fullscreen(!is_fullscreen)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn window_start_dragging(window: WebviewWindow) -> Result<(), String> {
     window.start_dragging().map_err(|e| e.to_string())
 }
@@ -3537,6 +3545,7 @@ fn main() {
             open_browser,
             window_minimize,
             window_toggle_maximize,
+            window_toggle_fullscreen,
             window_start_dragging,
             window_close,
             save_scan_results_dialog,
