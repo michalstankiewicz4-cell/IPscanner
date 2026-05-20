@@ -7,6 +7,40 @@
     var getScannerSidebarRuntime = deps.getScannerSidebarRuntime;
 
     var sidebarView = "scanner";
+    var invoke =
+      (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
+      || (window.__TAURI__ && window.__TAURI__.invoke)
+      || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
+      || null;
+
+    function firstIpv4(text) {
+      var match = String(text || "").match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
+      return match ? match[0] : "";
+    }
+
+    function firstCidr(text) {
+      var match = String(text || "").match(/\b(?:\d{1,3}\.){3}\d{1,3}\/\d{1,2}\b/);
+      return match ? match[0] : "";
+    }
+
+    function nowStamp() {
+      var d = new Date();
+      return d.toLocaleTimeString();
+    }
+
+    function appendPsConsole(line) {
+      var out = document.getElementById("v1PsOutput");
+      if (!out) return;
+      out.textContent += String(line || "") + "\n";
+      out.scrollTop = out.scrollHeight;
+      document.dispatchEvent(new CustomEvent("newui:console-pane-update", {
+        detail: {
+          pane: "console",
+          source: "scanner-sidebar",
+          text: String(line || ""),
+        },
+      }));
+    }
 
     function switchSidebarView(view) {
       sidebarView = view;
@@ -53,64 +87,162 @@
           if (action === "ext-ip") {
             var extEl = document.getElementById("v1DetectExtIp");
             var extBtn = document.getElementById("v1UseExtIp");
-            if (extEl) {
-              extEl.textContent = "...";
-              if (extBtn) extBtn.hidden = true;
-              setTimeout(function () {
-                var ip = "203.0.113.42";
-                extEl.textContent = ip;
-                if (extBtn) {
-                  extBtn.hidden = false;
-                  extBtn.onclick = function () {
-                    var runtime = scannerRuntime();
-                    return runtime && runtime.applyDetectedRange && runtime.applyDetectedRange(ip);
-                  };
-                }
-                if (setStatusLine) setStatusLine(tr("statusExternalIp") + " " + ip);
-              }, 600);
+            if (!extEl) return;
+
+            extEl.textContent = "...";
+            if (extBtn) extBtn.hidden = true;
+
+            var psCmd = "(Invoke-RestMethod -UseBasicParsing 'https://api.ipify.org').ToString()";
+
+            if (!invoke) {
+              extEl.textContent = "desktop only";
+              appendPsConsole("[" + nowStamp() + "] PS> " + psCmd);
+              appendPsConsole("[" + nowStamp() + "] desktop only");
+              if (setStatusLine) setStatusLine("External IP: desktop only");
+              return;
             }
+
+            appendPsConsole("[" + nowStamp() + "] PS> " + psCmd);
+            invoke("run_powershell", { command: psCmd }).then(function (res) {
+              var stdout = (res && res.stdout) ? String(res.stdout).trim() : "";
+              var stderr = (res && res.stderr) ? String(res.stderr).trim() : "";
+              var exitCode = (res && typeof res.exit_code === "number") ? res.exit_code : -1;
+              var ip = firstIpv4(stdout);
+
+              if (stdout) appendPsConsole(stdout);
+              if (stderr) appendPsConsole(stderr);
+              appendPsConsole("[" + nowStamp() + "] exit code: " + exitCode);
+
+              if (!ip) {
+                extEl.textContent = "error";
+                if (setStatusLine) setStatusLine("External IP: no output");
+                return;
+              }
+
+              extEl.textContent = ip;
+              if (extBtn) {
+                extBtn.hidden = false;
+                extBtn.onclick = function () {
+                  var runtime = scannerRuntime();
+                  return runtime && runtime.applyDetectedRange && runtime.applyDetectedRange(ip);
+                };
+              }
+              if (setStatusLine) setStatusLine(tr("statusExternalIp") + " " + ip);
+            }).catch(function () {
+              extEl.textContent = "error";
+              appendPsConsole("[" + nowStamp() + "] command failed");
+              if (setStatusLine) setStatusLine("External IP: command failed");
+            });
           }
 
           if (action === "local-ip") {
             var localEl = document.getElementById("v1DetectLocalIp");
             var localBtn = document.getElementById("v1UseLocalIp");
-            if (localEl) {
-              localEl.textContent = "...";
-              if (localBtn) localBtn.hidden = true;
-              setTimeout(function () {
-                var ip = "192.168.1.5";
-                localEl.textContent = ip;
-                if (localBtn) {
-                  localBtn.hidden = false;
-                  localBtn.onclick = function () {
-                    var runtime = scannerRuntime();
-                    return runtime && runtime.applyDetectedRange && runtime.applyDetectedRange(ip);
-                  };
-                }
-                if (setStatusLine) setStatusLine(tr("statusLocalIp") + " " + ip);
-              }, 400);
+            if (!localEl) return;
+
+            localEl.textContent = "...";
+            if (localBtn) localBtn.hidden = true;
+
+            var psLocalCmd = "$ip=(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -notmatch '^(127\\.|169\\.254\\.)' -and $_.InterfaceAlias -notmatch 'Loopback' } | Select-Object -First 1 -ExpandProperty IPAddress); if(-not $ip){$ip=(ipconfig | Select-String 'IPv4 Address|Adres IPv4' | ForEach-Object { $_.ToString().Split(':')[-1].Trim() } | Where-Object {$_ -and $_ -notmatch '^(127\\.|169\\.254\\.)'} | Select-Object -First 1)}; $ip";
+
+            if (!invoke) {
+              localEl.textContent = "desktop only";
+              appendPsConsole("[" + nowStamp() + "] PS> " + psLocalCmd);
+              appendPsConsole("[" + nowStamp() + "] desktop only");
+              if (setStatusLine) setStatusLine("Local IP: desktop only");
+              return;
             }
+
+            appendPsConsole("[" + nowStamp() + "] PS> " + psLocalCmd);
+            invoke("run_powershell", { command: psLocalCmd }).then(function (res) {
+              var stdout = (res && res.stdout) ? String(res.stdout).trim() : "";
+              var stderr = (res && res.stderr) ? String(res.stderr).trim() : "";
+              var exitCode = (res && typeof res.exit_code === "number") ? res.exit_code : -1;
+              var ip = firstIpv4(stdout);
+
+              if (stdout) appendPsConsole(stdout);
+              if (stderr) appendPsConsole(stderr);
+              appendPsConsole("[" + nowStamp() + "] exit code: " + exitCode);
+
+              if (!ip) {
+                localEl.textContent = "error";
+                if (setStatusLine) setStatusLine("Local IP: no output");
+                return;
+              }
+
+              localEl.textContent = ip;
+              if (localBtn) {
+                localBtn.hidden = false;
+                localBtn.onclick = function () {
+                  var runtime = scannerRuntime();
+                  return runtime && runtime.applyDetectedRange && runtime.applyDetectedRange(ip);
+                };
+              }
+              if (setStatusLine) setStatusLine(tr("statusLocalIp") + " " + ip);
+            }).catch(function () {
+              localEl.textContent = "error";
+              appendPsConsole("[" + nowStamp() + "] command failed");
+              if (setStatusLine) setStatusLine("Local IP: command failed");
+            });
           }
 
           if (action === "subnets") {
             var subEl = document.getElementById("v1DetectSubnets");
             var subBtn = document.getElementById("v1UseSubnets");
-            if (subEl) {
-              subEl.textContent = "...";
-              if (subBtn) subBtn.hidden = true;
-              setTimeout(function () {
-                var ip = "192.168.1.0/24";
-                subEl.textContent = ip;
-                if (subBtn) {
-                  subBtn.hidden = false;
-                  subBtn.onclick = function () {
-                    var runtime = scannerRuntime();
-                    return runtime && runtime.applyDetectedRange && runtime.applyDetectedRange(ip);
-                  };
-                }
-                if (setStatusLine) setStatusLine(tr("statusSubnet") + " " + ip);
-              }, 400);
+            if (!subEl) return;
+
+            subEl.textContent = "...";
+            if (subBtn) subBtn.hidden = true;
+
+            var psSubnetCmd = "$e=(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -notmatch '^(127\\.|169\\.254\\.)' -and $_.InterfaceAlias -notmatch 'Loopback' } | Select-Object -First 1); if($e){$oct=$e.IPAddress.Split('.'); \"$($oct[0]).$($oct[1]).$($oct[2]).0/$($e.PrefixLength)\"}";
+
+            if (!invoke) {
+              subEl.textContent = "desktop only";
+              appendPsConsole("[" + nowStamp() + "] PS> " + psSubnetCmd);
+              appendPsConsole("[" + nowStamp() + "] desktop only");
+              if (setStatusLine) setStatusLine("Subnets: desktop only");
+              return;
             }
+
+            appendPsConsole("[" + nowStamp() + "] PS> " + psSubnetCmd);
+            invoke("run_powershell", { command: psSubnetCmd }).then(function (res) {
+              var stdout = (res && res.stdout) ? String(res.stdout).trim() : "";
+              var stderr = (res && res.stderr) ? String(res.stderr).trim() : "";
+              var exitCode = (res && typeof res.exit_code === "number") ? res.exit_code : -1;
+              var cidr = firstCidr(stdout);
+
+              if (stdout) appendPsConsole(stdout);
+              if (stderr) appendPsConsole(stderr);
+              appendPsConsole("[" + nowStamp() + "] exit code: " + exitCode);
+
+              if (!cidr) {
+                var fallbackIp = firstIpv4(stdout);
+                if (fallbackIp) {
+                  var parts = fallbackIp.split(".");
+                  cidr = parts[0] + "." + parts[1] + "." + parts[2] + ".0/24";
+                }
+              }
+
+              if (!cidr) {
+                subEl.textContent = "error";
+                if (setStatusLine) setStatusLine("Subnets: no output");
+                return;
+              }
+
+              subEl.textContent = cidr;
+              if (subBtn) {
+                subBtn.hidden = false;
+                subBtn.onclick = function () {
+                  var runtime = scannerRuntime();
+                  return runtime && runtime.applyDetectedRange && runtime.applyDetectedRange(cidr);
+                };
+              }
+              if (setStatusLine) setStatusLine(tr("statusSubnet") + " " + cidr);
+            }).catch(function () {
+              subEl.textContent = "error";
+              appendPsConsole("[" + nowStamp() + "] command failed");
+              if (setStatusLine) setStatusLine("Subnets: command failed");
+            });
           }
 
           if (action === "save" && runMenuAction) runMenuAction("save-session");
