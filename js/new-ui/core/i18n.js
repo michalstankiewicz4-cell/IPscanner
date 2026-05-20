@@ -412,6 +412,9 @@
       lang = normalized;
       localStorage.setItem(LANG_KEY, normalized);
       document.documentElement.setAttribute("lang", normalized);
+      try {
+        window.dispatchEvent(new CustomEvent("netrecon:language-changed", { detail: { lang: normalized } }));
+      } catch (_) {}
       return lang;
     }
 

@@ -4,6 +4,8 @@
     var getToolInfoMap = deps.getToolInfoMap;
     var versionsData = Array.isArray(deps.versionsData) ? deps.versionsData : [];
     var store = deps.store;
+    var i18n = deps.i18n;
+    var applyStaticTranslations = deps.applyStaticTranslations;
     var onAfterRender = deps.onAfterRender;
     var setStatusLine = deps.setStatusLine;
     var activeTool = deps.initialActiveTool || "scan-runner";
@@ -114,6 +116,45 @@
       return "<div class=\"v1-versions-list\">" + entriesHtml + "</div>";
     }
 
+    function renderLanguageManagerTool() {
+      var current = document.documentElement.getAttribute("lang") || "en";
+      var langList = [];
+      try {
+        langList = i18n && i18n.listLanguages ? i18n.listLanguages() : [];
+      } catch (_) {
+        langList = [];
+      }
+      var langOptions = langList.map(function (code) {
+        return "<option value=\"" + code + "\">" + code + "</option>";
+      }).join("");
+      var dictPlaceholder = "{\n  \"menuFile\": \"Datei\",\n  \"menuOptions\": \"Optionen\",\n  \"menuTools\": \"Werkzeuge\",\n  \"menuHelp\": \"Hilfe\"\n}";
+
+      return [
+        "<div class=\"v1-lang-manager\">",
+        "<div class=\"v1-lang-manager-head\">",
+        "<div>",
+        "<h4 style=\"margin:0 0 4px;\">" + tr("langManagerTitle") + "</h4>",
+        "<div class=\"v1-lang-manager-note\">" + tr("langListHeader") + ": " + current + "</div>",
+        "</div>",
+        "</div>",
+        "<div class=\"v1-lang-manager-grid\">",
+        "<label for=\"v1LangTabSelect\">" + tr("langListHeader") + "</label>",
+        "<select id=\"v1LangTabSelect\">" + langOptions + "</select>",
+        "<label for=\"v1LangTabCode\">" + tr("langCodeLabel") + "</label>",
+        "<input id=\"v1LangTabCode\" type=\"text\" autocomplete=\"off\" placeholder=\"" + tr("langCodePlaceholder") + "\" />",
+        "<label for=\"v1LangTabDict\">" + tr("langDictLabel") + "</label>",
+        "<textarea id=\"v1LangTabDict\" spellcheck=\"false\" placeholder=\"" + dictPlaceholder.replace(/\"/g, '&quot;') + "\"></textarea>",
+        "</div>",
+        "<div class=\"v1-lang-manager-actions\">",
+        "<button type=\"button\" data-lang-action=\"add\">" + tr("langAddBtn") + "</button>",
+        "<button type=\"button\" data-lang-action=\"activate\">" + tr("langActivateBtn") + "</button>",
+        "<button type=\"button\" data-lang-action=\"list\">" + tr("langListBtn") + "</button>",
+        "</div>",
+        "<pre id=\"v1LangTabOutput\" class=\"v1-lang-manager-output\"></pre>",
+        "</div>"
+      ].join("");
+    }
+
     function renderResultsManage() {
       return [
         "<div class=\"v1-results-actions\">",
@@ -162,6 +203,7 @@
 
     var toolRenderers = {
       versions: renderVersionsTool,
+      "language-manager": renderLanguageManagerTool,
       "results-manage": renderResultsManage,
       "results-ip": renderResultsIp,
       "results-wifi": renderResultsWifi,
@@ -219,6 +261,109 @@
       if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + activeTool);
       if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + activeTool;
       if (typeof onAfterRender === "function") onAfterRender(activeTool);
+      if (activeTool === "language-manager") {
+        wireLanguageManagerButtons();
+      }
+    }
+
+    function wireLanguageManagerButtons() {
+      var root = document.getElementById("v1ToolDetail");
+      if (!root) return;
+
+      var selectEl = document.getElementById("v1LangTabSelect");
+      var codeEl = document.getElementById("v1LangTabCode");
+      var dictEl = document.getElementById("v1LangTabDict");
+      var outputEl = document.getElementById("v1LangTabOutput");
+
+      if (selectEl && selectEl.dataset.bound !== "1") {
+        selectEl.dataset.bound = "1";
+        selectEl.addEventListener("change", function () {
+          if (codeEl) codeEl.value = selectEl.value;
+        });
+      }
+
+      if (codeEl && !codeEl.value.trim()) {
+        codeEl.value = (selectEl && selectEl.value) || (i18n && i18n.getLang ? i18n.getLang() : "en");
+      }
+      if (selectEl && codeEl && codeEl.value && !selectEl.value) {
+        selectEl.value = codeEl.value;
+      }
+      if (dictEl && !dictEl.value.trim()) {
+        dictEl.value = "{\n  \"menuFile\": \"Datei\",\n  \"menuOptions\": \"Optionen\",\n  \"menuTools\": \"Werkzeuge\",\n  \"menuHelp\": \"Hilfe\"\n}";
+      }
+      if (outputEl && !outputEl.textContent.trim()) {
+        var langs = i18n && i18n.listLanguages ? i18n.listLanguages() : [];
+        outputEl.textContent = langs.length ? langs.join("\n") : tr("langListHeader") + ": -";
+      }
+
+      root.querySelectorAll("[data-lang-action]").forEach(function (button) {
+        if (button.dataset.bound === "1") return;
+        button.dataset.bound = "1";
+        button.addEventListener("click", function () {
+          var actionName = button.getAttribute("data-lang-action");
+          var code = ((codeEl && codeEl.value) || (selectEl && selectEl.value) || "").trim();
+
+          if (actionName === "list") {
+            var langs = i18n && i18n.listLanguages ? i18n.listLanguages() : [];
+            if (outputEl) outputEl.textContent = langs.length ? langs.join("\n") : tr("langListHeader") + ": -";
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langListHeader"));
+            return;
+          }
+
+          if (!code) {
+            if (outputEl) outputEl.textContent = tr("langInvalidCode");
+            return;
+          }
+
+          if (actionName === "add") {
+            var dict = null;
+            try {
+              dict = JSON.parse(dictEl ? (dictEl.value || "{}") : "{}");
+            } catch (_) {
+              if (outputEl) outputEl.textContent = tr("langInvalidDict");
+              return;
+            }
+
+            var addResult = i18n && i18n.addLanguage ? i18n.addLanguage(code, dict) : { ok: false, error: tr("langAddFail") };
+            if (!addResult.ok) {
+              if (outputEl) outputEl.textContent = tr("langAddFail") + "\n" + addResult.error;
+              return;
+            }
+
+            if (outputEl) outputEl.textContent = tr("langAddOk") + "\n" + addResult.code;
+            if (selectEl) {
+              var option = document.createElement("option");
+              option.value = addResult.code;
+              option.textContent = addResult.code;
+              selectEl.appendChild(option);
+              selectEl.value = addResult.code;
+            }
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langAddOk") + " - " + addResult.code);
+            return;
+          }
+
+          if (actionName === "activate") {
+            var before = i18n && i18n.getLang ? i18n.getLang() : "";
+            var after = i18n && i18n.setLang ? i18n.setLang(code) : before;
+            if (before === after && code.toLowerCase() !== after.toLowerCase()) {
+              if (outputEl) outputEl.textContent = tr("langActivateFail") + "\n" + code;
+              return;
+            }
+
+            if (selectEl) selectEl.value = after;
+            if (codeEl) codeEl.value = after;
+            if (clippyRuntime && clippyRuntime.setLanguage) {
+              clippyRuntime.setLanguage(after);
+            }
+
+            if (window.NetReconNewUI && typeof window.NetReconNewUI.refreshLanguageUi === "function") {
+              window.NetReconNewUI.refreshLanguageUi();
+            }
+            if (outputEl) outputEl.textContent = tr("langActivateOk") + "\n" + after;
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langActivateOk") + " - " + after);
+          }
+        });
+      });
     }
 
     function switchTool(tool) {

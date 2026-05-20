@@ -90,6 +90,11 @@
       text: "Ustawienia aplikacji, domyslne wartosci skanowania i preferencje UI.",
       points: ["Default scan values", "Language and presets", "Customization"]
     },
+    "language-manager": {
+      title: "Language Manager",
+      text: "Dodawanie, aktywacja i przeglad slownikow jezykowych.",
+      points: ["Add custom dictionaries", "Activate language", "List available languages"]
+    },
     versions: {
       title: "Versions",
       text: "Historia zmian i wydan aplikacji.",

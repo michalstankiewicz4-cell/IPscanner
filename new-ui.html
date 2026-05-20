@@ -214,6 +214,11 @@
             <span class="v1-tab-title">Versions</span>
             <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
           </button>
+          <button class="v1-tab tab-closed" data-tool="language-manager" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🌐</span>
+            <span class="v1-tab-title" id="v1TabTitleLanguageManager">Language</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
           <button class="v1-tab tab-closed" data-tool="results-ip" type="button" hidden>
             <span class="v1-tab-icon" aria-hidden="true">🖥</span>
             <span class="v1-tab-title" id="v1TabTitleResultsIp">IP Results</span>
@@ -476,6 +481,7 @@ macro://stealth-check
         const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
         const tabResultsWifi = document.getElementById("v1TabTitleResultsWifi");
         const tabResultsBt = document.getElementById("v1TabTitleResultsBt");
+        const tabTitleLanguageManager = document.getElementById("v1TabTitleLanguageManager");
         const consoleInfoTab = document.getElementById("v1ConsoleInfoTab");
         const assistantMenuLabel = document.querySelector('[data-menu-action="assistant"] span:first-child');
         const clippyClose = document.getElementById("v1ClippyClose");
@@ -520,6 +526,7 @@ macro://stealth-check
         if (tabResultsIp) tabResultsIp.textContent = tr("tabResultsIp");
         if (tabResultsWifi) tabResultsWifi.textContent = tr("tabResultsWifi");
         if (tabResultsBt) tabResultsBt.textContent = tr("tabResultsBt");
+        if (tabTitleLanguageManager) tabTitleLanguageManager.textContent = tr("langManagerTitle");
         if (consoleInfoTab) consoleInfoTab.textContent = tr("consoleInfoTab");
         if (assistantMenuLabel) assistantMenuLabel.textContent = "📎 " + tr("assistant");
         if (clippyClose) clippyClose.setAttribute("aria-label", tr("clippyCloseAria"));
@@ -530,6 +537,19 @@ macro://stealth-check
           powerShellConsoleRuntime.applyStaticTranslations();
         }
       }
+
+      function refreshLanguageUi() {
+        applyStaticTranslations();
+        if (setTooltips) setTooltips();
+        if (refreshActiveUI) refreshActiveUI();
+        if (typeof syncLanguageManagerPanel === "function") syncLanguageManagerPanel();
+        requestAnimationFrame(function () {
+          if (typeof refreshCustomScrollbars === "function") refreshCustomScrollbars();
+        });
+      }
+
+      window.NetReconNewUI = window.NetReconNewUI || {};
+      window.NetReconNewUI.refreshLanguageUi = refreshLanguageUi;
 
       // =========================
       // 1) Tool metadata + routing
@@ -702,6 +722,47 @@ macro://stealth-check
         if (els.manifest) els.manifest.focus();
       }
 
+      function openLanguageManager() {
+        switchTool("language-manager");
+      }
+
+      function languageManagerElements() {
+        return {
+          code: document.getElementById("v1LangTabCode"),
+          dict: document.getElementById("v1LangTabDict"),
+          output: document.getElementById("v1LangTabOutput"),
+        };
+      }
+
+      function languageManagerDefaultDict() {
+        return "{\n  \"menuFile\": \"Datei\",\n  \"menuOptions\": \"Optionen\",\n  \"menuTools\": \"Werkzeuge\",\n  \"menuHelp\": \"Hilfe\"\n}";
+      }
+
+      function languageManagerWrite(text) {
+        const els = languageManagerElements();
+        if (els.output) {
+          els.output.textContent = text;
+          els.output.scrollTop = 0;
+        }
+      }
+
+      function syncLanguageManagerPanel() {
+        if (activeTool !== "language-manager") return;
+        const els = languageManagerElements();
+        if (els.code && !els.code.value.trim()) {
+          els.code.value = i18n.getLang ? i18n.getLang() : "en";
+        }
+        if (els.dict && !els.dict.value.trim()) {
+          els.dict.value = languageManagerDefaultDict();
+        }
+        if (els.output && !els.output.textContent.trim()) {
+          const langs = i18n.listLanguages ? i18n.listLanguages() : [];
+          languageManagerWrite(langs.length ? langs.join("\n") : tr("langListHeader") + ": -");
+        }
+      }
+
+      function initLanguageManagerUi() {}
+
       function runMenuAction(action) {
         const actionMap = getActionMap();
         const label = action && actionMap[action] ? actionMap[action] : action;
@@ -714,7 +775,7 @@ macro://stealth-check
         }
 
         if (behavior === "open-language-manager") {
-          openExtensionManager("languages");
+          openLanguageManager();
           return;
         }
 
@@ -1120,9 +1181,12 @@ macro://stealth-check
             versionsData: core.versionsData || [],
             store,
             setStatusLine,
+            i18n,
+            applyStaticTranslations,
             onAfterRender: function () {
               requestAnimationFrame(function () {
                 refreshCustomScrollbars();
+                syncLanguageManagerPanel();
               });
             },
             initialActiveTool: activeTool,
@@ -1167,7 +1231,7 @@ macro://stealth-check
             getActionMap,
             setStatusLine,
             onOpenExtensionManager: openExtensionManager,
-            onOpenLanguageManager: openExtensionManager,
+            onOpenLanguageManager: openLanguageManager,
             onSwitchTool: switchTool,
             onToggleClippy: function () {
               if (clippyRuntime && clippyRuntime.toggle) {
@@ -1228,6 +1292,7 @@ macro://stealth-check
       applyStaticTranslations();
       applyMenuAndPanelDefinitions();
       initExtensionManagerUi();
+      initLanguageManagerUi();
       setTooltips();
       initMenuBar();
       initMenuActions();
@@ -1258,6 +1323,8 @@ macro://stealth-check
           closeExtensionManager();
         }
       });
+
+      window.addEventListener("netrecon:language-changed", refreshLanguageUi);
 
       // Collapsible sidebar sections
       document.querySelectorAll('.v1-section-header').forEach(function (header) {
