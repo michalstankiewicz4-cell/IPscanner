@@ -1,6 +1,13 @@
 (function () {
   function createIpInputsRuntime() {
+    var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils
+      ? window.NetReconNewUICore.utils.net
+      : null;
+
     function isValidIpv4(value) {
+      if (sharedNet && typeof sharedNet.isValidIpv4 === "function") {
+        return sharedNet.isValidIpv4(value);
+      }
       var parts = String(value || "").trim().split(".");
       if (parts.length !== 4) return false;
       return parts.every(function (part) {

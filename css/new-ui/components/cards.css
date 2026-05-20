@@ -212,6 +212,23 @@
   flex-wrap: wrap;
 }
 
+.v1-import-manager-options {
+  display: grid;
+  gap: 6px;
+  color: var(--txt-dim);
+  font-size: 12px;
+}
+
+.v1-import-manager-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.v1-import-manager-options input[type="checkbox"] {
+  accent-color: var(--brand);
+}
+
 .v1-import-manager-actions button {
   border: 0;
   background: #2f2f33;

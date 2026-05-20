@@ -11,6 +11,15 @@
     var setStatusLine = deps.setStatusLine;
     var activeTool = deps.initialActiveTool || "scan-runner";
 
+    function escapeHtml(value) {
+      return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     function infoFor(tool) {
       var tools = getToolInfoMap ? getToolInfoMap() : {};
       return tools[tool] || tools["scan-runner"] || {
@@ -101,8 +110,8 @@
 
     function renderDefaultTool(tool) {
       var info = infoFor(tool);
-      var points = (info.points || []).map(function (p) { return "<li>" + p + "</li>"; }).join("");
-      return "<h4>" + info.title + "</h4><div>" + info.text + "</div><ul>" + points + "</ul>";
+      var points = (info.points || []).map(function (p) { return "<li>" + escapeHtml(p) + "</li>"; }).join("");
+      return "<h4>" + escapeHtml(info.title) + "</h4><div>" + escapeHtml(info.text) + "</div><ul>" + points + "</ul>";
     }
 
     function renderVersionsTool() {
@@ -111,8 +120,8 @@
       }
 
       var entriesHtml = versionsData.map(function (entry) {
-        var notes = (entry.notes || []).map(function (note) { return "<li>" + note + "</li>"; }).join("");
-        return "<section class=\"v1-version-entry\"><h4>" + entry.version + "</h4><ul>" + notes + "</ul></section>";
+        var notes = (entry.notes || []).map(function (note) { return "<li>" + escapeHtml(note) + "</li>"; }).join("");
+        return "<section class=\"v1-version-entry\"><h4>" + escapeHtml(entry.version) + "</h4><ul>" + notes + "</ul></section>";
       }).join("");
       return "<div class=\"v1-versions-list\">" + entriesHtml + "</div>";
     }
@@ -126,7 +135,7 @@
         langList = [];
       }
       var langOptions = langList.map(function (code) {
-        return "<option value=\"" + code + "\">" + code + "</option>";
+        return "<option value=\"" + escapeHtml(code) + "\">" + escapeHtml(code) + "</option>";
       }).join("");
       var dictPlaceholder = "{\n  \"menuFile\": \"Datei\",\n  \"menuOptions\": \"Optionen\",\n  \"menuTools\": \"Werkzeuge\",\n  \"menuHelp\": \"Hilfe\"\n}";
 
@@ -166,7 +175,7 @@
 
       var listHtml = tools.length
         ? tools.map(function (item) {
-            return "<div class=\"v1-import-item\"><strong>" + item.id + "</strong> <span>@ " + item.version + "</span><div>" + item.name + "</div></div>";
+            return "<div class=\"v1-import-item\"><strong>" + escapeHtml(item.id) + "</strong> <span>@ " + escapeHtml(item.version) + "</span><div>" + escapeHtml(item.name) + "</div></div>";
           }).join("")
         : "<div class=\"v1-import-empty\">No imported tools yet.</div>";
 
@@ -186,6 +195,10 @@
         "<button type=\"button\" data-import-action=\"install\">Import</button>",
         "<button type=\"button\" data-import-action=\"list\">List</button>",
         "<button type=\"button\" data-import-action=\"uninstall\">Uninstall</button>",
+        "</div>",
+        "<div class=\"v1-import-manager-options\">",
+        "<label><input id=\"v1ImportAddMenu\" type=\"checkbox\" checked /> " + tr("importOptToolsMenu") + "</label>",
+        "<label><input id=\"v1ImportAddActivity\" type=\"checkbox\" /> " + tr("importOptActivityIcon") + "</label>",
         "</div>",
         "<div id=\"v1ImportOutput\" class=\"v1-import-output\">" + listHtml + "</div>",
         "</div>"
@@ -313,6 +326,8 @@
 
       var manifestEl = document.getElementById("v1ImportManifest");
       var uninstallEl = document.getElementById("v1ImportUninstallId");
+      var addMenuEl = document.getElementById("v1ImportAddMenu");
+      var addActivityEl = document.getElementById("v1ImportAddActivity");
       var outputEl = document.getElementById("v1ImportOutput");
 
       if (manifestEl && !manifestEl.value.trim()) {
@@ -329,9 +344,34 @@
           function listInstalled() {
             var items = extensionHost && extensionHost.listExtensions ? extensionHost.listExtensions() : [];
             if (!outputEl) return;
-            outputEl.innerHTML = items.length
-              ? items.map(function (item) { return "<div class=\"v1-import-item\"><strong>" + item.id + "</strong> <span>@ " + item.version + "</span><div>" + item.name + "</div></div>"; }).join("")
-              : "<div class=\"v1-import-empty\">No imported tools yet.</div>";
+            outputEl.textContent = "";
+
+            if (!items.length) {
+              var emptyEl = document.createElement("div");
+              emptyEl.className = "v1-import-empty";
+              emptyEl.textContent = "No imported tools yet.";
+              outputEl.appendChild(emptyEl);
+              return;
+            }
+
+            items.forEach(function (item) {
+              var itemEl = document.createElement("div");
+              itemEl.className = "v1-import-item";
+
+              var strong = document.createElement("strong");
+              strong.textContent = item.id;
+              itemEl.appendChild(strong);
+
+              var ver = document.createElement("span");
+              ver.textContent = "@ " + item.version;
+              itemEl.appendChild(ver);
+
+              var name = document.createElement("div");
+              name.textContent = item.name;
+              itemEl.appendChild(name);
+
+              outputEl.appendChild(itemEl);
+            });
           }
 
           if (actionName === "list") {
@@ -356,6 +396,9 @@
             listInstalled();
             if (outputEl) outputEl.textContent = tr("extUninstallOk") + "\n" + removeResult.id;
             if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extUninstallOk") + " - " + removeResult.id);
+            if (window.NetReconNewUI && typeof window.NetReconNewUI.syncExtensionToolUi === "function") {
+              window.NetReconNewUI.syncExtensionToolUi();
+            }
             refreshActiveUI();
             return;
           }
@@ -373,6 +416,20 @@
             return;
           }
 
+          var addToMenu = !addMenuEl || !!addMenuEl.checked;
+          var addToActivity = !!(addActivityEl && addActivityEl.checked);
+          if (manifest && manifest.contributions && manifest.contributions.tools && typeof manifest.contributions.tools === "object") {
+            Object.keys(manifest.contributions.tools).forEach(function (toolKey) {
+              var meta = manifest.contributions.tools[toolKey] || {};
+              meta.ui = meta.ui && typeof meta.ui === "object" ? meta.ui : {};
+              meta.ui.showInToolsMenu = addToMenu;
+              meta.ui.showInActivityBar = addToActivity;
+              meta.ui.showInLeftPanel = true;
+              meta.ui.showAsTab = true;
+              manifest.contributions.tools[toolKey] = meta;
+            });
+          }
+
           var result = extensionHost && extensionHost.installExtension ? extensionHost.installExtension(manifest) : { ok: false, error: tr("extInstallFail") };
           if (!result.ok) {
             if (outputEl) outputEl.textContent = tr("extInstallFail") + "\n" + result.error;
@@ -381,6 +438,9 @@
 
           if (outputEl) outputEl.textContent = tr("extInstallOk") + "\n" + result.manifest.id + "@" + result.manifest.version;
           if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extInstallOk") + " - " + result.manifest.id);
+          if (window.NetReconNewUI && typeof window.NetReconNewUI.syncExtensionToolUi === "function") {
+            window.NetReconNewUI.syncExtensionToolUi();
+          }
           listInstalled();
           refreshActiveUI();
         });

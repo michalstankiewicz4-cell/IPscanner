@@ -357,6 +357,7 @@ macro://stealth-check
   <script src="js/new-ui/core/theme.js"></script>
   <script src="js/new-ui/core/tool-catalog.js"></script>
   <script src="js/new-ui/core/versions-data.js"></script>
+  <script src="js/new-ui/core/utils/net-utils.js"></script>
   <script src="js/new-ui/core/extensions.js"></script>
   <script src="js/new-ui/core/ui-definitions.js"></script>
   <script src="js/new-ui/core/runtimes/status-log-runtime.js"></script>
@@ -520,6 +521,9 @@ macro://stealth-check
 
       window.NetReconNewUI = window.NetReconNewUI || {};
       window.NetReconNewUI.refreshLanguageUi = refreshLanguageUi;
+      window.NetReconNewUI.syncExtensionToolUi = function () {
+        if (typeof syncExtensionToolUi === "function") syncExtensionToolUi();
+      };
 
       // =========================
       // 1) Tool metadata + routing
@@ -591,6 +595,125 @@ macro://stealth-check
 
       function getActionMap() {
         return extensionHost ? extensionHost.getMenuActions() : baseActionMap;
+      }
+
+      function extensionToolEntries() {
+        const toolMap = getToolInfoMap();
+        return Object.keys(toolMap)
+          .filter((toolKey) => !Object.prototype.hasOwnProperty.call(baseToolInfo, toolKey))
+          .map((toolKey) => {
+            const info = toolMap[toolKey] || {};
+            const ui = info.ui && typeof info.ui === "object" ? info.ui : {};
+            return {
+              key: toolKey,
+              title: info.title || toolKey,
+              icon: info.icon || "🧩",
+              ui,
+            };
+          });
+      }
+
+      function clearDynamicExtensionUi() {
+        document.querySelectorAll('[data-dynamic-extension="1"]').forEach((el) => {
+          el.remove();
+        });
+      }
+
+      function syncExtensionToolUi() {
+        clearDynamicExtensionUi();
+
+        const entries = extensionToolEntries();
+        if (!entries.length) {
+          if (typeof setTooltips === "function") setTooltips();
+          return;
+        }
+
+        const toolsDropdown = document.querySelector('[data-menu="tools"] .v1-menu-dropdown');
+        const activityBar = document.querySelector('.v1-activity');
+        const activitySpacer = activityBar ? activityBar.querySelector('.v1-activity-spacer') : null;
+        const scannerToolList = document.querySelector('.v1-sidebar [data-sidebar-view="scanner"] .v1-tool-list');
+        const tabsBar = document.querySelector('.v1-tabs');
+
+        entries.forEach((entry) => {
+          if (tabsBar) {
+            const tab = document.createElement("button");
+            tab.className = "v1-tab tab-closed";
+            tab.setAttribute("data-tool", entry.key);
+            tab.setAttribute("type", "button");
+            tab.setAttribute("hidden", "hidden");
+            tab.setAttribute("data-dynamic-extension", "1");
+
+            const icon = document.createElement("span");
+            icon.className = "v1-tab-icon";
+            icon.setAttribute("aria-hidden", "true");
+            icon.textContent = entry.icon;
+
+            const title = document.createElement("span");
+            title.className = "v1-tab-title";
+            title.textContent = entry.title;
+
+            const close = document.createElement("span");
+            close.className = "v1-tab-close";
+            close.setAttribute("data-tab-close", "true");
+            close.setAttribute("role", "button");
+            close.setAttribute("aria-label", "Close tab");
+            close.setAttribute("tabindex", "-1");
+            close.textContent = "×";
+
+            tab.appendChild(icon);
+            tab.appendChild(title);
+            tab.appendChild(close);
+            tabsBar.appendChild(tab);
+          }
+
+          if (scannerToolList) {
+            const li = document.createElement("li");
+            li.className = "v1-extension-tool-item";
+            li.setAttribute("data-tool", entry.key);
+            li.setAttribute("data-dynamic-extension", "1");
+            li.textContent = entry.icon + " " + entry.title;
+            scannerToolList.appendChild(li);
+          }
+
+          if (toolsDropdown && entry.ui.showInToolsMenu !== false) {
+            const btn = document.createElement("button");
+            btn.className = "v1-menu-dd-item";
+            btn.setAttribute("data-tool", entry.key);
+            btn.setAttribute("data-dynamic-extension", "1");
+
+            const left = document.createElement("span");
+            left.textContent = entry.icon + " " + entry.title;
+            const right = document.createElement("span");
+            right.className = "shortcut";
+
+            btn.appendChild(left);
+            btn.appendChild(right);
+            btn.addEventListener("click", function () {
+              document.querySelectorAll(".v1-menu-group.open").forEach(function (group) {
+                group.classList.remove("open");
+              });
+            });
+            toolsDropdown.appendChild(btn);
+          }
+
+          if (activityBar && activitySpacer && entry.ui.showInActivityBar) {
+            const btn = document.createElement("button");
+            btn.setAttribute("data-tool", entry.key);
+            btn.setAttribute("data-dynamic-extension", "1");
+            btn.setAttribute("title", entry.title);
+            btn.setAttribute("aria-label", entry.title);
+            btn.textContent = entry.icon;
+            activityBar.insertBefore(btn, activitySpacer);
+          }
+        });
+
+        if (typeof setTooltips === "function") setTooltips();
+        if (panelsRuntime && panelsRuntime.initWorkbenchTabs) {
+          panelsRuntime.initWorkbenchTabs();
+        }
+        if (typeof refreshCustomScrollbars === "function") {
+          requestAnimationFrame(() => refreshCustomScrollbars());
+        }
       }
 
       function actionDefinition(action) {
@@ -1173,6 +1296,8 @@ macro://stealth-check
         }
       }
 
+      syncExtensionToolUi();
+
       const extensionManagerRuntime = runtimeFactory.createExtensionManagerRuntime
         ? runtimeFactory.createExtensionManagerRuntime({
             tr,
@@ -1301,6 +1426,7 @@ macro://stealth-check
 
       window.NetReconNewUI = window.NetReconNewUI || {};
       window.NetReconNewUI.extensions = extensionHost;
+      window.NetReconNewUI.syncExtensionToolUi = syncExtensionToolUi;
 
       document.addEventListener("click", () => {
         requestAnimationFrame(() => {
