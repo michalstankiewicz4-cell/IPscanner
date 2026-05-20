@@ -74,10 +74,10 @@
       behavior: "open-language-manager",
     },
     customization: {
-      label: "Customization (extensions)",
+      label: "Import Tool",
       purposeKey: "tipActionCustomization",
-      purpose: "Instalacja i zarzadzanie rozszerzeniami.",
-      behavior: "open-extension-manager",
+      purpose: "Import rozszerzen i zarzadzanie toolami.",
+      behavior: "switch-tool:import-tool",
     },
     versions: {
       label: "Versions",

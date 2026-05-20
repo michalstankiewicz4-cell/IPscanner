@@ -11,7 +11,7 @@
   <link id="newUiSkinLink" rel="stylesheet" href="css/new-ui/skins/default.css" />
   <link rel="stylesheet" href="css/new-ui/new-ui.css" />
 </head>
-<body>
+<body data-v1-ready="false" style="visibility:hidden;">
   <div class="v1-shell">
     <!-- Top menu -->
     <nav class="v1-menubar" id="v1Menubar">
@@ -40,7 +40,7 @@
           <div class="v1-menu-dd-sep"></div>
           <button class="v1-menu-dd-item" data-menu-action="language"><span>Language...</span><span class="shortcut"></span></button>
           <div class="v1-menu-dd-sep"></div>
-          <button class="v1-menu-dd-item" data-menu-action="customization"><span>Customization...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="customization"><span>Import Tool...</span><span class="shortcut"></span></button>
         </div>
       </div>
 
@@ -214,6 +214,11 @@
             <span class="v1-tab-title">Versions</span>
             <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
           </button>
+          <button class="v1-tab tab-closed" data-tool="import-tool" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">📦</span>
+            <span class="v1-tab-title" id="v1TabTitleImportTool">Import Tool</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
           <button class="v1-tab tab-closed" data-tool="language-manager" type="button" hidden>
             <span class="v1-tab-icon" aria-hidden="true">🌐</span>
             <span class="v1-tab-title" id="v1TabTitleLanguageManager">Language</span>
@@ -227,7 +232,7 @@
         </div>
 
         <div class="v1-content">
-          <article class="v1-card" id="v1MainCard">
+          <article class="v1-card" id="v1MainCard" hidden>
             <h3 id="v1ToolTitle">Scan Runner</h3>
 
             <div class="v1-meta" id="v1ScanMeta">
@@ -335,7 +340,7 @@ macro://stealth-check
     <!-- Bottom info bar -->
     <footer class="v1-status">
       <span>main • tauri-desktop • UI mock only</span>
-      <span id="v1StatusRight">active: scan-runner</span>
+      <span id="v1StatusRight">active: results-ip</span>
     </footer>
 
     <div id="v1ClippyContainer" class="v1-clippy-hidden" aria-live="polite">
@@ -346,47 +351,6 @@ macro://stealth-check
       <button id="v1ClippyChar" type="button" aria-label="Assistant">📎</button>
     </div>
   </div>
-
-  <section class="v1-ext-modal" id="v1ExtModal" hidden>
-    <div class="v1-ext-panel" role="dialog" aria-modal="true" aria-labelledby="v1ExtTitle">
-      <div class="v1-ext-head">
-        <h3 id="v1ExtTitle">Extension Manager</h3>
-        <button class="v1-ext-close" id="v1ExtClose" aria-label="Close">x</button>
-      </div>
-
-      <div class="v1-ext-grid">
-        <label id="v1ExtManifestLabel" for="v1ExtManifest">Manifest JSON</label>
-        <textarea id="v1ExtManifest" spellcheck="false"></textarea>
-      </div>
-
-      <div class="v1-ext-grid">
-        <label id="v1LangCodeLabel" for="v1LangCode">Language code</label>
-        <input id="v1LangCode" type="text" autocomplete="off" />
-      </div>
-
-      <div class="v1-ext-grid">
-        <label id="v1LangDictLabel" for="v1LangDict">Language dictionary JSON</label>
-        <textarea id="v1LangDict" spellcheck="false"></textarea>
-      </div>
-
-      <div class="v1-ext-grid">
-        <label id="v1ExtUninstallLabel" for="v1ExtUninstallId">Extension id to uninstall</label>
-        <input id="v1ExtUninstallId" type="text" autocomplete="off" />
-      </div>
-
-      <div class="v1-ext-actions">
-        <button id="v1ExtInstallBtn">Install</button>
-        <button id="v1ExtListBtn">List</button>
-        <button id="v1ExtUninstallBtn">Uninstall</button>
-        <button id="v1LangAddBtn">Add language</button>
-        <button id="v1LangActivateBtn">Activate language</button>
-        <button id="v1LangListBtn">List languages</button>
-        <button id="v1ExtCloseBtn">Close</button>
-      </div>
-
-      <pre class="v1-ext-output" id="v1ExtOutput"></pre>
-    </div>
-  </section>
 
   <script src="js/new-ui/core/store.js"></script>
   <script src="js/new-ui/core/i18n.js"></script>
@@ -417,9 +381,13 @@ macro://stealth-check
         core.theme.applySkin(core.theme.getCurrentSkin());
       }
 
+      const savedActiveTool = window.localStorage ? window.localStorage.getItem("netrecon_active_tool") : "";
+      const allowedStartupTools = { versions: true, "import-tool": true, "language-manager": true, "results-ip": true };
+      const initialActiveTool = savedActiveTool && allowedStartupTools[savedActiveTool] ? savedActiveTool : "results-ip";
+
       const store = core.createStore
         ? core.createStore({
-            activeTool: "scan-runner",
+            activeTool: initialActiveTool,
             lang: i18n.getLang(),
             skin: core.theme && core.theme.getCurrentSkin ? core.theme.getCurrentSkin() : "default",
           })
@@ -481,6 +449,7 @@ macro://stealth-check
         const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
         const tabResultsWifi = document.getElementById("v1TabTitleResultsWifi");
         const tabResultsBt = document.getElementById("v1TabTitleResultsBt");
+        const tabTitleImportTool = document.getElementById("v1TabTitleImportTool");
         const tabTitleLanguageManager = document.getElementById("v1TabTitleLanguageManager");
         const consoleInfoTab = document.getElementById("v1ConsoleInfoTab");
         const assistantMenuLabel = document.querySelector('[data-menu-action="assistant"] span:first-child');
@@ -526,6 +495,7 @@ macro://stealth-check
         if (tabResultsIp) tabResultsIp.textContent = tr("tabResultsIp");
         if (tabResultsWifi) tabResultsWifi.textContent = tr("tabResultsWifi");
         if (tabResultsBt) tabResultsBt.textContent = tr("tabResultsBt");
+        if (tabTitleImportTool) tabTitleImportTool.textContent = tr("importToolTitle");
         if (tabTitleLanguageManager) tabTitleLanguageManager.textContent = tr("langManagerTitle");
         if (consoleInfoTab) consoleInfoTab.textContent = tr("consoleInfoTab");
         if (assistantMenuLabel) assistantMenuLabel.textContent = "📎 " + tr("assistant");
@@ -1180,6 +1150,7 @@ macro://stealth-check
             getToolInfoMap,
             versionsData: core.versionsData || [],
             store,
+            extensionHost,
             setStatusLine,
             i18n,
             applyStaticTranslations,
@@ -1189,7 +1160,7 @@ macro://stealth-check
                 syncLanguageManagerPanel();
               });
             },
-            initialActiveTool: activeTool,
+            initialActiveTool: initialActiveTool,
           })
         : null;
 
@@ -1306,8 +1277,15 @@ macro://stealth-check
       }
       initResizableLayout();
       initCustomScrollbars();
-      refreshActiveUI();
+      switchTool(initialActiveTool);
       switchSidebarView("scanner");
+
+      requestAnimationFrame(function () {
+        if (document.body) {
+          document.body.style.visibility = "visible";
+          document.body.setAttribute("data-v1-ready", "true");
+        }
+      });
 
       window.NetReconNewUI = window.NetReconNewUI || {};
       window.NetReconNewUI.extensions = extensionHost;

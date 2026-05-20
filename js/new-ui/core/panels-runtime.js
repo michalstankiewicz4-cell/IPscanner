@@ -4,6 +4,7 @@
     var getToolInfoMap = deps.getToolInfoMap;
     var versionsData = Array.isArray(deps.versionsData) ? deps.versionsData : [];
     var store = deps.store;
+    var extensionHost = deps.extensionHost;
     var i18n = deps.i18n;
     var applyStaticTranslations = deps.applyStaticTranslations;
     var onAfterRender = deps.onAfterRender;
@@ -155,6 +156,42 @@
       ].join("");
     }
 
+    function renderImportTool() {
+      var tools = [];
+      try {
+        tools = extensionHost && extensionHost.listExtensions ? extensionHost.listExtensions() : [];
+      } catch (_) {
+        tools = [];
+      }
+
+      var listHtml = tools.length
+        ? tools.map(function (item) {
+            return "<div class=\"v1-import-item\"><strong>" + item.id + "</strong> <span>@ " + item.version + "</span><div>" + item.name + "</div></div>";
+          }).join("")
+        : "<div class=\"v1-import-empty\">No imported tools yet.</div>";
+
+      return [
+        "<div class=\"v1-import-manager\">",
+        "<div class=\"v1-import-manager-head\">",
+        "<h4 style=\"margin:0 0 4px;\">" + tr("tipActionCustomization") + "</h4>",
+        "<div class=\"v1-import-manager-note\">JSON manifest import, list and uninstall.</div>",
+        "</div>",
+        "<div class=\"v1-import-manager-grid\">",
+        "<label for=\"v1ImportManifest\">Manifest JSON</label>",
+        "<textarea id=\"v1ImportManifest\" spellcheck=\"false\" placeholder=\"{\n  \"id\": \"com.example.demo\"\n}\"></textarea>",
+        "<label for=\"v1ImportUninstallId\">Tool id to uninstall</label>",
+        "<input id=\"v1ImportUninstallId\" type=\"text\" autocomplete=\"off\" placeholder=\"com.example.demo\" />",
+        "</div>",
+        "<div class=\"v1-import-manager-actions\">",
+        "<button type=\"button\" data-import-action=\"install\">Import</button>",
+        "<button type=\"button\" data-import-action=\"list\">List</button>",
+        "<button type=\"button\" data-import-action=\"uninstall\">Uninstall</button>",
+        "</div>",
+        "<div id=\"v1ImportOutput\" class=\"v1-import-output\">" + listHtml + "</div>",
+        "</div>"
+      ].join("");
+    }
+
     function renderResultsManage() {
       return [
         "<div class=\"v1-results-actions\">",
@@ -203,6 +240,7 @@
 
     var toolRenderers = {
       versions: renderVersionsTool,
+      "import-tool": renderImportTool,
       "language-manager": renderLanguageManagerTool,
       "results-manage": renderResultsManage,
       "results-ip": renderResultsIp,
@@ -264,6 +302,89 @@
       if (activeTool === "language-manager") {
         wireLanguageManagerButtons();
       }
+      if (activeTool === "import-tool") {
+        wireImportToolButtons();
+      }
+    }
+
+    function wireImportToolButtons() {
+      var root = document.getElementById("v1ToolDetail");
+      if (!root) return;
+
+      var manifestEl = document.getElementById("v1ImportManifest");
+      var uninstallEl = document.getElementById("v1ImportUninstallId");
+      var outputEl = document.getElementById("v1ImportOutput");
+
+      if (manifestEl && !manifestEl.value.trim()) {
+        manifestEl.value = "{\n  \"id\": \"com.example.demo\",\n  \"name\": \"Demo Extension\",\n  \"version\": \"0.1.0\",\n  \"contributions\": {\n    \"tools\": {},\n    \"menuActions\": {}\n  }\n}";
+      }
+
+      root.querySelectorAll("[data-import-action]").forEach(function (button) {
+        if (button.dataset.bound === "1") return;
+        button.dataset.bound = "1";
+        button.addEventListener("click", function () {
+          var actionName = button.getAttribute("data-import-action");
+          var manifestText = manifestEl ? (manifestEl.value || "{}").trim() : "{}";
+
+          function listInstalled() {
+            var items = extensionHost && extensionHost.listExtensions ? extensionHost.listExtensions() : [];
+            if (!outputEl) return;
+            outputEl.innerHTML = items.length
+              ? items.map(function (item) { return "<div class=\"v1-import-item\"><strong>" + item.id + "</strong> <span>@ " + item.version + "</span><div>" + item.name + "</div></div>"; }).join("")
+              : "<div class=\"v1-import-empty\">No imported tools yet.</div>";
+          }
+
+          if (actionName === "list") {
+            listInstalled();
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extListHeader"));
+            return;
+          }
+
+          if (actionName === "uninstall") {
+            var id = uninstallEl ? (uninstallEl.value || "").trim() : "";
+            if (!id) {
+              if (outputEl) outputEl.textContent = tr("extUninstallPrompt");
+              return;
+            }
+
+            var removeResult = extensionHost && extensionHost.uninstallExtension ? extensionHost.uninstallExtension(id) : { ok: false, error: tr("extUninstallFail") };
+            if (!removeResult.ok) {
+              if (outputEl) outputEl.textContent = tr("extUninstallFail") + "\n" + removeResult.error;
+              return;
+            }
+
+            listInstalled();
+            if (outputEl) outputEl.textContent = tr("extUninstallOk") + "\n" + removeResult.id;
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extUninstallOk") + " - " + removeResult.id);
+            refreshActiveUI();
+            return;
+          }
+
+          if (!manifestText) {
+            if (outputEl) outputEl.textContent = tr("extInvalidJson");
+            return;
+          }
+
+          var manifest = null;
+          try {
+            manifest = JSON.parse(manifestText);
+          } catch (_) {
+            if (outputEl) outputEl.textContent = tr("extInvalidJson");
+            return;
+          }
+
+          var result = extensionHost && extensionHost.installExtension ? extensionHost.installExtension(manifest) : { ok: false, error: tr("extInstallFail") };
+          if (!result.ok) {
+            if (outputEl) outputEl.textContent = tr("extInstallFail") + "\n" + result.error;
+            return;
+          }
+
+          if (outputEl) outputEl.textContent = tr("extInstallOk") + "\n" + result.manifest.id + "@" + result.manifest.version;
+          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extInstallOk") + " - " + result.manifest.id);
+          listInstalled();
+          refreshActiveUI();
+        });
+      });
     }
 
     function wireLanguageManagerButtons() {
@@ -375,6 +496,9 @@
 
       activeTool = tool;
       if (store && store.setState) store.setState({ activeTool: tool });
+      try {
+        if (window.localStorage && tool !== "scan-runner") window.localStorage.setItem("netrecon_active_tool", tool);
+      } catch (_) {}
       refreshActiveUI();
       updateEmptyState();
     }

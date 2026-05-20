@@ -90,6 +90,11 @@
       text: "Ustawienia aplikacji, domyslne wartosci skanowania i preferencje UI.",
       points: ["Default scan values", "Language and presets", "Customization"]
     },
+    "import-tool": {
+      title: "Import Tool",
+      text: "Importowanie, lista i usuwanie tooli oraz rozszerzen z JSON manifestu.",
+      points: ["Paste manifest JSON", "List installed tools", "Uninstall by id"]
+    },
     "language-manager": {
       title: "Language Manager",
       text: "Dodawanie, aktywacja i przeglad slownikow jezykowych.",
