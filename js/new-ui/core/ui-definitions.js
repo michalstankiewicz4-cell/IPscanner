@@ -100,8 +100,8 @@
     assistant: {
       label: "Assistant",
       purposeKey: "tipActionAssistant",
-      purpose: "Przelaczenie do panelu asystenta AI.",
-      behavior: "switch-tool:ai-assistant",
+      purpose: "Pokaz lub ukryj asystenta Clippy.",
+      behavior: "toggle-clippy",
     },
     "window-min": {
       label: "Window minimize (mock)",

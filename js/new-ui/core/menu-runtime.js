@@ -7,6 +7,7 @@
     var onOpenExtensionManager = deps.onOpenExtensionManager;
     var onOpenLanguageManager = deps.onOpenLanguageManager;
     var onSwitchTool = deps.onSwitchTool;
+    var onToggleClippy = deps.onToggleClippy;
 
     function actionDefinition(action) {
       return (uiDefinitions.menuActions && uiDefinitions.menuActions[action]) || null;
@@ -31,6 +32,12 @@
       if (behavior.indexOf("switch-tool:") === 0) {
         var tool = behavior.slice("switch-tool:".length);
         if (tool && onSwitchTool) onSwitchTool(tool);
+        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
+        return;
+      }
+
+      if (behavior === "toggle-clippy") {
+        if (onToggleClippy) onToggleClippy();
         if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
         return;
       }

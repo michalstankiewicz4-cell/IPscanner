@@ -73,7 +73,7 @@
           <button class="v1-menu-dd-item" data-menu-action="download"><span>Download</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-menu-action="about"><span>About</span><span class="shortcut"></span></button>
           <div class="v1-menu-dd-sep"></div>
-          <button class="v1-menu-dd-item" data-menu-action="assistant"><span>Assistant</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="assistant"><span>📎 Assistant</span><span class="shortcut"></span></button>
         </div>
       </div>
 
@@ -332,6 +332,14 @@ macro://stealth-check
       <span>main • tauri-desktop • UI mock only</span>
       <span id="v1StatusRight">active: scan-runner</span>
     </footer>
+
+    <div id="v1ClippyContainer" class="v1-clippy-hidden" aria-live="polite">
+      <div id="v1ClippyBubble" role="button" tabindex="0" aria-label="Assistant tip bubble">
+        <span id="v1ClippyTipText"></span>
+        <button id="v1ClippyClose" type="button" aria-label="Close assistant">x</button>
+      </div>
+      <button id="v1ClippyChar" type="button" aria-label="Assistant">📎</button>
+    </div>
   </div>
 
   <section class="v1-ext-modal" id="v1ExtModal" hidden>
@@ -385,6 +393,7 @@ macro://stealth-check
   <script src="js/new-ui/core/runtimes/status-log-runtime.js"></script>
   <script src="js/new-ui/core/runtimes/layout-runtime.js"></script>
   <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js"></script>
+  <script src="js/new-ui/core/runtimes/clippy-runtime.js"></script>
   <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js"></script>
   <script src="js/new-ui/core/runtimes/navigation-runtime.js"></script>
   <script src="js/new-ui/core/panels-runtime.js"></script>
@@ -431,6 +440,7 @@ macro://stealth-check
       let customScrollbarRuntime = null;
       let ipInputsRuntime = null;
       let navigationRuntime = null;
+      let clippyRuntime = null;
 
       function applyStaticTranslations() {
         const fileTrigger = document.querySelector('[data-menu="file"] .v1-menu-trigger');
@@ -467,6 +477,8 @@ macro://stealth-check
         const tabResultsWifi = document.getElementById("v1TabTitleResultsWifi");
         const tabResultsBt = document.getElementById("v1TabTitleResultsBt");
         const consoleInfoTab = document.getElementById("v1ConsoleInfoTab");
+        const assistantMenuLabel = document.querySelector('[data-menu-action="assistant"] span:first-child');
+        const clippyClose = document.getElementById("v1ClippyClose");
 
         if (fileTrigger) fileTrigger.textContent = tr("menuFile");
         if (optionsTrigger) optionsTrigger.textContent = tr("menuOptions");
@@ -509,6 +521,8 @@ macro://stealth-check
         if (tabResultsWifi) tabResultsWifi.textContent = tr("tabResultsWifi");
         if (tabResultsBt) tabResultsBt.textContent = tr("tabResultsBt");
         if (consoleInfoTab) consoleInfoTab.textContent = tr("consoleInfoTab");
+        if (assistantMenuLabel) assistantMenuLabel.textContent = "📎 " + tr("assistant");
+        if (clippyClose) clippyClose.setAttribute("aria-label", tr("clippyCloseAria"));
         if (scannerSidebarRuntime && scannerSidebarRuntime.applyStaticTranslations) {
           scannerSidebarRuntime.applyStaticTranslations();
         }
@@ -833,6 +847,9 @@ macro://stealth-check
         }
 
         applyStaticTranslations();
+        if (clippyRuntime && clippyRuntime.setLanguage) {
+          clippyRuntime.setLanguage(after);
+        }
         setTooltips();
         refreshActiveUI();
         writeExtOutput(tr("langActivateOk") + "\n" + after);
@@ -1152,8 +1169,25 @@ macro://stealth-check
             onOpenExtensionManager: openExtensionManager,
             onOpenLanguageManager: openExtensionManager,
             onSwitchTool: switchTool,
+            onToggleClippy: function () {
+              if (clippyRuntime && clippyRuntime.toggle) {
+                clippyRuntime.toggle();
+              }
+            },
           })
         : null;
+
+      const clippyRuntimeFactory = runtimeFactory.createClippyRuntime
+        ? runtimeFactory.createClippyRuntime({
+            tr,
+            setStatusLine,
+            initialLang: i18n.getLang ? i18n.getLang() : "en",
+          })
+        : null;
+
+      if (clippyRuntimeFactory && clippyRuntimeFactory.init) {
+        clippyRuntime = clippyRuntimeFactory.init();
+      }
 
       if (menuRuntime) {
         initMenuBar = menuRuntime.initMenuBar;
