@@ -9,7 +9,15 @@
     var applyStaticTranslations = deps.applyStaticTranslations;
     var onAfterRender = deps.onAfterRender;
     var setStatusLine = deps.setStatusLine;
-    var activeTool = deps.initialActiveTool || "scan-runner";
+    // Domyślnie brak aktywnej zakładki, wszystkie taby zamknięte
+    var activeTool = null;
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".v1-tab").forEach(function (tab) {
+        tab.classList.add("tab-closed");
+        tab.setAttribute("hidden", "hidden");
+      });
+      updateEmptyState();
+    });
 
     function escapeHtml(value) {
       return String(value == null ? "" : value)
@@ -315,11 +323,15 @@
     function refreshActiveUI() {
       updateEmptyState();
 
-      document.querySelectorAll("[data-tool]").forEach(function (el) {
+      document.querySelectorAll(".v1-tab").forEach(function (el) {
         var isActive = el.getAttribute("data-tool") === activeTool;
         el.classList.toggle("active", isActive);
-        if (el.tagName === "BUTTON") {
-          el.setAttribute("aria-pressed", isActive ? "true" : "false");
+        if (isActive) {
+          el.classList.remove("tab-closed");
+          el.removeAttribute("hidden");
+        } else {
+          el.classList.add("tab-closed");
+          el.setAttribute("hidden", "hidden");
         }
       });
 
@@ -328,9 +340,29 @@
       var v1StatusRight = document.getElementById("v1StatusRight");
       var v1ScanMeta = document.getElementById("v1ScanMeta");
       var v1ScanActions = document.getElementById("v1ScanActions");
+
+      if (!activeTool) {
+        if (v1Title) v1Title.textContent = "";
+        if (v1Detail) v1Detail.innerHTML = "";
+        if (v1ScanMeta) {
+          v1ScanMeta.setAttribute("hidden", "hidden");
+          v1ScanMeta.style.display = "none";
+          v1ScanMeta.setAttribute("aria-hidden", "true");
+        }
+        if (v1ScanActions) {
+          v1ScanActions.setAttribute("hidden", "hidden");
+          v1ScanActions.style.display = "none";
+          v1ScanActions.setAttribute("aria-hidden", "true");
+        }
+        if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": brak aktywnej zakładki");
+        if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": brak aktywnej zakładki";
+        if (typeof onAfterRender === "function") onAfterRender(activeTool);
+        return;
+      }
+
+      // Ustaw zawartość dla aktywnej zakładki
       var info = infoFor(activeTool);
       var isScanRunner = activeTool === "scan-runner";
-
       if (v1Title) v1Title.textContent = info.title;
       if (v1Detail) v1Detail.innerHTML = buildDetailHtml(activeTool);
       if (v1ScanMeta) {
@@ -358,12 +390,6 @@
       if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + activeTool);
       if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + activeTool;
       if (typeof onAfterRender === "function") onAfterRender(activeTool);
-      if (activeTool === "language-manager") {
-        wireLanguageManagerButtons();
-      }
-      if (activeTool === "import-tool") {
-        wireImportToolButtons();
-      }
     }
 
     function wireImportToolButtons() {

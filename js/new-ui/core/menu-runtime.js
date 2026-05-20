@@ -19,6 +19,13 @@
       var def = actionDefinition(action);
       var behavior = def && def.behavior ? def.behavior : "status";
 
+      // Obsługa otwierania GitHuba dla Download
+      if (behavior === "open-github-download") {
+        window.open("https://github.com/michalstankiewicz4-cell/IPscanner", "_blank", "noopener");
+        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
+        return;
+      }
+
       function getInvoke() {
         return (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
           || (window.__TAURI__ && window.__TAURI__.invoke)
@@ -110,16 +117,18 @@
         return false;
       }
 
+
+      // Otwieranie zakładek przez switchTool
       if (behavior === "open-extension-manager") {
+        if (onSwitchTool) onSwitchTool("import-tool");
         if (onOpenExtensionManager) onOpenExtensionManager("extensions");
         return;
       }
-
       if (behavior === "open-language-manager") {
+        if (onSwitchTool) onSwitchTool("language-manager");
         if (onOpenLanguageManager) onOpenLanguageManager("languages");
         return;
       }
-
       if (behavior.indexOf("switch-tool:") === 0) {
         var tool = behavior.slice("switch-tool:".length);
         if (tool && onSwitchTool) onSwitchTool(tool);

@@ -86,10 +86,10 @@
       behavior: "switch-tool:versions",
     },
     download: {
-      label: "Download (mock)",
+      label: "Download",
       purposeKey: "tipActionDownload",
       purpose: "Linki do pobrania aplikacji.",
-      behavior: "status",
+      behavior: "open-github-download",
     },
     about: {
       label: "About (mock)",
