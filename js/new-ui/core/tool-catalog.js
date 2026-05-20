@@ -105,6 +105,16 @@
       text: "Historia zmian i wydan aplikacji.",
       points: ["Release history", "Major updates", "Quality fixes"]
     },
+    about: {
+      title: "About",
+      text: "Informacje o projekcie i autorze.",
+      points: ["Project summary", "Author details", "Support links"]
+    },
+    license: {
+      title: "License",
+      text: "Informacje o licencji i warunkach uzycia.",
+      points: ["MIT license", "Permission notice", "Copyright notice"]
+    },
     "results-manage": {
       title: "Manage Results",
       text: "Export, import, and clear saved scan results.",

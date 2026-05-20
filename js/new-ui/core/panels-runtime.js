@@ -126,6 +126,50 @@
       return "<div class=\"v1-versions-list\">" + entriesHtml + "</div>";
     }
 
+    function getCurrentVersion() {
+      if (!versionsData.length) return "v1.6.5";
+      var first = versionsData[0] || {};
+      var version = first.version;
+      if (!version) return "v1.6.5";
+      return String(version);
+    }
+
+    function renderAboutTool() {
+      var currentVersion = escapeHtml(getCurrentVersion());
+      var heading = escapeHtml(tr("aboutHeading")) + " " + currentVersion;
+      var contactUrl = "https://" + String(tr("aboutSupportFacebook") || "").trim();
+      var projectUrl = "https://" + String(tr("aboutProjectPageUrl") || "").trim();
+      return [
+        "<div class=\"v1-about\">",
+        "<h4>" + heading + "</h4>",
+        "<p>" + escapeHtml(tr("aboutByAuthor")) + "</p>",
+        "<h4>" + escapeHtml(tr("aboutSupportHeading")) + "</h4>",
+        "<p>" + escapeHtml(tr("aboutSupportBody")) + "</p>",
+        "<p><strong>" + escapeHtml(tr("aboutSupportQuick")) + "</strong></p>",
+        "<p><strong>" + escapeHtml(tr("aboutSupportPhone")) + "</strong></p>",
+        "<p>" + escapeHtml(tr("aboutSupportContact")) + " <strong><a href=\"" + escapeHtml(contactUrl) + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + escapeHtml(tr("aboutSupportFacebook")) + "</a></strong></p>",
+        "<p>" + escapeHtml(tr("aboutProjectPageLabel")) + " <strong><a href=\"" + escapeHtml(projectUrl) + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + escapeHtml(tr("aboutProjectPageUrl")) + "</a></strong></p>",
+        "<h4>" + escapeHtml(tr("aboutTransferHeading")) + "</h4>",
+        "<ul>",
+        "<li>" + escapeHtml(tr("aboutTransferName")) + "</li>",
+        "<li>" + escapeHtml(tr("aboutTransferCity")) + "</li>",
+        "<li>" + escapeHtml(tr("aboutTransferBank")) + "</li>",
+        "<li>" + escapeHtml(tr("aboutTransferIban")) + "</li>",
+        "<li>" + escapeHtml(tr("aboutTransferTitle")) + "</li>",
+        "</ul>",
+        "</div>"
+      ].join("");
+    }
+
+    function renderLicenseTool() {
+      return [
+        "<div class=\"v1-license\">",
+        "<h4>" + escapeHtml(tr("licenseHeading")) + "</h4>",
+        "<pre class=\"v1-license-text\">MIT License\n\nCopyright (c) Michal Stankiewicz\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.</pre>",
+        "</div>"
+      ].join("");
+    }
+
     function renderLanguageManagerTool() {
       var current = document.documentElement.getAttribute("lang") || "en";
       var langList = [];
@@ -253,6 +297,8 @@
 
     var toolRenderers = {
       versions: renderVersionsTool,
+      about: renderAboutTool,
+      license: renderLicenseTool,
       "import-tool": renderImportTool,
       "language-manager": renderLanguageManagerTool,
       "results-manage": renderResultsManage,

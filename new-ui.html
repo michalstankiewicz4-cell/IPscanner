@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OSINT NET Auditor v1.6.5</title>
+  <title>OSINT NET Auditor</title>
   <link rel="icon" type="image/png" href="zebrus.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,7 +15,7 @@
   <div class="v1-shell">
     <!-- Top menu -->
     <nav class="v1-menubar" id="v1Menubar">
-      <div class="v1-menu-brand" aria-label="OSINT NET Auditor v1.6.5" title="OSINT NET Auditor v1.6.5">
+      <div class="v1-menu-brand" id="v1MenuBrand" aria-label="OSINT NET Auditor" title="OSINT NET Auditor">
         <img src="zebrus.png" alt="Zebrus logo" class="v1-menu-brand-logo" />
       </div>
 
@@ -72,6 +72,7 @@
           <button class="v1-menu-dd-item" data-menu-action="versions"><span>Versions</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-menu-action="download"><span>Download</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-menu-action="about"><span>About</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="license"><span>License</span><span class="shortcut"></span></button>
           <div class="v1-menu-dd-sep"></div>
           <button class="v1-menu-dd-item" data-menu-action="assistant"><span>📎 Assistant</span><span class="shortcut"></span></button>
         </div>
@@ -222,6 +223,16 @@
           <button class="v1-tab tab-closed" data-tool="language-manager" type="button" hidden>
             <span class="v1-tab-icon" aria-hidden="true">🌐</span>
             <span class="v1-tab-title" id="v1TabTitleLanguageManager">Language</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="about" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">ℹ️</span>
+            <span class="v1-tab-title" id="v1TabTitleAbout">About</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="license" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">📄</span>
+            <span class="v1-tab-title" id="v1TabTitleLicense">License</span>
             <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
           </button>
           <button class="v1-tab tab-closed" data-tool="results-ip" type="button" hidden>
@@ -398,9 +409,28 @@ macro://stealth-check
         return i18n && i18n.t ? i18n.t(key) : key;
       }
 
+      function getCurrentVersion() {
+        const versions = Array.isArray(core.versionsData) ? core.versionsData : [];
+        if (!versions.length) return "v1.6.5";
+        const first = versions[0] || {};
+        return first.version ? String(first.version) : "v1.6.5";
+      }
+
+      function getAppNameWithVersion() {
+        return "OSINT NET Auditor " + getCurrentVersion();
+      }
+
       const statusLogRuntime = core.newUiRuntimes && core.newUiRuntimes.createStatusLogRuntime
         ? core.newUiRuntimes.createStatusLogRuntime({ maxLines: 400 })
         : null;
+
+      const appNameWithVersion = getAppNameWithVersion();
+      document.title = appNameWithVersion;
+      const menuBrand = document.getElementById("v1MenuBrand");
+      if (menuBrand) {
+        menuBrand.setAttribute("title", appNameWithVersion);
+        menuBrand.setAttribute("aria-label", appNameWithVersion);
+      }
 
       function setStatusLine(text) {
         if (statusLogRuntime && statusLogRuntime.append) {
@@ -452,8 +482,12 @@ macro://stealth-check
         const tabResultsBt = document.getElementById("v1TabTitleResultsBt");
         const tabTitleImportTool = document.getElementById("v1TabTitleImportTool");
         const tabTitleLanguageManager = document.getElementById("v1TabTitleLanguageManager");
+        const tabTitleAbout = document.getElementById("v1TabTitleAbout");
+        const tabTitleLicense = document.getElementById("v1TabTitleLicense");
         const consoleInfoTab = document.getElementById("v1ConsoleInfoTab");
         const assistantMenuLabel = document.querySelector('[data-menu-action="assistant"] span:first-child');
+        const aboutMenuLabel = document.querySelector('[data-menu-action="about"] span:first-child');
+        const licenseMenuLabel = document.querySelector('[data-menu-action="license"] span:first-child');
         const clippyClose = document.getElementById("v1ClippyClose");
 
         if (fileTrigger) fileTrigger.textContent = tr("menuFile");
@@ -498,7 +532,11 @@ macro://stealth-check
         if (tabResultsBt) tabResultsBt.textContent = tr("tabResultsBt");
         if (tabTitleImportTool) tabTitleImportTool.textContent = tr("importToolTitle");
         if (tabTitleLanguageManager) tabTitleLanguageManager.textContent = tr("langManagerTitle");
+        if (tabTitleAbout) tabTitleAbout.textContent = tr("tabAboutTitle");
+        if (tabTitleLicense) tabTitleLicense.textContent = tr("tabLicenseTitle");
         if (consoleInfoTab) consoleInfoTab.textContent = tr("consoleInfoTab");
+        if (aboutMenuLabel) aboutMenuLabel.textContent = tr("helpAboutTitle");
+        if (licenseMenuLabel) licenseMenuLabel.textContent = tr("helpLicenseTitle");
         if (assistantMenuLabel) assistantMenuLabel.textContent = "📎 " + tr("assistant");
         if (clippyClose) clippyClose.setAttribute("aria-label", tr("clippyCloseAria"));
         if (scannerSidebarRuntime && scannerSidebarRuntime.applyStaticTranslations) {
@@ -556,6 +594,7 @@ macro://stealth-check
         versions: "Versions (mock)",
         download: "Download (mock)",
         about: "About (mock)",
+        license: "License",
         assistant: "Assistant",
         "window-min": "Window minimize (mock)",
         "window-max": "Window maximize (mock)",

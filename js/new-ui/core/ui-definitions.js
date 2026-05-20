@@ -95,7 +95,13 @@
       label: "About (mock)",
       purposeKey: "tipActionAbout",
       purpose: "Informacje o projekcie.",
-      behavior: "status",
+      behavior: "switch-tool:about",
+    },
+    license: {
+      label: "License",
+      purposeKey: "tipActionLicense",
+      purpose: "Informacje o licencji projektu.",
+      behavior: "switch-tool:license",
     },
     assistant: {
       label: "Assistant",
