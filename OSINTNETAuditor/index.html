@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OSINT NET Auditor</title>
+  <link rel="icon" type="image/png" href="zebrus.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=optional" rel="stylesheet" />
+  <link id="newUiSkinLink" rel="stylesheet" href="css/new-ui/skins/default.css" />
+  <link rel="stylesheet" href="css/new-ui/new-ui.css" />
+</head>
+<body data-v1-ready="false" style="visibility:hidden;">
+  <div class="v1-shell">
+    <!-- Top menu -->
+    <nav class="v1-menubar" id="v1Menubar">
+      <div class="v1-menu-brand" id="v1MenuBrand" aria-label="OSINT NET Auditor" title="OSINT NET Auditor">
+        <img src="zebrus.png" alt="Zebrus logo" class="v1-menu-brand-logo" />
+      </div>
+
+      <div class="v1-menu-group" data-menu="file">
+        <button class="v1-menu-trigger">File</button>
+        <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-menu-action="save-session"><span>Save session</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="load-session"><span>Load session</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="close-session"><span>Close session</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="import-another-session"><span>Import another session data</span><span class="shortcut"></span></button>
+          <div class="v1-menu-dd-sep"></div>
+          <button class="v1-menu-dd-item" data-menu-action="exit"><span>Exit</span><span class="shortcut"></span></button>
+        </div>
+      </div>
+
+      <div class="v1-menu-group" data-menu="options">
+        <button class="v1-menu-trigger">Options</button>
+        <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-menu-action="countries"><span>Country IP Library...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="presets"><span>Port Presets...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="defaults"><span>Default Scan Values...</span><span class="shortcut"></span></button>
+          <div class="v1-menu-dd-sep"></div>
+          <button class="v1-menu-dd-item" data-menu-action="language"><span>Language...</span><span class="shortcut"></span></button>
+          <div class="v1-menu-dd-sep"></div>
+          <button class="v1-menu-dd-item" data-menu-action="customization"><span>Import Tool...</span><span class="shortcut"></span></button>
+        </div>
+      </div>
+
+      <div class="v1-menu-group" data-menu="tools">
+        <button class="v1-menu-trigger">Tools</button>
+        <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-tool="topology"><span>Topology</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="globe"><span>Globe</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="proto"><span>Prototype</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="macro"><span>Macro</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="speed"><span>Speed</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="console"><span>Console</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="scan-watch"><span>IP Scan Watch...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="wifi-detector"><span>WiFi Detector...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="wifi-radar"><span>WiFi Radar</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="bt-detector"><span>Bluetooth Detector...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="gnss"><span>GNSS Monitor...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="lte"><span>LTE Monitor...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="sniffer"><span>Network Sniffer...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="imgmeta"><span>Image Metadata...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="phone-lookup"><span>Phone Reverse Lookup...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="ai-assistant"><span>AI Security Assistant...</span><span class="shortcut"></span></button>
+        </div>
+      </div>
+
+      <div class="v1-menu-group" data-menu="help">
+        <button class="v1-menu-trigger">Help</button>
+        <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-menu-action="versions"><span>Versions</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="download"><span>Download</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="about"><span>About</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="license"><span>License</span><span class="shortcut"></span></button>
+          <div class="v1-menu-dd-sep"></div>
+          <button class="v1-menu-dd-item" data-menu-action="assistant"><span>📎 Assistant</span><span class="shortcut"></span></button>
+        </div>
+      </div>
+
+      <div class="v1-menu-spacer"></div>
+      <div class="v1-window-controls" aria-label="Window controls">
+        <button class="v1-window-btn" data-menu-action="window-min" title="Minimize" aria-label="Minimize">&#8211;</button>
+        <button class="v1-window-btn" data-menu-action="window-max" title="Maximize" aria-label="Maximize">&#9633;</button>
+        <button class="v1-window-btn" data-menu-action="window-fullscreen" title="Fullscreen" aria-label="Fullscreen">&#9974;</button>
+        <button class="v1-window-btn close" data-menu-action="window-close" title="Close" aria-label="Close">&#10005;</button>
+      </div>
+    </nav>
+
+    <!-- Main work area -->
+    <main class="v1-main">
+      <!-- Left icon bar -->
+      <aside class="v1-activity">
+        <button id="v1ActivityResults" data-activity="results" title="Results Browser" aria-label="Results Browser">📊</button>
+        <button id="v1ActivityScanner" data-activity="scanner" data-tool="results-ip" class="active" title="IP Scanner" aria-label="IP Scanner">▦</button>
+        <button data-tool="topology">🕸</button>
+        <button data-tool="globe">🌍</button>
+        <div class="v1-activity-spacer"></div>
+        <button data-tool="settings">⚙</button>
+      </aside>
+
+      <!-- Left section -->
+      <aside class="v1-sidebar">
+        <div class="v1-side-head">
+          <span class="v1-head-title" id="v1SidebarTitle">IP Scanner</span>
+          <button class="v1-panel-toggle" data-panel-toggle="left" title="Hide left section" aria-label="Hide left section">◀</button>
+        </div>
+        <div data-sidebar-view="scanner">
+          <ul class="v1-tool-list">
+            <li>
+              <div class="v1-section-header">
+                <strong id="v1DetectIpTitle">Detect IP</strong>
+                <span class="v1-collapse-arrow">▼</span>
+              </div>
+              <div class="v1-section-body">
+                <div class="v1-scanner-actions" style="margin-top:8px;flex-direction:column;gap:5px;">
+                  <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="ext-ip"><span class="v1-detect-icon">🌐</span><span id="v1DetectBtnExtLabel">External IP</span></button><span class="v1-detect-result" id="v1DetectExtIp"></span><button type="button" class="v1-use-btn" id="v1UseExtIp" hidden aria-label="Use range">&gt;</button></div>
+                  <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="local-ip"><span class="v1-detect-icon">🖥</span><span id="v1DetectBtnLocalLabel">Local IP</span></button><span class="v1-detect-result" id="v1DetectLocalIp"></span><button type="button" class="v1-use-btn" id="v1UseLocalIp" hidden aria-label="Use range">&gt;</button></div>
+                  <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="subnets"><span class="v1-detect-icon">🔗</span><span id="v1DetectBtnSubnetsLabel">Subnets</span></button><span class="v1-detect-result" id="v1DetectSubnets"></span><button type="button" class="v1-use-btn" id="v1UseSubnets" hidden aria-label="Use range">&gt;</button></div>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="v1-section-header">
+                <strong id="v1IpRangeTitle">IP Range</strong>
+                <span class="v1-collapse-arrow">▼</span>
+              </div>
+              <div class="v1-section-body">
+              <div class="v1-ip-row">
+                <span class="v1-ip-label" id="v1IpLabelFrom">From</span>
+                <div class="v1-ip-box" data-ip-box="from">
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="From IP octet 1" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="From IP octet 2" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="From IP octet 3" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="From IP octet 4" />
+                </div>
+                <input id="v1ScanFrom" type="hidden" value="192.168.1.1" />
+              </div>
+              <div class="v1-ip-row">
+                <span class="v1-ip-label" id="v1IpLabelTo">To</span>
+                <div class="v1-ip-box" data-ip-box="to">
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="To IP octet 1" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="To IP octet 2" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="To IP octet 3" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="To IP octet 4" />
+                </div>
+                <input id="v1ScanTo" type="hidden" value="192.168.1.254" />
+              </div>
+              <div class="v1-port-preset-row">
+                <label class="v1-ip-label" id="v1PortsLabel" for="v1PortPreset">Ports</label>
+                <select id="v1PortPreset" class="v1-port-preset-select">
+                  <option value="common">Common (21,22,23,80,443,3389)</option>
+                  <option value="top20">Top 20</option>
+                  <option value="web">Web (80,443,8080,8443)</option>
+                  <option value="smb">SMB / Windows (135,139,445)</option>
+                  <option value="db">Databases (1433,1521,3306,5432,6379,27017)</option>
+                  <option value="all">All (1–65535)</option>
+                  <option value="custom">Custom…</option>
+                </select>
+              </div>
+              <div class="v1-scanner-actions" style="margin-top:6px;">
+                <button type="button" data-scanner-action="start">▶ Start</button>
+                <button type="button" data-scanner-action="stop">■ Stop</button>
+                <button type="button" data-scanner-action="clear">✕ Clear</button>
+                <button type="button" data-scanner-action="scan-speed">⏱ Scan Speed</button>
+              </div>
+              </div>
+            </li>
+            <li>
+              <div class="v1-section-header">
+                <strong id="v1IpExtractorTitle">IP Extractor</strong>
+                <span class="v1-collapse-arrow">▼</span>
+              </div>
+              <div class="v1-section-body">
+              <textarea id="v1IpExtractorInput" class="v1-ip-extractor-input" rows="3" placeholder="example.com 192.168.1.10"></textarea>
+              <div class="v1-scanner-actions" style="margin-top:6px;">
+                <button type="button" id="v1IpExtractBtn">＋ Add / Extract</button>
+              </div>
+              <textarea id="v1IpExtractorOutput" class="v1-ip-extractor-output" rows="4" readonly placeholder="Extracted IPs..."></textarea>
+              </div>
+            </li>
+            <li>
+              <div class="v1-section-header">
+                <strong id="v1RangeHistoryTitle">Range History</strong>
+                <span class="v1-collapse-arrow">▼</span>
+              </div>
+              <div class="v1-section-body">
+                <div id="v1RangeHistory" class="v1-range-history"></div>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div data-sidebar-view="results" hidden>
+          <ul class="v1-tool-list">
+            <li id="v1ResultNavManage" data-result-tab="results-manage" class="v1-result-nav-item">📋 Manage Results</li>
+            <li id="v1ResultNavIp" data-result-tab="results-ip" class="v1-result-nav-item">🖥 IP Scan Results</li>
+            <li id="v1ResultNavWifi" data-result-tab="results-wifi" class="v1-result-nav-item">📶 WiFi Devices</li>
+            <li id="v1ResultNavBt" data-result-tab="results-bt" class="v1-result-nav-item">🔵 Bluetooth Devices</li>
+          </ul>
+        </div>
+      </aside>
+
+      <div class="v1-resizer-v" data-resize="left" title="Resize left panel"></div>
+
+      <!-- Central section -->
+      <section class="v1-editor">
+        <div class="v1-tabs">
+          <button class="v1-tab tab-closed" data-tool="versions" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">📘</span>
+            <span class="v1-tab-title">Versions</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="import-tool" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">📦</span>
+            <span class="v1-tab-title" id="v1TabTitleImportTool">Import Tool</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="language-manager" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🌐</span>
+            <span class="v1-tab-title" id="v1TabTitleLanguageManager">Language</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="about" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">ℹ️</span>
+            <span class="v1-tab-title" id="v1TabTitleAbout">About</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="license" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">📄</span>
+            <span class="v1-tab-title" id="v1TabTitleLicense">License</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="results-ip" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🖥</span>
+            <span class="v1-tab-title" id="v1TabTitleResultsIp">IP Results</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+        </div>
+
+        <div class="v1-content">
+          <article class="v1-card" id="v1MainCard" hidden>
+            <h3 id="v1ToolTitle">Scan Runner</h3>
+
+            <div class="v1-meta" id="v1ScanMeta">
+              <div class="v1-pill">Checked hosts<b>152</b></div>
+              <div class="v1-pill">Active hosts<b>29</b></div>
+              <div class="v1-pill">Open ports<b>188</b></div>
+              <div class="v1-pill">Elapsed<b>00:01:18</b></div>
+            </div>
+
+            <div class="tool-detail" id="v1ToolDetail">
+              <h4>IP Range Scan Control</h4>
+              <div>Tryb bazowy do skanowania hostow, portow i enrichmentu wynikow.</div>
+            </div>
+
+            <div class="v1-actions" id="v1ScanActions">
+              <button data-tool="scan-runner">▶ Start Scan</button>
+              <button data-tool="scan-watch">■ Stop</button>
+              <button data-tool="scan-runner">✕ Clear</button>
+              <button data-tool="scan-runner">⚙ Default Scan Values</button>
+              <button data-tool="scan-runner">📤 Export JSON</button>
+              <button data-tool="scan-runner">📥 Import JSON</button>
+            </div>
+          </article>
+
+          <div class="v1-empty-state" id="v1NoTabsState" hidden>
+            <img src="zebrus.png" alt="Zebrus" class="v1-empty-logo" />
+          </div>
+        </div>
+
+        <div class="v1-resizer-h" data-resize="console" title="Resize editor and terminal"></div>
+
+        <section class="v1-console-zone">
+          <div class="v1-console-tabs">
+            <button class="v1-console-tab active" data-v1-console-tab="console">Console</button>
+            <button class="v1-console-tab" data-v1-console-tab="macro">Macro</button>
+            <button class="v1-console-tab" data-v1-console-tab="info" id="v1ConsoleInfoTab">Logs</button>
+            <button class="v1-panel-toggle" data-panel-toggle="bottom" title="Hide bottom section" aria-label="Hide bottom section">▼</button>
+          </div>
+          <div class="v1-console-body">
+            <div class="v1-console-pane active" data-v1-console-pane="console">
+              <div class="v1-ps-shell">
+                <pre class="v1-ps-output" id="v1PsOutput" tabindex="0" role="textbox" aria-label="PowerShell output" aria-multiline="true"></pre>
+                <div class="v1-ps-input-row">
+                  <span class="v1-ps-prompt">PS&gt;</span>
+                  <input type="text" id="v1PsInput" class="v1-ps-input" autocomplete="off" spellcheck="false" placeholder="Type PowerShell command and press Enter" />
+                </div>
+              </div>
+            </div>
+            <div class="v1-console-pane" data-v1-console-pane="macro">macro://quick-lan-scan
+  - set range 192.168.1.1-192.168.1.254
+  - set preset common-lan+iot
+  - run scan
+
+macro://stealth-check
+  - delay 150ms
+  - sequential ports
+  - run lightweight sweep</div>
+            <div class="v1-console-pane" data-v1-console-pane="info">
+              <div class="v1-ps-shell v1-log-shell">
+                <pre class="v1-info-log" id="v1InfoLog" tabindex="0" role="textbox" aria-label="System information log" aria-multiline="true"></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <div class="v1-resizer-v" data-resize="right" title="Resize right panel"></div>
+
+      <!-- Right section -->
+      <aside class="v1-rightbar">
+        <div class="v1-side-head">
+          <span class="v1-head-title">Assistant</span>
+          <button class="v1-panel-toggle" data-panel-toggle="right" title="Hide right section" aria-label="Hide right section">▶</button>
+        </div>
+        <div class="v1-right-content">
+          <article class="v1-ai-panel">
+            <div class="v1-ai-head">
+              <h3 style="margin:0;">AI Assistant</h3>
+              <span class="v1-ai-badge">GPT-5.3-Codex</span>
+            </div>
+
+            <div class="v1-ai-threadlist">
+              <button class="v1-ai-thread active" data-tool="ai-assistant">Security review - LAN scan findings</button>
+              <button class="v1-ai-thread" data-tool="ai-assistant">Port profile optimization</button>
+              <button class="v1-ai-thread" data-tool="ai-assistant">WiFi hardening checklist</button>
+            </div>
+
+            <div class="v1-ai-chat">
+              <div class="v1-ai-msg user">Przeanalizuj aktywne hosty i zaznacz podejrzane endpointy.</div>
+              <div class="v1-ai-msg assistant">Wykryto 3 hosty z nietypowym zestawem portow. Priorytet: 192.168.1.54 (554,8000) oraz 192.168.1.73 (23,2323).</div>
+              <div class="v1-ai-msg assistant">Sugerowana akcja: uruchom Scan Watch i porownaj z logiem sniffera.</div>
+            </div>
+
+            <div class="v1-ai-input">
+              <span>Wpisz prompt... np. "zrob threat model dla hosta 192.168.1.54"</span>
+              <button data-tool="ai-assistant">Send</button>
+            </div>
+
+            <p class="status-line" id="v1StatusLine" hidden></p>
+          </article>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Bottom info bar -->
+    <footer class="v1-status">
+      <span>main • tauri-desktop • UI mock only</span>
+      <span id="v1StatusRight">active: results-ip</span>
+    </footer>
+
+    <div id="v1ClippyContainer" class="v1-clippy-hidden" aria-live="polite">
+      <div id="v1ClippyBubble" role="button" tabindex="0" aria-label="Assistant tip bubble">
+        <span id="v1ClippyTipText"></span>
+        <button id="v1ClippyClose" type="button" aria-label="Close assistant">x</button>
+      </div>
+      <button id="v1ClippyChar" type="button" aria-label="Assistant">📎</button>
+    </div>
+  </div>
+
+  <script src="js/new-ui/core/store.js"></script>
+  <script src="js/new-ui/core/i18n.js"></script>
+  <script src="js/new-ui/core/theme.js"></script>
+  <script src="js/new-ui/core/tool-catalog.js"></script>
+  <script src="js/new-ui/core/versions-data.js"></script>
+  <script src="js/new-ui/core/utils/net-utils.js"></script>
+  <script src="js/new-ui/core/extensions.js"></script>
+  <script src="js/new-ui/core/ui-definitions.js"></script>
+  <script src="js/new-ui/core/runtimes/status-log-runtime.js"></script>
+  <script src="js/new-ui/core/runtimes/layout-runtime.js"></script>
+  <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js"></script>
+  <script src="js/new-ui/core/runtimes/clippy-runtime.js"></script>
+  <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js"></script>
+  <script src="js/new-ui/core/runtimes/navigation-runtime.js"></script>
+  <script src="js/new-ui/core/panels-runtime.js"></script>
+  <script src="js/new-ui/core/extension-manager-runtime.js"></script>
+  <script src="js/new-ui/core/menu-runtime.js"></script>
+  <script src="js/new-ui/core/scanner-sidebar-runtime.js"></script>
+  <script src="js/new-ui/core/powershell-console-runtime.js"></script>
+    <script src="js/new-ui/core/bootstrap-runtime.js"></script>
+</body>
+</html>
+

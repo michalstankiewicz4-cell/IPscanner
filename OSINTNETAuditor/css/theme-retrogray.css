@@ -1,0 +1,187 @@
+/* -- Retro Gray skin overrides (enabled via body.skin-retrogray) -- */
+body.skin-retrogray {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0) 38%),
+    linear-gradient(180deg, #bcbcbc 0%, #a7a7a7 100%);
+  font-family: "Verdana", "Tahoma", sans-serif;
+  color: #111111;
+}
+
+body.skin-retrogray .retro-win,
+body.skin-retrogray .dlg95,
+body.skin-retrogray .ctxmenu,
+body.skin-retrogray .menu-dropdown,
+body.skin-retrogray .enrich-popup,
+body.skin-retrogray .groupbox,
+body.skin-retrogray .dlg-groupbox,
+body.skin-retrogray .status-panel,
+body.skin-retrogray .ip-box,
+body.skin-retrogray .progress-bar-bg,
+body.skin-retrogray .port-progress-bg,
+body.skin-retrogray .listview-wrap,
+body.skin-retrogray .preview-iframe,
+body.skin-retrogray .detail-section,
+body.skin-retrogray .cols-panel {
+  background: #c7c7c7;
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #585858;
+  border-bottom: 1px solid #585858;
+  box-shadow: none;
+}
+
+body.skin-retrogray .titlebar,
+body.skin-retrogray .dlg-title,
+body.skin-retrogray .enrich-popup-bar,
+body.skin-retrogray .preview-titlebar,
+body.skin-retrogray .menubar,
+body.skin-retrogray .win-menubar95,
+body.skin-retrogray .listview-filter,
+body.skin-retrogray .listview-header {
+  background:
+    repeating-linear-gradient(
+      180deg,
+      #d9d9d9 0px,
+      #d9d9d9 2px,
+      #b9b9b9 2px,
+      #b9b9b9 4px
+    );
+  color: #101010;
+  border-bottom: 1px solid #6a6a6a;
+  text-shadow: none;
+}
+
+body.skin-retrogray .titlebar .title,
+body.skin-retrogray .dlg-title .title-fill,
+body.skin-retrogray .preview-titlebar .preview-url-label {
+  background: #cbcbcb;
+  padding: 0 6px;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #6a6a6a;
+}
+
+body.skin-retrogray .title-btn,
+body.skin-retrogray .btn95,
+body.skin-retrogray .btn-filter,
+body.skin-retrogray .btn-cols,
+body.skin-retrogray .select95,
+body.skin-retrogray .input95,
+body.skin-retrogray input,
+body.skin-retrogray select,
+body.skin-retrogray textarea {
+  background: #d3d3d3;
+  color: #111111;
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #666666;
+  border-bottom: 1px solid #666666;
+  box-shadow: none;
+}
+
+body.skin-retrogray .btn95:active,
+body.skin-retrogray .btn95.pressed,
+body.skin-retrogray .title-btn:active,
+body.skin-retrogray .btn-filter.active,
+body.skin-retrogray .btn-cols.active {
+  background: #b8b8b8;
+  border-top: 1px solid #666666;
+  border-left: 1px solid #666666;
+  border-right: 1px solid #ffffff;
+  border-bottom: 1px solid #ffffff;
+  color: #000000;
+}
+
+body.skin-retrogray .menu-item,
+body.skin-retrogray .menu-dd-item,
+body.skin-retrogray .ctx-item,
+body.skin-retrogray .country-item,
+body.skin-retrogray .range-item,
+body.skin-retrogray .notepad-menu-item,
+body.skin-retrogray .lv-cell,
+body.skin-retrogray .oct,
+body.skin-retrogray .oct-dot,
+body.skin-retrogray .stats-row,
+body.skin-retrogray .port-progress-label,
+body.skin-retrogray .statusbar,
+body.skin-retrogray .status-panel,
+body.skin-retrogray .groupbox-legend,
+body.skin-retrogray .dlg-groupbox-legend,
+body.skin-retrogray .label-muted,
+body.skin-retrogray .label-muted-sm,
+body.skin-retrogray .filter-label,
+body.skin-retrogray .dlg-check-label,
+body.skin-retrogray .dlg-radio,
+body.skin-retrogray .imgmeta-status,
+body.skin-retrogray .imgmeta-filename {
+  color: #111111;
+}
+
+body.skin-retrogray .menu-item:hover,
+body.skin-retrogray .menu-item.open,
+body.skin-retrogray .menu-dd-item:hover,
+body.skin-retrogray .ctx-item:hover,
+body.skin-retrogray .notepad-menu-item:hover,
+body.skin-retrogray .country-item:hover,
+body.skin-retrogray .country-item.active,
+body.skin-retrogray .range-item:hover,
+body.skin-retrogray .range-item.active,
+body.skin-retrogray .lv-row:hover,
+body.skin-retrogray .lv-row.selected,
+body.skin-retrogray .cols-panel-item:hover,
+body.skin-retrogray .btn-filter:hover,
+body.skin-retrogray .btn-cols:hover {
+  background: #8f8f8f;
+  color: #ffffff;
+}
+
+body.skin-retrogray .lv-row.selected .lv-cell,
+body.skin-retrogray .lv-row:hover .lv-cell {
+  color: #ffffff;
+}
+
+body.skin-retrogray .lv-col {
+  color: #111111;
+  border-right: 1px solid #7a7a7a;
+  border-top: 1px solid #f1f1f1;
+  border-left: 1px solid #f1f1f1;
+}
+
+body.skin-retrogray .listview-body {
+  background: #d0d0d0;
+}
+
+body.skin-retrogray .progress-bar-fill,
+body.skin-retrogray .port-progress-fill {
+  background: linear-gradient(90deg, #4a4a4a, #2d2d2d);
+}
+
+body.skin-retrogray .stat-val,
+body.skin-retrogray #statTime,
+body.skin-retrogray #myIpResult,
+body.skin-retrogray #myLocalIpResult,
+body.skin-retrogray #localSubnetsResult,
+body.skin-retrogray #activePorts,
+body.skin-retrogray .port-hint,
+body.skin-retrogray .empty-row {
+  color: #202020 !important;
+}
+
+body.skin-retrogray input::placeholder,
+body.skin-retrogray textarea::placeholder {
+  color: #5d5d5d;
+}
+
+body.skin-retrogray a,
+body.skin-retrogray .statusbar a {
+  color: #000080;
+}
+
+/* Scan history items */
+body.skin-retrogray .scan-history-item:hover {
+  background: #a9a9a9 !important;
+}
+
+body.skin-retrogray .scan-history-item.selected {
+  background: #7a7a7a !important;
+  color: #ffffff !important;
+}

@@ -1,0 +1,20 @@
+.status-line {
+  color: var(--txt-dim);
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.v1-status {
+  border-top: 0;
+  background: var(--activity);
+  color: #fff;
+  font-size: 11px;
+  height: 24px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  box-sizing: border-box;
+  font-family: var(--font-mono);
+}
