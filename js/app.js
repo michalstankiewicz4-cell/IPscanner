@@ -26,6 +26,9 @@ function openNotepad() {
 `================================================================
   ${getAppDisplayName()}
   by Michał Stankiewicz
+  my total costs domains - $4
+  github copilot - $78.00
+  other expenses - $12
 ================================================================
 
   Tel. / BLIK:  797 486 355
