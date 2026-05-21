@@ -2,7 +2,7 @@
   border: 0;
   background: var(--bg-elev);
   box-shadow: none;
-  padding: 12px;
+  padding: 6px 12px 12px;
   position: relative;
   z-index: 1;
   flex: 1;

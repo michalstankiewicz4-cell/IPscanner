@@ -336,12 +336,81 @@
       });
     }
 
+    function bindRightTabsAndAssistant() {
+      document.querySelectorAll(".v1-right-tab").forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          var next = tab.getAttribute("data-v1-right-tab");
+          if (!next) return;
+
+          document.querySelectorAll(".v1-right-tab").forEach(function (item) {
+            item.classList.toggle("active", item === tab);
+          });
+
+          document.querySelectorAll(".v1-right-pane").forEach(function (pane) {
+            pane.classList.toggle("active", pane.getAttribute("data-v1-right-pane") === next);
+          });
+        });
+      });
+
+      var chat = document.getElementById("v1AiChatHistory");
+      var promptInput = document.getElementById("v1AiPromptInput");
+      var sendBtn = document.getElementById("v1AiSendBtn");
+      if (!chat || !promptInput) return;
+
+      function currentMode() {
+        var selected = document.querySelector('input[name="v1AiMode"]:checked');
+        return selected ? selected.value : "ui";
+      }
+
+      function appendMessage(kind, text) {
+        var msg = document.createElement("div");
+        msg.className = "v1-ai-msg " + kind;
+        msg.textContent = String(text || "");
+        chat.appendChild(msg);
+        chat.scrollTop = chat.scrollHeight;
+      }
+
+      document.querySelectorAll('input[name="v1AiMode"]').forEach(function (radio) {
+        radio.addEventListener("change", function () {
+          if (!radio.checked) return;
+          var mode = currentMode() === "ps" ? "PS" : "UI";
+          appendMessage("assistant", "Mode switched to " + mode + ".");
+        });
+      });
+
+      function sendPrompt() {
+        var prompt = (promptInput.value || "").trim();
+        if (!prompt) return;
+
+        var mode = currentMode();
+        appendMessage("user", prompt);
+        promptInput.value = "";
+
+        if (mode === "ps") {
+          appendMessage("assistant", "PS mode active: I will focus on PowerShell/console commands and terminal workflow.");
+        } else {
+          appendMessage("assistant", "UI mode active: I will focus on UI flows, panel actions, and visual workflow steps.");
+        }
+      }
+
+      if (sendBtn) {
+        sendBtn.addEventListener("click", sendPrompt);
+      }
+      promptInput.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter") return;
+        if (event.shiftKey) return;
+        event.preventDefault();
+        sendPrompt();
+      });
+    }
+
     function init() {
       bindScannerActions();
       bindResultTabs();
       bindActivityButtons();
       bindToolClicks();
       bindConsoleTabs();
+      bindRightTabsAndAssistant();
     }
 
     return {
