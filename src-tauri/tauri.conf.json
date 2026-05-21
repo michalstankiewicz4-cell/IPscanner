@@ -34,6 +34,14 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "windows": {
+      "nsis": {
+        "template": "nsis/installer-template.nsi"
+      },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    },
     "icon": [
       "icons/icon.ico"
     ]
