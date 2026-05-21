@@ -127,11 +127,192 @@
         return "<h4>Versions</h4><div>No version entries available.</div>";
       }
 
-      var entriesHtml = versionsData.map(function (entry) {
-        var notes = (entry.notes || []).map(function (note) { return "<li>" + escapeHtml(note) + "</li>"; }).join("");
-        return "<section class=\"v1-version-entry\"><h4>" + escapeHtml(entry.version) + "</h4><ul>" + notes + "</ul></section>";
+      var chronological = versionsData.slice().reverse();
+      var pointsHtml = chronological.map(function (entry, pos) {
+        var sourceIndex = versionsData.length - 1 - pos;
+        var activeClass = sourceIndex === 0 ? " active" : "";
+        return [
+          "<button type=\"button\" class=\"v1-version-point" + activeClass + "\" data-version-index=\"" + sourceIndex + "\" aria-label=\"" + escapeHtml(entry.version) + "\">",
+          "<span class=\"v1-version-dot is-published\"></span>",
+          "<span class=\"v1-version-label\">" + escapeHtml(entry.version) + "</span>",
+          "</button>"
+        ].join("");
       }).join("");
-      return "<div class=\"v1-versions-list\">" + entriesHtml + "</div>";
+
+      var listHtml = versionsData.map(function (entry, idx) {
+        var notes = (entry.notes || []).map(function (note) { return "<li>" + escapeHtml(note) + "</li>"; }).join("");
+        var activeClass = idx === 0 ? " is-active" : "";
+        return "<section class=\"v1-version-entry" + activeClass + "\" id=\"v1VersionEntry-" + idx + "\" data-version-entry-index=\"" + idx + "\"><h4>" + escapeHtml(entry.version) + "</h4><ul>" + notes + "</ul></section>";
+      }).join("");
+
+      return [
+        "<div class=\"v1-versions-shell\">",
+        "<div class=\"v1-versions-timeline-sticky\">",
+        "<div class=\"v1-version-track-wrap\">",
+        "<button type=\"button\" class=\"v1-version-scroll\" data-version-scroll=\"left\" aria-label=\"Scroll versions left\">◀</button>",
+        "<div class=\"v1-version-track\" id=\"v1VersionTrack\" role=\"listbox\" aria-label=\"Published versions timeline\">",
+        "<div class=\"v1-version-track-inner\">",
+        pointsHtml,
+        "</div>",
+        "</div>",
+        "<button type=\"button\" class=\"v1-version-scroll\" data-version-scroll=\"right\" aria-label=\"Scroll versions right\">▶</button>",
+        "</div>",
+        "<div class=\"v1-version-physics\" id=\"v1VersionPhysics\" style=\"--v1-version-progress: 1;\">",
+        "<div class=\"v1-version-orb\" aria-hidden=\"true\"></div>",
+        "</div>",
+        "</div>",
+        "<div class=\"v1-versions-list\" id=\"v1VersionsList\">",
+        listHtml,
+        "</div>",
+        "</div>"
+      ].join("");
+    }
+
+    function wireVersionsTimeline() {
+      var root = document.getElementById("v1ToolDetail");
+      if (!root) return;
+
+      var track = document.getElementById("v1VersionTrack");
+      var versionsList = document.getElementById("v1VersionsList");
+      var physics = document.getElementById("v1VersionPhysics");
+      if (!track || !versionsList || !physics) return;
+
+      var points = Array.from(root.querySelectorAll(".v1-version-point"));
+      if (!points.length) return;
+
+      function setActiveBySourceIndex(sourceIndex) {
+        var safeIndex = Number(sourceIndex);
+        if (!Number.isFinite(safeIndex) || safeIndex < 0 || safeIndex >= versionsData.length) return;
+
+        var entry = versionsData[safeIndex];
+        if (!entry) return;
+
+        points.forEach(function (point, idx) {
+          var isActive = Number(point.getAttribute("data-version-index")) === safeIndex;
+          point.classList.toggle("active", isActive);
+          if (isActive) {
+            point.classList.remove("is-bumping");
+            // Force reflow to replay spring animation when selecting another point.
+            void point.offsetWidth;
+            point.classList.add("is-bumping");
+
+            var progress = points.length > 1 ? idx / (points.length - 1) : 1;
+            physics.style.setProperty("--v1-version-progress", String(progress));
+            point.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+          }
+        });
+
+        root.querySelectorAll("[data-version-entry-index]").forEach(function (section) {
+          var isCurrent = Number(section.getAttribute("data-version-entry-index")) === safeIndex;
+          section.classList.toggle("is-active", isCurrent);
+          if (isCurrent) {
+            section.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+        });
+      }
+
+      points.forEach(function (point) {
+        point.addEventListener("click", function () {
+          setActiveBySourceIndex(point.getAttribute("data-version-index"));
+        });
+      });
+
+      root.querySelectorAll("[data-version-scroll]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var dir = btn.getAttribute("data-version-scroll") === "left" ? -1 : 1;
+          track.scrollBy({ left: dir * 220, behavior: "smooth" });
+        });
+      });
+
+      var dragging = false;
+      var moved = false;
+      var suppressClickOnce = false;
+      var pointerId = null;
+      var startX = 0;
+      var startScroll = 0;
+      var lastX = 0;
+      var lastT = 0;
+      var velocity = 0;
+      var inertiaRaf = 0;
+
+      function stopInertia() {
+        if (inertiaRaf) {
+          cancelAnimationFrame(inertiaRaf);
+          inertiaRaf = 0;
+        }
+      }
+
+      function runInertia() {
+        stopInertia();
+        function step() {
+          velocity *= 0.92;
+          if (Math.abs(velocity) < 0.1) {
+            inertiaRaf = 0;
+            return;
+          }
+          track.scrollLeft -= velocity;
+          inertiaRaf = requestAnimationFrame(step);
+        }
+        inertiaRaf = requestAnimationFrame(step);
+      }
+
+      track.addEventListener("pointerdown", function (event) {
+        if (event.button !== 0) return;
+        // Do not start drag on interactive version points - allow direct click selection.
+        if (event.target && event.target.closest && event.target.closest(".v1-version-point")) return;
+        stopInertia();
+        dragging = true;
+        moved = false;
+        pointerId = event.pointerId;
+        startX = event.clientX;
+        startScroll = track.scrollLeft;
+        lastX = event.clientX;
+        lastT = Date.now();
+        velocity = 0;
+        track.classList.add("is-dragging");
+        track.setPointerCapture(pointerId);
+      });
+
+      track.addEventListener("pointermove", function (event) {
+        if (!dragging || event.pointerId !== pointerId) return;
+        var dx = event.clientX - startX;
+        if (Math.abs(dx) > 3) moved = true;
+        track.scrollLeft = startScroll - dx;
+
+        var now = Date.now();
+        var dt = Math.max(1, now - lastT);
+        velocity = (event.clientX - lastX) / dt * 16;
+        lastX = event.clientX;
+        lastT = now;
+      });
+
+      function endDrag(event) {
+        if (!dragging || event.pointerId !== pointerId) return;
+        dragging = false;
+        track.classList.remove("is-dragging");
+        if (track.hasPointerCapture(pointerId)) {
+          track.releasePointerCapture(pointerId);
+        }
+        pointerId = null;
+        suppressClickOnce = moved;
+        if (moved) {
+          runInertia();
+        }
+      }
+
+      track.addEventListener("pointerup", endDrag);
+      track.addEventListener("pointercancel", endDrag);
+
+      points.forEach(function (point) {
+        point.addEventListener("click", function (event) {
+          if (!suppressClickOnce) return;
+          suppressClickOnce = false;
+          event.preventDefault();
+          event.stopPropagation();
+        }, true);
+      });
+
+      setActiveBySourceIndex(0);
     }
 
     function getCurrentVersion() {
@@ -344,6 +525,7 @@
       var v1StatusRight = document.getElementById("v1StatusRight");
       var v1ScanMeta = document.getElementById("v1ScanMeta");
       var v1ScanActions = document.getElementById("v1ScanActions");
+      var v1MainCard = document.getElementById("v1MainCard");
 
       if (!activeTool) {
         if (v1Title) v1Title.textContent = "";
@@ -357,6 +539,9 @@
           v1ScanActions.setAttribute("hidden", "hidden");
           v1ScanActions.style.display = "none";
           v1ScanActions.setAttribute("aria-hidden", "true");
+        }
+        if (v1MainCard) {
+          v1MainCard.classList.remove("is-versions-view");
         }
         if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": brak aktywnej zakładki");
         if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": brak aktywnej zakładki";
@@ -391,8 +576,14 @@
           v1ScanActions.setAttribute("aria-hidden", "true");
         }
       }
+      if (v1MainCard) {
+        v1MainCard.classList.toggle("is-versions-view", activeTool === "versions");
+      }
       if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + activeTool);
       if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + activeTool;
+      if (activeTool === "versions") {
+        wireVersionsTimeline();
+      }
       if (typeof onAfterRender === "function") onAfterRender(activeTool);
     }
 

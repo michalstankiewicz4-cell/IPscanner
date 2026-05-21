@@ -6,7 +6,7 @@
 
     function targets() {
       return Array.from(document.querySelectorAll(
-        ".v1-tool-list, .v1-card, .v1-ai-threadlist, .v1-ai-chat, .v1-ai-prompt, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log, .v1-ip-extractor-input, .v1-ip-extractor-output, .v1-lang-manager-grid textarea, .v1-import-manager-grid textarea, .v1-lang-manager-output, .v1-import-output"
+        ".v1-tool-list, .v1-card, .v1-versions-list, .v1-ai-threadlist, .v1-ai-chat, .v1-ai-prompt, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log, .v1-ip-extractor-input, .v1-ip-extractor-output, .v1-lang-manager-grid textarea, .v1-import-manager-grid textarea, .v1-lang-manager-output, .v1-import-output"
       ));
     }
 
@@ -96,8 +96,13 @@
       var rail = item.rail;
       var thumb = item.thumb;
       var rect = el.getBoundingClientRect();
-      var isVisible = rect.width > 0 && rect.height > 0 && getComputedStyle(el).display !== "none";
-      var scrollable = el.scrollHeight > el.clientHeight + 1;
+      var styles = getComputedStyle(el);
+      var isVisible = rect.width > 0 && rect.height > 0 && styles.display !== "none";
+      var overflowY = (styles.overflowY || "").toLowerCase();
+      var overflow = (styles.overflow || "").toLowerCase();
+      var allowsVerticalScroll = ["visible", "auto", "scroll", "overlay"].indexOf(overflowY) >= 0
+        || ["visible", "auto", "scroll", "overlay"].indexOf(overflow) >= 0;
+      var scrollable = allowsVerticalScroll && (el.scrollHeight > el.clientHeight + 1);
 
       if (!isVisible || !scrollable) {
         rail.style.display = "none";
