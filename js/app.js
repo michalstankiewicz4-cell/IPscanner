@@ -28,6 +28,27 @@ function openNotepad() {
   by Michał Stankiewicz
 ================================================================
 
+  OSINT NET Auditor v1.6.5
+  by Michal Stankiewicz
+
+  Do you like what I build?
+  If my work inspired you or helped in real use, you can support further development:
+
+  Quick support: Bank transfer or BLIK to phone:
+
+  +48 797 486 355
+
+  Stay in touch: Facebook facebook.com/MajkelMajkel
+
+  Project page: facebook.com/OSINTNETAuditor
+
+  Transfer details:
+  Michal Stankiewicz
+  02-585 Warszawa
+  PKO BP
+  IBAN: PL55 1020 1097 0000 7902 0226 5353
+  Title: "inspiracja"
+
   Tel. / BLIK:  797 486 355
 
   Jeżeli podoba Ci się to co robię i chcesz wesprzeć
