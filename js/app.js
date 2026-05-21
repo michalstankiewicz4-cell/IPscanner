@@ -44,6 +44,10 @@ function openNotepad() {
   IBAN: PL55 1020 1097 0000 7902 0226 5353
   Title: "inspiracja"
 
+  my total costs domains - $4
+  github copilot - $78.00
+  other expenses - $12
+
   LICENCJA (MIT) — Polski
 
   Niniejszym udziela się bezpłatnie każdemu, kto uzyska
