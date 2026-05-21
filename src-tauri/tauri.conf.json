@@ -14,7 +14,7 @@
     "windows": [
       {
         "title": "NetRecon IP Auditor v1.6.5",
-        "url": "new-ui.html",
+        "url": "index.html",
         "width": 900,
         "height": 620,
         "maximized": true,
