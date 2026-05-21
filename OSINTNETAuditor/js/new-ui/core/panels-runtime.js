@@ -170,6 +170,7 @@
         "<li>" + escapeHtml(tr("aboutTotalCostDomains")) + "</li>",
         "<li>" + escapeHtml(tr("aboutTotalCostCopilot")) + "</li>",
         "<li>" + escapeHtml(tr("aboutTotalCostOther")) + "</li>",
+        "<li>" + escapeHtml(tr("aboutTotalCostAds")) + "</li>",
         "</ul>",
         "</div>"
       ].join("");
@@ -335,9 +336,6 @@
         if (isActive) {
           el.classList.remove("tab-closed");
           el.removeAttribute("hidden");
-        } else {
-          el.classList.add("tab-closed");
-          el.setAttribute("hidden", "hidden");
         }
       });
 

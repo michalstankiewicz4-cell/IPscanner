@@ -320,31 +320,46 @@ macro://stealth-check
           <button class="v1-panel-toggle" data-panel-toggle="right" title="Hide right section" aria-label="Hide right section">▶</button>
         </div>
         <div class="v1-right-content">
-          <article class="v1-ai-panel">
-            <div class="v1-ai-head">
-              <h3 style="margin:0;">AI Assistant</h3>
-              <span class="v1-ai-badge">GPT-5.3-Codex</span>
-            </div>
+          <div class="v1-right-tabs">
+            <button class="v1-right-tab active" data-v1-right-tab="assistant" type="button">AI Assistant</button>
+            <button class="v1-right-tab" data-v1-right-tab="notes" type="button">Notes</button>
+          </div>
 
-            <div class="v1-ai-threadlist">
-              <button class="v1-ai-thread active" data-tool="ai-assistant">Security review - LAN scan findings</button>
-              <button class="v1-ai-thread" data-tool="ai-assistant">Port profile optimization</button>
-              <button class="v1-ai-thread" data-tool="ai-assistant">WiFi hardening checklist</button>
-            </div>
+          <div class="v1-right-body">
+            <section class="v1-right-pane active" data-v1-right-pane="assistant">
+              <article class="v1-ai-panel">
+                <div class="v1-ai-mode" role="radiogroup" aria-label="Assistant mode">
+                  <span class="v1-ai-mode-label">Mode</span>
+                  <label class="v1-ai-mode-option">
+                    <input type="radio" name="v1AiMode" value="ui" checked />
+                    <span>UI</span>
+                  </label>
+                  <label class="v1-ai-mode-option">
+                    <input type="radio" name="v1AiMode" value="ps" />
+                    <span>PS</span>
+                  </label>
+                  <span class="v1-ai-badge v1-ai-mode-badge">GPT-5.3-Codex</span>
+                </div>
 
-            <div class="v1-ai-chat">
-              <div class="v1-ai-msg user">Przeanalizuj aktywne hosty i zaznacz podejrzane endpointy.</div>
-              <div class="v1-ai-msg assistant">Wykryto 3 hosty z nietypowym zestawem portow. Priorytet: 192.168.1.54 (554,8000) oraz 192.168.1.73 (23,2323).</div>
-              <div class="v1-ai-msg assistant">Sugerowana akcja: uruchom Scan Watch i porownaj z logiem sniffera.</div>
-            </div>
+                <div class="v1-ai-chat" id="v1AiChatHistory" aria-live="polite">
+                  <div class="v1-ai-msg assistant">Assistant ready. Choose mode: UI for interface guidance, PS for console-first commands.</div>
+                </div>
 
-            <div class="v1-ai-input">
-              <span>Wpisz prompt... np. "zrob threat model dla hosta 192.168.1.54"</span>
-              <button data-tool="ai-assistant">Send</button>
-            </div>
+                <div class="v1-ai-input">
+                  <textarea id="v1AiPromptInput" class="v1-ai-prompt" rows="3" placeholder="Type prompt for assistant..."></textarea>
+                </div>
 
-            <p class="status-line" id="v1StatusLine" hidden></p>
-          </article>
+                <p class="status-line" id="v1StatusLine" hidden></p>
+              </article>
+            </section>
+
+            <section class="v1-right-pane" data-v1-right-pane="notes">
+              <div class="v1-notes-pane">
+                <h4 style="margin:0 0 8px;">Notes</h4>
+                <p style="margin:0;">Reserve tab for next assistant views (runbook, snippets, context).</p>
+              </div>
+            </section>
+          </div>
         </div>
       </aside>
     </main>
