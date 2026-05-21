@@ -95,10 +95,10 @@
             var psCmd = "(Invoke-RestMethod -UseBasicParsing 'https://api.ipify.org').ToString()";
 
             if (!invoke) {
-              extEl.textContent = "desktop only";
+              extEl.textContent = tr("statusDesktopOnlyShort");
               appendPsConsole("[" + nowStamp() + "] PS> " + psCmd);
-              appendPsConsole("[" + nowStamp() + "] desktop only");
-              if (setStatusLine) setStatusLine("External IP: desktop only");
+              appendPsConsole("[" + nowStamp() + "] " + tr("statusDesktopOnlyShort"));
+              if (setStatusLine) setStatusLine(tr("statusExternalIpDesktopOnly"));
               return;
             }
 
@@ -114,8 +114,8 @@
               appendPsConsole("[" + nowStamp() + "] exit code: " + exitCode);
 
               if (!ip) {
-                extEl.textContent = "error";
-                if (setStatusLine) setStatusLine("External IP: no output");
+                extEl.textContent = tr("statusErrorShort");
+                if (setStatusLine) setStatusLine(tr("statusExternalIpNoOutput"));
                 return;
               }
 
@@ -129,9 +129,9 @@
               }
               if (setStatusLine) setStatusLine(tr("statusExternalIp") + " " + ip);
             }).catch(function () {
-              extEl.textContent = "error";
-              appendPsConsole("[" + nowStamp() + "] command failed");
-              if (setStatusLine) setStatusLine("External IP: command failed");
+              extEl.textContent = tr("statusErrorShort");
+              appendPsConsole("[" + nowStamp() + "] " + tr("statusCommandFailed"));
+              if (setStatusLine) setStatusLine(tr("statusExternalIpCommandFailed"));
             });
           }
 
@@ -146,10 +146,10 @@
             var psLocalCmd = "$ip=(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -notmatch '^(127\\.|169\\.254\\.)' -and $_.InterfaceAlias -notmatch 'Loopback' } | Select-Object -First 1 -ExpandProperty IPAddress); if(-not $ip){$ip=(ipconfig | Select-String 'IPv4 Address|Adres IPv4' | ForEach-Object { $_.ToString().Split(':')[-1].Trim() } | Where-Object {$_ -and $_ -notmatch '^(127\\.|169\\.254\\.)'} | Select-Object -First 1)}; $ip";
 
             if (!invoke) {
-              localEl.textContent = "desktop only";
+              localEl.textContent = tr("statusDesktopOnlyShort");
               appendPsConsole("[" + nowStamp() + "] PS> " + psLocalCmd);
-              appendPsConsole("[" + nowStamp() + "] desktop only");
-              if (setStatusLine) setStatusLine("Local IP: desktop only");
+              appendPsConsole("[" + nowStamp() + "] " + tr("statusDesktopOnlyShort"));
+              if (setStatusLine) setStatusLine(tr("statusLocalIpDesktopOnly"));
               return;
             }
 
@@ -165,8 +165,8 @@
               appendPsConsole("[" + nowStamp() + "] exit code: " + exitCode);
 
               if (!ip) {
-                localEl.textContent = "error";
-                if (setStatusLine) setStatusLine("Local IP: no output");
+                localEl.textContent = tr("statusErrorShort");
+                if (setStatusLine) setStatusLine(tr("statusLocalIpNoOutput"));
                 return;
               }
 
@@ -180,9 +180,9 @@
               }
               if (setStatusLine) setStatusLine(tr("statusLocalIp") + " " + ip);
             }).catch(function () {
-              localEl.textContent = "error";
-              appendPsConsole("[" + nowStamp() + "] command failed");
-              if (setStatusLine) setStatusLine("Local IP: command failed");
+              localEl.textContent = tr("statusErrorShort");
+              appendPsConsole("[" + nowStamp() + "] " + tr("statusCommandFailed"));
+              if (setStatusLine) setStatusLine(tr("statusLocalIpCommandFailed"));
             });
           }
 
@@ -197,10 +197,10 @@
             var psSubnetCmd = "$e=(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -notmatch '^(127\\.|169\\.254\\.)' -and $_.InterfaceAlias -notmatch 'Loopback' } | Select-Object -First 1); if($e){$oct=$e.IPAddress.Split('.'); \"$($oct[0]).$($oct[1]).$($oct[2]).0/$($e.PrefixLength)\"}";
 
             if (!invoke) {
-              subEl.textContent = "desktop only";
+              subEl.textContent = tr("statusDesktopOnlyShort");
               appendPsConsole("[" + nowStamp() + "] PS> " + psSubnetCmd);
-              appendPsConsole("[" + nowStamp() + "] desktop only");
-              if (setStatusLine) setStatusLine("Subnets: desktop only");
+              appendPsConsole("[" + nowStamp() + "] " + tr("statusDesktopOnlyShort"));
+              if (setStatusLine) setStatusLine(tr("statusSubnetsDesktopOnly"));
               return;
             }
 
@@ -224,8 +224,8 @@
               }
 
               if (!cidr) {
-                subEl.textContent = "error";
-                if (setStatusLine) setStatusLine("Subnets: no output");
+                subEl.textContent = tr("statusErrorShort");
+                if (setStatusLine) setStatusLine(tr("statusSubnetsNoOutput"));
                 return;
               }
 
@@ -239,9 +239,9 @@
               }
               if (setStatusLine) setStatusLine(tr("statusSubnet") + " " + cidr);
             }).catch(function () {
-              subEl.textContent = "error";
-              appendPsConsole("[" + nowStamp() + "] command failed");
-              if (setStatusLine) setStatusLine("Subnets: command failed");
+              subEl.textContent = tr("statusErrorShort");
+              appendPsConsole("[" + nowStamp() + "] " + tr("statusCommandFailed"));
+              if (setStatusLine) setStatusLine(tr("statusSubnetsCommandFailed"));
             });
           }
 

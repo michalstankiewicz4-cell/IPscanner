@@ -2,6 +2,7 @@
   function createMenuRuntime(deps) {
     var tr = deps.tr;
     var uiDefinitions = deps.uiDefinitions || { menuGroups: {}, menuActions: {}, panelDefinitions: {} };
+    var appLinks = deps.appLinks || {};
     var getActionMap = deps.getActionMap;
     var setStatusLine = deps.setStatusLine;
     var onOpenExtensionManager = deps.onOpenExtensionManager;
@@ -13,6 +14,28 @@
       return (uiDefinitions.menuActions && uiDefinitions.menuActions[action]) || null;
     }
 
+    function getInvoke() {
+      return (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
+        || (window.__TAURI__ && window.__TAURI__.invoke)
+        || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
+        || null;
+    }
+
+    function openExternalUrl(url) {
+      var safeUrl = String(url || "").trim();
+      if (!safeUrl) return;
+
+      var invoke = getInvoke();
+      if (invoke) {
+        invoke("open_browser", { url: safeUrl }).catch(function () {
+          try { window.open(safeUrl, "_blank", "noopener"); } catch (_) {}
+        });
+        return;
+      }
+
+      try { window.open(safeUrl, "_blank", "noopener"); } catch (_) {}
+    }
+
     function runMenuAction(action) {
       var actionMap = getActionMap ? getActionMap() : {};
       var label = action && actionMap[action] ? actionMap[action] : action;
@@ -21,16 +44,9 @@
 
       // Obsługa otwierania GitHuba dla Download
       if (behavior === "open-github-download") {
-        window.open("https://github.com/michalstankiewicz4-cell/IPscanner", "_blank", "noopener");
+        openExternalUrl(appLinks.downloadUrl);
         if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
         return;
-      }
-
-      function getInvoke() {
-        return (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
-          || (window.__TAURI__ && window.__TAURI__.invoke)
-          || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
-          || null;
       }
 
       async function runNativeWindowAction(kind) {
@@ -146,7 +162,7 @@
         runNativeWindowAction("minimize").then(function (handled) {
           if (setStatusLine) {
             setStatusLine(
-              tr("menuPrefix") + ": " + label + (handled ? "" : " (desktop only)")
+              tr("menuPrefix") + ": " + label + (handled ? "" : tr("statusDesktopOnlySuffix"))
             );
           }
         });
@@ -157,7 +173,7 @@
         runNativeWindowAction("maximize").then(function (handled) {
           if (setStatusLine) {
             setStatusLine(
-              tr("menuPrefix") + ": " + label + (handled ? "" : " (desktop only)")
+              tr("menuPrefix") + ": " + label + (handled ? "" : tr("statusDesktopOnlySuffix"))
             );
           }
         });

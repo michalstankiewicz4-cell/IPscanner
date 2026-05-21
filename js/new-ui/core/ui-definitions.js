@@ -168,10 +168,15 @@
     },
   };
 
+  var appLinks = {
+    downloadUrl: "https://github.com/michalstankiewicz4-cell/IPscanner",
+  };
+
   window.NetReconNewUICore = window.NetReconNewUICore || {};
   window.NetReconNewUICore.uiDefinitions = {
     menuGroups: menuGroups,
     menuActions: menuActions,
     panelDefinitions: panelDefinitions,
+    appLinks: appLinks,
   };
 })();

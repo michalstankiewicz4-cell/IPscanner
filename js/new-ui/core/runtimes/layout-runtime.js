@@ -1,6 +1,7 @@
 (function () {
   function createLayoutRuntime(deps) {
     var refreshCustomScrollbars = deps.refreshCustomScrollbars || function () {};
+    var tr = deps.tr || function (key) { return key; };
 
     function init() {
       var main = document.querySelector(".v1-main");
@@ -48,16 +49,16 @@
 
       function syncToggleLabels() {
         leftToggle.textContent = panelState.leftCollapsed ? "▶" : "◀";
-        leftToggle.setAttribute("title", panelState.leftCollapsed ? "Restore left section" : "Hide left section");
-        leftToggle.setAttribute("aria-label", panelState.leftCollapsed ? "Restore left section" : "Hide left section");
+        leftToggle.setAttribute("title", panelState.leftCollapsed ? tr("panelRestoreLeft") : tr("panelHideLeft"));
+        leftToggle.setAttribute("aria-label", panelState.leftCollapsed ? tr("panelRestoreLeft") : tr("panelHideLeft"));
 
         rightToggle.textContent = panelState.rightCollapsed ? "◀" : "▶";
-        rightToggle.setAttribute("title", panelState.rightCollapsed ? "Restore right section" : "Hide right section");
-        rightToggle.setAttribute("aria-label", panelState.rightCollapsed ? "Restore right section" : "Hide right section");
+        rightToggle.setAttribute("title", panelState.rightCollapsed ? tr("panelRestoreRight") : tr("panelHideRight"));
+        rightToggle.setAttribute("aria-label", panelState.rightCollapsed ? tr("panelRestoreRight") : tr("panelHideRight"));
 
         bottomToggle.textContent = panelState.bottomCollapsed ? "▲" : "▼";
-        bottomToggle.setAttribute("title", panelState.bottomCollapsed ? "Restore bottom section" : "Hide bottom section");
-        bottomToggle.setAttribute("aria-label", panelState.bottomCollapsed ? "Restore bottom section" : "Hide bottom section");
+        bottomToggle.setAttribute("title", panelState.bottomCollapsed ? tr("panelRestoreBottom") : tr("panelHideBottom"));
+        bottomToggle.setAttribute("aria-label", panelState.bottomCollapsed ? tr("panelRestoreBottom") : tr("panelHideBottom"));
       }
 
       function applySizes() {

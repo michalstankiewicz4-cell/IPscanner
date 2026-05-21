@@ -41,13 +41,19 @@ Minimalny podzial odpowiedzialnosci:
 - runtimes/ip-inputs-runtime.js - segmentowane pola IP oraz synchronizacja hidden inputow zakresu.
 - runtimes/navigation-runtime.js - obsluga aktywnosci sidebar/results, zakladek dolnego panelu i routingu klikniec data-tool.
 
-new-ui.html powinien byc glownie adapterem DOM i eventow.
+index.html powinien byc glownie adapterem DOM i eventow.
 
 Mapa odpowiedzialnosci jest utrzymywana centralnie i nie powinna byc dublowana w wielu miejscach.
 
 - definicje menu i akcji: `js/new-ui/core/ui-definitions.js`,
 - definicje paneli: `js/new-ui/core/ui-definitions.js`,
-- wykonanie zachowan akcji: runtime modules + `new-ui.html` jako bootstrap/adaptor.
+- wykonanie zachowan akcji: runtime modules + `index.html` jako bootstrap/adaptor New UI.
+
+Aktualne pliki wejściowe UI:
+
+- `index.html` - New UI (aktywny domyślny entrypoint aplikacji),
+- `old-ui.html` - Legacy UI (utrzymanie kompatybilności / referencja migracyjna),
+- katalog `app/` - mirror generowany przez `npm run prepare:app` (nie edytujemy ręcznie).
 
 ## 4. Rozszerzenia (plugin-like)
 
@@ -130,6 +136,12 @@ Zasady:
   - npm run prepare:app && npx tauri build --no-bundle
 - Pelne bundlowanie (NSIS/MSI) tylko gdy jest to jawnie wymagane do releasu.
 - Nie uruchamiaj publikacji ani releasu bez wyraznej zgody maintainera.
+
+Plan rozwoju instalatora (roadmapa):
+
+- W kolejnych iteracjach rozbudowujemy instalator o dodatkowe opcjonalne skladniki.
+- Kazdy nowy skladnik powinien miec autodetekcje istniejacej instalacji i bezpieczny domyslny stan checkboxa.
+- Nie usuwamy wspoldzielonych runtime'ow systemowych bez jawnej, osobnej zgody uzytkownika.
 
 ## 7. Workflow PR
 
