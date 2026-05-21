@@ -32,11 +32,9 @@ function openNotepad() {
   If my work inspired you or helped in real use, you can support further development:
 
   Quick support: Bank transfer or BLIK to phone:
-
   +48 797 486 355
 
   Stay in touch: Facebook facebook.com/MajkelMajkel
-
   Project page: facebook.com/OSINTNETAuditor
 
   Transfer details:
@@ -96,9 +94,6 @@ function openNotepad() {
   OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
   IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
   DEALINGS IN THE SOFTWARE.
-
-  If you enjoy what I'm building — BLIK is welcome! 🙏
-  797 486 355
 
 ================================================================`;
 }
