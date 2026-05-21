@@ -165,6 +165,12 @@
         "<li>" + escapeHtml(tr("aboutTransferIban")) + "</li>",
         "<li>" + escapeHtml(tr("aboutTransferTitle")) + "</li>",
         "</ul>",
+        "<h4>" + escapeHtml(tr("aboutTotalCostsHeading")) + "</h4>",
+        "<ul>",
+        "<li>" + escapeHtml(tr("aboutTotalCostDomains")) + "</li>",
+        "<li>" + escapeHtml(tr("aboutTotalCostCopilot")) + "</li>",
+        "<li>" + escapeHtml(tr("aboutTotalCostOther")) + "</li>",
+        "</ul>",
         "</div>"
       ].join("");
     }
