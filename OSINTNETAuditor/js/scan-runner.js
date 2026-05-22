@@ -252,6 +252,15 @@
       else appendCmdLog('Scan complete. No hosts found.', 'scan');
       appendCmdLog('─'.repeat(52), 'scan');
     }
+
+    if (typeof window.persistScanResultsSnapshotToDb === 'function') {
+      await window.persistScanResultsSnapshotToDb({
+        reason: getStopRequested() ? 'scan_stopped' : 'scan_completed',
+        checkedHosts: Number(checkedText) || checked,
+        activeHosts: totalFound,
+        openPorts: totalOpenPorts,
+      });
+    }
   }
 
   window.startScan = startScan;

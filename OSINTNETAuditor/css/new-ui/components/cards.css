@@ -577,3 +577,111 @@
   font-style: italic;
   padding: 16px 10px;
 }
+
+.v1-results-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+}
+
+.v1-results-table-scroll--ip {
+  border: 1px solid #2a2a2e;
+  border-radius: 6px;
+}
+
+.v1-ip-results-table {
+  min-width: 980px;
+}
+
+.v1-ip-results-table th,
+.v1-ip-results-table td {
+  vertical-align: middle;
+}
+
+.v1-ip-results-table .v1-ip-col-check,
+.v1-ip-results-table .v1-ip-col-star,
+.v1-ip-results-table .v1-ip-col-status,
+.v1-ip-results-table .v1-ip-col-expand {
+  width: 28px;
+  text-align: center;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.v1-ip-results-table .v1-ip-col-ping {
+  width: 72px;
+  color: #43d17e;
+  font-weight: 700;
+}
+
+.v1-ip-results-table .v1-ip-col-host,
+.v1-ip-results-table .v1-ip-col-isp {
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.v1-ip-results-table .v1-ip-col-flag {
+  width: 48px;
+  text-align: center;
+}
+
+.v1-ip-status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  background: #6b7483;
+}
+
+.v1-ip-status-dot.is-up {
+  background: #2dcc71;
+  box-shadow: 0 0 0 2px rgba(45, 204, 113, 0.2);
+}
+
+.v1-ip-expand-btn {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #3d424d;
+  background: #20242b;
+  color: #dce6f6;
+  line-height: 1;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.v1-ip-expand-btn:hover {
+  border-color: #5f94de;
+  background: #273244;
+}
+
+.v1-ip-ports-row td {
+  padding-top: 2px;
+  padding-bottom: 8px;
+}
+
+.v1-ip-ports-wrap {
+  display: grid;
+  gap: 4px;
+  padding-left: 88px;
+}
+
+.v1-ip-port-link {
+  color: #8fc0ff;
+  text-decoration: underline;
+  font-size: 12px;
+  line-height: 1.3;
+  word-break: break-all;
+}
+
+.v1-ip-port-link:hover {
+  color: #c1deff;
+}
+
+.v1-ip-ports-empty {
+  color: var(--txt-dim);
+  font-style: italic;
+}

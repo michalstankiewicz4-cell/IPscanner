@@ -45,10 +45,88 @@
     }, 180);
   }
 
+  function buildResultsPayload(meta = {}) {
+    const results = collectResultsExportData();
+    const scanHistory = typeof window.getScanHistoryForExport === 'function'
+      ? window.getScanHistoryForExport()
+      : JSON.parse(localStorage.getItem('netrecon_scan_history') || '[]');
+
+    return {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      reason: meta.reason || 'manual',
+      ...meta,
+      results,
+      scanHistory: Array.isArray(scanHistory) ? scanHistory : [],
+    };
+  }
+
+  async function persistCurrentResultsSnapshotToDb(meta = {}) {
+    saveResultsNow();
+    const invoke = getTauriInvoke();
+    if (!invoke) return false;
+
+    try {
+      const payload = buildResultsPayload(meta);
+      await invoke('db_store_scan_results_snapshot', {
+        payloadJson: JSON.stringify(payload, null, 2),
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function tryRestoreResultsFromDatabase() {
+    const invoke = getTauriInvoke();
+    if (!invoke) return false;
+
+    try {
+      const latestRaw = await invoke('db_load_latest_scan_results_snapshot');
+      if (!latestRaw) return false;
+
+      let parsed;
+      try {
+        parsed = JSON.parse(latestRaw);
+      } catch {
+        return false;
+      }
+
+      const results = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.results)
+          ? parsed.results
+          : null;
+
+      if (!Array.isArray(results) || results.length === 0) return false;
+
+      const importedHistory = Array.isArray(parsed?.scanHistory) ? parsed.scanHistory : null;
+      localStorage.setItem('netrecon_results', JSON.stringify(results));
+      localStorage.setItem('netrecon_results_ts', Date.now());
+
+      if (importedHistory) {
+        if (typeof window.setScanHistoryFromImport === 'function') {
+          window.setScanHistoryFromImport(importedHistory);
+        } else {
+          localStorage.setItem('netrecon_scan_history', JSON.stringify(importedHistory));
+        }
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function restoreResults() {
     try {
       const raw = localStorage.getItem('netrecon_results');
-      if (!raw) return;
+      if (!raw) {
+        // Fallback path: restore latest persisted export snapshot from SQLite.
+        tryRestoreResultsFromDatabase().then((restored) => {
+          if (restored) restoreResults();
+        });
+        return;
+      }
       const data = JSON.parse(raw);
       if (!data.length) return;
       const ts = +localStorage.getItem('netrecon_results_ts');
@@ -122,20 +200,14 @@
 
   async function exportResultsToJson() {
     saveResultsNow();
-    const results = collectResultsExportData();
-    const scanHistory = typeof window.getScanHistoryForExport === 'function'
-      ? window.getScanHistoryForExport()
-      : JSON.parse(localStorage.getItem('netrecon_scan_history') || '[]');
-    const payload = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      results,
-      scanHistory: Array.isArray(scanHistory) ? scanHistory : [],
-    };
+    const payload = buildResultsPayload({ reason: 'manual_export' });
+    const results = payload.results;
     const ts = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
     const filename = `netrecon-results-${ts}.json`;
     const content = JSON.stringify(payload, null, 2);
     const invoke = getTauriInvoke();
+
+    await persistCurrentResultsSnapshotToDb({ reason: 'manual_export' });
 
     if (invoke) {
       try {
@@ -212,6 +284,13 @@
     document.getElementById('btnClear')?.click();
     localStorage.setItem('netrecon_results', JSON.stringify(results));
     localStorage.setItem('netrecon_results_ts', Date.now());
+
+    await persistCurrentResultsSnapshotToDb({
+      reason: 'manual_import',
+      importedAt: new Date().toISOString(),
+      scanHistory: importedHistory || [],
+    });
+
     if (importedHistory) {
       if (typeof window.setScanHistoryFromImport === 'function') {
         window.setScanHistoryFromImport(importedHistory);
@@ -226,6 +305,7 @@
   window.saveResultsNow = saveResultsNow;
   window.saveResults = saveResults;
   window.restoreResults = restoreResults;
+  window.persistScanResultsSnapshotToDb = persistCurrentResultsSnapshotToDb;
   window.exportScanResults = exportResultsToJson;
   window.importScanResultsFromFile = importResultsFromFile;
 })();
