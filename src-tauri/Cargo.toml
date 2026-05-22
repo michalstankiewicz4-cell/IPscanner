@@ -18,3 +18,4 @@ serialport = "4"
 keyring = "2"
 dns-lookup = "3"
 rfd = "0.14"
+rusqlite = { version = "0.31", features = ["bundled"] }

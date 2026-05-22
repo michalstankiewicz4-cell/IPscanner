@@ -16,6 +16,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use rusqlite::{Connection, params};
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
 use tokio::net::lookup_host;
 use tokio::net::TcpStream;
@@ -644,6 +645,79 @@ fn open_scan_results_dialog() -> Result<String, String> {
     };
 
     fs::read_to_string(&path).map_err(|e| format!("Failed to read file: {}", e))
+}
+
+fn scan_exports_db_path(app: &AppHandle) -> Result<std::path::PathBuf, String> {
+    let app_data = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to resolve app data dir: {e}"))?;
+
+    fs::create_dir_all(&app_data)
+        .map_err(|e| format!("Failed to create app data dir: {e}"))?;
+
+    Ok(app_data.join("scan_exports.sqlite3"))
+}
+
+fn open_scan_exports_db(app: &AppHandle) -> Result<Connection, String> {
+    let db_path = scan_exports_db_path(app)?;
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("Failed to open SQLite DB: {e}"))?;
+
+    conn.execute_batch(
+        "
+        PRAGMA journal_mode = WAL;
+        PRAGMA foreign_keys = ON;
+        CREATE TABLE IF NOT EXISTS scan_exports (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+          payload_json TEXT NOT NULL
+        );
+        "
+    )
+    .map_err(|e| format!("Failed to initialize SQLite schema: {e}"))?;
+
+    Ok(conn)
+}
+
+#[tauri::command]
+fn db_store_scan_results_snapshot(app: AppHandle, payload_json: String) -> Result<i64, String> {
+    if payload_json.trim().is_empty() {
+        return Err("payload_json is empty".into());
+    }
+
+    let conn = open_scan_exports_db(&app)?;
+    conn.execute(
+        "INSERT INTO scan_exports (payload_json) VALUES (?1)",
+        params![payload_json],
+    )
+    .map_err(|e| format!("Failed to insert export snapshot: {e}"))?;
+
+    Ok(conn.last_insert_rowid())
+}
+
+#[tauri::command]
+fn db_load_latest_scan_results_snapshot(app: AppHandle) -> Result<Option<String>, String> {
+    let conn = open_scan_exports_db(&app)?;
+    let mut stmt = conn
+        .prepare("SELECT payload_json FROM scan_exports ORDER BY id DESC LIMIT 1")
+        .map_err(|e| format!("Failed to prepare latest-snapshot query: {e}"))?;
+
+    let mut rows = stmt
+        .query([])
+        .map_err(|e| format!("Failed to query latest snapshot: {e}"))?;
+
+    if let Some(row) = rows
+        .next()
+        .map_err(|e| format!("Failed to read latest snapshot row: {e}"))?
+    {
+        let payload: String = row
+            .get(0)
+            .map_err(|e| format!("Failed to read snapshot payload: {e}"))?;
+        Ok(Some(payload))
+    } else {
+        Ok(None)
+    }
 }
 
 #[tauri::command]
@@ -3550,6 +3624,8 @@ fn main() {
             window_close,
             save_scan_results_dialog,
             open_scan_results_dialog,
+            db_store_scan_results_snapshot,
+            db_load_latest_scan_results_snapshot,
             run_powershell,
         ])
         .run(tauri::generate_context!())

@@ -461,16 +461,95 @@
     }
 
     function renderResultsIp() {
+      var rows = [
+        {
+          ip: "83.9.186.53",
+          ping: "23 ms",
+          hostname: "83.9.186.53.ipv4.supermedia.pl",
+          flag: "PL",
+          isp: "Orange Polska Spolka Akcyjna",
+          statusClass: "is-up",
+          ports: [":34567", ":80", ":443", ":631"]
+        },
+        {
+          ip: "83.9.186.185",
+          ping: "4 ms",
+          hostname: "83.9.186.185.ipv4.supermedia.pl",
+          flag: "PL",
+          isp: "Orange Polska Spolka Akcyjna",
+          statusClass: "is-up",
+          ports: [":80", ":443"]
+        }
+      ];
+
+      var totalPorts = rows.reduce(function (sum, row) {
+        return sum + ((row.ports && row.ports.length) || 0);
+      }, 0);
+
+      var bodyHtml = rows.map(function (row, idx) {
+        var portsHtml = (row.ports || []).map(function (port) {
+          return "<a href=\"#\" class=\"v1-ip-port-link\">/admin/video/snapshot/files/status/stream/mjpeg" + escapeHtml(port) + "</a>";
+        }).join("");
+
+        return [
+          "<tr class=\"v1-ip-result-row\" data-row-index=\"" + idx + "\">",
+          "<td class=\"v1-ip-col-check\">✓</td>",
+          "<td class=\"v1-ip-col-star\">★</td>",
+          "<td class=\"v1-ip-col-status\"><span class=\"v1-ip-status-dot " + escapeHtml(row.statusClass || "") + "\"></span></td>",
+          "<td class=\"v1-ip-col-ip\">" + escapeHtml(row.ip) + "</td>",
+          "<td class=\"v1-ip-col-expand\"><button type=\"button\" class=\"v1-ip-expand-btn\" data-open-ports=\"" + idx + "\" aria-expanded=\"false\">+</button></td>",
+          "<td class=\"v1-ip-col-ping\">" + escapeHtml(row.ping) + "</td>",
+          "<td class=\"v1-ip-col-host\">" + escapeHtml(row.hostname) + "</td>",
+          "<td class=\"v1-ip-col-flag\">" + escapeHtml(row.flag) + "</td>",
+          "<td class=\"v1-ip-col-isp\">" + escapeHtml(row.isp) + "</td>",
+          "</tr>",
+          "<tr class=\"v1-ip-ports-row\" data-ports-row=\"" + idx + "\" hidden>",
+          "<td colspan=\"10\">",
+          "<div class=\"v1-ip-ports-wrap\">" + (portsHtml || "<span class=\"v1-ip-ports-empty\">No open ports</span>") + "</div>",
+          "</td>",
+          "</tr>"
+        ].join("");
+      }).join("");
+
       return [
         "<div class=\"v1-results-meta-row\">",
-        "<span>Hosty: <b id=\"resIpHostCount\">–</b></span>",
-        "<span>Otwarte porty: <b id=\"resIpPortCount\">–</b></span>",
+        "<span>Hosty: <b id=\"resIpHostCount\">" + rows.length + "</b></span>",
+        "<span>Otwarte porty: <b id=\"resIpPortCount\">" + totalPorts + "</b></span>",
         "</div>",
-        "<table class=\"v1-results-table\">",
-        "<thead><tr><th>IP</th><th>Nazwa hosta</th><th>Otwarte porty</th><th>Status</th></tr></thead>",
-        "<tbody><tr><td colspan=\"4\" class=\"v1-results-empty\">Brak wyników skanowania IP.</td></tr></tbody>",
-        "</table>"
+        "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\">",
+        "<table class=\"v1-results-table v1-ip-results-table\">",
+        "<thead><tr><th class=\"v1-ip-col-check\">✓</th><th class=\"v1-ip-col-star\">★</th><th class=\"v1-ip-col-status\">●</th><th class=\"v1-ip-col-ip\">IP Address</th><th class=\"v1-ip-col-expand\">+</th><th class=\"v1-ip-col-ping\">Ping</th><th class=\"v1-ip-col-host\">Hostname</th><th class=\"v1-ip-col-flag\">Flag</th><th class=\"v1-ip-col-isp\">ISP</th></tr></thead>",
+        "<tbody>" + bodyHtml + "</tbody>",
+        "</table>",
+        "</div>"
       ].join("");
+    }
+
+    function wireResultsIpTable() {
+      var root = document.getElementById("v1ToolDetail");
+      if (!root) return;
+
+      root.querySelectorAll("[data-open-ports]").forEach(function (button) {
+        if (button.dataset.bound === "1") return;
+        button.dataset.bound = "1";
+
+        button.addEventListener("click", function () {
+          var rowId = button.getAttribute("data-open-ports");
+          var portsRow = root.querySelector('[data-ports-row="' + rowId + '"]');
+          if (!portsRow) return;
+
+          var expanded = button.getAttribute("aria-expanded") === "true";
+          var nextExpanded = !expanded;
+          button.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
+          button.textContent = nextExpanded ? "−" : "+";
+
+          if (nextExpanded) {
+            portsRow.removeAttribute("hidden");
+          } else {
+            portsRow.setAttribute("hidden", "hidden");
+          }
+        });
+      });
     }
 
     function renderResultsWifi() {
@@ -583,6 +662,9 @@
       if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + activeTool;
       if (activeTool === "versions") {
         wireVersionsTimeline();
+      }
+      if (activeTool === "results-ip") {
+        wireResultsIpTable();
       }
       if (typeof onAfterRender === "function") onAfterRender(activeTool);
     }

@@ -6,7 +6,7 @@
 
     function targets() {
       return Array.from(document.querySelectorAll(
-        ".v1-tool-list, .v1-card, .v1-versions-list, .v1-ai-threadlist, .v1-ai-chat, .v1-ai-prompt, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log, .v1-ip-extractor-input, .v1-ip-extractor-output, .v1-lang-manager-grid textarea, .v1-import-manager-grid textarea, .v1-lang-manager-output, .v1-import-output"
+        ".v1-tool-list, .v1-card, .v1-versions-list, .v1-ai-threadlist, .v1-ai-chat, .v1-ai-prompt, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log, .v1-ip-extractor-input, .v1-ip-extractor-output, .v1-lang-manager-grid textarea, .v1-import-manager-grid textarea, .v1-lang-manager-output, .v1-import-output, .v1-results-table-scroll--ip"
       ));
     }
 
@@ -15,6 +15,9 @@
         if (document.body && document.body.contains(item.el)) return true;
         if (item.rail && item.rail.parentNode) {
           item.rail.parentNode.removeChild(item.rail);
+        }
+        if (item.hRail && item.hRail.parentNode) {
+          item.hRail.parentNode.removeChild(item.hRail);
         }
         itemMap.delete(item.el);
         return false;
@@ -34,7 +37,29 @@
       rail.appendChild(thumb);
       document.body.appendChild(rail);
 
-      var item = { el: el, rail: rail, thumb: thumb, dragging: false, dragOffset: 0 };
+      var useHorizontalRail = el.classList.contains("v1-results-table-scroll--ip");
+      var hRail = null;
+      var hThumb = null;
+      if (useHorizontalRail) {
+        hRail = document.createElement("div");
+        hRail.className = "v1-faux-scrollbar-h";
+        hThumb = document.createElement("div");
+        hThumb.className = "v1-faux-scrollbar-thumb v1-faux-scrollbar-thumb-h";
+        hRail.appendChild(hThumb);
+        document.body.appendChild(hRail);
+      }
+
+      var item = {
+        el: el,
+        rail: rail,
+        thumb: thumb,
+        hRail: hRail,
+        hThumb: hThumb,
+        dragging: false,
+        dragOffset: 0,
+        draggingH: false,
+        dragOffsetH: 0
+      };
 
       el.addEventListener("scroll", function () { updateOne(item); }, { passive: true });
 
@@ -79,6 +104,49 @@
         updateOne(item);
       });
 
+      if (hRail && hThumb) {
+        hThumb.addEventListener("pointerdown", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          item.draggingH = true;
+          item.dragOffsetH = event.clientX - hThumb.getBoundingClientRect().left;
+          hThumb.classList.add("dragging");
+          hThumb.setPointerCapture(event.pointerId);
+        });
+
+        hThumb.addEventListener("pointermove", function (event) {
+          if (!item.draggingH) return;
+          var railRect = hRail.getBoundingClientRect();
+          var thumbRect = hThumb.getBoundingClientRect();
+          var nextLeft = Math.max(0, Math.min(railRect.width - thumbRect.width, event.clientX - railRect.left - item.dragOffsetH));
+          var ratio = nextLeft / Math.max(1, railRect.width - thumbRect.width);
+          el.scrollLeft = ratio * Math.max(1, el.scrollWidth - el.clientWidth);
+          updateOne(item);
+        });
+
+        hThumb.addEventListener("pointerup", function (event) {
+          item.draggingH = false;
+          hThumb.classList.remove("dragging");
+          hThumb.releasePointerCapture(event.pointerId);
+        });
+
+        hThumb.addEventListener("pointercancel", function () {
+          item.draggingH = false;
+          hThumb.classList.remove("dragging");
+        });
+
+        hRail.addEventListener("pointerdown", function (event) {
+          if (event.target === hThumb) return;
+          var railRect = hRail.getBoundingClientRect();
+          var thumbRect = hThumb.getBoundingClientRect();
+          var clickCenter = event.clientX - railRect.left - thumbRect.width / 2;
+          var nextLeft = Math.max(0, Math.min(railRect.width - thumbRect.width, clickCenter));
+          var ratio = nextLeft / Math.max(1, railRect.width - thumbRect.width);
+          el.scrollLeft = ratio * Math.max(1, el.scrollWidth - el.clientWidth);
+          updateOne(item);
+        });
+      }
+
       if (resizeObserver) resizeObserver.observe(el);
 
       itemMap.set(el, item);
@@ -104,27 +172,56 @@
         || ["visible", "auto", "scroll", "overlay"].indexOf(overflow) >= 0;
       var scrollable = allowsVerticalScroll && (el.scrollHeight > el.clientHeight + 1);
 
-      if (!isVisible || !scrollable) {
+      if (isVisible && scrollable) {
+        var railWidth = 10;
+        var thumbMin = 24;
+        var railHeight = rect.height;
+        var ratio = el.clientHeight / el.scrollHeight;
+        var thumbHeight = Math.max(thumbMin, Math.floor(railHeight * ratio));
+        var maxThumbTop = Math.max(0, railHeight - thumbHeight);
+        var scrollRange = Math.max(1, el.scrollHeight - el.clientHeight);
+        var thumbTop = Math.floor((el.scrollTop / scrollRange) * maxThumbTop);
+
+        rail.style.display = "block";
+        rail.style.top = rect.top + "px";
+        rail.style.left = rect.right - railWidth + "px";
+        rail.style.height = railHeight + "px";
+
+        thumb.style.height = thumbHeight + "px";
+        thumb.style.top = thumbTop + "px";
+      } else {
         rail.style.display = "none";
-        return;
       }
 
-      var railWidth = 10;
-      var thumbMin = 24;
-      var railHeight = rect.height;
-      var ratio = el.clientHeight / el.scrollHeight;
-      var thumbHeight = Math.max(thumbMin, Math.floor(railHeight * ratio));
-      var maxThumbTop = Math.max(0, railHeight - thumbHeight);
-      var scrollRange = Math.max(1, el.scrollHeight - el.clientHeight);
-      var thumbTop = Math.floor((el.scrollTop / scrollRange) * maxThumbTop);
+      if (item.hRail && item.hThumb) {
+        var horizontalStyles = getComputedStyle(el);
+        var overflowXValue = (horizontalStyles.overflowX || "").toLowerCase();
+        var overflowValue = (horizontalStyles.overflow || "").toLowerCase();
+        var canScrollHorizontally = ["visible", "auto", "scroll", "overlay"].indexOf(overflowXValue) >= 0
+          || ["visible", "auto", "scroll", "overlay"].indexOf(overflowValue) >= 0;
+        var hasHorizontalOverflow = canScrollHorizontally && (el.scrollWidth > el.clientWidth + 1);
 
-      rail.style.display = "block";
-      rail.style.top = rect.top + "px";
-      rail.style.left = rect.right - railWidth + "px";
-      rail.style.height = railHeight + "px";
+        if (!isVisible || !hasHorizontalOverflow) {
+          item.hRail.style.display = "none";
+        } else {
+          var horizontalRailHeight = 10;
+          var horizontalRailWidth = rect.width;
+          var horizontalThumbMin = 24;
+          var horizontalRatio = el.clientWidth / el.scrollWidth;
+          var horizontalThumbWidth = Math.max(horizontalThumbMin, Math.floor(horizontalRailWidth * horizontalRatio));
+          var horizontalMaxThumbLeft = Math.max(0, horizontalRailWidth - horizontalThumbWidth);
+          var horizontalScrollRange = Math.max(1, el.scrollWidth - el.clientWidth);
+          var horizontalThumbLeft = Math.floor((el.scrollLeft / horizontalScrollRange) * horizontalMaxThumbLeft);
 
-      thumb.style.height = thumbHeight + "px";
-      thumb.style.top = thumbTop + "px";
+          item.hRail.style.display = "block";
+          item.hRail.style.left = rect.left + "px";
+          item.hRail.style.top = rect.bottom - horizontalRailHeight + "px";
+          item.hRail.style.width = horizontalRailWidth + "px";
+
+          item.hThumb.style.width = horizontalThumbWidth + "px";
+          item.hThumb.style.left = horizontalThumbLeft + "px";
+        }
+      }
     }
 
     function refresh() {
