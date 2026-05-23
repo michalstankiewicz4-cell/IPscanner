@@ -127,6 +127,11 @@
       purpose: "Przelaczenie trybu pelnoekranowego.",
       behavior: "window-fullscreen",
     },
+    "auto-arrange-windows": {
+      label: "Auto Arrange windows",
+      purpose: "Automatyczne rozmieszczenie odpiętych okien.",
+      behavior: "auto-arrange-windows",
+    },
     "window-close": {
       label: "Window close",
       purposeKey: "tipActionWindowClose",

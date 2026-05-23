@@ -45,6 +45,27 @@
   margin-right: -4px;
 }
 
+.v1-menubar-action {
+  border: 0;
+  background: transparent;
+  color: #c7c7c7;
+  font-size: 12px;
+  font-family: var(--font-ui);
+  line-height: 1;
+  height: 100%;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.v1-menubar-action:hover {
+  background: #46484c;
+  color: #ffffff;
+}
+
 .v1-window-btn {
   width: 46px;
   border: 0;
