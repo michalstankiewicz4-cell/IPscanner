@@ -11,6 +11,424 @@
     var setStatusLine = deps.setStatusLine;
     // Domyślnie brak aktywnej zakładki, wszystkie taby zamknięte
     var activeTool = null;
+    var detachedTool = null;
+    var detachedCards = Object.create(null);
+    var detachedZCounter = 70;
+    var DETACHED_LAYOUTS_KEY = "netrecon_detached_layouts_v1";
+    var detachedDragState = {
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      startLeft: 0,
+      startTop: 0,
+      dragging: false,
+    };
+    var detachedInteractionsBound = false;
+    var detachedResizeObserver = null;
+
+    function readDetachedLayouts() {
+      try {
+        var raw = window.localStorage ? window.localStorage.getItem(DETACHED_LAYOUTS_KEY) : "";
+        if (!raw) return {};
+        var parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    function writeDetachedLayouts(layouts) {
+      try {
+        if (!window.localStorage) return;
+        window.localStorage.setItem(DETACHED_LAYOUTS_KEY, JSON.stringify(layouts || {}));
+      } catch (_) {
+        // ignore persistence failures
+      }
+    }
+
+    function saveDetachedLayout(tool, layout) {
+      if (!tool || !layout) return;
+      var all = readDetachedLayouts();
+      all[tool] = layout;
+      writeDetachedLayouts(all);
+    }
+
+    function clearDetachedLayout(tool) {
+      if (!tool) return;
+      var all = readDetachedLayouts();
+      if (!Object.prototype.hasOwnProperty.call(all, tool)) return;
+      delete all[tool];
+      writeDetachedLayouts(all);
+    }
+
+    function getDefaultDetachedLayout() {
+      return {
+        top: 64,
+        left: 96,
+        width: Math.min(980, Math.max(460, window.innerWidth - 160)),
+        height: Math.min(Math.round(window.innerHeight * 0.72), Math.max(260, window.innerHeight - 120)),
+      };
+    }
+
+    function getDetachedLayout(tool) {
+      if (!tool) return null;
+      var all = readDetachedLayouts();
+      var val = all[tool];
+      if (!val || typeof val !== "object") return null;
+      var top = Number(val.top);
+      var left = Number(val.left);
+      var width = Number(val.width);
+      var height = Number(val.height);
+      if (![top, left, width, height].every(function (n) { return Number.isFinite(n); })) return null;
+      return {
+        top: top,
+        left: left,
+        width: width,
+        height: height,
+      };
+    }
+
+    function clampDetachedLayout(layout) {
+      var vw = Math.max(320, window.innerWidth || 1280);
+      var vh = Math.max(320, window.innerHeight || 720);
+      var minWidth = 460;
+      var minHeight = 260;
+      var width = Math.max(minWidth, Math.min(layout.width, vw - 32));
+      var height = Math.max(minHeight, Math.min(layout.height, vh - 32));
+      var left = Math.max(8, Math.min(layout.left, vw - width - 8));
+      var top = Math.max(44, Math.min(layout.top, vh - height - 8));
+      return { top: top, left: left, width: width, height: height };
+    }
+
+    function readCardLayoutFromDom(card) {
+      if (!card) return null;
+      return {
+        top: card.offsetTop,
+        left: card.offsetLeft,
+        width: card.offsetWidth,
+        height: card.offsetHeight,
+      };
+    }
+
+    function applyCardLayout(card, layout) {
+      if (!card || !layout) return;
+      var safe = clampDetachedLayout(layout);
+      card.style.top = safe.top + "px";
+      card.style.left = safe.left + "px";
+      card.style.width = safe.width + "px";
+      card.style.height = safe.height + "px";
+    }
+
+    function persistCurrentDetachedLayout() {
+      var card = document.getElementById("v1MainCard");
+      if (!card || !detachedTool) return;
+      if (!card.classList.contains("v1-maincard-detached")) return;
+      var layout = readCardLayoutFromDom(card);
+      if (!layout) return;
+      saveDetachedLayout(detachedTool, layout);
+    }
+
+    function initDetachedCardInteractions() {
+      if (detachedInteractionsBound) return;
+      detachedInteractionsBound = true;
+
+      var card = document.getElementById("v1MainCard");
+      var title = document.getElementById("v1ToolTitle");
+      if (!card || !title) return;
+
+      title.addEventListener("pointerdown", function (event) {
+        if (event.button !== 0) return;
+        if (!card.classList.contains("v1-maincard-detached")) return;
+        event.preventDefault();
+
+        var rect = card.getBoundingClientRect();
+        detachedDragState.pointerId = event.pointerId;
+        detachedDragState.startX = event.clientX;
+        detachedDragState.startY = event.clientY;
+        detachedDragState.startLeft = rect.left;
+        detachedDragState.startTop = rect.top;
+        detachedDragState.dragging = true;
+        card.classList.add("is-dragging");
+      });
+
+      document.addEventListener("pointermove", function (event) {
+        if (!detachedDragState.dragging) return;
+        if (event.pointerId !== detachedDragState.pointerId) return;
+
+        var dx = event.clientX - detachedDragState.startX;
+        var dy = event.clientY - detachedDragState.startY;
+        var next = clampDetachedLayout({
+          top: detachedDragState.startTop + dy,
+          left: detachedDragState.startLeft + dx,
+          width: card.offsetWidth,
+          height: card.offsetHeight,
+        });
+
+        card.style.left = next.left + "px";
+        card.style.top = next.top + "px";
+      });
+
+      document.addEventListener("pointerup", function (event) {
+        if (!detachedDragState.dragging) return;
+        if (event.pointerId !== detachedDragState.pointerId) return;
+        detachedDragState.dragging = false;
+        detachedDragState.pointerId = null;
+        card.classList.remove("is-dragging");
+        persistCurrentDetachedLayout();
+      });
+
+      document.addEventListener("pointercancel", function () {
+        if (!detachedDragState.dragging) return;
+        detachedDragState.dragging = false;
+        detachedDragState.pointerId = null;
+        card.classList.remove("is-dragging");
+        persistCurrentDetachedLayout();
+      });
+
+      if (typeof ResizeObserver === "function") {
+        detachedResizeObserver = new ResizeObserver(function () {
+          persistCurrentDetachedLayout();
+        });
+        detachedResizeObserver.observe(card);
+      }
+    }
+
+    function ensureTabPopoutControl(tabEl) {
+      if (!tabEl || tabEl.querySelector("[data-tab-popout]")) return;
+      var popout = document.createElement("span");
+      popout.className = "v1-tab-popout";
+      popout.setAttribute("data-tab-popout", "true");
+      popout.setAttribute("role", "button");
+      popout.setAttribute("aria-label", "Open tab in floating window");
+      popout.setAttribute("tabindex", "-1");
+      popout.textContent = "↗";
+
+      var close = tabEl.querySelector("[data-tab-close]");
+      if (close && close.parentNode === tabEl) {
+        tabEl.insertBefore(popout, close);
+      } else {
+        tabEl.appendChild(popout);
+      }
+    }
+
+    function ensureAllTabControls() {
+      document.querySelectorAll(".v1-tab").forEach(function (tabEl) {
+        ensureTabPopoutControl(tabEl);
+      });
+    }
+
+    function updateTabPopoutUi() {
+      document.querySelectorAll(".v1-tab").forEach(function (tabEl) {
+        ensureTabPopoutControl(tabEl);
+        var tool = tabEl.getAttribute("data-tool");
+        var popout = tabEl.querySelector("[data-tab-popout]");
+        if (!popout) return;
+        var isDetached = !!tool && !!getDetachedCard(tool);
+        popout.classList.toggle("is-detached", isDetached);
+        popout.textContent = isDetached ? "↙" : "↗";
+        var label = isDetached ? "Dock tab back" : "Open tab in floating window";
+        popout.setAttribute("title", label);
+        popout.setAttribute("aria-label", label);
+      });
+    }
+
+    function getDetachedCard(tool) {
+      var card = detachedCards[tool];
+      if (!card) return null;
+      if (!document.body || !document.body.contains(card)) {
+        delete detachedCards[tool];
+        return null;
+      }
+      return card;
+    }
+
+    function getDetachedCardCount() {
+      return Object.keys(detachedCards).reduce(function (count, tool) {
+        return count + (getDetachedCard(tool) ? 1 : 0);
+      }, 0);
+    }
+
+    function bringDetachedCardToFront(cardEl) {
+      if (!cardEl) return;
+      detachedZCounter += 1;
+      cardEl.style.zIndex = String(detachedZCounter);
+    }
+
+    function wireDetachedResultsIp(rootEl) {
+      if (!rootEl) return;
+      rootEl.querySelectorAll("[data-open-ports]").forEach(function (button) {
+        if (button.dataset.bound === "1") return;
+        button.dataset.bound = "1";
+
+        button.addEventListener("click", function () {
+          var rowId = button.getAttribute("data-open-ports");
+          var portsRow = rootEl.querySelector('[data-ports-row="' + rowId + '"]');
+          if (!portsRow) return;
+
+          var expanded = button.getAttribute("aria-expanded") === "true";
+          var nextExpanded = !expanded;
+          button.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
+          button.textContent = nextExpanded ? "−" : "+";
+          if (nextExpanded) portsRow.removeAttribute("hidden");
+          else portsRow.setAttribute("hidden", "hidden");
+        });
+      });
+    }
+
+    function stripIds(html) {
+      return String(html || "").replace(/\sid="[^"]*"/g, "");
+    }
+
+    function destroyDetachedCard(tool) {
+      var card = getDetachedCard(tool);
+      if (!card) return;
+      if (card.__resizeObserver && typeof card.__resizeObserver.disconnect === "function") {
+        card.__resizeObserver.disconnect();
+      }
+      if (card.parentNode) card.parentNode.removeChild(card);
+      delete detachedCards[tool];
+      updateTabPopoutUi();
+    }
+
+    function createDetachedCard(tool) {
+      if (!tool) return null;
+      var existing = getDetachedCard(tool);
+      if (existing) return existing;
+
+      var info = infoFor(tool);
+      var card = document.createElement("article");
+      card.className = "v1-card v1-detached-tool-card";
+      card.setAttribute("data-detached-tool", tool);
+
+      var header = document.createElement("div");
+      header.className = "v1-detached-tool-head";
+
+      var title = document.createElement("strong");
+      title.className = "v1-detached-tool-title";
+      title.textContent = info.title || tool;
+      header.appendChild(title);
+
+      var dockBtn = document.createElement("button");
+      dockBtn.className = "v1-detached-tool-dock";
+      dockBtn.type = "button";
+      dockBtn.textContent = "↙";
+      dockBtn.setAttribute("title", "Dock tab back");
+      dockBtn.setAttribute("aria-label", "Dock tab back");
+      header.appendChild(dockBtn);
+
+      var body = document.createElement("div");
+      body.className = "v1-detached-tool-body tool-detail";
+      body.innerHTML = stripIds(buildDetailHtml(tool));
+
+      card.appendChild(header);
+      card.appendChild(body);
+      document.body.appendChild(card);
+
+      // Fallback inline styles keep floating card visible even with stale CSS cache.
+      card.style.position = "fixed";
+      card.style.display = "grid";
+      card.style.gridTemplateRows = "34px minmax(0, 1fr)";
+      card.style.overflow = "auto";
+      card.style.border = "1px solid #3c414a";
+      card.style.boxShadow = "0 20px 44px rgba(0, 0, 0, 0.55)";
+      card.style.zIndex = "70";
+
+      var remembered = getDetachedLayout(tool);
+      applyCardLayout(card, remembered || getDefaultDetachedLayout());
+      bringDetachedCardToFront(card);
+
+      if (tool === "results-ip") {
+        wireDetachedResultsIp(body);
+      }
+
+      card.addEventListener("pointerdown", function () {
+        bringDetachedCardToFront(card);
+      });
+
+      var drag = { pointerId: null, startX: 0, startY: 0, left: 0, top: 0, dragging: false };
+
+      header.addEventListener("pointerdown", function (event) {
+        if (event.button !== 0) return;
+        if (event.target.closest("button")) return;
+        event.preventDefault();
+        bringDetachedCardToFront(card);
+        var rect = card.getBoundingClientRect();
+        drag.pointerId = event.pointerId;
+        drag.startX = event.clientX;
+        drag.startY = event.clientY;
+        drag.left = rect.left;
+        drag.top = rect.top;
+        drag.dragging = true;
+        card.classList.add("is-dragging");
+      });
+
+      function finishDrag(event) {
+        if (!drag.dragging) return;
+        if (event && drag.pointerId !== null && event.pointerId !== drag.pointerId) return;
+        drag.dragging = false;
+        drag.pointerId = null;
+        card.classList.remove("is-dragging");
+        saveDetachedLayout(tool, readCardLayoutFromDom(card));
+      }
+
+      document.addEventListener("pointermove", function (event) {
+        if (!drag.dragging) return;
+        if (event.pointerId !== drag.pointerId) return;
+        var dx = event.clientX - drag.startX;
+        var dy = event.clientY - drag.startY;
+        var next = clampDetachedLayout({
+          left: drag.left + dx,
+          top: drag.top + dy,
+          width: card.offsetWidth,
+          height: card.offsetHeight,
+        });
+        card.style.left = next.left + "px";
+        card.style.top = next.top + "px";
+      });
+
+      document.addEventListener("pointerup", finishDrag);
+      document.addEventListener("pointercancel", finishDrag);
+
+      dockBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+        saveDetachedLayout(tool, readCardLayoutFromDom(card));
+        destroyDetachedCard(tool);
+        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool + " docked");
+      });
+
+      if (typeof ResizeObserver === "function") {
+        var ro = new ResizeObserver(function () {
+          if (!detachedCards[tool]) return;
+          saveDetachedLayout(tool, readCardLayoutFromDom(card));
+        });
+        ro.observe(card);
+        card.__resizeObserver = ro;
+      }
+
+      detachedCards[tool] = card;
+      updateTabPopoutUi();
+      return card;
+    }
+
+    function applyDetachedCardState() {
+      var card = document.getElementById("v1MainCard");
+      if (!card) return;
+
+      card.classList.remove("v1-maincard-detached", "is-dragging");
+      card.setAttribute("data-detached-tool", "");
+      card.style.top = "";
+      card.style.left = "";
+      card.style.width = "";
+      card.style.height = "";
+
+      if (document.body) {
+        document.body.classList.toggle("v1-has-detached-card", getDetachedCardCount() > 0);
+      }
+
+      updateTabPopoutUi();
+    }
     document.addEventListener("DOMContentLoaded", function () {
       document.querySelectorAll(".v1-tab").forEach(function (tab) {
         tab.classList.add("tab-closed");
@@ -75,11 +493,28 @@
     }
 
     function initWorkbenchTabs() {
-      var tabs = Array.from(document.querySelectorAll(".v1-tab"));
-      if (!tabs.length) return;
+      if (document.body && document.body.dataset.v1TabsBound === "1") {
+        ensureAllTabControls();
+        initDetachedCardInteractions();
+        updateTabPopoutUi();
+        return;
+      }
+
+      if (document.body) document.body.dataset.v1TabsBound = "1";
+
+      ensureAllTabControls();
+      initDetachedCardInteractions();
 
       function closeTab(tabEl) {
         if (!tabEl) return;
+        var closingTool = tabEl.getAttribute("data-tool") || "";
+
+        if (closingTool && closingTool === detachedTool) {
+          detachedTool = null;
+          applyDetachedCardState();
+        }
+        destroyDetachedCard(closingTool);
+
         tabEl.classList.add("tab-closed");
         tabEl.setAttribute("hidden", "hidden");
 
@@ -88,7 +523,9 @@
           return;
         }
 
-        var next = tabs.find(function (t) { return !t.classList.contains("tab-closed"); });
+        var next = Array.from(document.querySelectorAll(".v1-tab")).find(function (t) {
+          return !t.classList.contains("tab-closed");
+        });
         if (!next) {
           updateEmptyState();
           return;
@@ -102,18 +539,71 @@
         updateEmptyState();
       }
 
-      tabs.forEach(function (tabEl) {
-        var close = tabEl.querySelector("[data-tab-close]");
-        if (!close) return;
-
-        close.addEventListener("click", function (event) {
+      document.addEventListener("click", function (event) {
+        var close = event.target.closest("[data-tab-close]");
+        if (close) {
           event.preventDefault();
           event.stopPropagation();
-          closeTab(tabEl);
-        });
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+          closeTab(close.closest(".v1-tab"));
+          return;
+        }
+
+        var popout = event.target.closest("[data-tab-popout]");
+        if (!popout) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+
+        var tabEl = popout.closest(".v1-tab");
+        if (!tabEl) return;
+
+        var tool = tabEl.getAttribute("data-tool");
+        if (!tool) return;
+
+        if (getDetachedCard(tool)) {
+          destroyDetachedCard(tool);
+          applyDetachedCardState();
+          if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool + " docked");
+          return;
+        }
+
+        if (tabEl.classList.contains("tab-closed")) {
+          tabEl.classList.remove("tab-closed");
+          tabEl.removeAttribute("hidden");
+        }
+
+        createDetachedCard(tool);
+        applyDetachedCardState();
+        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool + " undocked");
+      });
+
+      document.addEventListener("contextmenu", function (event) {
+        var popout = event.target.closest("[data-tab-popout]");
+        if (!popout) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        var tabEl = popout.closest(".v1-tab");
+        if (!tabEl) return;
+        var tool = tabEl.getAttribute("data-tool");
+        if (!tool) return;
+
+        clearDetachedLayout(tool);
+
+        var detachedCard = getDetachedCard(tool);
+        if (detachedCard) {
+          applyCardLayout(detachedCard, getDefaultDetachedLayout());
+          saveDetachedLayout(tool, readCardLayoutFromDom(detachedCard));
+        }
+
+        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool + " floating layout reset");
       });
 
       updateEmptyState();
+      updateTabPopoutUi();
     }
 
     function renderDefaultTool(tool) {
@@ -658,6 +1148,7 @@
       if (v1MainCard) {
         v1MainCard.classList.toggle("is-versions-view", activeTool === "versions");
       }
+      applyDetachedCardState();
       if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + activeTool);
       if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + activeTool;
       if (activeTool === "versions") {
@@ -897,6 +1388,7 @@
     }
 
     function switchTool(tool) {
+      ensureAllTabControls();
       var tab = document.querySelector('.v1-tab[data-tool="' + tool + '"]');
       if (tab && tab.classList.contains("tab-closed")) {
         tab.classList.remove("tab-closed");
@@ -910,6 +1402,7 @@
       } catch (_) {}
       refreshActiveUI();
       updateEmptyState();
+      updateTabPopoutUi();
     }
 
     function getActiveTool() {
