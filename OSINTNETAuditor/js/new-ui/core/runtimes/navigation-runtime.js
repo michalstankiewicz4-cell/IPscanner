@@ -281,6 +281,7 @@
     function bindToolClicks() {
       document.addEventListener("click", function (e) {
         if (e.target.closest(".v1-activity [data-activity]")) return;
+        if (e.target.closest("[data-tab-close], [data-tab-popout]")) return;
         var target = e.target.closest("[data-tool]");
         if (!target) return;
         var tool = target.getAttribute("data-tool");

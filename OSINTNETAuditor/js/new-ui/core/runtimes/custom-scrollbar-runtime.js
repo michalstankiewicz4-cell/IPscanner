@@ -3,11 +3,14 @@
     var items = [];
     var itemMap = new WeakMap();
     var resizeObserver = null;
+    var mutationObserver = null;
+
+    function targetSelector() {
+      return ".v1-tool-list, .v1-card, .v1-detached-tool-body, .v1-versions-list, .v1-ai-threadlist, .v1-ai-chat, .v1-ai-prompt, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log, .v1-ip-extractor-input, .v1-ip-extractor-output, .v1-lang-manager-grid textarea, .v1-import-manager-grid textarea, .v1-lang-manager-output, .v1-import-output, .v1-results-table-scroll--ip";
+    }
 
     function targets() {
-      return Array.from(document.querySelectorAll(
-        ".v1-tool-list, .v1-card, .v1-versions-list, .v1-ai-threadlist, .v1-ai-chat, .v1-ai-prompt, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log, .v1-ip-extractor-input, .v1-ip-extractor-output, .v1-lang-manager-grid textarea, .v1-import-manager-grid textarea, .v1-lang-manager-output, .v1-import-output, .v1-results-table-scroll--ip"
-      ));
+      return Array.from(document.querySelectorAll(targetSelector()));
     }
 
     function cleanupRemovedItems() {
@@ -159,10 +162,22 @@
       cleanupRemovedItems();
     }
 
+    function resolveRailZIndex(el) {
+      var base = 20;
+      if (!el || !el.closest) return base;
+      var detachedCard = el.closest(".v1-detached-tool-card");
+      if (!detachedCard) return base;
+      var rawZ = window.getComputedStyle(detachedCard).zIndex;
+      var parsedZ = Number(rawZ);
+      if (!Number.isFinite(parsedZ)) return base;
+      return Math.max(base, parsedZ + 1);
+    }
+
     function updateOne(item) {
       var el = item.el;
       var rail = item.rail;
       var thumb = item.thumb;
+      var layerZ = resolveRailZIndex(el);
       var rect = el.getBoundingClientRect();
       var styles = getComputedStyle(el);
       var isVisible = rect.width > 0 && rect.height > 0 && styles.display !== "none";
@@ -183,6 +198,7 @@
         var thumbTop = Math.floor((el.scrollTop / scrollRange) * maxThumbTop);
 
         rail.style.display = "block";
+        rail.style.zIndex = String(layerZ);
         rail.style.top = rect.top + "px";
         rail.style.left = rect.right - railWidth + "px";
         rail.style.height = railHeight + "px";
@@ -214,6 +230,7 @@
           var horizontalThumbLeft = Math.floor((el.scrollLeft / horizontalScrollRange) * horizontalMaxThumbLeft);
 
           item.hRail.style.display = "block";
+          item.hRail.style.zIndex = String(layerZ);
           item.hRail.style.left = rect.left + "px";
           item.hRail.style.top = rect.bottom - horizontalRailHeight + "px";
           item.hRail.style.width = horizontalRailWidth + "px";
@@ -232,6 +249,21 @@
     function init() {
       resizeObserver = new ResizeObserver(refresh);
       ensureItems();
+
+      mutationObserver = new MutationObserver(function (mutations) {
+        var foundCandidate = mutations.some(function (mutation) {
+          if (!mutation.addedNodes || !mutation.addedNodes.length) return false;
+          return Array.from(mutation.addedNodes).some(function (node) {
+            if (!(node instanceof Element)) return false;
+            if (node.matches && node.matches(targetSelector())) return true;
+            return !!(node.querySelector && node.querySelector(targetSelector()));
+          });
+        });
+        if (foundCandidate) refresh();
+      });
+      if (document.body) {
+        mutationObserver.observe(document.body, { childList: true, subtree: true });
+      }
 
       window.addEventListener("resize", refresh);
       document.addEventListener("scroll", refresh, true);
