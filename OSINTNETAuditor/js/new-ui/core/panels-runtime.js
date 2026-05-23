@@ -201,8 +201,9 @@
           height: card.offsetHeight,
         });
 
-        card.style.left = next.left + "px";
-        card.style.top = next.top + "px";
+        var snapped = snapDetachedPosition(card, next);
+        card.style.left = snapped.left + "px";
+        card.style.top = snapped.top + "px";
       });
 
       document.addEventListener("pointerup", function (event) {
@@ -308,6 +309,62 @@
         width: Math.max(320, Math.round(rect.width - 16)),
         height: Math.max(260, Math.round(rect.height - 16)),
       };
+    }
+
+    var SNAP_THRESHOLD = 7;
+
+    function snapDetachedPosition(cardEl, next) {
+      var w = next.width;
+      var h = next.height;
+      var dL = next.left;
+      var dR = next.left + w;
+      var dT = next.top;
+      var dB = next.top + h;
+      var snL = dL;
+      var snT = dT;
+      var bestXDist = SNAP_THRESHOLD + 1;
+      var bestYDist = SNAP_THRESHOLD + 1;
+
+      var targets = [];
+      document.querySelectorAll(".v1-detached-tool-card").forEach(function (c) {
+        if (c === cardEl) return;
+        var r = c.getBoundingClientRect();
+        targets.push({ left: r.left, right: r.right, top: r.top, bottom: r.bottom });
+      });
+
+      for (var i = 0; i < targets.length; i++) {
+        var t = targets[i];
+        var overlapY = Math.min(dB, t.bottom) - Math.max(dT, t.top);
+        var overlapX = Math.min(dR, t.right) - Math.max(dL, t.left);
+
+        if (overlapY > 0) {
+          var candX = [
+            { dist: Math.abs(dL - t.right), value: t.right },
+            { dist: Math.abs(dR - t.left), value: t.left - w },
+          ];
+          for (var xi = 0; xi < candX.length; xi++) {
+            if (candX[xi].dist <= SNAP_THRESHOLD && candX[xi].dist < bestXDist) {
+              bestXDist = candX[xi].dist;
+              snL = candX[xi].value;
+            }
+          }
+        }
+
+        if (overlapX > 0) {
+          var candY = [
+            { dist: Math.abs(dT - t.bottom), value: t.bottom },
+            { dist: Math.abs(dB - t.top), value: t.top - h },
+          ];
+          for (var yi = 0; yi < candY.length; yi++) {
+            if (candY[yi].dist <= SNAP_THRESHOLD && candY[yi].dist < bestYDist) {
+              bestYDist = candY[yi].dist;
+              snT = candY[yi].value;
+            }
+          }
+        }
+      }
+
+      return { left: snL, top: snT };
     }
 
     function applyArrangementBox(tool, card, box, zOrder) {
@@ -579,8 +636,9 @@
           width: card.offsetWidth,
           height: card.offsetHeight,
         });
-        card.style.left = next.left + "px";
-        card.style.top = next.top + "px";
+        var snapped = snapDetachedPosition(card, next);
+        card.style.left = snapped.left + "px";
+        card.style.top = snapped.top + "px";
       });
 
       document.addEventListener("pointerup", finishDrag);
