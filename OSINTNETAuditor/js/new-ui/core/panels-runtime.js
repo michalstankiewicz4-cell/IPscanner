@@ -13,6 +13,7 @@
     var activeTool = null;
     var detachedTool = null;
     var detachedCards = Object.create(null);
+    var swapSourceCard = null;
     var detachedZCounter = 70;
     var DETACHED_LAYOUTS_KEY = "netrecon_detached_layouts_v1";
     var DETACHED_ARRANGE_STATE_KEY = "netrecon_detached_arrange_state_v1";
@@ -447,6 +448,37 @@
       syncDetachedArrangementOnCountChange();
     }
 
+    function swapDetachedCardContents(cardA, cardB) {
+      var toolA = cardA.getAttribute("data-detached-tool");
+      var toolB = cardB.getAttribute("data-detached-tool");
+      if (!toolA || !toolB || toolA === toolB) return;
+      var bodyA = cardA.querySelector(".v1-detached-tool-body");
+      var bodyB = cardB.querySelector(".v1-detached-tool-body");
+      if (!bodyA || !bodyB) return;
+      var titleA = cardA.querySelector(".v1-detached-tool-title");
+      var titleB = cardB.querySelector(".v1-detached-tool-title");
+      // Swap body nodes — native move preserves all event listeners
+      var nextA = bodyA.nextSibling;
+      var parentA = bodyA.parentNode;
+      var nextB = bodyB.nextSibling;
+      var parentB = bodyB.parentNode;
+      parentA.removeChild(bodyA);
+      parentB.removeChild(bodyB);
+      parentB.insertBefore(bodyA, nextB);
+      parentA.insertBefore(bodyB, nextA);
+      // Swap title text
+      if (titleA && titleB) {
+        var tmpTitle = titleA.textContent;
+        titleA.textContent = titleB.textContent;
+        titleB.textContent = tmpTitle;
+      }
+      // Swap data attributes and internal map
+      cardA.setAttribute("data-detached-tool", toolB);
+      cardB.setAttribute("data-detached-tool", toolA);
+      detachedCards[toolA] = cardB;
+      detachedCards[toolB] = cardA;
+    }
+
     function createDetachedCard(tool) {
       if (!tool) return null;
       var existing = getDetachedCard(tool);
@@ -464,6 +496,14 @@
       title.className = "v1-detached-tool-title";
       title.textContent = info.title || tool;
       header.appendChild(title);
+
+      var swapBtn = document.createElement("button");
+      swapBtn.className = "v1-detached-tool-swap";
+      swapBtn.type = "button";
+      swapBtn.textContent = "⇄";
+      swapBtn.setAttribute("title", "Swap content with another window");
+      swapBtn.setAttribute("aria-label", "Swap content with another window");
+      header.appendChild(swapBtn);
 
       var dockBtn = document.createElement("button");
       dockBtn.className = "v1-detached-tool-dock";
@@ -525,7 +565,7 @@
         drag.dragging = false;
         drag.pointerId = null;
         card.classList.remove("is-dragging");
-        saveDetachedLayout(tool, readCardLayoutFromDom(card));
+        saveDetachedLayout(card.getAttribute("data-detached-tool"), readCardLayoutFromDom(card));
       }
 
       document.addEventListener("pointermove", function (event) {
@@ -550,15 +590,34 @@
         event.preventDefault();
         event.stopPropagation();
         if (event.stopImmediatePropagation) event.stopImmediatePropagation();
-        saveDetachedLayout(tool, readCardLayoutFromDom(card));
-        destroyDetachedCard(tool);
-        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool + " docked");
+        var currentTool = card.getAttribute("data-detached-tool");
+        saveDetachedLayout(currentTool, readCardLayoutFromDom(card));
+        destroyDetachedCard(currentTool);
+        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + currentTool + " docked");
+      });
+
+      swapBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (swapSourceCard === card) {
+          card.classList.remove("is-swap-source");
+          swapSourceCard = null;
+        } else if (swapSourceCard) {
+          var source = swapSourceCard;
+          source.classList.remove("is-swap-source");
+          swapSourceCard = null;
+          swapDetachedCardContents(source, card);
+        } else {
+          swapSourceCard = card;
+          card.classList.add("is-swap-source");
+        }
       });
 
       if (typeof ResizeObserver === "function") {
         var ro = new ResizeObserver(function () {
-          if (!detachedCards[tool]) return;
-          saveDetachedLayout(tool, readCardLayoutFromDom(card));
+          var currentTool = card.getAttribute("data-detached-tool");
+          if (!currentTool || !detachedCards[currentTool]) return;
+          saveDetachedLayout(currentTool, readCardLayoutFromDom(card));
         });
         ro.observe(card);
         card.__resizeObserver = ro;
@@ -696,6 +755,13 @@
 
         updateEmptyState();
       }
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && swapSourceCard) {
+          swapSourceCard.classList.remove("is-swap-source");
+          swapSourceCard = null;
+        }
+      });
 
       document.addEventListener("click", function (event) {
         var autoArrangeTrigger = event.target.closest('[data-menu-action="auto-arrange-windows"]');

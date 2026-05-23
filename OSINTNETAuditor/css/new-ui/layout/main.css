@@ -699,6 +699,38 @@
   color: #ffffff;
 }
 
+.v1-detached-tool-title {
+  flex: 1;
+}
+
+.v1-detached-tool-swap {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #4a4f58;
+  background: #2c3139;
+  color: #d6dce8;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 13px;
+  padding: 0;
+}
+
+.v1-detached-tool-swap:hover {
+  background: #39424f;
+  color: #ffffff;
+}
+
+.v1-detached-tool-card.is-swap-source {
+  outline: 2px solid #4d9fff;
+  outline-offset: -2px;
+}
+
+.v1-detached-tool-card.is-swap-source .v1-detached-tool-swap {
+  background: #1e4a8a;
+  color: #7bbfff;
+  border-color: #4d9fff;
+}
+
 .v1-detached-tool-body {
   min-height: 0;
   overflow: auto;
