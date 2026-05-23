@@ -1125,11 +1125,6 @@
                 clippyRuntime.toggle();
               }
             },
-            onAutoArrangeWindows: function () {
-              if (panelsRuntime && panelsRuntime.autoArrangeDetachedCards) {
-                panelsRuntime.autoArrangeDetachedCards();
-              }
-            },
           })
         : null;
 

@@ -9,7 +9,6 @@
     var onOpenLanguageManager = deps.onOpenLanguageManager;
     var onSwitchTool = deps.onSwitchTool;
     var onToggleClippy = deps.onToggleClippy;
-    var onAutoArrangeWindows = deps.onAutoArrangeWindows;
 
     function actionDefinition(action) {
       return (uiDefinitions.menuActions && uiDefinitions.menuActions[action]) || null;
@@ -201,12 +200,6 @@
           }
           if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
         });
-        return;
-      }
-
-      if (behavior === "auto-arrange-windows") {
-        if (onAutoArrangeWindows) onAutoArrangeWindows();
-        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
         return;
       }
 
