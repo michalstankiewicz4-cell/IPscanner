@@ -9,6 +9,7 @@
     var onOpenLanguageManager = deps.onOpenLanguageManager;
     var onSwitchTool = deps.onSwitchTool;
     var onToggleClippy = deps.onToggleClippy;
+    var onAutoArrangeWindows = deps.onAutoArrangeWindows;
 
     function actionDefinition(action) {
       return (uiDefinitions.menuActions && uiDefinitions.menuActions[action]) || null;
@@ -203,6 +204,12 @@
         return;
       }
 
+      if (behavior === "auto-arrange-windows") {
+        if (onAutoArrangeWindows) onAutoArrangeWindows();
+        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
+        return;
+      }
+
       if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
     }
 
@@ -287,12 +294,17 @@
     }
 
     function initMenuActions() {
-      document.querySelectorAll("[data-menu-action]").forEach(function (item) {
-        item.addEventListener("click", function () {
-          var action = item.getAttribute("data-menu-action");
-          if (!action) return;
-          runMenuAction(action);
-        });
+      if (document.body && document.body.dataset.v1MenuActionsBound === "1") return;
+      if (document.body) document.body.dataset.v1MenuActionsBound = "1";
+
+      document.addEventListener("click", function (event) {
+        var item = event.target && event.target.closest
+          ? event.target.closest("[data-menu-action]")
+          : null;
+        if (!item) return;
+        var action = item.getAttribute("data-menu-action");
+        if (!action) return;
+        runMenuAction(action);
       });
     }
 

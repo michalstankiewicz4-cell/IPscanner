@@ -215,6 +215,7 @@
         "window-min": "Window minimize",
         "window-max": "Window maximize",
         "window-fullscreen": "Window fullscreen",
+        "auto-arrange-windows": "Auto Arrange windows",
         "window-close": "Window close"
       };
 
@@ -1122,6 +1123,11 @@
             onToggleClippy: function () {
               if (clippyRuntime && clippyRuntime.toggle) {
                 clippyRuntime.toggle();
+              }
+            },
+            onAutoArrangeWindows: function () {
+              if (panelsRuntime && panelsRuntime.autoArrangeDetachedCards) {
+                panelsRuntime.autoArrangeDetachedCards();
               }
             },
           })

@@ -254,6 +254,118 @@
       cardEl.style.zIndex = String(detachedZCounter);
     }
 
+    function getDetachedWorkspaceRect() {
+      var main = document.querySelector(".v1-main");
+      if (!main) {
+        return {
+          left: 8,
+          top: 44,
+          width: Math.max(320, (window.innerWidth || 1280) - 16),
+          height: Math.max(260, (window.innerHeight || 720) - 52),
+        };
+      }
+      var rect = main.getBoundingClientRect();
+      return {
+        left: Math.round(rect.left + 8),
+        top: Math.round(rect.top + 8),
+        width: Math.max(320, Math.round(rect.width - 16)),
+        height: Math.max(260, Math.round(rect.height - 16)),
+      };
+    }
+
+    function applyArrangementBox(tool, card, box, zOrder) {
+      if (!card || !box) return;
+      applyCardLayout(card, {
+        left: Math.round(box.left),
+        top: Math.round(box.top),
+        width: Math.round(box.width),
+        height: Math.round(box.height),
+      });
+      if (Number.isFinite(zOrder)) {
+        detachedZCounter = Math.max(detachedZCounter, zOrder);
+        card.style.zIndex = String(zOrder);
+      } else {
+        bringDetachedCardToFront(card);
+      }
+      if (tool) {
+        saveDetachedLayout(tool, readCardLayoutFromDom(card));
+      }
+    }
+
+    function autoArrangeDetachedCards() {
+      var cards = Array.from(document.querySelectorAll(".v1-detached-tool-card")).map(function (cardEl) {
+        var tool = cardEl.getAttribute("data-detached-tool") || "";
+        return {
+          tool: tool,
+          card: cardEl,
+        };
+      }).filter(function (entry) { return !!entry.card; });
+
+      if (!cards.length) {
+        if (setStatusLine) setStatusLine(tr("toolRoute") + ": no detached windows to arrange");
+        return;
+      }
+
+      var area = getDetachedWorkspaceRect();
+      var count = cards.length;
+      var boxes = [];
+
+      if (count === 1) {
+        boxes.push({ left: area.left, top: area.top, width: area.width, height: area.height });
+      } else if (count === 2) {
+        if (area.width >= area.height) {
+          var w2 = Math.floor(area.width / 2);
+          boxes.push({ left: area.left, top: area.top, width: w2, height: area.height });
+          boxes.push({ left: area.left + w2, top: area.top, width: area.width - w2, height: area.height });
+        } else {
+          var h2 = Math.floor(area.height / 2);
+          boxes.push({ left: area.left, top: area.top, width: area.width, height: h2 });
+          boxes.push({ left: area.left, top: area.top + h2, width: area.width, height: area.height - h2 });
+        }
+      } else if (count === 3) {
+        var colWidth = Math.floor(area.width / 2);
+        var rowHeight = Math.floor(area.height / 2);
+        if (area.width >= area.height) {
+          boxes.push({ left: area.left, top: area.top, width: colWidth, height: area.height });
+          boxes.push({ left: area.left + colWidth, top: area.top, width: area.width - colWidth, height: rowHeight });
+          boxes.push({ left: area.left + colWidth, top: area.top + rowHeight, width: area.width - colWidth, height: area.height - rowHeight });
+        } else {
+          boxes.push({ left: area.left, top: area.top, width: colWidth, height: rowHeight });
+          boxes.push({ left: area.left, top: area.top + rowHeight, width: colWidth, height: area.height - rowHeight });
+          boxes.push({ left: area.left + colWidth, top: area.top, width: area.width - colWidth, height: area.height });
+        }
+      } else if (count === 4) {
+        var w4 = Math.floor(area.width / 2);
+        var h4 = Math.floor(area.height / 2);
+        boxes.push({ left: area.left, top: area.top, width: w4, height: h4 });
+        boxes.push({ left: area.left + w4, top: area.top, width: area.width - w4, height: h4 });
+        boxes.push({ left: area.left, top: area.top + h4, width: w4, height: area.height - h4 });
+        boxes.push({ left: area.left + w4, top: area.top + h4, width: area.width - w4, height: area.height - h4 });
+      } else {
+        var cw = Math.max(320, Math.floor(area.width * 0.58));
+        var ch = Math.max(220, Math.floor(area.height * 0.58));
+        var stepX = 34;
+        var stepY = 28;
+        for (var i = 0; i < count; i += 1) {
+          boxes.push({
+            left: area.left + (i * stepX),
+            top: area.top + (i * stepY),
+            width: cw,
+            height: ch,
+          });
+        }
+      }
+
+      cards.forEach(function (entry, index) {
+        var box = boxes[Math.min(index, boxes.length - 1)];
+        applyArrangementBox(entry.tool, entry.card, box, 80 + index);
+      });
+
+      if (setStatusLine) {
+        setStatusLine(tr("toolRoute") + ": auto-arranged " + cards.length + " windows");
+      }
+    }
+
     function wireDetachedResultsIp(rootEl) {
       if (!rootEl) return;
       rootEl.querySelectorAll("[data-open-ports]").forEach(function (button) {
@@ -540,6 +652,15 @@
       }
 
       document.addEventListener("click", function (event) {
+        var autoArrangeTrigger = event.target.closest('[data-menu-action="auto-arrange-windows"]');
+        if (autoArrangeTrigger) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+          autoArrangeDetachedCards();
+          return;
+        }
+
         var close = event.target.closest("[data-tab-close]");
         if (close) {
           event.preventDefault();
