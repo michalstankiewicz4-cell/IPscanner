@@ -311,7 +311,7 @@
       };
     }
 
-    var SNAP_THRESHOLD = 7;
+    var SNAP_THRESHOLD = 10;
 
     function snapDetachedPosition(cardEl, next) {
       var w = next.width;
@@ -336,8 +336,8 @@
         var t = targets[i];
         var overlapY = Math.min(dB, t.bottom) - Math.max(dT, t.top);
         var overlapX = Math.min(dR, t.right) - Math.max(dL, t.left);
-
-        if (overlapY > 0) {
+        // Allow a small perpendicular-axis tolerance to avoid missed snaps due to pixel rounding.
+        if (overlapY >= -SNAP_THRESHOLD) {
           var candX = [
             { dist: Math.abs(dL - t.right), value: t.right },
             { dist: Math.abs(dR - t.left), value: t.left - w },
@@ -350,7 +350,7 @@
           }
         }
 
-        if (overlapX > 0) {
+        if (overlapX >= -SNAP_THRESHOLD) {
           var candY = [
             { dist: Math.abs(dT - t.bottom), value: t.bottom },
             { dist: Math.abs(dB - t.top), value: t.top - h },
