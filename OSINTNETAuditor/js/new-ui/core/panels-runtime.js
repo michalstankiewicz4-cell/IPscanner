@@ -15,6 +15,7 @@
     var detachedCards = Object.create(null);
     var detachedZCounter = 70;
     var DETACHED_LAYOUTS_KEY = "netrecon_detached_layouts_v1";
+    var DETACHED_ARRANGE_STATE_KEY = "netrecon_detached_arrange_state_v1";
     var detachedDragState = {
       pointerId: null,
       startX: 0,
@@ -59,6 +60,41 @@
       if (!Object.prototype.hasOwnProperty.call(all, tool)) return;
       delete all[tool];
       writeDetachedLayouts(all);
+    }
+
+    function readDetachedArrangeState() {
+      try {
+        var raw = window.localStorage ? window.localStorage.getItem(DETACHED_ARRANGE_STATE_KEY) : "";
+        if (!raw) return {};
+        var parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    function writeDetachedArrangeState(state) {
+      try {
+        if (!window.localStorage) return;
+        window.localStorage.setItem(DETACHED_ARRANGE_STATE_KEY, JSON.stringify(state || {}));
+      } catch (_) {
+        // ignore persistence failures
+      }
+    }
+
+    function getArrangementVariant(count, advance) {
+      if (count !== 2 && count !== 3) return 0;
+      var state = readDetachedArrangeState();
+      var key = String(count);
+      var current = Number(state[key]);
+      var safeCurrent = Number.isFinite(current) ? current % 2 : 0;
+      if (!advance) {
+        return safeCurrent;
+      }
+      var next = (safeCurrent + 1) % 2;
+      state[key] = next;
+      writeDetachedArrangeState(state);
+      return next;
     }
 
     function getDefaultDetachedLayout() {
@@ -292,7 +328,8 @@
       }
     }
 
-    function autoArrangeDetachedCards() {
+    function autoArrangeDetachedCards(options) {
+      var opts = options && typeof options === "object" ? options : {};
       var cards = Array.from(document.querySelectorAll(".v1-detached-tool-card")).map(function (cardEl) {
         var tool = cardEl.getAttribute("data-detached-tool") || "";
         return {
@@ -309,11 +346,12 @@
       var area = getDetachedWorkspaceRect();
       var count = cards.length;
       var boxes = [];
+  var variant = getArrangementVariant(count, opts.advanceVariant !== false);
 
       if (count === 1) {
         boxes.push({ left: area.left, top: area.top, width: area.width, height: area.height });
       } else if (count === 2) {
-        if (area.width >= area.height) {
+        if (variant === 0) {
           var w2 = Math.floor(area.width / 2);
           boxes.push({ left: area.left, top: area.top, width: w2, height: area.height });
           boxes.push({ left: area.left + w2, top: area.top, width: area.width - w2, height: area.height });
@@ -325,7 +363,7 @@
       } else if (count === 3) {
         var colWidth = Math.floor(area.width / 2);
         var rowHeight = Math.floor(area.height / 2);
-        if (area.width >= area.height) {
+        if (variant === 0) {
           boxes.push({ left: area.left, top: area.top, width: colWidth, height: area.height });
           boxes.push({ left: area.left + colWidth, top: area.top, width: area.width - colWidth, height: rowHeight });
           boxes.push({ left: area.left + colWidth, top: area.top + rowHeight, width: area.width - colWidth, height: area.height - rowHeight });
@@ -366,6 +404,12 @@
       }
     }
 
+    function syncDetachedArrangementOnCountChange() {
+      var count = document.querySelectorAll(".v1-detached-tool-card").length;
+      if (count <= 1) return;
+      autoArrangeDetachedCards({ advanceVariant: false });
+    }
+
     function wireDetachedResultsIp(rootEl) {
       if (!rootEl) return;
       rootEl.querySelectorAll("[data-open-ports]").forEach(function (button) {
@@ -400,6 +444,7 @@
       if (card.parentNode) card.parentNode.removeChild(card);
       delete detachedCards[tool];
       updateTabPopoutUi();
+      syncDetachedArrangementOnCountChange();
     }
 
     function createDetachedCard(tool) {
@@ -521,6 +566,7 @@
 
       detachedCards[tool] = card;
       updateTabPopoutUi();
+      syncDetachedArrangementOnCountChange();
       return card;
     }
 
