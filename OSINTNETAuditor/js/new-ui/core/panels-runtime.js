@@ -255,6 +255,36 @@
       });
     }
 
+    function isDetachedHiddenTab(tabEl) {
+      return !!(tabEl && tabEl.classList.contains("tab-detached-hidden"));
+    }
+
+    function hideDetachedTab(tool) {
+      if (!tool) return;
+      var tabEl = document.querySelector('.v1-tab[data-tool="' + tool + '"]');
+      if (!tabEl) return;
+      tabEl.classList.add("tab-detached-hidden");
+      tabEl.classList.remove("active");
+      tabEl.setAttribute("hidden", "hidden");
+    }
+
+    function restoreDetachedTab(tool) {
+      if (!tool) return;
+      var tabEl = document.querySelector('.v1-tab[data-tool="' + tool + '"]');
+      if (!tabEl) return;
+      tabEl.classList.remove("tab-detached-hidden");
+      if (!tabEl.classList.contains("tab-closed")) {
+        tabEl.removeAttribute("hidden");
+      }
+    }
+
+    function findNextDockedTab(excludedTool) {
+      return Array.from(document.querySelectorAll(".v1-tab")).find(function (tabEl) {
+        var tool = tabEl.getAttribute("data-tool") || "";
+        return !tabEl.classList.contains("tab-closed") && !isDetachedHiddenTab(tabEl) && tool !== excludedTool;
+      }) || null;
+    }
+
     function updateTabPopoutUi() {
       document.querySelectorAll(".v1-tab").forEach(function (tabEl) {
         ensureTabPopoutControl(tabEl);
@@ -651,6 +681,13 @@
         var currentTool = card.getAttribute("data-detached-tool");
         saveDetachedLayout(currentTool, readCardLayoutFromDom(card));
         destroyDetachedCard(currentTool);
+        restoreDetachedTab(currentTool);
+        if (!activeTool) {
+          switchTool(currentTool);
+        } else {
+          updateEmptyState();
+          updateTabPopoutUi();
+        }
         if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + currentTool + " docked");
       });
 
@@ -752,7 +789,9 @@
 
     function updateEmptyState() {
       var tabs = Array.from(document.querySelectorAll(".v1-tab"));
-      var hasOpenTabs = tabs.some(function (t) { return !t.classList.contains("tab-closed"); });
+      var hasOpenTabs = tabs.some(function (t) {
+        return !t.classList.contains("tab-closed") && !isDetachedHiddenTab(t);
+      });
       var emptyState = document.getElementById("v1NoTabsState");
       var mainCard = document.getElementById("v1MainCard");
 
@@ -799,7 +838,7 @@
         }
 
         var next = Array.from(document.querySelectorAll(".v1-tab")).find(function (t) {
-          return !t.classList.contains("tab-closed");
+          return !t.classList.contains("tab-closed") && !isDetachedHiddenTab(t);
         });
         if (!next) {
           updateEmptyState();
@@ -855,7 +894,14 @@
 
         if (getDetachedCard(tool)) {
           destroyDetachedCard(tool);
+          restoreDetachedTab(tool);
           applyDetachedCardState();
+          if (!activeTool) {
+            switchTool(tool);
+          } else {
+            updateEmptyState();
+            updateTabPopoutUi();
+          }
           if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool + " docked");
           return;
         }
@@ -866,7 +912,21 @@
         }
 
         createDetachedCard(tool);
+        hideDetachedTab(tool);
         applyDetachedCardState();
+        if (activeTool === tool) {
+          var nextDockedTab = findNextDockedTab(tool);
+          if (nextDockedTab) {
+            switchTool(nextDockedTab.getAttribute("data-tool"));
+          } else {
+            activeTool = null;
+            if (store && store.setState) store.setState({ activeTool: null });
+            refreshActiveUI();
+          }
+        } else {
+          updateEmptyState();
+          updateTabPopoutUi();
+        }
         if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool + " undocked");
       });
 
@@ -1374,7 +1434,7 @@
       document.querySelectorAll(".v1-tab").forEach(function (el) {
         var isActive = el.getAttribute("data-tool") === activeTool;
         el.classList.toggle("active", isActive);
-        if (isActive) {
+        if (isActive && !isDetachedHiddenTab(el)) {
           el.classList.remove("tab-closed");
           el.removeAttribute("hidden");
         }
@@ -1683,6 +1743,8 @@
       var tab = document.querySelector('.v1-tab[data-tool="' + tool + '"]');
       if (tab && tab.classList.contains("tab-closed")) {
         tab.classList.remove("tab-closed");
+      }
+      if (tab && !isDetachedHiddenTab(tab)) {
         tab.removeAttribute("hidden");
       }
 
