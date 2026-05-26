@@ -703,6 +703,24 @@
   color: #ffffff;
 }
 
+.v1-detached-tool-close {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #4a4f58;
+  background: #2c3139;
+  color: #d6dce8;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 13px;
+  padding: 0;
+}
+
+.v1-detached-tool-close:hover {
+  background: #5c2d34;
+  border-color: #8a3f49;
+  color: #ffffff;
+}
+
 .v1-detached-tool-title {
   flex: 1;
 }

@@ -130,6 +130,25 @@
       return { top: top, left: left, width: width, height: height };
     }
 
+    function clampDetachedResizeLayout(layout) {
+      var area = getDetachedWorkspaceRect();
+      var minWidth = Math.min(460, area.width);
+      var minHeight = Math.min(260, area.height);
+
+      // Keep the top-left anchor stable during CSS resize whenever possible.
+      var left = Number.isFinite(layout.left) ? layout.left : area.left;
+      var top = Number.isFinite(layout.top) ? layout.top : area.top;
+      left = Math.max(area.left, Math.min(left, area.left + area.width - minWidth));
+      top = Math.max(area.top, Math.min(top, area.top + area.height - minHeight));
+
+      var maxWidthFromLeft = Math.max(minWidth, area.left + area.width - left);
+      var maxHeightFromTop = Math.max(minHeight, area.top + area.height - top);
+      var width = Math.max(minWidth, Math.min(layout.width, maxWidthFromLeft));
+      var height = Math.max(minHeight, Math.min(layout.height, maxHeightFromTop));
+
+      return { top: top, left: left, width: width, height: height };
+    }
+
     function readCardLayoutFromDom(card) {
       if (!card) return null;
       return {
@@ -140,6 +159,24 @@
       };
     }
 
+    function updateDetachedCardResizeLimits(card) {
+      if (!card) return;
+      var area = getDetachedWorkspaceRect();
+      var minWidth = Math.min(460, area.width);
+      var minHeight = Math.min(260, area.height);
+      var rect = card.getBoundingClientRect();
+      var left = Number.isFinite(rect.left) ? rect.left : area.left;
+      var top = Number.isFinite(rect.top) ? rect.top : area.top;
+
+      left = Math.max(area.left, Math.min(left, area.left + area.width - minWidth));
+      top = Math.max(area.top, Math.min(top, area.top + area.height - minHeight));
+
+      var maxWidth = Math.max(minWidth, Math.floor(area.left + area.width - left));
+      var maxHeight = Math.max(minHeight, Math.floor(area.top + area.height - top));
+      card.style.maxWidth = maxWidth + "px";
+      card.style.maxHeight = maxHeight + "px";
+    }
+
     function applyCardLayout(card, layout) {
       if (!card || !layout) return;
       var safe = clampDetachedLayout(layout);
@@ -147,6 +184,7 @@
       card.style.left = safe.left + "px";
       card.style.width = safe.width + "px";
       card.style.height = safe.height + "px";
+      updateDetachedCardResizeLimits(card);
     }
 
     function ensureTabPopoutControl(tabEl) {
@@ -203,6 +241,39 @@
       }) || null;
     }
 
+    function closeToolTab(tool) {
+      if (!tool) return;
+
+      var tabEl = document.querySelector('.v1-tab[data-tool="' + tool + '"]');
+      if (tabEl) {
+        tabEl.classList.add("tab-closed");
+        tabEl.classList.remove("active", "tab-detached-hidden");
+        tabEl.setAttribute("hidden", "hidden");
+      }
+
+      destroyDetachedCard(tool);
+      applyDetachedCardState();
+
+      if (activeTool === tool) {
+        var next = findNextDockedTab(tool);
+        if (next) {
+          var nextTool = next.getAttribute("data-tool");
+          if (nextTool) {
+            switchTool(nextTool);
+            return;
+          }
+        }
+
+        activeTool = null;
+        if (store && store.setState) store.setState({ activeTool: null });
+        refreshActiveUI();
+        return;
+      }
+
+      updateEmptyState();
+      updateTabPopoutUi();
+    }
+
     function updateTabPopoutUi() {
       document.querySelectorAll(".v1-tab").forEach(function (tabEl) {
         ensureTabPopoutControl(tabEl);
@@ -242,9 +313,9 @@
 
     function getDetachedWorkspaceRect() {
       var main = document.querySelector(".v1-main");
+      var status = document.querySelector(".v1-status");
       if (!main) {
         var menubar = document.querySelector(".v1-menubar");
-        var status = document.querySelector(".v1-status");
         var vw = Math.max(320, window.innerWidth || 1280);
         var vh = Math.max(320, window.innerHeight || 720);
         var topEdge = menubar ? Math.round(menubar.getBoundingClientRect().bottom) : 0;
@@ -257,11 +328,15 @@
         };
       }
       var rect = main.getBoundingClientRect();
+      var statusTop = status ? Math.round(status.getBoundingClientRect().top) : Math.round(rect.bottom);
+      var bottomEdge = Math.min(Math.round(rect.bottom), statusTop);
+      // Keep a tiny safety gap so the resize border never bleeds into the status bar.
+      bottomEdge = Math.max(Math.round(rect.top) + 260, bottomEdge - 1);
       return {
         left: Math.round(rect.left),
         top: Math.round(rect.top),
         width: Math.max(320, Math.round(rect.width)),
-        height: Math.max(260, Math.round(rect.height)),
+        height: Math.max(260, bottomEdge - Math.round(rect.top)),
       };
     }
 
@@ -530,6 +605,14 @@
       dockBtn.setAttribute("aria-label", "Dock tab back");
       header.appendChild(dockBtn);
 
+      var closeBtn = document.createElement("button");
+      closeBtn.className = "v1-detached-tool-close";
+      closeBtn.type = "button";
+      closeBtn.textContent = "×";
+      closeBtn.setAttribute("title", "Close tab");
+      closeBtn.setAttribute("aria-label", "Close tab");
+      header.appendChild(closeBtn);
+
       var body = document.createElement("div");
       body.className = "v1-detached-tool-body tool-detail";
       body.innerHTML = stripIds(buildDetailHtml(tool));
@@ -599,6 +682,7 @@
         var snapped = snapDetachedPosition(card, next);
         card.style.left = snapped.left + "px";
         card.style.top = snapped.top + "px";
+        updateDetachedCardResizeLimits(card);
       });
 
       document.addEventListener("pointerup", finishDrag);
@@ -619,6 +703,15 @@
           updateTabPopoutUi();
         }
         if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + currentTool + " docked");
+      });
+
+      closeBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+        var currentTool = card.getAttribute("data-detached-tool");
+        closeToolTab(currentTool);
+        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + currentTool + " closed");
       });
 
       swapBtn.addEventListener("click", function (event) {
@@ -642,11 +735,16 @@
         var ro = new ResizeObserver(function () {
           var currentTool = card.getAttribute("data-detached-tool");
           if (!currentTool || !detachedCards[currentTool]) return;
+          updateDetachedCardResizeLimits(card);
           var current = readCardLayoutFromDom(card);
           if (!current) return;
-          var safe = clampDetachedLayout(current);
+          var safe = clampDetachedResizeLayout(current);
           if (safe.top !== current.top || safe.left !== current.left || safe.width !== current.width || safe.height !== current.height) {
-            applyCardLayout(card, safe);
+            card.style.top = safe.top + "px";
+            card.style.left = safe.left + "px";
+            card.style.width = safe.width + "px";
+            card.style.height = safe.height + "px";
+            updateDetachedCardResizeLimits(card);
           }
           saveDetachedLayout(currentTool, readCardLayoutFromDom(card));
         });
@@ -766,30 +864,7 @@
       function closeTab(tabEl) {
         if (!tabEl) return;
         var closingTool = tabEl.getAttribute("data-tool") || "";
-        destroyDetachedCard(closingTool);
-
-        tabEl.classList.add("tab-closed");
-        tabEl.setAttribute("hidden", "hidden");
-
-        if (!tabEl.classList.contains("active")) {
-          updateEmptyState();
-          return;
-        }
-
-        var next = Array.from(document.querySelectorAll(".v1-tab")).find(function (t) {
-          return !t.classList.contains("tab-closed") && !isDetachedHiddenTab(t);
-        });
-        if (!next) {
-          updateEmptyState();
-          return;
-        }
-
-        var tool = next.getAttribute("data-tool");
-        if (tool) {
-          switchTool(tool);
-        }
-
-        updateEmptyState();
+        closeToolTab(closingTool);
       }
 
       document.addEventListener("keydown", function (event) {
