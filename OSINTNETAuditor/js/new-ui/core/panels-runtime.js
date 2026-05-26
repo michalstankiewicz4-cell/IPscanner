@@ -11,7 +11,6 @@
     var setStatusLine = deps.setStatusLine;
     // Domyślnie brak aktywnej zakładki, wszystkie taby zamknięte
     var activeTool = null;
-    var detachedTool = null;
     var detachedCards = Object.create(null);
     var swapSourceCard = null;
     var detachedZCounter = 70;
@@ -162,11 +161,13 @@
 
     function persistCurrentDetachedLayout() {
       var card = document.getElementById("v1MainCard");
-      if (!card || !detachedTool) return;
+      if (!card) return;
       if (!card.classList.contains("v1-maincard-detached")) return;
+      var tool = card.getAttribute("data-detached-tool") || "";
+      if (!tool) return;
       var layout = readCardLayoutFromDom(card);
       if (!layout) return;
-      saveDetachedLayout(detachedTool, layout);
+      saveDetachedLayout(tool, layout);
     }
 
     function initDetachedCardInteractions() {
@@ -855,11 +856,6 @@
       function closeTab(tabEl) {
         if (!tabEl) return;
         var closingTool = tabEl.getAttribute("data-tool") || "";
-
-        if (closingTool && closingTool === detachedTool) {
-          detachedTool = null;
-          applyDetachedCardState();
-        }
         destroyDetachedCard(closingTool);
 
         tabEl.classList.add("tab-closed");
@@ -945,7 +941,6 @@
         }
 
         createDetachedCard(tool);
-        hideDetachedTab(tool);
         applyDetachedCardState();
         if (activeTool === tool) {
           var nextDockedTab = findNextDockedTab(tool);
