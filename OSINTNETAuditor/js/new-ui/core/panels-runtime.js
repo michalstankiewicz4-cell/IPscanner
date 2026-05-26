@@ -177,6 +177,24 @@
       card.style.maxHeight = maxHeight + "px";
     }
 
+    function setDetachedCardDraggingState(card, dragging) {
+      if (!card) return;
+      var body = card.querySelector(".v1-detached-tool-body");
+      if (!body) return;
+      if (dragging) {
+        body.style.overflow = "hidden";
+        return;
+      }
+      body.style.overflow = "auto";
+      if (typeof window.requestAnimationFrame === "function") {
+        window.requestAnimationFrame(function () {
+          body.style.overflow = "hidden";
+          body.offsetHeight;
+          body.style.overflow = "auto";
+        });
+      }
+    }
+
     function applyCardLayout(card, layout) {
       if (!card || !layout) return;
       var safe = clampDetachedLayout(layout);
@@ -657,6 +675,7 @@
         drag.top = rect.top;
         drag.dragging = true;
         card.classList.add("is-dragging");
+        setDetachedCardDraggingState(card, true);
       });
 
       function finishDrag(event) {
@@ -665,6 +684,7 @@
         drag.dragging = false;
         drag.pointerId = null;
         card.classList.remove("is-dragging");
+        setDetachedCardDraggingState(card, false);
         saveDetachedLayout(card.getAttribute("data-detached-tool"), readCardLayoutFromDom(card));
       }
 

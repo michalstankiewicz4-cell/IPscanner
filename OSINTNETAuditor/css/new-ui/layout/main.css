@@ -667,6 +667,10 @@
   box-shadow: 0 24px 54px rgba(0, 0, 0, 0.62);
 }
 
+.v1-detached-tool-card.is-dragging .v1-detached-tool-body {
+  overflow: hidden;
+}
+
 .v1-detached-tool-head {
   display: flex;
   align-items: center;
