@@ -99,11 +99,16 @@
     }
 
     function getDefaultDetachedLayout() {
+      var area = getDetachedWorkspaceRect();
+      var minWidth = Math.min(460, area.width);
+      var minHeight = Math.min(260, area.height);
+      var width = Math.min(980, Math.max(minWidth, area.width - 64));
+      var height = Math.min(Math.round(area.height * 0.72), Math.max(minHeight, area.height - 64));
       return {
-        top: 64,
-        left: 96,
-        width: Math.min(980, Math.max(460, window.innerWidth - 160)),
-        height: Math.min(Math.round(window.innerHeight * 0.72), Math.max(260, window.innerHeight - 120)),
+        top: area.top,
+        left: area.left,
+        width: width,
+        height: height,
       };
     }
 
@@ -126,14 +131,13 @@
     }
 
     function clampDetachedLayout(layout) {
-      var vw = Math.max(320, window.innerWidth || 1280);
-      var vh = Math.max(320, window.innerHeight || 720);
-      var minWidth = 460;
-      var minHeight = 260;
-      var width = Math.max(minWidth, Math.min(layout.width, vw - 32));
-      var height = Math.max(minHeight, Math.min(layout.height, vh - 32));
-      var left = Math.max(8, Math.min(layout.left, vw - width - 8));
-      var top = Math.max(44, Math.min(layout.top, vh - height - 8));
+      var area = getDetachedWorkspaceRect();
+      var minWidth = Math.min(460, area.width);
+      var minHeight = Math.min(260, area.height);
+      var width = Math.max(minWidth, Math.min(layout.width, area.width));
+      var height = Math.max(minHeight, Math.min(layout.height, area.height));
+      var left = Math.max(area.left, Math.min(layout.left, area.left + area.width - width));
+      var top = Math.max(area.top, Math.min(layout.top, area.top + area.height - height));
       return { top: top, left: left, width: width, height: height };
     }
 
@@ -225,6 +229,16 @@
 
       if (typeof ResizeObserver === "function") {
         detachedResizeObserver = new ResizeObserver(function () {
+          if (!card.classList.contains("v1-maincard-detached")) {
+            persistCurrentDetachedLayout();
+            return;
+          }
+          var current = readCardLayoutFromDom(card);
+          if (!current) return;
+          var safe = clampDetachedLayout(current);
+          if (safe.top !== current.top || safe.left !== current.left || safe.width !== current.width || safe.height !== current.height) {
+            applyCardLayout(card, safe);
+          }
           persistCurrentDetachedLayout();
         });
         detachedResizeObserver.observe(card);
@@ -325,19 +339,25 @@
     function getDetachedWorkspaceRect() {
       var main = document.querySelector(".v1-main");
       if (!main) {
+        var menubar = document.querySelector(".v1-menubar");
+        var status = document.querySelector(".v1-status");
+        var vw = Math.max(320, window.innerWidth || 1280);
+        var vh = Math.max(320, window.innerHeight || 720);
+        var topEdge = menubar ? Math.round(menubar.getBoundingClientRect().bottom) : 0;
+        var bottomEdge = status ? Math.round(status.getBoundingClientRect().top) : vh;
         return {
-          left: 8,
-          top: 44,
-          width: Math.max(320, (window.innerWidth || 1280) - 16),
-          height: Math.max(260, (window.innerHeight || 720) - 52),
+          left: 0,
+          top: Math.max(0, topEdge),
+          width: vw,
+          height: Math.max(260, bottomEdge - topEdge),
         };
       }
       var rect = main.getBoundingClientRect();
       return {
-        left: Math.round(rect.left + 8),
-        top: Math.round(rect.top + 8),
-        width: Math.max(320, Math.round(rect.width - 16)),
-        height: Math.max(260, Math.round(rect.height - 16)),
+        left: Math.round(rect.left),
+        top: Math.round(rect.top),
+        width: Math.max(320, Math.round(rect.width)),
+        height: Math.max(260, Math.round(rect.height)),
       };
     }
 
@@ -569,7 +589,10 @@
     function createDetachedCard(tool) {
       if (!tool) return null;
       var existing = getDetachedCard(tool);
-      if (existing) return existing;
+      if (existing) {
+        hideDetachedTab(tool);
+        return existing;
+      }
 
       var info = infoFor(tool);
       var card = document.createElement("article");
@@ -712,6 +735,12 @@
         var ro = new ResizeObserver(function () {
           var currentTool = card.getAttribute("data-detached-tool");
           if (!currentTool || !detachedCards[currentTool]) return;
+          var current = readCardLayoutFromDom(card);
+          if (!current) return;
+          var safe = clampDetachedLayout(current);
+          if (safe.top !== current.top || safe.left !== current.left || safe.width !== current.width || safe.height !== current.height) {
+            applyCardLayout(card, safe);
+          }
           saveDetachedLayout(currentTool, readCardLayoutFromDom(card));
         });
         ro.observe(card);
@@ -719,6 +748,7 @@
       }
 
       detachedCards[tool] = card;
+      hideDetachedTab(tool);
       updateTabPopoutUi();
       syncDetachedArrangementOnCountChange();
       return card;
