@@ -4,6 +4,7 @@
     var itemMap = new WeakMap();
     var resizeObserver = null;
     var mutationObserver = null;
+    var refreshRafId = 0;
 
     function targetSelector() {
       return ".v1-tool-list, .v1-card, .v1-detached-tool-body, .v1-versions-list, .v1-ai-threadlist, .v1-ai-chat, .v1-ai-prompt, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log, .v1-ip-extractor-input, .v1-ip-extractor-output, .v1-lang-manager-grid textarea, .v1-import-manager-grid textarea, .v1-lang-manager-output, .v1-import-output, .v1-results-table-scroll--ip";
@@ -162,6 +163,18 @@
       cleanupRemovedItems();
     }
 
+    function scheduleRefresh() {
+      if (refreshRafId) return;
+      if (typeof window.requestAnimationFrame !== "function") {
+        refresh();
+        return;
+      }
+      refreshRafId = window.requestAnimationFrame(function () {
+        refreshRafId = 0;
+        refresh();
+      });
+    }
+
     function resolveRailZIndex(el) {
       var base = 20;
       if (!el || !el.closest) return base;
@@ -267,6 +280,12 @@
 
       window.addEventListener("resize", refresh);
       document.addEventListener("scroll", refresh, true);
+      document.addEventListener("pointermove", function () {
+        if (!document.querySelector(".v1-detached-tool-card.is-dragging")) return;
+        scheduleRefresh();
+      }, { passive: true });
+      document.addEventListener("pointerup", scheduleRefresh, { passive: true });
+      document.addEventListener("pointercancel", scheduleRefresh, { passive: true });
 
       refresh();
       return {
