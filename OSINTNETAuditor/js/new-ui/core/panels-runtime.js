@@ -16,16 +16,6 @@
     var detachedZCounter = 70;
     var DETACHED_LAYOUTS_KEY = "netrecon_detached_layouts_v1";
     var DETACHED_ARRANGE_STATE_KEY = "netrecon_detached_arrange_state_v1";
-    var detachedDragState = {
-      pointerId: null,
-      startX: 0,
-      startY: 0,
-      startLeft: 0,
-      startTop: 0,
-      dragging: false,
-    };
-    var detachedInteractionsBound = false;
-    var detachedResizeObserver = null;
 
     function readDetachedLayouts() {
       try {
@@ -157,93 +147,6 @@
       card.style.left = safe.left + "px";
       card.style.width = safe.width + "px";
       card.style.height = safe.height + "px";
-    }
-
-    function persistCurrentDetachedLayout() {
-      var card = document.getElementById("v1MainCard");
-      if (!card) return;
-      if (!card.classList.contains("v1-maincard-detached")) return;
-      var tool = card.getAttribute("data-detached-tool") || "";
-      if (!tool) return;
-      var layout = readCardLayoutFromDom(card);
-      if (!layout) return;
-      saveDetachedLayout(tool, layout);
-    }
-
-    function initDetachedCardInteractions() {
-      if (detachedInteractionsBound) return;
-      detachedInteractionsBound = true;
-
-      var card = document.getElementById("v1MainCard");
-      var title = document.getElementById("v1ToolTitle");
-      if (!card || !title) return;
-
-      title.addEventListener("pointerdown", function (event) {
-        if (event.button !== 0) return;
-        if (!card.classList.contains("v1-maincard-detached")) return;
-        event.preventDefault();
-
-        var rect = card.getBoundingClientRect();
-        detachedDragState.pointerId = event.pointerId;
-        detachedDragState.startX = event.clientX;
-        detachedDragState.startY = event.clientY;
-        detachedDragState.startLeft = rect.left;
-        detachedDragState.startTop = rect.top;
-        detachedDragState.dragging = true;
-        card.classList.add("is-dragging");
-      });
-
-      document.addEventListener("pointermove", function (event) {
-        if (!detachedDragState.dragging) return;
-        if (event.pointerId !== detachedDragState.pointerId) return;
-
-        var dx = event.clientX - detachedDragState.startX;
-        var dy = event.clientY - detachedDragState.startY;
-        var next = clampDetachedLayout({
-          top: detachedDragState.startTop + dy,
-          left: detachedDragState.startLeft + dx,
-          width: card.offsetWidth,
-          height: card.offsetHeight,
-        });
-
-        var snapped = snapDetachedPosition(card, next);
-        card.style.left = snapped.left + "px";
-        card.style.top = snapped.top + "px";
-      });
-
-      document.addEventListener("pointerup", function (event) {
-        if (!detachedDragState.dragging) return;
-        if (event.pointerId !== detachedDragState.pointerId) return;
-        detachedDragState.dragging = false;
-        detachedDragState.pointerId = null;
-        card.classList.remove("is-dragging");
-        persistCurrentDetachedLayout();
-      });
-
-      document.addEventListener("pointercancel", function () {
-        if (!detachedDragState.dragging) return;
-        detachedDragState.dragging = false;
-        detachedDragState.pointerId = null;
-        card.classList.remove("is-dragging");
-        persistCurrentDetachedLayout();
-      });
-
-      if (typeof ResizeObserver === "function") {
-        detachedResizeObserver = new ResizeObserver(function () {
-          if (!card.classList.contains("v1-maincard-detached")) {
-            persistCurrentDetachedLayout();
-            return;
-          }
-          var current = readCardLayoutFromDom(card);
-          if (!current) return;
-          var safe = clampDetachedLayout(current);
-          if (safe.top !== current.top || safe.left !== current.left || safe.width !== current.width || safe.height !== current.height) {
-            applyCardLayout(card, safe);
-          }
-          persistCurrentDetachedLayout();
-        });
-        detachedResizeObserver.observe(card);
-      }
     }
 
     function ensureTabPopoutControl(tabEl) {
@@ -759,16 +662,6 @@
     }
 
     function applyDetachedCardState() {
-      var card = document.getElementById("v1MainCard");
-      if (!card) return;
-
-      card.classList.remove("v1-maincard-detached", "is-dragging");
-      card.setAttribute("data-detached-tool", "");
-      card.style.top = "";
-      card.style.left = "";
-      card.style.width = "";
-      card.style.height = "";
-
       if (document.body) {
         document.body.classList.toggle("v1-has-detached-card", getDetachedCardCount() > 0);
       }
@@ -862,7 +755,6 @@
     function initWorkbenchTabs() {
       if (document.body && document.body.dataset.v1TabsBound === "1") {
         ensureAllTabControls();
-        initDetachedCardInteractions();
         updateTabPopoutUi();
         return;
       }
@@ -870,7 +762,6 @@
       if (document.body) document.body.dataset.v1TabsBound = "1";
 
       ensureAllTabControls();
-      initDetachedCardInteractions();
 
       function closeTab(tabEl) {
         if (!tabEl) return;
