@@ -66,6 +66,30 @@
   color: #ffffff;
 }
 
+.v1-menubar-toggle {
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  color: #c7c7c7;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 0 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.v1-menubar-toggle:hover {
+  background: #46484c;
+  color: #ffffff;
+}
+
+.v1-menubar-toggle input[type="checkbox"] {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  accent-color: #0e639c;
+}
+
 .v1-window-btn {
   width: 46px;
   border: 0;

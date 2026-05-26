@@ -16,6 +16,8 @@
     var detachedZCounter = 70;
     var DETACHED_LAYOUTS_KEY = "netrecon_detached_layouts_v1";
     var DETACHED_ARRANGE_STATE_KEY = "netrecon_detached_arrange_state_v1";
+    var DETACHED_AUTO_ARRANGE_ENABLED_KEY = "netrecon_detached_auto_arrange_enabled_v1";
+    var autoArrangeOnUndockEnabled = readDetachedAutoArrangeEnabled();
 
     function readDetachedLayouts() {
       try {
@@ -60,6 +62,26 @@
         return parsed && typeof parsed === "object" ? parsed : {};
       } catch (_) {
         return {};
+      }
+    }
+
+    function readDetachedAutoArrangeEnabled() {
+      try {
+        var raw = window.localStorage ? window.localStorage.getItem(DETACHED_AUTO_ARRANGE_ENABLED_KEY) : "";
+        if (!raw) return true;
+        if (raw === "0" || raw === "false") return false;
+        return true;
+      } catch (_) {
+        return true;
+      }
+    }
+
+    function writeDetachedAutoArrangeEnabled(enabled) {
+      try {
+        if (!window.localStorage) return;
+        window.localStorage.setItem(DETACHED_AUTO_ARRANGE_ENABLED_KEY, enabled ? "1" : "0");
+      } catch (_) {
+        // ignore persistence failures
       }
     }
 
@@ -515,6 +537,7 @@
     function syncDetachedArrangementOnCountChange() {
       var count = document.querySelectorAll(".v1-detached-tool-card").length;
       if (count <= 1) return;
+      if (!autoArrangeOnUndockEnabled) return;
       autoArrangeDetachedCards({ advanceVariant: false });
     }
 
@@ -892,6 +915,26 @@
       }
 
       if (document.body) document.body.dataset.v1TabsBound = "1";
+
+      var autoArrangeToggle = document.getElementById("v1AutoArrangeToggle");
+      if (autoArrangeToggle) {
+        autoArrangeToggle.checked = !!autoArrangeOnUndockEnabled;
+      }
+
+      if (document.body && document.body.dataset.v1AutoArrangeToggleBound !== "1") {
+        document.body.dataset.v1AutoArrangeToggleBound = "1";
+        document.addEventListener("change", function (event) {
+          var target = event.target;
+          if (!target || target.id !== "v1AutoArrangeToggle") return;
+          autoArrangeOnUndockEnabled = !!target.checked;
+          writeDetachedAutoArrangeEnabled(autoArrangeOnUndockEnabled);
+          if (setStatusLine) {
+            setStatusLine(
+              tr("toolRoute") + ": auto arrange on undock " + (autoArrangeOnUndockEnabled ? "enabled" : "disabled")
+            );
+          }
+        });
+      }
 
       ensureAllTabControls();
 
