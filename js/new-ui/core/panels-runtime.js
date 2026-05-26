@@ -488,14 +488,17 @@
         boxes.push({ left: area.left, top: area.top + h4, width: w4, height: area.height - h4 });
         boxes.push({ left: area.left + w4, top: area.top + h4, width: area.width - w4, height: area.height - h4 });
       } else {
-        var cw = Math.max(320, Math.floor(area.width * 0.58));
-        var ch = Math.max(220, Math.floor(area.height * 0.58));
-        var stepX = 34;
-        var stepY = 28;
+        var minW = Math.min(460, area.width);
+        var minH = Math.min(260, area.height);
+        var cw = Math.max(minW, Math.floor(area.width * 0.58));
+        var ch = Math.max(minH, Math.floor(area.height * 0.58));
+        var maxOffsetX = Math.max(0, area.width - cw);
+        var maxOffsetY = Math.max(0, area.height - ch);
         for (var i = 0; i < count; i += 1) {
+          var t = count > 1 ? (i / (count - 1)) : 0;
           boxes.push({
-            left: area.left + (i * stepX),
-            top: area.top + (i * stepY),
+            left: area.left + Math.round(maxOffsetX * t),
+            top: area.top + Math.round(maxOffsetY * t),
             width: cw,
             height: ch,
           });
