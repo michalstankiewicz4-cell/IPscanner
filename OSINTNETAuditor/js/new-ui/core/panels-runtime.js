@@ -625,7 +625,7 @@
       card.style.position = "fixed";
       card.style.display = "grid";
       card.style.gridTemplateRows = "34px minmax(0, 1fr)";
-      card.style.overflow = "auto";
+      card.style.overflow = "hidden";
       card.style.border = "1px solid #3c414a";
       card.style.boxShadow = "0 20px 44px rgba(0, 0, 0, 0.55)";
       card.style.zIndex = "70";

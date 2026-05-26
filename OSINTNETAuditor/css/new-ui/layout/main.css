@@ -657,7 +657,7 @@
   border: 1px solid #3c414a;
   box-shadow: 0 20px 44px rgba(0, 0, 0, 0.55);
   resize: both;
-  overflow: auto;
+  overflow: hidden;
   display: grid;
   grid-template-rows: 34px minmax(0, 1fr);
   padding: 0;
