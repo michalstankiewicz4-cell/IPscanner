@@ -5,9 +5,10 @@
     var resizeObserver = null;
     var mutationObserver = null;
     var refreshRafId = 0;
+    var detachedDragActive = false;
 
     function targetSelector() {
-      return ".v1-tool-list, .v1-card, .v1-detached-tool-body, .v1-versions-list, .v1-ai-threadlist, .v1-ai-chat, .v1-ai-prompt, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log, .v1-ip-extractor-input, .v1-ip-extractor-output, .v1-lang-manager-grid textarea, .v1-import-manager-grid textarea, .v1-lang-manager-output, .v1-import-output, .v1-results-table-scroll--ip";
+      return ".v1-tool-list, .v1-card, .v1-detached-tool-body, .v1-versions-list, .v1-ai-threadlist, .v1-ai-chat, .v1-ai-prompt, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log, .v1-ip-extractor-input, .v1-ip-extractor-output, .v1-lang-manager-grid textarea, .v1-import-manager-grid textarea, .v1-lang-manager-output, .v1-import-output, .v1-results-table-scroll--ip, .listview-body";
     }
 
     function targets() {
@@ -280,12 +281,29 @@
 
       window.addEventListener("resize", refresh);
       document.addEventListener("scroll", refresh, true);
+
+      document.addEventListener("pointerdown", function (event) {
+        if (!event || event.button !== 0) return;
+        if (!event.target || !event.target.closest) return;
+        if (event.target.closest(".v1-detached-tool-head")) {
+          detachedDragActive = true;
+        }
+      }, true);
+
       document.addEventListener("pointermove", function () {
-        if (!document.querySelector(".v1-detached-tool-card.is-dragging")) return;
+        if (!detachedDragActive) return;
         scheduleRefresh();
       }, { passive: true });
-      document.addEventListener("pointerup", scheduleRefresh, { passive: true });
-      document.addEventListener("pointercancel", scheduleRefresh, { passive: true });
+      document.addEventListener("pointerup", function () {
+        if (!detachedDragActive) return;
+        detachedDragActive = false;
+        scheduleRefresh();
+      }, { passive: true });
+      document.addEventListener("pointercancel", function () {
+        if (!detachedDragActive) return;
+        detachedDragActive = false;
+        scheduleRefresh();
+      }, { passive: true });
 
       refresh();
       return {

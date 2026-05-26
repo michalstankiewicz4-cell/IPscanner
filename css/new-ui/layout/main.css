@@ -684,6 +684,7 @@
 }
 
 .v1-detached-tool-title {
+  flex: 1;
   font-size: 12px;
   color: var(--txt);
   font-family: var(--font-ui);
@@ -723,10 +724,6 @@
   background: #5c2d34;
   border-color: #8a3f49;
   color: #ffffff;
-}
-
-.v1-detached-tool-title {
-  flex: 1;
 }
 
 .v1-detached-tool-swap {
