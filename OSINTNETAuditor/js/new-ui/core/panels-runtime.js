@@ -674,6 +674,13 @@
         drag.left = rect.left;
         drag.top = rect.top;
         drag.dragging = true;
+        if (typeof header.setPointerCapture === "function") {
+          try {
+            header.setPointerCapture(event.pointerId);
+          } catch (_) {
+            // Ignore capture failures on unsupported platforms.
+          }
+        }
         card.classList.add("is-dragging");
         setDetachedCardDraggingState(card, true);
       });
@@ -683,12 +690,19 @@
         if (event && drag.pointerId !== null && event.pointerId !== drag.pointerId) return;
         drag.dragging = false;
         drag.pointerId = null;
+        if (event && typeof header.releasePointerCapture === "function") {
+          try {
+            header.releasePointerCapture(event.pointerId);
+          } catch (_) {
+            // Ignore capture failures on unsupported platforms.
+          }
+        }
         card.classList.remove("is-dragging");
         setDetachedCardDraggingState(card, false);
         saveDetachedLayout(card.getAttribute("data-detached-tool"), readCardLayoutFromDom(card));
       }
 
-      document.addEventListener("pointermove", function (event) {
+      header.addEventListener("pointermove", function (event) {
         if (!drag.dragging) return;
         if (event.pointerId !== drag.pointerId) return;
         var dx = event.clientX - drag.startX;
@@ -705,8 +719,8 @@
         updateDetachedCardResizeLimits(card);
       });
 
-      document.addEventListener("pointerup", finishDrag);
-      document.addEventListener("pointercancel", finishDrag);
+      header.addEventListener("pointerup", finishDrag);
+      header.addEventListener("pointercancel", finishDrag);
 
       dockBtn.addEventListener("click", function (event) {
         event.preventDefault();
