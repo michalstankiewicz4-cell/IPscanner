@@ -17,8 +17,12 @@ W praktyce: zmiany w warstwie UI powinny byc izolowane od logiki skanowania.
 - Nie edytuj katalogu app recznie - to mirror generowany skryptem.
 - W new UI preferuj male moduly w js/new-ui/core zamiast rozbudowy inline script.
 - Zanim dodasz nowy tekst UI, dodaj klucze do i18n.
+- Nie zostawiaj hardcoded tekstow user-facing (tooltip, aria-label, status line) w runtime; tekst powinien przechodzic przez i18n.
+- Dla opisow narzedzi (tool catalog) uzywaj kluczy i18n w formacie toolText_<tool_id_z_podkresleniami>.
+- W ui-definitions preferuj purposeKey; pole purpose traktuj jako awaryjny fallback.
 - Zachowuj backward compatibility danych i stanu (localStorage keys, nazwy akcji itp.).
 - Kazdy nowy przewijalny obszar New UI musi byc zgodny z systemem custom scrollbar (faux scrollbar).
+- W frameless window (decorations=false) nie przechwytuj zdarzen klikniecia elementow interaktywnych przez logike drag okna.
 
 ## 3. Architektura New UI (stan docelowy)
 
@@ -124,18 +128,25 @@ Zasady:
 - nie usuwaj kluczy bazowych - brakujace wpisy fallbackuja do EN,
 - po dodaniu jezyka sprawdz menu, zakladke Logs i panel rozszerzen.
 
-## 6.1. Scrollbar policy (New UI)
+## 6. Scrollbar policy (New UI)
 
 - W New UI nie mieszamy natywnych i custom scrollbar w tym samym przeplywie widoku.
 - Jezeli nowy kontener ma `overflow: auto`, upewnij sie, ze jest hostem custom scrollbar albo jest wewnatrz hosta obslugujacego przewijanie.
 - Po zmianie layoutu i po renderze dynamicznej zawartosci odswiez `refreshCustomScrollbars()`.
 
-## 6. Build i release
+## 7. Build i release
 
 - Domyslnie do testow uzywamy builda bez bundli:
   - npm run prepare:app && npx tauri build --no-bundle
 - Pelne bundlowanie (NSIS/MSI) tylko gdy jest to jawnie wymagane do releasu.
 - Nie uruchamiaj publikacji ani releasu bez wyraznej zgody maintainera.
+
+Checklist przed testowym buildem desktop:
+
+- Upewnij sie, ze wszystkie zmiany sa w zrodlach root (index.html, css/, js/) i NIE byly robione recznie w app/.
+- Uruchom npm run prepare:app i sprawdz czy mirror app/ zawiera te same zmiany.
+- Dla zmian UI uruchom get_errors na zmienionych plikach przed buildem.
+- Dla testow lokalnych preferuj plik: src-tauri/target/release/ipscanner.exe.
 
 Plan rozwoju instalatora (roadmapa):
 
@@ -143,15 +154,23 @@ Plan rozwoju instalatora (roadmapa):
 - Kazdy nowy skladnik powinien miec autodetekcje istniejacej instalacji i bezpieczny domyslny stan checkboxa.
 - Nie usuwamy wspoldzielonych runtime'ow systemowych bez jawnej, osobnej zgody uzytkownika.
 
-## 7. Workflow PR
+## 8. Workflow PR
 
 - Tworz male, tematyczne PR-y.
 - W opisie PR podaj: zakres, ryzyko regresji, test manualny.
 - Jesli zmieniasz UI, zalacz kroki reprodukcji i oczekiwany efekt.
 
-## 8. Czego nie robimy w PR do new UI
+## 9. Czego nie robimy w PR do new UI
 
 - Nie przepinamy calej aplikacji na new UI w jednym kroku.
 - Nie usuwamy legacy UI bez uzgodnionego planu migracji.
 - Nie dokladamy nowego dlugu technicznego przez kolejne duze skrypty inline.
+
+## 10. Definition of done (UI/i18n)
+
+- Tooltipy i aria-labele dzialaja w en i pl (bez hardcoded PL przy domyslnym en).
+- Status line nie zawiera mieszanego jezyka dla tej samej akcji.
+- Nowe kontrolki menubara nie sa blokowane przez logike drag okna.
+- Zmiany root -> app sa zsynchronizowane przez npm run prepare:app.
+- Build testowy --no-bundle przechodzi i generuje exe.
 
