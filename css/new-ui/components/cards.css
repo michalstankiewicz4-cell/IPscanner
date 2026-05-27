@@ -91,7 +91,9 @@
 .v1-versions-list {
   min-height: 0;
   overflow: auto;
-  padding-right: 2px;
+  /* Keep entry borders clear of the faux scrollbar lane. */
+  padding-right: 14px;
+  box-sizing: border-box;
 }
 
 .v1-version-track-wrap {
@@ -177,7 +179,7 @@
 .v1-version-dot {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: 50% !important;
   border: 2px solid #737a88;
   background: #1a1b1f;
   box-shadow: 0 0 0 2px rgba(20, 20, 22, 0.75);
@@ -190,7 +192,7 @@
   height: 4px;
   margin-top: 1px;
   margin-left: 1px;
-  border-radius: 50%;
+  border-radius: 50% !important;
   background: #8ec3ff;
 }
 
