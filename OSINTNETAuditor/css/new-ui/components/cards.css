@@ -91,9 +91,6 @@
 .v1-versions-list {
   min-height: 0;
   overflow: auto;
-  /* Keep entry borders clear of the faux scrollbar lane. */
-  padding-right: 14px;
-  box-sizing: border-box;
 }
 
 .v1-version-track-wrap {

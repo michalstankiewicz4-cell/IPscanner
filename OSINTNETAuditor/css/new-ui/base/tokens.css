@@ -7,6 +7,8 @@
   --txt-dim: #9da0a6;
   --brand: #3794ff;
   --activity: #007acc;
+  --v1-faux-scrollbar-size: 10px;
+  --v1-scroll-safe-gutter: 14px;
   --font-ui: "IBM Plex Sans", "Segoe UI", sans-serif;
   --font-head: "Space Grotesk", "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", Consolas, monospace;

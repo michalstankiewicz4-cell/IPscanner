@@ -52,7 +52,7 @@
         "<div class=\"v1-version-orb\" aria-hidden=\"true\"></div>",
         "</div>",
         "</div>",
-        "<div class=\"v1-versions-list\" id=\"v1VersionsList\">",
+        "<div class=\"v1-versions-list v1-scroll-safe-inline-end\" id=\"v1VersionsList\">",
         listHtml,
         "</div>",
         "</div>"
