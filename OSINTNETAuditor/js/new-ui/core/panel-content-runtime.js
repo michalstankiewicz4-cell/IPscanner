@@ -189,21 +189,6 @@
       ].join("");
     }
 
-    function renderResultsManage() {
-      return [
-        "<div class=\"v1-results-actions\">",
-        "<button class=\"v1-res-btn\">📤 Export JSON</button>",
-        "<button class=\"v1-res-btn\">📥 Import JSON</button>",
-        "<button class=\"v1-res-btn v1-res-btn--danger\">🗑 Wyczyść wyniki</button>",
-        "</div>",
-        "<h4 style=\"margin:14px 0 8px\">Ostatnie operacje</h4>",
-        "<table class=\"v1-results-table\">",
-        "<thead><tr><th>Czas</th><th>Operacja</th><th>Plik</th></tr></thead>",
-        "<tbody><tr><td colspan=\"3\" class=\"v1-results-empty\">Brak zapisanych operacji.</td></tr></tbody>",
-        "</table>"
-      ].join("");
-    }
-
     function renderResultsIp() {
       var rows = [
         {
@@ -269,34 +254,13 @@
       ].join("");
     }
 
-    function renderResultsWifi() {
-      return [
-        "<table class=\"v1-results-table\">",
-        "<thead><tr><th>SSID</th><th>BSSID</th><th>Sygnał (dBm)</th><th>Kanał</th></tr></thead>",
-        "<tbody><tr><td colspan=\"4\" class=\"v1-results-empty\">Brak wykrytych sieci WiFi.</td></tr></tbody>",
-        "</table>"
-      ].join("");
-    }
-
-    function renderResultsBt() {
-      return [
-        "<table class=\"v1-results-table\">",
-        "<thead><tr><th>Nazwa</th><th>Adres</th><th>RSSI</th><th>Typ</th></tr></thead>",
-        "<tbody><tr><td colspan=\"4\" class=\"v1-results-empty\">Brak wykrytych urządzeń Bluetooth.</td></tr></tbody>",
-        "</table>"
-      ].join("");
-    }
-
     var toolRenderers = {
       versions: renderVersionsTool,
       about: renderAboutTool,
       license: renderLicenseTool,
       "import-tool": renderImportTool,
       "language-manager": renderLanguageManagerTool,
-      "results-manage": renderResultsManage,
       "results-ip": renderResultsIp,
-      "results-wifi": renderResultsWifi,
-      "results-bt": renderResultsBt,
     };
 
     function buildDetailHtml(tool) {

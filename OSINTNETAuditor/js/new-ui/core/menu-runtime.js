@@ -3,6 +3,7 @@
     var tr = deps.tr;
     var uiDefinitions = deps.uiDefinitions || { menuGroups: {}, menuActions: {}, panelDefinitions: {} };
     var appLinks = deps.appLinks || {};
+    var platform = deps.platform || ((window.NetReconNewUICore && window.NetReconNewUICore.platform) || {});
     var getActionMap = deps.getActionMap;
     var setStatusLine = deps.setStatusLine;
     var onOpenExtensionManager = deps.onOpenExtensionManager;
@@ -15,22 +16,18 @@
     }
 
     function getInvoke() {
-      return (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
-        || (window.__TAURI__ && window.__TAURI__.invoke)
-        || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
-        || null;
+      if (platform && typeof platform.getInvoke === "function") {
+        return platform.getInvoke();
+      }
+      return null;
     }
 
     function openExternalUrl(url) {
       var safeUrl = String(url || "").trim();
       if (!safeUrl) return;
 
-      var invoke = getInvoke();
-      if (invoke) {
-        invoke("open_browser", { url: safeUrl }).catch(function () {
-          try { window.open(safeUrl, "_blank", "noopener"); } catch (_) {}
-        });
-        return;
+      if (platform && typeof platform.openExternalUrl === "function") {
+        if (platform.openExternalUrl(safeUrl)) return;
       }
 
       try { window.open(safeUrl, "_blank", "noopener"); } catch (_) {}
@@ -50,67 +47,12 @@
       }
 
       async function runNativeWindowAction(kind) {
-        var invoke = getInvoke();
-        if (invoke) {
+        if (platform && typeof platform.windowAction === "function") {
           try {
-            if (kind === "minimize") {
-              await invoke("window_minimize");
-              return true;
-            }
-            if (kind === "maximize") {
-              await invoke("window_toggle_maximize");
-              return true;
-            }
-            if (kind === "fullscreen") {
-              await invoke("window_toggle_fullscreen");
-              return true;
-            }
-            if (kind === "close") {
-              await invoke("window_close");
-              return true;
-            }
-          } catch (_) {}
-        }
-
-        var tauri = window.__TAURI__;
-        var winApi = tauri && (tauri.window || tauri.webviewWindow)
-          ? (tauri.window || tauri.webviewWindow)
-          : null;
-        if (!winApi) return false;
-
-        var currentWindow = null;
-        if (typeof winApi.getCurrentWindow === "function") {
-          currentWindow = winApi.getCurrentWindow();
-        } else if (typeof winApi.getCurrentWebviewWindow === "function") {
-          currentWindow = winApi.getCurrentWebviewWindow();
-        } else {
-          currentWindow = winApi.appWindow || null;
-        }
-        if (!currentWindow) return false;
-
-        try {
-          if (kind === "minimize" && typeof currentWindow.minimize === "function") {
-            await currentWindow.minimize();
-            return true;
+            return await platform.windowAction(kind);
+          } catch (_) {
+            return false;
           }
-          if (kind === "maximize" && typeof currentWindow.toggleMaximize === "function") {
-            await currentWindow.toggleMaximize();
-            return true;
-          }
-          if (kind === "close" && typeof currentWindow.close === "function") {
-            await currentWindow.close();
-            return true;
-          }
-          if (kind === "fullscreen" && typeof currentWindow.setFullscreen === "function") {
-            var isFullscreen = false;
-            if (typeof currentWindow.isFullscreen === "function") {
-              isFullscreen = await currentWindow.isFullscreen();
-            }
-            await currentWindow.setFullscreen(!isFullscreen);
-            return true;
-          }
-        } catch (_) {
-          return false;
         }
 
         return false;

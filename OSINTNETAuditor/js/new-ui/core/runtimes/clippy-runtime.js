@@ -19,20 +19,7 @@
     var dragState = null;
     var suppressNextBubbleClick = false;
 
-    var tips = {
-      en: [
-        "Need a quick start? Set an IP range and click Start.",
-        "Use the Results Browser to switch between IP, WiFi and Bluetooth views.",
-        "You can manage extensions and languages in Options -> Customization.",
-        "Tip: click me to rotate hints instantly."
-      ],
-      pl: [
-        "Szybki start: ustaw zakres IP i kliknij Start.",
-        "Uzyj Przegladania wynikow, aby przelaczac widoki IP, WiFi i Bluetooth.",
-        "Rozszerzeniami i jezykami zarzadzasz w Opcje -> Dostosowanie.",
-        "Wskazowka: kliknij mnie, aby od razu zmienic podpowiedz."
-      ]
-    };
+    var tipKeys = ["clippyTip1", "clippyTip2", "clippyTip3", "clippyTip4"];
 
     function normalizeLang(code) {
       return code === "pl" ? "pl" : "en";
@@ -43,7 +30,11 @@
     }
 
     function currentTips() {
-      return tips[lang] || tips.en;
+      return tipKeys
+        .map(function (key) { return tr(key); })
+        .filter(function (text, index) {
+          return !!text && text !== tipKeys[index];
+        });
     }
 
     function renderTip() {

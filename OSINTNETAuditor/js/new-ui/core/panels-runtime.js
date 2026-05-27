@@ -3,6 +3,8 @@
     var tr = deps.tr;
     var getToolInfoMap = deps.getToolInfoMap;
     var versionsData = Array.isArray(deps.versionsData) ? deps.versionsData : [];
+    var platform = deps.platform || ((window.NetReconNewUICore && window.NetReconNewUICore.platform) || {});
+    var storage = platform.storage || null;
     var store = deps.store;
     var extensionHost = deps.extensionHost;
     var i18n = deps.i18n;
@@ -18,9 +20,25 @@
     var DETACHED_AUTO_ARRANGE_ENABLED_KEY = "netrecon_detached_auto_arrange_enabled_v1";
     var autoArrangeOnUndockEnabled = readDetachedAutoArrangeEnabled();
 
+    function storageGet(key) {
+      if (storage && typeof storage.getItem === "function") {
+        return storage.getItem(key);
+      }
+      return window.localStorage ? window.localStorage.getItem(key) : null;
+    }
+
+    function storageSet(key, value) {
+      if (storage && typeof storage.setItem === "function") {
+        return storage.setItem(key, value);
+      }
+      if (!window.localStorage) return false;
+      window.localStorage.setItem(key, value);
+      return true;
+    }
+
     function readDetachedLayouts() {
       try {
-        var raw = window.localStorage ? window.localStorage.getItem(DETACHED_LAYOUTS_KEY) : "";
+        var raw = storageGet(DETACHED_LAYOUTS_KEY) || "";
         if (!raw) return {};
         var parsed = JSON.parse(raw);
         return parsed && typeof parsed === "object" ? parsed : {};
@@ -31,8 +49,7 @@
 
     function writeDetachedLayouts(layouts) {
       try {
-        if (!window.localStorage) return;
-        window.localStorage.setItem(DETACHED_LAYOUTS_KEY, JSON.stringify(layouts || {}));
+        storageSet(DETACHED_LAYOUTS_KEY, JSON.stringify(layouts || {}));
       } catch (_) {
         // ignore persistence failures
       }
@@ -55,7 +72,7 @@
 
     function readDetachedArrangeState() {
       try {
-        var raw = window.localStorage ? window.localStorage.getItem(DETACHED_ARRANGE_STATE_KEY) : "";
+        var raw = storageGet(DETACHED_ARRANGE_STATE_KEY) || "";
         if (!raw) return {};
         var parsed = JSON.parse(raw);
         return parsed && typeof parsed === "object" ? parsed : {};
@@ -66,7 +83,7 @@
 
     function readDetachedAutoArrangeEnabled() {
       try {
-        var raw = window.localStorage ? window.localStorage.getItem(DETACHED_AUTO_ARRANGE_ENABLED_KEY) : "";
+        var raw = storageGet(DETACHED_AUTO_ARRANGE_ENABLED_KEY) || "";
         if (!raw) return true;
         if (raw === "0" || raw === "false") return false;
         return true;
@@ -77,8 +94,7 @@
 
     function writeDetachedAutoArrangeEnabled(enabled) {
       try {
-        if (!window.localStorage) return;
-        window.localStorage.setItem(DETACHED_AUTO_ARRANGE_ENABLED_KEY, enabled ? "1" : "0");
+        storageSet(DETACHED_AUTO_ARRANGE_ENABLED_KEY, enabled ? "1" : "0");
       } catch (_) {
         // ignore persistence failures
       }
@@ -86,8 +102,7 @@
 
     function writeDetachedArrangeState(state) {
       try {
-        if (!window.localStorage) return;
-        window.localStorage.setItem(DETACHED_ARRANGE_STATE_KEY, JSON.stringify(state || {}));
+        storageSet(DETACHED_ARRANGE_STATE_KEY, JSON.stringify(state || {}));
       } catch (_) {
         // ignore persistence failures
       }
@@ -848,12 +863,15 @@
       };
 
       var keyTool = tool || "scan-runner";
-      var textKey = "toolText_" + String(keyTool).replace(/-/g, "_");
+      var titleKey = baseInfo.titleKey || ("toolTitle_" + String(keyTool).replace(/-/g, "_"));
+      var localizedTitle = tr(titleKey);
+      if (localizedTitle === titleKey) localizedTitle = baseInfo.title || keyTool;
+      var textKey = baseInfo.textKey || ("toolText_" + String(keyTool).replace(/-/g, "_"));
       var localizedText = tr(textKey);
       if (localizedText === textKey) localizedText = baseInfo.text || "";
 
       return {
-        title: baseInfo.title,
+        title: localizedTitle,
         text: localizedText,
         points: Array.isArray(baseInfo.points) ? baseInfo.points : [],
       };
@@ -1400,7 +1418,7 @@
       activeTool = tool;
       if (store && store.setState) store.setState({ activeTool: tool });
       try {
-        if (window.localStorage && tool !== "scan-runner") window.localStorage.setItem("netrecon_active_tool", tool);
+        if (tool !== "scan-runner") storageSet("netrecon_active_tool", tool);
       } catch (_) {}
       refreshActiveUI();
       updateEmptyState();

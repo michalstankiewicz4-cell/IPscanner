@@ -8,9 +8,18 @@
         core.theme.applySkin(core.theme.getCurrentSkin());
       }
 
-      const savedActiveTool = window.localStorage ? window.localStorage.getItem("netrecon_active_tool") : "";
-      const allowedStartupTools = { versions: true, "import-tool": true, "language-manager": true, "results-ip": true };
-      const initialActiveTool = savedActiveTool && allowedStartupTools[savedActiveTool] ? savedActiveTool : "results-ip";
+      const platform = core.platform || {};
+      const storage = platform.storage || null;
+      function storageGet(key) {
+        if (storage && typeof storage.getItem === "function") {
+          return storage.getItem(key);
+        }
+        return window.localStorage ? window.localStorage.getItem(key) : null;
+      }
+
+      const savedActiveTool = storageGet("netrecon_active_tool") || "";
+      const allowedStartupTools = { "scan-runner": true, topology: true, globe: true, "results-ip": true, versions: true, "import-tool": true, "language-manager": true };
+      const initialActiveTool = savedActiveTool && allowedStartupTools[savedActiveTool] ? savedActiveTool : "scan-runner";
 
       const store = core.createStore
         ? core.createStore({
@@ -53,6 +62,10 @@
         }
       }
 
+      if (platform && typeof platform.isParityMode === "function" && platform.isParityMode()) {
+        setStatusLine("Desktop parity mode enabled");
+      }
+
       let scannerSidebarRuntime = null;
       let powerShellConsoleRuntime = null;
       let layoutRuntime = null;
@@ -87,19 +100,14 @@
         const extClose = document.getElementById("v1ExtClose");
         const activityResultsBtn = document.getElementById("v1ActivityResults");
         const activityScannerBtn = document.getElementById("v1ActivityScanner");
-        const resultNavManage = document.getElementById("v1ResultNavManage");
         const resultNavIp = document.getElementById("v1ResultNavIp");
-        const resultNavWifi = document.getElementById("v1ResultNavWifi");
-        const resultNavBt = document.getElementById("v1ResultNavBt");
-        const tabResultsManage = document.getElementById("v1TabTitleResultsManage");
         const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
-        const tabResultsWifi = document.getElementById("v1TabTitleResultsWifi");
-        const tabResultsBt = document.getElementById("v1TabTitleResultsBt");
         const tabTitleImportTool = document.getElementById("v1TabTitleImportTool");
         const tabTitleLanguageManager = document.getElementById("v1TabTitleLanguageManager");
         const tabTitleAbout = document.getElementById("v1TabTitleAbout");
         const tabTitleLicense = document.getElementById("v1TabTitleLicense");
-        const consoleInfoTab = document.getElementById("v1ConsoleInfoTab");
+        const terminalTab = document.getElementById("v1TerminalTab");
+        const consoleTab = document.getElementById("v1ConsoleTab");
         const assistantMenuLabel = document.querySelector('[data-menu-action="assistant"] span:first-child');
         const aboutMenuLabel = document.querySelector('[data-menu-action="about"] span:first-child');
         const licenseMenuLabel = document.querySelector('[data-menu-action="license"] span:first-child');
@@ -139,19 +147,14 @@
           activityScannerBtn.setAttribute("title", tr("ipScanner"));
           activityScannerBtn.setAttribute("aria-label", tr("ipScanner"));
         }
-        if (resultNavManage) resultNavManage.textContent = "📋 " + tr("resultsManage");
         if (resultNavIp) resultNavIp.textContent = "🖥 " + tr("resultsIp");
-        if (resultNavWifi) resultNavWifi.textContent = "📶 " + tr("resultsWifi");
-        if (resultNavBt) resultNavBt.textContent = "🔵 " + tr("resultsBt");
-        if (tabResultsManage) tabResultsManage.textContent = tr("tabResultsManage");
         if (tabResultsIp) tabResultsIp.textContent = tr("tabResultsIp");
-        if (tabResultsWifi) tabResultsWifi.textContent = tr("tabResultsWifi");
-        if (tabResultsBt) tabResultsBt.textContent = tr("tabResultsBt");
         if (tabTitleImportTool) tabTitleImportTool.textContent = tr("importToolTitle");
         if (tabTitleLanguageManager) tabTitleLanguageManager.textContent = tr("langManagerTitle");
         if (tabTitleAbout) tabTitleAbout.textContent = tr("tabAboutTitle");
         if (tabTitleLicense) tabTitleLicense.textContent = tr("tabLicenseTitle");
-        if (consoleInfoTab) consoleInfoTab.textContent = tr("consoleInfoTab");
+        if (terminalTab) terminalTab.textContent = tr("terminalTab");
+        if (consoleTab) consoleTab.textContent = tr("consoleTab");
         if (aboutMenuLabel) aboutMenuLabel.textContent = tr("helpAboutTitle");
         if (licenseMenuLabel) licenseMenuLabel.textContent = tr("helpLicenseTitle");
         if (assistantMenuLabel) assistantMenuLabel.textContent = "📎 " + tr("assistant");
@@ -530,74 +533,12 @@
         const behavior = def && def.behavior ? def.behavior : "status";
 
         async function runNativeWindowAction(kind) {
-          const invoke =
-            (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
-            || (window.__TAURI__ && window.__TAURI__.invoke)
-            || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
-            || null;
-
-          if (invoke) {
+          if (platform && typeof platform.windowAction === "function") {
             try {
-              if (kind === "minimize") {
-                await invoke("window_minimize");
-                return true;
-              }
-              if (kind === "maximize") {
-                await invoke("window_toggle_maximize");
-                return true;
-              }
-              if (kind === "fullscreen") {
-                await invoke("window_toggle_fullscreen");
-                return true;
-              }
-              if (kind === "close") {
-                await invoke("window_close");
-                return true;
-              }
+              return await platform.windowAction(kind);
             } catch (_) {
-              // Fallback to window object API below.
+              return false;
             }
-          }
-
-          const tauri = window.__TAURI__;
-          const winApi = tauri && (tauri.window || tauri.webviewWindow)
-            ? (tauri.window || tauri.webviewWindow)
-            : null;
-          if (!winApi) return false;
-
-          let currentWindow = null;
-          if (typeof winApi.getCurrentWindow === "function") {
-            currentWindow = winApi.getCurrentWindow();
-          } else if (typeof winApi.getCurrentWebviewWindow === "function") {
-            currentWindow = winApi.getCurrentWebviewWindow();
-          } else {
-            currentWindow = winApi.appWindow || null;
-          }
-          if (!currentWindow) return false;
-
-          try {
-            if (kind === "minimize" && typeof currentWindow.minimize === "function") {
-              await currentWindow.minimize();
-              return true;
-            }
-            if (kind === "maximize" && typeof currentWindow.toggleMaximize === "function") {
-              await currentWindow.toggleMaximize();
-              return true;
-            }
-            if (kind === "close" && typeof currentWindow.close === "function") {
-              await currentWindow.close();
-              return true;
-            }
-            if (kind === "fullscreen" && typeof currentWindow.setFullscreen === "function") {
-              var isFullscreen = false;
-              if (typeof currentWindow.isFullscreen === "function") {
-                isFullscreen = await currentWindow.isFullscreen();
-              }
-              await currentWindow.setFullscreen(!isFullscreen);
-              return true;
-            }
-          } catch (_) {
-            return false;
           }
 
           return false;
@@ -842,28 +783,10 @@
       function infoFor(tool) {
         const tools = getToolInfoMap();
         const info = tools[tool] || tools["scan-runner"] || baseToolInfo["scan-runner"];
-        if (tool === "results-manage") {
-          return Object.assign({}, info, {
-            title: tr("toolResultsManageTitle"),
-            text: tr("toolResultsManageText"),
-          });
-        }
         if (tool === "results-ip") {
           return Object.assign({}, info, {
             title: tr("toolResultsIpTitle"),
             text: tr("toolResultsIpText"),
-          });
-        }
-        if (tool === "results-wifi") {
-          return Object.assign({}, info, {
-            title: tr("toolResultsWifiTitle"),
-            text: tr("toolResultsWifiText"),
-          });
-        }
-        if (tool === "results-bt") {
-          return Object.assign({}, info, {
-            title: tr("toolResultsBtTitle"),
-            text: tr("toolResultsBtText"),
           });
         }
         return info;
@@ -1026,6 +949,7 @@
         if (!runtimes.createLayoutRuntime) return;
         layoutRuntime = runtimes.createLayoutRuntime({
           tr: tr,
+          platform: platform,
           refreshCustomScrollbars: function () {
             refreshCustomScrollbars();
           },
@@ -1070,6 +994,7 @@
       const panelsRuntime = runtimeFactory.createPanelsRuntime
         ? runtimeFactory.createPanelsRuntime({
             tr,
+            platform,
             getToolInfoMap,
             versionsData: core.versionsData || [],
             store,
@@ -1123,6 +1048,7 @@
       const menuRuntime = runtimeFactory.createMenuRuntime
         ? runtimeFactory.createMenuRuntime({
             tr,
+            platform,
             uiDefinitions,
             appLinks,
             getActionMap,
@@ -1159,6 +1085,7 @@
       const navigationRuntimeFactory = runtimeFactory.createNavigationRuntime
         ? runtimeFactory.createNavigationRuntime({
             tr,
+            platform,
             switchTool,
             setStatusLine,
             runMenuAction: (menuRuntime && menuRuntime.runMenuAction) ? menuRuntime.runMenuAction : runMenuAction,
@@ -1182,6 +1109,7 @@
       const powerShellConsoleRuntimeFactory = runtimeFactory.createPowerShellConsoleRuntime
         ? runtimeFactory.createPowerShellConsoleRuntime({
             tr,
+            platform,
             setStatusLine,
           })
         : null;
@@ -1229,23 +1157,12 @@
       window.NetReconNewUI.extensions = extensionHost;
       window.NetReconNewUI.syncExtensionToolUi = syncExtensionToolUi;
 
-      function getInvoke() {
-        return (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
-          || (window.__TAURI__ && window.__TAURI__.invoke)
-          || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
-          || null;
-      }
-
       function openExternalUrl(url) {
         const safeUrl = String(url || "").trim();
         if (!/^https?:\/\//i.test(safeUrl)) return;
 
-        const invoke = getInvoke();
-        if (invoke) {
-          invoke("open_browser", { url: safeUrl }).catch(function () {
-            try { window.open(safeUrl, "_blank", "noopener"); } catch (_) {}
-          });
-          return;
+        if (platform && typeof platform.openExternalUrl === "function") {
+          if (platform.openExternalUrl(safeUrl)) return;
         }
 
         try { window.open(safeUrl, "_blank", "noopener"); } catch (_) {}

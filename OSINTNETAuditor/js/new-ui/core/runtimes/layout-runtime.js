@@ -2,6 +2,7 @@
   function createLayoutRuntime(deps) {
     var refreshCustomScrollbars = deps.refreshCustomScrollbars || function () {};
     var tr = deps.tr || function (key) { return key; };
+    var platform = deps.platform || ((window.NetReconNewUICore && window.NetReconNewUICore.platform) || {});
 
     function init() {
       var main = document.querySelector(".v1-main");
@@ -19,26 +20,24 @@
       if (!main || !editor || !sidebar || !rightbar || !leftHandle || !rightHandle || !consoleHandle || !leftToggle || !rightToggle || !bottomToggle) return;
 
       function getTauriInvoke() {
-        return (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
-          || (window.__TAURI__ && window.__TAURI__.invoke)
-          || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
-          || null;
+        if (platform && typeof platform.getInvoke === "function") {
+          return platform.getInvoke();
+        }
+        return null;
       }
 
       function getCurrentTauriWindow() {
-        var getter = (window.__TAURI__ && window.__TAURI__.window && window.__TAURI__.window.getCurrentWindow)
-          || (window.__TAURI__ && window.__TAURI__.webviewWindow && window.__TAURI__.webviewWindow.getCurrentWindow)
-          || null;
-        if (!getter) return null;
-        try {
-          return getter();
-        } catch (_) {
-          return null;
+        if (platform && typeof platform.getCurrentWindow === "function") {
+          return platform.getCurrentWindow();
         }
+        return null;
       }
 
       function getTauriDpi() {
-        return (window.__TAURI__ && window.__TAURI__.dpi) ? window.__TAURI__.dpi : null;
+        if (platform && typeof platform.getDpi === "function") {
+          return platform.getDpi();
+        }
+        return null;
       }
 
       if (menubar) {

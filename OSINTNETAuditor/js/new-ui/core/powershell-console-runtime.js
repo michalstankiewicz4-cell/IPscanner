@@ -2,12 +2,23 @@
   function createPowerShellConsoleRuntime(deps) {
     var tr = deps.tr;
     var setStatusLine = deps.setStatusLine;
+    var platform = deps.platform || ((window.NetReconNewUICore && window.NetReconNewUICore.platform) || {});
 
-    var invoke =
-      (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
-      || (window.__TAURI__ && window.__TAURI__.invoke)
-      || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
-      || null;
+    function getInvoke() {
+      if (platform && typeof platform.getInvoke === "function") {
+        return platform.getInvoke();
+      }
+      return null;
+    }
+
+    function runPowerShell(command) {
+      if (platform && typeof platform.invoke === "function") {
+        return platform.invoke("run_powershell", { command: command });
+      }
+      var invoke = getInvoke();
+      if (!invoke) return Promise.reject(new Error("tauri invoke unavailable"));
+      return invoke("run_powershell", { command: command });
+    }
 
     function t(key) {
       return typeof tr === "function" ? tr(key) : key;
@@ -56,6 +67,7 @@
         append("[" + nowStamp() + "] PS> " + cmd);
         input.value = "";
 
+        var invoke = getInvoke();
         if (!invoke) {
           append("[" + nowStamp() + "] " + t("psConsoleDesktopOnly"));
           if (typeof setStatusLine === "function") setStatusLine(t("psConsoleDesktopOnly"));
@@ -65,7 +77,7 @@
         setBusy(true);
         if (typeof setStatusLine === "function") setStatusLine(t("psConsoleRunning"));
 
-        invoke("run_powershell", { command: cmd }).then(function (res) {
+        runPowerShell(cmd).then(function (res) {
           var stdout = (res && res.stdout) ? String(res.stdout) : "";
           var stderr = (res && res.stderr) ? String(res.stderr) : "";
           var exitCode = (res && typeof res.exit_code === "number") ? res.exit_code : -1;
