@@ -6,7 +6,6 @@
     var store = deps.store;
     var extensionHost = deps.extensionHost;
     var i18n = deps.i18n;
-    var applyStaticTranslations = deps.applyStaticTranslations;
     var onAfterRender = deps.onAfterRender;
     var setStatusLine = deps.setStatusLine;
     // Domyślnie brak aktywnej zakładki, wszystkie taby zamknięte
@@ -842,10 +841,21 @@
 
     function infoFor(tool) {
       var tools = getToolInfoMap ? getToolInfoMap() : {};
-      return tools[tool] || tools["scan-runner"] || {
+      var baseInfo = tools[tool] || tools["scan-runner"] || {
         title: "Scan Runner",
         text: "",
         points: []
+      };
+
+      var keyTool = tool || "scan-runner";
+      var textKey = "toolText_" + String(keyTool).replace(/-/g, "_");
+      var localizedText = tr(textKey);
+      if (localizedText === textKey) localizedText = baseInfo.text || "";
+
+      return {
+        title: baseInfo.title,
+        text: localizedText,
+        points: Array.isArray(baseInfo.points) ? baseInfo.points : [],
       };
     }
 
