@@ -18,8 +18,8 @@
       }
 
       const savedActiveTool = storageGet("netrecon_active_tool") || "";
-      const allowedStartupTools = { versions: true, "import-tool": true, "language-manager": true, "results-ip": true };
-      const initialActiveTool = savedActiveTool && allowedStartupTools[savedActiveTool] ? savedActiveTool : "results-ip";
+      const allowedStartupTools = { "scan-runner": true, topology: true, globe: true, "results-ip": true, versions: true, "import-tool": true, "language-manager": true };
+      const initialActiveTool = savedActiveTool && allowedStartupTools[savedActiveTool] ? savedActiveTool : "scan-runner";
 
       const store = core.createStore
         ? core.createStore({
@@ -100,19 +100,14 @@
         const extClose = document.getElementById("v1ExtClose");
         const activityResultsBtn = document.getElementById("v1ActivityResults");
         const activityScannerBtn = document.getElementById("v1ActivityScanner");
-        const resultNavManage = document.getElementById("v1ResultNavManage");
         const resultNavIp = document.getElementById("v1ResultNavIp");
-        const resultNavWifi = document.getElementById("v1ResultNavWifi");
-        const resultNavBt = document.getElementById("v1ResultNavBt");
-        const tabResultsManage = document.getElementById("v1TabTitleResultsManage");
         const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
-        const tabResultsWifi = document.getElementById("v1TabTitleResultsWifi");
-        const tabResultsBt = document.getElementById("v1TabTitleResultsBt");
         const tabTitleImportTool = document.getElementById("v1TabTitleImportTool");
         const tabTitleLanguageManager = document.getElementById("v1TabTitleLanguageManager");
         const tabTitleAbout = document.getElementById("v1TabTitleAbout");
         const tabTitleLicense = document.getElementById("v1TabTitleLicense");
-        const consoleInfoTab = document.getElementById("v1ConsoleInfoTab");
+        const terminalTab = document.getElementById("v1TerminalTab");
+        const consoleTab = document.getElementById("v1ConsoleTab");
         const assistantMenuLabel = document.querySelector('[data-menu-action="assistant"] span:first-child');
         const aboutMenuLabel = document.querySelector('[data-menu-action="about"] span:first-child');
         const licenseMenuLabel = document.querySelector('[data-menu-action="license"] span:first-child');
@@ -152,19 +147,14 @@
           activityScannerBtn.setAttribute("title", tr("ipScanner"));
           activityScannerBtn.setAttribute("aria-label", tr("ipScanner"));
         }
-        if (resultNavManage) resultNavManage.textContent = "📋 " + tr("resultsManage");
         if (resultNavIp) resultNavIp.textContent = "🖥 " + tr("resultsIp");
-        if (resultNavWifi) resultNavWifi.textContent = "📶 " + tr("resultsWifi");
-        if (resultNavBt) resultNavBt.textContent = "🔵 " + tr("resultsBt");
-        if (tabResultsManage) tabResultsManage.textContent = tr("tabResultsManage");
         if (tabResultsIp) tabResultsIp.textContent = tr("tabResultsIp");
-        if (tabResultsWifi) tabResultsWifi.textContent = tr("tabResultsWifi");
-        if (tabResultsBt) tabResultsBt.textContent = tr("tabResultsBt");
         if (tabTitleImportTool) tabTitleImportTool.textContent = tr("importToolTitle");
         if (tabTitleLanguageManager) tabTitleLanguageManager.textContent = tr("langManagerTitle");
         if (tabTitleAbout) tabTitleAbout.textContent = tr("tabAboutTitle");
         if (tabTitleLicense) tabTitleLicense.textContent = tr("tabLicenseTitle");
-        if (consoleInfoTab) consoleInfoTab.textContent = tr("consoleInfoTab");
+        if (terminalTab) terminalTab.textContent = tr("terminalTab");
+        if (consoleTab) consoleTab.textContent = tr("consoleTab");
         if (aboutMenuLabel) aboutMenuLabel.textContent = tr("helpAboutTitle");
         if (licenseMenuLabel) licenseMenuLabel.textContent = tr("helpLicenseTitle");
         if (assistantMenuLabel) assistantMenuLabel.textContent = "📎 " + tr("assistant");
@@ -793,28 +783,10 @@
       function infoFor(tool) {
         const tools = getToolInfoMap();
         const info = tools[tool] || tools["scan-runner"] || baseToolInfo["scan-runner"];
-        if (tool === "results-manage") {
-          return Object.assign({}, info, {
-            title: tr("toolResultsManageTitle"),
-            text: tr("toolResultsManageText"),
-          });
-        }
         if (tool === "results-ip") {
           return Object.assign({}, info, {
             title: tr("toolResultsIpTitle"),
             text: tr("toolResultsIpText"),
-          });
-        }
-        if (tool === "results-wifi") {
-          return Object.assign({}, info, {
-            title: tr("toolResultsWifiTitle"),
-            text: tr("toolResultsWifiText"),
-          });
-        }
-        if (tool === "results-bt") {
-          return Object.assign({}, info, {
-            title: tr("toolResultsBtTitle"),
-            text: tr("toolResultsBtText"),
           });
         }
         return info;

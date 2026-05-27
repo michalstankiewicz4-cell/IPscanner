@@ -263,7 +263,7 @@
           if (action === "save" && runMenuAction) runMenuAction("save-session");
           if (action === "load" && runMenuAction) runMenuAction("load-session");
           if (["ext-ip", "local-ip", "subnets", "scan-speed"].indexOf(action) < 0 && switchTool) {
-            switchTool("results-ip");
+            switchTool("scan-runner");
           }
         });
       });

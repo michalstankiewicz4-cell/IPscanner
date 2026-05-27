@@ -863,12 +863,15 @@
       };
 
       var keyTool = tool || "scan-runner";
-      var textKey = "toolText_" + String(keyTool).replace(/-/g, "_");
+      var titleKey = baseInfo.titleKey || ("toolTitle_" + String(keyTool).replace(/-/g, "_"));
+      var localizedTitle = tr(titleKey);
+      if (localizedTitle === titleKey) localizedTitle = baseInfo.title || keyTool;
+      var textKey = baseInfo.textKey || ("toolText_" + String(keyTool).replace(/-/g, "_"));
       var localizedText = tr(textKey);
       if (localizedText === textKey) localizedText = baseInfo.text || "";
 
       return {
-        title: baseInfo.title,
+        title: localizedTitle,
         text: localizedText,
         points: Array.isArray(baseInfo.points) ? baseInfo.points : [],
       };

@@ -47,22 +47,9 @@
       <div class="v1-menu-group" data-menu="tools">
         <button class="v1-menu-trigger">Tools</button>
         <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-tool="scan-runner"><span>IP Scanner</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-tool="topology"><span>Topology</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-tool="globe"><span>Globe</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="proto"><span>Prototype</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="macro"><span>Macro</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="speed"><span>Speed</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="console"><span>Console</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="scan-watch"><span>IP Scan Watch...</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="wifi-detector"><span>WiFi Detector...</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="wifi-radar"><span>WiFi Radar</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="bt-detector"><span>Bluetooth Detector...</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="gnss"><span>GNSS Monitor...</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="lte"><span>LTE Monitor...</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="sniffer"><span>Network Sniffer...</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="imgmeta"><span>Image Metadata...</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="phone-lookup"><span>Phone Reverse Lookup...</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="ai-assistant"><span>AI Security Assistant...</span><span class="shortcut"></span></button>
         </div>
       </div>
 
@@ -95,12 +82,10 @@
     <main class="v1-main">
       <!-- Left icon bar -->
       <aside class="v1-activity">
-        <button id="v1ActivityResults" data-activity="results" title="Results Browser" aria-label="Results Browser">📊</button>
-        <button id="v1ActivityScanner" data-activity="scanner" data-tool="results-ip" class="active" title="IP Scanner" aria-label="IP Scanner">▦</button>
+        <button id="v1ActivityResults" data-activity="results" data-tool="results-ip" title="IP Results" aria-label="IP Results">📊</button>
+        <button id="v1ActivityScanner" data-activity="scanner" data-tool="scan-runner" class="active" title="IP Scanner" aria-label="IP Scanner">▦</button>
         <button data-tool="topology">🕸</button>
         <button data-tool="globe">🌍</button>
-        <div class="v1-activity-spacer"></div>
-        <button data-tool="settings">⚙</button>
       </aside>
 
       <!-- Left section -->
@@ -202,10 +187,7 @@
         </div>
         <div data-sidebar-view="results" hidden>
           <ul class="v1-tool-list">
-            <li id="v1ResultNavManage" data-result-tab="results-manage" class="v1-result-nav-item">📋 Manage Results</li>
-            <li id="v1ResultNavIp" data-result-tab="results-ip" class="v1-result-nav-item">🖥 IP Scan Results</li>
-            <li id="v1ResultNavWifi" data-result-tab="results-wifi" class="v1-result-nav-item">📶 WiFi Devices</li>
-            <li id="v1ResultNavBt" data-result-tab="results-bt" class="v1-result-nav-item">🔵 Bluetooth Devices</li>
+            <li id="v1ResultNavIp" data-result-tab="results-ip" class="v1-result-nav-item">🖥 IP Results</li>
           </ul>
         </div>
       </aside>
@@ -265,7 +247,7 @@
 
             <div class="v1-actions" id="v1ScanActions">
               <button data-tool="scan-runner">▶ Start Scan</button>
-              <button data-tool="scan-watch">■ Stop</button>
+              <button data-tool="scan-runner">■ Stop</button>
               <button data-tool="scan-runner">✕ Clear</button>
               <button data-tool="scan-runner">⚙ Default Scan Values</button>
               <button data-tool="scan-runner">📤 Export JSON</button>
@@ -282,9 +264,9 @@
 
         <section class="v1-console-zone">
           <div class="v1-console-tabs">
-            <button class="v1-console-tab active" data-v1-console-tab="console">Console</button>
+            <button class="v1-console-tab active" data-v1-console-tab="console" id="v1TerminalTab">Terminal</button>
             <button class="v1-console-tab" data-v1-console-tab="macro">Macro</button>
-            <button class="v1-console-tab" data-v1-console-tab="info" id="v1ConsoleInfoTab">Logs</button>
+            <button class="v1-console-tab" data-v1-console-tab="info" id="v1ConsoleTab">Console</button>
             <button class="v1-panel-toggle" data-panel-toggle="bottom" title="Hide bottom section" aria-label="Hide bottom section">▼</button>
           </div>
           <div class="v1-console-body">
@@ -371,7 +353,7 @@ macro://stealth-check
     <!-- Bottom info bar -->
     <footer class="v1-status">
       <span>main • tauri-desktop • UI mock only</span>
-      <span id="v1StatusRight">active: results-ip</span>
+      <span id="v1StatusRight">active: scan-runner</span>
     </footer>
 
     <div id="v1ClippyContainer" class="v1-clippy-hidden" aria-live="polite">
