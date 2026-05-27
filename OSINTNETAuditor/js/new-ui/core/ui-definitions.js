@@ -50,10 +50,10 @@
       behavior: "status",
     },
     countries: {
-      label: "Country IP Library (mock)",
+      label: "Country IP Library",
       purposeKey: "tipActionCountries",
       purpose: "Biblioteka zakresow IP wedlug krajow.",
-      behavior: "switch-tool:settings",
+      behavior: "switch-tool:ip-library",
     },
     presets: {
       label: "Port Presets (mock)",

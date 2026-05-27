@@ -15,6 +15,11 @@
       textKey: "toolText_globe",
       points: ["D3 globe", "Country markers", "Geo enrichment"]
     },
+    "ip-library": {
+      titleKey: "toolTitle_ip_library",
+      textKey: "toolText_ip_library",
+      points: ["Country IP ranges", "PowerShell auto update", "Local cache preview"]
+    },
     settings: {
       titleKey: "toolTitle_settings",
       textKey: "toolText_settings",

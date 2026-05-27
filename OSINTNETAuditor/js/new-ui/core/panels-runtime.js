@@ -1175,7 +1175,164 @@
           panelInteractionsRuntime.wireResultsIpTable();
         }
       }
+      if (activeTool === "ip-library") {
+        wireIpLibraryButtons();
+      }
       if (typeof onAfterRender === "function") onAfterRender(activeTool);
+    }
+
+    function wireIpLibraryButtons() {
+      var root = document.getElementById("v1ToolDetail");
+      if (!root) return;
+
+      var countriesEl = document.getElementById("v1IpLibraryCountryCodes");
+      var topRangesEl = document.getElementById("v1IpLibraryTopRanges");
+      var lastUpdateEl = document.getElementById("v1IpLibraryLastUpdate");
+      var statusEl = document.getElementById("v1IpLibraryStatus");
+      var outputEl = document.getElementById("v1IpLibraryOutput");
+
+      var DEFAULT_CODES = "pl,cn,ru,us,de,fr,gb,jp,kr,br,in,au,nl,ua,cz,se,no,fi,tr,ir,sa,za,ar,mx,ca,it,es";
+      var CACHE_KEY = "netrecon_country_ip_library_json";
+      var CACHE_UPDATED_KEY = "netrecon_country_ip_library_updated_at";
+
+      if (countriesEl && !countriesEl.value.trim()) countriesEl.value = DEFAULT_CODES;
+      if (topRangesEl && !topRangesEl.value.trim()) topRangesEl.value = "120";
+
+      function writeStatus(text) {
+        if (statusEl) statusEl.textContent = String(text || "");
+      }
+
+      function writeOutput(text) {
+        if (!outputEl) return;
+        outputEl.textContent = String(text || "");
+        outputEl.scrollTop = 0;
+      }
+
+      function setLastUpdate(value) {
+        if (!lastUpdateEl) return;
+        lastUpdateEl.textContent = String(value || "-");
+      }
+
+      function getInvoke() {
+        if (platform && typeof platform.getInvoke === "function") {
+          return platform.getInvoke();
+        }
+        return null;
+      }
+
+      function runPowerShell(command) {
+        if (platform && typeof platform.invoke === "function") {
+          return platform.invoke("run_powershell", { command: command });
+        }
+        var invoke = getInvoke();
+        if (!invoke) return Promise.reject(new Error("tauri invoke unavailable"));
+        return invoke("run_powershell", { command: command });
+      }
+
+      function parseCountries(text) {
+        return String(text || "")
+          .split(/[\s,;]+/)
+          .map(function (v) { return v.trim().toLowerCase(); })
+          .filter(function (v) { return /^[a-z]{2}$/.test(v); });
+      }
+
+      function loadCached() {
+        var raw = storageGet(CACHE_KEY) || "";
+        var updatedAt = storageGet(CACHE_UPDATED_KEY) || "-";
+        setLastUpdate(updatedAt);
+        if (!raw) {
+          writeStatus(tr("ipLibraryStatusEmpty"));
+          writeOutput("");
+          return;
+        }
+
+        try {
+          var data = JSON.parse(raw);
+          var count = Array.isArray(data) ? data.length : 0;
+          writeStatus(tr("ipLibraryStatusLoaded") + " " + count + " | " + tr("ipLibraryStatusUpdatedAt") + " " + updatedAt);
+          writeOutput(JSON.stringify(data, null, 2));
+        } catch (_) {
+          writeStatus(tr("ipLibraryStatusInvalidCache"));
+          writeOutput(raw);
+        }
+      }
+
+      root.querySelectorAll("[data-iplib-action]").forEach(function (button) {
+        if (button.dataset.bound === "1") return;
+        button.dataset.bound = "1";
+
+        button.addEventListener("click", function () {
+          var actionName = button.getAttribute("data-iplib-action");
+          if (actionName === "load") {
+            loadCached();
+            return;
+          }
+
+          var invoke = getInvoke();
+          if (!invoke && !(platform && typeof platform.invoke === "function")) {
+            writeStatus(tr("statusDesktopOnlyShort"));
+            writeOutput(tr("psConsoleDesktopOnly"));
+            return;
+          }
+
+          var countryCodes = parseCountries(countriesEl ? countriesEl.value : "");
+          if (!countryCodes.length) {
+            writeStatus(tr("ipLibraryStatusBadCountries"));
+            return;
+          }
+
+          var topRanges = Number(topRangesEl ? topRangesEl.value : "120");
+          if (!Number.isFinite(topRanges)) topRanges = 120;
+          topRanges = Math.max(10, Math.min(500, Math.round(topRanges)));
+          if (topRangesEl) topRangesEl.value = String(topRanges);
+
+          var countriesArg = "@('" + countryCodes.join("','") + "')";
+          var psCommand = [
+            "$ErrorActionPreference='Stop'",
+            "$scriptPath = Join-Path (Get-Location) 'scripts\\update-country-ip-library.ps1'",
+            "if (!(Test-Path $scriptPath)) { throw \"Missing script: $scriptPath\" }",
+            "& $scriptPath -TopRanges " + topRanges + " -CountryCodes " + countriesArg
+          ].join('; ');
+
+          writeStatus(tr("ipLibraryStatusUpdating"));
+          writeOutput(tr("psConsoleRunning"));
+
+          runPowerShell(psCommand).then(function (res) {
+            var stdout = res && res.stdout ? String(res.stdout).trim() : "";
+            var stderr = res && res.stderr ? String(res.stderr).trim() : "";
+            var jsonText = stdout;
+            var jsonStart = stdout.indexOf("[");
+            var jsonEnd = stdout.lastIndexOf("]");
+            if (jsonStart >= 0 && jsonEnd > jsonStart) {
+              jsonText = stdout.slice(jsonStart, jsonEnd + 1);
+            }
+
+            try {
+              var parsed = JSON.parse(jsonText || "[]");
+              var payload = JSON.stringify(parsed);
+              storageSet(CACHE_KEY, payload);
+              var updatedAt = new Date().toISOString();
+              storageSet(CACHE_UPDATED_KEY, updatedAt);
+              setLastUpdate(updatedAt);
+
+              var count = Array.isArray(parsed) ? parsed.length : 0;
+              writeStatus(tr("ipLibraryStatusUpdated") + " " + count + " | " + tr("ipLibraryStatusUpdatedAt") + " " + updatedAt);
+              writeOutput(JSON.stringify(parsed, null, 2));
+              if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("ipLibraryStatusUpdated") + " " + count);
+            } catch (_) {
+              var merged = [stdout, stderr].filter(Boolean).join("\n\n");
+              writeStatus(tr("ipLibraryStatusUpdateFailed"));
+              writeOutput(merged || tr("ipLibraryStatusUpdateFailed"));
+            }
+          }).catch(function (err) {
+            writeStatus(tr("ipLibraryStatusUpdateFailed"));
+            writeOutput((err && err.message) ? err.message : tr("ipLibraryStatusUpdateFailed"));
+          });
+        });
+      });
+
+      if (!outputEl || outputEl.textContent.trim()) return;
+      loadCached();
     }
 
     function wireImportToolButtons() {

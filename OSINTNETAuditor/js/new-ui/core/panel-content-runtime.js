@@ -189,6 +189,30 @@
       ].join("");
     }
 
+    function renderIpLibraryTool() {
+      return [
+        "<div class=\"v1-import-manager\">",
+        "<div class=\"v1-import-manager-head\">",
+        "<h4 style=\"margin:0 0 4px;\">" + escapeHtml(tr("ipLibraryTitle")) + "</h4>",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("ipLibraryNote")) + "</div>",
+        "</div>",
+        "<div class=\"v1-import-manager-grid\">",
+        "<label for=\"v1IpLibraryCountryCodes\">" + escapeHtml(tr("ipLibraryCountriesLabel")) + "</label>",
+        "<input id=\"v1IpLibraryCountryCodes\" type=\"text\" autocomplete=\"off\" placeholder=\"pl,cn,ru,us,de\" />",
+        "<label for=\"v1IpLibraryTopRanges\">" + escapeHtml(tr("ipLibraryTopRangesLabel")) + "</label>",
+        "<input id=\"v1IpLibraryTopRanges\" type=\"number\" min=\"10\" max=\"500\" step=\"10\" value=\"120\" />",
+        "</div>",
+        "<div class=\"v1-import-manager-actions\">",
+        "<button type=\"button\" data-iplib-action=\"update\">" + escapeHtml(tr("ipLibraryUpdateBtn")) + "</button>",
+        "<button type=\"button\" data-iplib-action=\"load\">" + escapeHtml(tr("ipLibraryLoadBtn")) + "</button>",
+        "</div>",
+        "<div class=\"v1-import-manager-note\"><strong>" + escapeHtml(tr("ipLibraryLastUpdateLabel")) + "</strong> <span id=\"v1IpLibraryLastUpdate\">-</span></div>",
+        "<div id=\"v1IpLibraryStatus\" class=\"v1-import-manager-note\"></div>",
+        "<pre id=\"v1IpLibraryOutput\" class=\"v1-import-output\"></pre>",
+        "</div>"
+      ].join("");
+    }
+
     function renderResultsIp() {
       var rows = [
         {
@@ -260,6 +284,7 @@
       license: renderLicenseTool,
       "import-tool": renderImportTool,
       "language-manager": renderLanguageManagerTool,
+      "ip-library": renderIpLibraryTool,
       "results-ip": renderResultsIp,
     };
 
