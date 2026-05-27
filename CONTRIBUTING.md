@@ -39,11 +39,18 @@ Minimalny podzial odpowiedzialnosci:
 - extension-manager-runtime.js - obsluga panelu rozszerzen i jezykow.
 - scanner-sidebar-runtime.js - obsluga sidebaru skanera (wykrywanie IP, historia zakresow, extractor).
 - powershell-console-runtime.js - obsluga zintegrowanej konsoli PowerShell.
-- runtimes/status-log-runtime.js - centralny log statusow (zakladka Logs).
+- runtimes/status-log-runtime.js - centralny log statusow (dolna zakladka Console / pane info).
 - runtimes/layout-runtime.js - resizery i zachowanie paneli (left/right/bottom).
 - runtimes/custom-scrollbar-runtime.js - faux scrollbar i odswiezanie hostow przewijania.
 - runtimes/ip-inputs-runtime.js - segmentowane pola IP oraz synchronizacja hidden inputow zakresu.
 - runtimes/navigation-runtime.js - obsluga aktywnosci sidebar/results, zakladek dolnego panelu i routingu klikniec data-tool.
+
+Skrypty PowerShell (source of truth):
+
+- katalog `scripts/` zawiera skrypty uruchamiane przez runtime/desktop (Tauri `run_powershell`),
+- wykrywanie IP jest rozdzielone na osobne skrypty: `detect-external-ip.ps1`, `detect-local-ip.ps1`, `detect-subnet-cidr.ps1`,
+- aktualizacja biblioteki krajow jest realizowana przez `update-country-ip-library.ps1`,
+- przy zmianie logiki preferuj edycje skryptu w `scripts/` zamiast rozbudowy inline command string w JS.
 
 index.html powinien byc glownie adapterem DOM i eventow.
 
@@ -127,6 +134,14 @@ Zasady:
 - kod jezyka: lowercase (np. `de`, `es`, `pt-br`),
 - nie usuwaj kluczy bazowych - brakujace wpisy fallbackuja do EN,
 - po dodaniu jezyka sprawdz menu, zakladke Logs i panel rozszerzen.
+- po dodaniu jezyka sprawdz menu, dolna zakladke Console (pane info) i panel rozszerzen.
+
+## 5a. Polityka logowania (obowiazkowa)
+
+- Logi programu (statusy, runtime events, wyniki automatycznych akcji PS) kierujemy do dolnego panelu `Console`, pane `info` (`#v1InfoLog`).
+- Zakladka `Terminal` (`pane console`) sluzy glownie do interaktywnej sesji PowerShell.
+- Nie duplikuj nowych strumieni logow w wielu pane; domyslny cel dla logow aplikacyjnych to `info`.
+- Dla eventow unread używaj `newui:console-pane-update` z `detail.pane = "info"` dla logow programu.
 
 ## 6. Scrollbar policy (New UI)
 
