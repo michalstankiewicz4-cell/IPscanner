@@ -18,7 +18,7 @@
       }
 
       const savedActiveTool = storageGet("netrecon_active_tool") || "";
-      const allowedStartupTools = { "scan-runner": true, topology: true, globe: true, "results-ip": true, versions: true, "import-tool": true, "language-manager": true };
+      const allowedStartupTools = { "scan-runner": true, topology: true, globe: true, "ip-library": true, "results-ip": true, versions: true, "import-tool": true, "language-manager": true };
       const initialActiveTool = savedActiveTool && allowedStartupTools[savedActiveTool] ? savedActiveTool : "scan-runner";
 
       const store = core.createStore
@@ -102,6 +102,7 @@
         const activityScannerBtn = document.getElementById("v1ActivityScanner");
         const resultNavIp = document.getElementById("v1ResultNavIp");
         const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
+        const tabTitleIpLibrary = document.getElementById("v1TabTitleIpLibrary");
         const tabTitleImportTool = document.getElementById("v1TabTitleImportTool");
         const tabTitleLanguageManager = document.getElementById("v1TabTitleLanguageManager");
         const tabTitleAbout = document.getElementById("v1TabTitleAbout");
@@ -149,6 +150,7 @@
         }
         if (resultNavIp) resultNavIp.textContent = "🖥 " + tr("resultsIp");
         if (tabResultsIp) tabResultsIp.textContent = tr("tabResultsIp");
+        if (tabTitleIpLibrary) tabTitleIpLibrary.textContent = tr("ipLibraryTabTitle");
         if (tabTitleImportTool) tabTitleImportTool.textContent = tr("importToolTitle");
         if (tabTitleLanguageManager) tabTitleLanguageManager.textContent = tr("langManagerTitle");
         if (tabTitleAbout) tabTitleAbout.textContent = tr("tabAboutTitle");
@@ -215,7 +217,7 @@
         "close-session": "Close session (mock)",
         "import-another-session": "Import another session data (mock)",
         exit: "Exit (mock)",
-        countries: "Country IP Library (mock)",
+        countries: "Country IP Library",
         presets: "Port Presets (mock)",
         defaults: "Default Scan Values (mock)",
         language: "Language manager",

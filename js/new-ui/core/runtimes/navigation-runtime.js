@@ -41,13 +41,13 @@
     }
 
     function appendPsConsole(line) {
-      var out = document.getElementById("v1PsOutput");
+      var out = document.getElementById("v1InfoLog");
       if (!out) return;
       out.textContent += String(line || "") + "\n";
       out.scrollTop = out.scrollHeight;
       document.dispatchEvent(new CustomEvent("newui:console-pane-update", {
         detail: {
-          pane: "console",
+          pane: "info",
           source: "scanner-sidebar",
           text: String(line || ""),
         },
