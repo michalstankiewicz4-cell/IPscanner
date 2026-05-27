@@ -241,7 +241,7 @@
 
 .v1-faux-scrollbar {
   position: fixed;
-  width: 10px;
+  width: var(--v1-faux-scrollbar-size);
   background: #1e1e1e;
   z-index: 20;
   pointer-events: auto;
@@ -249,7 +249,7 @@
 
 .v1-faux-scrollbar-h {
   position: fixed;
-  height: 10px;
+  height: var(--v1-faux-scrollbar-size);
   background: #1e1e1e;
   z-index: 20;
   pointer-events: auto;
@@ -268,7 +268,12 @@
 .v1-faux-scrollbar-thumb-h {
   right: auto;
   top: 0;
-  height: 10px;
+  height: var(--v1-faux-scrollbar-size);
+}
+
+.v1-scroll-safe-inline-end {
+  padding-inline-end: var(--v1-scroll-safe-gutter);
+  box-sizing: border-box;
 }
 
 .v1-faux-scrollbar-thumb:hover,
