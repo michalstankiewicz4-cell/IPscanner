@@ -233,7 +233,7 @@
       popout.className = "v1-tab-popout";
       popout.setAttribute("data-tab-popout", "true");
       popout.setAttribute("role", "button");
-      popout.setAttribute("aria-label", "Open tab in floating window");
+      popout.setAttribute("aria-label", tr("detachedUndockTitle"));
       popout.setAttribute("tabindex", "-1");
       popout.textContent = "↗";
 
@@ -323,7 +323,7 @@
         var isDetached = !!tool && !!getDetachedCard(tool);
         popout.classList.toggle("is-detached", isDetached);
         popout.textContent = isDetached ? "↙" : "↗";
-        var label = isDetached ? "Dock tab back" : "Open tab in floating window";
+        var label = isDetached ? tr("detachedDockTitle") : tr("detachedUndockTitle");
         popout.setAttribute("title", label);
         popout.setAttribute("aria-label", label);
       });
@@ -466,7 +466,7 @@
       }).filter(function (entry) { return !!entry.card; });
 
       if (!cards.length) {
-        if (setStatusLine) setStatusLine(tr("toolRoute") + ": no detached windows to arrange");
+        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tr("detachedNoWindowsToArrange"));
         return;
       }
 
@@ -530,7 +530,7 @@
       });
 
       if (setStatusLine) {
-        setStatusLine(tr("toolRoute") + ": auto-arranged " + cards.length + " windows");
+        setStatusLine(tr("toolRoute") + ": " + tr("detachedAutoArrangedPrefix") + " " + cards.length + " " + tr("detachedWindowsLabel"));
       }
     }
 
@@ -634,24 +634,24 @@
       swapBtn.className = "v1-detached-tool-swap";
       swapBtn.type = "button";
       swapBtn.textContent = "⇄";
-      swapBtn.setAttribute("title", "Swap content with another window");
-      swapBtn.setAttribute("aria-label", "Swap content with another window");
+      swapBtn.setAttribute("title", tr("detachedSwapTitle"));
+      swapBtn.setAttribute("aria-label", tr("detachedSwapTitle"));
       header.appendChild(swapBtn);
 
       var dockBtn = document.createElement("button");
       dockBtn.className = "v1-detached-tool-dock";
       dockBtn.type = "button";
       dockBtn.textContent = "↙";
-      dockBtn.setAttribute("title", "Dock tab back");
-      dockBtn.setAttribute("aria-label", "Dock tab back");
+      dockBtn.setAttribute("title", tr("detachedDockTitle"));
+      dockBtn.setAttribute("aria-label", tr("detachedDockTitle"));
       header.appendChild(dockBtn);
 
       var closeBtn = document.createElement("button");
       closeBtn.className = "v1-detached-tool-close";
       closeBtn.type = "button";
       closeBtn.textContent = "×";
-      closeBtn.setAttribute("title", "Close tab");
-      closeBtn.setAttribute("aria-label", "Close tab");
+      closeBtn.setAttribute("title", tr("tabCloseAria"));
+      closeBtn.setAttribute("aria-label", tr("tabCloseAria"));
       header.appendChild(closeBtn);
 
       var body = document.createElement("div");
@@ -759,7 +759,7 @@
           updateEmptyState();
           updateTabPopoutUi();
         }
-        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + currentTool + " docked");
+        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + currentTool + " " + tr("detachedDocked"));
       });
 
       closeBtn.addEventListener("click", function (event) {
@@ -768,7 +768,7 @@
         if (event.stopImmediatePropagation) event.stopImmediatePropagation();
         var currentTool = card.getAttribute("data-detached-tool");
         closeToolTab(currentTool);
-        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + currentTool + " closed");
+        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + currentTool + " " + tr("detachedClosed"));
       });
 
       swapBtn.addEventListener("click", function (event) {
@@ -886,6 +886,10 @@
           el.setAttribute("title", tr("tabPrefix") + ": " + txt);
         }
       });
+
+      document.querySelectorAll("[data-tab-close]").forEach(function (el) {
+        el.setAttribute("aria-label", tr("tabCloseAria"));
+      });
     }
 
     function updateEmptyState() {
@@ -926,7 +930,7 @@
             writeDetachedAutoArrangeEnabled(autoArrangeOnUndockEnabled);
             if (setStatusLine) {
               setStatusLine(
-                tr("toolRoute") + ": auto arrange on undock " + (autoArrangeOnUndockEnabled ? "enabled" : "disabled")
+                tr("toolRoute") + ": " + tr("autoArrangeOnUndockPrefix") + " " + (autoArrangeOnUndockEnabled ? tr("stateEnabled") : tr("stateDisabled"))
               );
             }
           });
@@ -941,21 +945,6 @@
           event.stopPropagation();
           if (event.stopImmediatePropagation) event.stopImmediatePropagation();
           autoArrangeDetachedCards();
-        });
-      }
-
-      if (document.body && document.body.dataset.v1AutoArrangeToggleBound !== "1") {
-        document.body.dataset.v1AutoArrangeToggleBound = "1";
-        document.addEventListener("change", function (event) {
-          var target = event.target;
-          if (!target || target.id !== "v1AutoArrangeToggle") return;
-          autoArrangeOnUndockEnabled = !!target.checked;
-          writeDetachedAutoArrangeEnabled(autoArrangeOnUndockEnabled);
-          if (setStatusLine) {
-            setStatusLine(
-              tr("toolRoute") + ": auto arrange on undock " + (autoArrangeOnUndockEnabled ? "enabled" : "disabled")
-            );
-          }
         });
       }
 
@@ -1010,7 +999,7 @@
             updateEmptyState();
             updateTabPopoutUi();
           }
-          if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool + " docked");
+          if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool + " " + tr("detachedDocked"));
           return;
         }
 
@@ -1034,7 +1023,7 @@
           updateEmptyState();
           updateTabPopoutUi();
         }
-        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool + " undocked");
+        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool + " " + tr("detachedUndocked"));
       });
 
       document.addEventListener("contextmenu", function (event) {
@@ -1060,7 +1049,7 @@
           saveDetachedLayout(tool, readCardLayoutFromDom(detachedCard));
         }
 
-        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool + " floating layout reset");
+        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool + " " + tr("detachedLayoutReset"));
       });
 
       updateEmptyState();
@@ -1109,8 +1098,8 @@
         if (v1MainCard) {
           v1MainCard.classList.remove("is-versions-view");
         }
-        if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": brak aktywnej zakładki");
-        if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": brak aktywnej zakładki";
+        if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + tr("noActiveTab"));
+        if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + tr("noActiveTab");
         if (typeof onAfterRender === "function") onAfterRender(activeTool);
         return;
       }

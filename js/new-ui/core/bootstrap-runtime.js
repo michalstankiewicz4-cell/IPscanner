@@ -103,6 +103,8 @@
         const assistantMenuLabel = document.querySelector('[data-menu-action="assistant"] span:first-child');
         const aboutMenuLabel = document.querySelector('[data-menu-action="about"] span:first-child');
         const licenseMenuLabel = document.querySelector('[data-menu-action="license"] span:first-child');
+        const autoArrangeToggle = document.getElementById("v1AutoArrangeToggle");
+        const autoArrangeToggleWrap = autoArrangeToggle ? autoArrangeToggle.closest(".v1-menubar-toggle") : null;
         const clippyClose = document.getElementById("v1ClippyClose");
 
         if (fileTrigger) fileTrigger.textContent = tr("menuFile");
@@ -153,6 +155,14 @@
         if (aboutMenuLabel) aboutMenuLabel.textContent = tr("helpAboutTitle");
         if (licenseMenuLabel) licenseMenuLabel.textContent = tr("helpLicenseTitle");
         if (assistantMenuLabel) assistantMenuLabel.textContent = "📎 " + tr("assistant");
+        if (autoArrangeToggleWrap) {
+          autoArrangeToggleWrap.setAttribute("title", tr("autoArrangeOnUndockTitle"));
+          autoArrangeToggleWrap.setAttribute("aria-label", tr("autoArrangeOnUndockTitle"));
+        }
+        if (autoArrangeToggle) {
+          autoArrangeToggle.setAttribute("title", tr("autoArrangeOnUndockTitle"));
+          autoArrangeToggle.setAttribute("aria-label", tr("autoArrangeOnUndockTitle"));
+        }
         if (clippyClose) clippyClose.setAttribute("aria-label", tr("clippyCloseAria"));
         if (scannerSidebarRuntime && scannerSidebarRuntime.applyStaticTranslations) {
           scannerSidebarRuntime.applyStaticTranslations();
@@ -313,7 +323,7 @@
             close.className = "v1-tab-close";
             close.setAttribute("data-tab-close", "true");
             close.setAttribute("role", "button");
-            close.setAttribute("aria-label", "Close tab");
+            close.setAttribute("aria-label", tr("tabCloseAria"));
             close.setAttribute("tabindex", "-1");
             close.textContent = "×";
 
