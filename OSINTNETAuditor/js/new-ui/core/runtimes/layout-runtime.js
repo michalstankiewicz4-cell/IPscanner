@@ -25,15 +25,110 @@
           || null;
       }
 
+      function getCurrentTauriWindow() {
+        var getter = (window.__TAURI__ && window.__TAURI__.window && window.__TAURI__.window.getCurrentWindow)
+          || (window.__TAURI__ && window.__TAURI__.webviewWindow && window.__TAURI__.webviewWindow.getCurrentWindow)
+          || null;
+        if (!getter) return null;
+        try {
+          return getter();
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function getTauriDpi() {
+        return (window.__TAURI__ && window.__TAURI__.dpi) ? window.__TAURI__.dpi : null;
+      }
+
       if (menubar) {
         menubar.addEventListener("pointerdown", function (event) {
           if (event.button !== 0) return;
-          if (event.target.closest(".v1-window-btn, .v1-menu-trigger, .v1-menu-dd-item, .v1-menu-group")) return;
+          var target = event.target;
+          if (!target || typeof target.closest !== "function") return;
+          if (target.closest("button, input, label, a, select, textarea, .v1-window-btn, .v1-menu-trigger, .v1-menu-dd-item, .v1-menu-group, .v1-menubar-action, .v1-menubar-toggle")) return;
           var invoke = getTauriInvoke();
           if (!invoke) return;
           invoke("window_start_dragging").catch(function () {});
         });
       }
+
+      var edgeSize = 6;
+
+      function getResizeDirection(event) {
+        var x = event.clientX;
+        var y = event.clientY;
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+
+        var atLeft = x <= edgeSize;
+        var atRight = x >= w - edgeSize;
+        var atTop = y <= edgeSize;
+        var atBottom = y >= h - edgeSize;
+
+        if (atTop && atLeft) return "northwest";
+        if (atTop && atRight) return "northeast";
+        if (atBottom && atLeft) return "southwest";
+        if (atBottom && atRight) return "southeast";
+        if (atTop) return "north";
+        if (atBottom) return "south";
+        if (atLeft) return "west";
+        if (atRight) return "east";
+        return "";
+      }
+
+      function cursorForDirection(direction) {
+        if (direction === "north" || direction === "south") return "ns-resize";
+        if (direction === "east" || direction === "west") return "ew-resize";
+        if (direction === "northeast" || direction === "southwest") return "nesw-resize";
+        if (direction === "northwest" || direction === "southeast") return "nwse-resize";
+        return "";
+      }
+
+      var winResize = null;
+      var MIN_WINDOW_WIDTH = 760;
+      var MIN_WINDOW_HEIGHT = 520;
+
+      window.addEventListener("pointermove", function (event) {
+        if (drag || winResize) return;
+        var invoke = getTauriInvoke();
+        if (!invoke) {
+          document.documentElement.style.cursor = "";
+          return;
+        }
+        var direction = getResizeDirection(event);
+        document.documentElement.style.cursor = cursorForDirection(direction);
+      });
+
+      window.addEventListener("pointerleave", function () {
+        if (drag || winResize) return;
+        document.documentElement.style.cursor = "";
+      });
+
+      window.addEventListener("pointerdown", function (event) {
+        if (event.button !== 0) return;
+        var tWin = getCurrentTauriWindow();
+        var dpi = getTauriDpi();
+        if (!tWin || !dpi || typeof dpi.LogicalSize !== "function" || typeof dpi.LogicalPosition !== "function") return;
+        var direction = getResizeDirection(event);
+        if (!direction) return;
+        event.preventDefault();
+        event.stopPropagation();
+        winResize = {
+          pointerId: event.pointerId,
+          direction: direction,
+          startScreenX: event.screenX,
+          startScreenY: event.screenY,
+          startLeft: window.screenX,
+          startTop: window.screenY,
+          startWidth: window.innerWidth,
+          startHeight: window.innerHeight,
+          win: tWin,
+          dpi: dpi,
+        };
+        document.body.style.userSelect = "none";
+        document.documentElement.style.cursor = cursorForDirection(direction);
+      }, true);
 
       var size = {
         left: 320,
@@ -118,9 +213,44 @@
         }
 
         document.body.style.userSelect = "";
+        document.documentElement.style.cursor = "";
       }
 
       window.addEventListener("pointermove", function (event) {
+        if (winResize) {
+          if (event.pointerId !== winResize.pointerId) return;
+
+          var dx = event.screenX - winResize.startScreenX;
+          var dy = event.screenY - winResize.startScreenY;
+          var dir = winResize.direction;
+
+          var nextLeft = winResize.startLeft;
+          var nextTop = winResize.startTop;
+          var nextWidth = winResize.startWidth;
+          var nextHeight = winResize.startHeight;
+
+          if (dir.indexOf("east") !== -1) {
+            nextWidth = Math.max(MIN_WINDOW_WIDTH, winResize.startWidth + dx);
+          }
+          if (dir.indexOf("west") !== -1) {
+            nextWidth = Math.max(MIN_WINDOW_WIDTH, winResize.startWidth - dx);
+            nextLeft = winResize.startLeft + (winResize.startWidth - nextWidth);
+          }
+          if (dir.indexOf("south") !== -1) {
+            nextHeight = Math.max(MIN_WINDOW_HEIGHT, winResize.startHeight + dy);
+          }
+          if (dir.indexOf("north") !== -1) {
+            nextHeight = Math.max(MIN_WINDOW_HEIGHT, winResize.startHeight - dy);
+            nextTop = winResize.startTop + (winResize.startHeight - nextHeight);
+          }
+
+          winResize.win.setSize(new winResize.dpi.LogicalSize(Math.round(nextWidth), Math.round(nextHeight))).catch(function () {});
+          if (nextLeft !== winResize.startLeft || nextTop !== winResize.startTop) {
+            winResize.win.setPosition(new winResize.dpi.LogicalPosition(Math.round(nextLeft), Math.round(nextTop))).catch(function () {});
+          }
+          return;
+        }
+
         if (!drag) return;
 
         if ((drag.type === "left" && panelState.leftCollapsed) || (drag.type === "right" && panelState.rightCollapsed) || (drag.type === "console" && panelState.bottomCollapsed)) {
@@ -146,6 +276,22 @@
 
       window.addEventListener("pointerup", stopDrag);
       window.addEventListener("pointercancel", stopDrag);
+
+      window.addEventListener("pointerup", function (event) {
+        if (!winResize) return;
+        if (event.pointerId !== winResize.pointerId) return;
+        winResize = null;
+        document.body.style.userSelect = "";
+        document.documentElement.style.cursor = "";
+      });
+
+      window.addEventListener("pointercancel", function (event) {
+        if (!winResize) return;
+        if (event.pointerId !== winResize.pointerId) return;
+        winResize = null;
+        document.body.style.userSelect = "";
+        document.documentElement.style.cursor = "";
+      });
 
       leftHandle.addEventListener("pointerdown", function (event) { startDrag("left", event); });
       rightHandle.addEventListener("pointerdown", function (event) { startDrag("right", event); });

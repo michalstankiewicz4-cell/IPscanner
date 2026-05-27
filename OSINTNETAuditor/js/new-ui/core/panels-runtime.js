@@ -919,6 +919,29 @@
       var autoArrangeToggle = document.getElementById("v1AutoArrangeToggle");
       if (autoArrangeToggle) {
         autoArrangeToggle.checked = !!autoArrangeOnUndockEnabled;
+        if (autoArrangeToggle.dataset.v1Bound !== "1") {
+          autoArrangeToggle.dataset.v1Bound = "1";
+          autoArrangeToggle.addEventListener("change", function () {
+            autoArrangeOnUndockEnabled = !!autoArrangeToggle.checked;
+            writeDetachedAutoArrangeEnabled(autoArrangeOnUndockEnabled);
+            if (setStatusLine) {
+              setStatusLine(
+                tr("toolRoute") + ": auto arrange on undock " + (autoArrangeOnUndockEnabled ? "enabled" : "disabled")
+              );
+            }
+          });
+        }
+      }
+
+      var autoArrangeButton = document.querySelector('[data-menu-action="auto-arrange-windows"]');
+      if (autoArrangeButton && autoArrangeButton.dataset.v1Bound !== "1") {
+        autoArrangeButton.dataset.v1Bound = "1";
+        autoArrangeButton.addEventListener("click", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+          autoArrangeDetachedCards();
+        });
       }
 
       if (document.body && document.body.dataset.v1AutoArrangeToggleBound !== "1") {
@@ -952,16 +975,10 @@
       });
 
       document.addEventListener("click", function (event) {
-        var autoArrangeTrigger = event.target.closest('[data-menu-action="auto-arrange-windows"]');
-        if (autoArrangeTrigger) {
-          event.preventDefault();
-          event.stopPropagation();
-          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
-          autoArrangeDetachedCards();
-          return;
-        }
+        var target = event.target;
+        if (!target || typeof target.closest !== "function") return;
 
-        var close = event.target.closest("[data-tab-close]");
+        var close = target.closest("[data-tab-close]");
         if (close) {
           event.preventDefault();
           event.stopPropagation();
@@ -970,7 +987,7 @@
           return;
         }
 
-        var popout = event.target.closest("[data-tab-popout]");
+        var popout = target.closest("[data-tab-popout]");
         if (!popout) return;
 
         event.preventDefault();
@@ -1021,7 +1038,10 @@
       });
 
       document.addEventListener("contextmenu", function (event) {
-        var popout = event.target.closest("[data-tab-popout]");
+        var target = event.target;
+        if (!target || typeof target.closest !== "function") return;
+
+        var popout = target.closest("[data-tab-popout]");
         if (!popout) return;
 
         event.preventDefault();
