@@ -25,6 +25,15 @@
       return invoke("run_powershell", { command: command });
     }
 
+    function scriptInvokeCommand(scriptRelativePath) {
+      return [
+        "$ErrorActionPreference='Stop'",
+        "$scriptPath = Join-Path (Get-Location) '" + String(scriptRelativePath || "") + "'",
+        "if (!(Test-Path $scriptPath)) { throw \"Missing script: $scriptPath\" }",
+        "& $scriptPath"
+      ].join("; ");
+    }
+
     function firstIpv4(text) {
       var match = String(text || "").match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
       return match ? match[0] : "";
@@ -104,7 +113,7 @@
             extEl.textContent = "...";
             if (extBtn) extBtn.hidden = true;
 
-            var psCmd = "(Invoke-RestMethod -UseBasicParsing 'https://api.ipify.org').ToString()";
+            var psCmd = scriptInvokeCommand("scripts\\detect-external-ip.ps1");
             var invoke = getInvoke();
 
             if (!invoke) {
@@ -156,7 +165,7 @@
             localEl.textContent = "...";
             if (localBtn) localBtn.hidden = true;
 
-            var psLocalCmd = "$ip=(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -notmatch '^(127\\.|169\\.254\\.)' -and $_.InterfaceAlias -notmatch 'Loopback' } | Select-Object -First 1 -ExpandProperty IPAddress); if(-not $ip){$ip=(ipconfig | Select-String 'IPv4 Address|Adres IPv4' | ForEach-Object { $_.ToString().Split(':')[-1].Trim() } | Where-Object {$_ -and $_ -notmatch '^(127\\.|169\\.254\\.)'} | Select-Object -First 1)}; $ip";
+            var psLocalCmd = scriptInvokeCommand("scripts\\detect-local-ip.ps1");
             var invoke = getInvoke();
 
             if (!invoke) {
@@ -208,7 +217,7 @@
             subEl.textContent = "...";
             if (subBtn) subBtn.hidden = true;
 
-            var psSubnetCmd = "$e=(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -notmatch '^(127\\.|169\\.254\\.)' -and $_.InterfaceAlias -notmatch 'Loopback' } | Select-Object -First 1); if($e){$oct=$e.IPAddress.Split('.'); \"$($oct[0]).$($oct[1]).$($oct[2]).0/$($e.PrefixLength)\"}";
+            var psSubnetCmd = scriptInvokeCommand("scripts\\detect-subnet-cidr.ps1");
             var invoke = getInvoke();
 
             if (!invoke) {
