@@ -159,6 +159,7 @@ Plan rozwoju instalatora (roadmapa):
 - Tworz male, tematyczne PR-y.
 - W opisie PR podaj: zakres, ryzyko regresji, test manualny.
 - Jesli zmieniasz UI, zalacz kroki reprodukcji i oczekiwany efekt.
+- Dla zmian UI uruchom i odnotuj wynik smoke-matrycy z sekcji 13.
 
 ## 9. Czego nie robimy w PR do new UI
 
@@ -173,4 +174,99 @@ Plan rozwoju instalatora (roadmapa):
 - Nowe kontrolki menubara nie sa blokowane przez logike drag okna.
 - Zmiany root -> app sa zsynchronizowane przez npm run prepare:app.
 - Build testowy --no-bundle przechodzi i generuje exe.
+
+## 11. Naming conventions (obowiazkowe)
+
+Cel: jednolite nazwy i szybsze code review.
+
+- Pliki JS runtime: kebab-case + sufiks `-runtime.js` (np. `menu-runtime.js`, `layout-runtime.js`).
+- Pliki core (nie-runtime): kebab-case bez sufiksu runtime (np. `ui-definitions.js`, `tool-catalog.js`).
+- Foldery: lowercase + kebab-case (np. `new-ui`, `core`, `runtimes`, `utils`).
+- Funkcje i metody JS: camelCase (np. `openExternalUrl`, `initMenuActions`).
+- Zmienne JS: camelCase.
+- Stale JS: UPPER_SNAKE_CASE (np. `DETACHED_LAYOUTS_KEY`, `LANG_KEY`).
+- Klucze i18n: lowerCamelCase dla ogolnych kluczy (np. `menuFile`) oraz `toolText_<tool_id_z_podkresleniami>` dla opisow narzedzi.
+- Atrybuty `data-*` w HTML: kebab-case (np. `data-menu-action`, `data-panel-toggle`).
+- ID w HTML: prefiks funkcjonalny i spojnosc nazewnicza, preferowany styl istniejacy w projekcie (`v1...`).
+- Nazwy komend Tauri (invoke): snake_case po stronie Rust/command (np. `window_toggle_fullscreen`) i nie tlumaczymy ich na wiele aliasow w JS.
+
+Zasada zgodnosci wstecznej:
+
+- Przy zmianie nazwy publicznej (klucz i18n, localStorage key, data attribute, action id) zapewnij migracje lub fallback.
+
+## 12. System podzialu projektu na pliki
+
+Repo ma formalny podzial warstw. Trzymaj sie go w kazdym PR.
+
+Warstwa zrodlowa (source of truth):
+
+- `index.html`, `css/`, `js/` sa jedynym miejscem recznych zmian frontendu.
+
+Warstwa mirror/build:
+
+- `app/` to mirror generowany przez `npm run prepare:app`.
+- Nie edytujemy `app/` recznie, chyba ze awaryjna diagnostyka lokalna (bez commitowania takich zmian).
+
+Podzial odpowiedzialnosci New UI:
+
+- `js/new-ui/core/` - moduly bazowe i orkiestracja.
+- `js/new-ui/core/runtimes/` - runtime UI (layout, nawigacja, logi, scroll, itp.).
+- `js/new-ui/core/utils/` - pomocnicze utility bez logiki widokowej.
+- `js/new-ui/core/platform-runtime.js` - adapter platformy (desktop/web), punkt centralny dla invoke/window/storage/openExternalUrl.
+
+Reguly dodawania nowego kodu:
+
+- Nie dokladaj nowej logiki biznesowej bezposrednio do `index.html` poza bootstrap/adaptor.
+- Nie duplikuj tej samej logiki w wielu runtime; wyciagaj do `core/` lub `utils/`.
+- Integracje desktop/web prowadzone przez adapter platformy, nie przez bezposrednie `window.__TAURI__` w wielu plikach.
+- Kazda nowa funkcjonalnosc powinna wskazac docelowy modul (gdzie zyje logika) i punkt wejscia (kto ja wywoluje).
+
+## 13. Smoke test matrix (standard)
+
+Minimalny standard testu manualnego po zmianach UI/runtime:
+
+1. HTML normal
+- Tryb: bez flag parity.
+- Oczekiwane:
+  - aplikacja startuje bez bledow,
+  - menu i przelaczanie kart dziala,
+  - linki zewnetrzne otwieraja sie poprawnie,
+  - resize paneli (left/right/bottom) dziala.
+
+2. HTML parity
+- Tryb: `?nr_parity=1` lub `localStorage.setItem("netrecon_desktop_parity", "1")`.
+- Oczekiwane:
+  - status zawiera "Desktop parity mode enabled",
+  - fallback web dziala bez invoke Tauri,
+  - akcje desktop-only nie wywalaja UI.
+
+3. EXE no-bundle
+- Tryb: `npm run prepare:app && npx tauri build --no-bundle`.
+- Oczekiwane:
+  - aplikacja uruchamia sie z `src-tauri/target/release/ipscanner.exe`,
+  - menu dziala,
+  - akcje okna (min/max/fullscreen/close) dzialaja,
+  - funkcje krytyczne zmieniane w PR przechodza bez regresji.
+
+Raportowanie w PR:
+
+- Dodaj krotka sekcje `Smoke matrix` z wynikiem: `HTML normal: PASS/FAIL`, `HTML parity: PASS/FAIL`, `EXE no-bundle: PASS/FAIL`.
+
+## 14. Status migracji platformy (maj 2026)
+
+Stan bazowy po migracji:
+
+- Integracje desktop/web w `js/new-ui/core/**` sa scentralizowane przez `js/new-ui/core/platform-runtime.js`.
+- Bezposrednie odwolania `window.__TAURI__` i `window.__TAURI_INTERNALS__` sa dozwolone tylko w adapterze platformy.
+- Runtime modules korzystaja z adaptera (`platform.getInvoke`, `platform.invoke`, `platform.windowAction`, `platform.storage`).
+
+Zasada utrzymaniowa:
+
+- Kazdy nowy kod, ktory potrzebuje funkcji desktop, musi przechodzic przez adapter platformy.
+- PR, ktory dodaje bezposrednie odwolanie do API Tauri poza adapterem, traktujemy jako regresje architektury.
+
+Dokumentacja robocza:
+
+- Tymczasowy plik `contextmigration.md` zostal wycofany po domknieciu migracji.
+- Jedynym zrodlem zasad i workflow pozostaje ten plik CONTRIBUTING.
 

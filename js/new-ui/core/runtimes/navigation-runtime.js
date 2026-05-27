@@ -5,13 +5,25 @@
     var setStatusLine = deps.setStatusLine;
     var runMenuAction = deps.runMenuAction;
     var getScannerSidebarRuntime = deps.getScannerSidebarRuntime;
+    var platform = deps.platform || ((window.NetReconNewUICore && window.NetReconNewUICore.platform) || {});
 
     var sidebarView = "scanner";
-    var invoke =
-      (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
-      || (window.__TAURI__ && window.__TAURI__.invoke)
-      || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
-      || null;
+
+    function getInvoke() {
+      if (platform && typeof platform.getInvoke === "function") {
+        return platform.getInvoke();
+      }
+      return null;
+    }
+
+    function runPowerShell(command) {
+      if (platform && typeof platform.invoke === "function") {
+        return platform.invoke("run_powershell", { command: command });
+      }
+      var invoke = getInvoke();
+      if (!invoke) return Promise.reject(new Error("tauri invoke unavailable"));
+      return invoke("run_powershell", { command: command });
+    }
 
     function firstIpv4(text) {
       var match = String(text || "").match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
@@ -93,6 +105,7 @@
             if (extBtn) extBtn.hidden = true;
 
             var psCmd = "(Invoke-RestMethod -UseBasicParsing 'https://api.ipify.org').ToString()";
+            var invoke = getInvoke();
 
             if (!invoke) {
               extEl.textContent = tr("statusDesktopOnlyShort");
@@ -103,7 +116,7 @@
             }
 
             appendPsConsole("[" + nowStamp() + "] PS> " + psCmd);
-            invoke("run_powershell", { command: psCmd }).then(function (res) {
+            runPowerShell(psCmd).then(function (res) {
               var stdout = (res && res.stdout) ? String(res.stdout).trim() : "";
               var stderr = (res && res.stderr) ? String(res.stderr).trim() : "";
               var exitCode = (res && typeof res.exit_code === "number") ? res.exit_code : -1;
@@ -144,6 +157,7 @@
             if (localBtn) localBtn.hidden = true;
 
             var psLocalCmd = "$ip=(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -notmatch '^(127\\.|169\\.254\\.)' -and $_.InterfaceAlias -notmatch 'Loopback' } | Select-Object -First 1 -ExpandProperty IPAddress); if(-not $ip){$ip=(ipconfig | Select-String 'IPv4 Address|Adres IPv4' | ForEach-Object { $_.ToString().Split(':')[-1].Trim() } | Where-Object {$_ -and $_ -notmatch '^(127\\.|169\\.254\\.)'} | Select-Object -First 1)}; $ip";
+            var invoke = getInvoke();
 
             if (!invoke) {
               localEl.textContent = tr("statusDesktopOnlyShort");
@@ -154,7 +168,7 @@
             }
 
             appendPsConsole("[" + nowStamp() + "] PS> " + psLocalCmd);
-            invoke("run_powershell", { command: psLocalCmd }).then(function (res) {
+            runPowerShell(psLocalCmd).then(function (res) {
               var stdout = (res && res.stdout) ? String(res.stdout).trim() : "";
               var stderr = (res && res.stderr) ? String(res.stderr).trim() : "";
               var exitCode = (res && typeof res.exit_code === "number") ? res.exit_code : -1;
@@ -195,6 +209,7 @@
             if (subBtn) subBtn.hidden = true;
 
             var psSubnetCmd = "$e=(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -notmatch '^(127\\.|169\\.254\\.)' -and $_.InterfaceAlias -notmatch 'Loopback' } | Select-Object -First 1); if($e){$oct=$e.IPAddress.Split('.'); \"$($oct[0]).$($oct[1]).$($oct[2]).0/$($e.PrefixLength)\"}";
+            var invoke = getInvoke();
 
             if (!invoke) {
               subEl.textContent = tr("statusDesktopOnlyShort");
@@ -205,7 +220,7 @@
             }
 
             appendPsConsole("[" + nowStamp() + "] PS> " + psSubnetCmd);
-            invoke("run_powershell", { command: psSubnetCmd }).then(function (res) {
+            runPowerShell(psSubnetCmd).then(function (res) {
               var stdout = (res && res.stdout) ? String(res.stdout).trim() : "";
               var stderr = (res && res.stderr) ? String(res.stderr).trim() : "";
               var exitCode = (res && typeof res.exit_code === "number") ? res.exit_code : -1;

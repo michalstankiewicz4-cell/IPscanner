@@ -2,6 +2,37 @@
   var LANG_KEY = "netrecon_lang";
   var CUSTOM_DICTS_KEY = "netrecon_custom_i18n";
 
+  function getStorageAdapter() {
+    var core = window.NetReconNewUICore || {};
+    var platform = core.platform || null;
+    return platform && platform.storage ? platform.storage : null;
+  }
+
+  function storageGet(key) {
+    var storage = getStorageAdapter();
+    if (storage && typeof storage.getItem === "function") {
+      return storage.getItem(key);
+    }
+    try {
+      return localStorage.getItem(key);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function storageSet(key, value) {
+    var storage = getStorageAdapter();
+    if (storage && typeof storage.setItem === "function") {
+      return storage.setItem(key, value);
+    }
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   var baseDictionaries = {
     en: {
       menuFile: "File",
@@ -521,14 +552,14 @@
     });
 
     try {
-      localStorage.setItem(CUSTOM_DICTS_KEY, JSON.stringify(custom));
+      storageSet(CUSTOM_DICTS_KEY, JSON.stringify(custom));
     } catch (_) {}
   }
 
   function loadCustomDictionaries() {
     var payload = null;
     try {
-      payload = localStorage.getItem(CUSTOM_DICTS_KEY);
+      payload = storageGet(CUSTOM_DICTS_KEY);
     } catch (_) {
       payload = null;
     }
@@ -553,7 +584,7 @@
   }
 
   function getCurrentLang() {
-    var raw = localStorage.getItem(LANG_KEY) || "en";
+    var raw = storageGet(LANG_KEY) || "en";
     return dictionaries[raw] ? raw : "en";
   }
 
@@ -592,7 +623,7 @@
       var normalized = normalizeLangCode(next);
       if (!normalized || !dictionaries[normalized]) return lang;
       lang = normalized;
-      localStorage.setItem(LANG_KEY, normalized);
+      storageSet(LANG_KEY, normalized);
       document.documentElement.setAttribute("lang", normalized);
       try {
         window.dispatchEvent(new CustomEvent("netrecon:language-changed", { detail: { lang: normalized } }));
