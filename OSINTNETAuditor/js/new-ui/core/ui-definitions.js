@@ -129,6 +129,7 @@
     },
     "auto-arrange-windows": {
       label: "Auto Arrange windows",
+      purposeKey: "tipActionAutoArrange",
       purpose: "Automatyczne rozmieszczenie odpiętych okien.",
       behavior: "auto-arrange-windows",
     },
