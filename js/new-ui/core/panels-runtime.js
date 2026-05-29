@@ -217,18 +217,8 @@
       if (!card) return;
       var body = card.querySelector(".v1-detached-tool-body");
       if (!body) return;
-      if (dragging) {
-        body.style.overflow = "hidden";
-        return;
-      }
+      // Keep scrollbar behavior consistent across detached tools while dragging.
       body.style.overflow = "auto";
-      if (typeof window.requestAnimationFrame === "function") {
-        window.requestAnimationFrame(function () {
-          body.style.overflow = "hidden";
-          body.offsetHeight;
-          body.style.overflow = "auto";
-        });
-      }
     }
 
     function applyCardLayout(card, layout) {
