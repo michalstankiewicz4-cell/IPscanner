@@ -534,6 +534,10 @@
   position: relative;
 }
 
+.v1-editor.no-center-tabs {
+  grid-template-rows: minmax(120px, 1fr) 6px 200px;
+}
+
 .v1-editor.console-collapsed {
   grid-template-rows: 38px 1fr 0 34px;
 }
@@ -663,10 +667,10 @@
 
 .v1-content {
   overflow: hidden;
-  padding: 8px 14px 14px;
+  padding: 0 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
   min-width: 0;
   min-height: 0;
   height: 100%;
@@ -678,11 +682,11 @@
   position: absolute;
   left: 14px;
   right: 14px;
-  top: 14px;
-  bottom: 14px;
+  top: 0;
+  bottom: 0;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   pointer-events: none;
   z-index: 0;
 }

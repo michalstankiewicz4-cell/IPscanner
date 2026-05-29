@@ -34,23 +34,15 @@
       try { window.open(safeUrl, "_blank", "noopener"); } catch (_) {}
     }
 
-    function openSidebarToolTab(tool) {
-      if (!tool) return;
-      var wrap = document.querySelector('.v1-sidebar-tool-tab-wrap[data-sidebar-tab="' + tool + '"]');
-      if (!wrap) return;
-      wrap.classList.remove("sidebar-tab-closed");
-      wrap.removeAttribute("hidden");
-
-      document.querySelectorAll(".v1-sidebar-tool-tab-wrap").forEach(function (item) {
-        var itemTool = item.getAttribute("data-sidebar-tab") || "";
-        item.classList.toggle("is-left-active", itemTool === tool);
-      });
-      document.querySelectorAll(".v1-sidebar-tool-tab").forEach(function (btn) {
-        var btnTool = btn.getAttribute("data-tool") || "";
-        var isActive = btnTool === tool;
-        btn.classList.toggle("is-left-active", isActive);
-        btn.classList.toggle("active", isActive);
-      });
+    function requestSidebarToolTabOpen(tool, preferredView) {
+      if (!tool) return false;
+      var detail = {
+        tool: tool,
+        activate: true,
+      };
+      if (preferredView) detail.view = preferredView;
+      document.dispatchEvent(new CustomEvent("newui:sidebar-tab-intent-open", { detail: detail }));
+      return true;
     }
 
     function runMenuAction(action) {
@@ -110,10 +102,10 @@
       if (behavior.indexOf("switch-tool:") === 0) {
         var tool = behavior.slice("switch-tool:".length);
         if (tool === "scan-runner" || tool === "ip-library") {
-          openSidebarToolTab(tool);
-        }
-        if (tool === "ip-library" && onSwitchSidebarView) {
-          onSwitchSidebarView("scanner");
+          var handledBySidebarRuntime = requestSidebarToolTabOpen(tool, "scanner");
+          if (!handledBySidebarRuntime && onSwitchSidebarView) {
+            onSwitchSidebarView("scanner");
+          }
         }
         if (tool && onSwitchTool) onSwitchTool(tool);
         if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
