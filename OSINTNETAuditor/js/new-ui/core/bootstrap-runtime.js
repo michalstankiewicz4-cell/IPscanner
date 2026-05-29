@@ -115,6 +115,7 @@
         const ipLibraryLoadBtn = document.getElementById("v1IpLibraryLoadBtn");
         const ipLibraryLastUpdateLabel = document.getElementById("v1IpLibraryLastUpdateLabel");
         const resultNavIp = document.getElementById("v1ResultNavIp");
+        const resultNavIpLibrary = document.getElementById("v1ResultNavIpLibrary");
         const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
         const tabTitleIpLibrary = document.getElementById("v1TabTitleIpLibrary");
         const tabTitleImportTool = document.getElementById("v1TabTitleImportTool");
@@ -191,6 +192,7 @@
           el.setAttribute("title", tr("tabCloseAria"));
         });
         if (resultNavIp) resultNavIp.textContent = "🖥 " + tr("resultsIp");
+        if (resultNavIpLibrary) resultNavIpLibrary.textContent = "🗂 " + tr("ipLibraryTabTitle");
         if (tabResultsIp) tabResultsIp.textContent = tr("tabResultsIp");
         if (tabTitleIpLibrary) tabTitleIpLibrary.textContent = tr("ipLibraryTabTitle");
         if (tabTitleImportTool) tabTitleImportTool.textContent = tr("importToolTitle");
