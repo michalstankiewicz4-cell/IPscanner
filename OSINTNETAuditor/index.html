@@ -47,7 +47,7 @@
       <div class="v1-menu-group" data-menu="tools">
         <button class="v1-menu-trigger">Tools</button>
         <div class="v1-menu-dropdown">
-          <button class="v1-menu-dd-item" data-tool="scan-runner"><span>IP Scanner</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="results-ip"><span>IP Scanner</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-tool="topology"><span>Topology</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-tool="globe"><span>Globe</span><span class="shortcut"></span></button>
         </div>
@@ -91,7 +91,21 @@
       <!-- Left section -->
       <aside class="v1-sidebar">
         <div class="v1-side-head">
-          <span class="v1-head-title" id="v1SidebarTitle">IP Scanner</span>
+          <div class="v1-sidebar-tool-tabs" id="v1SidebarToolTabs">
+            <div class="v1-sidebar-tool-tab-wrap sidebar-tab-closed" data-sidebar-tab="scan-runner" hidden>
+              <button class="v1-sidebar-tool-tab" id="v1SidebarTabScanner" data-tool="scan-runner" type="button">IP Scanner</button>
+              <span class="v1-sidebar-tool-tab-close" data-sidebar-tab-close="true" data-tool="scan-runner" role="button" tabindex="-1" aria-label="Close tab">×</span>
+            </div>
+            <div class="v1-sidebar-tool-tab-wrap sidebar-tab-closed" data-sidebar-tab="ip-library" hidden>
+              <button class="v1-sidebar-tool-tab" id="v1SidebarTabIpLibrary" data-tool="ip-library" type="button">IP Library</button>
+              <span class="v1-sidebar-tool-tab-close" data-sidebar-tab-close="true" data-tool="ip-library" role="button" tabindex="-1" aria-label="Close tab">×</span>
+            </div>
+            <div class="v1-sidebar-tool-tab-wrap sidebar-tab-closed" data-sidebar-tab="results-ip" hidden>
+              <button class="v1-sidebar-tool-tab" id="v1SidebarTabResults" data-tool="results-ip" type="button">Results</button>
+              <span class="v1-sidebar-tool-tab-close" data-sidebar-tab-close="true" data-tool="results-ip" role="button" tabindex="-1" aria-label="Close tab">×</span>
+            </div>
+          </div>
+          <span class="v1-head-title" id="v1SidebarTitle" hidden>IP Scanner</span>
           <button class="v1-panel-toggle" data-panel-toggle="left" title="Hide left section" aria-label="Hide left section">◀</button>
         </div>
         <div data-sidebar-view="scanner">

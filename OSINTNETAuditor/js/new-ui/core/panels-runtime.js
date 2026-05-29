@@ -1554,6 +1554,14 @@
 
     function switchTool(tool) {
       ensureAllTabControls();
+      if (tool === "scan-runner" && !document.querySelector('.v1-tab[data-tool="scan-runner"]')) {
+        activeTool = null;
+        if (store && store.setState) store.setState({ activeTool: null });
+        refreshActiveUI();
+        updateEmptyState();
+        updateTabPopoutUi();
+        return;
+      }
       var tab = document.querySelector('.v1-tab[data-tool="' + tool + '"]');
       if (tab && tab.classList.contains("tab-closed")) {
         tab.classList.remove("tab-closed");

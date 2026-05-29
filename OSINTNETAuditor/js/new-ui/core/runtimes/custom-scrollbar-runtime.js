@@ -6,6 +6,7 @@
     var mutationObserver = null;
     var refreshRafId = 0;
     var detachedDragActive = false;
+    var activeDetachedCard = null;
 
     function getScrollbarSizePx() {
       var raw = "";
@@ -208,11 +209,29 @@
       var selfCard = el.closest(".v1-detached-tool-card");
       if (!selfCard) return false;
 
+      // Keep detached scrollbar rails bound to the active floating window only.
+      if (activeDetachedCard && activeDetachedCard !== selfCard) {
+        return true;
+      }
+
       var selfZRaw = window.getComputedStyle(selfCard).zIndex;
       var selfZ = Number(selfZRaw);
       if (!Number.isFinite(selfZ)) selfZ = 0;
 
       var cards = Array.from(document.querySelectorAll(".v1-detached-tool-card"));
+
+      // Hard guard: keep rails on the top-most detached card only.
+      var topZ = cards.reduce(function (max, card) {
+        var style = window.getComputedStyle(card);
+        if (style.display === "none" || style.visibility === "hidden") return max;
+        var z = Number(style.zIndex);
+        if (!Number.isFinite(z)) z = 0;
+        return Math.max(max, z);
+      }, Number.NEGATIVE_INFINITY);
+      if (Number.isFinite(topZ) && selfZ < topZ) {
+        return true;
+      }
+
       return cards.some(function (card) {
         if (card === selfCard) return false;
         var style = window.getComputedStyle(card);
@@ -325,7 +344,9 @@
       document.addEventListener("pointerdown", function (event) {
         if (!event || event.button !== 0) return;
         if (!event.target || !event.target.closest) return;
-        if (event.target.closest(".v1-detached-tool-card")) {
+        var detachedCard = event.target.closest(".v1-detached-tool-card");
+        if (detachedCard) {
+          activeDetachedCard = detachedCard;
           detachedDragActive = true;
           scheduleRefresh();
         }
