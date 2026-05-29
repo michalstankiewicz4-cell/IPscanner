@@ -883,6 +883,14 @@
       });
     }
 
+    var panelRenderersRuntime = null;
+    if (window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes && window.NetReconNewUICore.newUiRuntimes.createPanelRenderersRuntime) {
+      panelRenderersRuntime = window.NetReconNewUICore.newUiRuntimes.createPanelRenderersRuntime({
+        tr: tr,
+        escapeHtml: escapeHtml,
+      });
+    }
+
     var panelInteractionsRuntime = null;
     if (window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes && window.NetReconNewUICore.newUiRuntimes.createPanelInteractionsRuntime) {
       panelInteractionsRuntime = window.NetReconNewUICore.newUiRuntimes.createPanelInteractionsRuntime({
@@ -1304,6 +1312,11 @@
         if (!centerRowsEl) return;
 
         var rows = Array.isArray(data) ? data : [];
+        if (panelRenderersRuntime && typeof panelRenderersRuntime.renderIpLibraryRows === "function") {
+          centerRowsEl.innerHTML = panelRenderersRuntime.renderIpLibraryRows(rows);
+          return;
+        }
+
         if (!rows.length) {
           centerRowsEl.innerHTML = '<tr><td colspan="2" class="v1-iplib-empty">' + escapeHtml(tr("ipLibraryTableEmpty")) + '</td></tr>';
           return;
@@ -1473,6 +1486,11 @@
           function listInstalled() {
             var items = extensionHost && extensionHost.listExtensions ? extensionHost.listExtensions() : [];
             if (!outputEl) return;
+            if (panelRenderersRuntime && typeof panelRenderersRuntime.renderExtensionList === "function") {
+              outputEl.innerHTML = panelRenderersRuntime.renderExtensionList(items);
+              return;
+            }
+
             outputEl.textContent = "";
 
             if (!items.length) {
