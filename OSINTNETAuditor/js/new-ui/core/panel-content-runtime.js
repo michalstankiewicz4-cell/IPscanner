@@ -6,6 +6,12 @@
     var versionsData = Array.isArray(deps.versionsData) ? deps.versionsData : [];
     var i18n = deps.i18n;
     var extensionHost = deps.extensionHost;
+    var core = window.NetReconNewUICore || {};
+    var contentConfig = core.panelContentConfig || {};
+    var versionsConfig = contentConfig.versions || {};
+    var languageManagerConfig = contentConfig.languageManager || {};
+    var importToolConfig = contentConfig.importTool || {};
+    var resultsIpConfig = contentConfig.resultsIp || {};
 
     function renderDefaultTool(tool) {
       var info = infoFor(tool);
@@ -15,7 +21,7 @@
 
     function renderVersionsTool() {
       if (!versionsData.length) {
-        return "<h4>Versions</h4><div>No version entries available.</div>";
+        return "<h4>" + escapeHtml(versionsConfig.emptyTitle || "Versions") + "</h4><div>" + escapeHtml(versionsConfig.emptyText || "No version entries available.") + "</div>";
       }
 
       var chronological = versionsData.slice().reverse();
@@ -40,13 +46,13 @@
         "<div class=\"v1-versions-shell\">",
         "<div class=\"v1-versions-timeline-sticky\">",
         "<div class=\"v1-version-track-wrap\">",
-        "<button type=\"button\" class=\"v1-version-scroll\" data-version-scroll=\"left\" aria-label=\"Scroll versions left\">◀</button>",
-        "<div class=\"v1-version-track\" id=\"v1VersionTrack\" role=\"listbox\" aria-label=\"Published versions timeline\">",
+        "<button type=\"button\" class=\"v1-version-scroll\" data-version-scroll=\"left\" aria-label=\"" + escapeHtml(versionsConfig.scrollLeftAria || "Scroll versions left") + "\">◀</button>",
+        "<div class=\"v1-version-track\" id=\"v1VersionTrack\" role=\"listbox\" aria-label=\"" + escapeHtml(versionsConfig.timelineAria || "Published versions timeline") + "\">",
         "<div class=\"v1-version-track-inner\">",
         pointsHtml,
         "</div>",
         "</div>",
-        "<button type=\"button\" class=\"v1-version-scroll\" data-version-scroll=\"right\" aria-label=\"Scroll versions right\">▶</button>",
+        "<button type=\"button\" class=\"v1-version-scroll\" data-version-scroll=\"right\" aria-label=\"" + escapeHtml(versionsConfig.scrollRightAria || "Scroll versions right") + "\">▶</button>",
         "</div>",
         "<div class=\"v1-version-physics\" id=\"v1VersionPhysics\" style=\"--v1-version-progress: 1;\">",
         "<div class=\"v1-version-orb\" aria-hidden=\"true\"></div>",
@@ -102,10 +108,33 @@
     }
 
     function renderLicenseTool() {
+      var licenseText = contentConfig.licenseText || [
+        "MIT License",
+        "",
+        "Copyright (c) Michal Stankiewicz",
+        "",
+        "Permission is hereby granted, free of charge, to any person obtaining a copy",
+        "of this software and associated documentation files (the \"Software\"), to deal",
+        "in the Software without restriction, including without limitation the rights",
+        "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell",
+        "copies of the Software, and to permit persons to whom the Software is",
+        "furnished to do so, subject to the following conditions:",
+        "",
+        "The above copyright notice and this permission notice shall be included in all",
+        "copies or substantial portions of the Software.",
+        "",
+        "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR",
+        "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,",
+        "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE",
+        "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER",
+        "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,",
+        "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE",
+        "SOFTWARE."
+      ].join("\n");
       return [
         "<div class=\"v1-license\">",
         "<h4>" + escapeHtml(tr("licenseHeading")) + "</h4>",
-        "<pre class=\"v1-license-text\">MIT License\n\nCopyright (c) Michal Stankiewicz\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.</pre>",
+        "<pre class=\"v1-license-text\">" + escapeHtml(licenseText) + "</pre>",
         "</div>"
       ].join("");
     }
@@ -121,7 +150,7 @@
       var langOptions = langList.map(function (code) {
         return "<option value=\"" + escapeHtml(code) + "\">" + escapeHtml(code) + "</option>";
       }).join("");
-      var dictPlaceholder = "{\n  \"menuFile\": \"Datei\",\n  \"menuOptions\": \"Optionen\",\n  \"menuTools\": \"Werkzeuge\",\n  \"menuHelp\": \"Hilfe\"\n}";
+      var dictPlaceholder = languageManagerConfig.dictPlaceholder || "{\n  \"menuFile\": \"Datei\",\n  \"menuOptions\": \"Optionen\",\n  \"menuTools\": \"Werkzeuge\",\n  \"menuHelp\": \"Hilfe\"\n}";
 
       return [
         "<div class=\"v1-lang-manager\">",
@@ -161,24 +190,24 @@
         ? tools.map(function (item) {
             return "<div class=\"v1-import-item\"><strong>" + escapeHtml(item.id) + "</strong> <span>@ " + escapeHtml(item.version) + "</span><div>" + escapeHtml(item.name) + "</div></div>";
           }).join("")
-        : "<div class=\"v1-import-empty\">No imported tools yet.</div>";
+        : "<div class=\"v1-import-empty\">" + escapeHtml(importToolConfig.emptyText || "No imported tools yet.") + "</div>";
 
       return [
         "<div class=\"v1-import-manager\">",
         "<div class=\"v1-import-manager-head\">",
         "<h4 style=\"margin:0 0 4px;\">" + tr("tipActionCustomization") + "</h4>",
-        "<div class=\"v1-import-manager-note\">JSON manifest import, list and uninstall.</div>",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(importToolConfig.subtitle || "JSON manifest import, list and uninstall.") + "</div>",
         "</div>",
         "<div class=\"v1-import-manager-grid\">",
-        "<label for=\"v1ImportManifest\">Manifest JSON</label>",
-        "<textarea id=\"v1ImportManifest\" spellcheck=\"false\" placeholder=\"{\n  \"id\": \"com.example.demo\"\n}\"></textarea>",
-        "<label for=\"v1ImportUninstallId\">Tool id to uninstall</label>",
-        "<input id=\"v1ImportUninstallId\" type=\"text\" autocomplete=\"off\" placeholder=\"com.example.demo\" />",
+        "<label for=\"v1ImportManifest\">" + escapeHtml(importToolConfig.manifestLabel || "Manifest JSON") + "</label>",
+        "<textarea id=\"v1ImportManifest\" spellcheck=\"false\" placeholder=\"" + escapeHtml(importToolConfig.manifestPlaceholder || "{\\n  \\\"id\\\": \\\"com.example.demo\\\"\\n}") + "\"></textarea>",
+        "<label for=\"v1ImportUninstallId\">" + escapeHtml(importToolConfig.uninstallLabel || "Tool id to uninstall") + "</label>",
+        "<input id=\"v1ImportUninstallId\" type=\"text\" autocomplete=\"off\" placeholder=\"" + escapeHtml(importToolConfig.uninstallPlaceholder || "com.example.demo") + "\" />",
         "</div>",
         "<div class=\"v1-import-manager-actions\">",
-        "<button type=\"button\" data-import-action=\"install\">Import</button>",
-        "<button type=\"button\" data-import-action=\"list\">List</button>",
-        "<button type=\"button\" data-import-action=\"uninstall\">Uninstall</button>",
+        "<button type=\"button\" data-import-action=\"install\">" + escapeHtml(importToolConfig.installBtn || "Import") + "</button>",
+        "<button type=\"button\" data-import-action=\"list\">" + escapeHtml(importToolConfig.listBtn || "List") + "</button>",
+        "<button type=\"button\" data-import-action=\"uninstall\">" + escapeHtml(importToolConfig.uninstallBtn || "Uninstall") + "</button>",
         "</div>",
         "<div class=\"v1-import-manager-options\">",
         "<label><input id=\"v1ImportAddMenu\" type=\"checkbox\" checked /> " + tr("importOptToolsMenu") + "</label>",
@@ -210,26 +239,7 @@
     }
 
     function renderResultsIp() {
-      var rows = [
-        {
-          ip: "83.9.186.53",
-          ping: "23 ms",
-          hostname: "83.9.186.53.ipv4.supermedia.pl",
-          flag: "PL",
-          isp: "Orange Polska Spolka Akcyjna",
-          statusClass: "is-up",
-          ports: [":34567", ":80", ":443", ":631"]
-        },
-        {
-          ip: "83.9.186.185",
-          ping: "4 ms",
-          hostname: "83.9.186.185.ipv4.supermedia.pl",
-          flag: "PL",
-          isp: "Orange Polska Spolka Akcyjna",
-          statusClass: "is-up",
-          ports: [":80", ":443"]
-        }
-      ];
+      var rows = Array.isArray(resultsIpConfig.sampleRows) ? resultsIpConfig.sampleRows : [];
 
       var totalPorts = rows.reduce(function (sum, row) {
         return sum + ((row.ports && row.ports.length) || 0);
@@ -254,20 +264,22 @@
           "</tr>",
           "<tr class=\"v1-ip-ports-row\" data-ports-row=\"" + idx + "\" hidden>",
           "<td colspan=\"10\">",
-          "<div class=\"v1-ip-ports-wrap\">" + (portsHtml || "<span class=\"v1-ip-ports-empty\">No open ports</span>") + "</div>",
+          "<div class=\"v1-ip-ports-wrap\">" + (portsHtml || "<span class=\"v1-ip-ports-empty\">" + escapeHtml(resultsIpConfig.noOpenPorts || "No open ports") + "</span>") + "</div>",
           "</td>",
           "</tr>"
         ].join("");
       }).join("");
 
+      var headers = resultsIpConfig.headers || {};
+
       return [
         "<div class=\"v1-results-meta-row\">",
-        "<span>Hosty: <b id=\"resIpHostCount\">" + rows.length + "</b></span>",
-        "<span>Otwarte porty: <b id=\"resIpPortCount\">" + totalPorts + "</b></span>",
+        "<span>" + escapeHtml(resultsIpConfig.hostsLabel || "Hosty") + ": <b id=\"resIpHostCount\">" + rows.length + "</b></span>",
+        "<span>" + escapeHtml(resultsIpConfig.openPortsLabel || "Otwarte porty") + ": <b id=\"resIpPortCount\">" + totalPorts + "</b></span>",
         "</div>",
         "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\">",
         "<table class=\"v1-results-table v1-ip-results-table\">",
-        "<thead><tr><th class=\"v1-ip-col-check\">✓</th><th class=\"v1-ip-col-star\">★</th><th class=\"v1-ip-col-status\">●</th><th class=\"v1-ip-col-ip\">IP Address</th><th class=\"v1-ip-col-expand\">+</th><th class=\"v1-ip-col-ping\">Ping</th><th class=\"v1-ip-col-host\">Hostname</th><th class=\"v1-ip-col-flag\">Flag</th><th class=\"v1-ip-col-isp\">ISP</th></tr></thead>",
+        "<thead><tr><th class=\"v1-ip-col-check\">✓</th><th class=\"v1-ip-col-star\">★</th><th class=\"v1-ip-col-status\">●</th><th class=\"v1-ip-col-ip\">" + escapeHtml(headers.ipAddress || "IP Address") + "</th><th class=\"v1-ip-col-expand\">+</th><th class=\"v1-ip-col-ping\">" + escapeHtml(headers.ping || "Ping") + "</th><th class=\"v1-ip-col-host\">" + escapeHtml(headers.hostname || "Hostname") + "</th><th class=\"v1-ip-col-flag\">" + escapeHtml(headers.flag || "Flag") + "</th><th class=\"v1-ip-col-isp\">" + escapeHtml(headers.isp || "ISP") + "</th></tr></thead>",
         "<tbody>" + bodyHtml + "</tbody>",
         "</table>",
         "</div>"
