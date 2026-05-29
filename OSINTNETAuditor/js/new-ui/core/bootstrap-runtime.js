@@ -101,6 +101,14 @@
         const sidebarTabScanner = document.getElementById("v1SidebarTabScanner");
         const sidebarTabIpLibrary = document.getElementById("v1SidebarTabIpLibrary");
         const sidebarTabResults = document.getElementById("v1SidebarTabResults");
+        const ipLibraryPanelTitle = document.getElementById("v1IpLibraryPanelTitle");
+        const ipLibraryPanelNote = document.getElementById("v1IpLibraryPanelNote");
+        const ipLibraryCountriesLabel = document.getElementById("v1IpLibraryCountriesLabel");
+        const ipLibraryCountriesInput = document.getElementById("v1IpLibraryCountryCodes");
+        const ipLibraryTopRangesLabel = document.getElementById("v1IpLibraryTopRangesLabel");
+        const ipLibraryUpdateBtn = document.getElementById("v1IpLibraryUpdateBtn");
+        const ipLibraryLoadBtn = document.getElementById("v1IpLibraryLoadBtn");
+        const ipLibraryLastUpdateLabel = document.getElementById("v1IpLibraryLastUpdateLabel");
         const resultNavIp = document.getElementById("v1ResultNavIp");
         const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
         const tabTitleIpLibrary = document.getElementById("v1TabTitleIpLibrary");
@@ -152,6 +160,14 @@
         if (sidebarTabScanner) sidebarTabScanner.textContent = tr("ipScanner");
         if (sidebarTabIpLibrary) sidebarTabIpLibrary.textContent = tr("ipLibraryTabTitle");
         if (sidebarTabResults) sidebarTabResults.textContent = tr("resultsSidebarTitle");
+        if (ipLibraryPanelTitle) ipLibraryPanelTitle.textContent = tr("ipLibraryTitle");
+        if (ipLibraryPanelNote) ipLibraryPanelNote.textContent = tr("ipLibraryNote");
+        if (ipLibraryCountriesLabel) ipLibraryCountriesLabel.textContent = tr("ipLibraryCountriesLabel");
+        if (ipLibraryCountriesInput) ipLibraryCountriesInput.setAttribute("placeholder", "pl,cn,ru,us,de,fr,gb,jp,kr,br,in,au,nl,ua,cz,se,no,fi,tr,ir,sa,za,ar,mx,ca,it,es");
+        if (ipLibraryTopRangesLabel) ipLibraryTopRangesLabel.textContent = tr("ipLibraryTopRangesLabel");
+        if (ipLibraryUpdateBtn) ipLibraryUpdateBtn.textContent = tr("ipLibraryUpdateBtn");
+        if (ipLibraryLoadBtn) ipLibraryLoadBtn.textContent = tr("ipLibraryLoadBtn");
+        if (ipLibraryLastUpdateLabel) ipLibraryLastUpdateLabel.textContent = tr("ipLibraryLastUpdateLabel");
         document.querySelectorAll("[data-sidebar-tab-close]").forEach((el) => {
           el.setAttribute("aria-label", tr("tabCloseAria"));
           el.setAttribute("title", tr("tabCloseAria"));

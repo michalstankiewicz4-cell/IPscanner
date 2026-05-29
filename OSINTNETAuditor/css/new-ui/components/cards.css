@@ -577,6 +577,18 @@
   padding: 16px 10px;
 }
 
+.v1-iplib-table .v1-iplib-col-country {
+  width: 120px;
+  white-space: nowrap;
+}
+
+.v1-iplib-table .v1-iplib-col-address {
+  white-space: nowrap;
+}
+
+.v1-iplib-empty {
+  color: var(--txt-dim);
+}
 .v1-results-table-scroll {
   width: 100%;
   overflow-x: auto;
