@@ -943,6 +943,7 @@
     function initWorkbenchTabs() {
       if (document.body && document.body.dataset.v1TabsBound === "1") {
         ensureAllTabControls();
+        wireIpLibraryButtons();
         updateTabPopoutUi();
         return;
       }
@@ -1082,6 +1083,7 @@
       });
 
       updateEmptyState();
+      wireIpLibraryButtons();
       updateTabPopoutUi();
     }
 
@@ -1183,14 +1185,15 @@
     }
 
     function wireIpLibraryButtons() {
-      var root = document.getElementById("v1ToolDetail");
-      if (!root) return;
-
       var countriesEl = document.getElementById("v1IpLibraryCountryCodes");
       var topRangesEl = document.getElementById("v1IpLibraryTopRanges");
       var lastUpdateEl = document.getElementById("v1IpLibraryLastUpdate");
+      var centerLastUpdateEl = document.getElementById("v1IpLibraryCenterLastUpdate");
       var statusEl = document.getElementById("v1IpLibraryStatus");
-      var outputEl = document.getElementById("v1IpLibraryOutput");
+      var centerStatusEl = document.getElementById("v1IpLibraryCenterStatus");
+      var centerRowsEl = document.getElementById("v1IpLibraryCenterRows");
+      var actionButtons = document.querySelectorAll("[data-iplib-action]");
+      if (!actionButtons.length && !centerRowsEl) return;
 
       var DEFAULT_CODES = "pl,cn,ru,us,de,fr,gb,jp,kr,br,in,au,nl,ua,cz,se,no,fi,tr,ir,sa,za,ar,mx,ca,it,es";
       var CACHE_KEY = "netrecon_country_ip_library_json";
@@ -1200,18 +1203,77 @@
       if (topRangesEl && !topRangesEl.value.trim()) topRangesEl.value = "120";
 
       function writeStatus(text) {
-        if (statusEl) statusEl.textContent = String(text || "");
+        var value = String(text || "");
+        if (statusEl) statusEl.textContent = value;
+        if (centerStatusEl) centerStatusEl.textContent = value;
       }
 
       function writeOutput(text) {
-        if (!outputEl) return;
-        outputEl.textContent = String(text || "");
-        outputEl.scrollTop = 0;
+        var value = String(text || "").trim();
+        if (!value) return;
+
+        var infoLog = document.getElementById("v1InfoLog");
+        if (infoLog) {
+          var clipped = value.length > 6000 ? (value.slice(0, 6000) + "\n...[truncated]") : value;
+          var next = (infoLog.textContent ? infoLog.textContent + "\n" : "") + clipped;
+          var rows = next.split("\n");
+          infoLog.textContent = rows.length > 400 ? rows.slice(rows.length - 400).join("\n") : next;
+          infoLog.scrollTop = infoLog.scrollHeight;
+        }
+
+        document.dispatchEvent(new CustomEvent("newui:console-pane-update", {
+          detail: {
+            pane: "info",
+            source: "ip-library",
+            text: value,
+          },
+        }));
       }
 
       function setLastUpdate(value) {
-        if (!lastUpdateEl) return;
-        lastUpdateEl.textContent = String(value || "-");
+        var text = String(value || "-");
+        if (lastUpdateEl) lastUpdateEl.textContent = text;
+        if (centerLastUpdateEl) centerLastUpdateEl.textContent = text;
+      }
+
+      function pickAddressFromItem(item) {
+        if (!item || typeof item !== "object") return "-";
+
+        if (item.cidr) return String(item.cidr);
+        if (item.range) return String(item.range);
+        if (item.network) return String(item.network);
+        if (item.address) return String(item.address);
+        if (item.ip_range) return String(item.ip_range);
+
+        if (Array.isArray(item.ranges) && item.ranges.length) {
+          return item.ranges.slice(0, 3).map(function (entry) {
+            if (entry && typeof entry === "object") {
+              return String(entry.cidr || entry.range || entry.network || entry.address || "");
+            }
+            return String(entry || "");
+          }).filter(Boolean).join(", ");
+        }
+
+        return "-";
+      }
+
+      function pickCountryFromItem(item) {
+        if (!item || typeof item !== "object") return "-";
+        return String(item.country_code || item.countryCode || item.country || item.code || "-").toUpperCase();
+      }
+
+      function renderCenterRows(data) {
+        if (!centerRowsEl) return;
+
+        var rows = Array.isArray(data) ? data : [];
+        if (!rows.length) {
+          centerRowsEl.innerHTML = '<tr><td colspan="2" class="v1-iplib-empty">' + escapeHtml(tr("ipLibraryTableEmpty")) + '</td></tr>';
+          return;
+        }
+
+        centerRowsEl.innerHTML = rows.map(function (item) {
+          return '<tr><td class="v1-iplib-col-country">' + escapeHtml(pickCountryFromItem(item)) + '</td><td class="v1-iplib-col-address">' + escapeHtml(pickAddressFromItem(item)) + '</td></tr>';
+        }).join("");
       }
 
       function getInvoke() {
@@ -1244,6 +1306,7 @@
         if (!raw) {
           writeStatus(tr("ipLibraryStatusEmpty"));
           writeOutput("");
+          renderCenterRows([]);
           return;
         }
 
@@ -1252,13 +1315,15 @@
           var count = Array.isArray(data) ? data.length : 0;
           writeStatus(tr("ipLibraryStatusLoaded") + " " + count + " | " + tr("ipLibraryStatusUpdatedAt") + " " + updatedAt);
           writeOutput(JSON.stringify(data, null, 2));
+          renderCenterRows(data);
         } catch (_) {
           writeStatus(tr("ipLibraryStatusInvalidCache"));
           writeOutput(raw);
+          renderCenterRows([]);
         }
       }
 
-      root.querySelectorAll("[data-iplib-action]").forEach(function (button) {
+      actionButtons.forEach(function (button) {
         if (button.dataset.bound === "1") return;
         button.dataset.bound = "1";
 
@@ -1270,7 +1335,7 @@
           }
 
           var invoke = getInvoke();
-          if (!invoke && !(platform && typeof platform.invoke === "function")) {
+          if (!invoke) {
             writeStatus(tr("statusDesktopOnlyShort"));
             writeOutput(tr("psConsoleDesktopOnly"));
             return;
@@ -1319,20 +1384,30 @@
               var count = Array.isArray(parsed) ? parsed.length : 0;
               writeStatus(tr("ipLibraryStatusUpdated") + " " + count + " | " + tr("ipLibraryStatusUpdatedAt") + " " + updatedAt);
               writeOutput(JSON.stringify(parsed, null, 2));
+              renderCenterRows(parsed);
               if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("ipLibraryStatusUpdated") + " " + count);
             } catch (_) {
               var merged = [stdout, stderr].filter(Boolean).join("\n\n");
               writeStatus(tr("ipLibraryStatusUpdateFailed"));
               writeOutput(merged || tr("ipLibraryStatusUpdateFailed"));
+              renderCenterRows([]);
             }
           }).catch(function (err) {
+            var errMsg = (err && err.message) ? String(err.message) : "";
+            if (errMsg.toLowerCase().indexOf("tauri invoke unavailable") >= 0) {
+              writeStatus(tr("statusDesktopOnlyShort"));
+              writeOutput(tr("psConsoleDesktopOnly"));
+              renderCenterRows([]);
+              return;
+            }
+
             writeStatus(tr("ipLibraryStatusUpdateFailed"));
-            writeOutput((err && err.message) ? err.message : tr("ipLibraryStatusUpdateFailed"));
+            writeOutput(errMsg || tr("ipLibraryStatusUpdateFailed"));
+            renderCenterRows([]);
           });
         });
       });
 
-      if (!outputEl || outputEl.textContent.trim()) return;
       loadCached();
     }
 

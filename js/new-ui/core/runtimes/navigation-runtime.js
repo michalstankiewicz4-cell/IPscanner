@@ -123,6 +123,14 @@
       switchSidebarView(sidebarViewForTool(tool, preferredView));
     }
 
+    function syncScannerSidebarToolPanels(activeTool) {
+      var selected = activeTool === "ip-library" ? "ip-library" : "scan-runner";
+      document.querySelectorAll("[data-sidebar-tool-panel]").forEach(function (panel) {
+        var panelTool = panel.getAttribute("data-sidebar-tool-panel") || "";
+        panel.hidden = panelTool !== selected;
+      });
+    }
+
     function setLeftActiveTab(tool) {
       var nextTool = String(tool || "");
       document.querySelectorAll(".v1-sidebar-tool-tab-wrap").forEach(function (wrap) {
@@ -134,6 +142,7 @@
         btn.classList.toggle("is-left-active", !!nextTool && btnTool === nextTool);
         btn.classList.toggle("active", !!nextTool && btnTool === nextTool);
       });
+      syncScannerSidebarToolPanels(nextTool);
     }
 
     function syncLeftTabActivationInvariant() {
