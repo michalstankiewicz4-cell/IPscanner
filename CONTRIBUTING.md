@@ -59,6 +59,7 @@ index.html powinien byc glownie adapterem DOM i eventow.
 Dla warstwy paneli utrzymujemy twardy podzial odpowiedzialnosci:
 
 - `panel-content-runtime.js` - renderowanie tresci i szablonow (markup), bez logiki stanu i bez routingu narzedzi.
+- `panel-renderers-runtime.js` - renderery fragmentow sekcji (np. listy/tabele), bez event bindingu i bez mutacji stanu aplikacji.
 - `panels-runtime.js` - stan aktywnego narzedzia, routing, lifecycle renderu i obsluga zdarzen UI.
 - `panel-interactions-runtime.js` - interakcje specyficzne dla widokow (timeline, tabela wynikow, itp.).
 
@@ -66,8 +67,15 @@ Zasady:
 
 - Nie umieszczaj logiki biznesowej skanera ani logiki routingu w rendererach tresci.
 - Nie przenos event bindingu globalnego do `panel-content-runtime.js`.
+- Nie przenos event bindingu globalnego do `panel-renderers-runtime.js`.
 - Teksty user-facing musza przechodzic przez i18n (brak nowych hardcoded tekstow w rendererach).
 - Duze statyczne tresci (np. About/License/help text) utrzymuj jako dane wejsciowe konfiguracji, a nie rozproszony inline markup w wielu runtime.
+
+Checklist PR dla warstwy paneli:
+
+- `panel-content-runtime.js` nie zawiera routingu narzedzi ani globalnych listenerow.
+- `panels-runtime.js` nie buduje recznie dlugich blokow HTML dla sekcji danych (uzywa dedykowanych rendererow).
+- Po zmianach uruchom `npm run prepare:app` i sprawdz mirror `app/`.
 
 Mapa odpowiedzialnosci jest utrzymywana centralnie i nie powinna byc dublowana w wielu miejscach.
 
