@@ -7,6 +7,18 @@
     var refreshRafId = 0;
     var detachedDragActive = false;
 
+    function getScrollbarSizePx() {
+      var raw = "";
+      try {
+        raw = getComputedStyle(document.documentElement).getPropertyValue("--v1-faux-scrollbar-size") || "";
+      } catch (_) {
+        raw = "";
+      }
+      var parsed = Number(String(raw).replace("px", "").trim());
+      if (!Number.isFinite(parsed) || parsed <= 0) return 10;
+      return parsed;
+    }
+
     function targetSelector() {
       return ".v1-tool-list, .v1-card, .v1-detached-tool-body, .v1-versions-list, .v1-ai-threadlist, .v1-ai-chat, .v1-ai-prompt, .v1-console-pane[data-v1-console-pane=\"macro\"], .v1-ps-output, .v1-info-log, .v1-ip-extractor-input, .v1-ip-extractor-output, .v1-lang-manager-grid textarea, .v1-import-manager-grid textarea, .v1-lang-manager-output, .v1-import-output, .v1-results-table-scroll--ip, .listview-body";
     }
@@ -187,22 +199,50 @@
       return Math.max(base, parsedZ + 1);
     }
 
+    function intersectsRect(a, b) {
+      return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+    }
+
+    function isHostOccludedByHigherDetachedCard(el, rect) {
+      if (!el || !el.closest) return false;
+      var selfCard = el.closest(".v1-detached-tool-card");
+      if (!selfCard) return false;
+
+      var selfZRaw = window.getComputedStyle(selfCard).zIndex;
+      var selfZ = Number(selfZRaw);
+      if (!Number.isFinite(selfZ)) selfZ = 0;
+
+      var cards = Array.from(document.querySelectorAll(".v1-detached-tool-card"));
+      return cards.some(function (card) {
+        if (card === selfCard) return false;
+        var style = window.getComputedStyle(card);
+        if (style.display === "none" || style.visibility === "hidden") return false;
+        var otherZ = Number(style.zIndex);
+        if (!Number.isFinite(otherZ) || otherZ <= selfZ) return false;
+        var otherRect = card.getBoundingClientRect();
+        if (otherRect.width <= 0 || otherRect.height <= 0) return false;
+        return intersectsRect(rect, otherRect);
+      });
+    }
+
     function updateOne(item) {
       var el = item.el;
       var rail = item.rail;
       var thumb = item.thumb;
       var layerZ = resolveRailZIndex(el);
+      var scrollbarSize = getScrollbarSizePx();
       var rect = el.getBoundingClientRect();
       var styles = getComputedStyle(el);
       var isVisible = rect.width > 0 && rect.height > 0 && styles.display !== "none";
+      var isOccluded = isHostOccludedByHigherDetachedCard(el, rect);
       var overflowY = (styles.overflowY || "").toLowerCase();
       var overflow = (styles.overflow || "").toLowerCase();
-      var allowsVerticalScroll = ["visible", "auto", "scroll", "overlay"].indexOf(overflowY) >= 0
-        || ["visible", "auto", "scroll", "overlay"].indexOf(overflow) >= 0;
-      var scrollable = allowsVerticalScroll && (el.scrollHeight > el.clientHeight + 1);
+      var allowsVerticalScroll = ["auto", "scroll", "overlay"].indexOf(overflowY) >= 0
+        || ["auto", "scroll", "overlay"].indexOf(overflow) >= 0;
+      var scrollable = !isOccluded && allowsVerticalScroll && (el.scrollHeight > el.clientHeight + 1);
 
       if (isVisible && scrollable) {
-        var railWidth = 10;
+        var railWidth = scrollbarSize;
         var thumbMin = 24;
         var railHeight = rect.height;
         var ratio = el.clientHeight / el.scrollHeight;
@@ -227,14 +267,14 @@
         var horizontalStyles = getComputedStyle(el);
         var overflowXValue = (horizontalStyles.overflowX || "").toLowerCase();
         var overflowValue = (horizontalStyles.overflow || "").toLowerCase();
-        var canScrollHorizontally = ["visible", "auto", "scroll", "overlay"].indexOf(overflowXValue) >= 0
-          || ["visible", "auto", "scroll", "overlay"].indexOf(overflowValue) >= 0;
-        var hasHorizontalOverflow = canScrollHorizontally && (el.scrollWidth > el.clientWidth + 1);
+        var canScrollHorizontally = ["auto", "scroll", "overlay"].indexOf(overflowXValue) >= 0
+          || ["auto", "scroll", "overlay"].indexOf(overflowValue) >= 0;
+        var hasHorizontalOverflow = !isOccluded && canScrollHorizontally && (el.scrollWidth > el.clientWidth + 1);
 
         if (!isVisible || !hasHorizontalOverflow) {
           item.hRail.style.display = "none";
         } else {
-          var horizontalRailHeight = 10;
+          var horizontalRailHeight = scrollbarSize;
           var horizontalRailWidth = rect.width;
           var horizontalThumbMin = 24;
           var horizontalRatio = el.clientWidth / el.scrollWidth;
@@ -261,7 +301,7 @@
     }
 
     function init() {
-      resizeObserver = new ResizeObserver(refresh);
+      resizeObserver = new ResizeObserver(scheduleRefresh);
       ensureItems();
 
       mutationObserver = new MutationObserver(function (mutations) {
@@ -273,20 +313,21 @@
             return !!(node.querySelector && node.querySelector(targetSelector()));
           });
         });
-        if (foundCandidate) refresh();
+        if (foundCandidate) scheduleRefresh();
       });
       if (document.body) {
         mutationObserver.observe(document.body, { childList: true, subtree: true });
       }
 
-      window.addEventListener("resize", refresh);
-      document.addEventListener("scroll", refresh, true);
+      window.addEventListener("resize", scheduleRefresh);
+      document.addEventListener("scroll", scheduleRefresh, true);
 
       document.addEventListener("pointerdown", function (event) {
         if (!event || event.button !== 0) return;
         if (!event.target || !event.target.closest) return;
-        if (event.target.closest(".v1-detached-tool-head")) {
+        if (event.target.closest(".v1-detached-tool-card")) {
           detachedDragActive = true;
+          scheduleRefresh();
         }
       }, true);
 

@@ -31,7 +31,6 @@
 
     function init() {
       var out = document.getElementById("v1PsOutput");
-      var infoLog = document.getElementById("v1InfoLog");
       var input = document.getElementById("v1PsInput");
       if (!out || !input) return;
 
@@ -46,16 +45,11 @@
       }
 
       function append(line) {
-        // Keep terminal echo for command context, but route program logs to Console tab.
         out.textContent += line + "\n";
         out.scrollTop = out.scrollHeight;
-        if (infoLog) {
-          infoLog.textContent += line + "\n";
-          infoLog.scrollTop = infoLog.scrollHeight;
-        }
         document.dispatchEvent(new CustomEvent("newui:console-pane-update", {
           detail: {
-            pane: "info",
+            pane: "console",
             source: "powershell-console",
             text: String(line || ""),
           },
