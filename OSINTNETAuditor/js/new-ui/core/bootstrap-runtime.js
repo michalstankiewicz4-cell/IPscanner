@@ -194,8 +194,6 @@
         if (sidebarTabIpLibrary) sidebarTabIpLibrary.textContent = tr("ipLibraryTabTitle");
         if (sidebarTabResults) sidebarTabResults.textContent = tr("resultsSidebarTitle");
         if (ipLibraryPanelTitle) ipLibraryPanelTitle.textContent = tr("ipLibraryTitle");
-        if (ipLibraryPanelNote) ipLibraryPanelNote.textContent = tr("ipLibraryNote");
-        if (ipLibraryCountriesLabel) ipLibraryCountriesLabel.textContent = tr("ipLibraryCountriesLabel");
         if (ipLibraryCountriesInput) ipLibraryCountriesInput.setAttribute("placeholder", "pl,cn,ru,us,de,fr,gb,jp,kr,br,in,au,nl,ua,cz,se,no,fi,tr,ir,sa,za,ar,mx,ca,it,es");
         if (ipLibraryTopRangesLabel) ipLibraryTopRangesLabel.textContent = tr("ipLibraryTopRangesLabel");
         if (ipLibraryUpdateBtn) ipLibraryUpdateBtn.textContent = tr("ipLibraryUpdateBtn");
