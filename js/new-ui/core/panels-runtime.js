@@ -1094,6 +1094,40 @@
       return "<h4>" + escapeHtml(tool || "") + "</h4><div>Panel content runtime is not available.</div>";
     }
 
+    function getTabsTrack() {
+      return document.querySelector(".v1-editor .v1-tabs");
+    }
+
+    function scrollActiveTabIntoView() {
+      var tabsTrack = getTabsTrack();
+      if (!tabsTrack) return;
+
+      var activeTab = tabsTrack.querySelector('.v1-tab.active');
+      if (!activeTab) return;
+
+      var maxScrollLeft = Math.max(0, tabsTrack.scrollWidth - tabsTrack.clientWidth);
+      var nextScrollLeft = Math.max(0, Math.min(
+        maxScrollLeft,
+        Math.round(activeTab.offsetLeft - (tabsTrack.clientWidth - activeTab.offsetWidth) / 2)
+      ));
+
+      if (Math.abs(tabsTrack.scrollLeft - nextScrollLeft) < 2) return;
+      tabsTrack.scrollLeft = nextScrollLeft;
+    }
+
+    function scheduleScrollActiveTabIntoView() {
+      if (!window.requestAnimationFrame) {
+        scrollActiveTabIntoView();
+        return;
+      }
+
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(function () {
+          scrollActiveTabIntoView();
+        });
+      });
+    }
+
     function refreshActiveUI() {
       updateEmptyState();
 
@@ -1168,6 +1202,7 @@
       applyDetachedCardState();
       if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + activeTool);
       if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + activeTool;
+      scheduleScrollActiveTabIntoView();
       if (activeTool === "versions") {
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireVersionsTimeline) {
           panelInteractionsRuntime.wireVersionsTimeline();

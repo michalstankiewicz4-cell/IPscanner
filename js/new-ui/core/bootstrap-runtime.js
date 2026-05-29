@@ -888,17 +888,13 @@
 
       function scrollTabTrackToElement(element) {
         if (!element || !tabsTrack) return;
-        if (typeof element.scrollIntoView === "function") {
-          element.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
-          return;
-        }
         const maxScrollLeft = Math.max(0, tabsTrack.scrollWidth - tabsTrack.clientWidth);
         const nextScrollLeft = Math.max(0, Math.min(
           maxScrollLeft,
           Math.round(element.offsetLeft - (tabsTrack.clientWidth - element.offsetWidth) / 2)
         ));
         if (Math.abs(tabsTrack.scrollLeft - nextScrollLeft) < 2) return;
-        tabsTrack.scrollTo({ left: nextScrollLeft, behavior: "smooth" });
+        tabsTrack.scrollLeft = nextScrollLeft;
       }
 
       function scheduleScrollActiveTabIntoView() {
@@ -952,6 +948,7 @@
         activeTool = tool;
         if (store) store.setState({ activeTool: tool });
         refreshActiveUI();
+        scheduleScrollActiveTabIntoView();
       }
 
       function initCenterTabsScrollButtons() {
@@ -986,6 +983,18 @@
               ? event.target.closest(".v1-tab")
               : null;
             if (!tab || tab.classList.contains("tab-closed") || tab.classList.contains("tab-detached-hidden")) return;
+            if (event.target && typeof event.target.closest === "function") {
+              if (event.target.closest("[data-tab-close]") || event.target.closest("[data-tab-popout]")) return;
+            }
+
+            const tool = tab.getAttribute("data-tool") || "";
+            if (!tool) return;
+
+            if (tool !== activeTool) {
+              switchTool(tool);
+              return;
+            }
+
             scheduleScrollActiveTabIntoView();
           });
         }
