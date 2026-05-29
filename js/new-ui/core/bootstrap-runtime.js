@@ -98,6 +98,11 @@
         const extClose = document.getElementById("v1ExtClose");
         const activityResultsBtn = document.getElementById("v1ActivityResults");
         const activityScannerBtn = document.getElementById("v1ActivityScanner");
+        const activityTopologyBtn = document.getElementById("v1ActivityTopology");
+        const activityGlobeBtn = document.getElementById("v1ActivityGlobe");
+        const toolsMenuIpScanner = document.getElementById("v1ToolsMenuIpScanner");
+        const toolsMenuTopology = document.getElementById("v1ToolsMenuTopology");
+        const toolsMenuGlobe = document.getElementById("v1ToolsMenuGlobe");
         const sidebarTabScanner = document.getElementById("v1SidebarTabScanner");
         const sidebarTabIpLibrary = document.getElementById("v1SidebarTabIpLibrary");
         const sidebarTabResults = document.getElementById("v1SidebarTabResults");
@@ -116,6 +121,8 @@
         const tabTitleLanguageManager = document.getElementById("v1TabTitleLanguageManager");
         const tabTitleAbout = document.getElementById("v1TabTitleAbout");
         const tabTitleLicense = document.getElementById("v1TabTitleLicense");
+        const tabTitleTopology = document.getElementById("v1TabTitleTopology");
+        const tabTitleGlobe = document.getElementById("v1TabTitleGlobe");
         const terminalTab = document.getElementById("v1TerminalTab");
         const consoleTab = document.getElementById("v1ConsoleTab");
         const assistantMenuLabel = document.querySelector('[data-menu-action="assistant"] span:first-child');
@@ -157,6 +164,17 @@
           activityScannerBtn.setAttribute("title", tr("ipScanner"));
           activityScannerBtn.setAttribute("aria-label", tr("ipScanner"));
         }
+        if (activityTopologyBtn) {
+          activityTopologyBtn.setAttribute("title", tr("toolTitle_topology"));
+          activityTopologyBtn.setAttribute("aria-label", tr("toolTitle_topology"));
+        }
+        if (activityGlobeBtn) {
+          activityGlobeBtn.setAttribute("title", tr("toolTitle_globe"));
+          activityGlobeBtn.setAttribute("aria-label", tr("toolTitle_globe"));
+        }
+        if (toolsMenuIpScanner) toolsMenuIpScanner.textContent = tr("tabResultsIp");
+        if (toolsMenuTopology) toolsMenuTopology.textContent = tr("toolTitle_topology");
+        if (toolsMenuGlobe) toolsMenuGlobe.textContent = tr("toolTitle_globe");
         if (sidebarTabScanner) sidebarTabScanner.textContent = tr("ipScanner");
         if (sidebarTabIpLibrary) sidebarTabIpLibrary.textContent = tr("ipLibraryTabTitle");
         if (sidebarTabResults) sidebarTabResults.textContent = tr("resultsSidebarTitle");
@@ -179,6 +197,8 @@
         if (tabTitleLanguageManager) tabTitleLanguageManager.textContent = tr("langManagerTitle");
         if (tabTitleAbout) tabTitleAbout.textContent = tr("tabAboutTitle");
         if (tabTitleLicense) tabTitleLicense.textContent = tr("tabLicenseTitle");
+        if (tabTitleTopology) tabTitleTopology.textContent = tr("toolTitle_topology");
+        if (tabTitleGlobe) tabTitleGlobe.textContent = tr("toolTitle_globe");
         if (terminalTab) terminalTab.textContent = tr("terminalTab");
         if (consoleTab) consoleTab.textContent = tr("consoleTab");
         if (aboutMenuLabel) aboutMenuLabel.textContent = tr("helpAboutTitle");

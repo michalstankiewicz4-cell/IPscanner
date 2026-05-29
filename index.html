@@ -47,9 +47,9 @@
       <div class="v1-menu-group" data-menu="tools">
         <button class="v1-menu-trigger">Tools</button>
         <div class="v1-menu-dropdown">
-          <button class="v1-menu-dd-item" data-tool="results-ip"><span>IP Scanner</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="topology"><span>Topology</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="globe"><span>Globe</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="results-ip"><span id="v1ToolsMenuIpScanner">IP Scanner</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="topology"><span id="v1ToolsMenuTopology">Topology</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="globe"><span id="v1ToolsMenuGlobe">Globe</span><span class="shortcut"></span></button>
         </div>
       </div>
 
@@ -83,9 +83,9 @@
       <!-- Left icon bar -->
       <aside class="v1-activity">
         <button id="v1ActivityResults" data-activity="results" data-tool="results-ip" title="IP Results" aria-label="IP Results">📊</button>
-        <button id="v1ActivityScanner" data-activity="scanner" data-tool="scan-runner" class="active" title="IP Scanner" aria-label="IP Scanner">▦</button>
-        <button data-tool="topology">🕸</button>
-        <button data-tool="globe">🌍</button>
+        <button id="v1ActivityScanner" data-activity="scanner" data-tool="scan-runner" class="active" title="IP Scanner" aria-label="IP Scanner">📡</button>
+        <button id="v1ActivityTopology" data-tool="topology" title="Topology" aria-label="Topology">🕸</button>
+        <button id="v1ActivityGlobe" data-tool="globe" title="Globe" aria-label="Globe">🌍</button>
       </aside>
 
       <!-- Left section -->
@@ -273,6 +273,16 @@
           <button class="v1-tab tab-closed" data-tool="results-ip" type="button" hidden>
             <span class="v1-tab-icon" aria-hidden="true">🖥</span>
             <span class="v1-tab-title" id="v1TabTitleResultsIp">IP Results</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="topology" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🕸</span>
+            <span class="v1-tab-title" id="v1TabTitleTopology">Topology</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="globe" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🌍</span>
+            <span class="v1-tab-title" id="v1TabTitleGlobe">Globe</span>
             <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
           </button>
         </div>
