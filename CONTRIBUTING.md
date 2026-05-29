@@ -54,6 +54,21 @@ Skrypty PowerShell (source of truth):
 
 index.html powinien byc glownie adapterem DOM i eventow.
 
+### 3a. Granica UI vs Content (obowiazkowa)
+
+Dla warstwy paneli utrzymujemy twardy podzial odpowiedzialnosci:
+
+- `panel-content-runtime.js` - renderowanie tresci i szablonow (markup), bez logiki stanu i bez routingu narzedzi.
+- `panels-runtime.js` - stan aktywnego narzedzia, routing, lifecycle renderu i obsluga zdarzen UI.
+- `panel-interactions-runtime.js` - interakcje specyficzne dla widokow (timeline, tabela wynikow, itp.).
+
+Zasady:
+
+- Nie umieszczaj logiki biznesowej skanera ani logiki routingu w rendererach tresci.
+- Nie przenos event bindingu globalnego do `panel-content-runtime.js`.
+- Teksty user-facing musza przechodzic przez i18n (brak nowych hardcoded tekstow w rendererach).
+- Duze statyczne tresci (np. About/License/help text) utrzymuj jako dane wejsciowe konfiguracji, a nie rozproszony inline markup w wielu runtime.
+
 Mapa odpowiedzialnosci jest utrzymywana centralnie i nie powinna byc dublowana w wielu miejscach.
 
 - definicje menu i akcji: `js/new-ui/core/ui-definitions.js`,
