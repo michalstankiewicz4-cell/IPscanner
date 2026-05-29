@@ -888,6 +888,10 @@
 
       function scrollTabTrackToElement(element) {
         if (!element || !tabsTrack) return;
+        if (typeof element.scrollIntoView === "function") {
+          element.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+          return;
+        }
         const maxScrollLeft = Math.max(0, tabsTrack.scrollWidth - tabsTrack.clientWidth);
         const nextScrollLeft = Math.max(0, Math.min(
           maxScrollLeft,
@@ -895,6 +899,18 @@
         ));
         if (Math.abs(tabsTrack.scrollLeft - nextScrollLeft) < 2) return;
         tabsTrack.scrollTo({ left: nextScrollLeft, behavior: "smooth" });
+      }
+
+      function scheduleScrollActiveTabIntoView() {
+        if (!tabsTrack) return;
+        window.requestAnimationFrame(function () {
+          window.requestAnimationFrame(function () {
+            const activeTab = tabsTrack.querySelector('.v1-tab.active');
+            if (activeTab) {
+              scrollTabTrackToElement(activeTab);
+            }
+          });
+        });
       }
 
       function refreshActiveUI() {
@@ -909,7 +925,7 @@
         if (tabsTrack) {
           const activeTab = tabsTrack.querySelector('.v1-tab.active');
           if (activeTab && !isElementFullyVisibleWithinContainer(activeTab, tabsTrack)) {
-            scrollTabTrackToElement(activeTab);
+            scheduleScrollActiveTabIntoView();
           }
 
           if (tabsScrollLeftBtn && tabsScrollRightBtn) {
@@ -965,6 +981,13 @@
           tabsTrack.addEventListener("scroll", function () {
             refreshActiveUI();
           }, { passive: true });
+          tabsTrack.addEventListener("click", function (event) {
+            const tab = event.target && typeof event.target.closest === "function"
+              ? event.target.closest(".v1-tab")
+              : null;
+            if (!tab || tab.classList.contains("tab-closed") || tab.classList.contains("tab-detached-hidden")) return;
+            scheduleScrollActiveTabIntoView();
+          });
         }
 
         window.addEventListener("resize", function () {
