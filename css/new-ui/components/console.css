@@ -241,6 +241,10 @@
   grid-template-rows: 38px minmax(120px, 1fr) 0 28px;
 }
 
+.v1-editor.no-center-tabs.console-collapsed {
+  grid-template-rows: 1fr 0 28px;
+}
+
 .v1-editor.console-collapsed .v1-resizer-h,
 .v1-editor.console-collapsed .v1-console-body {
   display: none;

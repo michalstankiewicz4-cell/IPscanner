@@ -917,6 +917,8 @@
       });
       var emptyState = document.getElementById("v1NoTabsState");
       var mainCard = document.getElementById("v1MainCard");
+      var tabsBar = document.querySelector(".v1-editor .v1-tabs");
+      var editor = document.querySelector(".v1-editor");
 
       if (emptyState) {
         if (hasOpenTabs) emptyState.setAttribute("hidden", "hidden");
@@ -926,6 +928,15 @@
       if (mainCard) {
         if (hasOpenTabs) mainCard.removeAttribute("hidden");
         else mainCard.setAttribute("hidden", "hidden");
+      }
+
+      if (tabsBar) {
+        if (hasOpenTabs) tabsBar.removeAttribute("hidden");
+        else tabsBar.setAttribute("hidden", "hidden");
+      }
+
+      if (editor) {
+        editor.classList.toggle("no-center-tabs", !hasOpenTabs);
       }
     }
 

@@ -10,6 +10,13 @@
     var sidebarView = "scanner";
     var sidebarFallbackOrder = ["scan-runner", "results-ip", "ip-library"];
 
+    function sidebarViewForTool(tool, preferredView) {
+      if (preferredView) return preferredView;
+      if (tool === "results-ip") return "results";
+      if (tool === "scan-runner" || tool === "ip-library") return "scanner";
+      return sidebarView;
+    }
+
     function getInvoke() {
       if (platform && typeof platform.getInvoke === "function") {
         return platform.getInvoke();
@@ -107,6 +114,13 @@
     function ensureSidebarTabOpen(tool) {
       if (!tool) return;
       setSidebarTabOpen(tool, true);
+    }
+
+    function activateSidebarTool(tool, preferredView) {
+      if (!tool) return;
+      ensureSidebarTabOpen(tool);
+      setLeftActiveTab(tool);
+      switchSidebarView(sidebarViewForTool(tool, preferredView));
     }
 
     function setLeftActiveTab(tool) {
@@ -374,8 +388,7 @@
         item.addEventListener("click", function () {
           var tool = item.getAttribute("data-result-tab");
           if (tool === "results-ip") {
-            ensureSidebarTabOpen("results-ip");
-            setLeftActiveTab("results-ip");
+            activateSidebarTool("results-ip", "results");
           }
           if (tool && switchTool) switchTool(tool);
           document.querySelectorAll("[data-result-tab]").forEach(function (el) {
@@ -393,11 +406,25 @@
           switchSidebarView(view);
           var tool = btn.getAttribute("data-tool");
           if (tool === "scan-runner" || tool === "ip-library" || tool === "results-ip") {
-            ensureSidebarTabOpen(tool);
-            setLeftActiveTab(tool);
+            activateSidebarTool(tool, view);
           }
           if (tool && switchTool) switchTool(tool);
         });
+      });
+    }
+
+    function bindSidebarIntentEvents() {
+      document.addEventListener("newui:sidebar-tab-intent-open", function (evt) {
+        var detail = evt && evt.detail ? evt.detail : {};
+        var tool = typeof detail.tool === "string" ? detail.tool : "";
+        if (!tool) return;
+
+        ensureSidebarTabOpen(tool);
+        if (detail.activate !== false) {
+          setLeftActiveTab(tool);
+        }
+
+        switchSidebarView(sidebarViewForTool(tool, detail.view));
       });
     }
 
@@ -422,17 +449,13 @@
 
         // Left sidebar tab clicks should only switch/activate left tabs.
         if (fromLeftTabs) {
-          ensureSidebarTabOpen(tool);
-          setLeftActiveTab(tool);
-          if (tool === "results-ip") switchSidebarView("results");
-          else switchSidebarView("scanner");
+          activateSidebarTool(tool);
           return;
         }
 
         if (tool === "results-ip") {
           if (!fromToolsMenu && !fromCenterTabs) {
-            ensureSidebarTabOpen("results-ip");
-            setLeftActiveTab("results-ip");
+            activateSidebarTool("results-ip", "results");
           } else {
             if (fromToolsMenu) setLeftActiveTab("scan-runner");
           }
@@ -441,9 +464,7 @@
             ensureSidebarTabOpen("scan-runner");
           }
         } else if (tool === "scan-runner" || tool === "ip-library") {
-          switchSidebarView("scanner");
-          ensureSidebarTabOpen(tool);
-          setLeftActiveTab(tool);
+          activateSidebarTool(tool, "scanner");
         }
         switchTool(tool);
       });
@@ -602,6 +623,7 @@
       bindScannerActions();
       bindResultTabs();
       bindActivityButtons();
+      bindSidebarIntentEvents();
       bindToolClicks();
       bindSidebarTabClosers();
       bindConsoleTabs();
