@@ -71,6 +71,9 @@
       let ipInputsRuntime = null;
       let navigationRuntime = null;
       let clippyRuntime = null;
+      let tabsTrack = null;
+      let tabsScrollLeftBtn = null;
+      let tabsScrollRightBtn = null;
 
       function applyStaticTranslations() {
         const fileTrigger = document.querySelector('[data-menu="file"] .v1-menu-trigger');
@@ -103,6 +106,9 @@
         const toolsMenuIpScanner = document.getElementById("v1ToolsMenuIpScanner");
         const toolsMenuTopology = document.getElementById("v1ToolsMenuTopology");
         const toolsMenuGlobe = document.getElementById("v1ToolsMenuGlobe");
+        tabsTrack = document.getElementById("v1TabsTrack");
+        tabsScrollLeftBtn = document.getElementById("v1TabsScrollLeft");
+        tabsScrollRightBtn = document.getElementById("v1TabsScrollRight");
         const sidebarTabScanner = document.getElementById("v1SidebarTabScanner");
         const sidebarTabIpLibrary = document.getElementById("v1SidebarTabIpLibrary");
         const sidebarTabResults = document.getElementById("v1SidebarTabResults");
@@ -172,6 +178,14 @@
         if (activityGlobeBtn) {
           activityGlobeBtn.setAttribute("title", tr("toolTitle_globe"));
           activityGlobeBtn.setAttribute("aria-label", tr("toolTitle_globe"));
+        }
+        if (tabsScrollLeftBtn) {
+          tabsScrollLeftBtn.setAttribute("title", tr("tabScrollLeft"));
+          tabsScrollLeftBtn.setAttribute("aria-label", tr("tabScrollLeft"));
+        }
+        if (tabsScrollRightBtn) {
+          tabsScrollRightBtn.setAttribute("title", tr("tabScrollRight"));
+          tabsScrollRightBtn.setAttribute("aria-label", tr("tabScrollRight"));
         }
         if (toolsMenuIpScanner) toolsMenuIpScanner.textContent = tr("tabResultsIp");
         if (toolsMenuTopology) toolsMenuTopology.textContent = tr("toolTitle_topology");
@@ -865,6 +879,13 @@
         return "<h4>" + info.title + "</h4><div>" + info.text + "</div><ul>" + points + "</ul>";
       }
 
+      function isElementFullyVisibleWithinContainer(element, container) {
+        if (!element || !container) return true;
+        const elementRect = element.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        return elementRect.left >= containerRect.left && elementRect.right <= containerRect.right;
+      }
+
       function refreshActiveUI() {
         document.querySelectorAll("[data-tool]").forEach((el) => {
           const isActive = el.getAttribute("data-tool") === activeTool;
@@ -873,6 +894,20 @@
             el.setAttribute("aria-pressed", isActive ? "true" : "false");
           }
         });
+
+        if (tabsTrack) {
+          const activeTab = tabsTrack.querySelector('.v1-tab.active');
+          if (activeTab && typeof activeTab.scrollIntoView === "function" && !isElementFullyVisibleWithinContainer(activeTab, tabsTrack)) {
+            activeTab.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+          }
+
+          if (tabsScrollLeftBtn && tabsScrollRightBtn) {
+            const maxScrollLeft = Math.max(0, tabsTrack.scrollWidth - tabsTrack.clientWidth);
+            const currentScrollLeft = tabsTrack.scrollLeft;
+            tabsScrollLeftBtn.disabled = currentScrollLeft <= 1;
+            tabsScrollRightBtn.disabled = currentScrollLeft >= maxScrollLeft - 1;
+          }
+        }
 
         const v1Title = document.getElementById("v1ToolTitle");
         const v1Detail = document.getElementById("v1ToolDetail");
@@ -890,6 +925,40 @@
         activeTool = tool;
         if (store) store.setState({ activeTool: tool });
         refreshActiveUI();
+      }
+
+      function initCenterTabsScrollButtons() {
+        if (!tabsTrack || !tabsScrollLeftBtn || !tabsScrollRightBtn) return;
+
+        function scrollTabsBy(direction) {
+          tabsTrack.scrollBy({ left: direction * 260, behavior: "smooth" });
+          requestAnimationFrame(refreshActiveUI);
+        }
+
+        if (tabsScrollLeftBtn.dataset.bound !== "1") {
+          tabsScrollLeftBtn.dataset.bound = "1";
+          tabsScrollLeftBtn.addEventListener("click", function () {
+            scrollTabsBy(-1);
+          });
+        }
+
+        if (tabsScrollRightBtn.dataset.bound !== "1") {
+          tabsScrollRightBtn.dataset.bound = "1";
+          tabsScrollRightBtn.addEventListener("click", function () {
+            scrollTabsBy(1);
+          });
+        }
+
+        if (tabsTrack.dataset.bound !== "1") {
+          tabsTrack.dataset.bound = "1";
+          tabsTrack.addEventListener("scroll", function () {
+            refreshActiveUI();
+          }, { passive: true });
+        }
+
+        window.addEventListener("resize", function () {
+          refreshActiveUI();
+        });
       }
 
       // =========================
@@ -1172,6 +1241,7 @@
       initMenuActions();
       initDisabledShortcuts();
       initSegmentedIpInputs();
+      initCenterTabsScrollButtons();
       if (scannerSidebarRuntime && scannerSidebarRuntime.init) {
         scannerSidebarRuntime.init();
       }
