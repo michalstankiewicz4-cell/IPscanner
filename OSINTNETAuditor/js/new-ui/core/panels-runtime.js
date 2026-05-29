@@ -1202,7 +1202,6 @@
       applyDetachedCardState();
       if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + activeTool);
       if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + activeTool;
-      scheduleScrollActiveTabIntoView();
       if (activeTool === "versions") {
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireVersionsTimeline) {
           panelInteractionsRuntime.wireVersionsTimeline();
@@ -1699,6 +1698,7 @@
       refreshActiveUI();
       updateEmptyState();
       updateTabPopoutUi();
+      scheduleScrollActiveTabIntoView();
     }
 
     function getActiveTool() {
