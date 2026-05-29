@@ -17,6 +17,15 @@
         return window.localStorage ? window.localStorage.getItem(key) : null;
       }
 
+      function storageSet(key, value) {
+        if (storage && typeof storage.setItem === "function") {
+          return storage.setItem(key, value);
+        }
+        if (!window.localStorage) return false;
+        window.localStorage.setItem(key, value);
+        return true;
+      }
+
       const initialActiveTool = null;
 
       const store = core.createStore
@@ -957,19 +966,16 @@
           requestAnimationFrame(refreshActiveUI);
         }
 
-        if (tabsScrollLeftBtn.dataset.bound !== "1") {
-          tabsScrollLeftBtn.dataset.bound = "1";
-          tabsScrollLeftBtn.addEventListener("click", function () {
-            scrollTabsBy(-1);
+        [
+          { btn: tabsScrollLeftBtn, direction: -1 },
+          { btn: tabsScrollRightBtn, direction: 1 },
+        ].forEach(function (entry) {
+          if (!entry.btn || entry.btn.dataset.bound === "1") return;
+          entry.btn.dataset.bound = "1";
+          entry.btn.addEventListener("click", function () {
+            scrollTabsBy(entry.direction);
           });
-        }
-
-        if (tabsScrollRightBtn.dataset.bound !== "1") {
-          tabsScrollRightBtn.dataset.bound = "1";
-          tabsScrollRightBtn.addEventListener("click", function () {
-            scrollTabsBy(1);
-          });
-        }
+        });
 
         if (tabsTrack.dataset.bound !== "1") {
           tabsTrack.dataset.bound = "1";
@@ -1153,6 +1159,8 @@
         ? runtimeFactory.createPanelsRuntime({
             tr,
             platform,
+            storageGet,
+            storageSet,
             getToolInfoMap,
             versionsData: core.versionsData || [],
             store,

@@ -20,21 +20,25 @@
     var DETACHED_AUTO_ARRANGE_ENABLED_KEY = "netrecon_detached_auto_arrange_enabled_v1";
     var autoArrangeOnUndockEnabled = readDetachedAutoArrangeEnabled();
 
-    function storageGet(key) {
-      if (storage && typeof storage.getItem === "function") {
-        return storage.getItem(key);
-      }
-      return window.localStorage ? window.localStorage.getItem(key) : null;
-    }
+    var storageGet = typeof deps.storageGet === "function"
+      ? deps.storageGet
+      : function (key) {
+          if (storage && typeof storage.getItem === "function") {
+            return storage.getItem(key);
+          }
+          return window.localStorage ? window.localStorage.getItem(key) : null;
+        };
 
-    function storageSet(key, value) {
-      if (storage && typeof storage.setItem === "function") {
-        return storage.setItem(key, value);
-      }
-      if (!window.localStorage) return false;
-      window.localStorage.setItem(key, value);
-      return true;
-    }
+    var storageSet = typeof deps.storageSet === "function"
+      ? deps.storageSet
+      : function (key, value) {
+          if (storage && typeof storage.setItem === "function") {
+            return storage.setItem(key, value);
+          }
+          if (!window.localStorage) return false;
+          window.localStorage.setItem(key, value);
+          return true;
+        };
 
     function readDetachedLayouts() {
       try {
