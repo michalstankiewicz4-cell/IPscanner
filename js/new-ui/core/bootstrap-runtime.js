@@ -17,9 +17,7 @@
         return window.localStorage ? window.localStorage.getItem(key) : null;
       }
 
-      const savedActiveTool = storageGet("netrecon_active_tool") || "";
-      const allowedStartupTools = { "scan-runner": true, topology: true, globe: true, "ip-library": true, "results-ip": true, versions: true, "import-tool": true, "language-manager": true };
-      const initialActiveTool = savedActiveTool && allowedStartupTools[savedActiveTool] ? savedActiveTool : "scan-runner";
+      const initialActiveTool = null;
 
       const store = core.createStore
         ? core.createStore({
@@ -100,6 +98,9 @@
         const extClose = document.getElementById("v1ExtClose");
         const activityResultsBtn = document.getElementById("v1ActivityResults");
         const activityScannerBtn = document.getElementById("v1ActivityScanner");
+        const sidebarTabScanner = document.getElementById("v1SidebarTabScanner");
+        const sidebarTabIpLibrary = document.getElementById("v1SidebarTabIpLibrary");
+        const sidebarTabResults = document.getElementById("v1SidebarTabResults");
         const resultNavIp = document.getElementById("v1ResultNavIp");
         const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
         const tabTitleIpLibrary = document.getElementById("v1TabTitleIpLibrary");
@@ -148,6 +149,13 @@
           activityScannerBtn.setAttribute("title", tr("ipScanner"));
           activityScannerBtn.setAttribute("aria-label", tr("ipScanner"));
         }
+        if (sidebarTabScanner) sidebarTabScanner.textContent = tr("ipScanner");
+        if (sidebarTabIpLibrary) sidebarTabIpLibrary.textContent = tr("ipLibraryTabTitle");
+        if (sidebarTabResults) sidebarTabResults.textContent = tr("resultsSidebarTitle");
+        document.querySelectorAll("[data-sidebar-tab-close]").forEach((el) => {
+          el.setAttribute("aria-label", tr("tabCloseAria"));
+          el.setAttribute("title", tr("tabCloseAria"));
+        });
         if (resultNavIp) resultNavIp.textContent = "🖥 " + tr("resultsIp");
         if (tabResultsIp) tabResultsIp.textContent = tr("tabResultsIp");
         if (tabTitleIpLibrary) tabTitleIpLibrary.textContent = tr("ipLibraryTabTitle");
@@ -1058,6 +1066,7 @@
             onOpenExtensionManager: openExtensionManager,
             onOpenLanguageManager: openLanguageManager,
             onSwitchTool: switchTool,
+            onSwitchSidebarView: switchSidebarView,
             onToggleClippy: function () {
               if (clippyRuntime && clippyRuntime.toggle) {
                 clippyRuntime.toggle();
@@ -1134,7 +1143,9 @@
       initResizableLayout();
       initCustomScrollbars();
       switchTool(initialActiveTool);
-      switchSidebarView("scanner");
+      const hasOpenSidebarTabs = !!document.querySelector('.v1-sidebar-tool-tab-wrap:not(.sidebar-tab-closed):not([hidden])');
+      const initialSidebarView = (!initialActiveTool && !hasOpenSidebarTabs) ? "empty" : "scanner";
+      switchSidebarView(initialSidebarView);
 
       function revealUi() {
         if (!document.body) return;

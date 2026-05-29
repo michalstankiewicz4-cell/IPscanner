@@ -34,6 +34,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "resources": [
+      "../scripts/*.ps1"
+    ],
     "windows": {
       "nsis": {
         "template": "nsis/installer-template.nsi"

@@ -4,6 +4,7 @@
 use std::net::{IpAddr, SocketAddr};
 use std::io::Read;
 use std::fs;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 use std::collections::{HashMap, HashSet};
@@ -129,6 +130,45 @@ struct PowerShellExecResult {
     stdout: String,
     stderr: String,
     exit_code: i32,
+}
+
+fn resolve_scripts_base_dir(app: &AppHandle) -> Option<PathBuf> {
+    fn has_scripts_dir(base: &Path) -> bool {
+        base.join("scripts").is_dir()
+    }
+
+    if let Ok(cwd) = std::env::current_dir() {
+        if has_scripts_dir(&cwd) {
+            return Some(cwd);
+        }
+    }
+
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        if has_scripts_dir(&resource_dir) {
+            return Some(resource_dir);
+        }
+        if let Some(parent) = resource_dir.parent() {
+            if has_scripts_dir(parent) {
+                return Some(parent.to_path_buf());
+            }
+        }
+    }
+
+    if let Ok(exe_path) = std::env::current_exe() {
+        let mut cursor = exe_path.parent().map(|p| p.to_path_buf());
+        for _ in 0..6 {
+            if let Some(dir) = cursor.clone() {
+                if has_scripts_dir(&dir) {
+                    return Some(dir);
+                }
+                cursor = dir.parent().map(|p| p.to_path_buf());
+            } else {
+                break;
+            }
+        }
+    }
+
+    None
 }
 
 #[derive(Serialize, Clone)]
@@ -574,17 +614,24 @@ fn open_browser(url: String) {
 }
 
 #[tauri::command]
-async fn run_powershell(command: String) -> Result<PowerShellExecResult, String> {
+async fn run_powershell(app: AppHandle, command: String) -> Result<PowerShellExecResult, String> {
     let cmd = command.trim().to_string();
     if cmd.is_empty() {
         return Err("Command is empty".into());
     }
 
+    let script_base_dir = if cmd.contains("scripts\\") || cmd.contains("scripts/") {
+        resolve_scripts_base_dir(&app)
+    } else {
+        None
+    };
+
     let output = tokio::task::spawn_blocking(move || {
         #[cfg(target_os = "windows")]
         {
             const CREATE_NO_WINDOW: u32 = 0x08000000;
-            Command::new("powershell")
+            let mut command = Command::new("powershell");
+            command
                 .creation_flags(CREATE_NO_WINDOW)
                 .args([
                     "-NoProfile",
@@ -593,15 +640,25 @@ async fn run_powershell(command: String) -> Result<PowerShellExecResult, String>
                     "Bypass",
                     "-Command",
                     cmd.as_str(),
-                ])
-                .output()
+                ]);
+
+            if let Some(base_dir) = script_base_dir.as_ref() {
+                command.current_dir(base_dir);
+            }
+
+            command.output()
         }
 
         #[cfg(not(target_os = "windows"))]
         {
-            Command::new("sh")
-                .args(["-lc", cmd.as_str()])
-                .output()
+            let mut command = Command::new("sh");
+            command.args(["-lc", cmd.as_str()]);
+
+            if let Some(base_dir) = script_base_dir.as_ref() {
+                command.current_dir(base_dir);
+            }
+
+            command.output()
         }
     })
     .await
