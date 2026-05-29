@@ -244,9 +244,11 @@
           closeAllMenus();
         });
       });
+
+      bindMenuActions();
     }
 
-    function initMenuActions() {
+    function bindMenuActions() {
       if (document.body && document.body.dataset.v1MenuActionsBound === "1") return;
       if (document.body) document.body.dataset.v1MenuActionsBound = "1";
 
@@ -259,6 +261,10 @@
         if (!action) return;
         runMenuAction(action);
       });
+    }
+
+    function initMenuActions() {
+      bindMenuActions();
     }
 
     return {
