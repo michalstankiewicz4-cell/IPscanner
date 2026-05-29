@@ -414,6 +414,22 @@
           var view = btn.getAttribute("data-activity");
           switchSidebarView(view);
           var tool = btn.getAttribute("data-tool");
+
+          // Results activity should only affect the left panel.
+          if (view === "results" || tool === "results-ip") {
+            activateSidebarTool("results-ip", "results");
+            return;
+          }
+
+          // Scanner activity should mirror Tools -> IP Scanner behavior.
+          if (view === "scanner" && tool === "scan-runner") {
+            ensureSidebarTabOpen("scan-runner");
+            setLeftActiveTab("scan-runner");
+            switchSidebarView("scanner");
+            if (switchTool) switchTool("results-ip");
+            return;
+          }
+
           if (tool === "scan-runner" || tool === "ip-library" || tool === "results-ip") {
             activateSidebarTool(tool, view);
           }
