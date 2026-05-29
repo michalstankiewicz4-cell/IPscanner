@@ -886,6 +886,17 @@
         return elementRect.left >= containerRect.left && elementRect.right <= containerRect.right;
       }
 
+      function scrollTabTrackToElement(element) {
+        if (!element || !tabsTrack) return;
+        const maxScrollLeft = Math.max(0, tabsTrack.scrollWidth - tabsTrack.clientWidth);
+        const nextScrollLeft = Math.max(0, Math.min(
+          maxScrollLeft,
+          Math.round(element.offsetLeft - (tabsTrack.clientWidth - element.offsetWidth) / 2)
+        ));
+        if (Math.abs(tabsTrack.scrollLeft - nextScrollLeft) < 2) return;
+        tabsTrack.scrollTo({ left: nextScrollLeft, behavior: "smooth" });
+      }
+
       function refreshActiveUI() {
         document.querySelectorAll("[data-tool]").forEach((el) => {
           const isActive = el.getAttribute("data-tool") === activeTool;
@@ -897,8 +908,8 @@
 
         if (tabsTrack) {
           const activeTab = tabsTrack.querySelector('.v1-tab.active');
-          if (activeTab && typeof activeTab.scrollIntoView === "function" && !isElementFullyVisibleWithinContainer(activeTab, tabsTrack)) {
-            activeTab.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+          if (activeTab && !isElementFullyVisibleWithinContainer(activeTab, tabsTrack)) {
+            scrollTabTrackToElement(activeTab);
           }
 
           if (tabsScrollLeftBtn && tabsScrollRightBtn) {
