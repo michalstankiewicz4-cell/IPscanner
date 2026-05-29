@@ -240,7 +240,9 @@
 
       <!-- Central section -->
       <section class="v1-editor">
-        <div class="v1-tabs">
+        <div class="v1-tabs-shell">
+          <button class="v1-tabs-nav" id="v1TabsScrollLeft" type="button" title="Scroll tabs left" aria-label="Scroll tabs left">◀</button>
+          <div class="v1-tabs" id="v1TabsTrack">
           <button class="v1-tab tab-closed" data-tool="versions" type="button" hidden>
             <span class="v1-tab-icon" aria-hidden="true">📘</span>
             <span class="v1-tab-title">Versions</span>
@@ -286,6 +288,8 @@
             <span class="v1-tab-title" id="v1TabTitleGlobe">Globe</span>
             <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
           </button>
+          </div>
+          <button class="v1-tabs-nav" id="v1TabsScrollRight" type="button" title="Scroll tabs right" aria-label="Scroll tabs right">▶</button>
         </div>
 
         <div class="v1-content">

@@ -578,10 +578,50 @@
   background: #2f2f31;
 }
 
+.v1-tabs-shell {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  background: var(--bg-elev);
+}
+
+.v1-tabs-nav {
+  flex: 0 0 30px;
+  border: 0;
+  background: var(--bg-elev);
+  color: #aeb2b9;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.v1-tabs-nav:hover:not(:disabled) {
+  background: #2f3338;
+  color: #ffffff;
+}
+
+.v1-tabs-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .v1-tabs {
   display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
   border-bottom: 0;
   background: var(--bg-elev);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.v1-tabs::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 .v1-tab {
@@ -597,6 +637,7 @@
   align-items: center;
   gap: 8px;
   max-width: 240px;
+  flex: 0 0 auto;
 }
 
 .v1-tab-icon {
