@@ -225,7 +225,14 @@
           }
           if (action === "stop" && setStatusLine) setStatusLine(tr("statusScanStop"));
           if (action === "clear" && setStatusLine) setStatusLine(tr("statusScanClear"));
-          if (action === "scan-speed" && setStatusLine) setStatusLine(tr("statusScanSpeed"));
+          if (action === "scan-speed") {
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("tabScanDefaultsTitle"));
+            if (switchTool) switchTool("scan-defaults");
+          }
+          if (action === "presets") {
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("scannerPortPresets"));
+            if (switchTool) switchTool("presets");
+          }
 
           if (action === "ext-ip") {
             var extEl = document.getElementById("v1DetectExtIp");
@@ -544,6 +551,36 @@
         return document.querySelector('.v1-console-tab[data-v1-console-tab="' + paneName + '"]');
       }
 
+      function appendToTerminalMirror(detail) {
+        var d = detail && typeof detail === "object" ? detail : {};
+        var paneName = typeof d.pane === "string" && d.pane ? d.pane : "info";
+        var source = typeof d.source === "string" && d.source ? d.source : "unknown";
+        var mirrorToTerminal = d.mirrorToTerminal === true;
+        var text = String(d.text || "").trim();
+        if (!text) return;
+
+        // Keep Console(info) and Terminal(console) separated by default.
+        // Only explicitly opted-in events may be mirrored to terminal output.
+        if (!mirrorToTerminal) {
+          return;
+        }
+
+        // Console-pane producers already append to terminal output directly.
+        if (paneName === "console") {
+          return;
+        }
+
+        var out = document.getElementById("v1PsOutput");
+        if (!out) return;
+
+        var prefix = "[" + paneName + ":" + source + "] ";
+        var line = prefix + text;
+        var next = (out.textContent ? out.textContent + "\n" : "") + line;
+        var rows = next.split("\n");
+        out.textContent = rows.length > 400 ? rows.slice(rows.length - 400).join("\n") : next;
+        out.scrollTop = out.scrollHeight;
+      }
+
       function paneIsActive(paneName) {
         var pane = document.querySelector('.v1-console-pane[data-v1-console-pane="' + paneName + '"]');
         return !!pane && pane.classList.contains("active");
@@ -565,6 +602,7 @@
         var detail = evt && evt.detail ? evt.detail : {};
         var paneName = typeof detail.pane === "string" && detail.pane ? detail.pane : "info";
         markPaneUnread(paneName);
+        appendToTerminalMirror(detail);
       });
 
       document.querySelectorAll(".v1-console-tab").forEach(function (tab) {

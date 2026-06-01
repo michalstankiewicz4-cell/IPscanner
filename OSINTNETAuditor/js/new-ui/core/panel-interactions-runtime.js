@@ -1,14 +1,21 @@
 (function () {
   function createPanelInteractionsRuntime(deps) {
     var versionsData = Array.isArray(deps.versionsData) ? deps.versionsData : [];
+    var tr = typeof deps.tr === "function" ? deps.tr : function (key) { return key; };
+    var setStatusLine = typeof deps.setStatusLine === "function" ? deps.setStatusLine : null;
 
-    function wireVersionsTimeline() {
-      var root = document.getElementById("v1ToolDetail");
+    function wireVersionsTimeline(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
       if (!root) return;
 
-      var track = document.getElementById("v1VersionTrack");
-      var versionsList = document.getElementById("v1VersionsList");
-      var physics = document.getElementById("v1VersionPhysics");
+      if (root.dataset.versionsTimelineBound === "1") return;
+      root.dataset.versionsTimelineBound = "1";
+
+      var track = root.querySelector("[data-version-role=\"track\"]") || root.querySelector("#v1VersionTrack");
+      var versionsList = root.querySelector("[data-version-role=\"list\"]") || root.querySelector("#v1VersionsList");
+      var physics = root.querySelector("[data-version-role=\"physics\"]") || root.querySelector("#v1VersionPhysics");
       if (!track || !versionsList || !physics) return;
 
       var points = Array.from(root.querySelectorAll(".v1-version-point"));
@@ -40,7 +47,8 @@
           var isCurrent = Number(section.getAttribute("data-version-entry-index")) === safeIndex;
           section.classList.toggle("is-active", isCurrent);
           if (isCurrent) {
-            section.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            var nextTop = Math.max(0, section.offsetTop - 8);
+            versionsList.scrollTo({ top: nextTop, behavior: "smooth" });
           }
         });
       }
@@ -149,8 +157,10 @@
       setActiveBySourceIndex(0);
     }
 
-    function wireResultsIpTable() {
-      var root = document.getElementById("v1ToolDetail");
+    function wireResultsIpTable(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
       if (!root) return;
 
       root.querySelectorAll("[data-open-ports]").forEach(function (button) {
@@ -176,9 +186,203 @@
       });
     }
 
+    function wirePresetsTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
+      if (!root) return;
+      if (!root.querySelector(".v1-presets-shell")) return;
+
+      var core = window.NetReconNewUICore || {};
+      var presetsApi = core.presets;
+      if (!presetsApi || typeof presetsApi.getState !== "function" || typeof presetsApi.replaceState !== "function") return;
+
+      var listEl = root.querySelector(".v1-presets-list");
+      var nameEl = root.querySelector("[data-preset-name]") || root.querySelector("#v1PresetName");
+      var portsEl = root.querySelector("[data-preset-ports]") || root.querySelector("#v1PresetPorts");
+      if (!listEl || !nameEl || !portsEl) return;
+
+      var selectedPresetId = null;
+
+      function cloneState(state) {
+        return {
+          defaultPresetId: String((state && state.defaultPresetId) || ""),
+          presets: (state && Array.isArray(state.presets) ? state.presets : []).map(function (item) {
+            return {
+              id: String((item && item.id) || "").trim(),
+              name: String((item && item.name) || "").trim(),
+              ports: String((item && item.ports) || "").trim(),
+            };
+          })
+        };
+      }
+
+      function getState() {
+        return cloneState(presetsApi.getState());
+      }
+
+      function sanitizeId(value) {
+        return String(value || "").toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
+      }
+
+      function pickSelected(state) {
+        var presets = state.presets;
+        if (!presets.length) return null;
+        var selected = presets.find(function (item) {
+          return item.id === selectedPresetId;
+        });
+        if (selected) return selected;
+
+        selected = presets.find(function (item) {
+          return item.id === state.defaultPresetId;
+        });
+        if (selected) return selected;
+        return presets[0];
+      }
+
+      function renderFromState(state) {
+        var presets = state.presets;
+        var selected = pickSelected(state);
+        if (!selected) {
+          listEl.innerHTML = "";
+          nameEl.value = "";
+          portsEl.value = "";
+          selectedPresetId = null;
+          return;
+        }
+
+        selectedPresetId = selected.id;
+        listEl.innerHTML = "";
+        presets.forEach(function (item) {
+          var li = document.createElement("li");
+          li.className = "v1-presets-item";
+          li.setAttribute("data-preset-id", item.id);
+          li.textContent = item.name;
+          if (item.id === selectedPresetId) {
+            li.classList.add("active");
+            li.setAttribute("aria-selected", "true");
+          }
+          if (item.id === state.defaultPresetId) {
+            li.setAttribute("title", "Default preset");
+          }
+          listEl.appendChild(li);
+        });
+
+        nameEl.value = selected.name;
+        portsEl.value = selected.ports;
+      }
+
+      function persistWith(mutator, statusSuffix) {
+        var current = getState();
+        var next = mutator(cloneState(current));
+        if (!next) return;
+        var saved = presetsApi.replaceState(next);
+        renderFromState(saved);
+        if (setStatusLine && statusSuffix) {
+          setStatusLine(tr("menuPrefix") + ": " + statusSuffix);
+        }
+      }
+
+      listEl.addEventListener("click", function (event) {
+        var itemEl = event.target.closest("[data-preset-id]");
+        if (!itemEl) return;
+        selectedPresetId = itemEl.getAttribute("data-preset-id") || "";
+        renderFromState(getState());
+      });
+
+      root.querySelectorAll("[data-preset-action]").forEach(function (button) {
+        if (button.dataset.bound === "1") return;
+        button.dataset.bound = "1";
+        button.addEventListener("click", function () {
+          var action = button.getAttribute("data-preset-action") || "";
+          var state = getState();
+          var selected = pickSelected(state);
+          if (!selected && action !== "add") return;
+
+          if (action === "add") {
+            persistWith(function (next) {
+              var rawId = sanitizeId(nameEl.value) || "preset";
+              var uniqueId = rawId;
+              var suffix = 2;
+              while (next.presets.some(function (entry) { return entry.id === uniqueId; })) {
+                uniqueId = rawId + "-" + String(suffix);
+                suffix += 1;
+              }
+
+              next.presets.push({
+                id: uniqueId,
+                name: String(nameEl.value || "New preset").trim() || "New preset",
+                ports: String(portsEl.value || "").trim(),
+              });
+
+              if (!next.defaultPresetId) next.defaultPresetId = uniqueId;
+              selectedPresetId = uniqueId;
+              return next;
+            }, "Preset added");
+            return;
+          }
+
+          if (action === "delete") {
+            persistWith(function (next) {
+              if (next.presets.length <= 1) return null;
+              var idx = next.presets.findIndex(function (entry) { return entry.id === selected.id; });
+              if (idx < 0) return null;
+              next.presets.splice(idx, 1);
+              if (!next.presets.length) return null;
+              if (next.defaultPresetId === selected.id) {
+                next.defaultPresetId = next.presets[0].id;
+              }
+              selectedPresetId = next.presets[Math.max(0, idx - 1)].id;
+              return next;
+            }, "Preset deleted");
+            return;
+          }
+
+          if (action === "move-up" || action === "move-down") {
+            persistWith(function (next) {
+              var idx = next.presets.findIndex(function (entry) { return entry.id === selected.id; });
+              if (idx < 0) return null;
+              var dir = action === "move-up" ? -1 : 1;
+              var target = idx + dir;
+              if (target < 0 || target >= next.presets.length) return null;
+              var moved = next.presets.splice(idx, 1)[0];
+              next.presets.splice(target, 0, moved);
+              selectedPresetId = moved.id;
+              return next;
+            }, action === "move-up" ? "Preset moved up" : "Preset moved down");
+            return;
+          }
+
+          if (action === "set-default") {
+            persistWith(function (next) {
+              if (!selected.id) return null;
+              next.defaultPresetId = selected.id;
+              selectedPresetId = selected.id;
+              return next;
+            }, "Default preset set");
+            return;
+          }
+
+          if (action === "save") {
+            persistWith(function (next) {
+              var idx = next.presets.findIndex(function (entry) { return entry.id === selected.id; });
+              if (idx < 0) return null;
+              next.presets[idx].name = String(nameEl.value || "").trim() || next.presets[idx].name;
+              next.presets[idx].ports = String(portsEl.value || "").trim();
+              selectedPresetId = next.presets[idx].id;
+              return next;
+            }, "Preset saved");
+          }
+        });
+      });
+
+      renderFromState(getState());
+    }
+
     return {
       wireVersionsTimeline: wireVersionsTimeline,
       wireResultsIpTable: wireResultsIpTable,
+      wirePresetsTool: wirePresetsTool,
     };
   }
 

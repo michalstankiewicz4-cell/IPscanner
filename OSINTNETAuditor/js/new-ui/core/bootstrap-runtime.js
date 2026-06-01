@@ -128,12 +128,14 @@
         const ipLibraryTopRangesLabel = document.getElementById("v1IpLibraryTopRangesLabel");
         const ipLibraryUpdateBtn = document.getElementById("v1IpLibraryUpdateBtn");
         const ipLibraryLoadBtn = document.getElementById("v1IpLibraryLoadBtn");
+        const ipLibraryClearBtn = document.getElementById("v1IpLibraryClearBtn");
         const ipLibraryLastUpdateLabel = document.getElementById("v1IpLibraryLastUpdateLabel");
         const resultNavIp = document.getElementById("v1ResultNavIp");
         const resultNavIpLibrary = document.getElementById("v1ResultNavIpLibrary");
         const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
         const tabTitleIpLibrary = document.getElementById("v1TabTitleIpLibrary");
         const tabTitlePresets = document.getElementById("v1TabTitlePresets");
+        const tabTitleScanDefaults = document.getElementById("v1TabTitleScanDefaults");
         const tabTitleImportTool = document.getElementById("v1TabTitleImportTool");
         const tabTitleLanguageManager = document.getElementById("v1TabTitleLanguageManager");
         const tabTitleAbout = document.getElementById("v1TabTitleAbout");
@@ -145,6 +147,7 @@
         const assistantMenuLabel = document.querySelector('[data-menu-action="assistant"] span:first-child');
         const aboutMenuLabel = document.querySelector('[data-menu-action="about"] span:first-child');
         const licenseMenuLabel = document.querySelector('[data-menu-action="license"] span:first-child');
+        const resetMemoryButton = document.querySelector('[data-menu-action="reset-memory"]');
         const autoArrangeToggle = document.getElementById("v1AutoArrangeToggle");
         const autoArrangeToggleWrap = autoArrangeToggle ? autoArrangeToggle.closest(".v1-menubar-toggle") : null;
         const clippyClose = document.getElementById("v1ClippyClose");
@@ -208,6 +211,7 @@
         if (ipLibraryTopRangesLabel) ipLibraryTopRangesLabel.textContent = tr("ipLibraryTopRangesLabel");
         if (ipLibraryUpdateBtn) ipLibraryUpdateBtn.textContent = tr("ipLibraryUpdateBtn");
         if (ipLibraryLoadBtn) ipLibraryLoadBtn.textContent = tr("ipLibraryLoadBtn");
+        if (ipLibraryClearBtn) ipLibraryClearBtn.textContent = tr("ipLibraryClearBtn");
         if (ipLibraryLastUpdateLabel) ipLibraryLastUpdateLabel.textContent = tr("ipLibraryLastUpdateLabel");
         document.querySelectorAll("[data-sidebar-tab-close]").forEach((el) => {
           el.setAttribute("aria-label", tr("tabCloseAria"));
@@ -218,6 +222,7 @@
         if (tabResultsIp) tabResultsIp.textContent = tr("tabResultsIp");
         if (tabTitleIpLibrary) tabTitleIpLibrary.textContent = tr("ipLibraryTabTitle");
         if (tabTitlePresets) tabTitlePresets.textContent = tr("tabPresetsTitle");
+        if (tabTitleScanDefaults) tabTitleScanDefaults.textContent = tr("tabScanDefaultsTitle");
         if (tabTitleImportTool) tabTitleImportTool.textContent = tr("importToolTitle");
         if (tabTitleLanguageManager) tabTitleLanguageManager.textContent = tr("langManagerTitle");
         if (tabTitleAbout) tabTitleAbout.textContent = tr("tabAboutTitle");
@@ -232,6 +237,10 @@
         if (autoArrangeToggleWrap) {
           autoArrangeToggleWrap.setAttribute("title", tr("autoArrangeOnUndockTitle"));
           autoArrangeToggleWrap.setAttribute("aria-label", tr("autoArrangeOnUndockTitle"));
+        }
+        if (resetMemoryButton) {
+          resetMemoryButton.setAttribute("title", tr("devFullResetButtonTitle"));
+          resetMemoryButton.setAttribute("aria-label", tr("devFullResetButtonTitle"));
         }
         if (autoArrangeToggle) {
           autoArrangeToggle.setAttribute("title", tr("autoArrangeOnUndockTitle"));

@@ -12,6 +12,30 @@
     var languageManagerConfig = contentConfig.languageManager || {};
     var importToolConfig = contentConfig.importTool || {};
     var resultsIpConfig = contentConfig.resultsIp || {};
+    var presetsApi = core.presets || null;
+
+    function getPresetsState() {
+      try {
+        if (presetsApi && typeof presetsApi.getState === "function") {
+          return presetsApi.getState();
+        }
+      } catch (_) {
+        // ignore presets provider errors
+      }
+
+      return {
+        defaultPresetId: "all-ports",
+        presets: [
+          { id: "cameras", name: "Cameras", ports: "80,554,8080,8554" },
+          { id: "printers", name: "Printers", ports: "80,443,515,631,9100" },
+          { id: "folders-http", name: "Folders / HTTP", ports: "80,139,443,445,8080" },
+          { id: "routers", name: "Routers", ports: "53,80,443,1900,8080" },
+          { id: "nas-servers", name: "NAS / Servers", ports: "21,22,80,139,443,445,5000" },
+          { id: "windows-smb", name: "Windows / SMB", ports: "135,139,445,3389" },
+          { id: "all-ports", name: "All ports", ports: "1-65535" }
+        ]
+      };
+    }
 
     function renderDefaultTool(tool) {
       var info = infoFor(tool);
@@ -47,18 +71,18 @@
         "<div class=\"v1-versions-timeline-sticky\">",
         "<div class=\"v1-version-track-wrap\">",
         "<button type=\"button\" class=\"v1-version-scroll\" data-version-scroll=\"left\" aria-label=\"" + escapeHtml(versionsConfig.scrollLeftAria || "Scroll versions left") + "\">◀</button>",
-        "<div class=\"v1-version-track\" id=\"v1VersionTrack\" role=\"listbox\" aria-label=\"" + escapeHtml(versionsConfig.timelineAria || "Published versions timeline") + "\">",
+        "<div class=\"v1-version-track\" id=\"v1VersionTrack\" data-version-role=\"track\" role=\"listbox\" aria-label=\"" + escapeHtml(versionsConfig.timelineAria || "Published versions timeline") + "\">",
         "<div class=\"v1-version-track-inner\">",
         pointsHtml,
         "</div>",
         "</div>",
         "<button type=\"button\" class=\"v1-version-scroll\" data-version-scroll=\"right\" aria-label=\"" + escapeHtml(versionsConfig.scrollRightAria || "Scroll versions right") + "\">▶</button>",
         "</div>",
-        "<div class=\"v1-version-physics\" id=\"v1VersionPhysics\" style=\"--v1-version-progress: 1;\">",
+        "<div class=\"v1-version-physics\" id=\"v1VersionPhysics\" data-version-role=\"physics\" style=\"--v1-version-progress: 1;\">",
         "<div class=\"v1-version-orb\" aria-hidden=\"true\"></div>",
         "</div>",
         "</div>",
-        "<div class=\"v1-versions-list v1-scroll-safe-inline-end\" id=\"v1VersionsList\">",
+        "<div class=\"v1-versions-list v1-scroll-safe-inline-end\" id=\"v1VersionsList\" data-version-role=\"list\">",
         listHtml,
         "</div>",
         "</div>"
@@ -162,18 +186,18 @@
         "</div>",
         "<div class=\"v1-lang-manager-grid\">",
         "<label for=\"v1LangTabSelect\">" + tr("langListHeader") + "</label>",
-        "<select id=\"v1LangTabSelect\">" + langOptions + "</select>",
+        "<select id=\"v1LangTabSelect\" data-lang-role=\"select\">" + langOptions + "</select>",
         "<label for=\"v1LangTabCode\">" + tr("langCodeLabel") + "</label>",
-        "<input id=\"v1LangTabCode\" type=\"text\" autocomplete=\"off\" placeholder=\"" + tr("langCodePlaceholder") + "\" />",
+        "<input id=\"v1LangTabCode\" data-lang-role=\"code\" type=\"text\" autocomplete=\"off\" placeholder=\"" + tr("langCodePlaceholder") + "\" />",
         "<label for=\"v1LangTabDict\">" + tr("langDictLabel") + "</label>",
-        "<textarea id=\"v1LangTabDict\" spellcheck=\"false\" placeholder=\"" + dictPlaceholder.replace(/\"/g, '&quot;') + "\"></textarea>",
+        "<textarea id=\"v1LangTabDict\" data-lang-role=\"dict\" spellcheck=\"false\" placeholder=\"" + dictPlaceholder.replace(/\"/g, '&quot;') + "\"></textarea>",
         "</div>",
         "<div class=\"v1-lang-manager-actions\">",
         "<button type=\"button\" data-lang-action=\"add\">" + tr("langAddBtn") + "</button>",
         "<button type=\"button\" data-lang-action=\"activate\">" + tr("langActivateBtn") + "</button>",
         "<button type=\"button\" data-lang-action=\"list\">" + tr("langListBtn") + "</button>",
         "</div>",
-        "<pre id=\"v1LangTabOutput\" class=\"v1-lang-manager-output\"></pre>",
+        "<pre id=\"v1LangTabOutput\" data-lang-role=\"output\" class=\"v1-lang-manager-output\"></pre>",
         "</div>"
       ].join("");
     }
@@ -192,17 +216,22 @@
           }).join("")
         : "<div class=\"v1-import-empty\">" + escapeHtml(importToolConfig.emptyText || "No imported tools yet.") + "</div>";
 
+      var subtitleText = tr("importToolSubtitle");
+      if (subtitleText === "importToolSubtitle") {
+        subtitleText = importToolConfig.subtitle || "This area is still under development, so tool imports are temporarily unavailable.";
+      }
+
       return [
         "<div class=\"v1-import-manager\">",
         "<div class=\"v1-import-manager-head\">",
         "<h4 style=\"margin:0 0 4px;\">" + tr("tipActionCustomization") + "</h4>",
-        "<div class=\"v1-import-manager-note\">" + escapeHtml(importToolConfig.subtitle || "JSON manifest import, list and uninstall.") + "</div>",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(subtitleText) + "</div>",
         "</div>",
         "<div class=\"v1-import-manager-grid\">",
         "<label for=\"v1ImportManifest\">" + escapeHtml(importToolConfig.manifestLabel || "Manifest JSON") + "</label>",
-        "<textarea id=\"v1ImportManifest\" spellcheck=\"false\" placeholder=\"" + escapeHtml(importToolConfig.manifestPlaceholder || "{\\n  \\\"id\\\": \\\"com.example.demo\\\"\\n}") + "\"></textarea>",
+        "<textarea id=\"v1ImportManifest\" data-import-role=\"manifest\" spellcheck=\"false\" placeholder=\"" + escapeHtml(importToolConfig.manifestPlaceholder || "{\\n  \\\"id\\\": \\\"com.example.demo\\\"\\n}") + "\"></textarea>",
         "<label for=\"v1ImportUninstallId\">" + escapeHtml(importToolConfig.uninstallLabel || "Tool id to uninstall") + "</label>",
-        "<input id=\"v1ImportUninstallId\" type=\"text\" autocomplete=\"off\" placeholder=\"" + escapeHtml(importToolConfig.uninstallPlaceholder || "com.example.demo") + "\" />",
+        "<input id=\"v1ImportUninstallId\" data-import-role=\"uninstall-id\" type=\"text\" autocomplete=\"off\" placeholder=\"" + escapeHtml(importToolConfig.uninstallPlaceholder || "com.example.demo") + "\" />",
         "</div>",
         "<div class=\"v1-import-manager-actions\">",
         "<button type=\"button\" data-import-action=\"install\">" + escapeHtml(importToolConfig.installBtn || "Import") + "</button>",
@@ -210,10 +239,10 @@
         "<button type=\"button\" data-import-action=\"uninstall\">" + escapeHtml(importToolConfig.uninstallBtn || "Uninstall") + "</button>",
         "</div>",
         "<div class=\"v1-import-manager-options\">",
-        "<label><input id=\"v1ImportAddMenu\" type=\"checkbox\" checked /> " + tr("importOptToolsMenu") + "</label>",
-        "<label><input id=\"v1ImportAddActivity\" type=\"checkbox\" /> " + tr("importOptActivityIcon") + "</label>",
+        "<label><input id=\"v1ImportAddMenu\" data-import-role=\"add-menu\" type=\"checkbox\" checked /> " + tr("importOptToolsMenu") + "</label>",
+        "<label><input id=\"v1ImportAddActivity\" data-import-role=\"add-activity\" type=\"checkbox\" /> " + tr("importOptActivityIcon") + "</label>",
         "</div>",
-        "<div id=\"v1ImportOutput\" class=\"v1-import-output\">" + listHtml + "</div>",
+        "<div id=\"v1ImportOutput\" data-import-role=\"output\" class=\"v1-import-output\">" + listHtml + "</div>",
         "</div>"
       ].join("");
     }
@@ -226,12 +255,12 @@
         "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("ipLibraryNote")) + "</div>",
         "</div>",
         "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("ipLibraryCentralHint")) + "</div>",
-        "<div class=\"v1-import-manager-note\"><strong>" + escapeHtml(tr("ipLibraryLastUpdateLabel")) + "</strong> <span id=\"v1IpLibraryCenterLastUpdate\">-</span></div>",
-        "<div id=\"v1IpLibraryCenterStatus\" class=\"v1-import-manager-note\"></div>",
-        "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\">",
+        "<div class=\"v1-import-manager-note\"><strong>" + escapeHtml(tr("ipLibraryLastUpdateLabel")) + "</strong> <span id=\"v1IpLibraryCenterLastUpdate\" data-iplib-role=\"last-update-center\">-</span></div>",
+        "<div id=\"v1IpLibraryCenterStatus\" data-iplib-role=\"status-center\" class=\"v1-import-manager-note\"></div>",
+        "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\" data-native-hscroll=\"true\">",
         "<table class=\"v1-results-table v1-ip-results-table v1-iplib-table\">",
         "<thead><tr><th class=\"v1-iplib-col-country\">" + escapeHtml(tr("ipLibraryTableCountry")) + "</th><th class=\"v1-iplib-col-address\">" + escapeHtml(tr("ipLibraryTableAddress")) + "</th></tr></thead>",
-        "<tbody id=\"v1IpLibraryCenterRows\"><tr><td colspan=\"2\" class=\"v1-iplib-empty\">" + escapeHtml(tr("ipLibraryTableEmpty")) + "</td></tr></tbody>",
+        "<tbody id=\"v1IpLibraryCenterRows\" data-iplib-role=\"rows\"><tr><td colspan=\"2\" class=\"v1-iplib-empty\">" + escapeHtml(tr("ipLibraryTableEmpty")) + "</td></tr></tbody>",
         "</table>",
         "</div>",
         "</div>"
@@ -239,39 +268,75 @@
     }
 
     function renderPresetsTool() {
+      var state = getPresetsState();
+      var presets = Array.isArray(state.presets) ? state.presets : [];
+      var selected = presets.find(function (item) {
+        return item && item.id === state.defaultPresetId;
+      }) || presets[0] || { id: "", name: "", ports: "" };
+
+      var listHtml = presets.map(function (item) {
+        var isActive = item.id === selected.id;
+        return '<li class="v1-presets-item' + (isActive ? ' active' : '') + '" data-preset-id="' + escapeHtml(item.id) + '"' + (isActive ? ' aria-selected="true"' : '') + '>' + escapeHtml(item.name || item.id) + '</li>';
+      }).join("");
+
       return [
         "<div class=\"v1-presets-shell\">",
         "<div class=\"v1-presets-list-block\">",
         "<ul class=\"v1-presets-list\" role=\"listbox\" aria-label=\"Port presets\">",
-        "<li class=\"v1-presets-item\">Cameras</li>",
-        "<li class=\"v1-presets-item\">Printers</li>",
-        "<li class=\"v1-presets-item\">Folders / HTTP</li>",
-        "<li class=\"v1-presets-item\">Routers</li>",
-        "<li class=\"v1-presets-item\">NAS / Servers</li>",
-        "<li class=\"v1-presets-item\">Windows / SMB</li>",
-        "<li class=\"v1-presets-item active\" aria-selected=\"true\">All ports</li>",
+        listHtml,
         "</ul>",
         "<div class=\"v1-presets-actions\">",
-        "<button type=\"button\">+ Add</button>",
-        "<button type=\"button\">Delete</button>",
-        "<button type=\"button\">Move Up</button>",
-        "<button type=\"button\">Move Down</button>",
-        "<button type=\"button\">Set as default</button>",
+        "<button type=\"button\" data-preset-action=\"add\">+ Add</button>",
+        "<button type=\"button\" data-preset-action=\"delete\">Delete</button>",
+        "<button type=\"button\" data-preset-action=\"move-up\">Move Up</button>",
+        "<button type=\"button\" data-preset-action=\"move-down\">Move Down</button>",
+        "<button type=\"button\" data-preset-action=\"set-default\">Set as default</button>",
         "</div>",
         "</div>",
         "<section class=\"v1-presets-editor\">",
         "<h4>Edit preset</h4>",
         "<div class=\"v1-presets-form\">",
         "<label for=\"v1PresetName\">Name</label>",
-        "<input id=\"v1PresetName\" type=\"text\" autocomplete=\"off\" value=\"All ports\" />",
+        "<input id=\"v1PresetName\" data-preset-name=\"true\" type=\"text\" autocomplete=\"off\" value=\"" + escapeHtml(selected.name || "") + "\" />",
         "<label for=\"v1PresetPorts\">Ports</label>",
-        "<input id=\"v1PresetPorts\" type=\"text\" autocomplete=\"off\" value=\"80,8080,443,554\" />",
+        "<input id=\"v1PresetPorts\" data-preset-ports=\"true\" type=\"text\" autocomplete=\"off\" value=\"" + escapeHtml(selected.ports || "") + "\" />",
         "</div>",
         "<p class=\"v1-presets-hint\">Enter port numbers separated by commas, e.g. 80, 443, 8080, 554</p>",
         "<div class=\"v1-presets-save\">",
-        "<button type=\"button\">Save</button>",
+        "<button type=\"button\" data-preset-action=\"save\">Save</button>",
         "</div>",
         "</section>",
+        "</div>"
+      ].join("");
+    }
+
+    function renderScanDefaultsTool() {
+      return [
+        "<div class=\"v1-import-manager\">",
+        "<div class=\"v1-import-manager-head\">",
+        "<h4 style=\"margin:0 0 4px;\">" + escapeHtml(tr("defaultsPanelTitle")) + "</h4>",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("defaultsPanelNote")) + "</div>",
+        "</div>",
+        "<div class=\"v1-import-manager-grid\">",
+        "<label for=\"v1DefaultsTimeout\">" + escapeHtml(tr("defaultsTimeoutLabel")) + "</label>",
+        "<input id=\"v1DefaultsTimeout\" type=\"number\" min=\"100\" max=\"10000\" step=\"100\" value=\"1200\" />",
+        "<label for=\"v1DefaultsRetries\">" + escapeHtml(tr("defaultsRetriesLabel")) + "</label>",
+        "<input id=\"v1DefaultsRetries\" type=\"number\" min=\"0\" max=\"10\" step=\"1\" value=\"2\" />",
+        "<label for=\"v1DefaultsConcurrency\">" + escapeHtml(tr("defaultsConcurrencyLabel")) + "</label>",
+        "<input id=\"v1DefaultsConcurrency\" type=\"number\" min=\"1\" max=\"4096\" step=\"1\" value=\"256\" />",
+        "<label for=\"v1DefaultsPortProfile\">" + escapeHtml(tr("defaultsPortProfileLabel")) + "</label>",
+        "<select id=\"v1DefaultsPortProfile\">",
+        "<option value=\"common\">" + escapeHtml(tr("scannerPresetCommon")) + "</option>",
+        "<option value=\"top20\">" + escapeHtml(tr("scannerPresetTop20")) + "</option>",
+        "<option value=\"web\">" + escapeHtml(tr("scannerPresetWeb")) + "</option>",
+        "<option value=\"smb\">" + escapeHtml(tr("scannerPresetSmb")) + "</option>",
+        "<option value=\"db\">" + escapeHtml(tr("scannerPresetDb")) + "</option>",
+        "</select>",
+        "</div>",
+        "<div class=\"v1-import-manager-actions\">",
+        "<button type=\"button\">" + escapeHtml(tr("defaultsSaveBtn")) + "</button>",
+        "<button type=\"button\">" + escapeHtml(tr("defaultsRestoreBtn")) + "</button>",
+        "</div>",
         "</div>"
       ].join("");
     }
@@ -332,6 +397,7 @@
       "language-manager": renderLanguageManagerTool,
       "ip-library": renderIpLibraryTool,
       presets: renderPresetsTool,
+      "scan-defaults": renderScanDefaultsTool,
       "results-ip": renderResultsIp,
     };
 

@@ -5,6 +5,7 @@
     var setRangeInputs = deps.setRangeInputs;
 
     var RANGE_HISTORY_KEY = "netrecon_range_history";
+    var presetsListenerBound = false;
 
     function t(key) {
       return typeof tr === "function" ? tr(key) : key;
@@ -203,6 +204,49 @@
       });
     }
 
+    function getPresetState() {
+      try {
+        var core = window.NetReconNewUICore || {};
+        var api = core.presets;
+        if (api && typeof api.getState === "function") {
+          return api.getState();
+        }
+      } catch (_) {
+        // ignore presets provider errors
+      }
+
+      return {
+        defaultPresetId: "",
+        presets: []
+      };
+    }
+
+    function renderPortPresetOptions() {
+      var portPreset = document.getElementById("v1PortPreset");
+      if (!portPreset) return;
+
+      var state = getPresetState();
+      var presets = Array.isArray(state.presets) ? state.presets : [];
+      if (!presets.length) return;
+
+      var currentValue = String(portPreset.value || "");
+      while (portPreset.firstChild) {
+        portPreset.removeChild(portPreset.firstChild);
+      }
+
+      presets.forEach(function (item) {
+        var option = document.createElement("option");
+        option.value = String(item.id || "");
+        option.textContent = String(item.name || item.id || "");
+        portPreset.appendChild(option);
+      });
+
+      var selectedValue = presets.some(function (item) { return String(item.id) === currentValue; })
+        ? currentValue
+        : String(state.defaultPresetId || presets[0].id || "");
+      portPreset.value = selectedValue;
+    }
+
     function applyStaticTranslations() {
       var detectTitle = document.getElementById("v1DetectIpTitle");
       var extLabel = document.getElementById("v1DetectBtnExtLabel");
@@ -223,6 +267,7 @@
       var stopBtn = document.querySelector('[data-scanner-action="stop"]');
       var clearBtn = document.querySelector('[data-scanner-action="clear"]');
       var scanSpeedBtn = document.querySelector('[data-scanner-action="scan-speed"]');
+      var presetsBtn = document.querySelector('[data-scanner-action="presets"]');
       var extractorTitle = document.getElementById("v1IpExtractorTitle");
       var extractorInput = document.getElementById("v1IpExtractorInput");
       var extractorBtn = document.getElementById("v1IpExtractBtn");
@@ -265,6 +310,7 @@
       if (stopBtn) stopBtn.textContent = "■ " + t("scannerStop");
       if (clearBtn) clearBtn.textContent = "✕ " + t("scannerClear");
       if (scanSpeedBtn) scanSpeedBtn.textContent = "⏱ " + t("scannerScanSpeed");
+      if (presetsBtn) presetsBtn.textContent = "⭐ " + t("scannerPortPresets");
       if (startBtn) {
         startBtn.setAttribute("title", t("scannerTipStart"));
         startBtn.setAttribute("aria-label", t("scannerTipStart"));
@@ -281,6 +327,10 @@
         scanSpeedBtn.setAttribute("title", t("scannerTipScanSpeed"));
         scanSpeedBtn.setAttribute("aria-label", t("scannerTipScanSpeed"));
       }
+      if (presetsBtn) {
+        presetsBtn.setAttribute("title", t("scannerTipPortPresets"));
+        presetsBtn.setAttribute("aria-label", t("scannerTipPortPresets"));
+      }
       if (extractorTitle) extractorTitle.textContent = t("scannerIpExtractor");
       if (extractorInput) extractorInput.setAttribute("placeholder", t("scannerExtractorPlaceholder"));
       if (extractorBtn) extractorBtn.textContent = "+ " + t("scannerAddExtract");
@@ -291,16 +341,7 @@
       if (extractorOutput) extractorOutput.setAttribute("placeholder", t("scannerExtractedPlaceholder"));
       if (historyTitle) historyTitle.textContent = t("scannerRangeHistory");
 
-      if (portPreset) {
-        var options = portPreset.querySelectorAll("option");
-        if (options[0]) options[0].textContent = t("scannerPresetCommon");
-        if (options[1]) options[1].textContent = t("scannerPresetTop20");
-        if (options[2]) options[2].textContent = t("scannerPresetWeb");
-        if (options[3]) options[3].textContent = t("scannerPresetSmb");
-        if (options[4]) options[4].textContent = t("scannerPresetDb");
-        if (options[5]) options[5].textContent = t("scannerPresetAll");
-        if (options[6]) options[6].textContent = t("scannerPresetCustom");
-      }
+      renderPortPresetOptions();
 
       renderRangeHistory();
     }
@@ -308,6 +349,12 @@
     function init() {
       initIpExtractor();
       initRangeHistoryUi();
+      if (!presetsListenerBound) {
+        document.addEventListener("newui:presets-changed", function () {
+          renderPortPresetOptions();
+        });
+        presetsListenerBound = true;
+      }
       applyStaticTranslations();
     }
 

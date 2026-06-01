@@ -3,6 +3,14 @@
     var PARITY_QUERY_KEY = "nr_parity";
     var PARITY_STORAGE_KEY = "netrecon_desktop_parity";
 
+    function hasNativeInvoke() {
+      return !!(
+        (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
+        || (window.__TAURI__ && window.__TAURI__.invoke)
+        || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
+      );
+    }
+
     function readParityFromQuery() {
       try {
         var params = new URLSearchParams(window.location.search || "");
@@ -24,7 +32,13 @@
     }
 
     function isParityMode() {
-      return readParityFromQuery() || readParityFromStorage();
+      // Query flag always wins (manual override for web parity testing).
+      if (readParityFromQuery()) return true;
+
+      // In desktop builds, never let stale storage parity disable native invoke.
+      if (hasNativeInvoke()) return false;
+
+      return readParityFromStorage();
     }
 
     function setParityMode(enabled) {
@@ -39,10 +53,12 @@
 
     function getInvoke() {
       if (isParityMode()) return null;
-      return (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
-        || (window.__TAURI__ && window.__TAURI__.invoke)
-        || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
-        || null;
+      return hasNativeInvoke()
+        ? ((window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke)
+            || (window.__TAURI__ && window.__TAURI__.invoke)
+            || (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
+            || null)
+        : null;
     }
 
     function invoke(command, payload) {

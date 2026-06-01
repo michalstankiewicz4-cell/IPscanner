@@ -11,7 +11,7 @@
   <link id="newUiSkinLink" rel="stylesheet" href="css/new-ui/skins/default.css" />
   <link rel="stylesheet" href="css/new-ui/new-ui.css" />
 </head>
-<body data-v1-ready="false" style="visibility:hidden;">
+<body data-v1-ready="false" class="v1-preload-hidden">
   <div class="v1-shell">
     <!-- Top menu -->
     <nav class="v1-menubar" id="v1Menubar">
@@ -66,6 +66,7 @@
       </div>
 
       <div class="v1-menu-spacer"></div>
+      <button class="v1-menubar-action v1-menubar-action--square" data-menu-action="reset-memory" title="Dev full reset button" aria-label="Dev full reset button">⟲</button>
       <label class="v1-menubar-toggle" title="Auto arrange when tabs are opened in floating windows" aria-label="Auto arrange when tabs are opened in floating windows">
         <input type="checkbox" id="v1AutoArrangeToggle" checked />
       </label>
@@ -117,7 +118,7 @@
                 <span class="v1-collapse-arrow">▼</span>
               </div>
               <div class="v1-section-body">
-                <div class="v1-scanner-actions" style="margin-top:8px;flex-direction:column;gap:5px;">
+                <div class="v1-scanner-actions v1-scanner-actions--detect">
                   <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="ext-ip"><span class="v1-detect-icon">🌐</span><span id="v1DetectBtnExtLabel">External IP</span></button><span class="v1-detect-result" id="v1DetectExtIp"></span><button type="button" class="v1-use-btn" id="v1UseExtIp" hidden aria-label="Use range">&gt;</button></div>
                   <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="local-ip"><span class="v1-detect-icon">🖥</span><span id="v1DetectBtnLocalLabel">Local IP</span></button><span class="v1-detect-result" id="v1DetectLocalIp"></span><button type="button" class="v1-use-btn" id="v1UseLocalIp" hidden aria-label="Use range">&gt;</button></div>
                   <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="subnets"><span class="v1-detect-icon">🔗</span><span id="v1DetectBtnSubnetsLabel">Subnets</span></button><span class="v1-detect-result" id="v1DetectSubnets"></span><button type="button" class="v1-use-btn" id="v1UseSubnets" hidden aria-label="Use range">&gt;</button></div>
@@ -159,20 +160,21 @@
               <div class="v1-port-preset-row">
                 <label class="v1-ip-label" id="v1PortsLabel" for="v1PortPreset">Ports</label>
                 <select id="v1PortPreset" class="v1-port-preset-select">
-                  <option value="common">Common (21,22,23,80,443,3389)</option>
-                  <option value="top20">Top 20</option>
-                  <option value="web">Web (80,443,8080,8443)</option>
-                  <option value="smb">SMB / Windows (135,139,445)</option>
-                  <option value="db">Databases (1433,1521,3306,5432,6379,27017)</option>
-                  <option value="all">All (1–65535)</option>
-                  <option value="custom">Custom…</option>
+                  <option value="cameras">Cameras</option>
+                  <option value="printers">Printers</option>
+                  <option value="folders-http">Folders / HTTP</option>
+                  <option value="routers">Routers</option>
+                  <option value="nas-servers">NAS / Servers</option>
+                  <option value="windows-smb">Windows / SMB</option>
+                  <option value="all-ports">All ports</option>
                 </select>
               </div>
-              <div class="v1-scanner-actions" style="margin-top:6px;">
+              <div class="v1-scanner-actions v1-scanner-actions--spaced">
                 <button type="button" data-scanner-action="start">▶ Start</button>
                 <button type="button" data-scanner-action="stop">■ Stop</button>
                 <button type="button" data-scanner-action="clear">✕ Clear</button>
                 <button type="button" data-scanner-action="scan-speed">⏱ Scan Speed</button>
+                <button type="button" data-scanner-action="presets">⭐ Port Presets</button>
               </div>
               </div>
             </li>
@@ -183,7 +185,7 @@
               </div>
               <div class="v1-section-body">
               <textarea id="v1IpExtractorInput" class="v1-ip-extractor-input" rows="3" placeholder="example.com 192.168.1.10"></textarea>
-              <div class="v1-scanner-actions" style="margin-top:6px;">
+              <div class="v1-scanner-actions v1-scanner-actions--spaced">
                 <button type="button" id="v1IpExtractBtn">＋ Add / Extract</button>
               </div>
               <textarea id="v1IpExtractorOutput" class="v1-ip-extractor-output" rows="4" readonly placeholder="Extracted IPs..."></textarea>
@@ -211,6 +213,7 @@
                   <div class="v1-scanner-actions v1-iplib-actions">
                     <button type="button" data-iplib-action="update" id="v1IpLibraryUpdateBtn">Update (PowerShell)</button>
                     <button type="button" data-iplib-action="load" id="v1IpLibraryLoadBtn">Load cached</button>
+                    <button type="button" data-iplib-action="clear" id="v1IpLibraryClearBtn">Clear base</button>
                   </div>
                 </div>
               </li>
@@ -264,6 +267,11 @@
           <button class="v1-tab tab-closed" data-tool="presets" type="button" hidden>
             <span class="v1-tab-icon" aria-hidden="true">⭐</span>
             <span class="v1-tab-title" id="v1TabTitlePresets">Presets</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="scan-defaults" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">⚙</span>
+            <span class="v1-tab-title" id="v1TabTitleScanDefaults">Default Scan Values</span>
             <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
           </button>
           <button class="v1-tab tab-closed" data-tool="import-tool" type="button" hidden>
@@ -417,8 +425,8 @@ macro://stealth-check
 
             <section class="v1-right-pane" data-v1-right-pane="notes">
               <div class="v1-notes-pane">
-                <h4 style="margin:0 0 8px;">Notes</h4>
-                <p style="margin:0;">Reserve tab for next assistant views (runbook, snippets, context).</p>
+                <h4 class="v1-notes-title">Notes</h4>
+                <p class="v1-notes-text">Reserve tab for next assistant views (runbook, snippets, context).</p>
               </div>
             </section>
           </div>
@@ -445,6 +453,7 @@ macro://stealth-check
   <script src="js/new-ui/core/i18n.js"></script>
   <script src="js/new-ui/core/theme.js"></script>
   <script src="js/new-ui/core/tool-catalog.js"></script>
+  <script src="js/new-ui/core/presets-runtime.js"></script>
   <script src="js/new-ui/core/versions-data.js"></script>
   <script src="js/new-ui/core/utils/net-utils.js"></script>
   <script src="js/new-ui/core/extensions.js"></script>

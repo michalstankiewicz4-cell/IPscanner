@@ -6,6 +6,7 @@
   position: relative;
   z-index: 1;
   flex: 1;
+  min-width: 0;
   overflow: auto;
 }
 
@@ -40,6 +41,7 @@
 .tool-detail {
   border: 0;
   padding: 10px;
+  min-width: 0;
   color: var(--txt-dim);
   font-size: 12px;
   line-height: 1.5;
@@ -84,6 +86,17 @@
 }
 
 #v1MainCard.is-versions-view #v1ToolDetail {
+  min-height: 0;
+  height: 100%;
+}
+
+.v1-detached-tool-card.is-versions-view .tool-detail {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.v1-detached-tool-card.is-versions-view .v1-versions-shell {
   min-height: 0;
   height: 100%;
 }
@@ -718,6 +731,13 @@
   min-width: 980px;
 }
 
+/* Ensure horizontal overflow exists for IP Scan Results (detached/tab parity).
+   Do not apply this to IP Library table (it also uses v1-ip-results-table class). */
+.v1-ip-results-table:not(.v1-iplib-table) {
+  width: max-content;
+  min-width: 1180px;
+}
+
 .v1-ip-results-table th,
 .v1-ip-results-table td {
   vertical-align: middle;
@@ -739,12 +759,25 @@
   font-weight: 700;
 }
 
+.v1-ip-results-table:not(.v1-iplib-table) .v1-ip-col-ip {
+  min-width: 140px;
+  white-space: nowrap;
+}
+
 .v1-ip-results-table .v1-ip-col-host,
 .v1-ip-results-table .v1-ip-col-isp {
   max-width: 240px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.v1-ip-results-table:not(.v1-iplib-table) .v1-ip-col-host,
+.v1-ip-results-table:not(.v1-iplib-table) .v1-ip-col-isp {
+  min-width: 280px;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .v1-ip-results-table .v1-ip-col-flag {

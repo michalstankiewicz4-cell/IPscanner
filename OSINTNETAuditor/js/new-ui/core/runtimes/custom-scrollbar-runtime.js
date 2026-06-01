@@ -8,6 +8,13 @@
     var detachedDragActive = false;
     var activeDetachedCard = null;
 
+    function normalizeActiveDetachedCard() {
+      if (!activeDetachedCard) return;
+      if (!document.body || !document.body.contains(activeDetachedCard)) {
+        activeDetachedCard = null;
+      }
+    }
+
     function getScrollbarSizePx() {
       var raw = "";
       try {
@@ -206,12 +213,19 @@
 
     function isHostOccludedByHigherDetachedCard(el, rect) {
       if (!el || !el.closest) return false;
+      normalizeActiveDetachedCard();
       var selfCard = el.closest(".v1-detached-tool-card");
       if (!selfCard) return false;
 
-      // Keep detached scrollbar rails bound to the active floating window only.
-      if (activeDetachedCard && activeDetachedCard !== selfCard) {
+      // While actively dragging one detached card, keep rails focused on that card.
+      if (detachedDragActive && activeDetachedCard && activeDetachedCard !== selfCard) {
         return true;
+      }
+
+      // In normal mode, show rails for each detached window independently.
+      // Occlusion heuristics are too aggressive and can hide rails on side-by-side windows.
+      if (!detachedDragActive) {
+        return false;
       }
 
       var selfZRaw = window.getComputedStyle(selfCard).zIndex;
@@ -219,18 +233,6 @@
       if (!Number.isFinite(selfZ)) selfZ = 0;
 
       var cards = Array.from(document.querySelectorAll(".v1-detached-tool-card"));
-
-      // Hard guard: keep rails on the top-most detached card only.
-      var topZ = cards.reduce(function (max, card) {
-        var style = window.getComputedStyle(card);
-        if (style.display === "none" || style.visibility === "hidden") return max;
-        var z = Number(style.zIndex);
-        if (!Number.isFinite(z)) z = 0;
-        return Math.max(max, z);
-      }, Number.NEGATIVE_INFINITY);
-      if (Number.isFinite(topZ) && selfZ < topZ) {
-        return true;
-      }
 
       return cards.some(function (card) {
         if (card === selfCard) return false;
@@ -294,18 +296,29 @@
           item.hRail.style.display = "none";
         } else {
           var horizontalRailHeight = scrollbarSize;
-          var horizontalRailWidth = rect.width;
+          var viewportWidth = Math.max(0, window.innerWidth || document.documentElement.clientWidth || 0);
+          var viewportHeight = Math.max(0, window.innerHeight || document.documentElement.clientHeight || 0);
+          var visibleLeft = Math.max(0, rect.left);
+          var visibleRight = Math.min(viewportWidth, rect.right);
+          var horizontalRailWidth = Math.max(0, visibleRight - visibleLeft);
           var horizontalThumbMin = 24;
           var horizontalRatio = el.clientWidth / el.scrollWidth;
           var horizontalThumbWidth = Math.max(horizontalThumbMin, Math.floor(horizontalRailWidth * horizontalRatio));
+          horizontalThumbWidth = Math.min(horizontalRailWidth, horizontalThumbWidth);
           var horizontalMaxThumbLeft = Math.max(0, horizontalRailWidth - horizontalThumbWidth);
           var horizontalScrollRange = Math.max(1, el.scrollWidth - el.clientWidth);
           var horizontalThumbLeft = Math.floor((el.scrollLeft / horizontalScrollRange) * horizontalMaxThumbLeft);
+          var horizontalTop = Math.max(0, Math.min(viewportHeight - horizontalRailHeight, rect.bottom - horizontalRailHeight));
+
+          if (horizontalRailWidth <= 0) {
+            item.hRail.style.display = "none";
+            return;
+          }
 
           item.hRail.style.display = "block";
           item.hRail.style.zIndex = String(layerZ);
-          item.hRail.style.left = rect.left + "px";
-          item.hRail.style.top = rect.bottom - horizontalRailHeight + "px";
+          item.hRail.style.left = visibleLeft + "px";
+          item.hRail.style.top = horizontalTop + "px";
           item.hRail.style.width = horizontalRailWidth + "px";
 
           item.hThumb.style.width = horizontalThumbWidth + "px";
@@ -349,7 +362,13 @@
           activeDetachedCard = detachedCard;
           detachedDragActive = true;
           scheduleRefresh();
+          return;
         }
+
+        // Clicking outside detached cards releases detached-only scrollbar focus.
+        activeDetachedCard = null;
+        detachedDragActive = false;
+        scheduleRefresh();
       }, true);
 
       document.addEventListener("pointermove", function () {

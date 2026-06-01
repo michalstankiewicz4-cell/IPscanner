@@ -40,6 +40,35 @@
           return true;
         };
 
+    function resetPersistentMemory() {
+      try {
+        if (storage && typeof storage.clear === "function") {
+          storage.clear();
+        } else if (window.localStorage && typeof window.localStorage.clear === "function") {
+          window.localStorage.clear();
+        }
+      } catch (_) {
+        // ignore storage clear failures
+      }
+
+      try {
+        if (window.sessionStorage && typeof window.sessionStorage.clear === "function") {
+          window.sessionStorage.clear();
+        }
+      } catch (_) {
+        // ignore session storage clear failures
+      }
+
+      try {
+        var core = window.NetReconNewUICore || null;
+        if (core && Object.prototype.hasOwnProperty.call(core, "__netreconIpLibraryCache")) {
+          delete core.__netreconIpLibraryCache;
+        }
+      } catch (_) {
+        // ignore in-memory cache clear failures
+      }
+    }
+
     function readDetachedLayouts() {
       try {
         var raw = storageGet(DETACHED_LAYOUTS_KEY) || "";
@@ -613,6 +642,8 @@
       // Swap data attributes and internal map
       cardA.setAttribute("data-detached-tool", toolB);
       cardB.setAttribute("data-detached-tool", toolA);
+      cardA.classList.toggle("is-versions-view", toolB === "versions");
+      cardB.classList.toggle("is-versions-view", toolA === "versions");
       detachedCards[toolA] = cardB;
       detachedCards[toolB] = cardA;
     }
@@ -629,6 +660,7 @@
       var card = document.createElement("article");
       card.className = "v1-card v1-detached-tool-card";
       card.setAttribute("data-detached-tool", tool);
+      card.classList.toggle("is-versions-view", tool === "versions");
 
       var header = document.createElement("div");
       header.className = "v1-detached-tool-head";
@@ -663,12 +695,17 @@
       header.appendChild(closeBtn);
 
       var body = document.createElement("div");
-      body.className = "v1-detached-tool-body tool-detail";
-      body.innerHTML = stripIds(buildDetailHtml(tool));
+      body.className = "v1-detached-tool-body v1-right-content";
+
+      var detailRoot = document.createElement("div");
+      detailRoot.className = "tool-detail";
+      detailRoot.innerHTML = stripIds(buildDetailHtml(tool));
+      body.appendChild(detailRoot);
 
       card.appendChild(header);
       card.appendChild(body);
-      document.body.appendChild(card);
+      var shellHost = document.querySelector(".v1-shell");
+      (shellHost || document.body).appendChild(card);
 
       // Fallback inline styles keep floating card visible even with stale CSS cache.
       card.style.position = "fixed";
@@ -684,8 +721,9 @@
       bringDetachedCardToFront(card);
 
       if (tool === "results-ip") {
-        wireDetachedResultsIp(body);
+        wireDetachedResultsIp(detailRoot);
       }
+      wireToolRuntime(tool, detailRoot);
 
       card.addEventListener("pointerdown", function () {
         bringDetachedCardToFront(card);
@@ -895,6 +933,8 @@
     if (window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes && window.NetReconNewUICore.newUiRuntimes.createPanelInteractionsRuntime) {
       panelInteractionsRuntime = window.NetReconNewUICore.newUiRuntimes.createPanelInteractionsRuntime({
         versionsData: versionsData,
+        tr: tr,
+        setStatusLine: setStatusLine,
       });
     }
 
@@ -955,7 +995,7 @@
     function initWorkbenchTabs() {
       if (document.body && document.body.dataset.v1TabsBound === "1") {
         ensureAllTabControls();
-        wireIpLibraryButtons();
+        wireIpLibraryButtons(document);
         updateTabPopoutUi();
         return;
       }
@@ -987,6 +1027,20 @@
           event.stopPropagation();
           if (event.stopImmediatePropagation) event.stopImmediatePropagation();
           autoArrangeDetachedCards();
+        });
+      }
+
+      var resetMemoryButton = document.querySelector('[data-menu-action="reset-memory"]');
+      if (resetMemoryButton && resetMemoryButton.dataset.v1Bound !== "1") {
+        resetMemoryButton.dataset.v1Bound = "1";
+        resetMemoryButton.addEventListener("click", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+          var shouldReset = window.confirm("Reset app memory and clear all saved state? The app will reload.");
+          if (!shouldReset) return;
+          resetPersistentMemory();
+          window.location.reload();
         });
       }
 
@@ -1106,6 +1160,45 @@
       return "<h4>" + escapeHtml(tool || "") + "</h4><div>Panel content runtime is not available.</div>";
     }
 
+    function wireToolRuntime(tool, rootEl) {
+      var scope = rootEl && typeof rootEl.querySelector === "function" ? rootEl : undefined;
+
+      if (tool === "versions") {
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireVersionsTimeline) {
+          panelInteractionsRuntime.wireVersionsTimeline(scope);
+        }
+        return;
+      }
+
+      if (tool === "results-ip") {
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireResultsIpTable) {
+          panelInteractionsRuntime.wireResultsIpTable(scope);
+        }
+        return;
+      }
+
+      if (tool === "presets") {
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wirePresetsTool) {
+          panelInteractionsRuntime.wirePresetsTool(scope);
+        }
+        return;
+      }
+
+      if (tool === "ip-library") {
+        wireIpLibraryButtons(scope);
+        return;
+      }
+
+      if (tool === "import-tool") {
+        wireImportToolButtons(scope);
+        return;
+      }
+
+      if (tool === "language-manager") {
+        wireLanguageManagerButtons(scope);
+      }
+    }
+
     function getTabsTrack() {
       return document.querySelector(".v1-editor .v1-tabs");
     }
@@ -1214,72 +1307,128 @@
       applyDetachedCardState();
       if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + activeTool);
       if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + activeTool;
-      if (activeTool === "versions") {
-        if (panelInteractionsRuntime && panelInteractionsRuntime.wireVersionsTimeline) {
-          panelInteractionsRuntime.wireVersionsTimeline();
-        }
-      }
-      if (activeTool === "results-ip") {
-        if (panelInteractionsRuntime && panelInteractionsRuntime.wireResultsIpTable) {
-          panelInteractionsRuntime.wireResultsIpTable();
-        }
-      }
-      if (activeTool === "ip-library") {
-        wireIpLibraryButtons();
-      }
+      wireToolRuntime(activeTool);
       if (typeof onAfterRender === "function") onAfterRender(activeTool);
     }
 
-    function wireIpLibraryButtons() {
-      var countriesEl = document.getElementById("v1IpLibraryCountryCodes");
-      var topRangesEl = document.getElementById("v1IpLibraryTopRanges");
-      var lastUpdateEl = document.getElementById("v1IpLibraryLastUpdate");
-      var centerLastUpdateEl = document.getElementById("v1IpLibraryCenterLastUpdate");
-      var statusEl = document.getElementById("v1IpLibraryStatus");
-      var centerStatusEl = document.getElementById("v1IpLibraryCenterStatus");
-      var centerRowsEl = document.getElementById("v1IpLibraryCenterRows");
-      var actionButtons = document.querySelectorAll("[data-iplib-action]");
-      if (!actionButtons.length && !centerRowsEl) return;
+    function wireIpLibraryButtons(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function" ? rootEl : document;
+
+      var countriesEl = root.querySelector("#v1IpLibraryCountryCodes") || root.querySelector(".v1-iplib-countries");
+      var topRangesEl = root.querySelector("#v1IpLibraryTopRanges") || root.querySelector(".v1-iplib-topranges");
+      var actionButtons = root.querySelectorAll("[data-iplib-action]");
+
+      function getLastUpdateEls() {
+        var sidebar = root.querySelector("#v1IpLibraryLastUpdate") || root.querySelector('[data-iplib-role="last-update-sidebar"]');
+        var center = root.querySelector("#v1IpLibraryCenterLastUpdate") || root.querySelector('[data-iplib-role="last-update-center"]');
+        if (root !== document) {
+          if (!sidebar) sidebar = document.getElementById("v1IpLibraryLastUpdate");
+          if (!center) center = document.getElementById("v1IpLibraryCenterLastUpdate");
+        }
+        return {
+          sidebar: sidebar,
+          center: center,
+        };
+      }
+
+      function getStatusEls() {
+        var sidebar = root.querySelector("#v1IpLibraryStatus") || root.querySelector('[data-iplib-role="status-sidebar"]');
+        var center = root.querySelector("#v1IpLibraryCenterStatus") || root.querySelector('[data-iplib-role="status-center"]');
+        if (root !== document) {
+          if (!sidebar) sidebar = document.getElementById("v1IpLibraryStatus");
+          if (!center) center = document.getElementById("v1IpLibraryCenterStatus");
+        }
+        return {
+          sidebar: sidebar,
+          center: center,
+        };
+      }
+
+      function getCenterRowsEl() {
+        return root.querySelector("#v1IpLibraryCenterRows") || root.querySelector('[data-iplib-role="rows"]');
+      }
+
+      if (!actionButtons.length && !getCenterRowsEl()) return;
 
       var DEFAULT_CODES = "pl,cn,ru,us,de,fr,gb,jp,kr,br,in,au,nl,ua,cz,se,no,fi,tr,ir,sa,za,ar,mx,ca,it,es";
       var CACHE_KEY = "netrecon_country_ip_library_json";
       var CACHE_UPDATED_KEY = "netrecon_country_ip_library_updated_at";
+      var MEMORY_CACHE_KEY = "__netreconIpLibraryCache";
 
       if (countriesEl && !countriesEl.value.trim()) countriesEl.value = DEFAULT_CODES;
       if (topRangesEl && !topRangesEl.value.trim()) topRangesEl.value = "120";
 
       function writeStatus(text) {
         var value = String(text || "");
-        if (statusEl) statusEl.textContent = value;
-        if (centerStatusEl) centerStatusEl.textContent = value;
+        var statusEls = getStatusEls();
+        if (statusEls.sidebar) statusEls.sidebar.textContent = value;
+        if (statusEls.center) statusEls.center.textContent = value;
       }
 
-      function writeOutput(text) {
-        var value = String(text || "").trim();
+      function nowStamp() {
+        var d = new Date();
+        return d.toLocaleTimeString();
+      }
+
+      function appendTerminalLine(line) {
+        var value = String(line || "");
         if (!value) return;
 
-        var infoLog = document.getElementById("v1InfoLog");
-        if (infoLog) {
-          var clipped = value.length > 6000 ? (value.slice(0, 6000) + "\n...[truncated]") : value;
-          var next = (infoLog.textContent ? infoLog.textContent + "\n" : "") + clipped;
+        var out = document.getElementById("v1PsOutput");
+        if (out) {
+          var next = (out.textContent ? out.textContent + "\n" : "") + value;
           var rows = next.split("\n");
-          infoLog.textContent = rows.length > 400 ? rows.slice(rows.length - 400).join("\n") : next;
-          infoLog.scrollTop = infoLog.scrollHeight;
+          out.textContent = rows.length > 400 ? rows.slice(rows.length - 400).join("\n") : next;
+          out.scrollTop = out.scrollHeight;
         }
 
         document.dispatchEvent(new CustomEvent("newui:console-pane-update", {
           detail: {
-            pane: "info",
+            pane: "console",
             source: "ip-library",
             text: value,
           },
         }));
       }
 
+      function writeOutput(text) {
+        var value = String(text || "").trim();
+        if (!value) return;
+
+        var clipped = value.length > 12000 ? (value.slice(0, 12000) + "\n...[truncated]") : value;
+        appendTerminalLine(clipped);
+      }
+
+      function readMemoryCache() {
+        try {
+          var core = window.NetReconNewUICore = window.NetReconNewUICore || {};
+          var payload = core[MEMORY_CACHE_KEY];
+          if (!payload || typeof payload !== "object") return null;
+          var data = Array.isArray(payload.data) ? payload.data : [];
+          var updatedAt = String(payload.updatedAt || "-");
+          return { data: data, updatedAt: updatedAt };
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function writeMemoryCache(data, updatedAt) {
+        try {
+          var core = window.NetReconNewUICore = window.NetReconNewUICore || {};
+          core[MEMORY_CACHE_KEY] = {
+            data: Array.isArray(data) ? data : [],
+            updatedAt: String(updatedAt || "-")
+          };
+        } catch (_) {
+          // ignore memory-cache write failures
+        }
+      }
+
       function setLastUpdate(value) {
         var text = String(value || "-");
-        if (lastUpdateEl) lastUpdateEl.textContent = text;
-        if (centerLastUpdateEl) centerLastUpdateEl.textContent = text;
+        var lastUpdateEls = getLastUpdateEls();
+        if (lastUpdateEls.sidebar) lastUpdateEls.sidebar.textContent = text;
+        if (lastUpdateEls.center) lastUpdateEls.center.textContent = text;
       }
 
       function pickAddressFromItem(item) {
@@ -1294,21 +1443,48 @@
         if (Array.isArray(item.ranges) && item.ranges.length) {
           return item.ranges.slice(0, 3).map(function (entry) {
             if (entry && typeof entry === "object") {
-              return String(entry.cidr || entry.range || entry.network || entry.address || "");
+              return String(entry.cidr || entry.range || entry.network || entry.address || entry.ip_range || "");
             }
-            return String(entry || "");
+            return String(entry || "").trim();
           }).filter(Boolean).join(", ");
         }
 
         return "-";
       }
 
+      function extractRanges(item) {
+        if (!item || typeof item !== "object") return [];
+
+        var direct = String(item.cidr || item.range || item.network || item.address || item.ip_range || "").trim();
+        if (direct) return [direct];
+
+        if (Array.isArray(item.ranges) && item.ranges.length) {
+          return item.ranges.map(function (entry) {
+            if (entry && typeof entry === "object") {
+              return String(entry.cidr || entry.range || entry.network || entry.address || entry.ip_range || "").trim();
+            }
+            return String(entry || "").trim();
+          }).filter(Boolean);
+        }
+
+        return [];
+      }
+
       function pickCountryFromItem(item) {
         if (!item || typeof item !== "object") return "-";
-        return String(item.country_code || item.countryCode || item.country || item.code || "-").toUpperCase();
+        return String(
+          item.country_code ||
+          item.countryCode ||
+          item.country ||
+          item.code ||
+          item.flag ||
+          item.name ||
+          "-"
+        ).toUpperCase();
       }
 
       function renderCenterRows(data) {
+        var centerRowsEl = getCenterRowsEl();
         if (!centerRowsEl) return;
 
         var rows = Array.isArray(data) ? data : [];
@@ -1322,9 +1498,22 @@
           return;
         }
 
-        centerRowsEl.innerHTML = rows.map(function (item) {
-          return '<tr><td class="v1-iplib-col-country">' + escapeHtml(pickCountryFromItem(item)) + '</td><td class="v1-iplib-col-address">' + escapeHtml(pickAddressFromItem(item)) + '</td></tr>';
-        }).join("");
+        var html = [];
+        rows.forEach(function (item) {
+          var country = pickCountryFromItem(item);
+          var ranges = extractRanges(item);
+
+          if (!ranges.length) {
+            html.push('<tr><td class="v1-iplib-col-country">' + escapeHtml(country) + '</td><td class="v1-iplib-col-address">' + escapeHtml(pickAddressFromItem(item)) + '</td></tr>');
+            return;
+          }
+
+          ranges.forEach(function (address) {
+            html.push('<tr><td class="v1-iplib-col-country">' + escapeHtml(country) + '</td><td class="v1-iplib-col-address">' + escapeHtml(address) + '</td></tr>');
+          });
+        });
+
+        centerRowsEl.innerHTML = html.join("");
       }
 
       function getInvoke() {
@@ -1351,25 +1540,33 @@
       }
 
       function loadCached() {
+        var memory = readMemoryCache();
+        if (memory && Array.isArray(memory.data) && memory.data.length) {
+          var memCount = memory.data.length;
+          setLastUpdate(memory.updatedAt || "-");
+          writeStatus(tr("ipLibraryStatusLoaded") + " " + memCount + " | " + tr("ipLibraryStatusUpdatedAt") + " " + (memory.updatedAt || "-"));
+          renderCenterRows(memory.data);
+          return;
+        }
+
         var raw = storageGet(CACHE_KEY) || "";
         var updatedAt = storageGet(CACHE_UPDATED_KEY) || "-";
         setLastUpdate(updatedAt);
         if (!raw) {
           writeStatus(tr("ipLibraryStatusEmpty"));
-          writeOutput("");
           renderCenterRows([]);
           return;
         }
 
         try {
           var data = JSON.parse(raw);
-          var count = Array.isArray(data) ? data.length : 0;
+          var normalized = Array.isArray(data) ? data : (data && typeof data === "object" ? [data] : []);
+          var count = normalized.length;
+          writeMemoryCache(normalized, updatedAt);
           writeStatus(tr("ipLibraryStatusLoaded") + " " + count + " | " + tr("ipLibraryStatusUpdatedAt") + " " + updatedAt);
-          writeOutput(JSON.stringify(data, null, 2));
-          renderCenterRows(data);
+          renderCenterRows(normalized);
         } catch (_) {
           writeStatus(tr("ipLibraryStatusInvalidCache"));
-          writeOutput(raw);
           renderCenterRows([]);
         }
       }
@@ -1385,10 +1582,15 @@
             return;
           }
 
-          var invoke = getInvoke();
-          if (!invoke) {
-            writeStatus(tr("statusDesktopOnlyShort"));
-            writeOutput(tr("psConsoleDesktopOnly"));
+          if (actionName === "clear") {
+            storageSet(CACHE_KEY, "");
+            storageSet(CACHE_UPDATED_KEY, "");
+            writeMemoryCache([], "-");
+            setLastUpdate("-");
+            writeStatus(tr("ipLibraryStatusCleared"));
+            renderCenterRows([]);
+            appendTerminalLine("[" + nowStamp() + "] " + tr("ipLibraryStatusCleared"));
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("ipLibraryStatusCleared"));
             return;
           }
 
@@ -1412,30 +1614,53 @@
           ].join('; ');
 
           writeStatus(tr("ipLibraryStatusUpdating"));
-          writeOutput(tr("psConsoleRunning"));
+          appendTerminalLine("[" + nowStamp() + "] PS> " + psCommand);
+          appendTerminalLine("[" + nowStamp() + "] " + tr("psConsoleRunning"));
 
           runPowerShell(psCommand).then(function (res) {
             var stdout = res && res.stdout ? String(res.stdout).trim() : "";
             var stderr = res && res.stderr ? String(res.stderr).trim() : "";
+            var exitCode = (res && typeof res.exit_code === "number") ? res.exit_code : -1;
+
+            if (stdout) writeOutput(stdout);
+            if (stderr) writeOutput(stderr);
+            appendTerminalLine("[" + nowStamp() + "] exit code: " + exitCode);
+
             var jsonText = stdout;
-            var jsonStart = stdout.indexOf("[");
-            var jsonEnd = stdout.lastIndexOf("]");
-            if (jsonStart >= 0 && jsonEnd > jsonStart) {
-              jsonText = stdout.slice(jsonStart, jsonEnd + 1);
+            var arrayStart = stdout.indexOf("[");
+            var arrayEnd = stdout.lastIndexOf("]");
+            var objectStart = stdout.indexOf("{");
+            var objectEnd = stdout.lastIndexOf("}");
+            if (arrayStart >= 0 && arrayEnd > arrayStart) {
+              jsonText = stdout.slice(arrayStart, arrayEnd + 1);
+            } else if (objectStart >= 0 && objectEnd > objectStart) {
+              jsonText = stdout.slice(objectStart, objectEnd + 1);
             }
 
             try {
               var parsed = JSON.parse(jsonText || "[]");
-              var payload = JSON.stringify(parsed);
+              var normalized = Array.isArray(parsed) ? parsed : (parsed && typeof parsed === "object" ? [parsed] : []);
+              var count = normalized.length;
+              if (count === 0) {
+                var mergedEmpty = [stdout, stderr].filter(Boolean).join("\n\n");
+                writeStatus(tr("ipLibraryStatusUpdateFailed"));
+                writeOutput(mergedEmpty || tr("ipLibraryStatusUpdateFailed"));
+                renderCenterRows([]);
+                if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("ipLibraryStatusUpdateFailed"));
+                return;
+              }
+
+              var payload = JSON.stringify(normalized);
               storageSet(CACHE_KEY, payload);
               var updatedAt = new Date().toISOString();
               storageSet(CACHE_UPDATED_KEY, updatedAt);
+              writeMemoryCache(normalized, updatedAt);
               setLastUpdate(updatedAt);
 
-              var count = Array.isArray(parsed) ? parsed.length : 0;
               writeStatus(tr("ipLibraryStatusUpdated") + " " + count + " | " + tr("ipLibraryStatusUpdatedAt") + " " + updatedAt);
-              writeOutput(JSON.stringify(parsed, null, 2));
-              renderCenterRows(parsed);
+              var mergedSuccess = [JSON.stringify(normalized, null, 2)].filter(Boolean).join("\n\n");
+              writeOutput(mergedSuccess);
+              loadCached();
               if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("ipLibraryStatusUpdated") + " " + count);
             } catch (_) {
               var merged = [stdout, stderr].filter(Boolean).join("\n\n");
@@ -1462,15 +1687,17 @@
       loadCached();
     }
 
-    function wireImportToolButtons() {
-      var root = document.getElementById("v1ToolDetail");
+    function wireImportToolButtons(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
       if (!root) return;
 
-      var manifestEl = document.getElementById("v1ImportManifest");
-      var uninstallEl = document.getElementById("v1ImportUninstallId");
-      var addMenuEl = document.getElementById("v1ImportAddMenu");
-      var addActivityEl = document.getElementById("v1ImportAddActivity");
-      var outputEl = document.getElementById("v1ImportOutput");
+      var manifestEl = root.querySelector('[data-import-role="manifest"]') || root.querySelector("#v1ImportManifest");
+      var uninstallEl = root.querySelector('[data-import-role="uninstall-id"]') || root.querySelector("#v1ImportUninstallId");
+      var addMenuEl = root.querySelector('[data-import-role="add-menu"]') || root.querySelector("#v1ImportAddMenu");
+      var addActivityEl = root.querySelector('[data-import-role="add-activity"]') || root.querySelector("#v1ImportAddActivity");
+      var outputEl = root.querySelector('[data-import-role="output"]') || root.querySelector("#v1ImportOutput");
 
       if (manifestEl && !manifestEl.value.trim()) {
         manifestEl.value = "{\n  \"id\": \"com.example.demo\",\n  \"name\": \"Demo Extension\",\n  \"version\": \"0.1.0\",\n  \"contributions\": {\n    \"tools\": {},\n    \"menuActions\": {}\n  }\n}";
@@ -1594,14 +1821,16 @@
       });
     }
 
-    function wireLanguageManagerButtons() {
-      var root = document.getElementById("v1ToolDetail");
+    function wireLanguageManagerButtons(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
       if (!root) return;
 
-      var selectEl = document.getElementById("v1LangTabSelect");
-      var codeEl = document.getElementById("v1LangTabCode");
-      var dictEl = document.getElementById("v1LangTabDict");
-      var outputEl = document.getElementById("v1LangTabOutput");
+      var selectEl = root.querySelector('[data-lang-role="select"]') || root.querySelector("#v1LangTabSelect");
+      var codeEl = root.querySelector('[data-lang-role="code"]') || root.querySelector("#v1LangTabCode");
+      var dictEl = root.querySelector('[data-lang-role="dict"]') || root.querySelector("#v1LangTabDict");
+      var outputEl = root.querySelector('[data-lang-role="output"]') || root.querySelector("#v1LangTabOutput");
 
       if (selectEl && selectEl.dataset.bound !== "1") {
         selectEl.dataset.bound = "1";

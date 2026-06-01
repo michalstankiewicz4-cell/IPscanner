@@ -66,6 +66,32 @@
   color: #ffffff;
 }
 
+.v1-menubar-action--square {
+  width: 26px;
+  min-width: 26px;
+  height: 22px;
+  padding: 0;
+  margin-right: 6px;
+  border: 1px solid #4a4f58;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #2f333a 0%, #272a30 100%);
+  color: #ffb18d;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.v1-menubar-action--square:hover {
+  background: linear-gradient(180deg, #3d2f2c 0%, #342522 100%);
+  border-color: #8a4f41;
+  color: #ffd2c0;
+}
+
+.v1-menubar-action--square:active {
+  transform: translateY(1px);
+}
+
 .v1-menubar-toggle {
   height: 100%;
   display: inline-flex;

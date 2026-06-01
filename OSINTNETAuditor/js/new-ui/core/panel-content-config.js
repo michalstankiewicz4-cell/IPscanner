@@ -57,7 +57,7 @@
       dictPlaceholder: "{\n  \\\"menuFile\\\": \\\"Datei\\\",\n  \\\"menuOptions\\\": \\\"Optionen\\\",\n  \\\"menuTools\\\": \\\"Werkzeuge\\\",\n  \\\"menuHelp\\\": \\\"Hilfe\\\"\n}"
     },
     importTool: {
-      subtitle: "JSON manifest import, list and uninstall.",
+      subtitle: "This area is still under development, so tool imports are temporarily unavailable.",
       manifestLabel: "Manifest JSON",
       manifestPlaceholder: "{\n  \\\"id\\\": \\\"com.example.demo\\\"\n}",
       uninstallLabel: "Tool id to uninstall",
