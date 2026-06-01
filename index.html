@@ -168,21 +168,20 @@
     <header class="topbar">
       <div class="title">
         <strong>Dual UI View</strong>
-        <span>Lewa strona: lokalny start UI. Prawa strona: https://ipscanner.pl/OSINTNETAuditor/. Suwak zmienia tylko odsłonięcie, nie układ wnętrza.</span>
       </div>
       <div class="legend">
-        <span><b>Left</b> start UI</span>
-        <span><b>Right</b> ipscanner.pl/OSINTNETAuditor</span>
+        <span><b>Left</b> old UI</span>
+        <span><b>Right</b> new UI</span>
       </div>
     </header>
 
     <main class="stage" id="stage">
       <section class="pane left" id="leftPane" style="flex-basis: 50%;">
-        <iframe src="dual-ui.html" title="Start UI"></iframe>
+        <iframe src="dual-ui.html" title="Old UI"></iframe>
       </section>
       <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" aria-label="Przesuwana przedziałka"></div>
       <section class="pane right" id="rightPane" style="flex-basis: 50%;">
-        <iframe src="https://ipscanner.pl/OSINTNETAuditor/" title="ipscanner.pl/OSINTNETAuditor"></iframe>
+        <iframe src="OSINTNETAuditor/index.html" title="New UI"></iframe>
       </section>
     </main>
   </div>
