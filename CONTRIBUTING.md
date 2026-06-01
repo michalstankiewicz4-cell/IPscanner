@@ -16,6 +16,7 @@ W praktyce: zmiany w warstwie UI powinny byc izolowane od logiki skanowania.
 - `main` utrzymuje klasyczny interfejs windowsowy (legacy UI).
 - `feature/new-ui-skins` utrzymuje nowe UI (uklad podobny do VS Code).
 - Galezie rozwijamy niezaleznie: brak mieszania entrypointow i runtime miedzy stackami.
+- Na `feature/new-ui-skins` utrzymujemy tylko zasoby `css/new-ui/**` i `js/new-ui/**` jako source UI; nie przywracamy top-level legacy plikow `css/*.css` i `js/*.js`.
 - Jedyny punkt integracji miedzy tymi galeziami to dual-view host:
   - lewa strona: `main` (legacy UI),
   - prawa strona: `feature/new-ui-skins` (new UI).
@@ -26,6 +27,7 @@ W praktyce: zmiany w warstwie UI powinny byc izolowane od logiki skanowania.
 - Nie mieszaj refaktoru UI z duzymi zmianami backendu skanera w jednym PR.
 - Nie edytuj katalogu app recznie - to mirror generowany skryptem.
 - W new UI preferuj male moduly w js/new-ui/core zamiast rozbudowy inline script.
+- Na `feature/new-ui-skins` nie dodawaj nowych odwolan do legacy path `css/*.css` i `js/*.js`; wejscie ma ladowac wyłącznie `css/new-ui/**` i `js/new-ui/**`.
 - Zanim dodasz nowy tekst UI, dodaj klucze do i18n.
 - Nie zostawiaj hardcoded tekstow user-facing (tooltip, aria-label, status line) w runtime; tekst powinien przechodzic przez i18n.
 - Dla opisow narzedzi (tool catalog) uzywaj kluczy i18n w formacie toolText_<tool_id_z_podkresleniami>.
