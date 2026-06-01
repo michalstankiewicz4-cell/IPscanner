@@ -86,7 +86,6 @@ Mapa odpowiedzialnosci jest utrzymywana centralnie i nie powinna byc dublowana w
 Aktualne pliki wejściowe UI:
 
 - `index.html` - New UI (aktywny domyślny entrypoint aplikacji),
-- `old-ui.html` - Legacy UI (utrzymanie kompatybilności / referencja migracyjna),
 - katalog `app/` - mirror generowany przez `npm run prepare:app` (nie edytujemy ręcznie).
 
 ## 4. Rozszerzenia (plugin-like)
@@ -202,7 +201,7 @@ Plan rozwoju instalatora (roadmapa):
 ## 9. Czego nie robimy w PR do new UI
 
 - Nie przepinamy calej aplikacji na new UI w jednym kroku.
-- Nie usuwamy legacy UI bez uzgodnionego planu migracji.
+- Nie usuwamy aktywnych entrypointow UI bez uzgodnionego planu migracji.
 - Nie dokladamy nowego dlugu technicznego przez kolejne duze skrypty inline.
 
 ## 10. Definition of done (UI/i18n)

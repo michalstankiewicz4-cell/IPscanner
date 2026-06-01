@@ -53,7 +53,6 @@ jobs:
 
           $itemsToCopy = @(
             'index.html',
-            'old-ui.html',
             'clippy.html',
             'txt-ui.html',
             'css',
