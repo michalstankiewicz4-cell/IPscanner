@@ -15,7 +15,7 @@
 
 .v1-resizer-v:hover,
 .v1-resizer-v.dragging {
-  background: #2f2f31;
+  background: var(--activity);
 }
 
 .v1-activity {
@@ -659,7 +659,7 @@
 
 .v1-resizer-h:hover,
 .v1-resizer-h.dragging {
-  background: #2f2f31;
+  background: var(--activity);
 }
 
 .v1-tabs-shell {
