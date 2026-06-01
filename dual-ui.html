@@ -1,256 +1,1764 @@
 <!doctype html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dual UI View</title>
-  <style>
-    :root {
-      --bg: #0e1116;
-      --panel: #151a22;
-      --panel-2: #1b2230;
-      --line: rgba(255, 255, 255, 0.12);
-      --text: #e8edf5;
-      --muted: rgba(232, 237, 245, 0.72);
-      --handle: #4b5563;
-    }
-
-    * { box-sizing: border-box; }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      overflow: hidden;
-      background: radial-gradient(1200px 800px at 20% 0%, #182131 0%, var(--bg) 55%, #080b10 100%);
-      color: var(--text);
-      font-family: "Segoe UI", Arial, sans-serif;
-    }
-
-    .shell {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      width: 100%;
-      height: 100%;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-      backdrop-filter: blur(12px);
-    }
-
-    .title {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 0;
-    }
-
-    .title strong {
-      font-size: 15px;
-      letter-spacing: 0.02em;
-    }
-
-    .title span {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .legend b {
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .stage {
-      position: relative;
-      display: flex;
-      width: 100%;
-      height: 100%;
-      min-height: 0;
-      background: rgba(0, 0, 0, 0.24);
-    }
-
-    .pane {
-      position: relative;
-      min-width: 0;
-      min-height: 0;
-      overflow: hidden;
-      flex: 1 1 50%;
-      background: var(--panel);
-    }
-
-    .pane.right {
-      background: var(--panel-2);
-    }
-
-    .pane iframe {
-      display: block;
-      width: 100%;
-      height: 100%;
-      border: 0;
-      background: #fff;
-    }
-
-    .splitter {
-      position: relative;
-      width: 12px;
-      flex: 0 0 12px;
-      cursor: col-resize;
-      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.09));
-      border-left: 1px solid var(--line);
-      border-right: 1px solid var(--line);
-      user-select: none;
-      touch-action: none;
-    }
-
-    .splitter::before {
-      content: "";
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 4px;
-      height: 48px;
-      transform: translate(-50%, -50%);
-      border-radius: 999px;
-      background: var(--handle);
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.08);
-    }
-
-    .splitter::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.14), transparent);
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-
-    .splitter:hover::after,
-    body.dragging .splitter::after {
-      opacity: 1;
-    }
-
-    body.dragging,
-    body.dragging * {
-      cursor: col-resize !important;
-      user-select: none !important;
-    }
-
-    @media (max-width: 900px) {
-      .topbar {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .pane {
-        min-width: 180px;
-      }
-    }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>NetRecon IP Auditor</title>
+<script>
+(function () {
+  try {
+    var tool = new URLSearchParams((window.location.hash || '').replace(/^#/, '')).get('tool');
+    if (tool) document.documentElement.classList.add('tool-window-boot');
+  } catch (_) {}
+})();
+</script>
+<link rel="icon" type="image/png" href="zebrus.png"/>
+<link rel="stylesheet" href="css/theme-base.css"/>
+<link rel="stylesheet" href="css/tool-proto.css"/>
+<link rel="stylesheet" href="css/tool-console.css"/>
+<link rel="stylesheet" href="css/tool-speed.css"/>
+<link rel="stylesheet" href="css/tool-macro.css"/>
+<link rel="stylesheet" href="css/tool-globe.css"/>
+<link rel="stylesheet" href="css/tool-radar.css"/>
+<link rel="stylesheet" href="css/tool-phonelookup.css"/>
+<link rel="stylesheet" href="css/theme-glass.css"/>
+<link rel="stylesheet" href="css/theme-workbench.css"/>
+<link rel="stylesheet" href="css/theme-purple-dark.css"/>
+<link rel="stylesheet" href="css/theme-black-flat.css"/>
+<link rel="stylesheet" href="css/theme-retrogray.css"/>
+<link rel="stylesheet" href="css/clippy.css"/>
 </head>
 <body>
-  <div class="shell">
-    <header class="topbar">
-      <div class="title">
-        <strong>Dual UI View</strong>
-        <span>Lewa strona: https://www.ipscanner.pl. Prawa strona: https://ipscanner.pl/OSINTNETAuditor/. Suwak zmienia tylko odsłonięcie, nie układ wnętrza.</span>
-      </div>
-      <div class="legend">
-        <span><b>Left</b> www.ipscanner.pl</span>
-        <span><b>Right</b> ipscanner.pl/OSINTNETAuditor</span>
-      </div>
-    </header>
+<script>
+(function () {
+  try {
+    var skin = localStorage.getItem('ui_skin');
+    if (skin === 'glass' || skin === 'workbench' || skin === 'purple-dark' || skin === 'black-flat' || skin === 'retrogray' || skin === 'classic') {
+      document.body.classList.add('skin-' + skin);
+    } else {
+      document.body.classList.add('skin-classic');
+    }
+  } catch (_) {
+    document.body.classList.add('skin-classic');
+  }
+})();
+</script>
 
-    <main class="stage" id="stage">
-      <section class="pane left" id="leftPane" style="flex-basis: 50%;">
-        <iframe src="https://www.ipscanner.pl" title="www.ipscanner.pl"></iframe>
-      </section>
-      <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" aria-label="Przesuwana przedziałka"></div>
-      <section class="pane right" id="rightPane" style="flex-basis: 50%;">
-        <iframe src="https://ipscanner.pl/OSINTNETAuditor/" title="ipscanner.pl/OSINTNETAuditor"></iframe>
-      </section>
-    </main>
+<div class="retro-win" id="mainWin">
+  <!-- Title bar -->
+  <div class="titlebar">
+    <img class="icon title-icon-img" src="zebrus.png" width="14" height="14" alt=""/>
+    <span class="title" id="appTitle">NetRecon IP Auditor</span>
+    <div class="titlebar-btns">
+      <div class="title-btn title-btn-clickable title-btn-reset-danger" id="btnFactoryReset" data-i18n-title="btnFactoryResetTip" title="Factory reset">⟲</div>
+      <div class="title-btn title-btn-clickable" id="mainMinBtn">_</div>
+      <div class="title-btn title-btn-clickable" id="mainMaxBtn">□</div>
+      <div class="title-btn title-btn-close" id="mainCloseBtn">✕</div>
+    </div>
   </div>
 
-  <script>
-    (function () {
-      var stage = document.getElementById('stage');
-      var splitter = document.getElementById('splitter');
-      var leftPane = document.getElementById('leftPane');
-      var rightPane = document.getElementById('rightPane');
-      var dragging = false;
-      var minRatio = 0;
-      var maxRatio = 1;
-      var ratio = 0.5;
+  <!-- Menu bar -->
+  <div class="menubar" id="menubar">
+    <div class="menu-item" id="menuFile"><span data-i18n="menuFile">File</span>
+      <div class="menu-dropdown">
+        <div class="menu-dd-item" id="menuExportResults" data-i18n="menuExportResults">💾 Export results...</div>
+        <div class="menu-dd-item" id="menuImportResults" data-i18n="menuImportResults">📂 Import results...</div>
+      </div>
+    </div>
+    <div class="menu-item" id="menuOptions"><span data-i18n="menuOptions">Options</span>
+      <div class="menu-dropdown">
+        <div class="menu-dd-item" id="menuCountries" data-i18n="menuCountries">Country IP Library...</div>
+        <div class="menu-dd-item" id="menuPresets" data-i18n="menuPresets">Port Presets...</div>
+        <div class="menu-dd-item" id="menuDefaults" data-i18n="menuDefaults">Default Scan Values...</div>
+        <div class="menu-dd-sep"></div>
+        <div class="menu-dd-item" id="menuLang" data-i18n="menuLanguage">Language...</div>
+        <div class="menu-dd-sep"></div>
+        <div class="menu-dd-item" id="menuCustomize">🎛 Customization...</div>
+      </div>
+    </div>
+    <div class="menu-item" id="menuTools"><span data-i18n="menuTools">Tools</span>
+      <div class="menu-dropdown">
+        <div class="menu-dd-item" id="menuToolTopology" data-i18n="btnTopology">🕸 Topology</div>
+        <div class="menu-dd-item" id="menuToolGlobe" data-i18n="btnGlobe">🌍 Globe</div>
+        <div class="menu-dd-item" id="menuToolProto" data-i18n="btnProto">🧩 Prototype</div>
+        <div class="menu-dd-item" id="menuToolMacro" data-i18n="btnMacro">📁 Macro</div>
+        <div class="menu-dd-item" id="menuToolSpeed" data-i18n="btnSpeed">📶 Speed</div>
+        <div class="menu-dd-item" id="menuToolConsole" data-i18n="btnConsole">⌨ Console</div>
+        <div class="menu-dd-item" id="menuToolScanWatch">🛡 IP Scan Watch...</div>
+        <div class="menu-dd-item" id="menuToolWifiDetector">📡 WiFi Detector...</div>
+        <div class="menu-dd-item" id="menuToolWifiRadar" data-i18n="btnWifiRadar">📍 WiFi Radar</div>
+        <div class="menu-dd-item" id="menuToolBtDetector" data-i18n="btnBtDetectorMenu">🔵 Bluetooth Detector...</div>
+        <div class="menu-dd-item" id="menuToolGnss" data-i18n="btnGnssMenu">🛰 GNSS Monitor...</div>
+        <div class="menu-dd-item" id="menuToolLte" data-i18n="btnLteMenu">📶 LTE Monitor...</div>
+        <div class="menu-dd-item" id="menuToolSniffer" data-i18n="btnSnifferMenu">🔎 Network Sniffer...</div>
+        <div class="menu-dd-item" id="menuToolImgMeta" data-i18n="btnImgMetaMenu">🖼 Image Metadata...</div>
+        <div class="menu-dd-item" id="menuToolPhoneLookup" data-i18n="btnPhoneLookupMenu">📱 Phone Reverse Lookup...</div>
+        <div class="menu-dd-item" id="menuToolAiAssistant">🤖 AI Security Assistant...</div>
+      </div>
+    </div>
+    <div class="menu-item" id="menuHelp"><span data-i18n="menuHelp">Help</span>
+      <div class="menu-dropdown">
+        <div class="menu-dd-item" id="menuVersions" data-i18n="menuVersions">Versions</div>
+        <div class="menu-dd-item" id="menuDownload" data-i18n="menuDownload">📥 Download</div>
+        <div class="menu-dd-item" id="menuAbout" data-i18n="menuAbout">About</div>
+        <div class="menu-dd-sep"></div>
+        <div class="menu-dd-item" id="menuClippy" data-i18n="menuClippy">📎 Assistant</div>
+      </div>
+    </div>
+  </div>
 
-      function clamp(value, min, max) {
-        return Math.max(min, Math.min(max, value));
-      }
+  <input type="file" id="scanResultsImportInput" accept="application/json,.json" style="display:none" />
 
-      function applyRatio(nextRatio) {
-        ratio = clamp(nextRatio, minRatio, maxRatio);
-        leftPane.style.flexBasis = (ratio * 100).toFixed(4) + '%';
-        rightPane.style.flexBasis = ((1 - ratio) * 100).toFixed(4) + '%';
-      }
+  <div class="win-body">
 
-      function updateFromPointer(clientX) {
-        var rect = stage.getBoundingClientRect();
-        if (!rect.width) return;
-        applyRatio((clientX - rect.left) / rect.width);
-      }
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <button class="btn95" id="btnGo" data-i18n="btnStart">▶ Start</button>
+      <button class="btn95" id="btnStop" disabled data-i18n="btnStop">■ Stop</button>
+      <button class="btn95" id="btnClear" data-i18n="btnClear">✕ Clear</button>
+      <button class="btn95" id="btnTopologyToolbar" title="Topology" data-i18n="btnTopology">🕸 Topology</button>
+      <button class="btn95" id="btnGlobe" title="World Map" data-i18n="btnGlobe">🌍 Globe</button>
+      <button class="btn95" id="btnProtoToolbar" title="Prototype" data-i18n="btnProto">🧩 Prototype</button>
+      <button class="btn95" id="btnMacroToolbar" title="Macro Folder" data-i18n="btnMacro">📁 Macro</button>
+      <button class="btn95" id="btnSpeedToolbar" title="Speed Test" data-i18n="btnSpeed">📶 Speed</button>
+      <button class="btn95" id="btnCmdConsole" title="Command Console" data-i18n="btnConsole">⌨ Console</button>
+      <button class="btn95" id="btnWifiRadarToolbar" title="WiFi Radar" data-i18n="btnWifiRadar">📍 WiFi Radar</button>
+      <button class="btn95" id="btnBtDetectorToolbar" title="Bluetooth Detector" data-i18n="btnBtDetector">🔵 BT Detector</button>
+      <button class="btn95" id="btnGnssToolbar" title="GNSS Monitor" data-i18n="btnGnss">🛰 GNSS</button>
+      <button class="btn95" id="btnSnifferToolbar" title="Network Sniffer" data-i18n="btnSniffer">🔎 Sniffer</button>
+      <div class="flex-spacer"></div>
+    </div>
 
-      splitter.addEventListener('pointerdown', function (event) {
-        dragging = true;
-        document.body.classList.add('dragging');
-        updateFromPointer(event.clientX);
-        try {
-          splitter.setPointerCapture(event.pointerId);
-        } catch (_) {}
-        event.preventDefault();
-      });
+    <!-- Mode + IP Range -->
+    <div class="groupbox">
+      <span class="groupbox-legend" data-i18n="scanSettings">Scan Settings</span>
 
-      window.addEventListener('pointermove', function (event) {
-        if (!dragging) return;
-        updateFromPointer(event.clientX);
-      });
+      <!-- IP Detection Buttons with History -->
+      <div class="settings-row-sm-with-history">
+        <div class="settings-row-sm-col">
+          <!-- External IP -->
+          <div class="settings-row-sm">
+            <button class="btn95 btn-wide-132" id="btnMyIp" data-i18n="btnMyIp">🌐 My External IP</button>
+            <span id="myIpResult" class="ip-result-label"></span>
+            <button class="btn95 btn-action-sm initially-hidden" id="btnCopyMyIp" data-i18n="btnCopy">📋 Copy</button>
+            <button class="btn95 btn-action-sm initially-hidden" id="btnUseMyIp"  data-i18n="btnUse">➤ Use</button>
+          </div>
 
-      function endDrag() {
-        dragging = false;
-        document.body.classList.remove('dragging');
-      }
+          <!-- Local IP -->
+          <div class="settings-row-sm">
+            <button class="btn95 btn-wide-132" id="btnMyLocalIp" data-i18n="btnMyLocalIp">🏠 My Local IP</button>
+            <span id="myLocalIpResult" class="ip-result-label"></span>
+            <button class="btn95 btn-action-sm initially-hidden" id="btnCopyMyLocalIp" data-i18n="btnCopy">📋 Copy</button>
+            <button class="btn95 btn-action-sm initially-hidden" id="btnUseMyLocalIp"  data-i18n="btnUse">➤ Use</button>
+          </div>
 
-      window.addEventListener('pointerup', function (event) {
-        endDrag();
-        try {
-          splitter.releasePointerCapture(event.pointerId);
-        } catch (_) {}
-      });
+          <!-- Local Subnets -->
+          <div class="settings-row-sm-wrap">
+            <button class="btn95 btn-wide-132" id="btnLocalSubnets" data-i18n="btnLocalSubnets">🧭 Local Subnets</button>
+            <span id="localSubnetsResult" class="ip-result-label"></span>
+            <select id="localSubnetSelect" class="select95 initially-hidden"></select>
+            <button class="btn95 btn-action-sm initially-hidden" id="btnUseLocalSubnet" data-i18n="btnUse">➤ Use</button>
+          </div>
+        </div>
 
-      window.addEventListener('pointercancel', function () {
-        endDrag();
-      });
+        <div class="settings-row-sm-extractor">
+          <div class="ip-extractor-head">
+            <div class="ip-extractor-head-spacer"></div>
+            <div class="scan-history-label ip-extractor-label" data-i18n="extractorLabel">🔎 IP extractor</div>
+          </div>
+          <div class="ip-extractor-row">
+            <button class="btn95 btn-ip-extractor" id="btnAddExtractedIp" data-i18n="extractorAdd">[add IP]</button>
+            <textarea id="ipExtractorInput" class="ip-extractor-input" data-i18n-placeholder="extractorPlaceholder" spellcheck="false"></textarea>
+          </div>
+        </div>
 
-      window.addEventListener('resize', function () {
-        applyRatio(ratio);
-      });
+        <!-- History panel -->
+        <div class="settings-row-sm-history">
+          <div class="scan-history-label">📋 Range History:</div>
+          <div class="scan-history-list" id="scanHistoryList">
+            <div class="scan-history-empty">No history</div>
+          </div>
+        </div>
+      </div>
 
-      applyRatio(ratio);
-    })();
-  </script>
+      <!-- Preset selector -->
+      <div class="settings-row">
+        <span class="label-nowrap" data-i18n="labelPreset">Preset:</span>
+        <select id="presetSelect" class="select95"></select>
+        <span class="label-muted-sm" data-i18n="labelPorts2">Ports:</span>
+        <span id="activePorts" class="active-ports-display"></span>
+      </div>
+
+      <!-- IP Range -->
+      <div class="range-row">
+        <span class="range-label" data-i18n="ipRange">IP Range:</span>
+        <!-- FROM -->
+        <div class="ip-box" id="boxFrom">
+          <input class="oct" id="f0" maxlength="3" placeholder="192"/>
+          <span class="oct-dot">.</span>
+          <input class="oct" id="f1" maxlength="3" placeholder="168"/>
+          <span class="oct-dot">.</span>
+          <input class="oct" id="f2" maxlength="3" placeholder="1"/>
+          <span class="oct-dot">.</span>
+          <input class="oct" id="f3" maxlength="3" placeholder="1"/>
+        </div>
+        <span>to</span>
+        <!-- TO -->
+        <div class="ip-box" id="boxTo">
+          <input class="oct" id="t0" maxlength="3" placeholder="192"/>
+          <span class="oct-dot">.</span>
+          <input class="oct" id="t1" maxlength="3" placeholder="168"/>
+          <span class="oct-dot">.</span>
+          <input class="oct" id="t2" maxlength="3" placeholder="1"/>
+          <span class="oct-dot">.</span>
+          <input class="oct" id="t3" maxlength="3" placeholder="254"/>
+        </div>
+        <button class="btn95 ml-10" id="btnScanSpeed">⚙ Scan Speed</button>
+        <input type="number" min="2" max="64" value="24" id="concNum" class="is-hidden"/>
+        <input type="number" min="0" max="5000" value="0" id="delayMs" class="is-hidden"/>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-wrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progFill"></div>
+        <div class="progress-pct" id="progPct">0%</div>
+      </div>
+      <div class="port-progress-wrap" id="portProgWrap">
+        <div class="port-progress-label" id="portProgLabel">Ports: 0 / 0</div>
+        <div class="port-progress-bg">
+          <div class="port-progress-fill" id="portProgFill"></div>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-item"><span data-i18n="labelChecked">Checked:</span> <span class="stat-val" id="statChecked">0</span></div>
+        <div class="stat-item"><span data-i18n="labelFound">Found:</span> <span class="stat-val" id="statFound">0</span></div>
+        <div class="stat-item"><span data-i18n="labelPorts">Ports:</span> <span class="stat-val" id="statPorts">0</span></div>
+        <div class="stat-item ml-auto"><span id="statTime" class="status-time">0.0s</span></div>
+      </div>
+    </div>
+
+    <!-- List view -->
+    <div class="listview-wrap" id="listviewWrap">
+      <div class="listview-filter">
+        <span class="filter-label" data-i18n="filterShow">Show:</span>
+        <button class="btn-filter" id="btnFilterAll" data-i18n="filterAll">All</button>
+        <button class="btn-filter" id="btnFilterFavorites" data-i18n="filterFavorites">★ Favorites</button>
+        <button class="btn-filter active" id="btnFilterActive" data-i18n="filterActive">Active</button>
+        <button class="btn-filter" id="btnFilterAnomaly" data-i18n="filterAnomaly">Intermediate</button>
+        <button class="btn-filter" id="btnFilterDead" data-i18n="filterDead">Dead</button>
+        <button class="btn-cols" id="btnCols">Columns ▾</button>
+        <button class="btn-cols ml-auto" id="btnBlurIp" title="Toggle IP blur">👁 Blur</button>
+        <div class="cols-panel" id="colsPanel">
+          <label class="cols-panel-item"><input type="checkbox" data-col="hostname" checked> 🧭 Hostname</label>
+          <label class="cols-panel-item"><input type="checkbox" data-col="geo" checked> 🌍 Country Flag</label>
+          <label class="cols-panel-item"><input type="checkbox" data-col="isp" checked> 🏢 ISP</label>
+          <label class="cols-panel-item"><input type="checkbox" data-col="asn"> 🛰 AS</label>
+          <label class="cols-panel-item"><input type="checkbox" data-col="device"> 🖥 Device Identification</label>
+          <label class="cols-panel-item"><input type="checkbox" data-col="title"> 📄 HTTP Page Title</label>
+          <label class="cols-panel-item"><input type="checkbox" data-col="access"> 🔑 Access / Snapshot</label>
+        </div>
+      </div>
+      <div class="listview-header">
+        <div class="lv-col lv-col-dot cursor-context-menu" id="colCheckAll" title="Right-click for options">✔</div>
+        <div class="lv-col lv-col-center cursor-context-menu" id="colFavAll" title="Right-click for options">★</div>
+        <div class="lv-col lv-col-center" title="Status">●</div>
+        <div class="lv-col cursor-pointer" id="colSortIp" data-i18n="colIp" title="Sort by IP">IP Address</div>
+        <div class="lv-col lv-col-center cursor-pointer" id="colExpandAll" title="Expand / collapse all">+</div>
+        <div class="lv-col cursor-pointer" id="colSortPing" data-i18n="colPing" title="Sort by Ping">Ping</div>
+        <div class="lv-col lv-extra-col" data-col="hostname">🧭 Hostname</div>
+        <div class="lv-col lv-extra-col" data-col="geo">🌍 Flag</div>
+        <div class="lv-col lv-extra-col" data-col="isp">🏢 ISP</div>
+        <div class="lv-col lv-extra-col is-hidden" data-col="asn">🛰 AS</div>
+        <div class="lv-col lv-extra-col is-hidden" data-col="device">🖥 Device</div>
+        <div class="lv-col lv-extra-col is-hidden" data-col="title">📄 Title</div>
+        <div class="lv-col lv-extra-col is-hidden" data-col="access">🔑 Access</div>
+      </div>
+      <div class="listview-body" id="listBody">
+        <div class="empty-row" id="emptyRow" data-i18n="emptyRow">No results. Configure IP range and click Start.</div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-wrap" id="previewWrap">
+      <div class="preview-titlebar">
+        <span>🖥</span>
+        <span class="preview-url-label" id="previewUrl">—</span>
+        <button class="btn95 preview-btn-sm" id="btnPreviewOpen" data-i18n="previewOpen">↗ Open</button>
+        <button class="btn95 preview-btn-sm" id="btnPreviewClose" data-i18n="previewClose">✕</button>
+      </div>
+      <iframe id="previewFrame" class="preview-iframe"
+        sandbox="allow-forms allow-scripts allow-popups"
+        title="Podgląd"></iframe>
+      <div class="preview-blocked" id="previewBlocked">
+        <div class="preview-blocked-icon">🔒</div>
+        <div>Urządzenie blokuje osadzanie (X-Frame-Options).</div>
+        <a id="previewExtLink" href="#" target="_blank" rel="noopener">Otwórz w nowej karcie →</a>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="statusbar">
+      <div class="status-panel" id="statusMsg" data-i18n="statusReady">Ready.</div>
+      <div class="status-panel status-count-panel" id="statusCount">0 hosts</div>
+    </div>
+
+  </div><!-- /win-body -->
+</div><!-- /retro-win -->
+
+
+
+<!-- Notepad window -->
+<div class="tool-win-shell notepad-win" id="notepadWin">
+  <!-- Title bar -->
+  <div class="titlebar">
+    <span>📝</span>
+    <span class="title-fill" data-i18n="notepadWinTitle">About</span>
+    <div class="titlebar-btns">
+      <div class="title-btn title-btn-clickable" id="btnNotepadClose">✕</div>
+    </div>
+  </div>
+
+  <!-- Text area -->
+  <textarea class="notepad-textarea" id="notepadText" readonly></textarea>
+</div>
+
+<!-- Command console window -->
+<div class="tool-win-shell cmd-win" id="cmdWin">
+  <div class="titlebar cursor-move" id="cmdTitlebar">
+    <span class="icon">🖥</span>
+    <span class="title" data-i18n="cmdWinTitle">Console Log</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnCmdClose" title="Close">✕</button>
+    </div>
+  </div>
+
+  <!-- Menu bar -->
+  <div class="win-menubar95 cmd-menubar">
+    <div class="cmd-menu-file" id="cmdMenuFile"><span data-i18n="cmdMenuFile">File</span>
+      <div class="cmd-file-drop" id="cmdMenuFileDrop">
+        <div class="cmd-file-action" id="btnCmdSaveLogs" data-i18n="cmdSaveLogs">💾 Save logs...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="cmd-filterbar">
+    <label class="cmd-filter-label" data-i18n="cmdFilter">Filter:</label>
+    <select class="cmd-filter-select" id="cmdFilterSelect">
+      <option value="" data-i18n="cmdFilterAll">-- All --</option>
+      <option value="scan" data-i18n="cmdFilterScan">Scan</option>
+      <option value="tracert" data-i18n="cmdFilterTracert">Tracert</option>
+      <option value="macro" data-i18n="cmdFilterMacro">Macro</option>
+      <option value="speed" data-i18n="cmdFilterSpeed">Speed</option>
+    </select>
+    <button class="btn95 cmd-bar-btn" id="btnCmdFilter" data-i18n="cmdBtnFilter">Filter</button>
+    <button class="btn95 cmd-bar-btn cmd-bar-btn-gap" id="btnCmdClearLog" data-i18n="cmdBtnClearLog">Clear</button>
+  </div>
+
+  <div class="cmd-output-wrap">
+    <textarea class="cmd-output" id="cmdOutput" readonly></textarea>
+  </div>
+</div>
+
+<!-- Speed test window -->
+<div class="tool-win-shell speed-win" id="speedWin">
+  <div class="titlebar cursor-move" id="speedTitlebar">
+    <span class="icon">📶</span>
+    <span class="title" data-i18n="speedWinTitle">Internet Speed Test</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnSpeedClose">✕</button>
+    </div>
+  </div>
+
+  <div class="speed-body">
+    <div class="speed-grid">
+      <div class="dlg-sunken-box speed-card">
+        <div class="speed-label" data-i18n="speedLabelDownload">Download</div>
+        <div class="speed-value speed-value-download" id="speedDownloadValue">--</div>
+        <div class="speed-unit" data-i18n="speedMbps">Mbps</div>
+      </div>
+      <div class="dlg-sunken-box speed-card">
+        <div class="speed-label" data-i18n="speedLabelPing">Ping</div>
+        <div class="speed-value speed-value-ping" id="speedPingValue">--</div>
+        <div class="speed-unit" data-i18n="speedMs">ms</div>
+      </div>
+      <div class="dlg-sunken-box speed-card">
+        <div class="speed-label" data-i18n="speedLabelUpload">Upload</div>
+        <div class="speed-value speed-value-upload" id="speedUploadValue">--</div>
+        <div class="speed-unit" data-i18n="speedMbps">Mbps</div>
+      </div>
+    </div>
+
+    <div class="dlg-sunken-box speed-status" id="speedStatus" data-i18n="speedReady">Kliknij Start, aby zmierzyc ping, download i upload.</div>
+
+    <div class="speed-actions">
+      <button class="btn95" id="btnSpeedStart" data-i18n="speedBtnStart">▶ Start test</button>
+    </div>
+  </div>
+</div>
+
+<!-- Visual programming prototype window -->
+<div class="tool-win-shell proto-win" id="protoWin">
+  <div class="titlebar cursor-move" id="protoTitlebar">
+    <span class="icon">🧩</span>
+    <span class="title" data-i18n="protoWinTitle">Prototyp Visual Programming</span>
+    <div class="titlebar-btns">
+      <button class="title-btn" id="btnProtoToggle" title="Maximize">□</button>
+      <button class="title-btn title-btn-close" id="btnProtoClose">✕</button>
+    </div>
+  </div>
+
+  <div class="proto-layout" id="protoLayout">
+    <div class="dlg-sunken-box proto-panel proto-panel-scroll">
+      <div class="proto-section-title">NODE TOOLBOX</div>
+      <div class="proto-list-wrap">
+        <div class="proto-chip proto-chip-blue">🕒 Trigger: Time</div>
+        <div class="proto-chip proto-chip-blue">🎯 Target: Single Host</div>
+        <div class="proto-chip proto-chip-blue">🌐 Target: IP Range</div>
+        <div class="proto-chip proto-chip-green">🔎 Action: Scan Host</div>
+        <div class="proto-chip proto-chip-green">🧭 Action: Scan Subnet</div>
+        <div class="proto-chip proto-chip-yellow">📄 Report: Summary</div>
+        <div class="proto-chip proto-chip-yellow">💾 Save File: Desktop</div>
+        <div class="proto-chip proto-chip-purple">📨 Notify: Email/Webhook</div>
+        <div class="proto-chip proto-chip-orange">🔀 Condition: IF</div>
+        <div class="proto-chip proto-chip-orange">⚠️ Filter: Port Match</div>
+      </div>
+      <div class="proto-note">
+        Condition nodes have two outputs: <span class="text-true">TRUE</span> and <span class="text-false">FALSE</span>.<br>
+        Prototype only: drag/drop and execution engine are not implemented yet.
+      </div>
+    </div>
+
+    <div class="dlg-sunken-box proto-panel proto-canvas-panel" id="protoCanvas">
+      <div class="proto-section-title proto-canvas-title">FLOW CANVAS (mockup)</div>
+
+      <svg id="protoLinks" width="100%" height="100%" class="proto-links-svg"></svg>
+
+      <div class="proto-node proto-node-blue" data-node="n1" style="left:18px;top:42px;width:176px">
+        <div class="proto-node-head">TRIGGER</div>
+        <div class="proto-node-body">🕒 At 22:30 daily</div>
+        <div class="proto-anchor proto-anchor-out" data-node="n1"></div>
+      </div>
+
+      <div class="proto-node proto-node-blue" data-node="n2" style="left:242px;top:42px;width:188px">
+        <div class="proto-node-head">TARGET</div>
+        <div class="proto-node-body">🎯 Host: 192.168.1.25</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n2"></div>
+        <div class="proto-anchor proto-anchor-out" data-node="n2"></div>
+      </div>
+
+      <div class="proto-node proto-node-green" data-node="n3" style="left:474px;top:42px;width:176px">
+        <div class="proto-node-head">ACTION</div>
+        <div class="proto-node-body">🔎 Deep scan preset</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n3"></div>
+        <div class="proto-anchor proto-anchor-out" data-node="n3"></div>
+      </div>
+
+      <div class="proto-node proto-node-yellow" data-node="n4" style="left:698px;top:42px;width:196px">
+        <div class="proto-node-head">OUTPUT</div>
+        <div class="proto-node-body">💾 Save: Desktop/report_192.168.1.25.txt</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n4"></div>
+      </div>
+
+      <div class="proto-node proto-node-blue" data-node="n5" style="left:18px;top:210px;width:196px">
+        <div class="proto-node-head">TRIGGER</div>
+        <div class="proto-node-body">🕒 At 01:00 every Sunday</div>
+        <div class="proto-anchor proto-anchor-out" data-node="n5"></div>
+      </div>
+
+      <div class="proto-node proto-node-blue" data-node="n6" style="left:256px;top:210px;width:220px">
+        <div class="proto-node-head">TARGET</div>
+        <div class="proto-node-body">🌐 Range: 10.0.0.1 - 10.0.0.254</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n6"></div>
+        <div class="proto-anchor proto-anchor-out" data-node="n6"></div>
+      </div>
+
+      <div class="proto-node proto-node-green" data-node="n7" style="left:522px;top:210px;width:172px">
+        <div class="proto-node-head">ACTION</div>
+        <div class="proto-node-body">📊 Topology + services</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n7"></div>
+        <div class="proto-anchor proto-anchor-out" data-node="n7"></div>
+      </div>
+
+      <div class="proto-node proto-node-purple" data-node="n8" style="left:738px;top:210px;width:168px">
+        <div class="proto-node-head">NOTIFY</div>
+        <div class="proto-node-body">📨 Send weekly summary</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n8"></div>
+      </div>
+
+      <!-- === IF condition example row === -->
+      <div class="proto-node proto-node-orange" data-node="n9" style="left:18px;top:390px;width:214px">
+        <div class="proto-node-head">TRIGGER</div>
+        <div class="proto-node-body">🕒 On scan complete</div>
+        <div class="proto-anchor proto-anchor-out" data-node="n9"></div>
+      </div>
+
+      <div class="proto-node proto-node-orange" data-node="n10" style="left:278px;top:390px;width:214px">
+        <div class="proto-node-head">CONDITION</div>
+        <div class="proto-node-body proto-node-body-cond">🔀 IF open port 8554 found</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n10"></div>
+        <!-- TRUE output (upper right) -->
+        <div class="proto-anchor proto-anchor-out proto-anchor-true" data-node="n10" data-anchor="out-true">
+          <span class="proto-anchor-label proto-anchor-label-true">TRUE</span>
+        </div>
+        <!-- FALSE output (lower right) -->
+        <div class="proto-anchor proto-anchor-out proto-anchor-false" data-node="n10" data-anchor="out-false">
+          <span class="proto-anchor-label proto-anchor-label-false">FALSE</span>
+        </div>
+      </div>
+
+      <div class="proto-node proto-node-purple" data-node="n11" style="left:546px;top:345px;width:196px">
+        <div class="proto-node-head">NOTIFY</div>
+        <div class="proto-node-body">📨 Alert: camera stream found!</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n11"></div>
+      </div>
+
+      <div class="proto-node proto-node-yellow" data-node="n12" style="left:546px;top:435px;width:196px">
+        <div class="proto-node-head">OUTPUT</div>
+        <div class="proto-node-body">📄 Log: no camera, port closed</div>
+        <div class="proto-anchor proto-anchor-in" data-node="n12"></div>
+      </div>
+    </div>
+
+    <div class="dlg-sunken-box proto-panel">
+      <div class="proto-section-title">EXAMPLE BLUEPRINTS</div>
+      <div class="proto-blueprints">
+        <div class="proto-bp-card">
+          <div class="proto-bp-title">1) Timed single PC scan</div>
+          <div>At 22:30 scan 192.168.1.25 and save a TXT report on Desktop.</div>
+        </div>
+        <div class="proto-bp-card">
+          <div class="proto-bp-title">2) Nightly IP range audit</div>
+          <div>Every night scan 192.168.0.1-192.168.0.254, include open ports and response time trend.</div>
+        </div>
+        <div class="proto-bp-card">
+          <div class="proto-bp-title">3) Multi-site inventory sync</div>
+          <div>Scan three subnets, merge results, export CSV + JSON and generate a diff versus previous day.</div>
+        </div>
+        <div class="proto-bp-card">
+          <div class="proto-bp-title">4) Incident response chain</div>
+          <div>If new host appears on secure VLAN, run deep scan, snapshot HTTP title/fingerprint, send webhook alert.</div>
+        </div>
+        <div class="proto-bp-card-orange">
+          <div class="proto-bp-title-orange">5) IF condition: detect camera stream</div>
+          <div>After scan completes, <b>IF</b> port 8554 is open → <span class="text-true">TRUE path</span>: send instant alert. <span class="text-false">FALSE path</span>: write a "port closed" log entry.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="proto-statusbar">
+    <div class="proto-statuspanel" id="protoStatus" data-i18n="protoStatusText">Status: Prototype mode (UI concept only). Link mode: click OUT anchor, then click IN anchor.</div>
+  </div>
+
+  <div class="proto-resize-handle" id="protoResizeHandle"></div>
+</div>
+
+<!-- Macro folder window -->
+<div id="macroFolderWin" class="macro-win-shell initially-hidden">
+  <div class="titlebar cursor-move" id="macroFolderTitlebar">
+    <span class="icon">📁</span>
+    <span class="title" data-i18n="macroWinTitle">Makra</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnMacroFolderClose">✕</button>
+    </div>
+  </div>
+
+  <div class="macro-folder-body">
+    <div id="macroFolderList" class="macro-folder-list"></div>
+    <div id="macroCtxMenu" class="macro-ctx-menu initially-hidden">
+      <div id="macroCtxDelete" class="macro-ctx-item" data-i18n="macroCtxDelete">🗑 Skasuj makro</div>
+    </div>
+  </div>
+
+  <div class="macro-folder-footer">
+    <div id="macroFolderCount" class="macro-folder-count">0 plikow</div>
+  </div>
+</div>
+
+
+<!-- External IP warning dialog -->
+<div class="dlg-overlay" id="dlgExternalIpOverlay">
+  <div class="dlg95">
+    <div class="dlg-title">
+      <span>🌐</span>
+      <span data-i18n="dlgExternalIpTitle">External IP Range</span>
+      <div class="title-btn" id="btnExtIpCancel">✕</div>
+    </div>
+    <div class="dlg-body dlg-icon-body dlg-alert-body">
+      <span class="dlg-icon">🌐</span>
+      <div>
+        <div class="dlg-headline" data-i18n="dlgExternalIpDetected">External IP scan detected</div>
+        <div class="dlg-text-11 dlg-lh-16" id="dlgExternalIpMsg"></div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="btnExtIpOk" data-i18n="dlgExternalIpContinue">OK - Continue</button>
+      <button class="btn95" id="btnExtIpCancelBtn" data-i18n="dlgCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Large range confirmation dialog -->
+<div class="dlg-overlay" id="dlgLargeRangeOverlay">
+  <div class="dlg95">
+    <div class="dlg-title">
+      <span>⚠️</span>
+      <span data-i18n="dlgLargeRangeTitle">Large Scan Range</span>
+      <div class="title-btn" id="btnLargeRangeCancel">✕</div>
+    </div>
+    <div class="dlg-body dlg-icon-body dlg-alert-body">
+      <span class="dlg-icon">⚠️</span>
+      <div>
+        <div class="dlg-headline" data-i18n="dlgLargeRangeHead">Are you sure?</div>
+        <div class="dlg-text-11 dlg-lh-15" id="dlgLargeRangeMsg"></div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="btnLargeRangeOk" data-i18n="dlgOk">OK</button>
+      <button class="btn95" id="btnLargeRangeCancelBtn" data-i18n="dlgCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Country IP Library dialog -->
+<div class="dlg-overlay" id="dlgCountriesOverlay">
+  <div class="dlg95">
+    <div class="dlg-title">
+      <span>🌍</span>
+      <span data-i18n="menuCountries">Country IP Library</span>
+      <div class="title-btn" id="btnCountriesCloseX">✕</div>
+    </div>
+    <div class="dlg-body dlg-body-compact dlg-icon-body">
+      <span class="dlg-icon dlg-icon-versions">🌍</span>
+      <div class="dlg-content-fill dlg-grid-2">
+
+      <!-- Left: search + list -->
+      <div class="dlg-col-stack">
+        <input id="countrySearch" type="text" placeholder="Search country…" data-i18n-placeholder="countrySearchPlaceholder"
+          class="dlg-input95 country-search-input"/>
+        <div class="dlg-sunken-box country-list-box" id="countryListBox"></div>
+      </div>
+
+      <!-- Right: ranges -->
+      <div class="dlg-col-stack">
+        <div class="country-name" id="countryName">—</div>
+        <div class="country-meta" id="countryMeta"></div>
+        <div class="dlg-sunken-box country-ranges" id="countryRanges"></div>
+        <div class="country-hint" id="countryRangeHint" data-i18n="countryRangeHint">Click a range to select it, then click Use.</div>
+        <div class="dlg-actions-row">
+          <button class="btn95 dlg-btn-use-range" id="btnCountryUse" disabled data-i18n="btnCountryUse">➤ Use range</button>
+          <button class="btn95 dlg-btn-use-all" id="btnCountryUseAll" disabled data-i18n="btnCountryUseAll">➤ Use all</button>
+        </div>
+      </div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="btnCountriesCancel" data-i18n="dlgCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Presets dialog -->
+<div class="dlg-overlay" id="dlgPresetsOverlay">
+  <div class="dlg95">
+    <div class="dlg-title">
+      <span>⚙</span>
+      <span data-i18n="menuPresets">Port Presets</span>
+      <div class="title-btn" id="btnPresetsCloseX">✕</div>
+    </div>
+    <div class="dlg-body dlg-icon-body dlg-icon-body-compact">
+      <span class="dlg-icon">⚙</span>
+      <div class="dlg-content-fill">
+      <!-- Preset list -->
+      <div class="dlg-presets-list-wrap">
+        <div class="dlg-sunken-box dlg-presets-list" id="presetListBox"></div>
+        <div class="dlg-inline-row dlg-inline-row-top">
+          <button class="btn95 dlg-btn-xs" id="btnPresetAdd" data-i18n="presetAdd">+ Add</button>
+          <button class="btn95 dlg-btn-xs" id="btnPresetDel" data-i18n="presetDel">✕ Delete</button>
+          <button class="btn95 dlg-btn-xxs" id="btnPresetUp">▲</button>
+          <button class="btn95 dlg-btn-xxs" id="btnPresetDown">▼</button>
+        </div>
+        <div class="dlg-inline-row dlg-inline-row-top">
+          <button class="btn95 dlg-btn-xs" id="btnPresetSetDefault" data-i18n="presetSetDefault" disabled>⭐ Set as default</button>
+        </div>
+      </div>
+      <!-- Edit selected preset -->
+      <div class="dlg-groupbox disabled" id="presetEditBox">
+        <span class="dlg-groupbox-legend" data-i18n="presetEdit">Edit preset</span>
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-40" data-i18n="presetName">Name:</label>
+          <input class="dlg-input95 dlg-content-fill" id="presetNameInput" type="text"/>
+        </div>
+        <div class="dlg-row">
+          <label class="dlg-label-40" data-i18n="presetPorts">Ports:</label>
+          <input id="presetPortsInput" type="text" placeholder="80, 8080, 443, 554"
+            class="dlg-input95 dlg-input95-courier dlg-content-fill"/>
+        </div>
+        <div class="dlg-note-muted" data-i18n="presetHint">
+          Enter port numbers separated by commas, e.g.: 80, 443, 8080, 554
+        </div>
+        <button class="btn95 btn-save-sm" id="btnPresetSave" data-i18n="presetSave">💾 Save</button>
+      </div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="dlgPresetsOk" data-i18n="dlgOk">OK</button>
+      <button class="btn95" id="btnPresetsCancel" data-i18n="dlgCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings dialog -->
+<div class="dlg-overlay" id="dlgOverlay">
+  <div class="dlg95">
+    <div class="dlg-title">
+      <span>⚙</span>
+      <span data-i18n="dlgTitle">Options</span>
+      <div class="title-btn" id="btnLangCloseX">✕</div>
+    </div>
+    <div class="dlg-body dlg-icon-body">
+      <span class="dlg-icon">⚙</span>
+      <div class="dlg-content-fill">
+      <div class="dlg-groupbox">
+        <span class="dlg-groupbox-legend" data-i18n="dlgLang">Language:</span>
+        <div class="dlg-radio-row">
+          <label class="dlg-radio">
+            <input type="radio" name="dlgLang" value="en" id="radioEn" checked/>
+            <span data-i18n="dlgLangEn">English</span>
+          </label>
+          <label class="dlg-radio">
+            <input type="radio" name="dlgLang" value="pl" id="radioPl"/>
+            <span data-i18n="dlgLangPl">Polski</span>
+          </label>
+        </div>
+      </div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="dlgOk" data-i18n="dlgOk">OK</button>
+      <button class="btn95" id="dlgCancel" data-i18n="dlgCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Default scan values dialog -->
+<div class="dlg-overlay" id="dlgDefaultsOverlay">
+  <div class="dlg95">
+    <div class="dlg-title">
+      <span>⚙</span>
+      <span data-i18n="menuDefaults">Default Scan Values...</span>
+      <div class="title-btn" id="btnDefaultsCloseX">✕</div>
+    </div>
+    <div class="dlg-body dlg-icon-body">
+      <span class="dlg-icon">⚙</span>
+      <div class="dlg-content-fill">
+      <div class="dlg-groupbox">
+        <span class="dlg-groupbox-legend" data-i18n="dlgIpScanningLegend" title="IP address scanning settings">IP scanning</span>
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-98" data-i18n="dlgDefaultThreads" title="Number of parallel scanning threads (2–64). More = faster, but higher network load." data-i18n-title="tipThreads">Parallel connections (limit):</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultThreads" type="number" min="2" max="64" value="24" title="Number of parallel scanning threads (2–64). More = faster, but higher network load." data-i18n-title="tipThreads"/>
+        </div>
+        <div class="dlg-row dlg-row-mb0">
+          <label class="dlg-label-98" data-i18n="dlgDefaultDelay" title="Delay (ms) between consecutive IP addresses scanned by each thread. 0 = no delay." data-i18n-title="tipIpDelay">Delay between IP addresses (ms):</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultDelay" type="number" min="0" max="5000" value="0" title="Delay (ms) between consecutive IP addresses scanned by each thread. 0 = no delay." data-i18n-title="tipIpDelay"/>
+        </div>
+      </div>
+
+      <div class="dlg-groupbox dlg-groupbox-mt12">
+        <span class="dlg-groupbox-legend" data-i18n="dlgPortModeLegend" title="Port scanning mode for each IP address">Port scan behavior</span>
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-98" data-i18n="dlgDefaultBatchSize" title="Ports processed per batch in parallel mode (10–500). Affects update cadence and pacing, not total global probe limit." data-i18n-title="tipBatchSize">Port batch size:</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultChunkSize" type="number" min="10" max="500" value="64" title="Ports processed per batch in parallel mode (10–500). Affects update cadence and pacing, not total global probe limit." data-i18n-title="tipBatchSize"/>
+        </div>
+        <div class="dlg-row dlg-row-mb6">
+          <label class="port-mode-label" title="All ports in a batch are scanned simultaneously — fastest mode." data-i18n-title="tipParallel">
+            <input class="port-mode-radio" type="radio" name="portScanMode" id="radioParallel" value="parallel" checked/>
+            <span class="port-mode-text" data-i18n="dlgPortModeParallel" title="All ports in a batch are scanned simultaneously — fastest mode." data-i18n-title="tipParallel">Parallel (throughput)</span>
+          </label>
+        </div>
+        <div class="dlg-row dlg-row-mb0">
+          <label class="port-mode-label" title="Ports are scanned one by one with a set delay — slower, but less visible to IDS/firewall." data-i18n-title="tipSequential">
+            <input class="port-mode-radio" type="radio" name="portScanMode" id="radioSequential" value="sequential"/>
+            <span class="port-mode-text" data-i18n="dlgPortModeSequential" title="Ports are scanned one by one with a set delay — slower, but less visible to IDS/firewall." data-i18n-title="tipSequential">Sequential (stealthier)</span>
+          </label>
+        </div>
+        <div class="dlg-row dlg-row-mb0 dlg-row-indent-24">
+          <label class="dlg-label-98" data-i18n="dlgDefaultDelayPerPort" title="Delay (ms) between scanning consecutive ports in sequential mode (0–1000)." data-i18n-title="tipPortDelay">Delay between ports (ms):</label>
+          <input class="dlg-input95 dlg-num-input" id="dlgDefaultDelayPerPort" type="number" min="0" max="1000" value="0" disabled title="Delay (ms) between scanning consecutive ports in sequential mode (0–1000)." data-i18n-title="tipPortDelay"/>
+        </div>
+      </div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95 ml-auto" id="dlgDefaultsReset">↺ Reset</button>
+      <button class="btn95" id="dlgDefaultsOk" data-i18n="dlgOk">OK</button>
+      <button class="btn95" id="dlgDefaultsCancel" data-i18n="dlgCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- IP scan watch dialog -->
+<div class="tool-win-shell scanwatch-win" id="scanWatchWin" style="display:none">
+  <div class="titlebar cursor-move" id="scanWatchTitlebar">
+    <span class="icon">🛡</span>
+    <span class="title" data-i18n="scanWatchTitle">IP Scan Watch</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnScanWatchClose">✕</button>
+    </div>
+  </div>
+
+  <div class="scanwatch-body">
+    <div class="dlg-groupbox">
+      <span class="dlg-groupbox-legend">Detection settings</span>
+      <div class="dlg-row dlg-row-mb6">
+        <label class="dlg-label-98" for="scanWatchWindowSecs" title="Time window used to aggregate suspicious activity.">Window (sec):</label>
+        <input class="dlg-input95 dlg-num-input" id="scanWatchWindowSecs" type="number" min="5" max="3600" value="30" title="Longer window catches slower scans; shorter window catches burst scans."/>
+      </div>
+      <div class="dlg-row dlg-row-mb6">
+        <label class="dlg-label-98" for="scanWatchMinPorts" title="Minimum number of different local ports touched by one remote IP before it is flagged.">Min unique ports:</label>
+        <input class="dlg-input95 dlg-num-input" id="scanWatchMinPorts" type="number" min="2" max="128" value="8" title="Higher value reduces false positives; lower value is more sensitive."/>
+      </div>
+      <div class="dlg-row dlg-row-mb0">
+        <label class="dlg-label-98" for="scanWatchPollSecs" title="How often watcher checks current TCP activity.">Refresh (sec):</label>
+        <input class="dlg-input95 dlg-num-input" id="scanWatchPollSecs" type="number" min="1" max="60" value="2" title="Lower value updates faster but uses more system checks."/>
+      </div>
+    </div>
+
+    <div class="dlg-sunken-box scanwatch-status" id="scanWatchStatus" title="Current detector state and latest summary.">Idle</div>
+
+    <div class="dlg-sunken-box scanwatch-table-wrap">
+      <table class="scanwatch-table">
+        <thead>
+          <tr>
+            <th title="Remote address that appears to probe multiple ports.">Remote IP</th>
+            <th class="scanwatch-num" title="Count of unique local ports touched by that address.">Ports</th>
+            <th class="scanwatch-num" title="Total connection events observed in current window.">Hits</th>
+            <th class="scanwatch-num" title="Seconds since last observed event from this address.">Last seen</th>
+          </tr>
+        </thead>
+        <tbody id="scanWatchTbody"></tbody>
+      </table>
+    </div>
+
+    <div class="scanwatch-footer">
+      <button class="btn95" id="btnScanWatchCheckNow" title="Run one immediate detection pass.">Check now</button>
+      <button class="btn95" id="btnScanWatchStart" title="Start automatic periodic detection checks.">Start watch</button>
+      <button class="btn95" id="btnScanWatchStop" disabled title="Stop automatic periodic checks.">Stop</button>
+    </div>
+  </div>
+</div>
+
+<!-- WiFi detector dialog -->
+<div class="tool-win-shell wifi-detector-win" id="wifiDetectorWin" style="display:none">
+  <div class="titlebar cursor-move" id="wifiDetectorTitlebar">
+    <span class="icon">📡</span>
+    <span class="title" data-i18n="wifiDetectorTitle">WiFi Detector</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnWifiDetectorClose">✕</button>
+    </div>
+  </div>
+
+  <div class="wifi-detector-body">
+    <div class="dlg-groupbox">
+      <span class="dlg-groupbox-legend">Detection settings</span>
+      <div class="dlg-row dlg-row-mb0">
+        <label class="dlg-label-98" for="wifiDetectorPollSecs" title="Refresh interval used when detector watch is running.">Refresh (sec):</label>
+        <input class="dlg-input95 dlg-num-input" id="wifiDetectorPollSecs" type="number" min="1" max="60" value="5" title="Lower value updates faster but can use more CPU."/>
+      </div>
+    </div>
+
+    <div class="dlg-sunken-box wifi-detector-status" id="wifiDetectorStatus" title="Current detector state.">Idle</div>
+
+    <div class="wifi-detector-content">
+      <div class="wifi-detector-pane">
+        <div class="wifi-detector-pane-title">Available networks</div>
+        <div class="dlg-sunken-box wifi-detector-net-list" id="wifiDetectorNetworkList"></div>
+      </div>
+
+      <div class="wifi-detector-pane">
+        <div class="wifi-detector-pane-title" id="wifiDetectorDetailsTitle">Properties</div>
+        <div class="dlg-sunken-box wifi-detector-table-wrap">
+          <table class="wifi-detector-table">
+            <tbody id="wifiDetectorDetailsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="wifi-detector-footer">
+      <button class="btn95" id="btnWifiDetectorCheckNow" title="Run one immediate WiFi detection pass.">Check now</button>
+      <button class="btn95" id="btnWifiDetectorStart" title="Start automatic periodic checks.">Start watch</button>
+      <button class="btn95" id="btnWifiDetectorStop" disabled title="Stop automatic periodic checks.">Stop</button>
+    </div>
+  </div>
+</div>
+
+<!-- WiFi Radar window -->
+<div class="tool-win-shell wifi-radar-win" id="wifiRadarWin">
+  <div class="titlebar cursor-move" id="wifiRadarTitlebar">
+    <span class="icon">📍</span>
+    <span class="title">WiFi Radar</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnWifiRadarClose">✕</button>
+    </div>
+  </div>
+
+  <div class="wifi-radar-body">
+    <div class="wifi-radar-controls">
+      <label class="wifi-radar-sort-label" for="wifiRadarSortBy">Sort by:</label>
+      <select class="select95" id="wifiRadarSortBy">
+        <option value="signal">Signal Strength</option>
+        <option value="ssid">SSID</option>
+        <option value="freq">Frequency</option>
+        <option value="bssid_count">Access Points</option>
+      </select>
+    </div>
+
+    <div class="wifi-radar-container">
+      <canvas id="wifiRadarCanvas" class="wifi-radar-canvas"></canvas>
+    </div>
+
+    <div class="wifi-radar-legend">
+      <div class="radar-legend-title">Networks</div>
+      <div id="wifiRadarLegend" class="radar-legend-items"></div>
+    </div>
+
+    <div class="wifi-radar-footer">
+      <button class="btn95" id="btnWifiRadarRefresh" title="Refresh WiFi networks">Refresh</button>
+      <button class="btn95" id="btnWifiRadarAutoRefresh" title="Start automatic periodic refresh">Auto</button>
+      <button class="btn95" id="btnWifiRadarStopAuto" disabled title="Stop automatic refresh">Stop</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bluetooth Detector window -->
+<div class="tool-win-shell bt-detector-win" id="btDetectorWin">
+  <div class="titlebar cursor-move" id="btDetectorTitlebar">
+    <span class="icon">🔵</span>
+    <span class="title" data-i18n="btWinTitle">Bluetooth Detector</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnBtDetectorClose">✕</button>
+    </div>
+  </div>
+
+  <div class="bt-detector-body">
+    <div class="dlg-groupbox bt-detector-settings">
+      <span class="dlg-groupbox-legend" data-i18n="btScanSettings">Scan settings</span>
+      <div class="bt-detector-controls">
+        <label for="btScanDuration" data-i18n="btDuration">Duration:</label>
+        <select class="select95" id="btScanDuration">
+          <option value="3">3 sec</option>
+          <option value="5" selected>5 sec</option>
+          <option value="10">10 sec</option>
+          <option value="15">15 sec</option>
+        </select>
+        <button class="btn95" id="btnBtScan" data-i18n="btScan">Scan</button>
+        <button class="btn95" id="btnBtScanStop" disabled data-i18n="btStop">Stop</button>
+      </div>
+    </div>
+
+    <div class="bt-detector-content">
+      <div class="bt-detector-pane">
+        <div class="bt-detector-pane-title" data-i18n="btNearbyDevices">Nearby devices</div>
+        <div class="dlg-sunken-box bt-detector-list" id="btDeviceList"></div>
+      </div>
+
+      <div class="bt-detector-pane">
+        <div class="bt-detector-pane-title" data-i18n="btProperties">Properties</div>
+        <div class="dlg-sunken-box bt-detector-detail" id="btDeviceDetail"></div>
+      </div>
+    </div>
+
+    <div class="dlg-sunken-box bt-detector-status" id="btDetectorStatus" data-i18n="btReady">Ready.</div>
+  </div>
+</div>
+
+<!-- Network Sniffer window -->
+<div class="tool-win-shell sniffer-win" id="snifferWin">
+  <div class="titlebar cursor-move" id="snifferTitlebar">
+    <span class="icon">🔎</span>
+    <span class="title" data-i18n="snifferWinTitle">Network Sniffer</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnSnifferClose">✕</button>
+    </div>
+  </div>
+
+  <div class="sniffer-body">
+    <div class="sniffer-toolbar">
+      <select class="select95" id="snifferProto">
+        <option value="" data-i18n="snifferAll">All</option>
+        <option value="TCP">TCP</option>
+        <option value="UDP">UDP</option>
+      </select>
+      <select class="select95" id="snifferState">
+        <option value="" data-i18n="snifferAll">All</option>
+        <option value="Established">ESTABLISHED</option>
+        <option value="Listen">LISTEN</option>
+        <option value="TimeWait">TIME_WAIT</option>
+        <option value="CloseWait">CLOSE_WAIT</option>
+      </select>
+      <input class="input95 sniffer-search" id="snifferSearch" placeholder="Filter process / IP...">
+      <button class="btn95" id="btnSnifferRefresh" data-i18n="snifferRefresh">↻ Refresh</button>
+      <label class="sniffer-live-label">
+        <input type="checkbox" id="snifferLive">
+        <span data-i18n="snifferLive">Live</span>
+      </label>
+      <select class="select95" id="snifferInterval">
+        <option value="1000">1s</option>
+        <option value="2000" selected>2s</option>
+        <option value="5000">5s</option>
+        <option value="10000">10s</option>
+      </select>
+      <button class="btn95" id="btnSnifferExport" data-i18n="snifferExport">💾 Export CSV</button>
+    </div>
+
+    <div class="dlg-sunken-box sniffer-table-wrap">
+      <table class="sniffer-table" id="snifferTable">
+        <thead>
+          <tr>
+            <th data-col="pid"    data-i18n="snifferColPid">PID</th>
+            <th data-col="proc"   data-i18n="snifferColProc">Process</th>
+            <th data-col="proto"  data-i18n="snifferColProto">Proto</th>
+            <th data-col="local"  data-i18n="snifferColLocal">Local</th>
+            <th data-col="remote" data-i18n="snifferColRemote">Remote</th>
+            <th data-col="state"  data-i18n="snifferColState">State</th>
+          </tr>
+        </thead>
+        <tbody id="snifferTableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="sniffer-footer">
+      <div class="sniffer-stats" id="snifferStats"></div>
+      <div class="sniffer-status" id="snifferStatus" data-i18n="snifferReady">Ready.</div>
+    </div>
+  </div>
+</div>
+
+<!-- GNSS Monitor window -->
+<div class="tool-win-shell gnss-win" id="gnssWin">
+  <div class="titlebar cursor-move" id="gnssTitlebar">
+    <span class="icon">🛰</span>
+    <span class="title" data-i18n="gnssWinTitle">GNSS Monitor</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnGnssClose">✕</button>
+    </div>
+  </div>
+
+  <div class="gnss-body">
+    <div class="gnss-controls">
+      <label for="gnssPortSelect" data-i18n="gnssPort">Port:</label>
+      <select class="select95" id="gnssPortSelect"></select>
+      <label for="gnssBaudSelect" data-i18n="gnssBaud">Baud:</label>
+      <select class="select95" id="gnssBaudSelect">
+        <option value="4800">4800</option>
+        <option value="9600" selected>9600</option>
+        <option value="38400">38400</option>
+        <option value="115200">115200</option>
+      </select>
+      <button class="btn95" id="btnGnssRefreshPorts" data-i18n="gnssRefreshPorts">Refresh ports</button>
+      <button class="btn95" id="btnGnssReadNow" data-i18n="gnssReadNow">Read now</button>
+      <button class="btn95" id="btnGnssStartLive" data-i18n="gnssStartLive">Start live</button>
+      <button class="btn95" id="btnGnssStopLive" disabled data-i18n="gnssStopLive">Stop</button>
+    </div>
+
+    <div class="gnss-grid">
+      <div class="dlg-sunken-box gnss-card">
+        <div class="gnss-card-title" data-i18n="gnssStatus">GNSS status</div>
+        <div class="gnss-metrics" id="gnssMetrics"></div>
+      </div>
+
+      <div class="dlg-sunken-box gnss-card">
+        <div class="gnss-card-title" data-i18n="gnssSatMonitor">Satellite monitor</div>
+        <canvas id="gnssSkyplot" width="260" height="260"></canvas>
+        <div class="gnss-sat-list-wrap">
+          <table class="gnss-sat-table">
+            <thead>
+              <tr>
+                <th>PRN</th>
+                <th data-i18n="gnssConstellation">Constellation</th>
+                <th>Az</th>
+                <th>El</th>
+                <th>SNR</th>
+              </tr>
+            </thead>
+            <tbody id="gnssSatTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="dlg-sunken-box gnss-audit-box">
+      <div class="gnss-card-title" data-i18n="gnssWifiAudit">GPS + WiFi audit</div>
+      <div class="gnss-audit-controls">
+        <button class="btn95" id="btnGnssWifiScan" data-i18n="gnssWifiScan">Scan WiFi now</button>
+        <button class="btn95" id="btnGnssAuditPoint" data-i18n="gnssAddPoint">Add audit point</button>
+        <button class="btn95" id="btnGnssExportAudit" data-i18n="gnssExportAudit">Export CSV</button>
+      </div>
+      <div class="gnss-audit-list dlg-sunken-box" id="gnssAuditList"></div>
+    </div>
+
+    <div class="dlg-sunken-box gnss-status" id="gnssStatus" data-i18n="gnssReady">Ready.</div>
+  </div>
+</div>
+
+<!-- LTE Monitor window -->
+<div class="tool-win-shell lte-win" id="lteWin">
+  <div class="titlebar cursor-move" id="lteTitlebar">
+    <span class="icon">📶</span>
+    <span class="title" data-i18n="lteWinTitle">LTE Monitor</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnLteClose">✕</button>
+    </div>
+  </div>
+
+  <div class="lte-body">
+    <div class="lte-controls">
+      <button class="btn95" id="btnLteRefresh" data-i18n="lteRefresh">Refresh</button>
+      <button class="btn95" id="btnLteStartLive" data-i18n="lteStartLive">Start live</button>
+      <button class="btn95" id="btnLteStopLive" disabled data-i18n="lteStopLive">Stop</button>
+      <label class="lte-inline-label" for="ltePortSelect" data-i18n="ltePort">Port:</label>
+      <select class="select95" id="ltePortSelect">
+        <option value="__auto__" data-i18n="lteAutoDetect">Auto</option>
+      </select>
+      <label class="lte-inline-label" for="lteBaudSelect" data-i18n="lteBaud">Baud:</label>
+      <select class="select95" id="lteBaudSelect">
+        <option value="115200" selected>115200</option>
+        <option value="57600">57600</option>
+        <option value="38400">38400</option>
+        <option value="19200">19200</option>
+        <option value="9600">9600</option>
+      </select>
+      <label class="lte-inline-label" for="lteLiveSecs" data-i18n="lteLiveEvery">Every (s):</label>
+      <select class="select95" id="lteLiveSecs">
+        <option value="2">2</option>
+        <option value="3" selected>3</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+      </select>
+    </div>
+
+    <div class="lte-grid">
+      <div class="dlg-sunken-box lte-card">
+        <div class="lte-card-title" data-i18n="lteStatusTitle">LTE status monitor</div>
+        <div class="lte-metrics" id="lteMetrics"></div>
+      </div>
+
+      <div class="dlg-sunken-box lte-card">
+        <div class="lte-card-title" data-i18n="lteHandoverTitle">Cell handover tracker</div>
+        <div class="lte-handover-list" id="lteHandoverList"></div>
+      </div>
+    </div>
+
+    <div class="dlg-sunken-box lte-card">
+      <div class="lte-card-title" data-i18n="lteAuditTitle">LTE + GPS audit</div>
+      <div class="lte-controls">
+        <button class="btn95" id="btnLteAddPoint" data-i18n="lteAddPoint">Add point</button>
+        <button class="btn95" id="btnLteExportAudit" data-i18n="lteExportAudit">Export CSV</button>
+      </div>
+      <div class="lte-audit-list" id="lteAuditList"></div>
+    </div>
+
+    <div class="lte-grid">
+      <div class="dlg-sunken-box lte-card">
+        <div class="lte-card-title" data-i18n="lteCorrelationTitle">Speed + quality correlation</div>
+        <div class="lte-controls">
+          <button class="btn95" id="btnLteRunSpeed" data-i18n="lteRunSpeed">Run sample</button>
+          <button class="btn95" id="btnLteExportCorrelation" data-i18n="lteExportCorrelation">Export CSV</button>
+        </div>
+        <div class="lte-corr-list" id="lteCorrList"></div>
+      </div>
+
+      <div class="dlg-sunken-box lte-card">
+        <div class="lte-card-title" data-i18n="lteWatchdogTitle">LTE internet watchdog</div>
+        <div class="lte-controls">
+          <button class="btn95" id="btnLteStartWatchdog" data-i18n="lteStartWatchdog">Start watchdog</button>
+          <button class="btn95" id="btnLteStopWatchdog" disabled data-i18n="lteStopWatchdog">Stop</button>
+          <label class="lte-inline-label" for="lteWatchdogSecs" data-i18n="lteLiveEvery">Every (s):</label>
+          <select class="select95" id="lteWatchdogSecs">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+        <div class="lte-watchdog-list" id="lteWatchdogList"></div>
+      </div>
+    </div>
+
+    <div class="dlg-sunken-box lte-status" id="lteStatus" data-i18n="lteReady">Ready.</div>
+  </div>
+</div>
+
+<!-- Image Metadata Analyzer window -->
+<div class="tool-win-shell imgmeta-win" id="imgMetaWin">
+  <div class="titlebar cursor-move" id="imgMetaTitlebar">
+    <span class="icon">🖼</span>
+    <span class="title" data-i18n="imgMetaWinTitle">Image Metadata and Steganography Analyzer</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnImgMetaClose">✕</button>
+    </div>
+  </div>
+
+  <div class="imgmeta-body">
+    <div id="imgMetaDropZone" class="imgmeta-drop-zone">
+      <span data-i18n="imgMetaDropHint">Drop an image here or click to browse</span>
+      <input type="file" id="imgMetaFileInput" accept="image/*,.psd,.tif,.tiff,.webp,.bmp,.gif">
+    </div>
+
+    <div class="imgmeta-controls">
+      <span class="imgmeta-filename" id="imgMetaFilename"></span>
+      <button class="btn95" id="btnImgMetaInfo" data-i18n="imgMetaInfo">Info</button>
+      <button class="btn95" id="btnImgMetaHideEmpty" data-i18n="imgMetaHideEmptyOn">Hide empty: ON</button>
+      <button class="btn95" id="btnImgMetaCopy" data-i18n="imgMetaCopy">Copy</button>
+      <button class="btn95" id="btnImgMetaExport" data-i18n="imgMetaExport">Export TXT</button>
+      <button class="btn95" id="btnImgMetaZero" data-i18n="imgMetaZeroValues">Zero values</button>
+      <button class="btn95" id="btnImgMetaClear" data-i18n="imgMetaClearAll">Clear all</button>
+    </div>
+
+    <div class="imgmeta-info-pop" id="imgMetaInfoPop">
+      <div class="imgmeta-info-head">
+        <span data-i18n="imgMetaInfoTitle">Analyzed metadata fields</span>
+        <button class="btn95 imgmeta-info-close" id="btnImgMetaInfoClose">✕</button>
+      </div>
+      <div class="imgmeta-info-body" id="imgMetaInfoBody"></div>
+    </div>
+
+    <div class="imgmeta-table-wrap" id="imgMetaTableWrap"></div>
+
+    <div class="imgmeta-status" id="imgMetaStatus" data-i18n="imgMetaReady">Ready.</div>
+  </div>
+</div>
+
+<!-- AI Assistant window -->
+<div class="tool-win-shell ai-assistant-win" id="aiAssistantWin">
+  <div class="titlebar cursor-move" id="aiAssistantTitlebar">
+    <span>🤖</span>
+    <span class="title-fill">AI Security Assistant</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnAiClose">✕</button>
+    </div>
+  </div>
+  <div class="ai-assistant-body">
+    <div class="dlg-groupbox">
+      <span class="dlg-groupbox-legend">Provider</span>
+      <div class="dlg-row dlg-row-mb6">
+        <label class="dlg-label-98" for="aiProviderSelect">Engine:</label>
+        <select class="select95" id="aiProviderSelect">
+          <option value="claude">Claude API</option>
+          <option value="google">Google Gemini API</option>
+          <option value="copilot">Copilot API (GitHub Models)</option>
+        </select>
+      </div>
+      <form autocomplete="on" onsubmit="return false;">
+        <input type="text" name="username" autocomplete="username" class="initially-hidden" tabindex="-1" aria-hidden="true"/>
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-98" for="aiModelInput">Model:</label>
+          <input class="dlg-input95 ai-input-grow" id="aiModelInput" type="text" autocomplete="username" value="claude-3-5-sonnet-latest"/>
+        </div>
+        <div class="dlg-row dlg-row-mb0">
+          <label class="dlg-label-98" for="aiApiKeyInput">API Key:</label>
+          <input class="dlg-input95 ai-input-grow" id="aiApiKeyInput" type="password" autocomplete="current-password" placeholder="Paste provider API key"/>
+        </div>
+        <div class="dlg-row dlg-row-mb0">
+          <label class="dlg-label-98" for="aiKeyStorageMode">Key storage:</label>
+          <select class="select95 ai-input-grow" id="aiKeyStorageMode">
+            <option value="local">Local storage</option>
+            <option value="ram">RAM only</option>
+            <option value="secure">Secure storage</option>
+          </select>
+        </div>
+      </form>
+    </div>
+
+    <div class="dlg-groupbox dlg-groupbox-mt12">
+      <span class="dlg-groupbox-legend">Security prompt presets</span>
+      <div class="ai-preset-row">
+        <button class="btn95" id="aiPresetNetwork">Network risk review</button>
+        <button class="btn95" id="aiPresetIp">IP exposure analysis</button>
+        <button class="btn95" id="aiPresetWifi">WiFi hardening checklist</button>
+        <button class="btn95" id="aiPresetIncident">Incident triage</button>
+      </div>
+    </div>
+
+    <div class="dlg-groupbox dlg-groupbox-mt12">
+      <span class="dlg-groupbox-legend">Prompt</span>
+      <textarea id="aiPromptInput" class="ai-prompt-box" spellcheck="false"></textarea>
+    </div>
+
+    <div class="dlg-sunken-box ai-status" id="aiAssistantStatus">Idle</div>
+
+    <div class="dlg-groupbox dlg-groupbox-mt12">
+      <span class="dlg-groupbox-legend">Response</span>
+      <textarea id="aiResponseOutput" class="ai-response-box" spellcheck="false" readonly></textarea>
+    </div>
+
+    <div class="ai-assistant-footer">
+      <button class="btn95" id="btnAiSend">Send</button>
+      <button class="btn95" id="btnAiClear">Clear</button>
+      <button class="btn95" id="btnAiCloseBottom">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Phone Reverse Lookup window -->
+<div class="tool-win-shell phonelookup-win" id="phoneLookupWin">
+  <div class="titlebar cursor-move" id="phoneLookupTitlebar">
+    <span class="icon">📱</span>
+    <span class="title" data-i18n="phoneLookupWinTitle">Phone Reverse Lookup</span>
+    <div class="titlebar-btns">
+      <button class="title-btn title-btn-close" id="btnPhoneLookupClose">✕</button>
+    </div>
+  </div>
+
+  <div class="phonelookup-body">
+    <div class="dlg-groupbox">
+      <span class="dlg-groupbox-legend" data-i18n="phoneLookupApiSetup">API Setup Guide</span>
+      <div class="phonelookup-help-content">
+        <div class="phonelookup-api-info">
+          <strong>NumVerify</strong> - Phone validation & carrier info
+          <div class="phonelookup-api-link">
+            🔗 <a href="https://numverify.com" target="_blank">numverify.com</a> (Free: 100 requests/month)
+          </div>
+        </div>
+        <div class="phonelookup-api-info">
+          <strong>OpenCellID</strong> - Cell tower geolocation
+          <div class="phonelookup-api-link">
+            🔗 <a href="https://www.opencellid.org/api" target="_blank">opencellid.org/api</a> (Free tier available)
+          </div>
+        </div>
+        <div class="phonelookup-api-info">
+          <strong>Google People API</strong> - Public profile data
+          <div class="phonelookup-api-link">
+            🔗 <a href="https://console.cloud.google.com/apis/library/people.googleapis.com" target="_blank">Google Cloud Console</a> (Requires setup)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dlg-groupbox dlg-groupbox-mt12">
+      <span class="dlg-groupbox-legend" data-i18n="phoneLookupApiKeys">API Keys Configuration</span>
+      <form autocomplete="on" onsubmit="return false;">
+        <input type="text" name="username" autocomplete="username" class="initially-hidden" tabindex="-1" aria-hidden="true"/>
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-98" for="phoneLookupNumVerifyKey">NumVerify:</label>
+          <input class="dlg-input95 ai-input-grow" id="phoneLookupNumVerifyKey" type="password" autocomplete="current-password" placeholder="Your NumVerify API key (free: 100/month)"/>
+        </div>
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-98" for="phoneLookupOpenCellIDKey">OpenCellID:</label>
+          <input class="dlg-input95 ai-input-grow" id="phoneLookupOpenCellIDKey" type="password" autocomplete="current-password" placeholder="Your OpenCellID API key"/>
+        </div>
+        <div class="dlg-row dlg-row-mb6">
+          <label class="dlg-label-98" for="phoneLookupGoogleKey">Google People:</label>
+          <input class="dlg-input95 ai-input-grow" id="phoneLookupGoogleKey" type="password" autocomplete="current-password" placeholder="Your Google People API key (requires OAuth)"/>
+        </div>
+        <div class="dlg-row dlg-row-mb0">
+          <button class="btn95" id="btnPhoneLookupSaveKeys" data-i18n="btnSave">Save Keys</button>
+          <button class="btn95" id="btnPhoneLookupClearKeys" data-i18n="btnClear">Clear Keys</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="dlg-groupbox dlg-groupbox-mt12">
+      <span class="dlg-groupbox-legend" data-i18n="phoneLookupInput">Phone Number</span>
+      <div class="dlg-row dlg-row-mb6">
+        <input class="dlg-input95 phonelookup-input-grow" id="phoneLookupInput" type="text" placeholder="+1234567890 or 123-456-7890" spellcheck="false"/>
+      </div>
+      <div class="dlg-row dlg-row-mb0">
+        <button class="btn95" id="btnPhoneLookupSearch" data-i18n="phoneLookupSearchBtn">Search</button>
+        <button class="btn95" id="btnPhoneLookupCopy" data-i18n="btnCopy">Copy</button>
+        <button class="btn95" id="btnPhoneLookupClear" data-i18n="btnClear">Clear</button>
+      </div>
+    </div>
+
+    <div class="phonelookup-status" id="phoneLookupStatus" data-i18n="phoneLookupReady">Ready.</div>
+
+    <div class="phonelookup-results-wrap" id="phoneLookupResultsWrap"></div>
+  </div>
+</div>
+
+<!-- Versions dialog -->
+<div class="dlg-overlay" id="dlgVersionsOverlay">
+  <div class="dlg95">
+    <div class="dlg-title">
+      <span>📘</span>
+      <span data-i18n="dlgVersionsTitle">Versions</span>
+      <div class="title-btn" id="btnVersionsCloseX">✕</div>
+    </div>
+    <div class="dlg-body dlg-icon-body dlg-versions-body">
+      <span class="dlg-icon dlg-icon-versions">📘</span>
+      <div class="dlg-sunken-box dlg-versions-card">
+        <div class="version-head">v1.6.5</div>
+        <div class="version-note">
+          Added intermediate host status (blue light) for unusual responses: IPs with no open ports but with detectable network response.<br>
+          Added a dedicated Intermediate filter button between Active and Dead in the results toolbar.<br>
+          Improved results filtering so Dead now shows only typical dead hosts, while intermediate hosts are grouped in their own view.<br>
+          Added scan results Export/Import actions in File menu (JSON format), including scan range history in exported files and restoring history on import.<br>
+          Improved Globe visualization: elevated arc routes with animated flow and thinner 1px styling aligned to globe route animation behavior.
+        </div>
+        <div class="version-head">v1.6.4</div>
+        <div class="version-note">
+          Added system reverse DNS for local/private IPs (PTR via desktop backend), so Hostname can resolve LAN devices reliably.<br>
+          Refined extra result columns: Country now shown as a flag, ISP moved to a dedicated column, and new AS column added.
+          All three columns can be toggled in Columns menu.<br>
+          Improved geolocation reliability with backend fallback handling and better globe point placement when exact coordinates are unavailable.
+          Globe now shows only active hosts (not dead entries).<br>
+          Fixed Topology Trace action: Trace button now correctly opens trace dialog and starts traceroute for selected/available host.<br>
+          Fixed list rendering edge cases where extra columns could remain visually hidden despite being enabled.
+        </div>
+        <div class="version-head">v1.6.3</div>
+        <div class="version-note">
+          Added a factory reset button in the title bar, positioned left of minimize, with a confirmation prompt,
+          icon-only appearance, and tooltip for quick access. The reset action clears stored app data and localStorage,
+          restoring the app to a clean first-run state.<br>
+          Added scan method optimizations for smoother and more consistent scan behavior.<br>
+          Added scan history panel with saved IP ranges, quick restore on double-click, and single-entry delete.
+        </div>
+        <div class="version-head">v1.6.2</div>
+        <div class="version-note">
+          Added Phone Reverse Lookup tool with integration of NumVerify API (phone validation, carrier detection),
+          OpenCellID (cell tower geolocation), and Google People API support.
+          Includes API key configuration UI with setup guide links, collapsible results sections for each API,
+          and copy-to-clipboard functionality for search results.
+          Added Photo Analyze tool enhancements with extended image metadata extraction and presentation,
+          including richer EXIF/GPS/IPTC/XMP overview, readable date/size formatting, and map links for GPS coordinates.
+          Added steganography-oriented checks for trailing data after image/container end, status messages for hidden-data detection,
+          custom/unknown metadata group visibility, and a default-on filter that hides empty detected metadata fields.
+          Added two new UI skins in Customization: Purple Dark and Black Flat (green text).
+        </div>
+        <div class="version-head">v1.6.1</div>
+        <div class="version-note">
+          Added GNSS Monitor tool with independent tool-window mode, serial NMEA parsing, live skyplot, satellite table,
+          and GPS + WiFi audit points export.
+          Added LTE Monitor tool with independent tool-window mode, live status monitor, handover tracker, LTE + GPS audit,
+          speed/quality correlation, and internet watchdog.
+          Added LTE serial modem backend integration (AT/COM) with auto-detection and manual COM/baud override,
+          including operator, band, EARFCN, cell ID, TAC, RSSI/RSRP/RSRQ/SINR metrics.
+        </div>
+        <div class="version-head">v1.6.0</div>
+        <div class="version-note">
+          Added IP Scan Watch in Tools to detect suspicious multi-port probing of your address.
+          Added WiFi Detector in Tools with clickable network list and per-network properties view.
+          Added AI Security Assistant tool with Claude, Google and Copilot API support plus ready-made security prompts.
+          Added Bluetooth Scanner in Tools with BLE and Classic BT device detection, signal strength and device properties.
+          Added Network Sniffer in Tools with live connections table, filtering/sorting and CSV export (Windows backend enabled).
+        </div>
+        <div class="version-head">v1.5.9</div>
+        <div class="version-note">
+          Added scan mode controls with selectable type and speed.
+          Results can now be sorted by IP address or response time (ms).
+          Port lists are faster to expand and browse.
+          Column settings are now available from the right-click context menu.
+          Improved IP filtering, favorites for addresses and ports, and grouping for both addresses and ports.
+          Added a Blur button to mask IP addresses for safer screen sharing.
+          Plus a handful of smaller quality-of-life refinements.
+        </div>
+        <div class="version-head">v1.5.8</div>
+        <div class="version-note">
+          i18n: translated all toolbar buttons (Console→Konsola, Macro→Makro, Speed→Prędkość, Prototype→Prototyp, Topology→Topologia),
+          fixed untranslated Polish strings (ipRange, accessLabel, traceRoutesLabel), fixed hardcoded Polish close-confirm dialog to use t().
+          Language and skin dialogs now have live preview with Cancel reverting the change.
+          BroadcastChannel sync: changing language or skin in any window instantly applies to all open tool windows.
+          Version numbers unified to 1.5.7 across app.js, tauri.conf.json, Cargo.toml and package.json.
+        </div>
+        <div class="version-head">v1.5.6</div>
+        <div class="version-note">
+          Code quality refactor: replaced all inline styles with CSS classes across the entire UI (stages 1–8),
+          fixed proto canvas node colors to match toolbox chip colors, and resolved duplicate class attribute bug
+          on proto canvas nodes caused by bulk replacement.
+        </div>
+        <div class="version-head">v1.5.5</div>
+        <div class="version-note">
+          Rebranded app name to NetRecon IP Auditor, switched favicon/title icon to zebrus.png,
+          unified dialog layout with left-side icons, improved Help/Versions readability in dark skin,
+          and fixed Versions dialog behavior so content wraps to window size instead of forcing panel expansion while dragging.
+        </div>
+        <div class="version-head">v1.5.4</div>
+        <div class="version-note">
+          Code quality fixes: moved concurrency/delayMs declarations before use (prevented ReferenceError on scan start),
+          removed duplicate event listeners in console window, fixed deleteMacroByIndex crashing on undefined function,
+          removed unused local copies of isPrivateIpv4/extractIpv4, removed redundant Import Trace button from topology toolbar,
+          extracted EN/PL language strings into separate js/lang-en.js and js/lang-pl.js files.
+        </div>
+        <div class="version-head">v1.5.3</div>
+        <div class="version-note">
+          Added 📎 Clippy assistant (Help → Assistant): rotating tips in EN/PL, draggable, persistent on/off state.
+        </div>
+        <div class="version-head">v1.5.2</div>
+        <div class="version-note">
+          Added Glass skin in Customization, enabled live skin switching on selection (without closing dialog),
+          and improved menu text contrast for better readability.
+        </div>
+        <div class="version-head">v1.5</div>
+        <div class="version-note">
+          Refined results list UX: plus moved to dedicated column, hostname moved to context menu, and improved row expansion details by port.
+        </div>
+        <div class="version-head">v1.4p pre-alpha</div>
+        <div class="version-note">
+          Moved Speed Test and Prototype from desktop icons to toolbar buttons. Added Show/Hide toggles for both in the Customization dialog.
+        </div>
+        <div class="version-head">v1.3p</div>
+        <div class="version-note">
+          Added a visual programming prototype window with draggable nodes, anchor points, and click-click line linking mode.
+        </div>
+        <div class="version-head">v1.3</div>
+        <div class="version-note">
+          Added internet speed checking (download/upload) in a dedicated Speed Test window.
+        </div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="dlgVersionsCloseBtn" data-i18n="dlgClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Customization dialog -->
+<div class="dlg-overlay" id="dlgCustomizeOverlay">
+  <div class="dlg95">
+    <div class="dlg-title">
+      <span>🎛</span>
+      <span class="title-fill" data-i18n="customizeTitle">Customization – Toolbar</span>
+      <div class="title-btn" id="btnCustomizeCancelX">✕</div>
+    </div>
+    <div class="dlg-body dlg-customize-body">
+      <span class="dlg-icon-xl">🎛</span>
+      <div class="dlg-content-fill">
+      <div class="dlg-groupbox">
+        <span class="dlg-groupbox-legend" data-i18n="customizeToolbarLegend">Toolbar buttons</span>
+        <div class="dlg-check-col">
+          <label class="dlg-check-label">
+            <input type="checkbox" id="chkBtnTopology" checked/>
+            <span data-i18n="customizeTopology">🕸 Topology</span>
+          </label>
+          <label class="dlg-check-label">
+            <input type="checkbox" id="chkBtnGlobe" checked/>
+            <span data-i18n="customizeGlobe">🌍 Globe (World Map)</span>
+          </label>
+          <label class="dlg-check-label">
+            <input type="checkbox" id="chkBtnProto" checked/>
+            <span data-i18n="customizeProto">🧩 Prototype</span>
+          </label>
+          <label class="dlg-check-label">
+            <input type="checkbox" id="chkBtnMacro" checked/>
+            <span data-i18n="customizeMacro">📁 Macro</span>
+          </label>
+          <label class="dlg-check-label">
+            <input type="checkbox" id="chkBtnSpeed" checked/>
+            <span data-i18n="customizeSpeed">📶 Speed Test</span>
+          </label>
+          <label class="dlg-check-label">
+            <input type="checkbox" id="chkBtnConsole" checked/>
+            <span data-i18n="customizeConsole">⌨ Console</span>
+          </label>
+        </div>
+      </div>
+      <div class="dlg-groupbox">
+        <span class="dlg-groupbox-legend" data-i18n="customizeSkinLegend">Skin</span>
+        <div class="dlg-radio-row">
+          <label class="dlg-radio">
+            <input type="radio" name="uiSkin" id="skinClassic" value="classic" checked/>
+            <span data-i18n="skinClassic">Classic</span>
+          </label>
+          <label class="dlg-radio">
+            <input type="radio" name="uiSkin" id="skinGlass" value="glass"/>
+            <span data-i18n="skinGlass">Glass</span>
+          </label>
+          <label class="dlg-radio">
+            <input type="radio" name="uiSkin" id="skinWorkbench" value="workbench"/>
+            <span data-i18n="skinWorkbench">Workbench Night</span>
+          </label>
+          <label class="dlg-radio">
+            <input type="radio" name="uiSkin" id="skinPurpleDark" value="purple-dark"/>
+            <span data-i18n="skinPurpleDark">Purple Dark</span>
+          </label>
+          <label class="dlg-radio">
+            <input type="radio" name="uiSkin" id="skinBlackFlat" value="black-flat"/>
+            <span data-i18n="skinBlackFlat">Black Flat</span>
+          </label>
+          <label class="dlg-radio">
+            <input type="radio" name="uiSkin" id="skinRetrogray" value="retrogray"/>
+            <span data-i18n="skinRetrogray">Retro Gray</span>
+          </label>
+        </div>
+      </div>
+      </div>
+    </div>
+    <div class="dlg-footer">
+      <button class="btn95" id="btnCustomizeOk" data-i18n="dlgOk">OK</button>
+      <button class="btn95" id="btnCustomizeCancel" data-i18n="dlgCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Context menu -->
+<div class="ctxmenu" id="favCtxMenu">
+  <div class="ctx-item" id="favCtxAddVisible">★ Add visible to favorites</div>
+  <div class="ctx-item" id="favCtxRemoveVisible">☆ Remove visible from favorites</div>
+</div>
+
+<div class="ctxmenu" id="checkCtxMenu">
+  <div class="ctx-item" id="checkCtxMarkVisible">✔ Mark visible</div>
+  <div class="ctx-item" id="checkCtxUnmarkVisible">✕ Unmark visible</div>
+</div>
+
+<div class="ctxmenu" id="ctxMenu">
+  <div class="ctx-item" id="ctxCopyIp" data-i18n="ctxCopyIp">Copy IP Address</div>
+  <div class="ctx-item" id="ctxCopyPorts" data-i18n="ctxCopyPorts">Copy Ports</div>
+  <div class="ctx-item" id="ctxHostname" data-i18n="ctxHostname">🧭 Hostname (reverse DNS)</div>
+  <div class="ctx-item ctx-disabled" id="ctxKnock" data-i18n="ctxKnock">🚪 Port Knock</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" id="ctxDetailGeo" data-i18n="ctxDetailGeo">🌍 Geolokalizacja / ISP</div>
+  <div class="ctx-item" id="ctxDetailDevice" data-i18n="ctxDetailDevice">🖥 Identyfikacja urządzenia</div>
+  <div class="ctx-item" id="ctxDetailTitle" data-i18n="ctxDetailTitle">📄 Tytuł strony HTTP</div>
+  <div class="ctx-item" id="ctxDetailAccess" data-i18n="ctxDetailAccess">🔑 Dostęp / Snapshot</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" id="ctxScanAllPorts" data-i18n="ctxScanAllPorts">Scan this IP (all ports)</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" id="ctxOpenBrowser" data-i18n="ctxOpenBrowser">Open in Browser</div>
+  <div class="ctx-item" id="ctxPreview" data-i18n="ctxPreview">Preview here</div>
+</div>
+
+
+<!-- Globe window -->
+<div id="globeWin">
+  <div class="titlebar cursor-move" id="globeTitlebar">
+    <span>🌍</span>
+    <span class="title-fill" data-i18n="globeWinTitle">Network Map – IP Scan Results</span>
+    <div class="titlebar-btns">
+      <div class="title-btn title-btn-clickable" id="btnGlobeClose">✕</div>
+    </div>
+  </div>
+  <div class="globe-toolbar">
+    <div class="flex-spacer"></div>
+    <button class="btn95" id="btnGlobeCameraMode" title="Camera view — show only cameras">📹</button>
+    <label class="globe-rotate-label" id="globeAutoRotateWrap">
+      <input type="checkbox" id="globeAutoRotate" checked/> <span data-i18n="globeAutoRotate">Auto-rotate</span>
+    </label>
+  </div>
+  <canvas id="globeCanvas" width="680" height="440"></canvas>
+  <div id="globeTooltip"></div>
+  <div id="globeCamPreview" class="globe-cam-preview">
+    <div class="cam-preview-title" id="globeCamPreviewTitle">📹</div>
+    <img id="globeCamPreviewImg" src="" alt="Camera preview" />
+    <div class="cam-preview-hint">Click to open</div>
+  </div>
+  <div class="globe-statusbar">
+    <div class="globe-panel" id="globeStatusText" data-i18n="globeStatusDefault">Drag to rotate · Click country to scan · Click dot to preview</div>
+  </div>
+</div>
+
+<!-- Topology window -->
+<div id="topoWin">
+  <div class="titlebar cursor-move" id="topoTitlebar">
+    <span>🕸</span>
+    <span class="title-fill" data-i18n="topoWinTitle">Network Topology</span>
+    <div class="titlebar-btns">
+      <div class="title-btn title-btn-clickable" id="btnTopoClose">✕</div>
+    </div>
+  </div>
+  <div class="globe-toolbar">
+    <button class="btn95" id="btnAutoTraceTopology" data-i18n="btnTraceAuto">Auto Trace</button>
+    <button class="btn95" id="btnClearGraph" data-i18n="btnClearGraph">Clear Graph</button>
+    <span class="toolbar-label" id="topoFiltersLabel" data-i18n="topoFiltersLabel">Filters:</span>
+    <select class="toolbar-select" id="topoPortFilter">
+      <option value="">All ports</option>
+    </select>
+    <input class="toolbar-input" id="topoSubnetFilter" placeholder="Subnet" />
+    <input class="toolbar-input" id="topoPingMax" type="number" min="0" step="1" placeholder="Max ms" />
+    <button class="btn95" id="btnClearTopoFilters" data-i18n="btnClearTopoFilters">Clear Filters</button>
+    <div class="flex-spacer"></div>
+    <span class="map-live-label" id="mapLiveLabel" data-i18n="mapLiveLabel">Live scan visualization</span>
+  </div>
+  <canvas id="topoCanvas" width="1060" height="620"></canvas>
+  <div class="globe-statusbar">
+    <div class="globe-panel" id="topoStatusText" data-i18n="topoStatusDefault">Topology view · Click host to preview · Rings show subnet depth</div>
+  </div>
+</div>
+
+<!-- Scan country confirm dialog -->
+<div id="dlgScanCountry">
+  <div class="titlebar">
+    <span>❓</span>
+    <span class="title-fill" data-i18n="scanCountryDlgTitle">Scan Country</span>
+    <div class="title-btn title-btn-clickable" id="btnScanCountryCloseX">✕</div>
+  </div>
+  <div class="dlg-content-pad dlg-icon-body">
+    <div class="dlg-icon-32" id="scDlgIcon">🌍</div>
+    <div>
+      <div class="dlg-headline" id="scDlgTitle">Scan country?</div>
+      <div class="trace-status" id="scDlgInfo"></div>
+    </div>
+  </div>
+  <div class="dlg-muted-block" id="scDlgRanges"></div>
+  <div class="dlg-footer-bar">
+    <button class="btn95 btn-min-60" id="scDlgYes" data-i18n="dlgYes">Yes</button>
+    <button class="btn95 btn-min-60" id="btnScanCountryNo" data-i18n="dlgNo">No</button>
+  </div>
+</div>
+
+<!-- Trace import dialog -->
+<div id="dlgTraceOverlay">
+  <div id="dlgTrace">
+    <div class="titlebar">
+      <span>🧭</span>
+      <span class="trace-title" id="traceDlgTitle" data-i18n="traceDlgTitle">Import traceroute</span>
+      <div class="title-btn" id="btnTraceCloseX">✕</div>
+    </div>
+    <div class="trace-body">
+      <div class="trace-row">
+        <label for="traceTargetIp" id="traceTargetLabel" data-i18n="traceTargetLabel">Target IP:</label>
+        <input class="dlg-input95 dlg-input95-courier trace-target-input" id="traceTargetIp" type="text" />
+        <span class="trace-hint" id="traceHint" data-i18n="traceHint">Paste output from tracert or traceroute.</span>
+      </div>
+      <textarea id="traceInput" spellcheck="false"></textarea>
+      <div class="trace-status" id="traceParseStatus"></div>
+    </div>
+    <div class="dlg-footer-bar">
+      <button class="btn95" id="btnTraceAuto" data-i18n="btnTraceAuto">Auto Trace</button>
+      <button class="btn95" id="btnTraceSave" data-i18n="btnTraceSave">Import</button>
+      <button class="btn95" id="btnTraceCancel" data-i18n="dlgCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Clippy assistant -->
+<div id="clippy-container" class="clippy-hidden">
+  <div id="clippy-bubble">
+    <span id="clippy-close">✕</span>
+    <span id="clippy-tip-text"></span>
+  </div>
+  <div id="clippy-char">📎</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script src="js/globe.js"></script>
+<script src="js/proto.js"></script>
+<script src="js/macros.js"></script>
+<script src="js/speedtest.js"></script>
+<script src="js/console.js"></script>
+<script src="js/lang-en.js"></script>
+<script src="js/lang-pl.js"></script>
+<script src="js/imgmeta.js"></script>
+<script src="js/scan-guards.js"></script>
+<script src="js/scan-results-persistence.js"></script>
+<script src="js/preview-context.js"></script>
+<script src="js/app.js"></script>
+<script src="js/scan-runner.js"></script>
+<script src="js/ip-detection.js"></script>
+<script src="js/scanwatch.js"></script>
+<script src="js/wifi-detector.js"></script>
+<script src="js/radar.js"></script>
+<script src="js/ai-assistant.js"></script>
+<script src="js/bt-detector.js"></script>
+<script src="js/gnss.js"></script>
+<script src="js/lte.js"></script>
+<script src="js/sniffer.js"></script>
+<script src="js/phone-lookup.js"></script>
+<script src="js/clippy.js"></script>
 </body>
 </html>
