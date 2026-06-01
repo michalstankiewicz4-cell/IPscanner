@@ -219,6 +219,9 @@
         dragging = true;
         document.body.classList.add('dragging');
         updateFromPointer(event.clientX);
+        try {
+          splitter.setPointerCapture(event.pointerId);
+        } catch (_) {}
         event.preventDefault();
       });
 
@@ -227,14 +230,20 @@
         updateFromPointer(event.clientX);
       });
 
-      window.addEventListener('pointerup', function () {
+      function endDrag() {
         dragging = false;
         document.body.classList.remove('dragging');
+      }
+
+      window.addEventListener('pointerup', function (event) {
+        endDrag();
+        try {
+          splitter.releasePointerCapture(event.pointerId);
+        } catch (_) {}
       });
 
       window.addEventListener('pointercancel', function () {
-        dragging = false;
-        document.body.classList.remove('dragging');
+        endDrag();
       });
 
       window.addEventListener('resize', function () {
