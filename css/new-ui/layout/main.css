@@ -40,12 +40,24 @@
   color: var(--txt-dim);
   font-size: 16px;
   cursor: pointer;
+  position: relative;
 }
 
 .v1-activity button.active {
-  background: rgba(55, 148, 255, 0.28);
-  border-color: rgba(55, 148, 255, 0.7);
+  background: transparent;
+  border-color: transparent;
   color: #fff;
+}
+
+.v1-activity button.active::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-radius: 0;
+  background: #3794ff;
 }
 
 .v1-activity button:hover:not(.active) {
