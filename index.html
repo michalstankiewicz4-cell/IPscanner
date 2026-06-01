@@ -57,11 +57,6 @@
       letter-spacing: 0.02em;
     }
 
-    .title span {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
     .legend {
       display: flex;
       flex-wrap: wrap;
@@ -177,7 +172,7 @@
 
     <main class="stage" id="stage">
       <section class="pane left" id="leftPane" style="flex-basis: 50%;">
-        <iframe src="dual-ui.html" title="Old UI"></iframe>
+        <iframe src="OSINTNETAuditor/old-ui.html" title="Old UI"></iframe>
       </section>
       <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" aria-label="Przesuwana przedziałka"></div>
       <section class="pane right" id="rightPane" style="flex-basis: 50%;">
@@ -217,9 +212,7 @@
         dragging = true;
         document.body.classList.add('dragging');
         updateFromPointer(event.clientX);
-        try {
-          splitter.setPointerCapture(event.pointerId);
-        } catch (_) {}
+        try { splitter.setPointerCapture(event.pointerId); } catch (_) {}
         event.preventDefault();
       });
 
@@ -235,9 +228,7 @@
 
       window.addEventListener('pointerup', function (event) {
         endDrag();
-        try {
-          splitter.releasePointerCapture(event.pointerId);
-        } catch (_) {}
+        try { splitter.releasePointerCapture(event.pointerId); } catch (_) {}
       });
 
       window.addEventListener('pointercancel', function () {

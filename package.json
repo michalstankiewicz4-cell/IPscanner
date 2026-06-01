@@ -4,7 +4,7 @@
   "version": "1.6.5",
   "scripts": {
     "sync-version": "powershell -NoProfile -Command \"$pkg = Get-Content package.json -Raw | ConvertFrom-Json; $version = $pkg.version; (Get-Content src-tauri/Cargo.toml) -replace 'version = \\\"[^\\\"]*\\\"', ('version = \\\"' + $version + '\\\"') | Set-Content src-tauri/Cargo.toml; (Get-Content src-tauri/tauri.conf.json) -replace '\\\"version\\\": \\\"[^\\\"]*\\\"', ('\\\"version\\\": \\\"' + $version + '\\\"') | Set-Content src-tauri/tauri.conf.json; (Get-Content js/app.js) -replace \\\"const APP_VERSION = '[^']*'\\\", (\\\"const APP_VERSION = '\\\" + $version + \\\"'\\\") | Set-Content js/app.js; Write-Host 'Version synced to '$version\"",
-    "prepare:app": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Copy-Item -Path 'index.html','dual-ui.html','clippy.html','zebrus.png' -Destination 'app' -Force; Copy-Item -Path 'OSINTNETAuditor' -Destination 'app' -Recurse -Force; Copy-Item -Path 'css' -Destination 'app' -Recurse -Force; Copy-Item -Path 'js' -Destination 'app' -Recurse -Force\"",
+    "prepare:app": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Copy-Item -Path 'index.html','clippy.html','zebrus.png' -Destination 'app' -Force; Copy-Item -Path 'OSINTNETAuditor' -Destination 'app' -Recurse -Force; Copy-Item -Path 'css' -Destination 'app' -Recurse -Force; Copy-Item -Path 'js' -Destination 'app' -Recurse -Force\"",
     "dev": "npm run prepare:app && npx http-server app -p 1420 -c-1",
     "tauri:dev": "tauri dev",
     "tauri:build": "npm run prepare:app && tauri build"
