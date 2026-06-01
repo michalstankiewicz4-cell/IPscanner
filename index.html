@@ -11,7 +11,7 @@
   <link id="newUiSkinLink" rel="stylesheet" href="css/new-ui/skins/default.css" />
   <link rel="stylesheet" href="css/new-ui/new-ui.css" />
 </head>
-<body data-v1-ready="false" style="visibility:hidden;">
+<body data-v1-ready="false" class="v1-preload-hidden">
   <div class="v1-shell">
     <!-- Top menu -->
     <nav class="v1-menubar" id="v1Menubar">
@@ -117,7 +117,7 @@
                 <span class="v1-collapse-arrow">▼</span>
               </div>
               <div class="v1-section-body">
-                <div class="v1-scanner-actions" style="margin-top:8px;flex-direction:column;gap:5px;">
+                <div class="v1-scanner-actions v1-scanner-actions--detect">
                   <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="ext-ip"><span class="v1-detect-icon">🌐</span><span id="v1DetectBtnExtLabel">External IP</span></button><span class="v1-detect-result" id="v1DetectExtIp"></span><button type="button" class="v1-use-btn" id="v1UseExtIp" hidden aria-label="Use range">&gt;</button></div>
                   <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="local-ip"><span class="v1-detect-icon">🖥</span><span id="v1DetectBtnLocalLabel">Local IP</span></button><span class="v1-detect-result" id="v1DetectLocalIp"></span><button type="button" class="v1-use-btn" id="v1UseLocalIp" hidden aria-label="Use range">&gt;</button></div>
                   <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="subnets"><span class="v1-detect-icon">🔗</span><span id="v1DetectBtnSubnetsLabel">Subnets</span></button><span class="v1-detect-result" id="v1DetectSubnets"></span><button type="button" class="v1-use-btn" id="v1UseSubnets" hidden aria-label="Use range">&gt;</button></div>
@@ -168,7 +168,7 @@
                   <option value="all-ports">All ports</option>
                 </select>
               </div>
-              <div class="v1-scanner-actions" style="margin-top:6px;">
+              <div class="v1-scanner-actions v1-scanner-actions--spaced">
                 <button type="button" data-scanner-action="start">▶ Start</button>
                 <button type="button" data-scanner-action="stop">■ Stop</button>
                 <button type="button" data-scanner-action="clear">✕ Clear</button>
@@ -184,7 +184,7 @@
               </div>
               <div class="v1-section-body">
               <textarea id="v1IpExtractorInput" class="v1-ip-extractor-input" rows="3" placeholder="example.com 192.168.1.10"></textarea>
-              <div class="v1-scanner-actions" style="margin-top:6px;">
+              <div class="v1-scanner-actions v1-scanner-actions--spaced">
                 <button type="button" id="v1IpExtractBtn">＋ Add / Extract</button>
               </div>
               <textarea id="v1IpExtractorOutput" class="v1-ip-extractor-output" rows="4" readonly placeholder="Extracted IPs..."></textarea>
@@ -423,8 +423,8 @@ macro://stealth-check
 
             <section class="v1-right-pane" data-v1-right-pane="notes">
               <div class="v1-notes-pane">
-                <h4 style="margin:0 0 8px;">Notes</h4>
-                <p style="margin:0;">Reserve tab for next assistant views (runbook, snippets, context).</p>
+                <h4 class="v1-notes-title">Notes</h4>
+                <p class="v1-notes-text">Reserve tab for next assistant views (runbook, snippets, context).</p>
               </div>
             </section>
           </div>
