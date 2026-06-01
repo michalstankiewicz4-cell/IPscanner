@@ -25,6 +25,11 @@
       textKey: "toolText_settings",
       points: ["Default scan values", "Language and presets", "Customization"]
     },
+    presets: {
+      titleKey: "toolTitle_presets",
+      textKey: "toolText_presets",
+      points: ["Built-in scan groups", "Editable custom ports", "Default preset choice"]
+    },
     "import-tool": {
       titleKey: "toolTitle_import_tool",
       textKey: "toolText_import_tool",

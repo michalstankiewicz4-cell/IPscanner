@@ -59,7 +59,7 @@
       label: "Port Presets (mock)",
       purposeKey: "tipActionPresets",
       purpose: "Zarzadzanie presetami portow.",
-      behavior: "switch-tool:settings",
+      behavior: "switch-tool:presets",
     },
     defaults: {
       label: "Default Scan Values (mock)",

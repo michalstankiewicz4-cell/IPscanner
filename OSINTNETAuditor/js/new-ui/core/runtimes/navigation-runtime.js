@@ -93,8 +93,13 @@
         titleEl.hidden = showToolTabs;
       }
 
+      document.querySelectorAll(".v1-activity [data-tool]").forEach(function (btn) {
+        btn.classList.remove("active");
+      });
       document.querySelectorAll(".v1-activity [data-activity]").forEach(function (btn) {
-        btn.classList.toggle("active", btn.getAttribute("data-activity") === view);
+        if (btn.getAttribute("data-activity") === view) {
+          btn.classList.add("active");
+        }
       });
     }
 
@@ -465,6 +470,13 @@
         var fromToolsMenu = !!target.closest('.v1-menu-group[data-menu="tools"]');
         var fromCenterTabs = !!target.closest(".v1-tabs");
         var fromLeftTabs = !!target.closest("#v1SidebarToolTabs");
+        var fromActivityRail = !!target.closest(".v1-activity");
+
+        if (fromActivityRail) {
+          document.querySelectorAll(".v1-activity [data-tool]").forEach(function (btn) {
+            btn.classList.toggle("active", btn === target);
+          });
+        }
 
         // Central tab clicks should only activate that tab.
         if (fromCenterTabs) {

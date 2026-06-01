@@ -133,6 +133,7 @@
         const resultNavIpLibrary = document.getElementById("v1ResultNavIpLibrary");
         const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
         const tabTitleIpLibrary = document.getElementById("v1TabTitleIpLibrary");
+        const tabTitlePresets = document.getElementById("v1TabTitlePresets");
         const tabTitleImportTool = document.getElementById("v1TabTitleImportTool");
         const tabTitleLanguageManager = document.getElementById("v1TabTitleLanguageManager");
         const tabTitleAbout = document.getElementById("v1TabTitleAbout");
@@ -196,7 +197,7 @@
           tabsScrollRightBtn.setAttribute("title", tr("tabScrollRight"));
           tabsScrollRightBtn.setAttribute("aria-label", tr("tabScrollRight"));
         }
-        if (toolsMenuIpScanner) toolsMenuIpScanner.textContent = tr("tabResultsIp");
+        if (toolsMenuIpScanner) toolsMenuIpScanner.textContent = tr("ipScanner");
         if (toolsMenuTopology) toolsMenuTopology.textContent = tr("toolTitle_topology");
         if (toolsMenuGlobe) toolsMenuGlobe.textContent = tr("toolTitle_globe");
         if (sidebarTabScanner) sidebarTabScanner.textContent = tr("ipScanner");
@@ -216,6 +217,7 @@
         if (resultNavIpLibrary) resultNavIpLibrary.textContent = "🗂 " + tr("ipLibraryTabTitle");
         if (tabResultsIp) tabResultsIp.textContent = tr("tabResultsIp");
         if (tabTitleIpLibrary) tabTitleIpLibrary.textContent = tr("ipLibraryTabTitle");
+        if (tabTitlePresets) tabTitlePresets.textContent = tr("tabPresetsTitle");
         if (tabTitleImportTool) tabTitleImportTool.textContent = tr("importToolTitle");
         if (tabTitleLanguageManager) tabTitleLanguageManager.textContent = tr("langManagerTitle");
         if (tabTitleAbout) tabTitleAbout.textContent = tr("tabAboutTitle");

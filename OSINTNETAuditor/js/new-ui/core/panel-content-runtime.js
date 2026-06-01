@@ -238,6 +238,44 @@
       ].join("");
     }
 
+    function renderPresetsTool() {
+      return [
+        "<div class=\"v1-presets-shell\">",
+        "<div class=\"v1-presets-list-block\">",
+        "<ul class=\"v1-presets-list\" role=\"listbox\" aria-label=\"Port presets\">",
+        "<li class=\"v1-presets-item\">Cameras</li>",
+        "<li class=\"v1-presets-item\">Printers</li>",
+        "<li class=\"v1-presets-item\">Folders / HTTP</li>",
+        "<li class=\"v1-presets-item\">Routers</li>",
+        "<li class=\"v1-presets-item\">NAS / Servers</li>",
+        "<li class=\"v1-presets-item\">Windows / SMB</li>",
+        "<li class=\"v1-presets-item active\" aria-selected=\"true\">All ports</li>",
+        "</ul>",
+        "<div class=\"v1-presets-actions\">",
+        "<button type=\"button\">+ Add</button>",
+        "<button type=\"button\">Delete</button>",
+        "<button type=\"button\">Move Up</button>",
+        "<button type=\"button\">Move Down</button>",
+        "<button type=\"button\">Set as default</button>",
+        "</div>",
+        "</div>",
+        "<section class=\"v1-presets-editor\">",
+        "<h4>Edit preset</h4>",
+        "<div class=\"v1-presets-form\">",
+        "<label for=\"v1PresetName\">Name</label>",
+        "<input id=\"v1PresetName\" type=\"text\" autocomplete=\"off\" value=\"All ports\" />",
+        "<label for=\"v1PresetPorts\">Ports</label>",
+        "<input id=\"v1PresetPorts\" type=\"text\" autocomplete=\"off\" value=\"80,8080,443,554\" />",
+        "</div>",
+        "<p class=\"v1-presets-hint\">Enter port numbers separated by commas, e.g. 80, 443, 8080, 554</p>",
+        "<div class=\"v1-presets-save\">",
+        "<button type=\"button\">Save</button>",
+        "</div>",
+        "</section>",
+        "</div>"
+      ].join("");
+    }
+
     function renderResultsIp() {
       var rows = Array.isArray(resultsIpConfig.sampleRows) ? resultsIpConfig.sampleRows : [];
 
@@ -293,6 +331,7 @@
       "import-tool": renderImportTool,
       "language-manager": renderLanguageManagerTool,
       "ip-library": renderIpLibraryTool,
+      presets: renderPresetsTool,
       "results-ip": renderResultsIp,
     };
 
