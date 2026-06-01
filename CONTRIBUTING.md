@@ -11,6 +11,16 @@ Repo zawiera stabilny rdzen skanera oraz kilka wariantow UI. Aktualny kierunek r
 
 W praktyce: zmiany w warstwie UI powinny byc izolowane od logiki skanowania.
 
+### 1a. Model galezi (obowiazkowy)
+
+- `main` utrzymuje klasyczny interfejs windowsowy (legacy UI).
+- `feature/new-ui-skins` utrzymuje nowe UI (uklad podobny do VS Code).
+- Galezie rozwijamy niezaleznie: brak mieszania entrypointow i runtime miedzy stackami.
+- Jedyny punkt integracji miedzy tymi galeziami to dual-view host:
+  - lewa strona: `main` (legacy UI),
+  - prawa strona: `feature/new-ui-skins` (new UI).
+- Zmiany na jednej galezi nie moga wymagac obecnosci plikow UI z drugiej galezi, poza powyzszym kontraktem dual-view.
+
 ## 2. Zasady zmian
 
 - Nie mieszaj refaktoru UI z duzymi zmianami backendu skanera w jednym PR.
@@ -201,7 +211,7 @@ Plan rozwoju instalatora (roadmapa):
 ## 9. Czego nie robimy w PR do new UI
 
 - Nie przepinamy calej aplikacji na new UI w jednym kroku.
-- Nie usuwamy aktywnych entrypointow UI bez uzgodnionego planu migracji.
+- Nie usuwamy aktywnych entrypointow UI bez uzgodnionego planu migracji w ramach danej galezi.
 - Nie dokladamy nowego dlugu technicznego przez kolejne duze skrypty inline.
 
 ## 10. Definition of done (UI/i18n)
