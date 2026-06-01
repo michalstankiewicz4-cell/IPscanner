@@ -211,19 +211,107 @@
       return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
     }
 
+    function isHostInVisibleTree(el) {
+      if (!el || !el.isConnected) return false;
+      var current = el;
+      while (current && current.nodeType === 1) {
+        var styles = window.getComputedStyle(current);
+        if (styles.display === "none" || styles.visibility === "hidden") {
+          return false;
+        }
+        current = current.parentElement;
+      }
+      return true;
+    }
+
+    function intersectsViewport(rect) {
+      var viewportWidth = Math.max(0, window.innerWidth || document.documentElement.clientWidth || 0);
+      var viewportHeight = Math.max(0, window.innerHeight || document.documentElement.clientHeight || 0);
+      if (viewportWidth <= 0 || viewportHeight <= 0) return false;
+      return rect.right > 0 && rect.left < viewportWidth && rect.bottom > 0 && rect.top < viewportHeight;
+    }
+
+    function isClippingOverflow(value) {
+      var normalized = String(value || "").toLowerCase();
+      return normalized === "hidden" || normalized === "clip" || normalized === "auto" || normalized === "scroll";
+    }
+
+    function clipBoundsToRect(bounds, rect) {
+      bounds.left = Math.max(bounds.left, rect.left);
+      bounds.right = Math.min(bounds.right, rect.right);
+      bounds.top = Math.max(bounds.top, rect.top);
+      bounds.bottom = Math.min(bounds.bottom, rect.bottom);
+    }
+
+    function resolveVisibleBounds(el, rect) {
+      var viewportWidth = Math.max(0, window.innerWidth || document.documentElement.clientWidth || 0);
+      var viewportHeight = Math.max(0, window.innerHeight || document.documentElement.clientHeight || 0);
+
+      var bounds = {
+        left: Math.max(0, rect.left),
+        right: Math.min(viewportWidth, rect.right),
+        top: Math.max(0, rect.top),
+        bottom: Math.min(viewportHeight, rect.bottom)
+      };
+
+      if (!el || !el.closest) return bounds;
+
+      // Constrain faux rails to clipping ancestors (e.g. main editor content above console).
+      var current = el.parentElement;
+      while (current && current.nodeType === 1) {
+        var style = window.getComputedStyle(current);
+        if (isClippingOverflow(style.overflow) || isClippingOverflow(style.overflowX) || isClippingOverflow(style.overflowY)) {
+          clipBoundsToRect(bounds, current.getBoundingClientRect());
+        }
+        current = current.parentElement;
+      }
+
+      var detachedCard = el.closest(".v1-detached-tool-card");
+      if (!detachedCard) return bounds;
+
+      var cardRect = detachedCard.getBoundingClientRect();
+      clipBoundsToRect(bounds, cardRect);
+
+      return bounds;
+    }
+
+    function getTopDetachedCard() {
+      var cards = Array.from(document.querySelectorAll(".v1-detached-tool-card"));
+      var best = null;
+      var bestZ = Number.NEGATIVE_INFINITY;
+      cards.forEach(function (card) {
+        var style = window.getComputedStyle(card);
+        if (style.display === "none" || style.visibility === "hidden") return;
+        var rect = card.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+        var z = Number(style.zIndex);
+        if (!Number.isFinite(z)) z = 0;
+        if (z >= bestZ) {
+          bestZ = z;
+          best = card;
+        }
+      });
+      return best;
+    }
+
     function isHostOccludedByHigherDetachedCard(el, rect) {
       if (!el || !el.closest) return false;
       normalizeActiveDetachedCard();
       var selfCard = el.closest(".v1-detached-tool-card");
       if (!selfCard) return false;
 
+      // Outside active interaction, keep faux rails only on focused/top detached window.
+      var focusedCard = activeDetachedCard || getTopDetachedCard();
+      if (focusedCard && focusedCard !== selfCard) {
+        return true;
+      }
+
       // While actively dragging one detached card, keep rails focused on that card.
       if (detachedDragActive && activeDetachedCard && activeDetachedCard !== selfCard) {
         return true;
       }
 
-      // In normal mode, show rails for each detached window independently.
-      // Occlusion heuristics are too aggressive and can hide rails on side-by-side windows.
+      // When not dragging, focused-card rule above is enough.
       if (!detachedDragActive) {
         return false;
       }
@@ -253,8 +341,13 @@
       var layerZ = resolveRailZIndex(el);
       var scrollbarSize = getScrollbarSizePx();
       var rect = el.getBoundingClientRect();
+      var visibleBounds = resolveVisibleBounds(el, rect);
+      var visibleWidth = Math.max(0, visibleBounds.right - visibleBounds.left);
+      var visibleHeight = Math.max(0, visibleBounds.bottom - visibleBounds.top);
       var styles = getComputedStyle(el);
-      var isVisible = rect.width > 0 && rect.height > 0 && styles.display !== "none";
+      var isVisibleTree = isHostInVisibleTree(el);
+      var inViewport = intersectsViewport(rect);
+      var isVisible = isVisibleTree && inViewport && rect.width > 0 && rect.height > 0 && visibleWidth > 0 && visibleHeight > 0;
       var isOccluded = isHostOccludedByHigherDetachedCard(el, rect);
       var overflowY = (styles.overflowY || "").toLowerCase();
       var overflow = (styles.overflow || "").toLowerCase();
@@ -265,7 +358,7 @@
       if (isVisible && scrollable) {
         var railWidth = scrollbarSize;
         var thumbMin = 24;
-        var railHeight = rect.height;
+        var railHeight = visibleHeight;
         var ratio = el.clientHeight / el.scrollHeight;
         var thumbHeight = Math.max(thumbMin, Math.floor(railHeight * ratio));
         var maxThumbTop = Math.max(0, railHeight - thumbHeight);
@@ -274,8 +367,8 @@
 
         rail.style.display = "block";
         rail.style.zIndex = String(layerZ);
-        rail.style.top = rect.top + "px";
-        rail.style.left = rect.right - railWidth + "px";
+        rail.style.top = visibleBounds.top + "px";
+        rail.style.left = Math.max(visibleBounds.left, visibleBounds.right - railWidth) + "px";
         rail.style.height = railHeight + "px";
 
         thumb.style.height = thumbHeight + "px";
@@ -296,10 +389,9 @@
           item.hRail.style.display = "none";
         } else {
           var horizontalRailHeight = scrollbarSize;
-          var viewportWidth = Math.max(0, window.innerWidth || document.documentElement.clientWidth || 0);
-          var viewportHeight = Math.max(0, window.innerHeight || document.documentElement.clientHeight || 0);
-          var visibleLeft = Math.max(0, rect.left);
-          var visibleRight = Math.min(viewportWidth, rect.right);
+          var visibleLeft = visibleBounds.left;
+          var visibleRight = visibleBounds.right;
+          var visibleBottom = visibleBounds.bottom;
           var horizontalRailWidth = Math.max(0, visibleRight - visibleLeft);
           var horizontalThumbMin = 24;
           var horizontalRatio = el.clientWidth / el.scrollWidth;
@@ -308,9 +400,9 @@
           var horizontalMaxThumbLeft = Math.max(0, horizontalRailWidth - horizontalThumbWidth);
           var horizontalScrollRange = Math.max(1, el.scrollWidth - el.clientWidth);
           var horizontalThumbLeft = Math.floor((el.scrollLeft / horizontalScrollRange) * horizontalMaxThumbLeft);
-          var horizontalTop = Math.max(0, Math.min(viewportHeight - horizontalRailHeight, rect.bottom - horizontalRailHeight));
+          var horizontalTop = visibleBottom - horizontalRailHeight;
 
-          if (horizontalRailWidth <= 0) {
+          if (horizontalRailWidth <= 0 || horizontalTop < visibleBounds.top) {
             item.hRail.style.display = "none";
             return;
           }
