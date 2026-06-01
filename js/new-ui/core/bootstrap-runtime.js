@@ -196,7 +196,7 @@
           tabsScrollRightBtn.setAttribute("title", tr("tabScrollRight"));
           tabsScrollRightBtn.setAttribute("aria-label", tr("tabScrollRight"));
         }
-        if (toolsMenuIpScanner) toolsMenuIpScanner.textContent = tr("tabResultsIp");
+        if (toolsMenuIpScanner) toolsMenuIpScanner.textContent = tr("ipScanner");
         if (toolsMenuTopology) toolsMenuTopology.textContent = tr("toolTitle_topology");
         if (toolsMenuGlobe) toolsMenuGlobe.textContent = tr("toolTitle_globe");
         if (sidebarTabScanner) sidebarTabScanner.textContent = tr("ipScanner");
