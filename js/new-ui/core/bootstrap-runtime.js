@@ -128,6 +128,7 @@
         const ipLibraryTopRangesLabel = document.getElementById("v1IpLibraryTopRangesLabel");
         const ipLibraryUpdateBtn = document.getElementById("v1IpLibraryUpdateBtn");
         const ipLibraryLoadBtn = document.getElementById("v1IpLibraryLoadBtn");
+        const ipLibraryClearBtn = document.getElementById("v1IpLibraryClearBtn");
         const ipLibraryLastUpdateLabel = document.getElementById("v1IpLibraryLastUpdateLabel");
         const resultNavIp = document.getElementById("v1ResultNavIp");
         const resultNavIpLibrary = document.getElementById("v1ResultNavIpLibrary");
@@ -209,6 +210,7 @@
         if (ipLibraryTopRangesLabel) ipLibraryTopRangesLabel.textContent = tr("ipLibraryTopRangesLabel");
         if (ipLibraryUpdateBtn) ipLibraryUpdateBtn.textContent = tr("ipLibraryUpdateBtn");
         if (ipLibraryLoadBtn) ipLibraryLoadBtn.textContent = tr("ipLibraryLoadBtn");
+        if (ipLibraryClearBtn) ipLibraryClearBtn.textContent = tr("ipLibraryClearBtn");
         if (ipLibraryLastUpdateLabel) ipLibraryLastUpdateLabel.textContent = tr("ipLibraryLastUpdateLabel");
         document.querySelectorAll("[data-sidebar-tab-close]").forEach((el) => {
           el.setAttribute("aria-label", tr("tabCloseAria"));

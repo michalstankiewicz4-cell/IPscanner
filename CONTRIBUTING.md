@@ -98,6 +98,9 @@ Zasady:
 - Nie umieszczaj logiki biznesowej skanera ani logiki routingu w rendererach tresci.
 - Nie przenos event bindingu globalnego do `panel-content-runtime.js`.
 - Nie przenos event bindingu globalnego do `panel-renderers-runtime.js`.
+- Dla centralnego panelu obowiazuje parytet `tab` vs `window`: zawartosc i zachowanie odczepionego okna musi byc 1:1 wzgledem aktywnej zakladki tego samego narzedzia.
+- Dla centralnego panelu obowiazuje takze parytet stylow `tab` vs `window`: spacing, typografia, kolory i stany hover/focus musza pozostac 1:1.
+- Nie opieraj krytycznych interakcji centralnego panelu tylko na selektorach `id`, jesli widok moze dzialac w trybie `window` (detached), gdzie `id` moze byc normalizowane lub usuwane.
 - Teksty user-facing musza przechodzic przez i18n (brak nowych hardcoded tekstow w rendererach).
 - Duze statyczne tresci (np. About/License/help text) utrzymuj jako dane wejsciowe konfiguracji, a nie rozproszony inline markup w wielu runtime.
 
@@ -105,6 +108,8 @@ Checklist PR dla warstwy paneli:
 
 - `panel-content-runtime.js` nie zawiera routingu narzedzi ani globalnych listenerow.
 - `panels-runtime.js` nie buduje recznie dlugich blokow HTML dla sekcji danych (uzywa dedykowanych rendererow).
+- Dla kazdego zmienionego narzedzia centralnego panelu potwierdz parity smoke test: `tab` i `window` maja ten sam markup funkcjonalny oraz te same akcje.
+- Dla kazdego zmienionego narzedzia centralnego panelu potwierdz parity smoke test stylow: `tab` i `window` maja ten sam layout i te same klasy stylujace dla kluczowych sekcji.
 - Po zmianach uruchom `npm run prepare:app` i sprawdz mirror `app/`.
 
 Mapa odpowiedzialnosci jest utrzymywana centralnie i nie powinna byc dublowana w wielu miejscach.
@@ -200,6 +205,10 @@ Zasady:
 - W New UI nie mieszamy natywnych i custom scrollbar w tym samym przeplywie widoku.
 - Jezeli nowy kontener ma `overflow: auto`, upewnij sie, ze jest hostem custom scrollbar albo jest wewnatrz hosta obslugujacego przewijanie.
 - Po zmianie layoutu i po renderze dynamicznej zawartosci odswiez `refreshCustomScrollbars()`.
+- Dla widokow centralnych wymagajacych parytetu `tab` vs `window` nie wprowadzaj trwalego bypassu custom-scrollbar (np. `data-native-hscroll`) bez jawnej decyzji architektonicznej.
+- Przy debugowaniu poziomego paska preferuj najpierw diagnoze `scrollWidth/clientWidth/overflowX` i layoutu kontenera; dopiero potem zmieniaj runtime scrollbar.
+- W layoutach grid/flex dla hostow tabel i wrapperow przewijania utrzymuj `min-width: 0`, aby overflow powstawal w kontenerze scroll i nie "uciekal" do rodzica.
+- Tymczasowe markery/testy diagnostyczne (np. probe classes, dodatkowe tabele testowe) musza byc usuniete przed zamknieciem taska i przed push.
 
 ## 7. Build i release
 

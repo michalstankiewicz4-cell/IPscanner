@@ -15,18 +15,44 @@
       if (Array.isArray(item.ranges) && item.ranges.length) {
         return item.ranges.slice(0, 3).map(function (entry) {
           if (entry && typeof entry === "object") {
-            return String(entry.cidr || entry.range || entry.network || entry.address || "");
+            return String(entry.cidr || entry.range || entry.network || entry.address || entry.ip_range || "");
           }
-          return String(entry || "");
+          return String(entry || "").trim();
         }).filter(Boolean).join(", ");
       }
 
       return "-";
     }
 
+    function extractRanges(item) {
+      if (!item || typeof item !== "object") return [];
+
+      var direct = String(item.cidr || item.range || item.network || item.address || item.ip_range || "").trim();
+      if (direct) return [direct];
+
+      if (Array.isArray(item.ranges) && item.ranges.length) {
+        return item.ranges.map(function (entry) {
+          if (entry && typeof entry === "object") {
+            return String(entry.cidr || entry.range || entry.network || entry.address || entry.ip_range || "").trim();
+          }
+          return String(entry || "").trim();
+        }).filter(Boolean);
+      }
+
+      return [];
+    }
+
     function pickCountryFromItem(item) {
       if (!item || typeof item !== "object") return "-";
-      return String(item.country_code || item.countryCode || item.country || item.code || "-").toUpperCase();
+      return String(
+        item.country_code ||
+        item.countryCode ||
+        item.country ||
+        item.code ||
+        item.flag ||
+        item.name ||
+        "-"
+      ).toUpperCase();
     }
 
     function renderIpLibraryRows(data) {
@@ -35,9 +61,22 @@
         return '<tr><td colspan="2" class="v1-iplib-empty">' + escapeHtml(tr("ipLibraryTableEmpty")) + "</td></tr>";
       }
 
-      return rows.map(function (item) {
-        return '<tr><td class="v1-iplib-col-country">' + escapeHtml(pickCountryFromItem(item)) + '</td><td class="v1-iplib-col-address">' + escapeHtml(pickAddressFromItem(item)) + "</td></tr>";
-      }).join("");
+      var html = [];
+      rows.forEach(function (item) {
+        var country = pickCountryFromItem(item);
+        var ranges = extractRanges(item);
+
+        if (!ranges.length) {
+          html.push('<tr><td class="v1-iplib-col-country">' + escapeHtml(country) + '</td><td class="v1-iplib-col-address">' + escapeHtml(pickAddressFromItem(item)) + "</td></tr>");
+          return;
+        }
+
+        ranges.forEach(function (address) {
+          html.push('<tr><td class="v1-iplib-col-country">' + escapeHtml(country) + '</td><td class="v1-iplib-col-address">' + escapeHtml(address) + "</td></tr>");
+        });
+      });
+
+      return html.join("");
     }
 
     function renderExtensionList(items) {

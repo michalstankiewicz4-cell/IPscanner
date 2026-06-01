@@ -4,13 +4,18 @@
     var tr = typeof deps.tr === "function" ? deps.tr : function (key) { return key; };
     var setStatusLine = typeof deps.setStatusLine === "function" ? deps.setStatusLine : null;
 
-    function wireVersionsTimeline() {
-      var root = document.getElementById("v1ToolDetail");
+    function wireVersionsTimeline(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
       if (!root) return;
 
-      var track = document.getElementById("v1VersionTrack");
-      var versionsList = document.getElementById("v1VersionsList");
-      var physics = document.getElementById("v1VersionPhysics");
+      if (root.dataset.versionsTimelineBound === "1") return;
+      root.dataset.versionsTimelineBound = "1";
+
+      var track = root.querySelector("[data-version-role=\"track\"]") || root.querySelector("#v1VersionTrack");
+      var versionsList = root.querySelector("[data-version-role=\"list\"]") || root.querySelector("#v1VersionsList");
+      var physics = root.querySelector("[data-version-role=\"physics\"]") || root.querySelector("#v1VersionPhysics");
       if (!track || !versionsList || !physics) return;
 
       var points = Array.from(root.querySelectorAll(".v1-version-point"));
@@ -42,7 +47,8 @@
           var isCurrent = Number(section.getAttribute("data-version-entry-index")) === safeIndex;
           section.classList.toggle("is-active", isCurrent);
           if (isCurrent) {
-            section.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            var nextTop = Math.max(0, section.offsetTop - 8);
+            versionsList.scrollTo({ top: nextTop, behavior: "smooth" });
           }
         });
       }
@@ -151,8 +157,10 @@
       setActiveBySourceIndex(0);
     }
 
-    function wireResultsIpTable() {
-      var root = document.getElementById("v1ToolDetail");
+    function wireResultsIpTable(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
       if (!root) return;
 
       root.querySelectorAll("[data-open-ports]").forEach(function (button) {
@@ -178,8 +186,10 @@
       });
     }
 
-    function wirePresetsTool() {
-      var root = document.getElementById("v1ToolDetail");
+    function wirePresetsTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
       if (!root) return;
       if (!root.querySelector(".v1-presets-shell")) return;
 
@@ -188,8 +198,8 @@
       if (!presetsApi || typeof presetsApi.getState !== "function" || typeof presetsApi.replaceState !== "function") return;
 
       var listEl = root.querySelector(".v1-presets-list");
-      var nameEl = document.getElementById("v1PresetName");
-      var portsEl = document.getElementById("v1PresetPorts");
+      var nameEl = root.querySelector("[data-preset-name]") || root.querySelector("#v1PresetName");
+      var portsEl = root.querySelector("[data-preset-ports]") || root.querySelector("#v1PresetPorts");
       if (!listEl || !nameEl || !portsEl) return;
 
       var selectedPresetId = null;

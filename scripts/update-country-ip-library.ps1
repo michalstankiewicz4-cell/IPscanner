@@ -35,15 +35,25 @@ function Convert-CidrToRange {
     return $null
   }
 
-  $ipNum = Convert-IPv4ToUInt32 -Ip $ip
-  [uint32]$all = 0xFFFFFFFF
-  [uint32]$mask = 0
-  if ($prefix -gt 0) {
-    $mask = $all -shl (32 - $prefix)
+  try {
+    $parsedIp = [System.Net.IPAddress]::Parse($ip)
+  }
+  catch {
+    return $null
+  }
+  if ($parsedIp.AddressFamily -ne [System.Net.Sockets.AddressFamily]::InterNetwork) {
+    return $null
   }
 
-  [uint32]$network = $ipNum -band $mask
-  [uint32]$broadcast = $network -bor ($all -bxor $mask)
+  $ipNum = Convert-IPv4ToUInt32 -Ip $ip
+  [uint64]$all = 4294967295
+  [uint64]$mask = 0
+  if ($prefix -gt 0) {
+    $mask = ($all -shl (32 - $prefix)) -band $all
+  }
+
+  [uint32]$network = [uint32](([uint64]$ipNum) -band $mask)
+  [uint32]$broadcast = [uint32](([uint64]$network) -bor ($all -bxor $mask))
 
   $from = Convert-UInt32ToIPv4 -Value $network
   $to = Convert-UInt32ToIPv4 -Value $broadcast
@@ -110,7 +120,12 @@ foreach ($rawCode in $CountryCodes) {
       continue
     }
 
-    $range = Convert-CidrToRange -Cidr $cidr
+    try {
+      $range = Convert-CidrToRange -Cidr $cidr
+    }
+    catch {
+      continue
+    }
     if (-not [string]::IsNullOrWhiteSpace($range)) {
       $ranges.Add($range)
     }
