@@ -1,9 +1,6 @@
 name: Publish OSINTNETAuditor Subpath
 
 on:
-  push:
-    branches:
-      - feature/new-ui-skins
   workflow_dispatch:
     inputs:
       source_ref:
@@ -46,10 +43,9 @@ jobs:
           $dstRoot = Join-Path $PWD 'target'
           $dst = Join-Path $dstRoot 'OSINTNETAuditor'
 
-          if (Test-Path $dst) {
-            Remove-Item -Recurse -Force $dst
+          if (-not (Test-Path $dst)) {
+            New-Item -ItemType Directory -Path $dst | Out-Null
           }
-          New-Item -ItemType Directory -Path $dst | Out-Null
 
           $itemsToCopy = @(
             'index.html',
