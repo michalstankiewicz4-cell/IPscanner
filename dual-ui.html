@@ -88,7 +88,7 @@
 
     .pane {
       position: relative;
-      min-width: 260px;
+      min-width: 0;
       min-height: 0;
       overflow: hidden;
       flex: 1 1 50%;
@@ -195,8 +195,8 @@
       var leftPane = document.getElementById('leftPane');
       var rightPane = document.getElementById('rightPane');
       var dragging = false;
-      var minRatio = 0.15;
-      var maxRatio = 0.85;
+      var minRatio = 0;
+      var maxRatio = 1;
       var ratio = 0.5;
 
       function clamp(value, min, max) {
@@ -218,21 +218,21 @@
       splitter.addEventListener('pointerdown', function (event) {
         dragging = true;
         document.body.classList.add('dragging');
-        splitter.setPointerCapture(event.pointerId);
+        updateFromPointer(event.clientX);
+        event.preventDefault();
       });
 
-      splitter.addEventListener('pointermove', function (event) {
+      window.addEventListener('pointermove', function (event) {
         if (!dragging) return;
         updateFromPointer(event.clientX);
       });
 
-      splitter.addEventListener('pointerup', function (event) {
+      window.addEventListener('pointerup', function () {
         dragging = false;
         document.body.classList.remove('dragging');
-        try { splitter.releasePointerCapture(event.pointerId); } catch (_) {}
       });
 
-      splitter.addEventListener('pointercancel', function () {
+      window.addEventListener('pointercancel', function () {
         dragging = false;
         document.body.classList.remove('dragging');
       });
