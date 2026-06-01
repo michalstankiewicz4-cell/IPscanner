@@ -1,78 +1,103 @@
-localStorage keys used by IPscanner
-=====================================
+IPscanner New UI - local memory (localStorage)
+===============================================
+
+Uwaga:
+- Lista dotyczy aktualnego New UI (index.html + js/new-ui).
+- Dane sa zapisywane przez localStorage albo przez adapter platform.storage (desktop parity).
+- Czesc kluczy jest zapisywana warunkowo, dopiero po wykonaniu danej akcji przez uzytkownika.
+
+1) Jezyk i slowniki
 
 netrecon_lang
-  - wybrany język interfejsu ('en' lub 'pl')
-  - domyślnie (gdy brak klucza): 'en'
+  - Aktualny jezyk interfejsu.
+  - Typ: string (np. "en", "pl").
+  - Fallback: "en".
 
-netrecon_scan_defaults
-  - ustawienia skanowania: threads, delayMs, delayMsPerPort, portScanMode, chunkSize
-  - domyślnie (gdy brak/invalid): { threads: 32, delayMs: 0, delayMsPerPort: 0, portScanMode: 'parallel', chunkSize: 100 }
+netrecon_custom_i18n
+  - Wlasne slowniki dodane przez Language Manager / extension host.
+  - Typ: JSON object (code -> dictionary).
+  - Fallback: brak klucza = tylko slowniki bazowe.
 
-netrecon_presets
-  - lista presetów portów (JSON array)
-  - domyślnie (gdy brak/invalid): wbudowana lista DEFAULT_PRESETS (6 presetów)
+2) Motyw UI
 
-netrecon_active_preset
-  - indeks aktywnego presetu portów
-  - domyślnie (gdy brak klucza): 0
+netrecon_newui_skin
+  - Aktualny skin New UI.
+  - Typ: string.
+  - Fallback: "default".
 
-netrecon_results
-  - wyniki ostatniego skanowania (JSON array: ip, ports, ping, hostname, geo itp.)
-  - domyślnie: brak klucza (nic do przywrócenia)
+3) Rozszerzenia
 
-netrecon_results_ts
-  - timestamp (Date.now()) ostatniego zapisu wyników
-  - domyślnie: brak klucza
+netrecon_newui_extensions
+  - Zainstalowane rozszerzenia (manifesty i contributions).
+  - Typ: JSON array.
+  - Fallback: [] (brak zainstalowanych rozszerzen).
 
-netrecon_marks
-  - zaznaczeń checkmark i gwiazdek: { favIps, favPorts, checkIps, checkPorts }
-  - domyślnie (gdy brak/invalid): { favIps: [], favPorts: [], checkIps: [], checkPorts: [] }
+4) Clippy
 
-netrecon_expanded
-  - lista IP-ów z rozwiniętym wierszem portów [+]
-  - domyślnie (gdy brak/invalid): []
+netrecon_newui_clippy_enabled
+  - Czy Clippy jest wlaczony.
+  - Typ: "1" albo "0".
+  - Fallback: traktowane jak "0" (wylaczone).
 
-netrecon_sort
-  - aktywne sortowanie listy: { col: 'ip'|'ping', dir: 1|-1 }
-  - domyślnie (gdy brak/invalid): brak sortowania (_sortCol = null, _sortDir = 1)
+5) Historia zakresow skanowania
 
-netrecon_scan_watch
-  - ustawienia IP Scan Watch: { windowSecs, minPorts, pollSecs }
-  - domyślnie (gdy brak/invalid): { windowSecs: 30, minPorts: 8, pollSecs: 2 }
+netrecon_range_history
+  - Historia ostatnich zakresow IP (From/To) z lewego panelu.
+  - Typ: JSON array, max 24 wpisy.
+  - Fallback: [] gdy brak klucza lub uszkodzony JSON.
 
-netrecon_focus_ip
-  - zapamiętany/fokusowany IP (legacy/stan pomocniczy)
-  - domyślnie (gdy brak klucza): ''
+6) IP Library cache
 
-ui_skin
-  - aktywny motyw wizualny ('classic', 'glass', 'workbench')
-  - domyślnie (gdy brak/invalid): 'classic'
+netrecon_country_ip_library_json
+  - Zcache'owana biblioteka zakresow IP krajow.
+  - Typ: JSON string (tablica rekordow).
+  - Fallback: brak danych.
 
-tb_globe
-  - widoczność przycisku Globe w pasku narzędzi (0/1)
-  - domyślnie (gdy brak klucza): 1 (widoczny)
+netrecon_country_ip_library_updated_at
+  - Czas ostatniej aktualizacji cache IP Library.
+  - Typ: string (ISO datetime).
+  - Fallback: "-" w UI.
 
-tb_console
-  - widoczność przycisku Console w pasku narzędzi (0/1)
-  - domyślnie (gdy brak klucza): 1 (widoczny)
+7) Detached windows i ich uklad
 
-tb_macro
-  - widoczność przycisku Macro w pasku narzędzi (0/1)
-  - domyślnie (gdy brak klucza): 1 (widoczny)
+netrecon_detached_layouts_v1
+  - Zapamietane pozycje i rozmiary undocked kart narzedzi.
+  - Typ: JSON object (tool -> {top,left,width,height}).
+  - Fallback: {}.
 
-tb_speed
-  - widoczność przycisku Speed Test w pasku narzędzi (0/1)
-  - domyślnie (gdy brak klucza): 1 (widoczny)
+netrecon_detached_arrange_state_v1
+  - Stan wariantu auto-arrange dla 2/3 okien detached.
+  - Typ: JSON object.
+  - Fallback: {}.
 
-tb_proto
-  - widoczność przycisku Proto w pasku narzędzi (0/1)
-  - domyślnie (gdy brak klucza): 1 (widoczny)
+netrecon_detached_auto_arrange_enabled_v1
+  - Czy auto-arrange po undock jest wlaczone.
+  - Typ: "1" albo "0".
+  - Fallback: wlaczone (true).
 
-tb_topology
-  - widoczność przycisku Topology w pasku narzędzi (0/1)
-  - domyślnie (gdy brak klucza): 1 (widoczny)
+8) Tryb parity (desktop/web)
 
-clippy_enabled
-  - czy asystent (Clippy) jest włączony (0/1)
-  - domyślnie (gdy brak klucza): 0 / wyłączony
+netrecon_desktop_parity
+  - Wymuszenie parity mode dla uruchomienia bez Tauri invoke.
+  - Typ: "1" albo "0" (akceptowane tez true/on).
+  - Fallback: off.
+
+9) Ostatnio aktywne narzedzie (zapis)
+
+netrecon_active_tool
+  - Ostatnie aktywowane narzedzie (poza scan-runner).
+  - Typ: string.
+  - Uwaga: w aktualnym kodzie klucz jest zapisywany, ale nie jest odczytywany przy starcie.
+
+Podsumowanie praktyczne
+----------------------
+
+Program zapamietuje dane i ustawienia. To nie jest "nic".
+Najczesciej zauważalne dla uzytkownika:
+- jezyk,
+- skin,
+- stan Clippy,
+- historia zakresow,
+- cache IP Library,
+- rozszerzenia,
+- uklad undocked okien.
