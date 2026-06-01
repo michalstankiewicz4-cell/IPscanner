@@ -895,6 +895,8 @@
     if (window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes && window.NetReconNewUICore.newUiRuntimes.createPanelInteractionsRuntime) {
       panelInteractionsRuntime = window.NetReconNewUICore.newUiRuntimes.createPanelInteractionsRuntime({
         versionsData: versionsData,
+        tr: tr,
+        setStatusLine: setStatusLine,
       });
     }
 
@@ -1222,6 +1224,11 @@
       if (activeTool === "results-ip") {
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireResultsIpTable) {
           panelInteractionsRuntime.wireResultsIpTable();
+        }
+      }
+      if (activeTool === "presets") {
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wirePresetsTool) {
+          panelInteractionsRuntime.wirePresetsTool();
         }
       }
       if (activeTool === "ip-library") {

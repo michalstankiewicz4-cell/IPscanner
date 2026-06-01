@@ -159,13 +159,13 @@
               <div class="v1-port-preset-row">
                 <label class="v1-ip-label" id="v1PortsLabel" for="v1PortPreset">Ports</label>
                 <select id="v1PortPreset" class="v1-port-preset-select">
-                  <option value="common">Common (21,22,23,80,443,3389)</option>
-                  <option value="top20">Top 20</option>
-                  <option value="web">Web (80,443,8080,8443)</option>
-                  <option value="smb">SMB / Windows (135,139,445)</option>
-                  <option value="db">Databases (1433,1521,3306,5432,6379,27017)</option>
-                  <option value="all">All (1–65535)</option>
-                  <option value="custom">Custom…</option>
+                  <option value="cameras">Cameras</option>
+                  <option value="printers">Printers</option>
+                  <option value="folders-http">Folders / HTTP</option>
+                  <option value="routers">Routers</option>
+                  <option value="nas-servers">NAS / Servers</option>
+                  <option value="windows-smb">Windows / SMB</option>
+                  <option value="all-ports">All ports</option>
                 </select>
               </div>
               <div class="v1-scanner-actions" style="margin-top:6px;">
@@ -451,6 +451,7 @@ macro://stealth-check
   <script src="js/new-ui/core/i18n.js"></script>
   <script src="js/new-ui/core/theme.js"></script>
   <script src="js/new-ui/core/tool-catalog.js"></script>
+  <script src="js/new-ui/core/presets-runtime.js"></script>
   <script src="js/new-ui/core/versions-data.js"></script>
   <script src="js/new-ui/core/utils/net-utils.js"></script>
   <script src="js/new-ui/core/extensions.js"></script>

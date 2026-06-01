@@ -12,6 +12,30 @@
     var languageManagerConfig = contentConfig.languageManager || {};
     var importToolConfig = contentConfig.importTool || {};
     var resultsIpConfig = contentConfig.resultsIp || {};
+    var presetsApi = core.presets || null;
+
+    function getPresetsState() {
+      try {
+        if (presetsApi && typeof presetsApi.getState === "function") {
+          return presetsApi.getState();
+        }
+      } catch (_) {
+        // ignore presets provider errors
+      }
+
+      return {
+        defaultPresetId: "all-ports",
+        presets: [
+          { id: "cameras", name: "Cameras", ports: "80,554,8080,8554" },
+          { id: "printers", name: "Printers", ports: "80,443,515,631,9100" },
+          { id: "folders-http", name: "Folders / HTTP", ports: "80,139,443,445,8080" },
+          { id: "routers", name: "Routers", ports: "53,80,443,1900,8080" },
+          { id: "nas-servers", name: "NAS / Servers", ports: "21,22,80,139,443,445,5000" },
+          { id: "windows-smb", name: "Windows / SMB", ports: "135,139,445,3389" },
+          { id: "all-ports", name: "All ports", ports: "1-65535" }
+        ]
+      };
+    }
 
     function renderDefaultTool(tool) {
       var info = infoFor(tool);
@@ -244,37 +268,42 @@
     }
 
     function renderPresetsTool() {
+      var state = getPresetsState();
+      var presets = Array.isArray(state.presets) ? state.presets : [];
+      var selected = presets.find(function (item) {
+        return item && item.id === state.defaultPresetId;
+      }) || presets[0] || { id: "", name: "", ports: "" };
+
+      var listHtml = presets.map(function (item) {
+        var isActive = item.id === selected.id;
+        return '<li class="v1-presets-item' + (isActive ? ' active' : '') + '" data-preset-id="' + escapeHtml(item.id) + '"' + (isActive ? ' aria-selected="true"' : '') + '>' + escapeHtml(item.name || item.id) + '</li>';
+      }).join("");
+
       return [
         "<div class=\"v1-presets-shell\">",
         "<div class=\"v1-presets-list-block\">",
         "<ul class=\"v1-presets-list\" role=\"listbox\" aria-label=\"Port presets\">",
-        "<li class=\"v1-presets-item\">Cameras</li>",
-        "<li class=\"v1-presets-item\">Printers</li>",
-        "<li class=\"v1-presets-item\">Folders / HTTP</li>",
-        "<li class=\"v1-presets-item\">Routers</li>",
-        "<li class=\"v1-presets-item\">NAS / Servers</li>",
-        "<li class=\"v1-presets-item\">Windows / SMB</li>",
-        "<li class=\"v1-presets-item active\" aria-selected=\"true\">All ports</li>",
+        listHtml,
         "</ul>",
         "<div class=\"v1-presets-actions\">",
-        "<button type=\"button\">+ Add</button>",
-        "<button type=\"button\">Delete</button>",
-        "<button type=\"button\">Move Up</button>",
-        "<button type=\"button\">Move Down</button>",
-        "<button type=\"button\">Set as default</button>",
+        "<button type=\"button\" data-preset-action=\"add\">+ Add</button>",
+        "<button type=\"button\" data-preset-action=\"delete\">Delete</button>",
+        "<button type=\"button\" data-preset-action=\"move-up\">Move Up</button>",
+        "<button type=\"button\" data-preset-action=\"move-down\">Move Down</button>",
+        "<button type=\"button\" data-preset-action=\"set-default\">Set as default</button>",
         "</div>",
         "</div>",
         "<section class=\"v1-presets-editor\">",
         "<h4>Edit preset</h4>",
         "<div class=\"v1-presets-form\">",
         "<label for=\"v1PresetName\">Name</label>",
-        "<input id=\"v1PresetName\" type=\"text\" autocomplete=\"off\" value=\"All ports\" />",
+        "<input id=\"v1PresetName\" type=\"text\" autocomplete=\"off\" value=\"" + escapeHtml(selected.name || "") + "\" />",
         "<label for=\"v1PresetPorts\">Ports</label>",
-        "<input id=\"v1PresetPorts\" type=\"text\" autocomplete=\"off\" value=\"80,8080,443,554\" />",
+        "<input id=\"v1PresetPorts\" type=\"text\" autocomplete=\"off\" value=\"" + escapeHtml(selected.ports || "") + "\" />",
         "</div>",
         "<p class=\"v1-presets-hint\">Enter port numbers separated by commas, e.g. 80, 443, 8080, 554</p>",
         "<div class=\"v1-presets-save\">",
-        "<button type=\"button\">Save</button>",
+        "<button type=\"button\" data-preset-action=\"save\">Save</button>",
         "</div>",
         "</section>",
         "</div>"

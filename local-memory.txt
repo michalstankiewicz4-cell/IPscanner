@@ -46,6 +46,11 @@ netrecon_range_history
   - Typ: JSON array, max 24 wpisy.
   - Fallback: [] gdy brak klucza lub uszkodzony JSON.
 
+netrecon_scan_presets_v1
+  - Wspolny stan presetow portow dla panelu Presets i lewego comboboxa IP Scanner.
+  - Typ: JSON object { defaultPresetId, presets:[{id,name,ports}] }.
+  - Fallback: wbudowana lista presetow (Cameras, Printers, Folders/HTTP, Routers, NAS/Servers, Windows/SMB, All ports).
+
 6) IP Library cache
 
 netrecon_country_ip_library_json
