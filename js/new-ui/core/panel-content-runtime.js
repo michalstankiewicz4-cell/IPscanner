@@ -192,11 +192,16 @@
           }).join("")
         : "<div class=\"v1-import-empty\">" + escapeHtml(importToolConfig.emptyText || "No imported tools yet.") + "</div>";
 
+      var subtitleText = tr("importToolSubtitle");
+      if (subtitleText === "importToolSubtitle") {
+        subtitleText = importToolConfig.subtitle || "This area is still under development, so tool imports are temporarily unavailable.";
+      }
+
       return [
         "<div class=\"v1-import-manager\">",
         "<div class=\"v1-import-manager-head\">",
         "<h4 style=\"margin:0 0 4px;\">" + tr("tipActionCustomization") + "</h4>",
-        "<div class=\"v1-import-manager-note\">" + escapeHtml(importToolConfig.subtitle || "JSON manifest import, list and uninstall.") + "</div>",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(subtitleText) + "</div>",
         "</div>",
         "<div class=\"v1-import-manager-grid\">",
         "<label for=\"v1ImportManifest\">" + escapeHtml(importToolConfig.manifestLabel || "Manifest JSON") + "</label>",
@@ -276,6 +281,37 @@
       ].join("");
     }
 
+    function renderScanDefaultsTool() {
+      return [
+        "<div class=\"v1-import-manager\">",
+        "<div class=\"v1-import-manager-head\">",
+        "<h4 style=\"margin:0 0 4px;\">" + escapeHtml(tr("defaultsPanelTitle")) + "</h4>",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("defaultsPanelNote")) + "</div>",
+        "</div>",
+        "<div class=\"v1-import-manager-grid\">",
+        "<label for=\"v1DefaultsTimeout\">" + escapeHtml(tr("defaultsTimeoutLabel")) + "</label>",
+        "<input id=\"v1DefaultsTimeout\" type=\"number\" min=\"100\" max=\"10000\" step=\"100\" value=\"1200\" />",
+        "<label for=\"v1DefaultsRetries\">" + escapeHtml(tr("defaultsRetriesLabel")) + "</label>",
+        "<input id=\"v1DefaultsRetries\" type=\"number\" min=\"0\" max=\"10\" step=\"1\" value=\"2\" />",
+        "<label for=\"v1DefaultsConcurrency\">" + escapeHtml(tr("defaultsConcurrencyLabel")) + "</label>",
+        "<input id=\"v1DefaultsConcurrency\" type=\"number\" min=\"1\" max=\"4096\" step=\"1\" value=\"256\" />",
+        "<label for=\"v1DefaultsPortProfile\">" + escapeHtml(tr("defaultsPortProfileLabel")) + "</label>",
+        "<select id=\"v1DefaultsPortProfile\">",
+        "<option value=\"common\">" + escapeHtml(tr("scannerPresetCommon")) + "</option>",
+        "<option value=\"top20\">" + escapeHtml(tr("scannerPresetTop20")) + "</option>",
+        "<option value=\"web\">" + escapeHtml(tr("scannerPresetWeb")) + "</option>",
+        "<option value=\"smb\">" + escapeHtml(tr("scannerPresetSmb")) + "</option>",
+        "<option value=\"db\">" + escapeHtml(tr("scannerPresetDb")) + "</option>",
+        "</select>",
+        "</div>",
+        "<div class=\"v1-import-manager-actions\">",
+        "<button type=\"button\">" + escapeHtml(tr("defaultsSaveBtn")) + "</button>",
+        "<button type=\"button\">" + escapeHtml(tr("defaultsRestoreBtn")) + "</button>",
+        "</div>",
+        "</div>"
+      ].join("");
+    }
+
     function renderResultsIp() {
       var rows = Array.isArray(resultsIpConfig.sampleRows) ? resultsIpConfig.sampleRows : [];
 
@@ -332,6 +368,7 @@
       "language-manager": renderLanguageManagerTool,
       "ip-library": renderIpLibraryTool,
       presets: renderPresetsTool,
+      "scan-defaults": renderScanDefaultsTool,
       "results-ip": renderResultsIp,
     };
 

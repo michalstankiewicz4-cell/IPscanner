@@ -223,6 +223,7 @@
       var stopBtn = document.querySelector('[data-scanner-action="stop"]');
       var clearBtn = document.querySelector('[data-scanner-action="clear"]');
       var scanSpeedBtn = document.querySelector('[data-scanner-action="scan-speed"]');
+      var presetsBtn = document.querySelector('[data-scanner-action="presets"]');
       var extractorTitle = document.getElementById("v1IpExtractorTitle");
       var extractorInput = document.getElementById("v1IpExtractorInput");
       var extractorBtn = document.getElementById("v1IpExtractBtn");
@@ -265,6 +266,7 @@
       if (stopBtn) stopBtn.textContent = "■ " + t("scannerStop");
       if (clearBtn) clearBtn.textContent = "✕ " + t("scannerClear");
       if (scanSpeedBtn) scanSpeedBtn.textContent = "⏱ " + t("scannerScanSpeed");
+      if (presetsBtn) presetsBtn.textContent = "⭐ " + t("scannerPortPresets");
       if (startBtn) {
         startBtn.setAttribute("title", t("scannerTipStart"));
         startBtn.setAttribute("aria-label", t("scannerTipStart"));
@@ -280,6 +282,10 @@
       if (scanSpeedBtn) {
         scanSpeedBtn.setAttribute("title", t("scannerTipScanSpeed"));
         scanSpeedBtn.setAttribute("aria-label", t("scannerTipScanSpeed"));
+      }
+      if (presetsBtn) {
+        presetsBtn.setAttribute("title", t("scannerTipPortPresets"));
+        presetsBtn.setAttribute("aria-label", t("scannerTipPortPresets"));
       }
       if (extractorTitle) extractorTitle.textContent = t("scannerIpExtractor");
       if (extractorInput) extractorInput.setAttribute("placeholder", t("scannerExtractorPlaceholder"));

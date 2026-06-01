@@ -65,7 +65,7 @@
       label: "Default Scan Values (mock)",
       purposeKey: "tipActionDefaults",
       purpose: "Domyslne wartosci skanowania.",
-      behavior: "switch-tool:settings",
+      behavior: "switch-tool:scan-defaults",
     },
     language: {
       label: "Language manager",

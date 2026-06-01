@@ -22,6 +22,24 @@ W praktyce: zmiany w warstwie UI powinny byc izolowane od logiki skanowania.
   - prawa strona: `feature/new-ui-skins` (new UI).
 - Zmiany na jednej galezi nie moga wymagac obecnosci plikow UI z drugiej galezi, poza powyzszym kontraktem dual-view.
 
+### 1b. Reka synchronizacja na `main` (obowiazkowa dla deployu)
+
+Jesli nowy UI ma byc pokazany w domenie `https://ipscanner.pl/OSINTNETAuditor/`, synchronizujemy go recznie z `feature/new-ui-skins` do `main` w osobnym worktree.
+
+Zasady:
+
+- synchronizujemy tylko katalog `OSINTNETAuditor/` na `main`,
+- nie nadpisujemy rootowego dual view `index.html` / `css/` / `js/` na `main`,
+- nie przenosimy zmian przez automatyczne merge z feature do main, jesli dotycza wyłącznie nowego UI,
+- przed pushem sprawdzamy `git status` w worktree `main`, aby potwierdzic, ze zmienione sa tylko pliki deployowe.
+
+Praktyczny przebieg:
+
+1. utworz lub uzyj osobnego worktree dla `main`,
+2. skopiuj aktualny `index.html`, `clippy.html`, `zebrus.png` i katalogi `css/` oraz `js/` do `OSINTNETAuditor/`,
+3. zweryfikuj diff, commit i push tylko z worktree `main`,
+4. pozostaw root dual view bez zmian, chyba ze jest osobna, jawna migracja.
+
 ## 2. Zasady zmian
 
 - Nie mieszaj refaktoru UI z duzymi zmianami backendu skanera w jednym PR.

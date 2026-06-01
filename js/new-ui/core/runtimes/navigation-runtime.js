@@ -225,7 +225,14 @@
           }
           if (action === "stop" && setStatusLine) setStatusLine(tr("statusScanStop"));
           if (action === "clear" && setStatusLine) setStatusLine(tr("statusScanClear"));
-          if (action === "scan-speed" && setStatusLine) setStatusLine(tr("statusScanSpeed"));
+          if (action === "scan-speed") {
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("tabScanDefaultsTitle"));
+            if (switchTool) switchTool("scan-defaults");
+          }
+          if (action === "presets") {
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("scannerPortPresets"));
+            if (switchTool) switchTool("presets");
+          }
 
           if (action === "ext-ip") {
             var extEl = document.getElementById("v1DetectExtIp");
