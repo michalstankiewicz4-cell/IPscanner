@@ -297,11 +297,21 @@
     function isHostOccludedByHigherDetachedCard(el, rect) {
       if (!el || !el.closest) return false;
       normalizeActiveDetachedCard();
+      var focusedCard = activeDetachedCard || getTopDetachedCard();
       var selfCard = el.closest(".v1-detached-tool-card");
-      if (!selfCard) return false;
+
+      if (!selfCard) {
+        var visibleCards = Array.from(document.querySelectorAll(".v1-detached-tool-card"));
+        return visibleCards.some(function (card) {
+          var style = window.getComputedStyle(card);
+          if (style.display === "none" || style.visibility === "hidden") return false;
+          var cardRect = card.getBoundingClientRect();
+          if (cardRect.width <= 0 || cardRect.height <= 0) return false;
+          return intersectsRect(rect, cardRect);
+        });
+      }
 
       // Outside active interaction, keep faux rails only on focused/top detached window.
-      var focusedCard = activeDetachedCard || getTopDetachedCard();
       if (focusedCard && focusedCard !== selfCard) {
         return true;
       }
@@ -334,6 +344,10 @@
       });
     }
 
+    function isMenuDropdownOpen() {
+      return !!document.querySelector(".v1-menu-group.open .v1-menu-dropdown");
+    }
+
     function updateOne(item) {
       var el = item.el;
       var rail = item.rail;
@@ -348,7 +362,7 @@
       var isVisibleTree = isHostInVisibleTree(el);
       var inViewport = intersectsViewport(rect);
       var isVisible = isVisibleTree && inViewport && rect.width > 0 && rect.height > 0 && visibleWidth > 0 && visibleHeight > 0;
-      var isOccluded = isHostOccludedByHigherDetachedCard(el, rect);
+      var isOccluded = isHostOccludedByHigherDetachedCard(el, rect) || isMenuDropdownOpen();
       var overflowY = (styles.overflowY || "").toLowerCase();
       var overflow = (styles.overflow || "").toLowerCase();
       var allowsVerticalScroll = ["auto", "scroll", "overlay"].indexOf(overflowY) >= 0
@@ -437,10 +451,21 @@
             return !!(node.querySelector && node.querySelector(targetSelector()));
           });
         });
-        if (foundCandidate) scheduleRefresh();
+        var menuStateChanged = mutations.some(function (mutation) {
+          if (mutation.type !== "attributes" || mutation.attributeName !== "class") return false;
+          var target = mutation.target;
+          if (!(target instanceof Element)) return false;
+          return target.classList.contains("v1-menu-group");
+        });
+        if (foundCandidate || menuStateChanged) scheduleRefresh();
       });
       if (document.body) {
-        mutationObserver.observe(document.body, { childList: true, subtree: true });
+        mutationObserver.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["class"]
+        });
       }
 
       window.addEventListener("resize", scheduleRefresh);
