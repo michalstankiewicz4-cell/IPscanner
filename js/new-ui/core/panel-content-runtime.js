@@ -31,13 +31,13 @@
       return {
         defaultPresetId: "all-ports",
         presets: [
-          { id: "cameras", name: "Cameras", ports: "80,554,8080,8554" },
-          { id: "printers", name: "Printers", ports: "80,443,515,631,9100" },
-          { id: "folders-http", name: "Folders / HTTP", ports: "80,139,443,445,8080" },
-          { id: "routers", name: "Routers", ports: "53,80,443,1900,8080" },
-          { id: "nas-servers", name: "NAS / Servers", ports: "21,22,80,139,443,445,5000" },
-          { id: "windows-smb", name: "Windows / SMB", ports: "135,139,445,3389" },
-          { id: "all-ports", name: "All ports", ports: "1-65535" }
+          { id: "cameras", name: "Cameras", ports: "80,443,554,8080,8081,9000,34567,37777" },
+          { id: "printers", name: "Printers", ports: "80,443,631,8080,9100" },
+          { id: "folders-http", name: "Folders / HTTP", ports: "21,80,3000,5000,8000,8080,8888" },
+          { id: "routers", name: "Routers", ports: "80,443,8080,8443,10000" },
+          { id: "nas-servers", name: "NAS / Servers", ports: "80,443,5000,5001,8006,8080,9090" },
+          { id: "windows-smb", name: "Windows / SMB", ports: "135,139,445,3389,5985,5986" },
+          { id: "all-ports", name: "All ports", ports: "21,80,135,139,443,445,554,631,3000,3389,5000,5001,5985,5986,8000,8006,8080,8081,8443,8888,9000,9090,9100,10000,34567,37777" }
         ]
       };
     }

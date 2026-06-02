@@ -436,7 +436,17 @@ macro://stealth-check
 
     <!-- Bottom info bar -->
     <footer class="v1-status">
-      <span>main • tauri-desktop • UI mock only</span>
+      <span class="v1-status-left">
+        <span class="v1-status-loader" id="v1StatusLoader" aria-hidden="true">
+          <span class="v1-status-loader-cell"></span>
+          <span class="v1-status-loader-cell"></span>
+          <span class="v1-status-loader-cell"></span>
+          <span class="v1-status-loader-cell"></span>
+          <span class="v1-status-loader-cell"></span>
+          <span class="v1-status-loader-cell"></span>
+        </span>
+        <span>main • tauri-desktop • UI mock only</span>
+      </span>
       <span id="v1StatusRight">active: scan-runner</span>
     </footer>
 
@@ -460,6 +470,7 @@ macro://stealth-check
   <script src="js/new-ui/core/ui-definitions.js"></script>
   <script src="js/new-ui/core/platform-runtime.js"></script>
   <script src="js/new-ui/core/runtimes/status-log-runtime.js"></script>
+  <script src="js/new-ui/core/runtimes/statusbar-loader-runtime.js"></script>
   <script src="js/new-ui/core/runtimes/layout-runtime.js"></script>
   <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js"></script>
   <script src="js/new-ui/core/runtimes/clippy-runtime.js"></script>

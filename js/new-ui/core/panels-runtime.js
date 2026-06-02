@@ -1523,13 +1523,41 @@
         return null;
       }
 
-      function runPowerShell(command) {
-        if (platform && typeof platform.invoke === "function") {
-          return platform.invoke("run_powershell", { command: command });
+      function emitBusyDelta(delta) {
+        try {
+          document.dispatchEvent(new CustomEvent("newui:busy-state", {
+            detail: {
+              source: "panels-runtime",
+              delta: delta,
+            },
+          }));
+        } catch (_) {
+          // ignore busy-state event errors
         }
-        var invoke = getInvoke();
-        if (!invoke) return Promise.reject(new Error("tauri invoke unavailable"));
-        return invoke("run_powershell", { command: command });
+      }
+
+      function runPowerShell(command) {
+        emitBusyDelta(1);
+
+        var promise;
+        try {
+          if (platform && typeof platform.invoke === "function") {
+            promise = platform.invoke("run_powershell", { command: command });
+          } else {
+            var invoke = getInvoke();
+            if (!invoke) {
+              promise = Promise.reject(new Error("tauri invoke unavailable"));
+            } else {
+              promise = invoke("run_powershell", { command: command });
+            }
+          }
+        } catch (err) {
+          promise = Promise.reject(err);
+        }
+
+        return Promise.resolve(promise).finally(function () {
+          emitBusyDelta(-1);
+        });
       }
 
       function parseCountries(text) {
