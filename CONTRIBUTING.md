@@ -36,7 +36,10 @@ Zasady:
 Praktyczny przebieg:
 
 1. utworz lub uzyj osobnego worktree dla `main`,
-2. skopiuj aktualny `index.html`, `clippy.html`, `zebrus.png` i katalogi `css/` oraz `js/` do `OSINTNETAuditor/`,
+2. skopiuj aktualny `index.html`, `clippy.html`, `zebrus.png` oraz tylko zasoby New UI:
+  `css/new-ui/**` -> `OSINTNETAuditor/css/new-ui/**`
+  `js/new-ui/**` -> `OSINTNETAuditor/js/new-ui/**`,
+  zachowujac dokladnie strukture katalogow `new-ui` (bez splaszczania do `OSINTNETAuditor/css/*` lub `OSINTNETAuditor/js/*`),
 3. zweryfikuj diff, commit i push tylko z worktree `main`,
 4. pozostaw root dual view bez zmian, chyba ze jest osobna, jawna migracja.
 
