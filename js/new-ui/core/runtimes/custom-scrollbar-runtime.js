@@ -256,6 +256,12 @@
 
       if (!el || !el.closest) return bounds;
 
+      // Always clamp rails to the nearest layout pane to prevent bleed into sibling columns.
+      var paneHost = el.closest(".v1-sidebar, .v1-editor, .v1-rightbar");
+      if (paneHost) {
+        clipBoundsToRect(bounds, paneHost.getBoundingClientRect());
+      }
+
       // Constrain faux rails to clipping ancestors (e.g. main editor content above console).
       var current = el.parentElement;
       while (current && current.nodeType === 1) {
@@ -389,6 +395,7 @@
         thumb.style.top = thumbTop + "px";
       } else {
         rail.style.display = "none";
+        rail.style.height = "0px";
       }
 
       if (item.hRail && item.hThumb) {
@@ -401,6 +408,7 @@
 
         if (!isVisible || !hasHorizontalOverflow) {
           item.hRail.style.display = "none";
+          item.hRail.style.width = "0px";
         } else {
           var horizontalRailHeight = scrollbarSize;
           var visibleLeft = visibleBounds.left;
@@ -418,6 +426,7 @@
 
           if (horizontalRailWidth <= 0 || horizontalTop < visibleBounds.top) {
             item.hRail.style.display = "none";
+            item.hRail.style.width = "0px";
             return;
           }
 

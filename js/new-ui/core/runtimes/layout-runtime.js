@@ -172,6 +172,7 @@
         }
 
         syncToggleLabels();
+        refreshCustomScrollbars();
       }
 
       var drag = null;
