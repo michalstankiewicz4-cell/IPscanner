@@ -69,10 +69,6 @@
         }
       }
 
-      if (platform && typeof platform.isParityMode === "function" && platform.isParityMode()) {
-        setStatusLine("Desktop parity mode enabled");
-      }
-
       let scannerSidebarRuntime = null;
       let powerShellConsoleRuntime = null;
       let layoutRuntime = null;
@@ -927,6 +923,39 @@
         });
       }
 
+      function refreshTabsOverflowUi() {
+        if (!tabsTrack) return;
+
+        const tabsShell = tabsTrack.closest('.v1-tabs-shell');
+        const visibleTabs = Array.from(tabsTrack.querySelectorAll('.v1-tab')).filter((tab) => {
+          return !tab.classList.contains('tab-closed') && !tab.classList.contains('tab-detached-hidden') && !tab.hasAttribute('hidden');
+        });
+        const visibleTabsWidth = visibleTabs.reduce(function (sum, tab) {
+          return sum + Math.ceil(tab.getBoundingClientRect().width || tab.offsetWidth || 0);
+        }, 0);
+        const trackRect = tabsTrack.getBoundingClientRect();
+        const firstVisibleTab = visibleTabs.length ? visibleTabs[0] : null;
+        const lastVisibleTab = visibleTabs.length ? visibleTabs[visibleTabs.length - 1] : null;
+        const firstRect = firstVisibleTab ? firstVisibleTab.getBoundingClientRect() : null;
+        const lastRect = lastVisibleTab ? lastVisibleTab.getBoundingClientRect() : null;
+        const hasLeftOverflow = !!(firstRect && firstRect.left < trackRect.left - 1);
+        const hasRightOverflow = !!(lastRect && lastRect.right > trackRect.right + 1);
+        const maxScrollLeft = Math.max(0, Math.ceil((tabsTrack.scrollWidth || 0) - (tabsTrack.clientWidth || 0)));
+        const widthOverflow = visibleTabsWidth > (tabsTrack.clientWidth || 0) + 2;
+        const hasOverflow = widthOverflow || maxScrollLeft > 1 || hasLeftOverflow || hasRightOverflow;
+        const effectiveMaxScrollLeft = Math.max(0, Math.ceil(Math.max(maxScrollLeft, visibleTabsWidth - (tabsTrack.clientWidth || 0))));
+
+        if (tabsShell) {
+          tabsShell.classList.toggle('has-overflow', hasOverflow);
+        }
+
+        if (tabsScrollLeftBtn && tabsScrollRightBtn) {
+          const currentScrollLeft = tabsTrack.scrollLeft;
+          tabsScrollLeftBtn.disabled = !hasOverflow || currentScrollLeft <= 1;
+          tabsScrollRightBtn.disabled = !hasOverflow || currentScrollLeft >= effectiveMaxScrollLeft - 1;
+        }
+      }
+
       function refreshActiveUI() {
         document.querySelectorAll("[data-tool]").forEach((el) => {
           const isActive = el.getAttribute("data-tool") === activeTool;
@@ -941,13 +970,7 @@
           if (activeTab && !isElementFullyVisibleWithinContainer(activeTab, tabsTrack)) {
             scheduleScrollActiveTabIntoView();
           }
-
-          if (tabsScrollLeftBtn && tabsScrollRightBtn) {
-            const maxScrollLeft = Math.max(0, tabsTrack.scrollWidth - tabsTrack.clientWidth);
-            const currentScrollLeft = tabsTrack.scrollLeft;
-            tabsScrollLeftBtn.disabled = currentScrollLeft <= 1;
-            tabsScrollRightBtn.disabled = currentScrollLeft >= maxScrollLeft - 1;
-          }
+          refreshTabsOverflowUi();
         }
 
         const v1Title = document.getElementById("v1ToolTitle");
@@ -972,9 +995,13 @@
       function initCenterTabsScrollButtons() {
         if (!tabsTrack || !tabsScrollLeftBtn || !tabsScrollRightBtn) return;
 
+        // Start hidden; refresh will enable only when real overflow is present.
+        tabsScrollLeftBtn.disabled = true;
+        tabsScrollRightBtn.disabled = true;
+
         function scrollTabsBy(direction) {
           tabsTrack.scrollBy({ left: direction * 260, behavior: "smooth" });
-          requestAnimationFrame(refreshActiveUI);
+          requestAnimationFrame(refreshTabsOverflowUi);
         }
 
         [
@@ -991,8 +1018,17 @@
         if (tabsTrack.dataset.bound !== "1") {
           tabsTrack.dataset.bound = "1";
           tabsTrack.addEventListener("scroll", function () {
-            refreshActiveUI();
+            refreshTabsOverflowUi();
           }, { passive: true });
+          tabsTrack.addEventListener("wheel", function (event) {
+            const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+              ? event.deltaX
+              : event.deltaY;
+            if (Math.abs(delta) < 0.5) return;
+            event.preventDefault();
+            tabsTrack.scrollBy({ left: delta, behavior: "auto" });
+            refreshTabsOverflowUi();
+          }, { passive: false });
           tabsTrack.addEventListener("click", function (event) {
             const tab = event.target && typeof event.target.closest === "function"
               ? event.target.closest(".v1-tab")
@@ -1015,8 +1051,16 @@
         }
 
         window.addEventListener("resize", function () {
-          refreshActiveUI();
+          refreshTabsOverflowUi();
         });
+
+        refreshTabsOverflowUi();
+        window.requestAnimationFrame(function () {
+          window.requestAnimationFrame(function () {
+            refreshTabsOverflowUi();
+          });
+        });
+
       }
 
       // =========================
@@ -1191,8 +1235,16 @@
 
       if (panelsRuntime) {
         setTooltips = panelsRuntime.setTooltips;
-        refreshActiveUI = panelsRuntime.refreshActiveUI;
-        switchTool = panelsRuntime.switchTool;
+        const panelsRefreshActiveUI = panelsRuntime.refreshActiveUI;
+        const panelsSwitchTool = panelsRuntime.switchTool;
+        refreshActiveUI = function () {
+          panelsRefreshActiveUI();
+          refreshTabsOverflowUi();
+        };
+        switchTool = function (tool) {
+          panelsSwitchTool(tool);
+          refreshTabsOverflowUi();
+        };
         if (panelsRuntime.initWorkbenchTabs) {
           panelsRuntime.initWorkbenchTabs();
         }

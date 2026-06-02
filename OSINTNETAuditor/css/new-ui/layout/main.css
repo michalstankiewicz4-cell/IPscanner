@@ -7,7 +7,7 @@
 }
 
 .v1-resizer-v {
-  background: #252526;
+  background: var(--bg-elev);
   border-left: 0;
   border-right: 0;
   cursor: col-resize;
@@ -104,6 +104,7 @@
 
 .v1-side-head {
   border-bottom: 0;
+  background: var(--v1-panel-head-bg);
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -651,7 +652,7 @@
 }
 
 .v1-resizer-h {
-  background: #252526;
+  background: var(--bg-elev);
   border-top: 0;
   border-bottom: 0;
   cursor: row-resize;
@@ -666,18 +667,39 @@
   display: flex;
   align-items: stretch;
   min-width: 0;
-  background: var(--bg-elev);
+  background: var(--v1-tabs-strip-bg);
+  position: relative;
 }
 
 .v1-tabs-nav {
-  flex: 0 0 30px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 22px;
+  z-index: 2;
   border: 0;
-  background: var(--bg-elev);
+  background: var(--v1-tabs-scroll-overlay-bg);
   color: #aeb2b9;
   font-family: var(--font-ui);
   font-size: 13px;
   cursor: pointer;
   padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+#v1TabsScrollLeft {
+  left: 0;
+}
+
+#v1TabsScrollRight {
+  right: 0;
+}
+
+.v1-tabs-shell.has-overflow .v1-tabs-nav:not(:disabled) {
+  opacity: 0.92;
+  pointer-events: auto;
 }
 
 .v1-tabs-nav:hover:not(:disabled) {
@@ -686,8 +708,13 @@
 }
 
 .v1-tabs-nav:disabled {
-  opacity: 0.35;
+  opacity: 0;
+  pointer-events: none;
   cursor: default;
+}
+
+.v1-tabs-shell.has-overflow .v1-tabs-nav:disabled {
+  opacity: 0.35;
 }
 
 .v1-tabs {
@@ -697,7 +724,7 @@
   overflow-x: auto;
   overflow-y: hidden;
   border-bottom: 0;
-  background: var(--bg-elev);
+  background: var(--v1-tabs-strip-bg);
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -808,7 +835,7 @@
 
 .v1-content {
   overflow: hidden;
-  padding: 0 14px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -821,10 +848,11 @@
 
 .v1-empty-state {
   position: absolute;
-  left: 14px;
-  right: 14px;
+  left: 0;
+  right: 0;
   top: 0;
   bottom: 0;
+  background: var(--v1-empty-state-bg);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -836,8 +864,8 @@
   width: min(320px, 62vw);
   max-width: 100%;
   height: auto;
-  opacity: 0.2;
-  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.35));
+  opacity: var(--v1-empty-logo-opacity);
+  filter: var(--v1-empty-logo-filter);
 }
 
 #v1MainCard {
@@ -988,6 +1016,10 @@
   display: grid;
   grid-template-rows: 34px 1fr;
   overflow: hidden;
+}
+
+.v1-rightbar .v1-side-head {
+  background: var(--v1-panel-head-bg);
 }
 
 .v1-right-content {
