@@ -794,9 +794,21 @@ fn window_toggle_maximize(window: WebviewWindow) -> Result<(), String> {
 #[tauri::command]
 fn window_toggle_fullscreen(window: WebviewWindow) -> Result<(), String> {
     let is_fullscreen = window.is_fullscreen().map_err(|e| e.to_string())?;
-    window
-        .set_fullscreen(!is_fullscreen)
-        .map_err(|e| e.to_string())
+    if is_fullscreen {
+        return window.set_fullscreen(false).map_err(|e| e.to_string());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        // On Windows, entering fullscreen directly from maximized frameless windows
+        // can leave a stale bottom strip. Unmaximize first so the OS recalculates bounds.
+        if window.is_maximized().map_err(|e| e.to_string())? {
+            window.unmaximize().map_err(|e| e.to_string())?;
+            std::thread::sleep(Duration::from_millis(35));
+        }
+    }
+
+    window.set_fullscreen(true).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

@@ -46,40 +46,13 @@
 
   window.NetReconNewUICore = window.NetReconNewUICore || {};
   window.NetReconNewUICore.panelContentConfig = {
-    versions: {
-      emptyTitle: "Versions",
-      emptyText: "No version entries available.",
-      scrollLeftAria: "Scroll versions left",
-      scrollRightAria: "Scroll versions right",
-      timelineAria: "Published versions timeline"
-    },
-    languageManager: {
-      dictPlaceholder: "{\n  \\\"menuFile\\\": \\\"Datei\\\",\n  \\\"menuOptions\\\": \\\"Optionen\\\",\n  \\\"menuTools\\\": \\\"Werkzeuge\\\",\n  \\\"menuHelp\\\": \\\"Hilfe\\\"\n}"
-    },
-    importTool: {
-      subtitle: "This area is still under development, so tool imports are temporarily unavailable.",
-      manifestLabel: "Manifest JSON",
-      manifestPlaceholder: "{\n  \\\"id\\\": \\\"com.example.demo\\\"\n}",
-      uninstallLabel: "Tool id to uninstall",
-      uninstallPlaceholder: "com.example.demo",
-      installBtn: "Import",
-      listBtn: "List",
-      uninstallBtn: "Uninstall",
-      emptyText: "No imported tools yet."
-    },
+    versions: {},
+    languageManager: {},
+    importTool: {},
     licenseText: LICENSE_TEXT,
     resultsIp: {
       sampleRows: RESULTS_IP_SAMPLE_ROWS,
-      hostsLabel: "Hosty",
-      openPortsLabel: "Otwarte porty",
-      headers: {
-        ipAddress: "IP Address",
-        ping: "Ping",
-        hostname: "Hostname",
-        flag: "Flag",
-        isp: "ISP"
-      },
-      noOpenPorts: "No open ports"
+      headers: {}
     }
   };
 })();

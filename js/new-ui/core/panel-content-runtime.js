@@ -14,6 +14,11 @@
     var resultsIpConfig = contentConfig.resultsIp || {};
     var presetsApi = core.presets || null;
 
+    function trOr(key, fallback) {
+      var value = tr(key);
+      return value === key ? fallback : value;
+    }
+
     function getPresetsState() {
       try {
         if (presetsApi && typeof presetsApi.getState === "function") {
@@ -45,7 +50,7 @@
 
     function renderVersionsTool() {
       if (!versionsData.length) {
-        return "<h4>" + escapeHtml(versionsConfig.emptyTitle || "Versions") + "</h4><div>" + escapeHtml(versionsConfig.emptyText || "No version entries available.") + "</div>";
+        return "<h4>" + escapeHtml(trOr("versionsEmptyTitle", versionsConfig.emptyTitle || "Versions")) + "</h4><div>" + escapeHtml(trOr("versionsEmptyText", versionsConfig.emptyText || "No version entries available.")) + "</div>";
       }
 
       var chronological = versionsData.slice().reverse();
@@ -70,13 +75,13 @@
         "<div class=\"v1-versions-shell\">",
         "<div class=\"v1-versions-timeline-sticky\">",
         "<div class=\"v1-version-track-wrap\">",
-        "<button type=\"button\" class=\"v1-version-scroll\" data-version-scroll=\"left\" aria-label=\"" + escapeHtml(versionsConfig.scrollLeftAria || "Scroll versions left") + "\">◀</button>",
-        "<div class=\"v1-version-track\" id=\"v1VersionTrack\" data-version-role=\"track\" role=\"listbox\" aria-label=\"" + escapeHtml(versionsConfig.timelineAria || "Published versions timeline") + "\">",
+        "<button type=\"button\" class=\"v1-version-scroll\" data-version-scroll=\"left\" aria-label=\"" + escapeHtml(trOr("versionsScrollLeftAria", versionsConfig.scrollLeftAria || "Scroll versions left")) + "\">◀</button>",
+        "<div class=\"v1-version-track\" id=\"v1VersionTrack\" data-version-role=\"track\" role=\"listbox\" aria-label=\"" + escapeHtml(trOr("versionsTimelineAria", versionsConfig.timelineAria || "Published versions timeline")) + "\">",
         "<div class=\"v1-version-track-inner\">",
         pointsHtml,
         "</div>",
         "</div>",
-        "<button type=\"button\" class=\"v1-version-scroll\" data-version-scroll=\"right\" aria-label=\"" + escapeHtml(versionsConfig.scrollRightAria || "Scroll versions right") + "\">▶</button>",
+        "<button type=\"button\" class=\"v1-version-scroll\" data-version-scroll=\"right\" aria-label=\"" + escapeHtml(trOr("versionsScrollRightAria", versionsConfig.scrollRightAria || "Scroll versions right")) + "\">▶</button>",
         "</div>",
         "<div class=\"v1-version-physics\" id=\"v1VersionPhysics\" data-version-role=\"physics\" style=\"--v1-version-progress: 1;\">",
         "<div class=\"v1-version-orb\" aria-hidden=\"true\"></div>",
@@ -174,7 +179,7 @@
       var langOptions = langList.map(function (code) {
         return "<option value=\"" + escapeHtml(code) + "\">" + escapeHtml(code) + "</option>";
       }).join("");
-      var dictPlaceholder = languageManagerConfig.dictPlaceholder || "{\n  \"menuFile\": \"Datei\",\n  \"menuOptions\": \"Optionen\",\n  \"menuTools\": \"Werkzeuge\",\n  \"menuHelp\": \"Hilfe\"\n}";
+      var dictPlaceholder = trOr("langDictPlaceholder", languageManagerConfig.dictPlaceholder || "{\n  \"menuFile\": \"Datei\"\n}");
 
       return [
         "<div class=\"v1-lang-manager\">",
@@ -214,11 +219,11 @@
         ? tools.map(function (item) {
             return "<div class=\"v1-import-item\"><strong>" + escapeHtml(item.id) + "</strong> <span>@ " + escapeHtml(item.version) + "</span><div>" + escapeHtml(item.name) + "</div></div>";
           }).join("")
-        : "<div class=\"v1-import-empty\">" + escapeHtml(importToolConfig.emptyText || "No imported tools yet.") + "</div>";
+        : "<div class=\"v1-import-empty\">" + escapeHtml(trOr("importToolEmptyText", importToolConfig.emptyText || "No imported tools yet.")) + "</div>";
 
       var subtitleText = tr("importToolSubtitle");
       if (subtitleText === "importToolSubtitle") {
-        subtitleText = importToolConfig.subtitle || "This area is still under development, so tool imports are temporarily unavailable.";
+        subtitleText = trOr("importToolSubtitle", importToolConfig.subtitle || "This area is still under development, so tool imports are temporarily unavailable.");
       }
 
       return [
@@ -228,15 +233,15 @@
         "<div class=\"v1-import-manager-note\">" + escapeHtml(subtitleText) + "</div>",
         "</div>",
         "<div class=\"v1-import-manager-grid\">",
-        "<label for=\"v1ImportManifest\">" + escapeHtml(importToolConfig.manifestLabel || "Manifest JSON") + "</label>",
-        "<textarea id=\"v1ImportManifest\" data-import-role=\"manifest\" spellcheck=\"false\" placeholder=\"" + escapeHtml(importToolConfig.manifestPlaceholder || "{\\n  \\\"id\\\": \\\"com.example.demo\\\"\\n}") + "\"></textarea>",
-        "<label for=\"v1ImportUninstallId\">" + escapeHtml(importToolConfig.uninstallLabel || "Tool id to uninstall") + "</label>",
-        "<input id=\"v1ImportUninstallId\" data-import-role=\"uninstall-id\" type=\"text\" autocomplete=\"off\" placeholder=\"" + escapeHtml(importToolConfig.uninstallPlaceholder || "com.example.demo") + "\" />",
+        "<label for=\"v1ImportManifest\">" + escapeHtml(trOr("importToolManifestLabel", importToolConfig.manifestLabel || "Manifest JSON")) + "</label>",
+        "<textarea id=\"v1ImportManifest\" data-import-role=\"manifest\" spellcheck=\"false\" placeholder=\"" + escapeHtml(trOr("importToolManifestPlaceholder", importToolConfig.manifestPlaceholder || "{\\n  \\\"id\\\": \\\"com.example.demo\\\"\\n}")) + "\"></textarea>",
+        "<label for=\"v1ImportUninstallId\">" + escapeHtml(trOr("importToolUninstallLabel", importToolConfig.uninstallLabel || "Tool id to uninstall")) + "</label>",
+        "<input id=\"v1ImportUninstallId\" data-import-role=\"uninstall-id\" type=\"text\" autocomplete=\"off\" placeholder=\"" + escapeHtml(trOr("importToolUninstallPlaceholder", importToolConfig.uninstallPlaceholder || "com.example.demo")) + "\" />",
         "</div>",
         "<div class=\"v1-import-manager-actions\">",
-        "<button type=\"button\" data-import-action=\"install\">" + escapeHtml(importToolConfig.installBtn || "Import") + "</button>",
-        "<button type=\"button\" data-import-action=\"list\">" + escapeHtml(importToolConfig.listBtn || "List") + "</button>",
-        "<button type=\"button\" data-import-action=\"uninstall\">" + escapeHtml(importToolConfig.uninstallBtn || "Uninstall") + "</button>",
+        "<button type=\"button\" data-import-action=\"install\">" + escapeHtml(trOr("importToolInstallBtn", importToolConfig.installBtn || "Import")) + "</button>",
+        "<button type=\"button\" data-import-action=\"list\">" + escapeHtml(trOr("importToolListBtn", importToolConfig.listBtn || "List")) + "</button>",
+        "<button type=\"button\" data-import-action=\"uninstall\">" + escapeHtml(trOr("importToolUninstallBtn", importToolConfig.uninstallBtn || "Uninstall")) + "</button>",
         "</div>",
         "<div class=\"v1-import-manager-options\">",
         "<label><input id=\"v1ImportAddMenu\" data-import-role=\"add-menu\" type=\"checkbox\" checked /> " + tr("importOptToolsMenu") + "</label>",
@@ -282,28 +287,28 @@
       return [
         "<div class=\"v1-presets-shell\">",
         "<div class=\"v1-presets-list-block\">",
-        "<ul class=\"v1-presets-list\" role=\"listbox\" aria-label=\"Port presets\">",
+        "<ul class=\"v1-presets-list\" role=\"listbox\" aria-label=\"" + escapeHtml(trOr("presetsListAria", "Port presets")) + "\">",
         listHtml,
         "</ul>",
         "<div class=\"v1-presets-actions\">",
-        "<button type=\"button\" data-preset-action=\"add\">+ Add</button>",
-        "<button type=\"button\" data-preset-action=\"delete\">Delete</button>",
-        "<button type=\"button\" data-preset-action=\"move-up\">Move Up</button>",
-        "<button type=\"button\" data-preset-action=\"move-down\">Move Down</button>",
-        "<button type=\"button\" data-preset-action=\"set-default\">Set as default</button>",
+        "<button type=\"button\" data-preset-action=\"add\">" + escapeHtml(trOr("presetsAddBtn", "+ Add")) + "</button>",
+        "<button type=\"button\" data-preset-action=\"delete\">" + escapeHtml(trOr("presetsDeleteBtn", "Delete")) + "</button>",
+        "<button type=\"button\" data-preset-action=\"move-up\">" + escapeHtml(trOr("presetsMoveUpBtn", "Move Up")) + "</button>",
+        "<button type=\"button\" data-preset-action=\"move-down\">" + escapeHtml(trOr("presetsMoveDownBtn", "Move Down")) + "</button>",
+        "<button type=\"button\" data-preset-action=\"set-default\">" + escapeHtml(trOr("presetsSetDefaultBtn", "Set as default")) + "</button>",
         "</div>",
         "</div>",
         "<section class=\"v1-presets-editor\">",
-        "<h4>Edit preset</h4>",
+        "<h4>" + escapeHtml(trOr("presetsEditHeading", "Edit preset")) + "</h4>",
         "<div class=\"v1-presets-form\">",
-        "<label for=\"v1PresetName\">Name</label>",
+        "<label for=\"v1PresetName\">" + escapeHtml(trOr("presetsNameLabel", "Name")) + "</label>",
         "<input id=\"v1PresetName\" data-preset-name=\"true\" type=\"text\" autocomplete=\"off\" value=\"" + escapeHtml(selected.name || "") + "\" />",
-        "<label for=\"v1PresetPorts\">Ports</label>",
+        "<label for=\"v1PresetPorts\">" + escapeHtml(trOr("presetsPortsLabel", "Ports")) + "</label>",
         "<input id=\"v1PresetPorts\" data-preset-ports=\"true\" type=\"text\" autocomplete=\"off\" value=\"" + escapeHtml(selected.ports || "") + "\" />",
         "</div>",
-        "<p class=\"v1-presets-hint\">Enter port numbers separated by commas, e.g. 80, 443, 8080, 554</p>",
+        "<p class=\"v1-presets-hint\">" + escapeHtml(trOr("presetsHint", "Enter port numbers separated by commas, e.g. 80, 443, 8080, 554")) + "</p>",
         "<div class=\"v1-presets-save\">",
-        "<button type=\"button\" data-preset-action=\"save\">Save</button>",
+        "<button type=\"button\" data-preset-action=\"save\">" + escapeHtml(trOr("presetsSaveBtn", "Save")) + "</button>",
         "</div>",
         "</section>",
         "</div>"
@@ -367,7 +372,7 @@
           "</tr>",
           "<tr class=\"v1-ip-ports-row\" data-ports-row=\"" + idx + "\" hidden>",
           "<td colspan=\"10\">",
-          "<div class=\"v1-ip-ports-wrap\">" + (portsHtml || "<span class=\"v1-ip-ports-empty\">" + escapeHtml(resultsIpConfig.noOpenPorts || "No open ports") + "</span>") + "</div>",
+          "<div class=\"v1-ip-ports-wrap\">" + (portsHtml || "<span class=\"v1-ip-ports-empty\">" + escapeHtml(trOr("resultsIpNoOpenPorts", resultsIpConfig.noOpenPorts || "No open ports")) + "</span>") + "</div>",
           "</td>",
           "</tr>"
         ].join("");
@@ -377,12 +382,12 @@
 
       return [
         "<div class=\"v1-results-meta-row\">",
-        "<span>" + escapeHtml(resultsIpConfig.hostsLabel || "Hosty") + ": <b id=\"resIpHostCount\">" + rows.length + "</b></span>",
-        "<span>" + escapeHtml(resultsIpConfig.openPortsLabel || "Otwarte porty") + ": <b id=\"resIpPortCount\">" + totalPorts + "</b></span>",
+        "<span>" + escapeHtml(trOr("resultsIpHostsLabel", resultsIpConfig.hostsLabel || "Hosty")) + ": <b id=\"resIpHostCount\">" + rows.length + "</b></span>",
+        "<span>" + escapeHtml(trOr("resultsIpOpenPortsLabel", resultsIpConfig.openPortsLabel || "Otwarte porty")) + ": <b id=\"resIpPortCount\">" + totalPorts + "</b></span>",
         "</div>",
         "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\">",
         "<table class=\"v1-results-table v1-ip-results-table\">",
-        "<thead><tr><th class=\"v1-ip-col-check\">✓</th><th class=\"v1-ip-col-star\">★</th><th class=\"v1-ip-col-status\">●</th><th class=\"v1-ip-col-ip\">" + escapeHtml(headers.ipAddress || "IP Address") + "</th><th class=\"v1-ip-col-expand\">+</th><th class=\"v1-ip-col-ping\">" + escapeHtml(headers.ping || "Ping") + "</th><th class=\"v1-ip-col-host\">" + escapeHtml(headers.hostname || "Hostname") + "</th><th class=\"v1-ip-col-flag\">" + escapeHtml(headers.flag || "Flag") + "</th><th class=\"v1-ip-col-isp\">" + escapeHtml(headers.isp || "ISP") + "</th></tr></thead>",
+        "<thead><tr><th class=\"v1-ip-col-check\">✓</th><th class=\"v1-ip-col-star\">★</th><th class=\"v1-ip-col-status\">●</th><th class=\"v1-ip-col-ip\">" + escapeHtml(trOr("resultsIpHeaderIpAddress", headers.ipAddress || "IP Address")) + "</th><th class=\"v1-ip-col-expand\">+</th><th class=\"v1-ip-col-ping\">" + escapeHtml(trOr("resultsIpHeaderPing", headers.ping || "Ping")) + "</th><th class=\"v1-ip-col-host\">" + escapeHtml(trOr("resultsIpHeaderHostname", headers.hostname || "Hostname")) + "</th><th class=\"v1-ip-col-flag\">" + escapeHtml(trOr("resultsIpHeaderFlag", headers.flag || "Flag")) + "</th><th class=\"v1-ip-col-isp\">" + escapeHtml(trOr("resultsIpHeaderIsp", headers.isp || "ISP")) + "</th></tr></thead>",
         "<tbody>" + bodyHtml + "</tbody>",
         "</table>",
         "</div>"
