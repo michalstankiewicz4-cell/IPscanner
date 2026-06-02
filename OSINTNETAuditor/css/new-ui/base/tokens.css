@@ -7,6 +7,12 @@
   --txt-dim: #9da0a6;
   --brand: #3794ff;
   --activity: #007acc;
+  --v1-panel-head-bg: var(--bg-elev);
+  --v1-tabs-strip-bg: color-mix(in oklab, var(--bg-elev) 84%, #000 16%);
+  --v1-tabs-scroll-overlay-bg: color-mix(in oklab, var(--bg-elev) 74%, #000 26%);
+  --v1-empty-state-bg: var(--v1-tabs-strip-bg);
+  --v1-empty-logo-opacity: 0.2;
+  --v1-empty-logo-filter: grayscale(100%) brightness(0.62) contrast(0.92) drop-shadow(0 8px 20px rgba(0, 0, 0, 0.35));
   --v1-faux-scrollbar-size: 10px;
   --v1-scroll-safe-gutter: 14px;
   --font-ui: "IBM Plex Sans", "Segoe UI", sans-serif;
