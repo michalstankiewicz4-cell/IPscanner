@@ -942,11 +942,17 @@
             scheduleScrollActiveTabIntoView();
           }
 
+          const tabsShell = tabsTrack.closest('.v1-tabs-shell');
+          const hasOverflow = tabsTrack.scrollWidth > tabsTrack.clientWidth + 1;
+          if (tabsShell) {
+            tabsShell.classList.toggle('has-overflow', hasOverflow);
+          }
+
           if (tabsScrollLeftBtn && tabsScrollRightBtn) {
             const maxScrollLeft = Math.max(0, tabsTrack.scrollWidth - tabsTrack.clientWidth);
             const currentScrollLeft = tabsTrack.scrollLeft;
-            tabsScrollLeftBtn.disabled = currentScrollLeft <= 1;
-            tabsScrollRightBtn.disabled = currentScrollLeft >= maxScrollLeft - 1;
+            tabsScrollLeftBtn.disabled = !hasOverflow || currentScrollLeft <= 1;
+            tabsScrollRightBtn.disabled = !hasOverflow || currentScrollLeft >= maxScrollLeft - 1;
           }
         }
 
@@ -993,6 +999,15 @@
           tabsTrack.addEventListener("scroll", function () {
             refreshActiveUI();
           }, { passive: true });
+          tabsTrack.addEventListener("wheel", function (event) {
+            const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+              ? event.deltaX
+              : event.deltaY;
+            if (Math.abs(delta) < 0.5) return;
+            event.preventDefault();
+            tabsTrack.scrollBy({ left: delta, behavior: "auto" });
+            refreshActiveUI();
+          }, { passive: false });
           tabsTrack.addEventListener("click", function (event) {
             const tab = event.target && typeof event.target.closest === "function"
               ? event.target.closest(".v1-tab")
