@@ -684,8 +684,8 @@
   font-size: 13px;
   cursor: pointer;
   padding: 0;
-  opacity: 0.74;
-  pointer-events: auto;
+  opacity: 0;
+  pointer-events: none;
   transition: opacity 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
@@ -697,12 +697,9 @@
   right: 0;
 }
 
-.v1-tabs-shell.has-overflow .v1-tabs-nav {
+.v1-tabs-shell.has-overflow .v1-tabs-nav:not(:disabled) {
   opacity: 0.92;
-}
-
-.v1-tabs-shell:not(.has-overflow) .v1-tabs-nav {
-  opacity: 0.52;
+  pointer-events: auto;
 }
 
 .v1-tabs-nav:hover:not(:disabled) {
@@ -711,8 +708,13 @@
 }
 
 .v1-tabs-nav:disabled {
-  opacity: 0.35;
+  opacity: 0;
+  pointer-events: none;
   cursor: default;
+}
+
+.v1-tabs-shell.has-overflow .v1-tabs-nav:disabled {
+  opacity: 0.35;
 }
 
 .v1-tabs {
