@@ -301,25 +301,21 @@
         panelState.leftCollapsed = false;
         size.left = 320;
         applySizes();
-        refreshCustomScrollbars();
       });
 
       leftToggle.addEventListener("click", function () {
         panelState.leftCollapsed = !panelState.leftCollapsed;
         applySizes();
-        refreshCustomScrollbars();
       });
 
       rightToggle.addEventListener("click", function () {
         panelState.rightCollapsed = !panelState.rightCollapsed;
         applySizes();
-        refreshCustomScrollbars();
       });
 
       bottomToggle.addEventListener("click", function () {
         panelState.bottomCollapsed = !panelState.bottomCollapsed;
         applySizes();
-        refreshCustomScrollbars();
       });
 
       window.addEventListener("resize", applySizes);
