@@ -348,6 +348,30 @@
   text-overflow: ellipsis;
 }
 
+.v1-detect-result.is-loading {
+  color: #c7c7c7;
+}
+
+.v1-detect-loader {
+  display: inline-grid;
+  grid-template-columns: repeat(3, 5px);
+  grid-template-rows: repeat(2, 5px);
+  gap: 2px;
+  align-items: center;
+  justify-items: center;
+}
+
+.v1-detect-loader-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #7a7a7a;
+}
+
+.v1-detect-loader-dot.is-active {
+  background: #ffffff;
+}
+
 .v1-use-btn {
   flex-shrink: 0;
   border: 1px solid #3f3f46;
