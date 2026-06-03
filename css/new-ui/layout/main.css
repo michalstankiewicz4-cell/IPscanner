@@ -99,6 +99,10 @@
   background: var(--bg-elev);
 }
 
+.v1-sidebar > [data-sidebar-view="results"] .v1-tool-list {
+  background: var(--bg-elev);
+}
+
 .v1-sidebar > [data-sidebar-view][hidden] {
   display: none !important;
 }
@@ -114,7 +118,7 @@
   align-items: stretch;
   justify-content: space-between;
   gap: 8px;
-  padding: 0 6px 0 10px;
+  padding: 0 6px 0 0;
 }
 
 .v1-head-title {
