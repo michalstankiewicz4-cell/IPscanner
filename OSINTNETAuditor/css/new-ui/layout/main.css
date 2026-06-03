@@ -99,6 +99,10 @@
   background: var(--bg-elev);
 }
 
+.v1-sidebar > [data-sidebar-view="results"] .v1-tool-list {
+  background: var(--bg-elev);
+}
+
 .v1-sidebar > [data-sidebar-view][hidden] {
   display: none !important;
 }
@@ -114,7 +118,7 @@
   align-items: stretch;
   justify-content: space-between;
   gap: 8px;
-  padding: 0 6px 0 10px;
+  padding: 0 6px 0 0;
 }
 
 .v1-head-title {
@@ -346,6 +350,30 @@
   min-width: 108px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.v1-detect-result.is-loading {
+  color: #c7c7c7;
+}
+
+.v1-detect-loader {
+  display: inline-grid;
+  grid-template-columns: repeat(3, 5px);
+  grid-template-rows: repeat(2, 5px);
+  gap: 2px;
+  align-items: center;
+  justify-items: center;
+}
+
+.v1-detect-loader-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #7a7a7a;
+}
+
+.v1-detect-loader-dot.is-active {
+  background: #ffffff;
 }
 
 .v1-use-btn {
