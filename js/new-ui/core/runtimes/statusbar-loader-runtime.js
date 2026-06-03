@@ -60,14 +60,22 @@
       }
     }
 
+    function renderCount(countEl) {
+      if (!countEl) return;
+      countEl.textContent = String(Math.max(0, busyCount));
+      countEl.classList.toggle("is-busy", busyCount > 0);
+    }
+
     function init() {
       var loader = document.getElementById("v1StatusLoader");
       if (!loader) return;
+      var countEl = document.getElementById("v1StatusProcCount");
 
       var cells = Array.from(loader.querySelectorAll(".v1-status-loader-cell"));
       if (cells.length < 6) return;
 
       stop(cells);
+      renderCount(countEl);
 
       document.addEventListener("newui:busy-state", function (event) {
         var detail = event && event.detail ? event.detail : {};
@@ -80,6 +88,7 @@
 
         if (busyCount < 0) busyCount = 0;
         applyBusyState(cells);
+        renderCount(countEl);
       });
     }
 

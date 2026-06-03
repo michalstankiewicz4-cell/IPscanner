@@ -47,3 +47,25 @@
 .v1-status-loader-cell.is-active {
   background: #3bd16f;
 }
+
+.v1-status-proc-count {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--activity);
+  color: #d8d8d8;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  border: 1px solid #9ec5ff;
+  font-family: var(--font-mono);
+}
+
+.v1-status-proc-count.is-busy {
+  color: #ffffff;
+  background: #1f5d2f;
+  border-color: #5fbd7a;
+}
