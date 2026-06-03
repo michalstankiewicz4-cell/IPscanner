@@ -45,6 +45,15 @@
   margin-right: -4px;
 }
 
+.v1-menubar-separator {
+  width: 1px;
+  height: 16px;
+  background: #4a4f58;
+  margin: 0 6px;
+  flex: 0 0 auto;
+  opacity: 0.9;
+}
+
 .v1-menubar-action {
   border: 0;
   background: transparent;

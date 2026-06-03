@@ -144,6 +144,7 @@
         const aboutMenuLabel = document.querySelector('[data-menu-action="about"] span:first-child');
         const licenseMenuLabel = document.querySelector('[data-menu-action="license"] span:first-child');
         const resetMemoryButton = document.querySelector('[data-menu-action="reset-memory"]');
+        const blurIpSoonButton = document.querySelector('[data-menu-action="blur-ip-soon"]');
         const autoArrangeToggle = document.getElementById("v1AutoArrangeToggle");
         const autoArrangeToggleWrap = autoArrangeToggle ? autoArrangeToggle.closest(".v1-menubar-toggle") : null;
         const clippyClose = document.getElementById("v1ClippyClose");
@@ -237,6 +238,10 @@
         if (resetMemoryButton) {
           resetMemoryButton.setAttribute("title", tr("devFullResetButtonTitle"));
           resetMemoryButton.setAttribute("aria-label", tr("devFullResetButtonTitle"));
+        }
+        if (blurIpSoonButton) {
+          blurIpSoonButton.setAttribute("title", tr("blurIpSoonButtonTitle"));
+          blurIpSoonButton.setAttribute("aria-label", tr("blurIpSoonButtonTitle"));
         }
         if (autoArrangeToggle) {
           autoArrangeToggle.setAttribute("title", tr("autoArrangeOnUndockTitle"));
