@@ -318,7 +318,22 @@
                   from: (document.getElementById("v1ScanFrom") || {}).value || "0.0.0.0",
                   to: (document.getElementById("v1ScanTo") || {}).value || "0.0.0.0",
                 };
-            if (setStatusLine) setStatusLine(tr("statusScanStart") + " " + range.from + " - " + range.to);
+            var selectedPreset = runtime && runtime.getSelectedPreset
+              ? runtime.getSelectedPreset()
+              : null;
+            var selectedPorts = selectedPreset ? String(selectedPreset.ports || "") : "";
+            var selectedPresetLabel = selectedPreset ? String(selectedPreset.name || selectedPreset.id || "").trim() : "";
+            var portsCount = selectedPorts
+              ? selectedPorts.split(",").map(function (token) { return token.trim(); }).filter(Boolean).length
+              : 0;
+            if (setStatusLine) {
+              var status = tr("statusScanStart") + " " + range.from + " - " + range.to;
+              if (selectedPresetLabel) {
+                status += " | " + tr("scannerPortPresets") + ": " + selectedPresetLabel;
+                status += " (" + portsCount + ")";
+              }
+              setStatusLine(status);
+            }
           }
           if (action === "stop" && setStatusLine) setStatusLine(tr("statusScanStop"));
           if (action === "clear" && setStatusLine) setStatusLine(tr("statusScanClear"));
