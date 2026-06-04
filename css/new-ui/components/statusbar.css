@@ -55,17 +55,60 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--activity);
-  color: #d8d8d8;
+  background: #3bd16f;
+  color: #ffffff;
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
-  border: 1px solid #9ec5ff;
+  border: 1px solid #5fbd7a;
   font-family: var(--font-mono);
 }
 
-.v1-status-proc-count.is-busy {
+.v1-status-proc-count.is-ok {
   color: #ffffff;
-  background: #1f5d2f;
+  background: #3bd16f;
   border-color: #5fbd7a;
+}
+
+.v1-status-proc-count.is-overload {
+  color: #ffffff;
+  background: #c0392b;
+  border-color: #ff8d84;
+}
+
+.v1-status-progress {
+  width: 130px;
+  height: 16px;
+  border: 1px solid #9ec5ff;
+  border-radius: 8px;
+  background: var(--activity);
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.v1-status-progress-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: #3bd16f;
+  transition: width 140ms linear;
+}
+
+.v1-status-progress-text {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 10px;
+  line-height: 1;
+  font-family: var(--font-mono);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+  pointer-events: none;
 }

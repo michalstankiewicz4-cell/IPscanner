@@ -78,6 +78,15 @@ struct HostFound {
     ping_ms: Option<u64>,
 }
 
+#[derive(Serialize, Clone)]
+struct ScanProgress {
+    total: u32,
+    processed: u32,
+    found: u32,
+    done: bool,
+    stopped: bool,
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct GeoResult {
     pub status: String,
@@ -341,6 +350,14 @@ async fn scan_range(
     let total = end - start + 1;
     let mut set: tokio::task::JoinSet<bool> = tokio::task::JoinSet::new();
 
+    let _ = app.emit("scan-progress", ScanProgress {
+        total,
+        processed: 0,
+        found: 0,
+        done: false,
+        stopped: false,
+    });
+
     for i in 0..total {
         if stop.stop.load(Ordering::Relaxed) { break; }
         let ip      = u32_to_ip(start + i);
@@ -365,9 +382,28 @@ async fn scan_range(
     }
 
     let mut found = 0u32;
+    let mut processed = 0u32;
     while let Some(res) = set.join_next().await {
+        processed += 1;
         if matches!(res, Ok(true)) { found += 1; }
+        let _ = app.emit("scan-progress", ScanProgress {
+            total,
+            processed,
+            found,
+            done: false,
+            stopped: false,
+        });
     }
+
+    let stopped = stop.stop.load(Ordering::Relaxed);
+    let _ = app.emit("scan-progress", ScanProgress {
+        total,
+        processed,
+        found,
+        done: true,
+        stopped,
+    });
+
     Ok(found)
 }
 

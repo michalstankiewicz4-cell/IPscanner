@@ -1634,6 +1634,13 @@
         return;
       }
 
+      if (tool === "scan-defaults") {
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireScanDefaultsTool) {
+          panelInteractionsRuntime.wireScanDefaultsTool(scope);
+        }
+        return;
+      }
+
       if (tool === "ip-library") {
         wireIpLibraryButtons(scope);
         return;
