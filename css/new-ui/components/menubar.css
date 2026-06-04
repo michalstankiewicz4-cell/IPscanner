@@ -233,3 +233,90 @@
   margin: 6px 0;
   background: #3c3c3c;
 }
+
+.v1-exit-modal[hidden] {
+  display: none;
+}
+
+.v1-exit-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 12050;
+  background: rgba(9, 10, 12, 0.58);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.v1-exit-panel {
+  width: min(430px, 100%);
+  border: 1px solid #3c414a;
+  border-radius: 0;
+  background: #232830;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.55);
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+
+.v1-exit-head {
+  display: flex;
+  align-items: center;
+  min-height: 34px;
+  border-bottom: 1px solid #30343b;
+  background: #252a31;
+  padding: 6px 10px;
+}
+
+.v1-exit-head h3 {
+  margin: 0;
+  color: var(--txt);
+  font: 600 12px/1.2 var(--font-ui);
+}
+
+.v1-exit-message {
+  margin: 0;
+  padding: 12px 10px 10px;
+  color: #cfd6e2;
+  font: 400 13px/1.45 var(--font-ui);
+}
+
+.v1-exit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 10px 10px;
+}
+
+.v1-exit-btn {
+  border: 1px solid #4a4f58;
+  border-radius: 0;
+  background: #2c3139;
+  color: #d6dce8;
+  font: 500 12px/1 var(--font-ui);
+  min-height: 30px;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.v1-exit-btn:hover {
+  background: #39424f;
+  border-color: #4a4f58;
+}
+
+.v1-exit-btn:focus-visible {
+  outline: 2px solid #7fb7ff;
+  outline-offset: 1px;
+}
+
+.v1-exit-btn--primary {
+  border-color: #0f6ab2;
+  background: #1c7fd0;
+  color: #ffffff;
+}
+
+.v1-exit-btn--primary:hover {
+  background: #2790e7;
+  border-color: #2e8fe0;
+}
