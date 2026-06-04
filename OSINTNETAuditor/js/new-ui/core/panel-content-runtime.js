@@ -401,69 +401,189 @@
       var selectedPreset = getSelectedPresetInfo();
       var selectedPresetEmoji = selectedPreset.emoji || "🔎";
       var selectedPresetLabel = selectedPreset.name || selectedPreset.id || "";
+      var columnItems = [
+        { key: "hostname", icon: "🧭", label: trOr("resultsIpColumnHostname", "Hostname"), defaultVisible: true },
+        { key: "flag", icon: "🌎", label: trOr("resultsIpColumnCountryFlag", "Country Flag"), defaultVisible: true },
+        { key: "isp", icon: "🏢", label: trOr("resultsIpColumnIsp", "ISP"), defaultVisible: true },
+        { key: "as", icon: "🕷", label: trOr("resultsIpColumnAs", "AS"), defaultVisible: false },
+        { key: "device", icon: "📱", label: trOr("resultsIpColumnDeviceIdentification", "Device Identification"), defaultVisible: false },
+        { key: "http", icon: "📄", label: trOr("resultsIpColumnHttpPageTitle", "HTTP Page Title"), defaultVisible: false },
+        { key: "access", icon: "🔑", label: trOr("resultsIpColumnAccessSnapshot", "Access / Snapshot"), defaultVisible: false }
+      ];
+      var filterGroups = [
+        {
+          key: "type",
+          buttonLabel: trOr("resultsIpFilterTypeButton", "IP / Ports"),
+          items: [
+            { key: "ip", icon: "🖧", label: trOr("resultsIpFilterTypeIp", "IP"), defaultChecked: true },
+            { key: "ports", icon: "🔌", label: trOr("resultsIpFilterTypePorts", "Ports"), defaultChecked: true }
+          ]
+        },
+        {
+          key: "marks",
+          buttonLabel: trOr("resultsIpFilterMarksButton", "Favorites / Checked"),
+          items: [
+            { key: "favorite", icon: "★", label: trOr("resultsIpFilterMarksFavorite", "Favorites"), defaultChecked: false },
+            { key: "check", icon: "✓", label: trOr("resultsIpFilterMarksChecked", "Checked"), defaultChecked: false }
+          ]
+        },
+        {
+          key: "status",
+          buttonLabel: trOr("resultsIpFilterStatusButton", "Status"),
+          items: [
+            { key: "active", icon: "🟢", label: trOr("resultsIpFilterStatusActive", "Active"), defaultChecked: true },
+            { key: "unknown", icon: "⚪", label: trOr("resultsIpFilterStatusUnknown", "Unknown"), defaultChecked: true },
+            { key: "dead", icon: "🔴", label: trOr("resultsIpFilterStatusDead", "Dead"), defaultChecked: true }
+          ]
+        }
+      ];
+
+      function resolvePortEntry(port) {
+        if (port && typeof port === "object") {
+          var rawPort = port.port != null ? port.port : (port.value != null ? port.value : "");
+          return {
+            portLabel: String(rawPort || "").replace(/^:/, "").trim(),
+            httpPageTitle: String(port.httpPageTitle || port.pageTitle || port.title || "").trim(),
+            accessSnapshot: String(port.accessSnapshot || port.access || port.snapshot || port.url || "").trim()
+          };
+        }
+
+        return {
+          portLabel: String(port || "").replace(/^:/, "").trim(),
+          httpPageTitle: "",
+          accessSnapshot: ""
+        };
+      }
+
+      function resolveStatusKey(row) {
+        var explicit = String((row && (row.status || row.state || row.health)) || "").toLowerCase().trim();
+        if (explicit === "active" || explicit === "up" || explicit === "alive") return "active";
+        if (explicit === "dead" || explicit === "down") return "dead";
+        if (explicit === "unknown") return "unknown";
+
+        var cls = String((row && row.statusClass) || "").toLowerCase();
+        if (cls.indexOf("is-up") >= 0 || cls.indexOf("active") >= 0) return "active";
+        if (cls.indexOf("is-down") >= 0 || cls.indexOf("dead") >= 0) return "dead";
+        return "unknown";
+      }
 
       var totalPorts = rows.reduce(function (sum, row) {
         return sum + ((row.ports && row.ports.length) || 0);
       }, 0);
 
       var bodyHtml = rows.map(function (row, idx) {
+        var statusKey = resolveStatusKey(row);
+        var resultKey = String(row.ip || "").trim();
         var portList = Array.isArray(row.ports) ? row.ports : [];
         var portsHtml = portList.length ? portList.map(function (port, portIdx) {
-          var portLabel = String(port || "").replace(/^:/, "").trim();
+          var portEntry = resolvePortEntry(port);
+          var portLabel = portEntry.portLabel;
           var portKey = String(row.ip || "").trim() + "|" + portLabel;
+          var portHttpTitle = portEntry.httpPageTitle || "-";
+          var portAccess = portEntry.accessSnapshot || "-";
           return [
-            "<tr class=\"v1-ip-port-row\" data-ports-row=\"" + idx + "\" data-port-index=\"" + portIdx + "\" hidden>",
+            "<tr class=\"v1-ip-port-row\" data-ports-row=\"" + idx + "\" data-port-index=\"" + portIdx + "\" data-port-key=\"" + escapeHtml(portKey) + "\" data-status=\"" + escapeHtml(statusKey) + "\" hidden>",
             "<td class=\"v1-ip-col-check\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-port-action=\"check\" data-port-key=\"" + escapeHtml(portKey) + "\" aria-pressed=\"false\" aria-label=\"Mark port\">✓</button></td>",
             "<td class=\"v1-ip-col-star\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-port-action=\"favorite\" data-port-key=\"" + escapeHtml(portKey) + "\" aria-pressed=\"false\" aria-label=\"Add port to favorites\">★</button></td>",
             "<td class=\"v1-ip-col-status\" aria-hidden=\"true\"></td>",
             "<td class=\"v1-ip-col-ip\"><span class=\"v1-ip-port-line\"><span class=\"v1-ip-port-chip-emoji\" aria-hidden=\"true\" title=\"" + escapeHtml(selectedPresetLabel) + "\">" + escapeHtml(selectedPresetEmoji) + "</span><span class=\"v1-ip-port-value\">" + escapeHtml(portLabel) + "</span></span></td>",
             "<td class=\"v1-ip-col-expand\" aria-hidden=\"true\"></td>",
             "<td class=\"v1-ip-col-ping\" aria-hidden=\"true\"></td>",
-            "<td class=\"v1-ip-col-host\" aria-hidden=\"true\"></td>",
-            "<td class=\"v1-ip-col-flag\" aria-hidden=\"true\"></td>",
-            "<td class=\"v1-ip-col-isp\" aria-hidden=\"true\"></td>",
+            "<td class=\"v1-ip-col-host\" data-col=\"hostname\" aria-hidden=\"true\"></td>",
+            "<td class=\"v1-ip-col-flag\" data-col=\"flag\" aria-hidden=\"true\"></td>",
+            "<td class=\"v1-ip-col-isp\" data-col=\"isp\" aria-hidden=\"true\"></td>",
+            "<td class=\"v1-ip-col-as\" data-col=\"as\" aria-hidden=\"true\"></td>",
+            "<td class=\"v1-ip-col-device\" data-col=\"device\" aria-hidden=\"true\"></td>",
+            "<td class=\"v1-ip-col-http\" data-col=\"http\">" + escapeHtml(portHttpTitle) + "</td>",
+            "<td class=\"v1-ip-col-access\" data-col=\"access\"><span class=\"v1-ip-port-link\">" + escapeHtml(portAccess) + "</span></td>",
             "</tr>"
           ].join("");
         }).join("") : [
-          "<tr class=\"v1-ip-port-row v1-ip-port-row--empty\" data-ports-row=\"" + idx + "\" hidden>",
+          "<tr class=\"v1-ip-port-row v1-ip-port-row--empty\" data-ports-row=\"" + idx + "\" data-status=\"" + escapeHtml(statusKey) + "\" hidden>",
           "<td class=\"v1-ip-col-check\" aria-hidden=\"true\"></td>",
           "<td class=\"v1-ip-col-star\" aria-hidden=\"true\"></td>",
           "<td class=\"v1-ip-col-status\" aria-hidden=\"true\"></td>",
           "<td class=\"v1-ip-col-ip\"><span class=\"v1-ip-port-empty\">" + escapeHtml(trOr("resultsIpNoOpenPorts", resultsIpConfig.noOpenPorts || "No open ports")) + "</span></td>",
           "<td class=\"v1-ip-col-expand\" aria-hidden=\"true\"></td>",
           "<td class=\"v1-ip-col-ping\" aria-hidden=\"true\"></td>",
-          "<td class=\"v1-ip-col-host\" aria-hidden=\"true\"></td>",
-          "<td class=\"v1-ip-col-flag\" aria-hidden=\"true\"></td>",
-          "<td class=\"v1-ip-col-isp\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-host\" data-col=\"hostname\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-flag\" data-col=\"flag\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-isp\" data-col=\"isp\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-as\" data-col=\"as\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-device\" data-col=\"device\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-http\" data-col=\"http\">-</td>",
+          "<td class=\"v1-ip-col-access\" data-col=\"access\">-</td>",
           "</tr>"
         ].join("");
 
+        var rowAs = String(row.as || row.autonomousSystem || "").trim() || "-";
+        var rowDevice = String(row.deviceIdentification || row.device || "").trim() || "-";
+
         return [
-          "<tr class=\"v1-ip-result-row\" data-row-index=\"" + idx + "\">",
-          "<td class=\"v1-ip-col-check\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-result-action=\"check\" data-result-key=\"" + escapeHtml(String(row.ip || "").trim()) + "\" aria-pressed=\"false\" aria-label=\"Mark IP\">✓</button></td>",
-          "<td class=\"v1-ip-col-star\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-result-action=\"favorite\" data-result-key=\"" + escapeHtml(String(row.ip || "").trim()) + "\" aria-pressed=\"false\" aria-label=\"Add IP to favorites\">★</button></td>",
+          "<tr class=\"v1-ip-result-row\" data-row-index=\"" + idx + "\" data-result-key=\"" + escapeHtml(resultKey) + "\" data-status=\"" + escapeHtml(statusKey) + "\">",
+          "<td class=\"v1-ip-col-check\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-result-action=\"check\" data-result-key=\"" + escapeHtml(resultKey) + "\" aria-pressed=\"false\" aria-label=\"Mark IP\">✓</button></td>",
+          "<td class=\"v1-ip-col-star\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-result-action=\"favorite\" data-result-key=\"" + escapeHtml(resultKey) + "\" aria-pressed=\"false\" aria-label=\"Add IP to favorites\">★</button></td>",
           "<td class=\"v1-ip-col-status\"><span class=\"v1-ip-status-dot " + escapeHtml(row.statusClass || "") + "\"></span></td>",
           "<td class=\"v1-ip-col-ip\">" + escapeHtml(row.ip) + "</td>",
           "<td class=\"v1-ip-col-expand\"><button type=\"button\" class=\"v1-ip-expand-btn\" data-open-ports=\"" + idx + "\" aria-expanded=\"false\">+</button></td>",
           "<td class=\"v1-ip-col-ping\">" + escapeHtml(row.ping) + "</td>",
-          "<td class=\"v1-ip-col-host\">" + escapeHtml(row.hostname) + "</td>",
-          "<td class=\"v1-ip-col-flag\">" + escapeHtml(row.flag) + "</td>",
-          "<td class=\"v1-ip-col-isp\">" + escapeHtml(row.isp) + "</td>",
+          "<td class=\"v1-ip-col-host\" data-col=\"hostname\">" + escapeHtml(row.hostname) + "</td>",
+          "<td class=\"v1-ip-col-flag\" data-col=\"flag\">" + escapeHtml(row.flag) + "</td>",
+          "<td class=\"v1-ip-col-isp\" data-col=\"isp\">" + escapeHtml(row.isp) + "</td>",
+          "<td class=\"v1-ip-col-as\" data-col=\"as\">" + escapeHtml(rowAs) + "</td>",
+          "<td class=\"v1-ip-col-device\" data-col=\"device\">" + escapeHtml(rowDevice) + "</td>",
+          "<td class=\"v1-ip-col-http\" data-col=\"http\">-</td>",
+          "<td class=\"v1-ip-col-access\" data-col=\"access\">-</td>",
           "</tr>",
           portsHtml
         ].join("");
       }).join("");
 
       var headers = resultsIpConfig.headers || {};
+      var columnsMenuHtml = columnItems.map(function (item) {
+        return [
+          "<label class=\"v1-results-columns-item\">",
+          "<input type=\"checkbox\" data-column-key=\"" + escapeHtml(item.key) + "\"" + (item.defaultVisible ? " checked" : "") + " />",
+          "<span class=\"v1-results-columns-icon\" aria-hidden=\"true\">" + escapeHtml(item.icon) + "</span>",
+          "<span>" + escapeHtml(item.label) + "</span>",
+          "</label>"
+        ].join("");
+      }).join("");
+      var filtersHtml = filterGroups.map(function (group) {
+        var itemsHtml = group.items.map(function (item) {
+          return [
+            "<label class=\"v1-results-columns-item\">",
+            "<input type=\"checkbox\" data-filter-group=\"" + escapeHtml(group.key) + "\" data-filter-key=\"" + escapeHtml(item.key) + "\"" + (item.defaultChecked ? " checked" : "") + " />",
+            "<span class=\"v1-results-columns-icon\" aria-hidden=\"true\">" + escapeHtml(item.icon) + "</span>",
+            "<span>" + escapeHtml(item.label) + "</span>",
+            "</label>"
+          ].join("");
+        }).join("");
+
+        return [
+          "<div class=\"v1-results-columns v1-results-filter\" data-results-filter data-filter-group=\"" + escapeHtml(group.key) + "\">",
+          "<button type=\"button\" class=\"v1-results-columns-btn\" data-filter-toggle=\"" + escapeHtml(group.key) + "\" data-filter-label=\"" + escapeHtml(group.buttonLabel) + "\" aria-expanded=\"false\">" + escapeHtml(group.buttonLabel) + " ▾</button>",
+          "<div class=\"v1-results-columns-menu\" data-filter-menu=\"" + escapeHtml(group.key) + "\" hidden>" + itemsHtml + "</div>",
+          "</div>"
+        ].join("");
+      }).join("");
 
       return [
         "<div class=\"v1-results-meta-row\">",
         "<span>" + escapeHtml(trOr("resultsIpHostsLabel", resultsIpConfig.hostsLabel || "Hosty")) + ": <b id=\"resIpHostCount\">" + rows.length + "</b></span>",
         "<span>" + escapeHtml(trOr("resultsIpOpenPortsLabel", resultsIpConfig.openPortsLabel || "Otwarte porty")) + ": <b id=\"resIpPortCount\">" + totalPorts + "</b></span>",
+        "<div class=\"v1-results-controls\">",
+        filtersHtml,
+        "<button type=\"button\" class=\"v1-results-columns-btn\" data-reset-filters>" + escapeHtml(trOr("resultsIpResetFilters", "Reset filters")) + "</button>",
+        "<div class=\"v1-results-columns\" data-results-columns>",
+        "<button type=\"button\" class=\"v1-results-columns-btn\" data-columns-toggle aria-expanded=\"false\">" + escapeHtml(trOr("resultsIpColumnsButton", "Columns")) + " ▾</button>",
+        "<div class=\"v1-results-columns-menu\" data-columns-menu hidden>" + columnsMenuHtml + "</div>",
+        "</div>",
+        "</div>",
         "</div>",
         "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\">",
         "<table class=\"v1-results-table v1-ip-results-table\">",
-        "<thead><tr><th class=\"v1-ip-col-check\">✓</th><th class=\"v1-ip-col-star\">★</th><th class=\"v1-ip-col-status\">●</th><th class=\"v1-ip-col-ip\">" + escapeHtml(trOr("resultsIpHeaderIpAddressPort", headers.ipAddressPort || "IP Adress / Port")) + "</th><th class=\"v1-ip-col-expand\">+</th><th class=\"v1-ip-col-ping\">" + escapeHtml(trOr("resultsIpHeaderPing", headers.ping || "Ping")) + "</th><th class=\"v1-ip-col-host\">" + escapeHtml(trOr("resultsIpHeaderHostname", headers.hostname || "Hostname")) + "</th><th class=\"v1-ip-col-flag\">" + escapeHtml(trOr("resultsIpHeaderFlag", headers.flag || "Flag")) + "</th><th class=\"v1-ip-col-isp\">" + escapeHtml(trOr("resultsIpHeaderIsp", headers.isp || "ISP")) + "</th></tr></thead>",
+        "<thead><tr><th class=\"v1-ip-col-check\">✓</th><th class=\"v1-ip-col-star\">★</th><th class=\"v1-ip-col-status\">●</th><th class=\"v1-ip-col-ip\">" + escapeHtml(trOr("resultsIpHeaderIpAddressPort", headers.ipAddressPort || "IP Adress / Port")) + "</th><th class=\"v1-ip-col-expand\">+</th><th class=\"v1-ip-col-ping\">" + escapeHtml(trOr("resultsIpHeaderPing", headers.ping || "Ping")) + "</th><th class=\"v1-ip-col-host\" data-col=\"hostname\">" + escapeHtml(trOr("resultsIpHeaderHostname", headers.hostname || "Hostname")) + "</th><th class=\"v1-ip-col-flag\" data-col=\"flag\">" + escapeHtml(trOr("resultsIpHeaderFlag", headers.flag || "Flag")) + "</th><th class=\"v1-ip-col-isp\" data-col=\"isp\">" + escapeHtml(trOr("resultsIpHeaderIsp", headers.isp || "ISP")) + "</th><th class=\"v1-ip-col-as\" data-col=\"as\">" + escapeHtml(trOr("resultsIpHeaderAs", headers.as || "AS")) + "</th><th class=\"v1-ip-col-device\" data-col=\"device\">" + escapeHtml(trOr("resultsIpHeaderDeviceIdentification", headers.deviceIdentification || "Device Identification")) + "</th><th class=\"v1-ip-col-http\" data-col=\"http\">" + escapeHtml(trOr("resultsIpHeaderHttpPageTitle", headers.httpPageTitle || "HTTP Page Title")) + "</th><th class=\"v1-ip-col-access\" data-col=\"access\">" + escapeHtml(trOr("resultsIpHeaderAccessSnapshot", headers.accessSnapshot || "Access / Snapshot")) + "</th></tr></thead>",
         "<tbody>" + bodyHtml + "</tbody>",
         "</table>",
         "</div>"

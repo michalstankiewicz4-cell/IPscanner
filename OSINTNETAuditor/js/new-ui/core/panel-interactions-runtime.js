@@ -173,6 +173,36 @@
       if (!root) return;
 
       var RESULT_STATE_KEY = "netrecon_results_ip_result_state_v1";
+      var COLUMN_STATE_KEY = "netrecon_results_ip_columns_v1";
+      var FILTER_STATE_KEY = "netrecon_results_ip_filters_v1";
+      var DEFAULT_COLUMNS = {
+        hostname: true,
+        flag: true,
+        isp: true,
+        as: false,
+        device: false,
+        http: false,
+        access: false,
+      };
+      var DEFAULT_FILTERS = {
+        type: {
+          ip: true,
+          ports: true,
+        },
+        marks: {
+          favorite: false,
+          check: false,
+        },
+        status: {
+          active: true,
+          unknown: true,
+          dead: true,
+        },
+      };
+
+      function cloneDefaultFilters() {
+        return JSON.parse(JSON.stringify(DEFAULT_FILTERS));
+      }
 
       function readResultState() {
         try {
@@ -192,6 +222,285 @@
         } catch (_) {}
       }
 
+      function readColumnState() {
+        var merged = Object.assign({}, DEFAULT_COLUMNS);
+        try {
+          var raw = window.localStorage ? window.localStorage.getItem(COLUMN_STATE_KEY) : "";
+          if (!raw) return merged;
+          var parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return merged;
+
+          Object.keys(DEFAULT_COLUMNS).forEach(function (key) {
+            if (Object.prototype.hasOwnProperty.call(parsed, key)) {
+              merged[key] = !!parsed[key];
+            }
+          });
+          return merged;
+        } catch (_) {
+          return merged;
+        }
+      }
+
+      function writeColumnState(state) {
+        try {
+          if (!window.localStorage) return;
+          window.localStorage.setItem(COLUMN_STATE_KEY, JSON.stringify(state || {}));
+        } catch (_) {}
+      }
+
+      function readFilterState() {
+        var merged = cloneDefaultFilters();
+        try {
+          var raw = window.localStorage ? window.localStorage.getItem(FILTER_STATE_KEY) : "";
+          if (!raw) return merged;
+          var parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return merged;
+
+          Object.keys(DEFAULT_FILTERS).forEach(function (groupKey) {
+            var sourceGroup = parsed[groupKey];
+            if (!sourceGroup || typeof sourceGroup !== "object") return;
+            Object.keys(DEFAULT_FILTERS[groupKey]).forEach(function (itemKey) {
+              if (Object.prototype.hasOwnProperty.call(sourceGroup, itemKey)) {
+                merged[groupKey][itemKey] = !!sourceGroup[itemKey];
+              }
+            });
+          });
+
+          return merged;
+        } catch (_) {
+          return merged;
+        }
+      }
+
+      function writeFilterState(state) {
+        try {
+          if (!window.localStorage) return;
+          window.localStorage.setItem(FILTER_STATE_KEY, JSON.stringify(state || cloneDefaultFilters()));
+        } catch (_) {}
+      }
+
+      function applyColumnVisibility(state) {
+        Object.keys(DEFAULT_COLUMNS).forEach(function (key) {
+          var visible = !state || state[key] !== false;
+          root.querySelectorAll('[data-col="' + key + '"]').forEach(function (cell) {
+            cell.style.display = visible ? "" : "none";
+          });
+        });
+      }
+
+      function positionFloatingMenu(toggleBtn, menu) {
+        if (!toggleBtn || !menu || menu.hasAttribute("hidden")) return;
+
+        var margin = 8;
+        var gap = 4;
+        var viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1024;
+        var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 768;
+        var triggerRect = toggleBtn.getBoundingClientRect();
+
+        menu.style.position = "fixed";
+        menu.style.left = "0px";
+        menu.style.top = "0px";
+        menu.style.visibility = "hidden";
+        menu.style.maxHeight = "";
+        menu.style.overflowY = "";
+
+        var menuWidth = Math.max(220, Math.ceil(menu.offsetWidth || 0));
+        var menuHeight = Math.max(160, Math.ceil(menu.offsetHeight || 0));
+        var openUp = (triggerRect.bottom + gap + menuHeight + margin > viewportHeight)
+          && (triggerRect.top - gap - menuHeight > margin);
+
+        var top = openUp ? (triggerRect.top - menuHeight - gap) : (triggerRect.bottom + gap);
+        var left = triggerRect.right - menuWidth;
+
+        top = Math.max(margin, Math.min(top, viewportHeight - margin - menuHeight));
+        left = Math.max(margin, Math.min(left, viewportWidth - margin - menuWidth));
+
+        menu.style.left = Math.round(left) + "px";
+        menu.style.top = Math.round(top) + "px";
+        menu.style.maxHeight = Math.max(120, viewportHeight - margin - top) + "px";
+        menu.style.overflowY = "auto";
+        menu.style.visibility = "";
+      }
+
+      function positionColumnsMenu() {
+        positionFloatingMenu(root.querySelector("[data-columns-toggle]"), root.querySelector("[data-columns-menu]"));
+      }
+
+      function positionFilterMenus() {
+        root.querySelectorAll("[data-filter-toggle]").forEach(function (toggleBtn) {
+          var group = toggleBtn.getAttribute("data-filter-toggle");
+          if (!group) return;
+          var menu = root.querySelector('[data-filter-menu="' + group + '"]');
+          positionFloatingMenu(toggleBtn, menu);
+        });
+      }
+
+      function positionAllOpenMenus() {
+        positionColumnsMenu();
+        positionFilterMenus();
+      }
+
+      function updateMenusOpenClass() {
+        var anyOpen = !!root.querySelector("[data-columns-menu]:not([hidden]), [data-filter-menu]:not([hidden])");
+        root.classList.toggle("is-columns-menu-open", anyOpen);
+      }
+
+      function closeAllFilterMenus(exceptGroup) {
+        root.querySelectorAll("[data-filter-menu]").forEach(function (menu) {
+          var group = menu.getAttribute("data-filter-menu");
+          if (exceptGroup && group === exceptGroup) return;
+          menu.setAttribute("hidden", "hidden");
+          menu.style.left = "";
+          menu.style.top = "";
+          menu.style.maxHeight = "";
+          menu.style.overflowY = "";
+          menu.style.visibility = "";
+        });
+
+        root.querySelectorAll("[data-filter-toggle]").forEach(function (toggleBtn) {
+          var group = toggleBtn.getAttribute("data-filter-toggle");
+          if (exceptGroup && group === exceptGroup) return;
+          toggleBtn.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      function setFilterMenuOpen(group, open) {
+        var toggleBtn = root.querySelector('[data-filter-toggle="' + group + '"]');
+        var menu = root.querySelector('[data-filter-menu="' + group + '"]');
+        if (!toggleBtn || !menu) return;
+
+        if (open) {
+          setColumnsMenuOpen(false);
+          closeAllFilterMenus(group);
+          menu.removeAttribute("hidden");
+          toggleBtn.setAttribute("aria-expanded", "true");
+          positionFloatingMenu(toggleBtn, menu);
+        } else {
+          menu.setAttribute("hidden", "hidden");
+          toggleBtn.setAttribute("aria-expanded", "false");
+          menu.style.left = "";
+          menu.style.top = "";
+          menu.style.maxHeight = "";
+          menu.style.overflowY = "";
+          menu.style.visibility = "";
+        }
+
+        updateMenusOpenClass();
+      }
+
+      function hasActionState(resultState, key, action) {
+        if (!key || !resultState || !resultState[key]) return false;
+        return !!resultState[key][action];
+      }
+
+      function applyRowsFilter() {
+        var filterState = readFilterState();
+        var resultState = readResultState();
+        var activeMarkFilters = Object.keys(DEFAULT_FILTERS.marks).filter(function (key) {
+          return !!(filterState.marks && filterState.marks[key]);
+        });
+        var hasAnyStatusFilter = Object.keys(DEFAULT_FILTERS.status).some(function (key) {
+          return !!(filterState.status && filterState.status[key]);
+        });
+        var showIpRows = !(filterState.type && filterState.type.ip === false);
+        var showPortRows = !(filterState.type && filterState.type.ports === false);
+
+        root.querySelectorAll(".v1-ip-result-row[data-row-index]").forEach(function (resultRow) {
+          var rowId = resultRow.getAttribute("data-row-index");
+          var status = String(resultRow.getAttribute("data-status") || "unknown").toLowerCase();
+          var resultKey = String(resultRow.getAttribute("data-result-key") || "");
+          var expandBtn = rowId ? root.querySelector('[data-open-ports="' + rowId + '"]') : null;
+          var expanded = expandBtn ? expandBtn.getAttribute("aria-expanded") === "true" : false;
+          var forcePortsExpanded = showPortRows && !showIpRows;
+          var statusPass = !hasAnyStatusFilter || !!(filterState.status && filterState.status[status]);
+          var marksPass = !activeMarkFilters.length || activeMarkFilters.some(function (markKey) {
+            return hasActionState(resultState, resultKey, markKey);
+          });
+          var ipVisible = showIpRows && statusPass && marksPass;
+
+          resultRow.style.display = ipVisible ? "" : "none";
+
+          if (!rowId) return;
+          root.querySelectorAll('[data-ports-row="' + rowId + '"]').forEach(function (portsRow) {
+            var portKey = String(portsRow.getAttribute("data-port-key") || "");
+            var portMarksPass = !activeMarkFilters.length || (portKey && activeMarkFilters.some(function (markKey) {
+              return hasActionState(resultState, portKey, markKey);
+            }));
+            var portsVisible = showPortRows && statusPass && portMarksPass && (forcePortsExpanded || expanded);
+
+            portsRow.style.display = portsVisible ? "" : "none";
+            if (portsVisible) {
+              portsRow.removeAttribute("hidden");
+            } else {
+              portsRow.setAttribute("hidden", "hidden");
+            }
+          });
+        });
+      }
+
+      function setColumnsMenuOpen(open) {
+        var toggleBtn = root.querySelector("[data-columns-toggle]");
+        var menu = root.querySelector("[data-columns-menu]");
+        if (!toggleBtn || !menu) return;
+        if (open) {
+          closeAllFilterMenus();
+          menu.removeAttribute("hidden");
+          toggleBtn.setAttribute("aria-expanded", "true");
+          positionColumnsMenu();
+        } else {
+          menu.setAttribute("hidden", "hidden");
+          toggleBtn.setAttribute("aria-expanded", "false");
+          menu.style.left = "";
+          menu.style.top = "";
+          menu.style.maxHeight = "";
+          menu.style.overflowY = "";
+          menu.style.visibility = "";
+        }
+
+        updateMenusOpenClass();
+      }
+
+      function syncColumnControls() {
+        var state = readColumnState();
+        root.querySelectorAll("[data-column-key]").forEach(function (input) {
+          var key = input.getAttribute("data-column-key");
+          if (!key || !Object.prototype.hasOwnProperty.call(DEFAULT_COLUMNS, key)) return;
+          input.checked = state[key] !== false;
+        });
+        applyColumnVisibility(state);
+      }
+
+      function syncFilterControls() {
+        var state = readFilterState();
+        root.querySelectorAll("[data-filter-group][data-filter-key]").forEach(function (input) {
+          var groupKey = input.getAttribute("data-filter-group");
+          var itemKey = input.getAttribute("data-filter-key");
+          if (!groupKey || !itemKey) return;
+          if (!Object.prototype.hasOwnProperty.call(DEFAULT_FILTERS, groupKey)) return;
+          if (!Object.prototype.hasOwnProperty.call(DEFAULT_FILTERS[groupKey], itemKey)) return;
+          input.checked = !!(state[groupKey] && state[groupKey][itemKey]);
+        });
+        updateFilterButtonLabels(state);
+      }
+
+      function updateFilterButtonLabels(filterState) {
+        var state = filterState || readFilterState();
+        root.querySelectorAll("[data-filter-toggle]").forEach(function (toggleBtn) {
+          var groupKey = toggleBtn.getAttribute("data-filter-toggle");
+          if (!groupKey || !Object.prototype.hasOwnProperty.call(DEFAULT_FILTERS, groupKey)) return;
+
+          var baseLabel = toggleBtn.getAttribute("data-filter-label") || toggleBtn.textContent.replace(/\s*\(\d+\)\s*▾\s*$/, "").replace(/\s*▾\s*$/, "").trim();
+          var activeCount = 0;
+          Object.keys(DEFAULT_FILTERS[groupKey]).forEach(function (itemKey) {
+            var value = !!(state[groupKey] && state[groupKey][itemKey]);
+            var defValue = !!DEFAULT_FILTERS[groupKey][itemKey];
+            if (value !== defValue) activeCount += 1;
+          });
+
+          toggleBtn.textContent = baseLabel + (activeCount > 0 ? " (" + activeCount + ")" : "") + " ▾";
+        });
+      }
+
       function syncResultButtonsState() {
         var state = readResultState();
         root.querySelectorAll("[data-port-action][data-port-key], [data-result-action][data-result-key]").forEach(function (button) {
@@ -206,7 +515,59 @@
 
       if (root.dataset.resultStateBound !== "1") {
         root.dataset.resultStateBound = "1";
+
+        if (root.dataset.columnsMenuViewportBound !== "1") {
+          root.dataset.columnsMenuViewportBound = "1";
+          window.addEventListener("resize", function () {
+            positionAllOpenMenus();
+          });
+          window.addEventListener("scroll", function () {
+            positionAllOpenMenus();
+          }, true);
+        }
+
         root.addEventListener("click", function (event) {
+          var filterToggleBtn = event.target && typeof event.target.closest === "function"
+            ? event.target.closest("[data-filter-toggle]")
+            : null;
+          if (filterToggleBtn && root.contains(filterToggleBtn)) {
+            var filterGroup = filterToggleBtn.getAttribute("data-filter-toggle");
+            var filterExpanded = filterToggleBtn.getAttribute("aria-expanded") === "true";
+            setFilterMenuOpen(filterGroup, !filterExpanded);
+            return;
+          }
+
+          var toggleBtn = event.target && typeof event.target.closest === "function"
+            ? event.target.closest("[data-columns-toggle]")
+            : null;
+          if (toggleBtn && root.contains(toggleBtn)) {
+            var isExpanded = toggleBtn.getAttribute("aria-expanded") === "true";
+            setColumnsMenuOpen(!isExpanded);
+            return;
+          }
+
+          var resetButton = event.target && typeof event.target.closest === "function"
+            ? event.target.closest("[data-reset-filters]")
+            : null;
+          if (resetButton && root.contains(resetButton)) {
+            writeFilterState(cloneDefaultFilters());
+            syncFilterControls();
+            applyRowsFilter();
+            setColumnsMenuOpen(false);
+            closeAllFilterMenus();
+            updateMenusOpenClass();
+            return;
+          }
+
+          var menuRoot = event.target && typeof event.target.closest === "function"
+            ? event.target.closest("[data-columns-menu], [data-filter-menu]")
+            : null;
+          if (!menuRoot || !root.contains(menuRoot)) {
+            setColumnsMenuOpen(false);
+            closeAllFilterMenus();
+            updateMenusOpenClass();
+          }
+
           var button = event.target && typeof event.target.closest === "function"
             ? event.target.closest("[data-port-action][data-port-key], [data-result-action][data-result-key]")
             : null;
@@ -222,6 +583,36 @@
           state[key] = entry;
           writeResultState(state);
           syncResultButtonsState();
+          applyRowsFilter();
+        });
+
+        root.addEventListener("change", function (event) {
+          var input = event.target;
+          if (!input) return;
+
+          if (input.getAttribute("data-column-key") != null) {
+            var key = input.getAttribute("data-column-key");
+            if (!key || !Object.prototype.hasOwnProperty.call(DEFAULT_COLUMNS, key)) return;
+
+            var columnState = readColumnState();
+            columnState[key] = !!input.checked;
+            writeColumnState(columnState);
+            applyColumnVisibility(columnState);
+            return;
+          }
+
+          if (input.getAttribute("data-filter-group") != null && input.getAttribute("data-filter-key") != null) {
+            var groupKey = input.getAttribute("data-filter-group");
+            var itemKey = input.getAttribute("data-filter-key");
+            if (!groupKey || !itemKey) return;
+            if (!Object.prototype.hasOwnProperty.call(DEFAULT_FILTERS, groupKey)) return;
+            if (!Object.prototype.hasOwnProperty.call(DEFAULT_FILTERS[groupKey], itemKey)) return;
+
+            var filterState = readFilterState();
+            filterState[groupKey][itemKey] = !!input.checked;
+            writeFilterState(filterState);
+            applyRowsFilter();
+          }
         });
       }
 
@@ -240,17 +631,14 @@
           button.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
           button.textContent = nextExpanded ? "−" : "+";
 
-          portsRows.forEach(function (portsRow) {
-            if (nextExpanded) {
-              portsRow.removeAttribute("hidden");
-            } else {
-              portsRow.setAttribute("hidden", "hidden");
-            }
-          });
+          applyRowsFilter();
         });
       });
 
       syncResultButtonsState();
+      syncColumnControls();
+      syncFilterControls();
+      applyRowsFilter();
     }
 
     function wirePresetsTool(rootEl) {

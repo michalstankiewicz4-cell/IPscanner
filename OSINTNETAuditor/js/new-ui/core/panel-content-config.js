@@ -30,8 +30,31 @@
       hostname: "83.9.186.53.ipv4.supermedia.pl",
       flag: "PL",
       isp: "Orange Polska Spolka Akcyjna",
+      as: "AS5617",
+      deviceIdentification: "Router / CPE",
       statusClass: "is-up",
-      ports: [":34567", ":80", ":443", ":631"]
+      ports: [
+        {
+          port: ":34567",
+          httpPageTitle: "IP Camera Stream",
+          accessSnapshot: "/admin/video/snapshot/files/status/stream/mjpeg:34567"
+        },
+        {
+          port: ":80",
+          httpPageTitle: "Web Admin",
+          accessSnapshot: "/admin/video/snapshot/files/status/stream/mjpeg:80"
+        },
+        {
+          port: ":443",
+          httpPageTitle: "Secure Web Admin",
+          accessSnapshot: "/admin/video/snapshot/files/status/stream/mjpeg:443"
+        },
+        {
+          port: ":631",
+          httpPageTitle: "Print / IPP",
+          accessSnapshot: "/admin/video/snapshot/files/status/stream/mjpeg:631"
+        }
+      ]
     },
     {
       ip: "83.9.186.185",
@@ -39,8 +62,21 @@
       hostname: "83.9.186.185.ipv4.supermedia.pl",
       flag: "PL",
       isp: "Orange Polska Spolka Akcyjna",
+      as: "AS5617",
+      deviceIdentification: "Gateway",
       statusClass: "is-up",
-      ports: [":80", ":443"]
+      ports: [
+        {
+          port: ":80",
+          httpPageTitle: "Home Panel",
+          accessSnapshot: "/admin/video/snapshot/files/status/stream/mjpeg:80"
+        },
+        {
+          port: ":443",
+          httpPageTitle: "Secure Home Panel",
+          accessSnapshot: "/admin/video/snapshot/files/status/stream/mjpeg:443"
+        }
+      ]
     }
   ];
 
