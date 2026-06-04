@@ -11,6 +11,18 @@
     var onSwitchTool = deps.onSwitchTool;
     var onSwitchSidebarView = deps.onSwitchSidebarView;
     var onToggleClippy = deps.onToggleClippy;
+    var exitDialogState = {
+      root: null,
+      title: null,
+      message: null,
+      saveBtn: null,
+      discardBtn: null,
+      cancelBtn: null,
+      resolver: null,
+      keyHandler: null,
+      backdropHandler: null,
+      lastFocused: null,
+    };
 
     function actionDefinition(action) {
       return (uiDefinitions.menuActions && uiDefinitions.menuActions[action]) || null;
@@ -43,6 +55,132 @@
       if (preferredView) detail.view = preferredView;
       document.dispatchEvent(new CustomEvent("newui:sidebar-tab-intent-open", { detail: detail }));
       return true;
+    }
+
+    function ensureExitDialog() {
+      if (exitDialogState.root && exitDialogState.root.isConnected) return exitDialogState;
+
+      var root = document.createElement("div");
+      root.className = "v1-exit-modal";
+      root.setAttribute("hidden", "hidden");
+      root.setAttribute("role", "dialog");
+      root.setAttribute("aria-modal", "true");
+      root.setAttribute("aria-labelledby", "v1ExitModalTitle");
+      root.setAttribute("aria-describedby", "v1ExitModalMessage");
+
+      var panel = document.createElement("div");
+      panel.className = "v1-exit-panel";
+
+      var head = document.createElement("div");
+      head.className = "v1-exit-head";
+
+      var title = document.createElement("h3");
+      title.id = "v1ExitModalTitle";
+      head.appendChild(title);
+
+      var message = document.createElement("p");
+      message.id = "v1ExitModalMessage";
+      message.className = "v1-exit-message";
+
+      var actions = document.createElement("div");
+      actions.className = "v1-exit-actions";
+
+      var saveBtn = document.createElement("button");
+      saveBtn.type = "button";
+      saveBtn.className = "v1-exit-btn v1-exit-btn--primary";
+      saveBtn.dataset.exitChoice = "save";
+
+      var discardBtn = document.createElement("button");
+      discardBtn.type = "button";
+      discardBtn.className = "v1-exit-btn";
+      discardBtn.dataset.exitChoice = "discard";
+
+      var cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "v1-exit-btn";
+      cancelBtn.dataset.exitChoice = "cancel";
+
+      actions.appendChild(saveBtn);
+      actions.appendChild(discardBtn);
+      actions.appendChild(cancelBtn);
+
+      panel.appendChild(head);
+      panel.appendChild(message);
+      panel.appendChild(actions);
+      root.appendChild(panel);
+      document.body.appendChild(root);
+
+      function resolveChoice(choice) {
+        if (typeof exitDialogState.resolver === "function") {
+          var done = exitDialogState.resolver;
+          exitDialogState.resolver = null;
+          done(choice || "cancel");
+        }
+      }
+
+      root.addEventListener("click", function (event) {
+        var target = event.target;
+        var choice = target && target.dataset ? target.dataset.exitChoice : "";
+        if (!choice) return;
+        root.setAttribute("hidden", "hidden");
+        if (exitDialogState.lastFocused && typeof exitDialogState.lastFocused.focus === "function") {
+          try { exitDialogState.lastFocused.focus(); } catch (_) {}
+        }
+        resolveChoice(choice);
+      });
+
+      exitDialogState.keyHandler = function (event) {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        root.setAttribute("hidden", "hidden");
+        if (exitDialogState.lastFocused && typeof exitDialogState.lastFocused.focus === "function") {
+          try { exitDialogState.lastFocused.focus(); } catch (_) {}
+        }
+        resolveChoice("cancel");
+      };
+
+      exitDialogState.backdropHandler = function (event) {
+        if (event.target !== root) return;
+        root.setAttribute("hidden", "hidden");
+        if (exitDialogState.lastFocused && typeof exitDialogState.lastFocused.focus === "function") {
+          try { exitDialogState.lastFocused.focus(); } catch (_) {}
+        }
+        resolveChoice("cancel");
+      };
+
+      exitDialogState.root = root;
+      exitDialogState.title = title;
+      exitDialogState.message = message;
+      exitDialogState.saveBtn = saveBtn;
+      exitDialogState.discardBtn = discardBtn;
+      exitDialogState.cancelBtn = cancelBtn;
+      return exitDialogState;
+    }
+
+    function openExitConfirmDialog() {
+      var modal = ensureExitDialog();
+      modal.title.textContent = tr("exitDialogTitle");
+      modal.message.textContent = tr("exitDialogMessage");
+      modal.saveBtn.textContent = tr("exitPromptSaveAndExit");
+      modal.discardBtn.textContent = tr("exitPromptExitWithoutSave");
+      modal.cancelBtn.textContent = tr("exitPromptCancel");
+      modal.lastFocused = document.activeElement;
+
+      modal.root.removeAttribute("hidden");
+      document.addEventListener("keydown", modal.keyHandler, true);
+      modal.root.addEventListener("mousedown", modal.backdropHandler);
+      setTimeout(function () {
+        try { modal.saveBtn.focus(); } catch (_) {}
+      }, 0);
+
+      return new Promise(function (resolve) {
+        modal.resolver = function (choice) {
+          modal.root.setAttribute("hidden", "hidden");
+          document.removeEventListener("keydown", modal.keyHandler, true);
+          modal.root.removeEventListener("mousedown", modal.backdropHandler);
+          resolve(choice || "cancel");
+        };
+      });
     }
 
     function runMenuAction(action) {
@@ -85,6 +223,15 @@
           return false;
         }
         return false;
+      }
+
+      function closeAppWindow(labelText) {
+        runNativeWindowAction("close").then(function (handled) {
+          if (!handled) {
+            try { window.close(); } catch (_) {}
+          }
+          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + labelText);
+        });
       }
 
 
@@ -154,11 +301,24 @@
       }
 
       if (behavior === "window-close") {
-        runNativeWindowAction("close").then(function (handled) {
-          if (!handled) {
-            try { window.close(); } catch (_) {}
+        closeAppWindow(label);
+        return;
+      }
+
+      if (behavior === "app-exit") {
+        openExitConfirmDialog().then(function (choice) {
+          if (choice === "save") {
+            runMenuAction("save-session");
+            closeAppWindow(label);
+            return;
           }
-          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
+
+          if (choice === "discard") {
+            closeAppWindow(label);
+            return;
+          }
+
+          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("exitPromptCancelled"));
         });
         return;
       }

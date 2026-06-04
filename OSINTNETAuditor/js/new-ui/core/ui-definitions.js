@@ -47,7 +47,7 @@
       label: "Exit (mock)",
       purposeKey: "tipActionExit",
       purpose: "Wyjscie z aplikacji.",
-      behavior: "status",
+      behavior: "app-exit",
     },
     countries: {
       label: "Country IP Library",

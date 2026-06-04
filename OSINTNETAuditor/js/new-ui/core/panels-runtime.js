@@ -1953,6 +1953,12 @@
 
     function switchTool(tool) {
       ensureAllTabControls();
+      var detachedCard = tool ? getDetachedCard(tool) : null;
+      if (detachedCard) {
+        bringDetachedCardToFront(detachedCard);
+        if (setStatusLine) setStatusLine(tr("toolRoute") + ": " + tool);
+        return;
+      }
       if (tool === "scan-runner" && !document.querySelector('.v1-tab[data-tool="scan-runner"]')) {
         activeTool = null;
         if (store && store.setState) store.setState({ activeTool: null });

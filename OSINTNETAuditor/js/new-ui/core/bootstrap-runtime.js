@@ -128,6 +128,7 @@
         const ipLibraryLastUpdateLabel = document.getElementById("v1IpLibraryLastUpdateLabel");
         const resultNavIp = document.getElementById("v1ResultNavIp");
         const resultNavIpLibrary = document.getElementById("v1ResultNavIpLibrary");
+        const resultNavPresets = document.getElementById("v1ResultNavPresets");
         const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
         const tabTitleIpLibrary = document.getElementById("v1TabTitleIpLibrary");
         const tabTitlePresets = document.getElementById("v1TabTitlePresets");
@@ -216,6 +217,7 @@
         });
         if (resultNavIp) resultNavIp.textContent = "🖥 " + tr("resultsIp");
         if (resultNavIpLibrary) resultNavIpLibrary.textContent = "🗂 " + tr("ipLibraryTabTitle");
+        if (resultNavPresets) resultNavPresets.textContent = "⭐ " + tr("tabPresetsTitle");
         if (tabResultsIp) tabResultsIp.textContent = tr("tabResultsIp");
         if (tabTitleIpLibrary) tabTitleIpLibrary.textContent = tr("ipLibraryTabTitle");
         if (tabTitlePresets) tabTitlePresets.textContent = tr("tabPresetsTitle");
