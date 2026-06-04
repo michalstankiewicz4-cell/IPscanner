@@ -9,6 +9,17 @@
 
     var sidebarView = "scanner";
     var sidebarFallbackOrder = ["scan-runner", "results-ip", "ip-library"];
+    var SCAN_DEFAULTS_KEY = "netrecon_scan_defaults_v1";
+    var SCAN_RESULTS_KEY = "netrecon_scan_results_v1";
+    var SCAN_PROGRESS_KEY = "netrecon_scan_progress_v1";
+    var hostFoundUnlisten = null;
+    var scanProgressUnlisten = null;
+    var scanInProgress = false;
+    var MAX_ENRICH_CONCURRENCY = 8;
+    var enrichQueue = [];
+    var enrichInFlight = 0;
+    var enrichPendingByIp = Object.create(null);
+    var resultsRefreshTimer = 0;
 
     function sidebarViewForTool(tool, preferredView) {
       if (preferredView) return preferredView;
@@ -24,12 +35,15 @@
       return null;
     }
 
-    function emitBusyDelta(delta) {
+    function emitBusyDelta(delta, processKey, processLabel, processLabelKey) {
       try {
         document.dispatchEvent(new CustomEvent("newui:busy-state", {
           detail: {
             source: "navigation-runtime",
             delta: delta,
+            processKey: processKey || "",
+            processLabel: processLabel || "",
+            processLabelKey: processLabelKey || "",
           },
         }));
       } catch (_) {
@@ -37,8 +51,8 @@
       }
     }
 
-    function runPowerShell(command) {
-      emitBusyDelta(1);
+    function runPowerShell(command, processKey, processLabel, processLabelKey) {
+      emitBusyDelta(1, processKey, processLabel, processLabelKey);
 
       var promise;
       try {
@@ -57,7 +71,7 @@
       }
 
       return Promise.resolve(promise).finally(function () {
-        emitBusyDelta(-1);
+        emitBusyDelta(-1, processKey, processLabel, processLabelKey);
       });
     }
 
@@ -204,6 +218,461 @@
       return typeof getScannerSidebarRuntime === "function" ? getScannerSidebarRuntime() : null;
     }
 
+    function readScanDefaults() {
+      var defaults = { timeoutMs: 1000, concurrency: 128 };
+      try {
+        var raw = window.localStorage ? window.localStorage.getItem(SCAN_DEFAULTS_KEY) : "";
+        if (!raw) return defaults;
+        var parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return defaults;
+
+        var timeout = Number(parsed.timeoutMs);
+        var concurrency = Number(parsed.concurrency);
+        if (!Number.isFinite(timeout)) timeout = defaults.timeoutMs;
+        if (!Number.isFinite(concurrency)) concurrency = defaults.concurrency;
+
+        defaults.timeoutMs = Math.max(200, Math.min(5000, Math.round(timeout)));
+        defaults.concurrency = Math.max(1, Math.min(256, Math.round(concurrency)));
+        return defaults;
+      } catch (_) {
+        return defaults;
+      }
+    }
+
+    function parsePortsCsv(csv) {
+      var unique = Object.create(null);
+      var values = String(csv || "")
+        .split(",")
+        .map(function (token) { return Number(String(token || "").trim()); })
+        .filter(function (num) {
+          if (!Number.isFinite(num)) return false;
+          var asInt = Math.round(num);
+          if (asInt < 1 || asInt > 65535) return false;
+          if (unique[asInt]) return false;
+          unique[asInt] = true;
+          return true;
+        })
+        .map(function (num) { return Math.round(num); });
+
+      return values;
+    }
+
+    function readScanResults() {
+      try {
+        var raw = window.localStorage ? window.localStorage.getItem(SCAN_RESULTS_KEY) : "";
+        if (!raw) return [];
+        var parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function writeScanResults(rows) {
+      try {
+        if (!window.localStorage) return;
+        window.localStorage.setItem(SCAN_RESULTS_KEY, JSON.stringify(Array.isArray(rows) ? rows : []));
+      } catch (_) {}
+    }
+
+    function scheduleResultsRefresh() {
+      if (resultsRefreshTimer) return;
+      resultsRefreshTimer = window.setTimeout(function () {
+        resultsRefreshTimer = 0;
+        refreshResultsViewIfVisible();
+      }, 140);
+    }
+
+    function emitScanProgress(detail) {
+      writeScanProgressState(detail || {});
+      updateResultsProgressText(detail || {});
+      try {
+        document.dispatchEvent(new CustomEvent("newui:scan-progress", {
+          detail: detail || {},
+        }));
+      } catch (_) {}
+    }
+
+    function writeScanProgressState(detail) {
+      try {
+        if (!window.localStorage) return;
+        window.localStorage.setItem(SCAN_PROGRESS_KEY, JSON.stringify(detail || {}));
+      } catch (_) {}
+    }
+
+    function formatProgressText(detail) {
+      var processed = Number(detail && detail.processed);
+      var total = Number(detail && detail.total);
+      var found = Number(detail && detail.found);
+      if (!Number.isFinite(processed)) processed = 0;
+      if (!Number.isFinite(total)) total = 0;
+      if (!Number.isFinite(found)) found = 0;
+
+      var percent = total > 0 ? Math.round((processed / total) * 100) : 0;
+      if (percent < 0) percent = 0;
+      if (percent > 100) percent = 100;
+
+      return "Progress: " + processed + "/" + total + " (" + percent + "%) | found: " + found;
+    }
+
+    function updateResultsProgressText(detail) {
+      var el = document.getElementById("resIpScanProgressTop");
+      if (!el) return;
+      el.textContent = formatProgressText(detail || {});
+    }
+
+    function countryCodeToFlag(code) {
+      var normalized = String(code || "").trim().toUpperCase();
+      if (!/^[A-Z]{2}$/.test(normalized)) return "-";
+      var first = 127397 + normalized.charCodeAt(0);
+      var second = 127397 + normalized.charCodeAt(1);
+      return String.fromCodePoint(first, second);
+    }
+
+    function invokeCommand(command, payload) {
+      var invoke = getInvoke();
+      if (!invoke) return Promise.reject(new Error("tauri invoke unavailable"));
+
+      try {
+        if (platform && typeof platform.invoke === "function") {
+          return Promise.resolve(platform.invoke(command, payload || {}));
+        }
+        return Promise.resolve(invoke(command, payload || {}));
+      } catch (err) {
+        return Promise.reject(err);
+      }
+    }
+
+    function mutateScanRow(ip, mutator) {
+      var keyIp = String(ip || "").trim();
+      if (!keyIp) return;
+
+      var rows = readScanResults();
+      var idx = rows.findIndex(function (row) {
+        return row && String(row.ip || "").trim() === keyIp;
+      });
+      if (idx < 0) return;
+
+      var current = rows[idx] && typeof rows[idx] === "object" ? rows[idx] : {};
+      var next = mutator(Object.assign({}, current));
+      if (!next || typeof next !== "object") return;
+      rows[idx] = next;
+      writeScanResults(rows);
+      scheduleResultsRefresh();
+    }
+
+    function resetEnrichmentState() {
+      enrichQueue = [];
+      enrichInFlight = 0;
+      enrichPendingByIp = Object.create(null);
+    }
+
+    function performHostEnrichment(ip) {
+      var keyIp = String(ip || "").trim();
+      if (!keyIp) return Promise.resolve();
+
+      return Promise.allSettled([
+        invokeCommand("hostname_lookup", { ip: keyIp }),
+        invokeCommand("geo_lookup", { ip: keyIp }),
+      ]).then(function (results) {
+        var hostnameResult = results[0] || {};
+        var geoResult = results[1] || {};
+        var hostname = hostnameResult.status === "fulfilled" ? String(hostnameResult.value || "").trim() : "";
+        var geo = geoResult.status === "fulfilled" && geoResult.value && typeof geoResult.value === "object"
+          ? geoResult.value
+          : null;
+
+        mutateScanRow(keyIp, function (row) {
+          var normalized = Object.assign({}, row);
+          normalized.hostname = hostname || normalized.hostname || "-";
+
+          if (geo) {
+            var countryCode = String(geo.country_code || geo.countryCode || "").trim();
+            var isp = String(geo.isp || "").trim();
+            var asInfo = String(geo.as_info || geo.as || "").trim();
+            var deviceHints = [];
+            if (geo.proxy === true) deviceHints.push("Proxy");
+            if (geo.hosting === true) deviceHints.push("Hosting");
+
+            if (countryCode) normalized.flag = countryCodeToFlag(countryCode);
+            if (isp) normalized.isp = isp;
+            if (asInfo) normalized.as = asInfo;
+            if (deviceHints.length) normalized.deviceIdentification = deviceHints.join(" / ");
+          }
+
+          return normalized;
+        });
+      }).catch(function () {
+        // ignore enrichment failures for individual hosts
+      });
+    }
+
+    function drainEnrichmentQueue() {
+      while (enrichInFlight < MAX_ENRICH_CONCURRENCY && enrichQueue.length) {
+        var ip = enrichQueue.shift();
+        if (!ip) continue;
+
+        enrichInFlight += 1;
+        performHostEnrichment(ip).finally(function () {
+          enrichInFlight = Math.max(0, enrichInFlight - 1);
+          drainEnrichmentQueue();
+        });
+      }
+    }
+
+    function queueHostEnrichment(ip) {
+      var keyIp = String(ip || "").trim();
+      if (!keyIp) return;
+      if (enrichPendingByIp[keyIp]) return;
+
+      enrichPendingByIp[keyIp] = true;
+      enrichQueue.push(keyIp);
+      drainEnrichmentQueue();
+    }
+
+    function clearScanResults() {
+      resetEnrichmentState();
+      writeScanResults([]);
+    }
+
+    function upsertHostResult(payload) {
+      var ip = String(payload && payload.ip || "").trim();
+      if (!ip) return;
+
+      var openPorts = Array.isArray(payload && payload.open_ports)
+        ? payload.open_ports.filter(function (port) {
+            var value = Number(port);
+            return Number.isFinite(value) && value >= 1 && value <= 65535;
+          }).map(function (port) { return Math.round(Number(port)); })
+        : [];
+
+      var pingMs = Number(payload && payload.ping_ms);
+      var pingLabel = Number.isFinite(pingMs) && pingMs >= 0 ? (String(Math.round(pingMs)) + " ms") : "-";
+
+      var rows = readScanResults();
+      var existing = rows.find(function (row) {
+        return row && String(row.ip || "").trim() === ip;
+      }) || {};
+      var nextRow = {
+        ip: ip,
+        ping: pingLabel,
+        hostname: String(existing.hostname || "-").trim() || "-",
+        flag: String(existing.flag || "-").trim() || "-",
+        isp: String(existing.isp || "-").trim() || "-",
+        as: String(existing.as || "").trim(),
+        deviceIdentification: String(existing.deviceIdentification || "").trim(),
+        status: "active",
+        statusClass: "is-up",
+        ports: openPorts,
+      };
+
+      var idx = rows.findIndex(function (row) {
+        return row && String(row.ip || "").trim() === ip;
+      });
+
+      if (idx >= 0) {
+        rows[idx] = nextRow;
+      } else {
+        rows.push(nextRow);
+      }
+
+      rows.sort(function (a, b) {
+        return String(a.ip || "").localeCompare(String(b.ip || ""), undefined, { numeric: true, sensitivity: "base" });
+      });
+
+      writeScanResults(rows);
+      scheduleResultsRefresh();
+      queueHostEnrichment(ip);
+    }
+
+    function getEventListen() {
+      var tauri = window.__TAURI__ || {};
+      if (tauri.event && typeof tauri.event.listen === "function") return tauri.event.listen;
+      if (tauri.core && typeof tauri.core.listen === "function") return tauri.core.listen;
+      if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.event && typeof window.__TAURI_INTERNALS__.event.listen === "function") {
+        return window.__TAURI_INTERNALS__.event.listen;
+      }
+      return null;
+    }
+
+    function detachHostFoundListener() {
+      var off = hostFoundUnlisten;
+      hostFoundUnlisten = null;
+      if (typeof off === "function") {
+        try {
+          off();
+        } catch (_) {}
+      }
+    }
+
+    function detachScanProgressListener() {
+      var off = scanProgressUnlisten;
+      scanProgressUnlisten = null;
+      if (typeof off === "function") {
+        try {
+          off();
+        } catch (_) {}
+      }
+    }
+
+    function ipv4ToU32(ip) {
+      var parts = String(ip || "").trim().split(".");
+      if (parts.length !== 4) return null;
+      var nums = parts.map(function (part) {
+        if (!/^\d{1,3}$/.test(part)) return NaN;
+        return Number(part);
+      });
+      if (nums.some(function (value) { return !Number.isFinite(value) || value < 0 || value > 255; })) {
+        return null;
+      }
+      return (((nums[0] << 24) >>> 0) + (nums[1] << 16) + (nums[2] << 8) + nums[3]) >>> 0;
+    }
+
+    function estimateRangeTotal(fromIp, toIp) {
+      var start = ipv4ToU32(fromIp);
+      var end = ipv4ToU32(toIp);
+      if (start == null || end == null || end < start) return 0;
+      return (end - start + 1) >>> 0;
+    }
+
+    function setScanButtonsState(isBusy) {
+      var startBtn = document.querySelector('[data-scanner-action="start"]');
+      var stopBtn = document.querySelector('[data-scanner-action="stop"]');
+      if (startBtn) startBtn.disabled = !!isBusy;
+      if (stopBtn) stopBtn.disabled = !isBusy;
+    }
+
+    function refreshResultsViewIfVisible() {
+      var activeTab = document.querySelector('.v1-tab.active[data-tool]');
+      var activeTool = activeTab ? String(activeTab.getAttribute("data-tool") || "").trim() : "";
+      if (!activeTool) return;
+
+      if (switchTool && activeTool === "results-ip") {
+        switchTool("results-ip");
+      }
+    }
+
+    function startScanWithCurrentSettings() {
+      var invoke = getInvoke();
+      if (!invoke) {
+        if (setStatusLine) setStatusLine(tr("statusDesktopOnlyShort"));
+        return;
+      }
+
+      var runtime = scannerRuntime();
+      var range = runtime && runtime.addCurrentRangeFromInputs
+        ? runtime.addCurrentRangeFromInputs()
+        : {
+            from: (document.getElementById("v1ScanFrom") || {}).value || "0.0.0.0",
+            to: (document.getElementById("v1ScanTo") || {}).value || "0.0.0.0",
+          };
+      var selectedPreset = runtime && runtime.getSelectedPreset
+        ? runtime.getSelectedPreset()
+        : null;
+      var selectedPorts = selectedPreset ? String(selectedPreset.ports || "") : "";
+      var selectedPresetLabel = selectedPreset ? String(selectedPreset.name || selectedPreset.id || "").trim() : "";
+      var ports = parsePortsCsv(selectedPorts);
+      var defaults = readScanDefaults();
+      var estimatedTotal = estimateRangeTotal(range.from, range.to);
+
+      if (!ports.length) {
+        if (setStatusLine) setStatusLine(tr("statusExtractorNoInput"));
+        return;
+      }
+
+      var eventListen = getEventListen();
+      detachHostFoundListener();
+      detachScanProgressListener();
+      if (eventListen) {
+        Promise.resolve(eventListen("scan-progress", function (evt) {
+          var payload = evt && evt.payload ? evt.payload : evt;
+          var processed = Number(payload && payload.processed);
+          var total = Number(payload && payload.total);
+          var found = Number(payload && payload.found);
+          var done = !!(payload && payload.done);
+          var stopped = !!(payload && payload.stopped);
+
+          emitScanProgress({
+            state: done ? (stopped ? "cancelled" : "done") : "update",
+            processed: Number.isFinite(processed) ? Math.max(0, Math.round(processed)) : 0,
+            total: Number.isFinite(total) ? Math.max(0, Math.round(total)) : 0,
+            found: Number.isFinite(found) ? Math.max(0, Math.round(found)) : 0,
+          });
+        })).then(function (off) {
+          if (typeof off === "function") {
+            scanProgressUnlisten = off;
+          }
+        }).catch(function () {});
+
+        Promise.resolve(eventListen("host-found", function (evt) {
+          var payload = evt && evt.payload ? evt.payload : evt;
+          upsertHostResult(payload);
+        })).then(function (off) {
+          if (typeof off === "function") {
+            hostFoundUnlisten = off;
+          }
+        }).catch(function () {});
+      }
+
+      emitScanProgress({
+        state: "start",
+        processed: 0,
+        total: estimatedTotal,
+        found: 0,
+      });
+
+      clearScanResults();
+
+      scanInProgress = true;
+      emitBusyDelta(1, "scan-range", "Scan IP range", "statusProcScanRange");
+      setScanButtonsState(true);
+
+      if (setStatusLine) {
+        var status = tr("statusScanStart") + " " + range.from + " - " + range.to;
+        status += " | timeout=" + defaults.timeoutMs + "ms";
+        status += " | c=" + defaults.concurrency;
+        if (selectedPresetLabel) {
+          status += " | " + tr("scannerPortPresets") + ": " + selectedPresetLabel + " (" + ports.length + ")";
+        }
+        setStatusLine(status);
+      }
+
+      var promise;
+      try {
+        promise = invokeCommand("scan_range", {
+          fromIp: String(range.from || "").trim(),
+          toIp: String(range.to || "").trim(),
+          ports: ports,
+          concurrency: defaults.concurrency,
+          timeoutMs: defaults.timeoutMs,
+        });
+      } catch (err) {
+        promise = Promise.reject(err);
+      }
+
+      Promise.resolve(promise).then(function (found) {
+        var totalFound = Number(found);
+        if (!Number.isFinite(totalFound)) totalFound = readScanResults().length;
+        if (setStatusLine) setStatusLine(tr("statusScanStop") + " | hosts=" + String(Math.max(0, Math.round(totalFound))));
+      }).catch(function (err) {
+        var msg = err && err.message ? err.message : String(err || "scan error");
+        emitScanProgress({
+          state: "error",
+        });
+        if (setStatusLine) setStatusLine(tr("statusCommandFailed") + ": " + msg);
+      }).finally(function () {
+        scanInProgress = false;
+        emitBusyDelta(-1, "scan-range", "Scan IP range", "statusProcScanRange");
+        setScanButtonsState(false);
+        detachHostFoundListener();
+        detachScanProgressListener();
+        emitScanProgress({
+          state: "done",
+        });
+        refreshResultsViewIfVisible();
+      });
+    }
+
     function setSidebarTabOpen(tool, isOpen) {
       var wrap = document.querySelector('.v1-sidebar-tool-tab-wrap[data-sidebar-tab="' + tool + '"]');
       if (!wrap) return;
@@ -311,32 +780,25 @@
           if (!action) return;
 
           if (action === "start") {
-            var runtime = scannerRuntime();
-            var range = runtime && runtime.addCurrentRangeFromInputs
-              ? runtime.addCurrentRangeFromInputs()
-              : {
-                  from: (document.getElementById("v1ScanFrom") || {}).value || "0.0.0.0",
-                  to: (document.getElementById("v1ScanTo") || {}).value || "0.0.0.0",
-                };
-            var selectedPreset = runtime && runtime.getSelectedPreset
-              ? runtime.getSelectedPreset()
-              : null;
-            var selectedPorts = selectedPreset ? String(selectedPreset.ports || "") : "";
-            var selectedPresetLabel = selectedPreset ? String(selectedPreset.name || selectedPreset.id || "").trim() : "";
-            var portsCount = selectedPorts
-              ? selectedPorts.split(",").map(function (token) { return token.trim(); }).filter(Boolean).length
-              : 0;
-            if (setStatusLine) {
-              var status = tr("statusScanStart") + " " + range.from + " - " + range.to;
-              if (selectedPresetLabel) {
-                status += " | " + tr("scannerPortPresets") + ": " + selectedPresetLabel;
-                status += " (" + portsCount + ")";
-              }
-              setStatusLine(status);
-            }
+            startScanWithCurrentSettings();
+            return;
           }
-          if (action === "stop" && setStatusLine) setStatusLine(tr("statusScanStop"));
-          if (action === "clear" && setStatusLine) setStatusLine(tr("statusScanClear"));
+          if (action === "stop") {
+            if (scanInProgress) {
+              try {
+                invokeCommand("stop_scan", {}).catch(function () {});
+              } catch (_) {}
+            }
+            if (setStatusLine) setStatusLine(tr("statusScanStop"));
+            return;
+          }
+          if (action === "clear") {
+            clearScanResults();
+            emitScanProgress({ state: "reset", processed: 0, total: 0, found: 0 });
+            refreshResultsViewIfVisible();
+            if (setStatusLine) setStatusLine(tr("statusScanClear"));
+            return;
+          }
           if (action === "scan-speed") {
             if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("tabScanDefaultsTitle"));
             if (switchTool) switchTool("scan-defaults");
@@ -366,7 +828,7 @@
             }
 
             appendPsConsole("[" + nowStamp() + "] PS> " + psCmd);
-            runPowerShell(psCmd).then(function (res) {
+            runPowerShell(psCmd, "detect-external-ip", "Detect external IP", "statusProcDetectExternalIp").then(function (res) {
               var stdout = (res && res.stdout) ? String(res.stdout).trim() : "";
               var stderr = (res && res.stderr) ? String(res.stderr).trim() : "";
               var exitCode = (res && typeof res.exit_code === "number") ? res.exit_code : -1;
@@ -418,7 +880,7 @@
             }
 
             appendPsConsole("[" + nowStamp() + "] PS> " + psLocalCmd);
-            runPowerShell(psLocalCmd).then(function (res) {
+            runPowerShell(psLocalCmd, "detect-local-ip", "Detect local IP", "statusProcDetectLocalIp").then(function (res) {
               var stdout = (res && res.stdout) ? String(res.stdout).trim() : "";
               var stderr = (res && res.stderr) ? String(res.stderr).trim() : "";
               var exitCode = (res && typeof res.exit_code === "number") ? res.exit_code : -1;
@@ -470,7 +932,7 @@
             }
 
             appendPsConsole("[" + nowStamp() + "] PS> " + psSubnetCmd);
-            runPowerShell(psSubnetCmd).then(function (res) {
+            runPowerShell(psSubnetCmd, "detect-subnets", "Detect subnets", "statusProcDetectSubnets").then(function (res) {
               var stdout = (res && res.stdout) ? String(res.stdout).trim() : "";
               var stderr = (res && res.stderr) ? String(res.stderr).trim() : "";
               var exitCode = (res && typeof res.exit_code === "number") ? res.exit_code : -1;
@@ -807,6 +1269,7 @@
     function init() {
       setLeftActiveTab("");
       syncLeftTabActivationInvariant();
+      setScanButtonsState(false);
       bindScannerActions();
       bindResultTabs();
       bindActivityButtons();

@@ -372,32 +372,123 @@
         "<h4 style=\"margin:0 0 4px;\">" + escapeHtml(tr("defaultsPanelTitle")) + "</h4>",
         "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("defaultsPanelNote")) + "</div>",
         "</div>",
-        "<div class=\"v1-import-manager-grid\">",
+        "<div class=\"v1-import-manager-grid\" data-scan-defaults-form>",
         "<label for=\"v1DefaultsTimeout\">" + escapeHtml(tr("defaultsTimeoutLabel")) + "</label>",
-        "<input id=\"v1DefaultsTimeout\" type=\"number\" min=\"100\" max=\"10000\" step=\"100\" value=\"1200\" />",
-        "<label for=\"v1DefaultsRetries\">" + escapeHtml(tr("defaultsRetriesLabel")) + "</label>",
-        "<input id=\"v1DefaultsRetries\" type=\"number\" min=\"0\" max=\"10\" step=\"1\" value=\"2\" />",
+        "<input id=\"v1DefaultsTimeout\" type=\"number\" min=\"200\" max=\"5000\" step=\"50\" value=\"1000\" />",
         "<label for=\"v1DefaultsConcurrency\">" + escapeHtml(tr("defaultsConcurrencyLabel")) + "</label>",
-        "<input id=\"v1DefaultsConcurrency\" type=\"number\" min=\"1\" max=\"4096\" step=\"1\" value=\"256\" />",
-        "<label for=\"v1DefaultsPortProfile\">" + escapeHtml(tr("defaultsPortProfileLabel")) + "</label>",
-        "<select id=\"v1DefaultsPortProfile\">",
-        "<option value=\"common\">" + escapeHtml(tr("scannerPresetCommon")) + "</option>",
-        "<option value=\"top20\">" + escapeHtml(tr("scannerPresetTop20")) + "</option>",
-        "<option value=\"web\">" + escapeHtml(tr("scannerPresetWeb")) + "</option>",
-        "<option value=\"smb\">" + escapeHtml(tr("scannerPresetSmb")) + "</option>",
-        "<option value=\"db\">" + escapeHtml(tr("scannerPresetDb")) + "</option>",
-        "</select>",
+        "<input id=\"v1DefaultsConcurrency\" type=\"number\" min=\"1\" max=\"256\" step=\"1\" value=\"128\" />",
         "</div>",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("defaultsPresetsManagedInPresets")) + "</div>",
         "<div class=\"v1-import-manager-actions\">",
-        "<button type=\"button\">" + escapeHtml(tr("defaultsSaveBtn")) + "</button>",
-        "<button type=\"button\">" + escapeHtml(tr("defaultsRestoreBtn")) + "</button>",
+        "<button type=\"button\" data-defaults-action=\"save\">" + escapeHtml(tr("defaultsSaveBtn")) + "</button>",
+        "<button type=\"button\" data-defaults-action=\"restore\">" + escapeHtml(tr("defaultsRestoreBtn")) + "</button>",
         "</div>",
         "</div>"
       ].join("");
     }
 
     function renderResultsIp() {
-      var rows = Array.isArray(resultsIpConfig.sampleRows) ? resultsIpConfig.sampleRows : [];
+      var SCAN_PROGRESS_KEY = "netrecon_scan_progress_v1";
+
+      function buildScanProgressLoaderMarkup() {
+        return [
+          "<span class=\"v1-results-progress-loader\" aria-hidden=\"true\">",
+          "<span class=\"v1-detect-loader-dot\"></span>",
+          "<span class=\"v1-detect-loader-dot\"></span>",
+          "<span class=\"v1-detect-loader-dot\"></span>",
+          "<span class=\"v1-detect-loader-dot\"></span>",
+          "<span class=\"v1-detect-loader-dot\"></span>",
+          "<span class=\"v1-detect-loader-dot\"></span>",
+          "</span>"
+        ].join("");
+      }
+
+      function readScanProgressState() {
+        try {
+          var raw = window.localStorage ? window.localStorage.getItem(SCAN_PROGRESS_KEY) : "";
+          if (!raw) return null;
+          var parsed = JSON.parse(raw);
+          return parsed && typeof parsed === "object" ? parsed : null;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function formatScanProgress(state) {
+        if (!state || typeof state !== "object") {
+          return {
+            text: trOr("resultsIpScanProgressIdle", "Progress: idle"),
+            showLoader: true,
+          };
+        }
+
+        var processed = Number(state.processed);
+        var total = Number(state.total);
+        var found = Number(state.found);
+        if (!Number.isFinite(processed)) processed = 0;
+        if (!Number.isFinite(total)) total = 0;
+        if (!Number.isFinite(found)) found = 0;
+
+        var percent = total > 0 ? Math.round((processed / total) * 100) : 0;
+        if (percent < 0) percent = 0;
+        if (percent > 100) percent = 100;
+
+        if (total <= 0 && processed <= 0) {
+          return {
+            text: trOr("resultsIpScanProgressIdle", "Progress: idle"),
+            showLoader: true,
+          };
+        }
+
+        return {
+          text: "Progress: " + processed + "/" + total + " (" + percent + "%) | found: " + found,
+          showLoader: false,
+        };
+      }
+
+      function readPersistedScanRows() {
+        var STORAGE_KEY = "netrecon_scan_results_v1";
+        try {
+          var raw = window.localStorage ? window.localStorage.getItem(STORAGE_KEY) : "";
+          if (!raw) return [];
+          var parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed)) return [];
+
+          return parsed
+            .filter(function (row) {
+              return row && typeof row === "object" && String(row.ip || "").trim();
+            })
+            .map(function (row) {
+              var ports = Array.isArray(row.ports) ? row.ports : [];
+              return {
+                ip: String(row.ip || "").trim(),
+                ping: String(row.ping || "-").trim() || "-",
+                hostname: String(row.hostname || "-").trim() || "-",
+                flag: String(row.flag || "-").trim() || "-",
+                isp: String(row.isp || "-").trim() || "-",
+                as: String(row.as || "").trim(),
+                deviceIdentification: String(row.deviceIdentification || "").trim(),
+                status: String(row.status || "active").trim() || "active",
+                statusClass: String(row.statusClass || "is-up").trim() || "is-up",
+                ports: ports,
+              };
+            });
+        } catch (_) {
+          return [];
+        }
+      }
+
+      var persistedRows = readPersistedScanRows();
+      var scanProgress = formatScanProgress(readScanProgressState());
+      var scanProgressText = scanProgress && typeof scanProgress.text === "string"
+        ? scanProgress.text
+        : trOr("resultsIpScanProgressIdle", "Progress: idle");
+      var scanProgressMarkup = scanProgress && scanProgress.showLoader
+        ? buildScanProgressLoaderMarkup()
+        : escapeHtml(scanProgressText);
+      var rows = persistedRows.length
+        ? persistedRows
+        : (Array.isArray(resultsIpConfig.sampleRows) ? resultsIpConfig.sampleRows : []);
       var selectedPreset = getSelectedPresetInfo();
       var selectedPresetEmoji = selectedPreset.emoji || "🔎";
       var selectedPresetLabel = selectedPreset.name || selectedPreset.id || "";
@@ -572,6 +663,7 @@
         "<div class=\"v1-results-meta-row\">",
         "<span>" + escapeHtml(trOr("resultsIpHostsLabel", resultsIpConfig.hostsLabel || "Hosty")) + ": <b id=\"resIpHostCount\">" + rows.length + "</b></span>",
         "<span>" + escapeHtml(trOr("resultsIpOpenPortsLabel", resultsIpConfig.openPortsLabel || "Otwarte porty")) + ": <b id=\"resIpPortCount\">" + totalPorts + "</b></span>",
+        "<span id=\"resIpScanProgressTop\" class=\"v1-results-progress-note\" title=\"" + escapeHtml(scanProgressText) + "\">" + scanProgressMarkup + "</span>",
         "<div class=\"v1-results-controls\">",
         filtersHtml,
         "<button type=\"button\" class=\"v1-results-columns-btn\" data-reset-filters>" + escapeHtml(trOr("resultsIpResetFilters", "Reset filters")) + "</button>",
