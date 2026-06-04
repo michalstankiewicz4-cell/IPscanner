@@ -19,6 +19,31 @@
       return value === key ? fallback : value;
     }
 
+    function getSelectedPresetInfo() {
+      var selectEl = document.getElementById("v1PortPreset");
+      var selectedId = selectEl ? String(selectEl.value || "").trim() : "";
+      var corePresets = core.presets && typeof core.presets.getState === "function"
+        ? core.presets.getState()
+        : null;
+      var presets = corePresets && Array.isArray(corePresets.presets) ? corePresets.presets : [];
+
+      var selected = presets.find(function (item) {
+        return String(item && item.id || "") === selectedId;
+      });
+      if (!selected && corePresets && corePresets.defaultPresetId) {
+        selected = presets.find(function (item) {
+          return String(item && item.id || "") === String(corePresets.defaultPresetId || "");
+        });
+      }
+      if (!selected) selected = presets[0] || { id: "", emoji: "", name: "" };
+
+      return {
+        id: String(selected.id || ""),
+        emoji: String(selected.emoji || "").trim(),
+        name: String(selected.name || selected.id || "").trim(),
+      };
+    }
+
     function getPresetsState() {
       var fallbackState = {
         defaultPresetId: "all-ports",
@@ -373,20 +398,50 @@
 
     function renderResultsIp() {
       var rows = Array.isArray(resultsIpConfig.sampleRows) ? resultsIpConfig.sampleRows : [];
+      var selectedPreset = getSelectedPresetInfo();
+      var selectedPresetEmoji = selectedPreset.emoji || "🔎";
+      var selectedPresetLabel = selectedPreset.name || selectedPreset.id || "";
 
       var totalPorts = rows.reduce(function (sum, row) {
         return sum + ((row.ports && row.ports.length) || 0);
       }, 0);
 
       var bodyHtml = rows.map(function (row, idx) {
-        var portsHtml = (row.ports || []).map(function (port) {
-          return "<a href=\"#\" class=\"v1-ip-port-link\">/admin/video/snapshot/files/status/stream/mjpeg" + escapeHtml(port) + "</a>";
-        }).join("");
+        var portList = Array.isArray(row.ports) ? row.ports : [];
+        var portsHtml = portList.length ? portList.map(function (port, portIdx) {
+          var portLabel = String(port || "").replace(/^:/, "").trim();
+          var portKey = String(row.ip || "").trim() + "|" + portLabel;
+          return [
+            "<tr class=\"v1-ip-port-row\" data-ports-row=\"" + idx + "\" data-port-index=\"" + portIdx + "\" hidden>",
+            "<td class=\"v1-ip-col-check\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-port-action=\"check\" data-port-key=\"" + escapeHtml(portKey) + "\" aria-pressed=\"false\" aria-label=\"Mark port\">✓</button></td>",
+            "<td class=\"v1-ip-col-star\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-port-action=\"favorite\" data-port-key=\"" + escapeHtml(portKey) + "\" aria-pressed=\"false\" aria-label=\"Add port to favorites\">★</button></td>",
+            "<td class=\"v1-ip-col-status\" aria-hidden=\"true\"></td>",
+            "<td class=\"v1-ip-col-ip\"><span class=\"v1-ip-port-line\"><span class=\"v1-ip-port-chip-emoji\" aria-hidden=\"true\" title=\"" + escapeHtml(selectedPresetLabel) + "\">" + escapeHtml(selectedPresetEmoji) + "</span><span class=\"v1-ip-port-value\">" + escapeHtml(portLabel) + "</span></span></td>",
+            "<td class=\"v1-ip-col-expand\" aria-hidden=\"true\"></td>",
+            "<td class=\"v1-ip-col-ping\" aria-hidden=\"true\"></td>",
+            "<td class=\"v1-ip-col-host\" aria-hidden=\"true\"></td>",
+            "<td class=\"v1-ip-col-flag\" aria-hidden=\"true\"></td>",
+            "<td class=\"v1-ip-col-isp\" aria-hidden=\"true\"></td>",
+            "</tr>"
+          ].join("");
+        }).join("") : [
+          "<tr class=\"v1-ip-port-row v1-ip-port-row--empty\" data-ports-row=\"" + idx + "\" hidden>",
+          "<td class=\"v1-ip-col-check\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-star\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-status\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-ip\"><span class=\"v1-ip-port-empty\">" + escapeHtml(trOr("resultsIpNoOpenPorts", resultsIpConfig.noOpenPorts || "No open ports")) + "</span></td>",
+          "<td class=\"v1-ip-col-expand\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-ping\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-host\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-flag\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-isp\" aria-hidden=\"true\"></td>",
+          "</tr>"
+        ].join("");
 
         return [
           "<tr class=\"v1-ip-result-row\" data-row-index=\"" + idx + "\">",
-          "<td class=\"v1-ip-col-check\">✓</td>",
-          "<td class=\"v1-ip-col-star\">★</td>",
+          "<td class=\"v1-ip-col-check\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-result-action=\"check\" data-result-key=\"" + escapeHtml(String(row.ip || "").trim()) + "\" aria-pressed=\"false\" aria-label=\"Mark IP\">✓</button></td>",
+          "<td class=\"v1-ip-col-star\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-result-action=\"favorite\" data-result-key=\"" + escapeHtml(String(row.ip || "").trim()) + "\" aria-pressed=\"false\" aria-label=\"Add IP to favorites\">★</button></td>",
           "<td class=\"v1-ip-col-status\"><span class=\"v1-ip-status-dot " + escapeHtml(row.statusClass || "") + "\"></span></td>",
           "<td class=\"v1-ip-col-ip\">" + escapeHtml(row.ip) + "</td>",
           "<td class=\"v1-ip-col-expand\"><button type=\"button\" class=\"v1-ip-expand-btn\" data-open-ports=\"" + idx + "\" aria-expanded=\"false\">+</button></td>",
@@ -395,11 +450,7 @@
           "<td class=\"v1-ip-col-flag\">" + escapeHtml(row.flag) + "</td>",
           "<td class=\"v1-ip-col-isp\">" + escapeHtml(row.isp) + "</td>",
           "</tr>",
-          "<tr class=\"v1-ip-ports-row\" data-ports-row=\"" + idx + "\" hidden>",
-          "<td colspan=\"10\">",
-          "<div class=\"v1-ip-ports-wrap\">" + (portsHtml || "<span class=\"v1-ip-ports-empty\">" + escapeHtml(trOr("resultsIpNoOpenPorts", resultsIpConfig.noOpenPorts || "No open ports")) + "</span>") + "</div>",
-          "</td>",
-          "</tr>"
+          portsHtml
         ].join("");
       }).join("");
 
@@ -412,7 +463,7 @@
         "</div>",
         "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\">",
         "<table class=\"v1-results-table v1-ip-results-table\">",
-        "<thead><tr><th class=\"v1-ip-col-check\">✓</th><th class=\"v1-ip-col-star\">★</th><th class=\"v1-ip-col-status\">●</th><th class=\"v1-ip-col-ip\">" + escapeHtml(trOr("resultsIpHeaderIpAddress", headers.ipAddress || "IP Address")) + "</th><th class=\"v1-ip-col-expand\">+</th><th class=\"v1-ip-col-ping\">" + escapeHtml(trOr("resultsIpHeaderPing", headers.ping || "Ping")) + "</th><th class=\"v1-ip-col-host\">" + escapeHtml(trOr("resultsIpHeaderHostname", headers.hostname || "Hostname")) + "</th><th class=\"v1-ip-col-flag\">" + escapeHtml(trOr("resultsIpHeaderFlag", headers.flag || "Flag")) + "</th><th class=\"v1-ip-col-isp\">" + escapeHtml(trOr("resultsIpHeaderIsp", headers.isp || "ISP")) + "</th></tr></thead>",
+        "<thead><tr><th class=\"v1-ip-col-check\">✓</th><th class=\"v1-ip-col-star\">★</th><th class=\"v1-ip-col-status\">●</th><th class=\"v1-ip-col-ip\">" + escapeHtml(trOr("resultsIpHeaderIpAddressPort", headers.ipAddressPort || "IP Adress / Port")) + "</th><th class=\"v1-ip-col-expand\">+</th><th class=\"v1-ip-col-ping\">" + escapeHtml(trOr("resultsIpHeaderPing", headers.ping || "Ping")) + "</th><th class=\"v1-ip-col-host\">" + escapeHtml(trOr("resultsIpHeaderHostname", headers.hostname || "Hostname")) + "</th><th class=\"v1-ip-col-flag\">" + escapeHtml(trOr("resultsIpHeaderFlag", headers.flag || "Flag")) + "</th><th class=\"v1-ip-col-isp\">" + escapeHtml(trOr("resultsIpHeaderIsp", headers.isp || "ISP")) + "</th></tr></thead>",
         "<tbody>" + bodyHtml + "</tbody>",
         "</table>",
         "</div>"

@@ -846,15 +846,88 @@
   background: #273244;
 }
 
-.v1-ip-ports-row td {
-  padding-top: 2px;
-  padding-bottom: 8px;
+.v1-ip-port-row .v1-ip-col-status,
+.v1-ip-port-row .v1-ip-col-expand,
+.v1-ip-port-row .v1-ip-col-ping,
+.v1-ip-port-row .v1-ip-col-host,
+.v1-ip-port-row .v1-ip-col-flag,
+.v1-ip-port-row .v1-ip-col-isp {
+  color: transparent;
 }
 
-.v1-ip-ports-wrap {
-  display: grid;
-  gap: 4px;
-  padding-left: 88px;
+.v1-ip-port-row .v1-ip-col-ip {
+  color: #dce6f6;
+}
+
+.v1-ip-port-row .v1-ip-col-check,
+.v1-ip-port-row .v1-ip-col-star {
+  text-align: center;
+}
+
+.v1-ip-port-action-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  color: #dce6f6;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.v1-ip-port-action-btn:hover {
+  color: #ffffff;
+}
+
+.v1-ip-port-action-btn.is-active[data-port-action="check"],
+.v1-ip-port-action-btn.is-active[data-result-action="check"] {
+  color: #43d17e;
+}
+
+.v1-ip-port-action-btn.is-active[data-port-action="favorite"],
+.v1-ip-port-action-btn.is-active[data-result-action="favorite"] {
+  color: #f0c85a;
+}
+
+.v1-ip-port-row td {
+  padding-top: 2px;
+  padding-bottom: 8px;
+  border-bottom: 0;
+  vertical-align: middle;
+}
+
+.v1-ip-port-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.v1-ip-port-chip-emoji {
+  font-size: 13px;
+  line-height: 1;
+  text-align: center;
+}
+
+.v1-ip-port-value {
+  font-family: var(--font-mono);
+  letter-spacing: 0.01em;
+  min-width: 0;
+  color: #dce6f6;
+  word-break: break-word;
+}
+
+.v1-ip-port-empty {
+  color: var(--txt-dim);
+  font-style: italic;
 }
 
 .v1-ip-port-link {

@@ -172,27 +172,85 @@
         : document.getElementById("v1ToolDetail");
       if (!root) return;
 
+      var RESULT_STATE_KEY = "netrecon_results_ip_result_state_v1";
+
+      function readResultState() {
+        try {
+          var raw = window.localStorage ? window.localStorage.getItem(RESULT_STATE_KEY) : "";
+          if (!raw) return {};
+          var parsed = JSON.parse(raw);
+          return parsed && typeof parsed === "object" ? parsed : {};
+        } catch (_) {
+          return {};
+        }
+      }
+
+      function writeResultState(state) {
+        try {
+          if (!window.localStorage) return;
+          window.localStorage.setItem(RESULT_STATE_KEY, JSON.stringify(state || {}));
+        } catch (_) {}
+      }
+
+      function syncResultButtonsState() {
+        var state = readResultState();
+        root.querySelectorAll("[data-port-action][data-port-key], [data-result-action][data-result-key]").forEach(function (button) {
+          var key = button.getAttribute("data-port-key") || button.getAttribute("data-result-key");
+          var action = button.getAttribute("data-port-action") || button.getAttribute("data-result-action");
+          var entry = key && state[key] ? state[key] : null;
+          var active = !!(entry && entry[action]);
+          button.classList.toggle("is-active", active);
+          button.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+      }
+
+      if (root.dataset.resultStateBound !== "1") {
+        root.dataset.resultStateBound = "1";
+        root.addEventListener("click", function (event) {
+          var button = event.target && typeof event.target.closest === "function"
+            ? event.target.closest("[data-port-action][data-port-key], [data-result-action][data-result-key]")
+            : null;
+          if (!button || !root.contains(button)) return;
+
+          var key = button.getAttribute("data-port-key") || button.getAttribute("data-result-key");
+          var action = button.getAttribute("data-port-action") || button.getAttribute("data-result-action");
+          if (!key || !action) return;
+
+          var state = readResultState();
+          var entry = state[key] && typeof state[key] === "object" ? state[key] : {};
+          entry[action] = !entry[action];
+          state[key] = entry;
+          writeResultState(state);
+          syncResultButtonsState();
+        });
+      }
+
       root.querySelectorAll("[data-open-ports]").forEach(function (button) {
         if (button.dataset.bound === "1") return;
         button.dataset.bound = "1";
 
         button.addEventListener("click", function () {
           var rowId = button.getAttribute("data-open-ports");
-          var portsRow = root.querySelector('[data-ports-row="' + rowId + '"]');
-          if (!portsRow) return;
+          syncResultButtonsState();
+          var portsRows = root.querySelectorAll('[data-ports-row="' + rowId + '"]');
+          if (!portsRows.length) return;
 
           var expanded = button.getAttribute("aria-expanded") === "true";
           var nextExpanded = !expanded;
           button.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
           button.textContent = nextExpanded ? "−" : "+";
 
-          if (nextExpanded) {
-            portsRow.removeAttribute("hidden");
-          } else {
-            portsRow.setAttribute("hidden", "hidden");
-          }
+          portsRows.forEach(function (portsRow) {
+            if (nextExpanded) {
+              portsRow.removeAttribute("hidden");
+            } else {
+              portsRow.setAttribute("hidden", "hidden");
+            }
+          });
         });
       });
+
+      syncResultButtonsState();
     }
 
     function wirePresetsTool(rootEl) {
