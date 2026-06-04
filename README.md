@@ -1,3 +1,4 @@
+# Sorry :( Due to the inflated stupid prices of GitHub, the project was postponed to the next month
 # Projekt amatorski wykonany wyłącznie przy użyciu vibe-codingu w celach naukowych.
 # An amateur project made solely using vibe-coding for scientific purposes.
 
