@@ -20,26 +20,42 @@
     }
 
     function getPresetsState() {
+      var fallbackState = {
+        defaultPresetId: "all-ports",
+        presets: [
+          { id: "cameras", emoji: "📷", name: "Cameras", ports: "80,443,554,8080,8081,9000,34567,37777" },
+          { id: "printers", emoji: "🖨", name: "Printers", ports: "80,443,631,8080,9100" },
+          { id: "folders-http", emoji: "📁", name: "Folders / HTTP", ports: "21,80,3000,5000,8000,8080,8888" },
+          { id: "routers", emoji: "📡", name: "Routers", ports: "80,443,8080,8443,10000" },
+          { id: "nas-servers", emoji: "🗄", name: "NAS / Servers", ports: "80,443,5000,5001,8006,8080,9090" },
+          { id: "windows-smb", emoji: "🪟", name: "Windows / SMB", ports: "135,139,445,3389,5985,5986" },
+          { id: "all-ports", emoji: "🌐", name: "All ports", ports: "21,80,135,139,443,445,554,631,3000,3389,5000,5001,5985,5986,8000,8006,8080,8081,8443,8888,9000,9090,9100,10000,34567,37777" }
+        ]
+      };
+
+      function hasPresetData(state) {
+        var presets = state && Array.isArray(state.presets) ? state.presets : [];
+        if (!presets.length) return false;
+        return presets.some(function (item) {
+          if (!item || typeof item !== "object") return false;
+          return !!String(item.name || "").trim() || !!String(item.ports || "").trim();
+        });
+      }
+
       try {
         if (presetsApi && typeof presetsApi.getState === "function") {
-          return presetsApi.getState();
+          var state = presetsApi.getState();
+          if (hasPresetData(state)) return state;
+          if (typeof presetsApi.resetDefaults === "function") {
+            var resetState = presetsApi.resetDefaults();
+            if (hasPresetData(resetState)) return resetState;
+          }
         }
       } catch (_) {
         // ignore presets provider errors
       }
 
-      return {
-        defaultPresetId: "all-ports",
-        presets: [
-          { id: "cameras", name: "Cameras", ports: "80,443,554,8080,8081,9000,34567,37777" },
-          { id: "printers", name: "Printers", ports: "80,443,631,8080,9100" },
-          { id: "folders-http", name: "Folders / HTTP", ports: "21,80,3000,5000,8000,8080,8888" },
-          { id: "routers", name: "Routers", ports: "80,443,8080,8443,10000" },
-          { id: "nas-servers", name: "NAS / Servers", ports: "80,443,5000,5001,8006,8080,9090" },
-          { id: "windows-smb", name: "Windows / SMB", ports: "135,139,445,3389,5985,5986" },
-          { id: "all-ports", name: "All ports", ports: "21,80,135,139,443,445,554,631,3000,3389,5000,5001,5985,5986,8000,8006,8080,8081,8443,8888,9000,9090,9100,10000,34567,37777" }
-        ]
-      };
+      return fallbackState;
     }
 
     function renderDefaultTool(tool) {
@@ -273,44 +289,53 @@
     }
 
     function renderPresetsTool() {
+      var fallbackPresets = [
+        { id: "cameras", emoji: "📷", name: "Cameras", ports: "80,443,554,8080,8081,9000,34567,37777" },
+        { id: "printers", emoji: "🖨", name: "Printers", ports: "80,443,631,8080,9100" },
+        { id: "folders-http", emoji: "📁", name: "Folders / HTTP", ports: "21,80,3000,5000,8000,8080,8888" },
+        { id: "routers", emoji: "📡", name: "Routers", ports: "80,443,8080,8443,10000" },
+        { id: "nas-servers", emoji: "🗄", name: "NAS / Servers", ports: "80,443,5000,5001,8006,8080,9090" },
+        { id: "windows-smb", emoji: "🪟", name: "Windows / SMB", ports: "135,139,445,3389,5985,5986" },
+        { id: "all-ports", emoji: "🌐", name: "All ports", ports: "21,80,135,139,443,445,554,631,3000,3389,5000,5001,5985,5986,8000,8006,8080,8081,8443,8888,9000,9090,9100,10000,34567,37777" }
+      ];
+
       var state = getPresetsState();
       var presets = Array.isArray(state.presets) ? state.presets : [];
-      var selected = presets.find(function (item) {
-        return item && item.id === state.defaultPresetId;
-      }) || presets[0] || { id: "", name: "", ports: "" };
+      if (!presets.length) {
+        presets = fallbackPresets.slice();
+      }
+      var selected = presets[0] || { id: "", emoji: "", name: "", ports: "" };
 
-      var listHtml = presets.map(function (item) {
-        var isActive = item.id === selected.id;
-        return '<li class="v1-presets-item' + (isActive ? ' active' : '') + '" data-preset-id="' + escapeHtml(item.id) + '"' + (isActive ? ' aria-selected="true"' : '') + '>' + escapeHtml(item.name || item.id) + '</li>';
+      var rowsHtml = presets.map(function (item) {
+        var isDefault = item && item.id === state.defaultPresetId;
+        var isSelected = item && item.id === selected.id;
+        return [
+          '<tr class="v1-presets-row' + (isSelected ? ' is-selected' : '') + '" data-preset-id="' + escapeHtml(item.id || "") + '">',
+          '<td class="v1-presets-col-default"><input type="radio" name="v1PresetDefault" data-preset-default="' + escapeHtml(item.id || "") + '" ' + (isDefault ? 'checked' : '') + ' aria-label="' + escapeHtml(trOr("presetsDefaultCol", "Default")) + '" /></td>',
+          '<td class="v1-presets-col-emoji"><input type="text" maxlength="4" data-preset-field="emoji" data-preset-id="' + escapeHtml(item.id || "") + '" value="' + escapeHtml(item.emoji || "") + '" placeholder="⭐" /></td>',
+          '<td class="v1-presets-col-name"><input type="text" data-preset-field="name" data-preset-id="' + escapeHtml(item.id || "") + '" value="' + escapeHtml(item.name || "") + '" placeholder="' + escapeHtml(trOr("presetsNameLabel", "Name")) + '" /></td>',
+          '<td class="v1-presets-col-ports"><input type="text" data-preset-field="ports" data-preset-id="' + escapeHtml(item.id || "") + '" value="' + escapeHtml(item.ports || "") + '" placeholder="80,443,8080" /></td>',
+          '</tr>'
+        ].join("");
       }).join("");
 
       return [
         "<div class=\"v1-presets-shell\">",
-        "<div class=\"v1-presets-list-block\">",
-        "<ul class=\"v1-presets-list\" role=\"listbox\" aria-label=\"" + escapeHtml(trOr("presetsListAria", "Port presets")) + "\">",
-        listHtml,
-        "</ul>",
         "<div class=\"v1-presets-actions\">",
         "<button type=\"button\" data-preset-action=\"add\">" + escapeHtml(trOr("presetsAddBtn", "+ Add")) + "</button>",
         "<button type=\"button\" data-preset-action=\"delete\">" + escapeHtml(trOr("presetsDeleteBtn", "Delete")) + "</button>",
         "<button type=\"button\" data-preset-action=\"move-up\">" + escapeHtml(trOr("presetsMoveUpBtn", "Move Up")) + "</button>",
         "<button type=\"button\" data-preset-action=\"move-down\">" + escapeHtml(trOr("presetsMoveDownBtn", "Move Down")) + "</button>",
-        "<button type=\"button\" data-preset-action=\"set-default\">" + escapeHtml(trOr("presetsSetDefaultBtn", "Set as default")) + "</button>",
         "</div>",
-        "</div>",
-        "<section class=\"v1-presets-editor\">",
-        "<h4>" + escapeHtml(trOr("presetsEditHeading", "Edit preset")) + "</h4>",
-        "<div class=\"v1-presets-form\">",
-        "<label for=\"v1PresetName\">" + escapeHtml(trOr("presetsNameLabel", "Name")) + "</label>",
-        "<input id=\"v1PresetName\" data-preset-name=\"true\" type=\"text\" autocomplete=\"off\" value=\"" + escapeHtml(selected.name || "") + "\" />",
-        "<label for=\"v1PresetPorts\">" + escapeHtml(trOr("presetsPortsLabel", "Ports")) + "</label>",
-        "<input id=\"v1PresetPorts\" data-preset-ports=\"true\" type=\"text\" autocomplete=\"off\" value=\"" + escapeHtml(selected.ports || "") + "\" />",
+        "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip v1-presets-table-wrap\">",
+        "<table class=\"v1-results-table v1-presets-table\" role=\"grid\" aria-label=\"" + escapeHtml(trOr("presetsListAria", "Port presets")) + "\">",
+        "<thead><tr><th class=\"v1-presets-col-default\">" + escapeHtml(trOr("presetsDefaultCol", "Default")) + "</th><th class=\"v1-presets-col-emoji\">" + escapeHtml(trOr("presetsEmojiLabel", "Emoji")) + "</th><th class=\"v1-presets-col-name\">" + escapeHtml(trOr("presetsNameLabel", "Name")) + "</th><th class=\"v1-presets-col-ports\">" + escapeHtml(trOr("presetsPortsLabel", "Ports")) + "</th></tr></thead>",
+        "<tbody>",
+        rowsHtml,
+        "</tbody>",
+        "</table>",
         "</div>",
         "<p class=\"v1-presets-hint\">" + escapeHtml(trOr("presetsHint", "Enter port numbers separated by commas, e.g. 80, 443, 8080, 554")) + "</p>",
-        "<div class=\"v1-presets-save\">",
-        "<button type=\"button\" data-preset-action=\"save\">" + escapeHtml(trOr("presetsSaveBtn", "Save")) + "</button>",
-        "</div>",
-        "</section>",
         "</div>"
       ].join("");
     }

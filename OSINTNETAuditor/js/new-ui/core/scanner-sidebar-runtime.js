@@ -6,6 +6,7 @@
 
     var RANGE_HISTORY_KEY = "netrecon_range_history";
     var presetsListenerBound = false;
+    var portPresetListenerBound = false;
 
     function t(key) {
       return typeof tr === "function" ? tr(key) : key;
@@ -236,15 +237,59 @@
 
       presets.forEach(function (item) {
         var option = document.createElement("option");
+        var emoji = String((item && item.emoji) || "").trim();
+        var name = String((item && item.name) || item.id || "").trim();
+        var label = emoji ? (emoji + " " + name) : name;
         option.value = String(item.id || "");
-        option.textContent = String(item.name || item.id || "");
+        option.textContent = label;
         portPreset.appendChild(option);
       });
 
-      var selectedValue = presets.some(function (item) { return String(item.id) === currentValue; })
+      var hasCurrentValue = presets.some(function (item) {
+        return String(item.id) === currentValue;
+      });
+      var shouldPreserveCurrent = portPreset.dataset.userSelected === "1";
+      var selectedValue = (shouldPreserveCurrent && hasCurrentValue)
         ? currentValue
         : String(state.defaultPresetId || presets[0].id || "");
       portPreset.value = selectedValue;
+      syncSelectedPortsValue();
+    }
+
+    function getSelectedPreset() {
+      var state = getPresetState();
+      var presets = Array.isArray(state.presets) ? state.presets : [];
+      if (!presets.length) {
+        return { id: "", emoji: "", name: "", ports: "" };
+      }
+
+      var portPreset = document.getElementById("v1PortPreset");
+      var selectedId = portPreset
+        ? String(portPreset.value || "").trim()
+        : String(state.defaultPresetId || "").trim();
+
+      var selected = presets.find(function (item) {
+        return String((item && item.id) || "") === selectedId;
+      });
+      if (!selected) {
+        selected = presets.find(function (item) {
+          return String((item && item.id) || "") === String(state.defaultPresetId || "").trim();
+        }) || presets[0];
+      }
+
+      return {
+        id: String((selected && selected.id) || "").trim(),
+        emoji: String((selected && selected.emoji) || "").trim(),
+        name: String((selected && selected.name) || (selected && selected.id) || "").trim(),
+        ports: String((selected && selected.ports) || "").trim(),
+      };
+    }
+
+    function syncSelectedPortsValue() {
+      var hiddenPorts = document.getElementById("v1ScanPorts");
+      if (!hiddenPorts) return;
+      var selected = getSelectedPreset();
+      hiddenPorts.value = selected.ports || "";
     }
 
     function applyStaticTranslations() {
@@ -349,6 +394,14 @@
     function init() {
       initIpExtractor();
       initRangeHistoryUi();
+      var portPreset = document.getElementById("v1PortPreset");
+      if (portPreset && !portPresetListenerBound) {
+        portPreset.addEventListener("change", function () {
+          portPreset.dataset.userSelected = "1";
+          syncSelectedPortsValue();
+        });
+        portPresetListenerBound = true;
+      }
       if (!presetsListenerBound) {
         document.addEventListener("newui:presets-changed", function () {
           renderPortPresetOptions();
@@ -363,6 +416,7 @@
       applyStaticTranslations: applyStaticTranslations,
       addCurrentRangeFromInputs: addCurrentRangeFromInputs,
       applyDetectedRange: applyDetectedRange,
+      getSelectedPreset: getSelectedPreset,
     };
   }
 

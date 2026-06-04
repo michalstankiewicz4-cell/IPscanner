@@ -4,6 +4,15 @@
     var tr = typeof deps.tr === "function" ? deps.tr : function (key) { return key; };
     var setStatusLine = typeof deps.setStatusLine === "function" ? deps.setStatusLine : null;
 
+    function escapeHtml(value) {
+      return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     function wireVersionsTimeline(rootEl) {
       var root = rootEl && typeof rootEl.querySelector === "function"
         ? rootEl
@@ -197,10 +206,8 @@
       var presetsApi = core.presets;
       if (!presetsApi || typeof presetsApi.getState !== "function" || typeof presetsApi.replaceState !== "function") return;
 
-      var listEl = root.querySelector(".v1-presets-list");
-      var nameEl = root.querySelector("[data-preset-name]") || root.querySelector("#v1PresetName");
-      var portsEl = root.querySelector("[data-preset-ports]") || root.querySelector("#v1PresetPorts");
-      if (!listEl || !nameEl || !portsEl) return;
+      var tableBody = root.querySelector(".v1-presets-table tbody");
+      if (!tableBody) return;
 
       var selectedPresetId = null;
 
@@ -210,6 +217,7 @@
           presets: (state && Array.isArray(state.presets) ? state.presets : []).map(function (item) {
             return {
               id: String((item && item.id) || "").trim(),
+              emoji: String((item && item.emoji) || "").trim(),
               name: String((item && item.name) || "").trim(),
               ports: String((item && item.ports) || "").trim(),
             };
@@ -218,7 +226,38 @@
       }
 
       function getState() {
-        return cloneState(presetsApi.getState());
+        var fallbackState = {
+          defaultPresetId: "all-ports",
+          presets: [
+            { id: "cameras", emoji: "📷", name: "Cameras", ports: "80,443,554,8080,8081,9000,34567,37777" },
+            { id: "printers", emoji: "🖨", name: "Printers", ports: "80,443,631,8080,9100" },
+            { id: "folders-http", emoji: "📁", name: "Folders / HTTP", ports: "21,80,3000,5000,8000,8080,8888" },
+            { id: "routers", emoji: "📡", name: "Routers", ports: "80,443,8080,8443,10000" },
+            { id: "nas-servers", emoji: "🗄", name: "NAS / Servers", ports: "80,443,5000,5001,8006,8080,9090" },
+            { id: "windows-smb", emoji: "🪟", name: "Windows / SMB", ports: "135,139,445,3389,5985,5986" },
+            { id: "all-ports", emoji: "🌐", name: "All ports", ports: "21,80,135,139,443,445,554,631,3000,3389,5000,5001,5985,5986,8000,8006,8080,8081,8443,8888,9000,9090,9100,10000,34567,37777" }
+          ]
+        };
+
+        var state = cloneState(presetsApi.getState());
+        var hasData = Array.isArray(state.presets) && state.presets.some(function (item) {
+          if (!item) return false;
+          return !!String(item.name || "").trim() || !!String(item.ports || "").trim();
+        });
+        if (hasData) return state;
+
+        if (typeof presetsApi.resetDefaults === "function") {
+          try {
+            var resetState = cloneState(presetsApi.resetDefaults());
+            if (Array.isArray(resetState.presets) && resetState.presets.length) {
+              return resetState;
+            }
+          } catch (_) {
+            return cloneState(fallbackState);
+          }
+        }
+
+        return cloneState(fallbackState);
       }
 
       function sanitizeId(value) {
@@ -244,32 +283,30 @@
         var presets = state.presets;
         var selected = pickSelected(state);
         if (!selected) {
-          listEl.innerHTML = "";
-          nameEl.value = "";
-          portsEl.value = "";
+          tableBody.innerHTML = "";
           selectedPresetId = null;
           return;
         }
 
         selectedPresetId = selected.id;
-        listEl.innerHTML = "";
+        tableBody.innerHTML = "";
         presets.forEach(function (item) {
-          var li = document.createElement("li");
-          li.className = "v1-presets-item";
-          li.setAttribute("data-preset-id", item.id);
-          li.textContent = item.name;
+          var rowEl = document.createElement("tr");
+          rowEl.className = "v1-presets-row";
+          rowEl.setAttribute("data-preset-id", item.id);
           if (item.id === selectedPresetId) {
-            li.classList.add("active");
-            li.setAttribute("aria-selected", "true");
+            rowEl.classList.add("is-selected");
           }
-          if (item.id === state.defaultPresetId) {
-            li.setAttribute("title", "Default preset");
-          }
-          listEl.appendChild(li);
-        });
 
-        nameEl.value = selected.name;
-        portsEl.value = selected.ports;
+          rowEl.innerHTML = [
+            '<td class="v1-presets-col-default"><input type="radio" name="v1PresetDefault" data-preset-default="' + item.id + '"' + (item.id === state.defaultPresetId ? ' checked' : '') + ' /></td>',
+            '<td class="v1-presets-col-emoji"><input type="text" maxlength="4" data-preset-field="emoji" data-preset-id="' + item.id + '" value="' + escapeHtml(item.emoji || "") + '" placeholder="⭐" /></td>',
+            '<td class="v1-presets-col-name"><input type="text" data-preset-field="name" data-preset-id="' + item.id + '" value="' + escapeHtml(item.name || "") + '" placeholder="' + escapeHtml(tr("presetsNameLabel")) + '" /></td>',
+            '<td class="v1-presets-col-ports"><input type="text" data-preset-field="ports" data-preset-id="' + item.id + '" value="' + escapeHtml(item.ports || "") + '" placeholder="80,443,8080" /></td>'
+          ].join("");
+
+          tableBody.appendChild(rowEl);
+        });
       }
 
       function persistWith(mutator, statusSuffix) {
@@ -283,11 +320,41 @@
         }
       }
 
-      listEl.addEventListener("click", function (event) {
-        var itemEl = event.target.closest("[data-preset-id]");
-        if (!itemEl) return;
-        selectedPresetId = itemEl.getAttribute("data-preset-id") || "";
+      tableBody.addEventListener("click", function (event) {
+        var defaultEl = event.target.closest("[data-preset-default]");
+        if (defaultEl) {
+          var defaultId = defaultEl.getAttribute("data-preset-default") || "";
+          if (defaultId) {
+            persistWith(function (next) {
+              next.defaultPresetId = defaultId;
+              selectedPresetId = defaultId;
+              return next;
+            }, "Default preset set");
+          }
+          return;
+        }
+
+        var rowEl = event.target.closest(".v1-presets-row[data-preset-id]");
+        if (!rowEl) return;
+        if (event.target.closest("input[type=\"text\"], input[type=\"radio\"]")) return;
+        selectedPresetId = rowEl.getAttribute("data-preset-id") || "";
         renderFromState(getState());
+      });
+
+      tableBody.addEventListener("input", function (event) {
+        var fieldEl = event.target.closest("[data-preset-field][data-preset-id]");
+        if (!fieldEl) return;
+        var field = fieldEl.getAttribute("data-preset-field") || "";
+        var presetId = fieldEl.getAttribute("data-preset-id") || "";
+        if (!presetId || (field !== "emoji" && field !== "name" && field !== "ports")) return;
+
+        persistWith(function (next) {
+          var idx = next.presets.findIndex(function (entry) { return entry.id === presetId; });
+          if (idx < 0) return null;
+          next.presets[idx][field] = String(fieldEl.value || "").trim();
+          selectedPresetId = presetId;
+          return next;
+        }, null);
       });
 
       root.querySelectorAll("[data-preset-action]").forEach(function (button) {
@@ -301,7 +368,7 @@
 
           if (action === "add") {
             persistWith(function (next) {
-              var rawId = sanitizeId(nameEl.value) || "preset";
+              var rawId = "preset";
               var uniqueId = rawId;
               var suffix = 2;
               while (next.presets.some(function (entry) { return entry.id === uniqueId; })) {
@@ -309,10 +376,11 @@
                 suffix += 1;
               }
 
-              next.presets.push({
+              next.presets.unshift({
                 id: uniqueId,
-                name: String(nameEl.value || "New preset").trim() || "New preset",
-                ports: String(portsEl.value || "").trim(),
+                emoji: "",
+                name: "",
+                ports: "",
               });
 
               if (!next.defaultPresetId) next.defaultPresetId = uniqueId;
@@ -351,27 +419,6 @@
               return next;
             }, action === "move-up" ? "Preset moved up" : "Preset moved down");
             return;
-          }
-
-          if (action === "set-default") {
-            persistWith(function (next) {
-              if (!selected.id) return null;
-              next.defaultPresetId = selected.id;
-              selectedPresetId = selected.id;
-              return next;
-            }, "Default preset set");
-            return;
-          }
-
-          if (action === "save") {
-            persistWith(function (next) {
-              var idx = next.presets.findIndex(function (entry) { return entry.id === selected.id; });
-              if (idx < 0) return null;
-              next.presets[idx].name = String(nameEl.value || "").trim() || next.presets[idx].name;
-              next.presets[idx].ports = String(portsEl.value || "").trim();
-              selectedPresetId = next.presets[idx].id;
-              return next;
-            }, "Preset saved");
           }
         });
       });

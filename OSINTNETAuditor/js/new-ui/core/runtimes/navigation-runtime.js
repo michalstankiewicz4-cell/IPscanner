@@ -85,6 +85,75 @@
       return d.toLocaleTimeString();
     }
 
+    function stopDetectLoader(el) {
+      if (!el) return;
+      if (el.__detectLoaderTimerId) {
+        window.clearInterval(el.__detectLoaderTimerId);
+        el.__detectLoaderTimerId = 0;
+      }
+      el.classList.remove("is-loading");
+      delete el.__detectLoaderStepIndex;
+      delete el.__detectLoaderResetPending;
+      el.innerHTML = "";
+    }
+
+    function setDetectResultText(el, text) {
+      if (!el) return;
+      stopDetectLoader(el);
+      el.textContent = String(text || "");
+    }
+
+    function startDetectLoader(el) {
+      if (!el) return;
+      stopDetectLoader(el);
+
+      var sequence = [0, 1, 2, 5, 4, 3];
+      var dots = [];
+      var loader = document.createElement("span");
+      loader.className = "v1-detect-loader";
+
+      for (var i = 0; i < 6; i += 1) {
+        var dot = document.createElement("span");
+        dot.className = "v1-detect-loader-dot";
+        loader.appendChild(dot);
+        dots.push(dot);
+      }
+
+      function clearDots() {
+        dots.forEach(function (dotEl) {
+          dotEl.classList.remove("is-active");
+        });
+      }
+
+      function tick() {
+        if (el.__detectLoaderResetPending) {
+          clearDots();
+          el.__detectLoaderStepIndex = 0;
+          el.__detectLoaderResetPending = false;
+          return;
+        }
+
+        var index = Number(el.__detectLoaderStepIndex || 0);
+        var seq = sequence[index];
+        if (dots[seq]) {
+          dots[seq].classList.add("is-active");
+        }
+
+        index += 1;
+        el.__detectLoaderStepIndex = index;
+        if (index >= sequence.length) {
+          el.__detectLoaderResetPending = true;
+        }
+      }
+
+      el.classList.add("is-loading");
+      el.appendChild(loader);
+      el.__detectLoaderStepIndex = 0;
+      el.__detectLoaderResetPending = false;
+      tick();
+      el.__detectLoaderTimerId = window.setInterval(tick, 200);
+    }
+
     function appendPsConsole(line) {
       var out = document.getElementById("v1PsOutput");
       if (!out) return;
@@ -249,7 +318,22 @@
                   from: (document.getElementById("v1ScanFrom") || {}).value || "0.0.0.0",
                   to: (document.getElementById("v1ScanTo") || {}).value || "0.0.0.0",
                 };
-            if (setStatusLine) setStatusLine(tr("statusScanStart") + " " + range.from + " - " + range.to);
+            var selectedPreset = runtime && runtime.getSelectedPreset
+              ? runtime.getSelectedPreset()
+              : null;
+            var selectedPorts = selectedPreset ? String(selectedPreset.ports || "") : "";
+            var selectedPresetLabel = selectedPreset ? String(selectedPreset.name || selectedPreset.id || "").trim() : "";
+            var portsCount = selectedPorts
+              ? selectedPorts.split(",").map(function (token) { return token.trim(); }).filter(Boolean).length
+              : 0;
+            if (setStatusLine) {
+              var status = tr("statusScanStart") + " " + range.from + " - " + range.to;
+              if (selectedPresetLabel) {
+                status += " | " + tr("scannerPortPresets") + ": " + selectedPresetLabel;
+                status += " (" + portsCount + ")";
+              }
+              setStatusLine(status);
+            }
           }
           if (action === "stop" && setStatusLine) setStatusLine(tr("statusScanStop"));
           if (action === "clear" && setStatusLine) setStatusLine(tr("statusScanClear"));
@@ -267,14 +351,14 @@
             var extBtn = document.getElementById("v1UseExtIp");
             if (!extEl) return;
 
-            extEl.textContent = "...";
+            startDetectLoader(extEl);
             if (extBtn) extBtn.hidden = true;
 
             var psCmd = scriptInvokeCommand("scripts\\detect-external-ip.ps1");
             var invoke = getInvoke();
 
             if (!invoke) {
-              extEl.textContent = tr("statusDesktopOnlyShort");
+              setDetectResultText(extEl, tr("statusDesktopOnlyShort"));
               appendPsConsole("[" + nowStamp() + "] PS> " + psCmd);
               appendPsConsole("[" + nowStamp() + "] " + tr("statusDesktopOnlyShort"));
               if (setStatusLine) setStatusLine(tr("statusExternalIpDesktopOnly"));
@@ -293,12 +377,12 @@
               appendPsConsole("[" + nowStamp() + "] exit code: " + exitCode);
 
               if (!ip) {
-                extEl.textContent = tr("statusErrorShort");
+                setDetectResultText(extEl, tr("statusErrorShort"));
                 if (setStatusLine) setStatusLine(tr("statusExternalIpNoOutput"));
                 return;
               }
 
-              extEl.textContent = ip;
+              setDetectResultText(extEl, ip);
               if (extBtn) {
                 extBtn.hidden = false;
                 extBtn.onclick = function () {
@@ -308,7 +392,7 @@
               }
               if (setStatusLine) setStatusLine(tr("statusExternalIp") + " " + ip);
             }).catch(function () {
-              extEl.textContent = tr("statusErrorShort");
+              setDetectResultText(extEl, tr("statusErrorShort"));
               appendPsConsole("[" + nowStamp() + "] " + tr("statusCommandFailed"));
               if (setStatusLine) setStatusLine(tr("statusExternalIpCommandFailed"));
             });
@@ -319,14 +403,14 @@
             var localBtn = document.getElementById("v1UseLocalIp");
             if (!localEl) return;
 
-            localEl.textContent = "...";
+            startDetectLoader(localEl);
             if (localBtn) localBtn.hidden = true;
 
             var psLocalCmd = scriptInvokeCommand("scripts\\detect-local-ip.ps1");
             var invoke = getInvoke();
 
             if (!invoke) {
-              localEl.textContent = tr("statusDesktopOnlyShort");
+              setDetectResultText(localEl, tr("statusDesktopOnlyShort"));
               appendPsConsole("[" + nowStamp() + "] PS> " + psLocalCmd);
               appendPsConsole("[" + nowStamp() + "] " + tr("statusDesktopOnlyShort"));
               if (setStatusLine) setStatusLine(tr("statusLocalIpDesktopOnly"));
@@ -345,12 +429,12 @@
               appendPsConsole("[" + nowStamp() + "] exit code: " + exitCode);
 
               if (!ip) {
-                localEl.textContent = tr("statusErrorShort");
+                setDetectResultText(localEl, tr("statusErrorShort"));
                 if (setStatusLine) setStatusLine(tr("statusLocalIpNoOutput"));
                 return;
               }
 
-              localEl.textContent = ip;
+              setDetectResultText(localEl, ip);
               if (localBtn) {
                 localBtn.hidden = false;
                 localBtn.onclick = function () {
@@ -360,7 +444,7 @@
               }
               if (setStatusLine) setStatusLine(tr("statusLocalIp") + " " + ip);
             }).catch(function () {
-              localEl.textContent = tr("statusErrorShort");
+              setDetectResultText(localEl, tr("statusErrorShort"));
               appendPsConsole("[" + nowStamp() + "] " + tr("statusCommandFailed"));
               if (setStatusLine) setStatusLine(tr("statusLocalIpCommandFailed"));
             });
@@ -371,14 +455,14 @@
             var subBtn = document.getElementById("v1UseSubnets");
             if (!subEl) return;
 
-            subEl.textContent = "...";
+            startDetectLoader(subEl);
             if (subBtn) subBtn.hidden = true;
 
             var psSubnetCmd = scriptInvokeCommand("scripts\\detect-subnet-cidr.ps1");
             var invoke = getInvoke();
 
             if (!invoke) {
-              subEl.textContent = tr("statusDesktopOnlyShort");
+              setDetectResultText(subEl, tr("statusDesktopOnlyShort"));
               appendPsConsole("[" + nowStamp() + "] PS> " + psSubnetCmd);
               appendPsConsole("[" + nowStamp() + "] " + tr("statusDesktopOnlyShort"));
               if (setStatusLine) setStatusLine(tr("statusSubnetsDesktopOnly"));
@@ -405,12 +489,12 @@
               }
 
               if (!cidr) {
-                subEl.textContent = tr("statusErrorShort");
+                setDetectResultText(subEl, tr("statusErrorShort"));
                 if (setStatusLine) setStatusLine(tr("statusSubnetsNoOutput"));
                 return;
               }
 
-              subEl.textContent = cidr;
+              setDetectResultText(subEl, cidr);
               if (subBtn) {
                 subBtn.hidden = false;
                 subBtn.onclick = function () {
@@ -420,7 +504,7 @@
               }
               if (setStatusLine) setStatusLine(tr("statusSubnet") + " " + cidr);
             }).catch(function () {
-              subEl.textContent = tr("statusErrorShort");
+              setDetectResultText(subEl, tr("statusErrorShort"));
               appendPsConsole("[" + nowStamp() + "] " + tr("statusCommandFailed"));
               if (setStatusLine) setStatusLine(tr("statusSubnetsCommandFailed"));
             });
