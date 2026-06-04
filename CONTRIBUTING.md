@@ -106,6 +106,7 @@ Zasady:
 - Nie opieraj krytycznych interakcji centralnego panelu tylko na selektorach `id`, jesli widok moze dzialac w trybie `window` (detached), gdzie `id` moze byc normalizowane lub usuwane.
 - Teksty user-facing musza przechodzic przez i18n (brak nowych hardcoded tekstow w rendererach).
 - Duze statyczne tresci (np. About/License/help text) utrzymuj jako dane wejsciowe konfiguracji, a nie rozproszony inline markup w wielu runtime.
+- Kazdy listener globalny (`window`/`document`) dodany przez runtime musi miec jawny cleanup w lifecycle (`destroy`, `dispose`, `unmount`) tego samego widoku.
 
 Checklist PR dla warstwy paneli:
 
@@ -113,6 +114,7 @@ Checklist PR dla warstwy paneli:
 - `panels-runtime.js` nie buduje recznie dlugich blokow HTML dla sekcji danych (uzywa dedykowanych rendererow).
 - Dla kazdego zmienionego narzedzia centralnego panelu potwierdz parity smoke test: `tab` i `window` maja ten sam markup funkcjonalny oraz te same akcje.
 - Dla kazdego zmienionego narzedzia centralnego panelu potwierdz parity smoke test stylow: `tab` i `window` maja ten sam layout i te same klasy stylujace dla kluczowych sekcji.
+- Dla zmian dodajacych listenery globalne potwierdz, ze cleanup dziala po zamknieciu/odczepieniu widoku i nie kumuluje callbackow.
 - Po zmianach uruchom `npm run prepare:app` i sprawdz mirror `app/`.
 
 Mapa odpowiedzialnosci jest utrzymywana centralnie i nie powinna byc dublowana w wielu miejscach.
@@ -193,8 +195,9 @@ Zasady:
 
 - kod jezyka: lowercase (np. `de`, `es`, `pt-br`),
 - nie usuwaj kluczy bazowych - brakujace wpisy fallbackuja do EN,
+- w obrebie jednego locale (np. `en`, `pl`) klucz i18n moze wystapic tylko raz; duplikaty sa traktowane jako blad review,
+- przed pushem zmian i18n uruchom szybki check duplikatow kluczy (np. skrypt Node/CI) i odnotuj wynik w PR,
 - po dodaniu jezyka sprawdz menu, zakladke Logs i panel rozszerzen.
-- po dodaniu jezyka sprawdz menu, dolna zakladke Console (pane info) i panel rozszerzen.
 
 ## 5a. Polityka logowania (obowiazkowa)
 
@@ -238,7 +241,7 @@ Plan rozwoju instalatora (roadmapa):
 - Tworz male, tematyczne PR-y.
 - W opisie PR podaj: zakres, ryzyko regresji, test manualny.
 - Jesli zmieniasz UI, zalacz kroki reprodukcji i oczekiwany efekt.
-- Dla zmian UI uruchom i odnotuj wynik smoke-matrycy z sekcji 13.
+- Dla zmian UI uruchom i odnotuj wynik smoke-matrycy z sekcji 13 (dla zmian tylko CSS/i18n bez logiki runtime dopuszczalny jest brak EXE, ale z jawnym uzasadnieniem w PR).
 
 ## 9. Czego nie robimy w PR do new UI
 
@@ -252,7 +255,7 @@ Plan rozwoju instalatora (roadmapa):
 - Status line nie zawiera mieszanego jezyka dla tej samej akcji.
 - Nowe kontrolki menubara nie sa blokowane przez logike drag okna.
 - Zmiany root -> app sa zsynchronizowane przez npm run prepare:app.
-- Build testowy --no-bundle przechodzi i generuje exe.
+- Build testowy --no-bundle przechodzi i generuje exe dla zmian runtime/desktop/platform; dla zmian tylko CSS/i18n wymagane jest uzasadnienie pominiecia EXE.
 
 ## 11. Naming conventions (obowiazkowe)
 
@@ -330,6 +333,7 @@ Minimalny standard testu manualnego po zmianach UI/runtime:
 Raportowanie w PR:
 
 - Dodaj krotka sekcje `Smoke matrix` z wynikiem: `HTML normal: PASS/FAIL`, `HTML parity: PASS/FAIL`, `EXE no-bundle: PASS/FAIL`.
+- Jesli EXE jest pomijane (tylko CSS/i18n, brak zmian runtime), wpisz `EXE no-bundle: SKIPPED (reason: ...)`.
 
 ## 14. Status migracji platformy (maj 2026)
 
