@@ -42,9 +42,9 @@
 
       function getCurrentVersion() {
         const versions = Array.isArray(core.versionsData) ? core.versionsData : [];
-        if (!versions.length) return "v1.6.5";
+        if (!versions.length) return "v1.7.0";
         const first = versions[0] || {};
-        return first.version ? String(first.version) : "v1.6.5";
+        return first.version ? String(first.version) : "v1.7.0";
       }
 
       function getAppNameWithVersion() {
