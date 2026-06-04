@@ -48,18 +48,31 @@
 
             var progress = points.length > 1 ? idx / (points.length - 1) : 1;
             physics.style.setProperty("--v1-version-progress", String(progress));
-            point.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+
+            // Keep timeline movement scoped to the horizontal track only.
+            var centerLeft = point.offsetLeft - Math.max(0, Math.floor((track.clientWidth - point.clientWidth) / 2));
+            var maxLeft = Math.max(0, track.scrollWidth - track.clientWidth);
+            var nextLeft = Math.max(0, Math.min(maxLeft, centerLeft));
+            track.scrollTo({ left: nextLeft, behavior: "smooth" });
           }
         });
 
+        var targetSection = null;
         root.querySelectorAll("[data-version-entry-index]").forEach(function (section) {
           var isCurrent = Number(section.getAttribute("data-version-entry-index")) === safeIndex;
           section.classList.toggle("is-active", isCurrent);
           if (isCurrent) {
-            var nextTop = Math.max(0, section.offsetTop - 8);
-            versionsList.scrollTo({ top: nextTop, behavior: "smooth" });
+            targetSection = section;
           }
         });
+
+        if (targetSection) {
+          var listRect = versionsList.getBoundingClientRect();
+          var sectionRect = targetSection.getBoundingClientRect();
+          var relativeTop = (sectionRect.top - listRect.top) + versionsList.scrollTop;
+          var nextTop = safeIndex === 0 ? 0 : Math.max(0, Math.round(relativeTop - 12));
+          versionsList.scrollTo({ top: nextTop, behavior: "smooth" });
+        }
       }
 
       points.forEach(function (point) {

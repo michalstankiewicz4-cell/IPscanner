@@ -1,13 +1,10 @@
 (function () {
   var versions = [
     {
-      version: "v1.6.5",
+      version: "v1.7.0 reset",
       notes: [
-        "Added intermediate host status (blue light) for unusual responses: IPs with no open ports but with detectable network response.",
-        "Added a dedicated Intermediate filter button between Active and Dead in the results toolbar.",
-        "Improved results filtering so Dead now shows only typical dead hosts, while intermediate hosts are grouped in their own view.",
-        "Added scan results Export/Import actions in File menu (JSON format), including scan range history in exported files and restoring history on import.",
-        "Improved Globe visualization: elevated arc routes with animated flow and thinner 1px styling aligned to globe route animation behavior."
+        "New UI",
+        "IP Scanner in progress"
       ]
     },
     {
