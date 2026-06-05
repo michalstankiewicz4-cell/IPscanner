@@ -2,7 +2,7 @@
 # Projekt amatorski wykonany wyłącznie przy użyciu vibe-codingu w celach naukowych.
 # An amateur project made solely using vibe-coding for scientific purposes.
 
-# NetRecon IP Scanner — aplikacja desktopowa (Tauri)
+# OSINT NET Auditor — aplikacja desktopowa (Tauri)
 
 ## Uruchomienie / Installation
 
