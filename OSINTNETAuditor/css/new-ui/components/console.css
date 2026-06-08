@@ -242,7 +242,7 @@
 }
 
 .v1-editor.no-center-tabs.console-collapsed {
-  grid-template-rows: 1fr 0 28px;
+  grid-template-rows: 0 1fr 0 28px;
 }
 
 .v1-editor.console-collapsed .v1-resizer-h,

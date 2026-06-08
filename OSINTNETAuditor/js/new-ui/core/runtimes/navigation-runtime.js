@@ -8,7 +8,7 @@
     var platform = deps.platform || ((window.NetReconNewUICore && window.NetReconNewUICore.platform) || {});
 
     var sidebarView = "scanner";
-    var sidebarFallbackOrder = ["scan-runner", "results-ip", "ip-library"];
+    var sidebarFallbackOrder = ["scan-runner", "shellcraft-library", "shellcraft-inspector", "results-ip", "ip-library"];
     var SCAN_DEFAULTS_KEY = "netrecon_scan_defaults_v1";
     var SCAN_RESULTS_KEY = "netrecon_scan_results_v1";
     var SCAN_PROGRESS_KEY = "netrecon_scan_progress_v1";
@@ -25,6 +25,7 @@
       if (preferredView) return preferredView;
       if (tool === "results-ip") return "results";
       if (tool === "scan-runner" || tool === "ip-library") return "scanner";
+      if (tool === "shellcraft-library" || tool === "shellcraft-inspector") return "shellcraft";
       return sidebarView;
     }
 
@@ -193,10 +194,11 @@
       if (titleEl) {
         if (view === "results") titleEl.textContent = tr("resultsSidebarTitle");
         else if (view === "scanner") titleEl.textContent = tr("ipScanner");
+        else if (view === "shellcraft") titleEl.textContent = tr("shellcraftSidebarTitle");
         else titleEl.textContent = tr("explorer");
       }
 
-      var showToolTabs = view === "scanner" || view === "results" || view === "empty";
+      var showToolTabs = view === "scanner" || view === "results" || view === "empty" || view === "shellcraft";
       if (toolTabsEl) {
         toolTabsEl.hidden = !showToolTabs;
       }
@@ -687,6 +689,81 @@
       setSidebarTabOpen(tool, true);
     }
 
+    function setRightTabOpen(tool, isOpen) {
+      var wrap = document.querySelector('.v1-right-tool-tab-wrap[data-right-tab="' + tool + '"]');
+      if (!wrap) return;
+      wrap.classList.toggle("right-tab-closed", !isOpen);
+      if (isOpen) wrap.removeAttribute("hidden");
+      else wrap.setAttribute("hidden", "hidden");
+      if (!isOpen) {
+        if (wrap.classList.contains("is-right-active")) {
+          wrap.classList.remove("is-right-active");
+          setRightTabActive(firstOpenRightTab(tool));
+        }
+      }
+      syncRightTabActivationInvariant();
+    }
+
+    function ensureRightTabOpen(tool) {
+      if (!tool) return;
+      setRightTabOpen(tool, true);
+    }
+
+    function syncRightTabActivationInvariant() {
+      var openTools = Array.from(document.querySelectorAll(".v1-right-tool-tab-wrap"))
+        .filter(function (wrap) {
+          return !wrap.classList.contains("right-tab-closed") && !wrap.hasAttribute("hidden");
+        })
+        .map(function (wrap) {
+          return wrap.getAttribute("data-right-tab") || "";
+        })
+        .filter(Boolean);
+
+      var rightbar = document.querySelector(".v1-rightbar");
+      if (rightbar) {
+        rightbar.classList.toggle("right-tabs-empty", openTools.length === 0);
+      }
+
+      if (!openTools.length) {
+        setRightTabActive("");
+        return;
+      }
+
+      var hasActive = Array.from(document.querySelectorAll(".v1-right-tool-tab-wrap.is-right-active")).some(function (wrap) {
+        var tool = wrap.getAttribute("data-right-tab") || "";
+        return openTools.indexOf(tool) >= 0;
+      });
+      if (!hasActive) {
+        setRightTabActive(openTools[0]);
+      }
+    }
+
+    function setRightTabActive(tool) {
+      var nextTool = String(tool || "");
+      document.querySelectorAll(".v1-right-tool-tab-wrap").forEach(function (wrap) {
+        var wrapTool = wrap.getAttribute("data-right-tab") || "";
+        wrap.classList.toggle("is-right-active", !!nextTool && wrapTool === nextTool);
+      });
+      document.querySelectorAll(".v1-right-tab").forEach(function (btn) {
+        var btnTool = btn.getAttribute("data-v1-right-tab") || "";
+        btn.classList.toggle("active", !!nextTool && btnTool === nextTool);
+      });
+      document.querySelectorAll(".v1-right-pane").forEach(function (pane) {
+        pane.classList.toggle("active", pane.getAttribute("data-v1-right-pane") === nextTool);
+      });
+    }
+
+    function firstOpenRightTab(excludedTool) {
+      var wraps = Array.from(document.querySelectorAll(".v1-right-tool-tab-wrap"));
+      var next = wraps.find(function (wrap) {
+        if (wrap.classList.contains("right-tab-closed")) return false;
+        if (wrap.hasAttribute("hidden")) return false;
+        var tabTool = wrap.getAttribute("data-right-tab") || "";
+        return tabTool && tabTool !== excludedTool;
+      });
+      return next ? (next.getAttribute("data-right-tab") || "") : "";
+    }
+
     function activateSidebarTool(tool, preferredView) {
       if (!tool) return;
       ensureSidebarTabOpen(tool);
@@ -695,7 +772,7 @@
     }
 
     function syncScannerSidebarToolPanels(activeTool) {
-      var selected = activeTool === "ip-library" ? "ip-library" : "scan-runner";
+      var selected = String(activeTool || "");
       document.querySelectorAll("[data-sidebar-tool-panel]").forEach(function (panel) {
         var panelTool = panel.getAttribute("data-sidebar-tool-panel") || "";
         panel.hidden = panelTool !== selected;
@@ -1061,6 +1138,12 @@
 
         // Central tab clicks should only activate that tab.
         if (fromCenterTabs) {
+          if (tool === "shellcraft") {
+            ensureSidebarTabOpen("shellcraft-library");
+            ensureSidebarTabOpen("shellcraft-inspector");
+            setLeftActiveTab("shellcraft-library");
+            switchSidebarView("shellcraft");
+          }
           switchTool(tool);
           return;
         }
@@ -1083,6 +1166,11 @@
           }
         } else if (tool === "scan-runner" || tool === "ip-library") {
           activateSidebarTool(tool, "scanner");
+        } else if (tool === "shellcraft") {
+          ensureSidebarTabOpen("shellcraft-library");
+          ensureSidebarTabOpen("shellcraft-inspector");
+          setLeftActiveTab("shellcraft-library");
+          switchSidebarView("shellcraft");
         }
         switchTool(tool);
       });
@@ -1204,13 +1292,16 @@
           var next = tab.getAttribute("data-v1-right-tab");
           if (!next) return;
 
-          document.querySelectorAll(".v1-right-tab").forEach(function (item) {
-            item.classList.toggle("active", item === tab);
-          });
+          setRightTabActive(next);
+        });
+      });
 
-          document.querySelectorAll(".v1-right-pane").forEach(function (pane) {
-            pane.classList.toggle("active", pane.getAttribute("data-v1-right-pane") === next);
-          });
+      document.querySelectorAll("[data-right-tab-close]").forEach(function (close) {
+        close.addEventListener("click", function (evt) {
+          evt.stopPropagation();
+          var tab = close.getAttribute("data-tool");
+          if (!tab) return;
+          setRightTabOpen(tab, false);
         });
       });
 

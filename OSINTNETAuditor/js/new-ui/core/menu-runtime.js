@@ -259,6 +259,34 @@
         return;
       }
 
+      if (behavior.indexOf("open-right-tool:") === 0) {
+        var tool = behavior.slice("open-right-tool:".length);
+        if (tool) {
+          var wrap = document.querySelector('.v1-right-tool-tab-wrap[data-right-tab="' + tool + '"]');
+          if (wrap) {
+            wrap.classList.remove("right-tab-closed");
+            wrap.removeAttribute("hidden");
+          }
+          document.querySelectorAll(".v1-right-tool-tab-wrap").forEach(function (item) {
+            var wrapTool = item.getAttribute("data-right-tab") || "";
+            item.classList.toggle("is-right-active", wrapTool === tool);
+          });
+          document.querySelectorAll(".v1-right-tab").forEach(function (btn) {
+            var btnTool = btn.getAttribute("data-v1-right-tab") || "";
+            btn.classList.toggle("active", btnTool === tool);
+          });
+          document.querySelectorAll(".v1-right-pane").forEach(function (pane) {
+            pane.classList.toggle("active", pane.getAttribute("data-v1-right-pane") === tool);
+          });
+          var rightbar = document.querySelector(".v1-rightbar");
+          if (rightbar) {
+            rightbar.classList.remove("right-tabs-empty");
+          }
+        }
+        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
+        return;
+      }
+
       if (behavior === "toggle-clippy") {
         if (onToggleClippy) onToggleClippy();
         if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);

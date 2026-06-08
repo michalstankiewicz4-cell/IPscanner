@@ -48,6 +48,8 @@
         <button class="v1-menu-trigger">Tools</button>
         <div class="v1-menu-dropdown">
           <button class="v1-menu-dd-item" data-tool="results-ip"><span id="v1ToolsMenuIpScanner">IP Scanner</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="shellcraft"><span id="v1ToolsMenuShellCraft">ShellCraft</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="assistant-right"><span>🤖 AI Assistant</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-tool="topology"><span id="v1ToolsMenuTopology">Topology</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-tool="globe"><span id="v1ToolsMenuGlobe">Globe</span><span class="shortcut"></span></button>
         </div>
@@ -103,6 +105,14 @@
             <div class="v1-sidebar-tool-tab-wrap sidebar-tab-closed" data-sidebar-tab="ip-library" hidden>
               <button class="v1-sidebar-tool-tab" id="v1SidebarTabIpLibrary" data-tool="ip-library" type="button">IP Library</button>
               <span class="v1-sidebar-tool-tab-close" data-sidebar-tab-close="true" data-tool="ip-library" role="button" tabindex="-1" aria-label="Close tab">×</span>
+            </div>
+            <div class="v1-sidebar-tool-tab-wrap sidebar-tab-closed" data-sidebar-tab="shellcraft-library" hidden>
+              <button class="v1-sidebar-tool-tab" id="v1SidebarTabShellCraftLibrary" data-tool="shellcraft-library" type="button">Library</button>
+              <span class="v1-sidebar-tool-tab-close" data-sidebar-tab-close="true" data-tool="shellcraft-library" role="button" tabindex="-1" aria-label="Close tab">×</span>
+            </div>
+            <div class="v1-sidebar-tool-tab-wrap sidebar-tab-closed" data-sidebar-tab="shellcraft-inspector" hidden>
+              <button class="v1-sidebar-tool-tab" id="v1SidebarTabShellCraftInspector" data-tool="shellcraft-inspector" type="button">Inspector</button>
+              <span class="v1-sidebar-tool-tab-close" data-sidebar-tab-close="true" data-tool="shellcraft-inspector" role="button" tabindex="-1" aria-label="Close tab">×</span>
             </div>
             <div class="v1-sidebar-tool-tab-wrap sidebar-tab-closed" data-sidebar-tab="results-ip" hidden>
               <button class="v1-sidebar-tool-tab" id="v1SidebarTabResults" data-tool="results-ip" type="button">Results</button>
@@ -243,6 +253,34 @@
             </ul>
           </div>
         </div>
+        <div data-sidebar-view="shellcraft" hidden>
+          <div data-sidebar-tool-panel="shellcraft-library" hidden>
+            <ul class="v1-tool-list">
+              <li>
+                <div class="v1-section-header">
+                  <strong>Library</strong>
+                  <span class="v1-collapse-arrow">▼</span>
+                </div>
+                <div class="v1-section-body">
+                  <div class="v1-import-manager-note">ShellCraft library content is empty for now.</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div data-sidebar-tool-panel="shellcraft-inspector" hidden>
+            <ul class="v1-tool-list">
+              <li>
+                <div class="v1-section-header">
+                  <strong>Inspector</strong>
+                  <span class="v1-collapse-arrow">▼</span>
+                </div>
+                <div class="v1-section-body">
+                  <div class="v1-import-manager-note">ShellCraft inspector content is empty for now.</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
         <div data-sidebar-view="results" hidden>
           <ul class="v1-tool-list">
             <li id="v1ResultNavIp" data-result-tab="results-ip" class="v1-result-nav-item">🖥 IP Results</li>
@@ -302,6 +340,11 @@
           <button class="v1-tab tab-closed" data-tool="results-ip" type="button" hidden>
             <span class="v1-tab-icon" aria-hidden="true">🖥</span>
             <span class="v1-tab-title" id="v1TabTitleResultsIp">IP Results</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="shellcraft" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🛠</span>
+            <span class="v1-tab-title" id="v1TabTitleShellCraft">ShellCraft</span>
             <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
           </button>
           <button class="v1-tab tab-closed" data-tool="topology" type="button" hidden>
@@ -391,16 +434,15 @@ macro://stealth-check
       <!-- Right section -->
       <aside class="v1-rightbar">
         <div class="v1-side-head">
-          <span class="v1-head-title">Assistant</span>
+          <div class="v1-right-tabs">
+            <div class="v1-right-tool-tab-wrap is-right-active" data-right-tab="assistant">
+              <button class="v1-right-tab active" data-v1-right-tab="assistant" type="button">AI Assistant</button>
+              <span class="v1-right-tool-tab-close" data-right-tab-close="true" data-tool="assistant" role="button" tabindex="-1" aria-label="Close tab">×</span>
+            </div>
+          </div>
           <button class="v1-panel-toggle" data-panel-toggle="right" title="Hide right section" aria-label="Hide right section">▶</button>
         </div>
         <div class="v1-right-content">
-          <div class="v1-right-tabs">
-            <button class="v1-right-tab active" data-v1-right-tab="assistant" type="button">AI Assistant</button>
-            <button class="v1-right-tab" data-v1-right-tab="notes" type="button">Notes</button>
-          </div>
-
-          <div class="v1-right-body">
             <section class="v1-right-pane active" data-v1-right-pane="assistant">
               <article class="v1-ai-panel">
                 <div class="v1-ai-mode" role="radiogroup" aria-label="Assistant mode">
@@ -427,14 +469,6 @@ macro://stealth-check
                 <p class="status-line" id="v1StatusLine" hidden></p>
               </article>
             </section>
-
-            <section class="v1-right-pane" data-v1-right-pane="notes">
-              <div class="v1-notes-pane">
-                <h4 class="v1-notes-title">Notes</h4>
-                <p class="v1-notes-text">Reserve tab for next assistant views (runbook, snippets, context).</p>
-              </div>
-            </section>
-          </div>
         </div>
       </aside>
     </main>

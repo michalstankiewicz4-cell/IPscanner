@@ -109,6 +109,12 @@
       purpose: "Pokaz lub ukryj asystenta Clippy.",
       behavior: "toggle-clippy",
     },
+    "assistant-right": {
+      label: "AI Assistant",
+      purposeKey: "tipActionAssistant",
+      purpose: "Otwiera panel asystenta AI po prawej stronie.",
+      behavior: "open-right-tool:assistant",
+    },
     "window-min": {
       label: "Window minimize",
       purposeKey: "tipActionWindowMin",

@@ -20,6 +20,11 @@
       textKey: "toolText_ip_library",
       points: ["Country IP ranges", "PowerShell auto update", "Local cache preview"]
     },
+    shellcraft: {
+      titleKey: "toolTitle_shellcraft",
+      textKey: "toolText_shellcraft",
+      points: ["Shell script library", "Command inspector", "Empty starter workspace"]
+    },
     settings: {
       titleKey: "toolTitle_settings",
       textKey: "toolText_settings",

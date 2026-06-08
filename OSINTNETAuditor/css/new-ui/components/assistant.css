@@ -1,40 +1,122 @@
 .v1-right-content {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   height: 100%;
   min-height: 0;
   box-sizing: border-box;
   overflow: hidden;
+  padding: 10px;
+  background: var(--bg-elev);
 }
 
 .v1-right-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 0 0 8px;
+  min-width: 0;
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+  flex-wrap: nowrap;
+  font-size: 12px;
+  letter-spacing: normal;
+  text-transform: none;
+  padding: 0;
+}
+
+.v1-right-tool-tab-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 240px;
+  padding: 7px 10px;
+  color: var(--txt-dim);
+  background: var(--bg-elev);
+  font-family: var(--font-ui);
+  line-height: 1.2;
+  position: relative;
+}
+
+.v1-right-tool-tab-wrap.right-tab-closed {
+  display: none;
+}
+
+.v1-right-tool-tab-wrap.is-right-active {
+  color: var(--txt);
+  background: var(--bg-elev);
+  box-shadow: inset 0 2px 0 var(--brand);
+}
+
+.v1-right-tool-tab-wrap:hover:not(.is-right-active) {
+  color: #ffffff;
+  background: #222326;
+}
+
+.v1-right-tool-tab-wrap .v1-right-tab {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.v1-right-tool-tab-wrap .v1-right-tab.active {
+  color: var(--txt);
+}
+
+.v1-right-tool-tab-wrap .v1-right-tool-tab-close {
+  display: none;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  color: #c6c9d0;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+.v1-right-tool-tab-wrap .v1-right-tool-tab-close:hover {
+  border-color: #4a4f58;
+  background: #2c3139;
+  color: #ffffff;
+}
+
+.v1-right-tool-tab-wrap.is-right-active .v1-right-tool-tab-close {
+  display: inline-flex;
+}
+
+.v1-rightbar.right-tabs-empty {
+  background: var(--v1-tabs-strip-bg);
+}
+
+.v1-rightbar.right-tabs-empty .v1-side-head {
+  justify-content: flex-start;
+  padding: 0 0 0 6px;
+}
+
+.v1-rightbar.right-tabs-empty .v1-right-tabs {
+  display: none;
+}
+
+.v1-rightbar.right-tabs-empty .v1-right-content {
+  display: none;
 }
 
 .v1-right-tab {
   border: 0;
-  background: #212124;
-  color: var(--txt-dim);
+  background: transparent;
+  color: inherit;
   font-size: 12px;
-  font-family: var(--font-ui);
-  padding: 6px 10px;
+  font-family: inherit;
+  padding: 0;
   cursor: pointer;
 }
 
 .v1-right-tab.active {
-  background: color-mix(in oklab, var(--bg-soft) 74%, var(--brand) 26%);
   color: var(--txt);
-}
-
-.v1-right-body {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr);
-  height: 100%;
-  min-height: 0;
-  position: relative;
-  overflow: hidden;
 }
 
 .v1-right-pane {
