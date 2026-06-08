@@ -1197,6 +1197,12 @@
           return;
         }
 
+        if (nextTool === "shellcraft-library" || nextTool === "shellcraft-inspector") {
+          setLeftActiveTab(nextTool);
+          switchSidebarView("shellcraft");
+          return;
+        }
+
         if (nextTool === "results-ip") {
           setLeftActiveTab("results-ip");
           switchSidebarView("results");
