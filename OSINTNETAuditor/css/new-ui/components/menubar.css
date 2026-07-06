@@ -38,6 +38,24 @@
   min-width: 12px;
 }
 
+.v1-session-name-spacer {
+  flex: 1 1 auto;
+  min-width: 12px;
+}
+
+.v1-session-name-label {
+  flex: 0 1 auto;
+  max-width: 40vw;
+  color: #a8adb5;
+  font: 500 12px/1 var(--font-ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+}
+
 .v1-window-controls {
   display: flex;
   align-items: stretch;
@@ -319,4 +337,68 @@
 .v1-exit-btn--primary:hover {
   background: #2790e7;
   border-color: #2e8fe0;
+}
+
+.v1-session-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  border: none;
+  background: none;
+  padding: 3px 4px;
+}
+
+.v1-session-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.v1-session-row-date {
+  color: #8a93a3;
+  font: 400 11px/1.4 var(--font-ui);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.v1-session-row-name {
+  color: #5b9dff;
+  font: 500 12px/1.4 var(--font-ui);
+  text-decoration: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.v1-session-row-name:hover,
+.v1-session-row-name:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
+.v1-session-row-folder {
+  color: #7c8494;
+  font: 400 11px/1.4 var(--font-ui);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v1-session-row-remove {
+  border: none;
+  background: none;
+  color: #8a93a3;
+  font: 400 14px/1 var(--font-ui);
+  cursor: pointer;
+  padding: 0 4px;
+  flex-shrink: 0;
+  opacity: 0;
+}
+
+.v1-session-row:hover .v1-session-row-remove,
+.v1-session-row-remove:focus-visible {
+  opacity: 1;
+}
+
+.v1-session-row-remove:hover {
+  color: #ff6b6b;
 }

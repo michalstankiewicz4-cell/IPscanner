@@ -11,6 +11,7 @@
     var onSwitchTool = deps.onSwitchTool;
     var onSwitchSidebarView = deps.onSwitchSidebarView;
     var onToggleClippy = deps.onToggleClippy;
+    var session = deps.session || null;
     var exitDialogState = {
       root: null,
       title: null,
@@ -333,11 +334,33 @@
         return;
       }
 
+      if (behavior === "save-session") {
+        return session ? session.saveSession() : undefined;
+      }
+
+      if (behavior === "save-session-as") {
+        if (session) session.saveSessionAs();
+        return;
+      }
+
+      if (behavior === "load-session") {
+        if (session) session.loadSession();
+        return;
+      }
+
+      if (behavior === "close-session") {
+        if (!session) return;
+        if (!window.confirm(tr("sessionCloseConfirm"))) return;
+        session.closeSession();
+        return;
+      }
+
       if (behavior === "app-exit") {
         openExitConfirmDialog().then(function (choice) {
           if (choice === "save") {
-            runMenuAction("save-session");
-            closeAppWindow(label);
+            Promise.resolve(runMenuAction("save-session")).then(function () {
+              closeAppWindow(label);
+            });
             return;
           }
 

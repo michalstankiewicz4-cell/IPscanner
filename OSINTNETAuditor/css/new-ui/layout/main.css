@@ -903,11 +903,47 @@
 }
 
 .v1-empty-logo {
+  position: absolute;
+  inset: 0;
+  margin: auto;
   width: min(320px, 62vw);
   max-width: 100%;
   height: auto;
   opacity: var(--v1-empty-logo-opacity);
   filter: var(--v1-empty-logo-filter);
+}
+
+.v1-session-welcome {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+  width: min(360px, 84vw);
+  max-height: 80%;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: none;
+  background: none;
+}
+
+.v1-session-welcome h3 {
+  margin: 0;
+  color: var(--txt);
+  font: 600 13px/1.2 var(--font-ui);
+}
+
+.v1-session-welcome-list {
+  display: grid;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.v1-session-welcome-empty {
+  margin: 0;
+  color: #9aa3b2;
+  font: 400 12px/1.4 var(--font-ui);
 }
 
 #v1MainCard {

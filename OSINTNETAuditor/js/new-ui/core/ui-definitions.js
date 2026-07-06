@@ -20,22 +20,28 @@
 
   var menuActions = {
     "save-session": {
-      label: "Save session (mock)",
+      label: "Save session",
       purposeKey: "tipActionSaveSession",
       purpose: "Zapis aktualnej sesji.",
-      behavior: "status",
+      behavior: "save-session",
+    },
+    "save-session-as": {
+      label: "Save session as...",
+      purposeKey: "tipActionSaveSessionAs",
+      purpose: "Zapis aktualnej sesji pod nowa nazwa.",
+      behavior: "save-session-as",
     },
     "load-session": {
-      label: "Load session (mock)",
+      label: "Load session",
       purposeKey: "tipActionLoadSession",
       purpose: "Wczytanie zapisanej sesji.",
-      behavior: "status",
+      behavior: "load-session",
     },
     "close-session": {
-      label: "Close session (mock)",
+      label: "Close session",
       purposeKey: "tipActionCloseSession",
       purpose: "Zamkniecie aktywnej sesji.",
-      behavior: "status",
+      behavior: "close-session",
     },
     "import-another-session": {
       label: "Import another session data (mock)",

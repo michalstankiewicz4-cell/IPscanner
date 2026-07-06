@@ -79,6 +79,14 @@
       let tabsTrack = null;
       let tabsScrollLeftBtn = null;
       let tabsScrollRightBtn = null;
+      // Reassigned once panelsRuntime is created (below) to
+      // panelsRuntime.setTooltips / a wrapper around panelsRuntime's
+      // refreshActiveUI/switchTool. These no-op placeholders only exist so
+      // the names are bound in scope for the handful of call sites that
+      // execute before that reassignment runs.
+      let setTooltips = function () {};
+      let refreshActiveUI = function () {};
+      let switchTool = function () {};
 
       function applyStaticTranslations() {
         const fileTrigger = document.querySelector('[data-menu="file"] .v1-menu-trigger');
@@ -293,9 +301,10 @@
       };
 
       const fallbackActionMap = {
-        "save-session": "Save session (mock)",
-        "load-session": "Load session (mock)",
-        "close-session": "Close session (mock)",
+        "save-session": "Save session",
+        "save-session-as": "Save session as...",
+        "load-session": "Load session",
+        "close-session": "Close session",
         "import-another-session": "Import another session data (mock)",
         exit: "Exit (mock)",
         countries: "Country IP Library",
@@ -863,50 +872,6 @@
 
       let activeTool = store ? store.getState().activeTool : "scan-runner";
 
-      function infoFor(tool) {
-        const tools = getToolInfoMap();
-        const info = tools[tool] || tools["scan-runner"] || baseToolInfo["scan-runner"];
-        if (tool === "results-ip") {
-          return Object.assign({}, info, {
-            title: tr("toolResultsIpTitle"),
-            text: tr("toolResultsIpText"),
-          });
-        }
-        return info;
-      }
-
-      function setTooltips() {
-        document.querySelectorAll("[data-tool]").forEach((el) => {
-          const tool = el.getAttribute("data-tool");
-          if (!tool) return;
-          const info = infoFor(tool);
-          const tip = info.title + " - " + info.text;
-          el.setAttribute("title", tip);
-          el.setAttribute("aria-label", tip);
-        });
-
-        document.querySelectorAll(".v1-tab").forEach((el) => {
-          const txt = (el.textContent || "").trim();
-          if (!txt) return;
-          if (!el.getAttribute("title")) {
-            el.setAttribute("title", tr("tabPrefix") + ": " + txt);
-          }
-        });
-      }
-
-      function buildDetailHtml(tool) {
-        const info = infoFor(tool);
-        const points = info.points.map((p) => "<li>" + p + "</li>").join("");
-        return "<h4>" + info.title + "</h4><div>" + info.text + "</div><ul>" + points + "</ul>";
-      }
-
-      function isElementFullyVisibleWithinContainer(element, container) {
-        if (!element || !container) return true;
-        const elementRect = element.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        return elementRect.left >= containerRect.left && elementRect.right <= containerRect.right;
-      }
-
       function scrollTabTrackToElement(element) {
         if (!element || !tabsTrack) return;
         const maxScrollLeft = Math.max(0, tabsTrack.scrollWidth - tabsTrack.clientWidth);
@@ -961,42 +926,6 @@
           tabsScrollLeftBtn.disabled = !hasOverflow || currentScrollLeft <= 1;
           tabsScrollRightBtn.disabled = !hasOverflow || currentScrollLeft >= effectiveMaxScrollLeft - 1;
         }
-      }
-
-      function refreshActiveUI() {
-        document.querySelectorAll("[data-tool]").forEach((el) => {
-          const isActive = el.getAttribute("data-tool") === activeTool;
-          el.classList.toggle("active", isActive);
-          if (el.tagName === "BUTTON") {
-            el.setAttribute("aria-pressed", isActive ? "true" : "false");
-          }
-        });
-
-        if (tabsTrack) {
-          const activeTab = tabsTrack.querySelector('.v1-tab.active');
-          if (activeTab && !isElementFullyVisibleWithinContainer(activeTab, tabsTrack)) {
-            scheduleScrollActiveTabIntoView();
-          }
-          refreshTabsOverflowUi();
-        }
-
-        const v1Title = document.getElementById("v1ToolTitle");
-        const v1Detail = document.getElementById("v1ToolDetail");
-        const v1StatusLine = document.getElementById("v1StatusLine");
-        const v1StatusRight = document.getElementById("v1StatusRight");
-        const info = infoFor(activeTool);
-
-        if (v1Title) v1Title.textContent = info.title;
-        if (v1Detail) v1Detail.innerHTML = buildDetailHtml(activeTool);
-        if (v1StatusLine) v1StatusLine.textContent = tr("toolRoute") + ": " + activeTool;
-        if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + activeTool;
-      }
-
-      function switchTool(tool) {
-        activeTool = tool;
-        if (store) store.setState({ activeTool: tool });
-        refreshActiveUI();
-        scheduleScrollActiveTabIntoView();
       }
 
       function initCenterTabsScrollButtons() {
@@ -1281,6 +1210,18 @@
         initExtensionManagerUi = extensionManagerRuntime.init;
       }
 
+      const sessionRuntime = runtimeFactory.createSessionRuntime
+        ? runtimeFactory.createSessionRuntime({
+            tr,
+            platform,
+            setStatusLine,
+            panelsRuntime,
+            switchTool,
+            getNavigationRuntime: function () { return navigationRuntime; },
+            refreshCustomScrollbars: function () { refreshCustomScrollbars(); },
+          })
+        : null;
+
       const menuRuntime = runtimeFactory.createMenuRuntime
         ? runtimeFactory.createMenuRuntime({
             tr,
@@ -1298,6 +1239,7 @@
                 clippyRuntime.toggle();
               }
             },
+            session: sessionRuntime,
           })
         : null;
 
@@ -1373,6 +1315,12 @@
       const hasOpenSidebarTabs = !!document.querySelector('.v1-sidebar-tool-tab-wrap:not(.sidebar-tab-closed):not([hidden])');
       const initialSidebarView = (!initialActiveTool && !hasOpenSidebarTabs) ? "empty" : "scanner";
       switchSidebarView(initialSidebarView);
+      if (sessionRuntime && sessionRuntime.restoreLayoutAfterReload) {
+        sessionRuntime.restoreLayoutAfterReload();
+      }
+      if (sessionRuntime && sessionRuntime.initWelcomeView) {
+        sessionRuntime.initWelcomeView();
+      }
 
       function revealUi() {
         if (!document.body) return;

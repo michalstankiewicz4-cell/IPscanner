@@ -1377,9 +1377,45 @@
       bindRightTabsAndAssistant();
     }
 
+    function getOpenLeftTools() {
+      return Array.from(document.querySelectorAll(".v1-sidebar-tool-tab-wrap[data-sidebar-tab]"))
+        .filter(function (wrap) {
+          return !wrap.classList.contains("sidebar-tab-closed") && !wrap.hasAttribute("hidden");
+        })
+        .map(function (wrap) { return wrap.getAttribute("data-sidebar-tab"); })
+        .filter(Boolean);
+    }
+
+    function getActiveLeftTool() {
+      var wrap = document.querySelector(".v1-sidebar-tool-tab-wrap.is-left-active[data-sidebar-tab]");
+      return wrap ? wrap.getAttribute("data-sidebar-tab") : null;
+    }
+
+    function getOpenRightTools() {
+      return Array.from(document.querySelectorAll(".v1-right-tool-tab-wrap[data-right-tab]"))
+        .filter(function (wrap) {
+          return !wrap.classList.contains("right-tab-closed") && !wrap.hasAttribute("hidden");
+        })
+        .map(function (wrap) { return wrap.getAttribute("data-right-tab"); })
+        .filter(Boolean);
+    }
+
+    function getActiveRightTool() {
+      var wrap = document.querySelector(".v1-right-tool-tab-wrap.is-right-active[data-right-tab]");
+      return wrap ? wrap.getAttribute("data-right-tab") : null;
+    }
+
     return {
       init: init,
       switchSidebarView: switchSidebarView,
+      getOpenLeftTools: getOpenLeftTools,
+      getActiveLeftTool: getActiveLeftTool,
+      getOpenRightTools: getOpenRightTools,
+      getActiveRightTool: getActiveRightTool,
+      setSidebarTabOpen: setSidebarTabOpen,
+      ensureRightTabOpen: ensureRightTabOpen,
+      setRightTabOpen: setRightTabOpen,
+      setRightTabActive: setRightTabActive,
     };
   }
 

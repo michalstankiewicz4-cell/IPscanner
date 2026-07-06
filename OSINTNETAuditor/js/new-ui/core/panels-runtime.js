@@ -292,6 +292,50 @@
       return !!(tabEl && tabEl.classList.contains("tab-detached-hidden"));
     }
 
+    function extractRanges(item) {
+      if (!item || typeof item !== "object") return [];
+
+      var direct = String(item.cidr || item.range || item.network || item.address || item.ip_range || "").trim();
+      if (direct) return [direct];
+
+      if (Array.isArray(item.ranges) && item.ranges.length) {
+        return item.ranges.map(function (entry) {
+          if (entry && typeof entry === "object") {
+            return String(entry.cidr || entry.range || entry.network || entry.address || entry.ip_range || "").trim();
+          }
+          return String(entry || "").trim();
+        }).filter(Boolean);
+      }
+
+      return [];
+    }
+
+    function pickCountryFromItem(item) {
+      if (!item || typeof item !== "object") return "-";
+      return String(
+        item.country_code ||
+        item.countryCode ||
+        item.country ||
+        item.code ||
+        item.flag ||
+        item.name ||
+        "-"
+      ).toUpperCase();
+    }
+
+    function flattenIpLibraryEntries(rawArray) {
+      var items = Array.isArray(rawArray) ? rawArray : [];
+      var entries = [];
+      items.forEach(function (item) {
+        var countryCode = pickCountryFromItem(item);
+        extractRanges(item).forEach(function (cidr) {
+          if (!cidr) return;
+          entries.push({ cidr: cidr, countryCode: countryCode });
+        });
+      });
+      return entries;
+    }
+
     function hideDetachedTab(tool) {
       if (!tool) return;
       var tabEl = document.querySelector('.v1-tab[data-tool="' + tool + '"]');
@@ -1319,14 +1363,6 @@
 
       updateTabPopoutUi();
     }
-    document.addEventListener("DOMContentLoaded", function () {
-      document.querySelectorAll(".v1-tab").forEach(function (tab) {
-        tab.classList.add("tab-closed");
-        tab.setAttribute("hidden", "hidden");
-      });
-      updateEmptyState();
-    });
-
     function escapeHtml(value) {
       return String(value == null ? "" : value)
         .replace(/&/g, "&amp;")
@@ -1909,36 +1945,6 @@
         return "-";
       }
 
-      function extractRanges(item) {
-        if (!item || typeof item !== "object") return [];
-
-        var direct = String(item.cidr || item.range || item.network || item.address || item.ip_range || "").trim();
-        if (direct) return [direct];
-
-        if (Array.isArray(item.ranges) && item.ranges.length) {
-          return item.ranges.map(function (entry) {
-            if (entry && typeof entry === "object") {
-              return String(entry.cidr || entry.range || entry.network || entry.address || entry.ip_range || "").trim();
-            }
-            return String(entry || "").trim();
-          }).filter(Boolean);
-        }
-
-        return [];
-      }
-
-      function pickCountryFromItem(item) {
-        if (!item || typeof item !== "object") return "-";
-        return String(
-          item.country_code ||
-          item.countryCode ||
-          item.country ||
-          item.code ||
-          item.flag ||
-          item.name ||
-          "-"
-        ).toUpperCase();
-      }
 
       function renderCenterRows(data) {
         var centerRowsEl = getCenterRowsEl();
@@ -2452,12 +2458,28 @@
       return !!tools[tool];
     }
 
+    function getDetachedTools() {
+      return Object.keys(detachedCards);
+    }
+
+    function getOpenCenterTools() {
+      return Array.from(document.querySelectorAll(".v1-tab[data-tool]")).filter(function (t) {
+        return !t.classList.contains("tab-closed") && !isDetachedHiddenTab(t);
+      }).map(function (t) {
+        return t.getAttribute("data-tool");
+      }).filter(Boolean);
+    }
+
     return {
       setTooltips: setTooltips,
       refreshActiveUI: refreshActiveUI,
       switchTool: switchTool,
       getActiveTool: getActiveTool,
       hasTool: hasTool,
+      getDetachedTools: getDetachedTools,
+      getOpenCenterTools: getOpenCenterTools,
+      closeCenterTool: closeToolTab,
+      flattenIpLibraryEntries: flattenIpLibraryEntries,
       initWorkbenchTabs: initWorkbenchTabs,
     };
   }
