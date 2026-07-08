@@ -4,17 +4,6 @@ An amateur project made solely using vibe-coding for scientific purposes.
 
 Desktop IP/port scanner application built with [Tauri](https://tauri.app/).
 
-## Project status
-
-This repo currently ships two interface tracks, developed independently:
-
-- `main` (this branch) — the classic, Windows 95-style legacy interface.
-- `feature/new-ui-skins` — the new VS Code-style interface, under active development.
-
-**The legacy Windows 95-style look on `main` is being phased out.** Once the new UI fully
-replaces it, the legacy interface will be dropped. See [CONTRIBUTING.md](CONTRIBUTING.md)
-for the exact branch model and current direction.
-
 ## Installation
 
 ### Ready-to-use installer (recommended)
@@ -36,9 +25,6 @@ for the exact branch model and current direction.
 ```bash
 git clone https://github.com/michalstankiewicz4-cell/IPscanner.git
 cd IPscanner
-# main (default branch) builds the legacy UI.
-# for the new VS Code-style UI, switch branch first:
-# git checkout feature/new-ui-skins
 npm install
 npm run tauri:build
 ```
@@ -66,7 +52,7 @@ Planned next: a PDF censored-text checker and an email/file analyser, plus IPv6/
 
 | File | Description |
 | --- | --- |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Project direction, branch model, and rules for contributing code (written in Polish). |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Project direction and rules for contributing code (written in Polish). |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community code of conduct. |
 | [SECURITY.md](SECURITY.md) | How to report a security vulnerability. |
 | [LICENSE.MD](LICENSE.MD) | MIT License. |
