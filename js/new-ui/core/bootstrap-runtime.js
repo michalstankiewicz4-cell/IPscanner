@@ -766,6 +766,15 @@
       // =========================
       const runtimeFactory = core.newUiRuntimes || {};
 
+      // shell: generic named-command registry (FUTURE_PLUGIN_SHELL.md's
+      // "Command bus"). Instantiated for future use - nothing is registered
+      // or invoked through it yet, existing menu/action wiring is untouched.
+      const commandBusRuntime = runtimeFactory.createCommandBusRuntime
+        ? runtimeFactory.createCommandBusRuntime()
+        : null;
+      window.NetReconNewUI = window.NetReconNewUI || {};
+      window.NetReconNewUI.commandBus = commandBusRuntime;
+
       const ipInputsRuntimeFactory = runtimeFactory.createIpInputsRuntime
         ? runtimeFactory.createIpInputsRuntime()
         : null;
