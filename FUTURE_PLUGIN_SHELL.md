@@ -253,6 +253,48 @@ trzeba go sformalizować i zastosować konsekwentnie wszędzie (dziś
 bo dostaje żywy `rootEl` i sam podpina listenery - to trzeba będzie przerobić
 na delegację zdarzeń, patrz niżej).
 
+### Gdzie faktycznie działa WASM (dotąd nieustalone, ustalane teraz)
+
+Dwie opcje, trzeba wybrać jedną, bo to zmienia implementację:
+
+**Opcja A - WASM w webview (JS), rekomendowana.** Nowoczesne webview (WebView2
+na Windows, którego używa Tauri) mają wbudowane, natywne wsparcie
+`WebAssembly.instantiate()` w JS - bez żadnego udziału Rusta. Cały system
+kontrybucji (render/handle_event, command bus, event bus) może działać
+wyłącznie po stronie JS. Piaskownica bierze się z samej natury WASM (własna
+pamięć liniowa, zero ambient authority) plus z tego, że host (JS) świadomie
+udostępnia dodatkowi tylko wybrane funkcje importu, zgodnie z `permissions`.
+
+**Opcja B - WASM w backendzie Rust (np. `wasmtime`).** Wymagałoby dodatkowego
+przeskoku JS <-> Tauri `invoke()` <-> Rust-hosted-WASM na każdą interakcję -
+więcej złożoności i opóźnień, bez wyraźnej korzyści, skoro webview i tak już
+umie hostować WASM sam.
+
+**Rekomendacja: Opcja A.** Rust/Tauri zostaje tym, czym jest dziś -
+uprzywilejowaną bramką do rzeczy systemowych (sieć, pliki, PowerShell) poprzez
+`invoke()`. Ważne: **`platform-runtime.js` już dziś jest dokładnie taką bramką**
+(jedyne miejsce z bezpośrednim dostępem do `window.__TAURI__`, patrz
+CONTRIBUTING §14/§12) - model uprawnień dla dodatków to naturalne rozszerzenie
+tego co już istnieje, nie nowy koncept. Dodatek WASM woła funkcję importu JS
+(np. `host_tcp_connect`), ta funkcja **wewnątrz** sprawdza `permissions` danego
+dodatku i dopiero wtedy (albo nie) woła `platform.invoke(...)`. Brak
+uprawnienia = host w ogóle nie rejestruje tej funkcji importu dla tej instancji
+WASM, więc dodatek nie ma nawet czego zawołać.
+
+**Konsekwencja dla wersji www (`ipscanner.pl`, bez backendu Tauri - ustalone w
+rozmowie):** skoro WASM działa w webview (Opcja A), cała warstwa UI dodatku
+(`render`/`handle_event`, panele, zakładki, menu, activity bar) **działa
+identycznie na www i na desktopie** - to czysty JS+WASM, nie potrzebuje
+Tauri. Different jest tylko dostępność uprawnień wymagających realnego
+systemu (`network.tcp`, `shell.powershell`, dostęp do plików): na www host po
+prostu nigdy ich nie przyznaje, niezależnie co deklaruje manifest dodatku -
+dokładnie tak jak dziś działa `platform-runtime.js`'s tryb parity
+(`isParityMode()`, CONTRIBUTING §13 "HTML parity": "akcje desktop-only nie
+wywalają UI"). Czyli: zakładki się otwierają, panele renderują, nawigacja
+działa wszędzie: funkcje wymagające Tauri po prostu nie są dostępne na www,
+bez wywalania reszty interfejsu - nie nowa zasada, tylko zastosowanie już
+istniejącej do nowego systemu dodatków.
+
 ### Kształt pojedynczego punktu kontrybucji
 
 Dla każdej sekcji (lewy/prawy/centralny panel, status bar, activity bar, menu)
