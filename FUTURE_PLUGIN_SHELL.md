@@ -144,6 +144,9 @@ Poniższe propozycje zostały zaakceptowane i dochodzą do ustalonej wizji powy�
    konkretnych paneli), żeby ograniczyć ryzyko instalacji złośliwego
    dodatku. Bez tego "instalowalne dodatki" to też potencjalna furtka
    bezpieczeństwa, o czym warto pamiętać projektując manager z sekcji wyżej.
+   **Ustalone (2026-07-08): mechanizmem sandboxingu będzie WASM** - patrz
+   nowa sekcja "Magistrala zdarzeń/komend i punkty kontrybucji (pod WASM)"
+   niżej, to już nie jest otwarta opcja tylko podjęta decyzja.
 6. **Wersjonowanie dodatków** i podstawowe sprawdzanie
    kompatybilności/aktualizacji (dodatek działa z wersją X powłoki wzwyż).
 7. **Wiele jednoczesnych ikon w activity bar** - jedna na każdy
@@ -217,3 +220,115 @@ zrobić to porządnie, potrzeba:
 To dotknie praktycznie każdego pliku runtime w `js/new-ui/core/**` i wymaga
 osobnego, porządnego planowania (patrz sekcja "Kolejność prac" wyżej - robimy
 to dopiero po dokończeniu w pełni działającego skanera).
+
+## Magistrala zdarzeń/komend i punkty kontrybucji (pod WASM)
+
+Ustalone: mechanizmem instalowania/sandboxingu dodatków będzie **WASM** (dodatek
+skompilowany do WebAssembly, uruchamiany w piaskownicy wbudowanej w apkę Rust).
+To nie jest szczegół implementacyjny odłożony na później - **zmienia ksztalt
+calego API kontrybucji już teraz**, więc projektujemy to od razu z tym
+zalozeniem, zamiast projektować "generyczne JS API" i potem je przerabiać.
+
+### Dlaczego WASM zmienia kształt API
+
+Moduł WASM działa w piaskownicy z własną pamięcią liniową. Może wymieniać z
+hostem (JS/Rust) tylko dane **serializowalne** (liczby, stringi/bufory przez
+wspólną pamięć) - nie może:
+
+- trzymać żywej referencji do węzła DOM,
+- otrzymać referencji do funkcji JS jako callbacka,
+- samodzielnie manipulować DOM-em (nie ma dostępu do przeglądarki/DOM-u wprost).
+
+Innymi słowy: **dodatek nie może "zawołać" żywego elementu ani przekazać
+funkcji zwrotnej** tak jak dziś robi to JS-do-JS. Musi to wyglądać jak wymiana
+wiadomości: dodatek dostaje serializowany opis sytuacji, zwraca serializowany
+opis tego co ma się stać, a host (JS shell) faktycznie dotyka DOM-u.
+
+**Dobra wiadomość:** część dzisiejszego kodu już ma dokładnie ten kształt.
+`panel-content-runtime.js`'s `buildDetailHtml(tool)` **już dziś zwraca string
+HTML** zamiast manipulować DOM-em bezpośrednio - host (`panels-runtime.js`)
+wstawia ten string do kontenera. To jest dokładnie wzorzec zgodny z WASM, tylko
+trzeba go sformalizować i zastosować konsekwentnie wszędzie (dziś
+`panel-interactions-runtime.js`'s `wireXXXTool(rootEl)` łamie ten wzorzec,
+bo dostaje żywy `rootEl` i sam podpina listenery - to trzeba będzie przerobić
+na delegację zdarzeń, patrz niżej).
+
+### Kształt pojedynczego punktu kontrybucji
+
+Dla każdej sekcji (lewy/prawy/centralny panel, status bar, activity bar, menu)
+dodatek eksportuje dwie funkcje o serializowalnych sygnaturach:
+
+```
+render(context: JSON) -> html: String
+handle_event(event: JSON) -> patch: JSON
+```
+
+- `render` dostaje kontekst (np. `{tool: "results-ip", state: {...}}` jako
+  JSON) i zwraca gotowy HTML string do wstawienia - dokładnie jak dzisiejsze
+  `buildDetailHtml`.
+- Host podpina **jeden generyczny, delegowany listener** na kontener danego
+  panelu (nie per-dodatek), łapie kliknięcia/inputy wewnątrz, buduje z nich
+  serializowalny opis zdarzenia (`{type: "click", target: "[data-preset-action=add]", ...}`)
+  i woła `handle_event` dodatku.
+- `handle_event` zwraca "patch" - opis co ma się zmienić (np. `{rerender: true}`
+  albo `{updateText: {selector, value}}`) - host wykonuje to na prawdziwym DOM-ie.
+  Dodatek nigdy nie dotyka DOM-u sam.
+
+### Command bus (rejestr nazwanych komend)
+
+Wspólny rejestr `command-id -> handler`, do którego wpisuje się zarówno
+podstawa jak i dodatki (przez manifest, `contributions.commands`). Wywołanie
+komendy to zawsze `invoke(commandId, argsJson) -> resultJson` - ten sam
+serializowalny kształt co wyżej, więc działa identycznie dla JS-owych
+wbudowanych komend i dla komend z dodatku WASM. To od razu daje za darmo
+**paletę komend** (punkt 1 z listy dodatkowych możliwości) - paleta to po
+prostu lista wszystkich zarejestrowanych `command-id` z etykietą.
+
+### Event bus (nazwane, wersjonowane tematy)
+
+Dzisiejsze ad-hoc `CustomEvent`y (`newui:sidebar-tab-intent-open`,
+`newui:console-pane-update` itd., patrz sekcja "Stan obecny" wyżej) zostają
+zebrane w jeden udokumentowany katalog tematów, każdy z wersją i schematem
+payloadu (np. `sidebar.tab.open.v1`). Dodatek może subskrybować/emitować tylko
+tematy, na które manifest deklaruje uprawnienie (patrz niżej) - to samo w
+sobie ogranicza co złośliwy dodatek może "podsłuchać".
+
+### Manifest kontrybucji i uprawnień (rozszerzenie dzisiejszego)
+
+Dzisiejszy manifest (`contributions.tools`/`menuActions`/`i18n` w
+`extensions.js`) rozszerza się o:
+
+```json
+{
+  "contributions": {
+    "leftPanel": [...], "rightPanel": [...], "centerPanel": [...],
+    "statusBar": [...], "activityBar": [...], "commands": [...],
+    "settings": [...], "keybindings": [...]
+  },
+  "permissions": ["network.tcp", "shell.powershell", "storage", "panel.left", "panel.center"],
+  "minShellVersion": "2.0.0"
+}
+```
+
+`permissions` decyduje, jakie funkcje hosta (importy) w ogóle są widoczne dla
+instancji WASM tego dodatku - klasyczny model capability-based. Brak
+zadeklarowanego `network.tcp` = host nie daje dodatkowi żadnej funkcji do
+otwierania połączeń, więc nawet gdyby dodatek chciał, fizycznie nie może.
+`minShellVersion` realizuje punkt 6 (wersjonowanie dodatków) wprost.
+
+### Co jeszcze otwarte (nie rozstrzygać teraz, tylko odnotować)
+
+- Dokładny format "na drucie" między hostem a WASM - JSON (prosty, czytelny,
+  wolniejszy) vs format binarny typu MessagePack/FlatBuffers (szybszy,
+  bardziej roboty). Dla zaczątku prawdopodobnie JSON - można zmienić później
+  bez zmiany reszty API, bo to szczegół serializacji, nie kształtu API.
+- Dokładne sygnatury funkcji importu/eksportu WASM (jak dokładnie przekazuje
+  się stringi przez pamięć liniową - wskaźnik+długość, czy coś gotowego jak
+  `wasm-bindgen`).
+- Ile z dzisiejszego kodu (`panel-content-runtime.js`, `panel-renderers-runtime.js`)
+  da się bezpośrednio zaadaptować (prawdopodobnie sporo, bo już zwraca HTML
+  string) vs ile trzeba przepisać (`panel-interactions-runtime.js` - żywe
+  listenery na `rootEl`, do przerobienia na delegację + `handle_event`).
+- Czy AI Assistant (ma mieć "dostęp do wszystkiego") dostaje specjalne,
+  szersze uprawnienia domyślnie, czy też deklaruje je w swoim manifeście jak
+  każdy inny dodatek podstawy.
