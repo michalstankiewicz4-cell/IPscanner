@@ -62,7 +62,11 @@ Planned next: a PDF censored-text checker and an email/file analyser, plus IPv6/
 Have a question or an idea? Use [GitHub Discussions](https://github.com/michalstankiewicz4-cell/IPscanner/discussions)
 instead of opening an issue.
 
-## Screenshots
+## NEW Screenshots
+
+<img width="1919" height="1199" alt="image" src="https://github.com/user-attachments/assets/e870c791-973c-4365-a556-816111eea023" />
+
+## OLD Screenshots
 
 <img width="1042" height="852" alt="image" src="https://github.com/user-attachments/assets/c7b0f7dd-f0b3-4882-aaed-b8c919045ea1" />
 
