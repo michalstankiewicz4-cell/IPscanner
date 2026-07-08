@@ -1103,6 +1103,22 @@
       });
     }
 
+    // shell: mirrors bindSidebarIntentEvents above, for the right panel -
+    // lets callers without a direct navigation-runtime reference (e.g.
+    // menu-runtime.js's extension-contributed Options-menu entries) open/
+    // activate a dynamically-created right-panel tab by dispatching a plain
+    // DOM event instead of needing a new dependency threaded through.
+    function bindRightTabIntentEvents() {
+      document.addEventListener("newui:right-tab-intent-open", function (evt) {
+        var detail = evt && evt.detail ? evt.detail : {};
+        var tool = typeof detail.tool === "string" ? detail.tool : "";
+        if (!tool) return;
+
+        ensureRightTabOpen(tool);
+        setRightTabActive(tool);
+      });
+    }
+
     // shell dispatch mechanism (generic [data-tool] click routing) with
     // several embedded ip-scanner-specific branches below (shellcraft,
     // results-ip, scan-runner/ip-library) - not cleanly separable without
@@ -1339,6 +1355,7 @@
       bindResultTabs();
       bindActivityButtons();
       bindSidebarIntentEvents();
+      bindRightTabIntentEvents();
       bindToolClicks();
       bindSidebarTabClosers();
       bindConsoleTabs();
@@ -1383,6 +1400,8 @@
       ensureRightTabOpen: ensureRightTabOpen,
       setRightTabOpen: setRightTabOpen,
       setRightTabActive: setRightTabActive,
+      syncLeftTabActivationInvariant: syncLeftTabActivationInvariant,
+      syncRightTabActivationInvariant: syncRightTabActivationInvariant,
     };
   }
 

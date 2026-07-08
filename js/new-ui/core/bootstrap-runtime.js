@@ -424,6 +424,12 @@
 
         const entries = extensionToolEntries();
         if (!entries.length) {
+          if (navigationRuntime && navigationRuntime.syncLeftTabActivationInvariant) {
+            navigationRuntime.syncLeftTabActivationInvariant();
+          }
+          if (navigationRuntime && navigationRuntime.syncRightTabActivationInvariant) {
+            navigationRuntime.syncRightTabActivationInvariant();
+          }
           if (typeof setTooltips === "function") setTooltips();
           return;
         }
@@ -433,9 +439,13 @@
         const activitySpacer = activityBar ? activityBar.querySelector('.v1-activity-spacer') : null;
         const scannerToolList = document.querySelector('.v1-sidebar [data-sidebar-tool-panel="scan-runner"] .v1-tool-list');
         const tabsBar = document.querySelector('.v1-tabs');
+        const sidebarToolTabs = document.getElementById('v1SidebarToolTabs');
+        const sidebarEl = document.querySelector('.v1-sidebar');
+        const rightTabsEl = document.querySelector('.v1-right-tabs');
+        const rightContentEl = document.querySelector('.v1-right-content');
 
         entries.forEach((entry) => {
-          if (tabsBar) {
+          if (tabsBar && entry.ui.showAsTab !== false) {
             const tab = document.createElement("button");
             tab.className = "v1-tab tab-closed";
             tab.setAttribute("data-tool", entry.key);
@@ -466,13 +476,101 @@
             tabsBar.appendChild(tab);
           }
 
-          if (scannerToolList) {
+          if (scannerToolList && entry.ui.showInLeftPanel !== true) {
             const li = document.createElement("li");
             li.className = "v1-extension-tool-item";
             li.setAttribute("data-tool", entry.key);
             li.setAttribute("data-dynamic-extension", "1");
             li.textContent = entry.icon + " " + entry.title;
             scannerToolList.appendChild(li);
+          }
+
+          if (sidebarToolTabs && sidebarEl && entry.ui.showInLeftPanel === true) {
+            const wrap = document.createElement("div");
+            wrap.className = "v1-sidebar-tool-tab-wrap sidebar-tab-closed";
+            wrap.setAttribute("data-sidebar-tab", entry.key);
+            wrap.setAttribute("data-dynamic-extension", "1");
+            wrap.setAttribute("hidden", "hidden");
+
+            const tabBtn = document.createElement("button");
+            tabBtn.className = "v1-sidebar-tool-tab";
+            tabBtn.setAttribute("data-tool", entry.key);
+            tabBtn.setAttribute("type", "button");
+            tabBtn.textContent = entry.title;
+
+            const tabClose = document.createElement("span");
+            tabClose.className = "v1-sidebar-tool-tab-close";
+            tabClose.setAttribute("data-sidebar-tab-close", "true");
+            tabClose.setAttribute("data-tool", entry.key);
+            tabClose.setAttribute("role", "button");
+            tabClose.setAttribute("tabindex", "-1");
+            tabClose.setAttribute("aria-label", tr("tabCloseAria"));
+            tabClose.textContent = "×";
+
+            wrap.appendChild(tabBtn);
+            wrap.appendChild(tabClose);
+            sidebarToolTabs.appendChild(wrap);
+
+            const panel = document.createElement("div");
+            panel.className = "tool-detail";
+            panel.setAttribute("data-sidebar-tool-panel", entry.key);
+            panel.setAttribute("data-dynamic-extension", "1");
+            panel.setAttribute("hidden", "hidden");
+            if (panelsRuntime && panelsRuntime.buildDetailHtml) {
+              panel.innerHTML = panelsRuntime.buildDetailHtml(entry.key);
+            }
+            sidebarEl.appendChild(panel);
+            if (panelsRuntime && panelsRuntime.wireToolRuntime) {
+              panelsRuntime.wireToolRuntime(entry.key, panel);
+            }
+          }
+
+          if (rightTabsEl && rightContentEl && entry.ui.showInRightPanel === true) {
+            const wrap = document.createElement("div");
+            wrap.className = "v1-right-tool-tab-wrap right-tab-closed";
+            wrap.setAttribute("data-right-tab", entry.key);
+            wrap.setAttribute("data-dynamic-extension", "1");
+            wrap.setAttribute("hidden", "hidden");
+
+            const tabBtn = document.createElement("button");
+            tabBtn.className = "v1-right-tab";
+            tabBtn.setAttribute("data-v1-right-tab", entry.key);
+            tabBtn.setAttribute("type", "button");
+            tabBtn.textContent = entry.title;
+            tabBtn.addEventListener("click", function () {
+              document.dispatchEvent(new CustomEvent("newui:right-tab-intent-open", { detail: { tool: entry.key } }));
+            });
+
+            const tabClose = document.createElement("span");
+            tabClose.className = "v1-right-tool-tab-close";
+            tabClose.setAttribute("data-right-tab-close", "true");
+            tabClose.setAttribute("data-tool", entry.key);
+            tabClose.setAttribute("role", "button");
+            tabClose.setAttribute("tabindex", "-1");
+            tabClose.setAttribute("aria-label", tr("tabCloseAria"));
+            tabClose.textContent = "×";
+            tabClose.addEventListener("click", function (e) {
+              e.stopPropagation();
+              if (navigationRuntime && navigationRuntime.setRightTabOpen) {
+                navigationRuntime.setRightTabOpen(entry.key, false);
+              }
+            });
+
+            wrap.appendChild(tabBtn);
+            wrap.appendChild(tabClose);
+            rightTabsEl.appendChild(wrap);
+
+            const pane = document.createElement("section");
+            pane.className = "v1-right-pane tool-detail";
+            pane.setAttribute("data-v1-right-pane", entry.key);
+            pane.setAttribute("data-dynamic-extension", "1");
+            if (panelsRuntime && panelsRuntime.buildDetailHtml) {
+              pane.innerHTML = panelsRuntime.buildDetailHtml(entry.key);
+            }
+            rightContentEl.appendChild(pane);
+            if (panelsRuntime && panelsRuntime.wireToolRuntime) {
+              panelsRuntime.wireToolRuntime(entry.key, pane);
+            }
           }
 
           if (toolsDropdown && entry.ui.showInToolsMenu !== false) {
@@ -507,6 +605,38 @@
           }
         });
 
+        // shell: extension-contributed Options-menu entries (contributions.optionsMenu),
+        // each opening a list of that extension's own tool keys via whichever
+        // surface (LS/RS/CS) their own ui flags declare. See menu-runtime.js's
+        // "ext:" behavior branch for the click-time dispatch.
+        const optionsDropdown = document.querySelector('.v1-menu-group[data-menu="options"] .v1-menu-dropdown');
+        if (optionsDropdown && extensionHost && extensionHost.getInstalledManifests) {
+          extensionHost.getInstalledManifests().forEach((manifest) => {
+            const optionsMenu = manifest.contributions && manifest.contributions.optionsMenu;
+            if (!optionsMenu || typeof optionsMenu !== "object") return;
+            Object.keys(optionsMenu).forEach((actionKey) => {
+              const entryDef = optionsMenu[actionKey] || {};
+              const btn = document.createElement("button");
+              btn.className = "v1-menu-dd-item";
+              btn.setAttribute("data-menu-action", "ext:" + manifest.id + ":" + actionKey);
+              btn.setAttribute("data-dynamic-extension", "1");
+              const label = document.createElement("span");
+              label.textContent = String(entryDef.label || actionKey);
+              const shortcut = document.createElement("span");
+              shortcut.className = "shortcut";
+              btn.appendChild(label);
+              btn.appendChild(shortcut);
+              optionsDropdown.appendChild(btn);
+            });
+          });
+        }
+
+        if (navigationRuntime && navigationRuntime.syncLeftTabActivationInvariant) {
+          navigationRuntime.syncLeftTabActivationInvariant();
+        }
+        if (navigationRuntime && navigationRuntime.syncRightTabActivationInvariant) {
+          navigationRuntime.syncRightTabActivationInvariant();
+        }
         if (typeof setTooltips === "function") setTooltips();
         if (panelsRuntime && panelsRuntime.initWorkbenchTabs) {
           panelsRuntime.initWorkbenchTabs();
@@ -759,8 +889,9 @@
       const runtimeFactory = core.newUiRuntimes || {};
 
       // shell: generic named-command registry (FUTURE_PLUGIN_SHELL.md's
-      // "Command bus"). Instantiated for future use - nothing is registered
-      // or invoked through it yet, existing menu/action wiring is untouched.
+      // "Command bus"). First real registrations: extensions that declare a
+      // permission-gated contributions.commands entry (see panels-runtime.js's
+      // registerExtensionCommands) - existing menu/action wiring is untouched.
       const commandBusRuntime = runtimeFactory.createCommandBusRuntime
         ? runtimeFactory.createCommandBusRuntime()
         : null;
@@ -785,6 +916,7 @@
             versionsData: core.versionsData || [],
             store,
             extensionHost,
+            commandBus: commandBusRuntime,
             setStatusLine,
             i18n,
             applyStaticTranslations,
@@ -862,6 +994,7 @@
             onOpenExtensionManager: openExtensionManager,
             onOpenLanguageManager: openLanguageManager,
             onSwitchTool: switchTool,
+            extensionHost,
             onToggleClippy: function () {
               if (clippyRuntime && clippyRuntime.toggle) {
                 clippyRuntime.toggle();

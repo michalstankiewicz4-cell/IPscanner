@@ -645,6 +645,41 @@
   color: var(--txt);
 }
 
+.v1-import-item-uninstall {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+/* shell: generic action buttons + output box for extension-contributed
+   tools whose manifest declares contributions.tools[key].actions (see
+   renderDefaultTool/wireExtensionToolActions) */
+.v1-ext-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.v1-ext-action-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.v1-ext-action-output {
+  display: block;
+  margin: 0;
+  min-height: 40px;
+  padding: 10px;
+  border: 1px solid #31333a;
+  background: #18181b;
+  color: var(--txt-dim);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: auto;
+}
+
 .v1-import-item span {
   color: #9db5ff;
   font-size: 11px;

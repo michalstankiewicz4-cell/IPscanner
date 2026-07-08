@@ -92,7 +92,23 @@
     function renderDefaultTool(tool) {
       var info = infoFor(tool);
       var points = (info.points || []).map(function (p) { return "<li>" + escapeHtml(p) + "</li>"; }).join("");
-      return "<h4>" + escapeHtml(info.title) + "</h4><div>" + escapeHtml(info.text) + "</div><ul>" + points + "</ul>";
+      var hasActions = Array.isArray(info.actions) && info.actions.length;
+      var hasResult = info.resultText != null;
+      var actionsHtml = "";
+      if (hasActions || hasResult) {
+        var buttonsHtml = "";
+        if (hasActions) {
+          var buttons = info.actions.map(function (action, idx) {
+            var commandId = String((action && action.commandId) || "");
+            if (!commandId) return "";
+            var label = escapeHtml(String((action && action.label) || commandId || ("Action " + (idx + 1))));
+            return "<button type=\"button\" class=\"v1-ext-action-btn\" data-ext-action-command=\"" + escapeHtml(commandId) + "\">" + label + "</button>";
+          }).join(" ");
+          buttonsHtml = "<div class=\"v1-ext-actions\">" + buttons + "</div>";
+        }
+        actionsHtml = buttonsHtml + "<pre class=\"v1-ext-action-output\" data-ext-action-output>" + escapeHtml(info.resultText || "") + "</pre>";
+      }
+      return "<h4>" + escapeHtml(info.title) + "</h4><div>" + escapeHtml(info.text) + "</div><ul>" + points + "</ul>" + actionsHtml;
     }
 
     function renderVersionsTool() {
@@ -267,7 +283,8 @@
 
       var listHtml = tools.length
         ? tools.map(function (item) {
-            return "<div class=\"v1-import-item\"><strong>" + escapeHtml(item.id) + "</strong> <span>@ " + escapeHtml(item.version) + "</span><div>" + escapeHtml(item.name) + "</div></div>";
+            return "<div class=\"v1-import-item\"><strong>" + escapeHtml(item.id) + "</strong> <span>@ " + escapeHtml(item.version) + "</span><div>" + escapeHtml(item.name) + "</div>"
+              + "<button type=\"button\" class=\"v1-import-item-uninstall\" data-import-uninstall-id=\"" + escapeHtml(item.id) + "\">" + escapeHtml(tr("importToolUninstallBtn")) + "</button></div>";
           }).join("")
         : "<div class=\"v1-import-empty\">" + escapeHtml(trOr("importToolEmptyText", importToolConfig.emptyText || "No imported tools yet.")) + "</div>";
 
@@ -289,6 +306,7 @@
         "<input id=\"v1ImportUninstallId\" data-import-role=\"uninstall-id\" type=\"text\" autocomplete=\"off\" placeholder=\"" + escapeHtml(trOr("importToolUninstallPlaceholder", importToolConfig.uninstallPlaceholder || "com.example.demo")) + "\" />",
         "</div>",
         "<div class=\"v1-import-manager-actions\">",
+        "<button type=\"button\" data-import-action=\"load-file\">" + escapeHtml(trOr("importToolLoadFileBtn", importToolConfig.loadFileBtn || "Load from file...")) + "</button>",
         "<button type=\"button\" data-import-action=\"install\">" + escapeHtml(trOr("importToolInstallBtn", importToolConfig.installBtn || "Import")) + "</button>",
         "<button type=\"button\" data-import-action=\"list\">" + escapeHtml(trOr("importToolListBtn", importToolConfig.listBtn || "List")) + "</button>",
         "<button type=\"button\" data-import-action=\"uninstall\">" + escapeHtml(trOr("importToolUninstallBtn", importToolConfig.uninstallBtn || "Uninstall")) + "</button>",

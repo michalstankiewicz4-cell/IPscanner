@@ -16,6 +16,7 @@
     var storage = platform.storage || null;
     var store = deps.store;
     var extensionHost = deps.extensionHost;
+    var commandBus = deps.commandBus || null;
     var i18n = deps.i18n;
     var onAfterRender = deps.onAfterRender;
     var setStatusLine = deps.setStatusLine;
@@ -1406,11 +1407,46 @@
       var localizedText = tr(textKey);
       if (localizedText === textKey) localizedText = baseInfo.text || "";
 
+      var extResults = (store && store.getState().extResults) || {};
+      var resultText = typeof baseInfo.resultKey === "string"
+        ? (extResults[baseInfo.resultKey] || "")
+        : undefined;
+
       return {
         title: localizedTitle,
         text: localizedText,
         points: Array.isArray(baseInfo.points) ? baseInfo.points : [],
+        actions: Array.isArray(baseInfo.actions) ? baseInfo.actions : [],
+        resultText: resultText,
       };
+    }
+
+    // shell: registers command-bus entries declared by an installed
+    // extension's contributions.commands, gated on the extension's granted
+    // permissions. Only "powershell" commands are supported today (see
+    // FUTURE_PLUGIN_SHELL.md for the larger, still-undone contribution model).
+    function registerExtensionCommands(manifest) {
+      if (!commandBus || !manifest || !manifest.contributions) return;
+      var granted = Array.isArray(manifest.permissions) ? manifest.permissions : [];
+      var commands = manifest.contributions.commands || {};
+      Object.keys(commands).forEach(function (commandId) {
+        var def = commands[commandId];
+        if (!def || def.type !== "powershell") return;
+        if (granted.indexOf("powershell") === -1) return;
+        var script = typeof def.script === "string" ? def.script.trim() : "";
+        if (!script) return;
+        commandBus.register(commandId, function () {
+          return platform.invoke("run_powershell", { command: script }).then(function (res) {
+            var stdout = res && res.stdout ? String(res.stdout).trim() : "";
+            var stderr = res && res.stderr ? String(res.stderr).trim() : "";
+            return stdout || stderr || "(no output)";
+          });
+        }, manifest.id);
+      });
+    }
+
+    if (commandBus && extensionHost && typeof extensionHost.getInstalledManifests === "function") {
+      extensionHost.getInstalledManifests().forEach(registerExtensionCommands);
     }
 
     var panelContentRuntime = null;
@@ -1709,7 +1745,53 @@
 
       if (tool === "language-manager") { // shell
         wireLanguageManagerButtons(scope);
+        return;
       }
+
+      // shell: generic fallback for extension-contributed tools whose
+      // manifest declares contributions.tools[key].actions - wires each
+      // declared action button to invoke the matching command-bus command.
+      var toolInfo = (getToolInfoMap ? getToolInfoMap() : {})[tool];
+      if (toolInfo && Array.isArray(toolInfo.actions) && toolInfo.actions.length) {
+        wireExtensionToolActions(scope, toolInfo.actions);
+      }
+    }
+
+    function wireExtensionToolActions(scope, actions) {
+      var root = scope || document;
+      actions.forEach(function (action) {
+        var commandId = action && action.commandId;
+        if (!commandId) return;
+        var btn = root.querySelector('[data-ext-action-command="' + commandId + '"]');
+        if (!btn || btn.dataset.extActionBound === "1") return;
+        btn.dataset.extActionBound = "1";
+        btn.addEventListener("click", function () {
+          var output = root.querySelector("[data-ext-action-output]");
+          if (!commandBus || !commandBus.has(commandId)) {
+            if (output) output.textContent = "Command not available (missing permission or extension not installed).";
+            return;
+          }
+          btn.disabled = true;
+          if (output) output.textContent = "Running...";
+          Promise.resolve(commandBus.invoke(commandId))
+            .then(function (result) {
+              var text = String(result == null ? "" : result);
+              if (output) output.textContent = text;
+              if (action.resultKey && store) {
+                store.setState({
+                  extResults: Object.assign({}, store.getState().extResults, {
+                    [action.resultKey]: text,
+                  }),
+                });
+              }
+              if (action.openTool && switchTool) switchTool(action.openTool);
+            })
+            .catch(function (err) {
+              if (output) output.textContent = "Error: " + (err && err.message ? err.message : String(err));
+            })
+            .then(function () { btn.disabled = false; });
+        });
+      });
     }
 
     function getTabsTrack() {
@@ -2219,50 +2301,93 @@
         manifestEl.value = "{\n  \"id\": \"com.example.demo\",\n  \"name\": \"Demo Extension\",\n  \"version\": \"0.1.0\",\n  \"contributions\": {\n    \"tools\": {},\n    \"menuActions\": {}\n  }\n}";
       }
 
+      function listInstalled() {
+        var items = extensionHost && extensionHost.listExtensions ? extensionHost.listExtensions() : [];
+        if (!outputEl) return;
+        if (panelRenderersRuntime && typeof panelRenderersRuntime.renderExtensionList === "function") {
+          outputEl.innerHTML = panelRenderersRuntime.renderExtensionList(items);
+          return;
+        }
+
+        outputEl.textContent = "";
+
+        if (!items.length) {
+          var emptyEl = document.createElement("div");
+          emptyEl.className = "v1-import-empty";
+          emptyEl.textContent = "No imported tools yet.";
+          outputEl.appendChild(emptyEl);
+          return;
+        }
+
+        items.forEach(function (item) {
+          var itemEl = document.createElement("div");
+          itemEl.className = "v1-import-item";
+
+          var strong = document.createElement("strong");
+          strong.textContent = item.id;
+          itemEl.appendChild(strong);
+
+          var ver = document.createElement("span");
+          ver.textContent = "@ " + item.version;
+          itemEl.appendChild(ver);
+
+          var name = document.createElement("div");
+          name.textContent = item.name;
+          itemEl.appendChild(name);
+
+          var uninstallBtn = document.createElement("button");
+          uninstallBtn.type = "button";
+          uninstallBtn.className = "v1-import-item-uninstall";
+          uninstallBtn.setAttribute("data-import-uninstall-id", item.id);
+          uninstallBtn.textContent = tr("importToolUninstallBtn");
+          itemEl.appendChild(uninstallBtn);
+
+          outputEl.appendChild(itemEl);
+        });
+      }
+
+      // shell: uninstalls one extension by id - shared by the manual
+      // "Tool id to uninstall" field/button and the per-item Uninstall
+      // button rendered in the installed-extensions list below.
+      function performUninstall(id) {
+        if (!id) {
+          if (outputEl) outputEl.textContent = tr("extUninstallPrompt");
+          return;
+        }
+
+        var removeResult = extensionHost && extensionHost.uninstallExtension ? extensionHost.uninstallExtension(id) : { ok: false, error: tr("extUninstallFail") };
+        if (!removeResult.ok) {
+          if (outputEl) outputEl.textContent = tr("extUninstallFail") + "\n" + removeResult.error;
+          return;
+        }
+
+        if (commandBus && commandBus.unregisterAllFor) {
+          commandBus.unregisterAllFor(removeResult.id);
+        }
+        listInstalled();
+        if (outputEl) outputEl.textContent = tr("extUninstallOk") + "\n" + removeResult.id;
+        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extUninstallOk") + " - " + removeResult.id);
+        if (window.NetReconNewUI && typeof window.NetReconNewUI.syncExtensionToolUi === "function") {
+          window.NetReconNewUI.syncExtensionToolUi();
+        }
+        refreshActiveUI();
+      }
+
+      if (outputEl && outputEl.dataset.uninstallBound !== "1") {
+        outputEl.dataset.uninstallBound = "1";
+        outputEl.addEventListener("click", function (e) {
+          var btn = e.target && e.target.closest ? e.target.closest("[data-import-uninstall-id]") : null;
+          if (!btn) return;
+          performUninstall(btn.getAttribute("data-import-uninstall-id") || "");
+        });
+      }
+
       root.querySelectorAll("[data-import-action]").forEach(function (button) {
         if (button.dataset.bound === "1") return;
         button.dataset.bound = "1";
         button.addEventListener("click", function () {
           var actionName = button.getAttribute("data-import-action");
           var manifestText = manifestEl ? (manifestEl.value || "{}").trim() : "{}";
-
-          function listInstalled() {
-            var items = extensionHost && extensionHost.listExtensions ? extensionHost.listExtensions() : [];
-            if (!outputEl) return;
-            if (panelRenderersRuntime && typeof panelRenderersRuntime.renderExtensionList === "function") {
-              outputEl.innerHTML = panelRenderersRuntime.renderExtensionList(items);
-              return;
-            }
-
-            outputEl.textContent = "";
-
-            if (!items.length) {
-              var emptyEl = document.createElement("div");
-              emptyEl.className = "v1-import-empty";
-              emptyEl.textContent = "No imported tools yet.";
-              outputEl.appendChild(emptyEl);
-              return;
-            }
-
-            items.forEach(function (item) {
-              var itemEl = document.createElement("div");
-              itemEl.className = "v1-import-item";
-
-              var strong = document.createElement("strong");
-              strong.textContent = item.id;
-              itemEl.appendChild(strong);
-
-              var ver = document.createElement("span");
-              ver.textContent = "@ " + item.version;
-              itemEl.appendChild(ver);
-
-              var name = document.createElement("div");
-              name.textContent = item.name;
-              itemEl.appendChild(name);
-
-              outputEl.appendChild(itemEl);
-            });
-          }
 
           if (actionName === "list") {
             listInstalled();
@@ -2272,24 +2397,19 @@
 
           if (actionName === "uninstall") {
             var id = uninstallEl ? (uninstallEl.value || "").trim() : "";
-            if (!id) {
-              if (outputEl) outputEl.textContent = tr("extUninstallPrompt");
-              return;
-            }
+            performUninstall(id);
+            return;
+          }
 
-            var removeResult = extensionHost && extensionHost.uninstallExtension ? extensionHost.uninstallExtension(id) : { ok: false, error: tr("extUninstallFail") };
-            if (!removeResult.ok) {
-              if (outputEl) outputEl.textContent = tr("extUninstallFail") + "\n" + removeResult.error;
-              return;
-            }
-
-            listInstalled();
-            if (outputEl) outputEl.textContent = tr("extUninstallOk") + "\n" + removeResult.id;
-            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extUninstallOk") + " - " + removeResult.id);
-            if (window.NetReconNewUI && typeof window.NetReconNewUI.syncExtensionToolUi === "function") {
-              window.NetReconNewUI.syncExtensionToolUi();
-            }
-            refreshActiveUI();
+          if (actionName === "load-file") {
+            Promise.resolve(platform.invoke("open_extension_manifest_dialog", {}))
+              .then(function (text) {
+                if (manifestEl) manifestEl.value = String(text || "");
+              })
+              .catch(function (err) {
+                var cancelled = err === "cancelled" || (err && err.message === "cancelled");
+                if (!cancelled && outputEl) outputEl.textContent = tr("extInvalidJson");
+              });
             return;
           }
 
@@ -2312,12 +2432,21 @@
             Object.keys(manifest.contributions.tools).forEach(function (toolKey) {
               var meta = manifest.contributions.tools[toolKey] || {};
               meta.ui = meta.ui && typeof meta.ui === "object" ? meta.ui : {};
-              meta.ui.showInToolsMenu = addToMenu;
-              meta.ui.showInActivityBar = addToActivity;
-              meta.ui.showInLeftPanel = true;
-              meta.ui.showAsTab = true;
+              if (meta.ui.showInToolsMenu === undefined) meta.ui.showInToolsMenu = addToMenu;
+              if (meta.ui.showInActivityBar === undefined) meta.ui.showInActivityBar = addToActivity;
+              if (meta.ui.showInLeftPanel === undefined) meta.ui.showInLeftPanel = false;
+              if (meta.ui.showAsTab === undefined) meta.ui.showAsTab = true;
               manifest.contributions.tools[toolKey] = meta;
             });
+          }
+
+          var requestedPermissions = Array.isArray(manifest.permissions) ? manifest.permissions : [];
+          if (requestedPermissions.length) {
+            var confirmMsg = tr("extPermissionConfirmPrefix") + "\n\n- " + requestedPermissions.join("\n- ") + "\n\n" + tr("extPermissionConfirmSuffix");
+            if (!window.confirm(confirmMsg)) {
+              if (outputEl) outputEl.textContent = tr("extPermissionDeclined");
+              return;
+            }
           }
 
           var result = extensionHost && extensionHost.installExtension ? extensionHost.installExtension(manifest) : { ok: false, error: tr("extInstallFail") };
@@ -2326,6 +2455,7 @@
             return;
           }
 
+          registerExtensionCommands(result.manifest);
           if (outputEl) outputEl.textContent = tr("extInstallOk") + "\n" + result.manifest.id + "@" + result.manifest.version;
           if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extInstallOk") + " - " + result.manifest.id);
           if (window.NetReconNewUI && typeof window.NetReconNewUI.syncExtensionToolUi === "function") {
@@ -2425,9 +2555,6 @@
 
             if (selectEl) selectEl.value = after;
             if (codeEl) codeEl.value = after;
-            if (clippyRuntime && clippyRuntime.setLanguage) {
-              clippyRuntime.setLanguage(after);
-            }
 
             if (window.NetReconNewUI && typeof window.NetReconNewUI.refreshLanguageUi === "function") {
               window.NetReconNewUI.refreshLanguageUi();
@@ -2506,6 +2633,8 @@
       closeCenterTool: closeToolTab,
       flattenIpLibraryEntries: flattenIpLibraryEntries,
       initWorkbenchTabs: initWorkbenchTabs,
+      buildDetailHtml: buildDetailHtml,
+      wireToolRuntime: wireToolRuntime,
     };
   }
 

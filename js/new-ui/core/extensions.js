@@ -22,6 +22,10 @@
     var name = typeof raw.name === "string" ? raw.name.trim() : id;
     var version = typeof raw.version === "string" ? raw.version.trim() : "0.0.0";
     var contributions = isObject(raw.contributions) ? raw.contributions : {};
+    var SUPPORTED_PERMISSIONS = ["powershell"];
+    var permissions = Array.isArray(raw.permissions)
+      ? raw.permissions.filter(function (p) { return SUPPORTED_PERMISSIONS.indexOf(p) !== -1; })
+      : [];
 
     return {
       ok: true,
@@ -29,10 +33,13 @@
         id: id,
         name: name,
         version: version,
+        permissions: permissions,
         contributions: {
           tools: isObject(contributions.tools) ? cloneObject(contributions.tools) : {},
           menuActions: isObject(contributions.menuActions) ? cloneObject(contributions.menuActions) : {},
-          i18n: isObject(contributions.i18n) ? cloneObject(contributions.i18n) : {}
+          i18n: isObject(contributions.i18n) ? cloneObject(contributions.i18n) : {},
+          commands: isObject(contributions.commands) ? cloneObject(contributions.commands) : {},
+          optionsMenu: isObject(contributions.optionsMenu) ? cloneObject(contributions.optionsMenu) : {}
         }
       }
     };
@@ -98,6 +105,7 @@
         id: manifest.id,
         name: manifest.name,
         version: manifest.version,
+        permissions: manifest.permissions,
         contributions: manifest.contributions
       });
 
@@ -182,13 +190,26 @@
       });
     }
 
+    function getInstalledManifests() {
+      return installed.map(function (item) {
+        return {
+          id: item.id,
+          name: item.name,
+          version: item.version,
+          permissions: (item.permissions || []).slice(),
+          contributions: item.contributions
+        };
+      });
+    }
+
     return {
       installExtension: installExtension,
       uninstallExtension: uninstallExtension,
       loadFromStorage: loadFromStorage,
       getTools: getTools,
       getMenuActions: getMenuActions,
-      listExtensions: listExtensions
+      listExtensions: listExtensions,
+      getInstalledManifests: getInstalledManifests
     };
   }
 

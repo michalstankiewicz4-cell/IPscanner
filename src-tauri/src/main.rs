@@ -780,6 +780,21 @@ fn open_scan_results_dialog() -> Result<String, String> {
     fs::read_to_string(&path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
+#[tauri::command]
+fn open_extension_manifest_dialog() -> Result<String, String> {
+    let picked = rfd::FileDialog::new()
+        .set_title("Import Extension Manifest")
+        .add_filter("JSON", &["json"])
+        .pick_file();
+
+    let path = match picked {
+        Some(path) => path,
+        None => return Err("cancelled".into()),
+    };
+
+    fs::read_to_string(&path).map_err(|e| format!("Failed to read file: {}", e))
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ScanResultRow {
@@ -4206,6 +4221,7 @@ fn main() {
             window_close,
             save_scan_results_dialog,
             open_scan_results_dialog,
+            open_extension_manifest_dialog,
             session_install_dir,
             save_session_dialog,
             open_session_dialog,

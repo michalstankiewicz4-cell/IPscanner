@@ -1,0 +1,41 @@
+{
+  "id": "ip-scanner-detect-address-poc",
+  "name": "IP Scanner: Detect Address (LS/CS/RS demo)",
+  "version": "0.1.0",
+  "permissions": ["powershell"],
+  "contributions": {
+    "commands": {
+      "detectAddressPoc": {
+        "type": "powershell",
+        "script": "try { $ip = (Invoke-RestMethod -Uri 'https://api.ipify.org' -TimeoutSec 8); Write-Output $ip } catch { Write-Output ('ERROR: ' + $_.Exception.Message) }"
+      }
+    },
+    "optionsMenu": {
+      "detectAddressPoc": {
+        "label": "Detect Address (LS/CS/RS demo)",
+        "openTools": ["detect-address-ls-poc", "detect-address-cs-poc", "detect-address-rs-poc"]
+      }
+    },
+    "tools": {
+      "detect-address-ls-poc": {
+        "title": "Detect Address",
+        "text": "Click to detect your external IP address. The result opens in the CS tab.",
+        "actions": [
+          { "label": "Wykryj adres", "commandId": "detectAddressPoc", "resultKey": "detect-address-poc-result", "openTool": "detect-address-cs-poc" }
+        ],
+        "ui": { "showInLeftPanel": true, "showInToolsMenu": false, "showInActivityBar": false, "showAsTab": false }
+      },
+      "detect-address-cs-poc": {
+        "title": "Detect Address - Result",
+        "text": "Shows the result from the LS Detect Address action.",
+        "resultKey": "detect-address-poc-result",
+        "ui": { "showInToolsMenu": false, "showInActivityBar": false, "showAsTab": true }
+      },
+      "detect-address-rs-poc": {
+        "title": "RS Test Tab",
+        "text": "Empty test tab - proves an addon can contribute a right-panel tab.",
+        "ui": { "showInRightPanel": true, "showInToolsMenu": false, "showInActivityBar": false, "showAsTab": false }
+      }
+    }
+  }
+}
