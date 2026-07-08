@@ -75,36 +75,22 @@
   grid-template-rows: 34px 1fr;
 }
 
-.v1-sidebar > [data-sidebar-view] {
+.v1-sidebar > [data-sidebar-tool-panel] {
   min-height: 0;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.v1-sidebar > [data-sidebar-view] > [data-sidebar-tool-panel] {
-  min-height: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-.v1-sidebar > [data-sidebar-view] > [data-sidebar-tool-panel][hidden] {
+.v1-sidebar > [data-sidebar-tool-panel][hidden] {
   display: none !important;
 }
 
-.v1-sidebar > [data-sidebar-view] > [data-sidebar-tool-panel] .v1-tool-list {
+.v1-sidebar > [data-sidebar-tool-panel] .v1-tool-list {
   flex: 1 1 auto;
   min-height: 0;
   background: var(--bg-elev);
-}
-
-.v1-sidebar > [data-sidebar-view="results"] .v1-tool-list {
-  background: var(--bg-elev);
-}
-
-.v1-sidebar > [data-sidebar-view][hidden] {
-  display: none !important;
 }
 
 .v1-side-head {

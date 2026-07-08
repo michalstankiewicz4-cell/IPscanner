@@ -431,7 +431,7 @@
         const toolsDropdown = document.querySelector('[data-menu="tools"] .v1-menu-dropdown');
         const activityBar = document.querySelector('.v1-activity');
         const activitySpacer = activityBar ? activityBar.querySelector('.v1-activity-spacer') : null;
-        const scannerToolList = document.querySelector('.v1-sidebar [data-sidebar-view="scanner"] .v1-tool-list');
+        const scannerToolList = document.querySelector('.v1-sidebar [data-sidebar-tool-panel="scan-runner"] .v1-tool-list');
         const tabsBar = document.querySelector('.v1-tabs');
 
         entries.forEach((entry) => {
@@ -687,14 +687,6 @@
       }
 
       // =========================
-      // Activity bar + sidebar views
-      // =========================
-      function switchSidebarView(view) {
-        if (!navigationRuntime || !navigationRuntime.switchSidebarView) return;
-        navigationRuntime.switchSidebarView(view);
-      }
-
-      // =========================
       // 2) Top menu behavior
       // =========================
       function initDisabledShortcuts() {
@@ -870,7 +862,6 @@
             onOpenExtensionManager: openExtensionManager,
             onOpenLanguageManager: openLanguageManager,
             onSwitchTool: switchTool,
-            onSwitchSidebarView: switchSidebarView,
             onToggleClippy: function () {
               if (clippyRuntime && clippyRuntime.toggle) {
                 clippyRuntime.toggle();
@@ -949,9 +940,6 @@
       initResizableLayout();
       initCustomScrollbars();
       switchTool(initialActiveTool);
-      const hasOpenSidebarTabs = !!document.querySelector('.v1-sidebar-tool-tab-wrap:not(.sidebar-tab-closed):not([hidden])');
-      const initialSidebarView = (!initialActiveTool && !hasOpenSidebarTabs) ? "empty" : "scanner";
-      switchSidebarView(initialSidebarView);
       if (sessionRuntime && sessionRuntime.restoreLayoutAfterReload) {
         sessionRuntime.restoreLayoutAfterReload();
       }

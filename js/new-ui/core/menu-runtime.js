@@ -9,7 +9,6 @@
     var onOpenExtensionManager = deps.onOpenExtensionManager;
     var onOpenLanguageManager = deps.onOpenLanguageManager;
     var onSwitchTool = deps.onSwitchTool;
-    var onSwitchSidebarView = deps.onSwitchSidebarView;
     var onToggleClippy = deps.onToggleClippy;
     var session = deps.session || null;
     var exitDialogState = {
@@ -47,13 +46,12 @@
       try { window.open(safeUrl, "_blank", "noopener"); } catch (_) {}
     }
 
-    function requestSidebarToolTabOpen(tool, preferredView) {
+    function requestSidebarToolTabOpen(tool) {
       if (!tool) return false;
       var detail = {
         tool: tool,
         activate: true,
       };
-      if (preferredView) detail.view = preferredView;
       document.dispatchEvent(new CustomEvent("newui:sidebar-tab-intent-open", { detail: detail }));
       return true;
     }
@@ -249,16 +247,13 @@
       }
       if (behavior.indexOf("switch-tool:") === 0) {
         var tool = behavior.slice("switch-tool:".length);
-        // ip-scanner tool keys: only these 2 ids get the extra sidebar-view
-        // activation below. Rest of this function/file is shell (generic
-        // menu action dispatch) - this hardcoded check is the one seam that
-        // would need a generic "preferredSidebarView" contribution instead
-        // of an id check, once a contribution-point API exists.
+        // ip-scanner tool keys: only these 2 ids also open/activate the
+        // matching left-sidebar tool tab below. Rest of this function/file is
+        // shell (generic menu action dispatch) - this hardcoded check is the
+        // one seam that would need a generic contribution instead of an id
+        // check, once a contribution-point API exists.
         if (tool === "scan-runner" || tool === "ip-library") {
-          var handledBySidebarRuntime = requestSidebarToolTabOpen(tool, "scanner");
-          if (!handledBySidebarRuntime && onSwitchSidebarView) {
-            onSwitchSidebarView("scanner");
-          }
+          requestSidebarToolTabOpen(tool);
         }
         if (tool && onSwitchTool) onSwitchTool(tool);
         if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);

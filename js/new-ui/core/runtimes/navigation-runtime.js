@@ -7,8 +7,6 @@
     var getScannerSidebarRuntime = deps.getScannerSidebarRuntime;
     var platform = deps.platform || ((window.NetReconNewUICore && window.NetReconNewUICore.platform) || {});
 
-    var sidebarView = "scanner";
-
     // --- ip-scanner tool keys ---
     // Fallback tab order, scan data keys, and scan-engine state below are all
     // IP-Scanner-specific, not generic shell state.
@@ -24,17 +22,6 @@
     var enrichInFlight = 0;
     var enrichPendingByIp = Object.create(null);
     var resultsRefreshTimer = 0;
-
-    // shell mechanism (generic tab->view resolution), but every branch below
-    // is a hardcoded ip-scanner tool id. Future seam: a per-tool
-    // "preferredSidebarView" contribution instead of an id check.
-    function sidebarViewForTool(tool, preferredView) {
-      if (preferredView) return preferredView;
-      if (tool === "results-ip") return "results";
-      if (tool === "scan-runner" || tool === "ip-library") return "scanner";
-      if (tool === "shellcraft-library" || tool === "shellcraft-inspector") return "shellcraft";
-      return sidebarView;
-    }
 
     function getInvoke() {
       if (platform && typeof platform.getInvoke === "function") {
@@ -190,39 +177,6 @@
           text: String(line || ""),
         },
       }));
-    }
-
-    function switchSidebarView(view) {
-      sidebarView = view;
-      document.querySelectorAll("[data-sidebar-view]").forEach(function (el) {
-        el.hidden = el.getAttribute("data-sidebar-view") !== view;
-      });
-
-      var titleEl = document.getElementById("v1SidebarTitle");
-      var toolTabsEl = document.getElementById("v1SidebarToolTabs");
-      if (titleEl) {
-        if (view === "results") titleEl.textContent = tr("resultsSidebarTitle");
-        else if (view === "scanner") titleEl.textContent = tr("ipScanner");
-        else if (view === "shellcraft") titleEl.textContent = tr("shellcraftSidebarTitle");
-        else titleEl.textContent = tr("explorer");
-      }
-
-      var showToolTabs = view === "scanner" || view === "results" || view === "empty" || view === "shellcraft";
-      if (toolTabsEl) {
-        toolTabsEl.hidden = !showToolTabs;
-      }
-      if (titleEl) {
-        titleEl.hidden = showToolTabs;
-      }
-
-      document.querySelectorAll(".v1-activity [data-tool]").forEach(function (btn) {
-        btn.classList.remove("active");
-      });
-      document.querySelectorAll(".v1-activity [data-activity]").forEach(function (btn) {
-        if (btn.getAttribute("data-activity") === view) {
-          btn.classList.add("active");
-        }
-      });
     }
 
     // --- ip-scanner tool keys ---
@@ -777,11 +731,20 @@
       return next ? (next.getAttribute("data-right-tab") || "") : "";
     }
 
-    function activateSidebarTool(tool, preferredView) {
+    function activateSidebarTool(tool) {
       if (!tool) return;
       ensureSidebarTabOpen(tool);
       setLeftActiveTab(tool);
-      switchSidebarView(sidebarViewForTool(tool, preferredView));
+    }
+
+    // ip-scanner tool: maps a left-sidebar tool id to the activity-bar button
+    // (if any) that represents it, so the activity bar stays in sync with
+    // whichever tool is active in the left sidebar, regardless of how it got
+    // activated (activity-bar click, Tools menu, center-tab click, tab close).
+    function activityForSidebarTool(tool) {
+      if (tool === "results-ip") return "results";
+      if (tool === "scan-runner" || tool === "ip-library") return "scanner";
+      return "";
     }
 
     function syncScannerSidebarToolPanels(activeTool) {
@@ -804,6 +767,16 @@
         btn.classList.toggle("active", !!nextTool && btnTool === nextTool);
       });
       syncScannerSidebarToolPanels(nextTool);
+
+      var activity = activityForSidebarTool(nextTool);
+      document.querySelectorAll(".v1-activity [data-tool]").forEach(function (btn) {
+        btn.classList.remove("active");
+      });
+      document.querySelectorAll(".v1-activity [data-activity]").forEach(function (btn) {
+        if (activity && btn.getAttribute("data-activity") === activity) {
+          btn.classList.add("active");
+        }
+      });
     }
 
     function syncLeftTabActivationInvariant() {
@@ -1077,7 +1050,7 @@
         item.addEventListener("click", function () {
           var tool = item.getAttribute("data-result-tab");
           if (tool === "results-ip") { // ip-scanner tool
-            activateSidebarTool("results-ip", "results");
+            activateSidebarTool("results-ip");
           }
           if (tool && switchTool) switchTool(tool);
           document.querySelectorAll("[data-result-tab]").forEach(function (el) {
@@ -1089,33 +1062,29 @@
 
     // shell dispatch mechanism (activity bar clicks) with embedded
     // ip-scanner-specific special cases below - not cleanly separable
-    // without restructuring.
+    // without restructuring. Only binds to the Results/Scanner buttons
+    // (the only ones carrying data-activity); Topology/Globe are handled
+    // generically by bindToolClicks()'s fromActivityRail branch below.
     function bindActivityButtons() {
       document.querySelectorAll(".v1-activity [data-activity]").forEach(function (btn) {
         btn.addEventListener("click", function (e) {
           e.stopPropagation();
-          var view = btn.getAttribute("data-activity");
-          switchSidebarView(view);
           var tool = btn.getAttribute("data-tool");
 
           // ip-scanner tool: Results activity should only affect the left panel.
-          if (view === "results" || tool === "results-ip") {
-            activateSidebarTool("results-ip", "results");
+          if (tool === "results-ip") {
+            activateSidebarTool("results-ip");
             return;
           }
 
           // ip-scanner tool: Scanner activity should mirror Tools -> IP Scanner behavior.
-          if (view === "scanner" && tool === "scan-runner") {
+          if (tool === "scan-runner") {
             ensureSidebarTabOpen("scan-runner");
             setLeftActiveTab("scan-runner");
-            switchSidebarView("scanner");
             if (switchTool) switchTool("results-ip");
             return;
           }
 
-          if (tool === "scan-runner" || tool === "ip-library" || tool === "results-ip") { // ip-scanner tool
-            activateSidebarTool(tool, view);
-          }
           if (tool && switchTool) switchTool(tool);
         });
       });
@@ -1131,8 +1100,6 @@
         if (detail.activate !== false) {
           setLeftActiveTab(tool);
         }
-
-        switchSidebarView(sidebarViewForTool(tool, detail.view));
       });
     }
 
@@ -1166,7 +1133,6 @@
             ensureSidebarTabOpen("shellcraft-library");
             ensureSidebarTabOpen("shellcraft-inspector");
             setLeftActiveTab("shellcraft-library");
-            switchSidebarView("shellcraft");
           }
           switchTool(tool);
           return;
@@ -1180,29 +1146,24 @@
 
         if (tool === "results-ip") {
           if (!fromToolsMenu && !fromCenterTabs) {
-            activateSidebarTool("results-ip", "results");
-          } else {
-            if (fromToolsMenu) setLeftActiveTab("scan-runner");
-          }
-          switchSidebarView(fromToolsMenu ? "scanner" : "results");
-          if (fromToolsMenu) {
+            activateSidebarTool("results-ip");
+          } else if (fromToolsMenu) {
             ensureSidebarTabOpen("scan-runner");
+            setLeftActiveTab("scan-runner");
           }
         } else if (tool === "scan-runner" || tool === "ip-library") {
-          activateSidebarTool(tool, "scanner");
+          activateSidebarTool(tool);
         } else if (tool === "shellcraft") {
           ensureSidebarTabOpen("shellcraft-library");
           ensureSidebarTabOpen("shellcraft-inspector");
           setLeftActiveTab("shellcraft-library");
-          switchSidebarView("shellcraft");
         }
         switchTool(tool);
       });
     }
 
-    // shell dispatch mechanism (generic sidebar tab close) with embedded
-    // ip-scanner-specific fallback-view routing below - not cleanly
-    // separable without restructuring.
+    // shell dispatch mechanism (generic sidebar tab close) - fully generic,
+    // no ip-scanner-specific id checks.
     function bindSidebarTabClosers() {
       document.addEventListener("click", function (e) {
         var close = e.target && e.target.closest ? e.target.closest("[data-sidebar-tab-close]") : null;
@@ -1217,27 +1178,7 @@
         setSidebarTabOpen(tool, false);
 
         var nextTool = firstOpenSidebarTab(tool);
-
-        if (nextTool === "scan-runner" || nextTool === "ip-library") {
-          setLeftActiveTab(nextTool);
-          switchSidebarView("scanner");
-          return;
-        }
-
-        if (nextTool === "shellcraft-library" || nextTool === "shellcraft-inspector") {
-          setLeftActiveTab(nextTool);
-          switchSidebarView("shellcraft");
-          return;
-        }
-
-        if (nextTool === "results-ip") {
-          setLeftActiveTab("results-ip");
-          switchSidebarView("results");
-          return;
-        }
-
-        setLeftActiveTab("");
-        switchSidebarView("empty");
+        setLeftActiveTab(nextTool);
       });
     }
 
@@ -1434,7 +1375,6 @@
 
     return {
       init: init,
-      switchSidebarView: switchSidebarView,
       getOpenLeftTools: getOpenLeftTools,
       getActiveLeftTool: getActiveLeftTool,
       getOpenRightTools: getOpenRightTools,

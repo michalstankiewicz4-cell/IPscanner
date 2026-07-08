@@ -137,8 +137,7 @@
           <span class="v1-head-title" id="v1SidebarTitle" hidden>IP Scanner</span>
           <button class="v1-panel-toggle" data-panel-toggle="left" title="Hide left section" aria-label="Hide left section">◀</button>
         </div>
-        <div data-sidebar-view="scanner">
-          <div data-sidebar-tool-panel="scan-runner">
+        <div data-sidebar-tool-panel="scan-runner">
           <ul class="v1-tool-list">
             <li>
               <div class="v1-section-header">
@@ -267,8 +266,6 @@
               </li>
             </ul>
           </div>
-        </div>
-        <div data-sidebar-view="shellcraft" hidden>
           <div data-sidebar-tool-panel="shellcraft-library" hidden>
             <ul class="v1-tool-list">
               <li>
@@ -295,14 +292,13 @@
               </li>
             </ul>
           </div>
-        </div>
-        <div data-sidebar-view="results" hidden>
-          <ul class="v1-tool-list">
-            <li id="v1ResultNavIp" data-result-tab="results-ip" class="v1-result-nav-item">🖥 IP Results</li>
-            <li id="v1ResultNavIpLibrary" data-result-tab="ip-library" class="v1-result-nav-item">🗂 IP Library</li>
-            <li id="v1ResultNavPresets" data-result-tab="presets" class="v1-result-nav-item">⭐ Presets</li>
-          </ul>
-        </div>
+          <div data-sidebar-tool-panel="results-ip" hidden>
+            <ul class="v1-tool-list">
+              <li id="v1ResultNavIp" data-result-tab="results-ip" class="v1-result-nav-item">🖥 IP Results</li>
+              <li id="v1ResultNavIpLibrary" data-result-tab="ip-library" class="v1-result-nav-item">🗂 IP Library</li>
+              <li id="v1ResultNavPresets" data-result-tab="presets" class="v1-result-nav-item">⭐ Presets</li>
+            </ul>
+          </div>
       </aside>
 
       <div class="v1-resizer-v" data-resize="left" title="Resize left panel"></div>
@@ -539,18 +535,18 @@ macro://stealth-check
   <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js?v=20260713"></script>
   <script src="js/new-ui/core/runtimes/clippy-runtime.js?v=20260604"></script>
   <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js?v=20260604"></script>
-  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260713"></script>
+  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260716"></script>
   <script src="js/new-ui/core/panel-content-config.js?v=20260713"></script>
   <script src="js/new-ui/core/panel-content-runtime.js?v=20260715"></script>
   <script src="js/new-ui/core/panel-interactions-runtime.js?v=20260713"></script>
   <script src="js/new-ui/core/panel-renderers-runtime.js?v=20260604"></script>
   <script src="js/new-ui/core/panels-runtime.js?v=20260713"></script>
   <script src="js/new-ui/core/extension-manager-runtime.js?v=20260604"></script>
-  <script src="js/new-ui/core/menu-runtime.js?v=20260713"></script>
+  <script src="js/new-ui/core/menu-runtime.js?v=20260716"></script>
   <script src="js/new-ui/core/session-runtime.js?v=20260714"></script>
   <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260604"></script>
   <script src="js/new-ui/core/powershell-console-runtime.js?v=20260604"></script>
-    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260714"></script>
+    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260716"></script>
 </body>
 </html>
 
