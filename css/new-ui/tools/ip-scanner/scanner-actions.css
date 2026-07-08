@@ -1,0 +1,35 @@
+.v1-scanner-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.v1-scanner-actions button {
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  background: #2a2d31;
+  color: var(--txt);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.v1-scanner-actions button:hover {
+  border-color: var(--brand);
+  background: color-mix(in oklab, var(--bg-soft) 74%, var(--brand) 26%);
+  color: #ffffff;
+}
+
+.v1-scanner-actions--detect {
+  margin-top: 8px;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.v1-scanner-actions--spaced {
+  margin-top: 6px;
+}

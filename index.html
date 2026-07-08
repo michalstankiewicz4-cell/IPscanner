@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OSINT NET Auditor</title>
+  <link rel="icon" type="image/png" href="zebrus.png" />
+  <link id="newUiSkinLink" rel="stylesheet" href="css/new-ui/skins/default.css" />
+  <link rel="stylesheet" href="css/new-ui/new-ui.css" />
+</head>
+<body data-v1-ready="false" class="v1-preload-hidden">
+  <div class="v1-shell">
+    <!-- Top menu -->
+    <nav class="v1-menubar" id="v1Menubar">
+      <div class="v1-menu-brand" id="v1MenuBrand" aria-label="OSINT NET Auditor" title="OSINT NET Auditor">
+        <img src="zebrus.png" alt="Zebrus logo" class="v1-menu-brand-logo" />
+      </div>
+
+      <div class="v1-menu-group" data-menu="file">
+        <button class="v1-menu-trigger">File</button>
+        <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-menu-action="save-session"><span>Save session</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="save-session-as"><span>Save session as...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="load-session"><span>Load session</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="close-session"><span>Close session</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="import-another-session"><span>Import another session data</span><span class="shortcut"></span></button>
+          <div class="v1-menu-dd-sep"></div>
+          <button class="v1-menu-dd-item" data-menu-action="exit"><span>Exit</span><span class="shortcut"></span></button>
+        </div>
+      </div>
+
+      <div class="v1-menu-group" data-menu="options">
+        <button class="v1-menu-trigger">Options</button>
+        <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-menu-action="countries"><span>Country IP Library...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="presets"><span>Port Presets...</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="defaults"><span>Default Scan Values...</span><span class="shortcut"></span></button>
+          <div class="v1-menu-dd-sep"></div>
+          <button class="v1-menu-dd-item" data-menu-action="language"><span>Language...</span><span class="shortcut"></span></button>
+          <div class="v1-menu-dd-sep"></div>
+          <button class="v1-menu-dd-item" data-menu-action="customization"><span>Import Tool...</span><span class="shortcut"></span></button>
+        </div>
+      </div>
+
+      <div class="v1-menu-group" data-menu="tools">
+        <button class="v1-menu-trigger">Tools</button>
+        <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-tool="results-ip"><span id="v1ToolsMenuIpScanner">IP Scanner</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="shellcraft"><span id="v1ToolsMenuShellCraft">ShellCraft</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="assistant-right"><span>🤖 AI Assistant</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="topology"><span id="v1ToolsMenuTopology">Topology</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-tool="globe"><span id="v1ToolsMenuGlobe">Globe</span><span class="shortcut"></span></button>
+        </div>
+      </div>
+
+      <div class="v1-menu-group" data-menu="help">
+        <button class="v1-menu-trigger">Help</button>
+        <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-menu-action="versions"><span>Versions</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="download"><span>Download</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="about"><span>About</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="license"><span>License</span><span class="shortcut"></span></button>
+          <div class="v1-menu-dd-sep"></div>
+          <button class="v1-menu-dd-item" data-menu-action="assistant"><span>📎 Assistant</span><span class="shortcut"></span></button>
+        </div>
+      </div>
+
+      <div class="v1-session-name-spacer"></div>
+      <div class="v1-session-name-label" id="v1SessionNameLabel" title="">No active session</div>
+      <div class="v1-menu-spacer"></div>
+      <button class="v1-menubar-action v1-menubar-action--square" data-menu-action="reset-memory" title="Dev full reset button" aria-label="Dev full reset button">⟲</button>
+      <button class="v1-menubar-action v1-menubar-action--square" data-menu-action="blur-ip-soon" title="Blur IP - soon" aria-label="Blur IP - soon">👁</button>
+      <span class="v1-menubar-separator" aria-hidden="true"></span>
+      <label class="v1-menubar-toggle" title="Auto arrange when tabs are opened in floating windows" aria-label="Auto arrange when tabs are opened in floating windows">
+        <input type="checkbox" id="v1AutoArrangeToggle" checked />
+      </label>
+      <button class="v1-menubar-action" data-menu-action="auto-arrange-windows" title="Auto Arrange windows" aria-label="Auto Arrange windows">▦</button>
+      <span class="v1-menubar-separator" aria-hidden="true"></span>
+      <div class="v1-window-controls" aria-label="Window controls">
+        <button class="v1-window-btn" data-menu-action="window-min" title="Minimize" aria-label="Minimize">&#8211;</button>
+        <button class="v1-window-btn" data-menu-action="window-max" title="Maximize" aria-label="Maximize">&#9633;</button>
+        <button class="v1-window-btn" data-menu-action="window-fullscreen" title="Fullscreen" aria-label="Fullscreen">&#9974;</button>
+        <button class="v1-window-btn close" data-menu-action="window-close" title="Close" aria-label="Close">&#10005;</button>
+      </div>
+    </nav>
+
+    <!-- Main work area -->
+    <main class="v1-main">
+      <!-- Left icon bar -->
+      <aside class="v1-activity">
+        <button id="v1ActivityResults" data-activity="results" data-tool="results-ip" title="Result Data List" aria-label="Result Data List">📊</button>
+        <button id="v1ActivityScanner" data-activity="scanner" data-tool="scan-runner" class="active" title="IP Scanner" aria-label="IP Scanner">📡</button>
+        <button id="v1ActivityTopology" data-tool="topology" title="Topology" aria-label="Topology">🕸</button>
+        <button id="v1ActivityGlobe" data-tool="globe" title="Globe" aria-label="Globe">🌍</button>
+      </aside>
+
+      <!-- Left section -->
+      <aside class="v1-sidebar">
+        <div class="v1-side-head">
+          <div class="v1-sidebar-tool-tabs" id="v1SidebarToolTabs">
+            <div class="v1-sidebar-tool-tab-wrap sidebar-tab-closed" data-sidebar-tab="scan-runner" hidden>
+              <button class="v1-sidebar-tool-tab" id="v1SidebarTabScanner" data-tool="scan-runner" type="button">IP Scanner</button>
+              <span class="v1-sidebar-tool-tab-close" data-sidebar-tab-close="true" data-tool="scan-runner" role="button" tabindex="-1" aria-label="Close tab">×</span>
+            </div>
+            <div class="v1-sidebar-tool-tab-wrap sidebar-tab-closed" data-sidebar-tab="ip-library" hidden>
+              <button class="v1-sidebar-tool-tab" id="v1SidebarTabIpLibrary" data-tool="ip-library" type="button">IP Library</button>
+              <span class="v1-sidebar-tool-tab-close" data-sidebar-tab-close="true" data-tool="ip-library" role="button" tabindex="-1" aria-label="Close tab">×</span>
+            </div>
+            <div class="v1-sidebar-tool-tab-wrap sidebar-tab-closed" data-sidebar-tab="shellcraft-library" hidden>
+              <button class="v1-sidebar-tool-tab" id="v1SidebarTabShellCraftLibrary" data-tool="shellcraft-library" type="button">Library</button>
+              <span class="v1-sidebar-tool-tab-close" data-sidebar-tab-close="true" data-tool="shellcraft-library" role="button" tabindex="-1" aria-label="Close tab">×</span>
+            </div>
+            <div class="v1-sidebar-tool-tab-wrap sidebar-tab-closed" data-sidebar-tab="shellcraft-inspector" hidden>
+              <button class="v1-sidebar-tool-tab" id="v1SidebarTabShellCraftInspector" data-tool="shellcraft-inspector" type="button">Inspector</button>
+              <span class="v1-sidebar-tool-tab-close" data-sidebar-tab-close="true" data-tool="shellcraft-inspector" role="button" tabindex="-1" aria-label="Close tab">×</span>
+            </div>
+            <div class="v1-sidebar-tool-tab-wrap sidebar-tab-closed" data-sidebar-tab="results-ip" hidden>
+              <button class="v1-sidebar-tool-tab" id="v1SidebarTabResults" data-tool="results-ip" type="button">Results</button>
+              <span class="v1-sidebar-tool-tab-close" data-sidebar-tab-close="true" data-tool="results-ip" role="button" tabindex="-1" aria-label="Close tab">×</span>
+            </div>
+          </div>
+          <span class="v1-head-title" id="v1SidebarTitle" hidden>IP Scanner</span>
+          <button class="v1-panel-toggle" data-panel-toggle="left" title="Hide left section" aria-label="Hide left section">◀</button>
+        </div>
+        <div data-sidebar-view="scanner">
+          <div data-sidebar-tool-panel="scan-runner">
+          <ul class="v1-tool-list">
+            <li>
+              <div class="v1-section-header">
+                <strong id="v1DetectIpTitle">Detect IP</strong>
+                <span class="v1-collapse-arrow">▼</span>
+              </div>
+              <div class="v1-section-body">
+                <div class="v1-scanner-actions v1-scanner-actions--detect">
+                  <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="ext-ip"><span class="v1-detect-icon">🌐</span><span id="v1DetectBtnExtLabel">External IP</span></button><span class="v1-detect-result" id="v1DetectExtIp"></span><button type="button" class="v1-use-btn" id="v1UseExtIp" hidden aria-label="Use range">&gt;</button></div>
+                  <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="local-ip"><span class="v1-detect-icon">🖥</span><span id="v1DetectBtnLocalLabel">Local IP</span></button><span class="v1-detect-result" id="v1DetectLocalIp"></span><button type="button" class="v1-use-btn" id="v1UseLocalIp" hidden aria-label="Use range">&gt;</button></div>
+                  <div class="v1-detect-row"><button type="button" class="v1-detect-btn" data-scanner-action="subnets"><span class="v1-detect-icon">🔗</span><span id="v1DetectBtnSubnetsLabel">Subnets</span></button><span class="v1-detect-result" id="v1DetectSubnets"></span><button type="button" class="v1-use-btn" id="v1UseSubnets" hidden aria-label="Use range">&gt;</button></div>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="v1-section-header">
+                <strong id="v1IpRangeTitle">IP Range</strong>
+                <span class="v1-collapse-arrow">▼</span>
+              </div>
+              <div class="v1-section-body">
+              <div class="v1-ip-row">
+                <span class="v1-ip-label" id="v1IpLabelFrom">From</span>
+                <div class="v1-ip-box" data-ip-box="from">
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="From IP octet 1" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="From IP octet 2" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="From IP octet 3" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="From IP octet 4" />
+                </div>
+                <input id="v1ScanFrom" type="hidden" value="192.168.1.1" />
+              </div>
+              <div class="v1-ip-row">
+                <span class="v1-ip-label" id="v1IpLabelTo">To</span>
+                <div class="v1-ip-box" data-ip-box="to">
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="To IP octet 1" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="To IP octet 2" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="To IP octet 3" />
+                  <span class="v1-octet-dot">.</span>
+                  <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" aria-label="To IP octet 4" />
+                </div>
+                <input id="v1ScanTo" type="hidden" value="192.168.1.254" />
+              </div>
+              <div class="v1-port-preset-row">
+                <label class="v1-ip-label" id="v1PortsLabel" for="v1PortPreset">Ports</label>
+                <select id="v1PortPreset" class="v1-port-preset-select">
+                  <option value="all-ports">🌐 All ports</option>
+                  <option value="cameras">📷 Cameras</option>
+                  <option value="printers">🖨 Printers</option>
+                  <option value="folders-http">📁 Folders / HTTP</option>
+                  <option value="routers">📡 Routers</option>
+                  <option value="nas-servers">🗄 NAS / Servers</option>
+                  <option value="windows-smb">🪟 Windows / SMB</option>
+                </select>
+                <input id="v1ScanPorts" type="hidden" value="" />
+              </div>
+              <div class="v1-scanner-actions v1-scanner-actions--spaced">
+                <button type="button" data-scanner-action="start">▶ Start</button>
+                <button type="button" data-scanner-action="stop">■ Stop</button>
+                <button type="button" data-scanner-action="clear">✕ Clear</button>
+                <button type="button" data-scanner-action="scan-speed">⏱ Scan Speed</button>
+                <button type="button" data-scanner-action="presets">⭐ Port Presets</button>
+              </div>
+              </div>
+            </li>
+            <li>
+              <div class="v1-section-header">
+                <strong id="v1IpExtractorTitle">IP Extractor</strong>
+                <span class="v1-collapse-arrow">▼</span>
+              </div>
+              <div class="v1-section-body">
+              <textarea id="v1IpExtractorInput" class="v1-ip-extractor-input" rows="3" placeholder="example.com 192.168.1.10"></textarea>
+              <div class="v1-scanner-actions v1-scanner-actions--spaced">
+                <button type="button" id="v1IpExtractBtn">＋ Add / Extract</button>
+              </div>
+              <textarea id="v1IpExtractorOutput" class="v1-ip-extractor-output" rows="4" readonly placeholder="Extracted IPs..."></textarea>
+              </div>
+            </li>
+            <li>
+              <div class="v1-section-header">
+                <strong id="v1RangeHistoryTitle">Range History</strong>
+                <span class="v1-collapse-arrow">▼</span>
+              </div>
+              <div class="v1-section-body">
+                <div id="v1RangeHistory" class="v1-range-history"></div>
+              </div>
+            </li>
+          </ul>
+          </div>
+          <div data-sidebar-tool-panel="ip-library" hidden>
+            <ul class="v1-tool-list">
+              <li>
+                <div class="v1-section-header">
+                  <strong id="v1IpLibraryPanelTitle">Country IP Library • Actions</strong>
+                  <span class="v1-collapse-arrow">▼</span>
+                </div>
+                <div class="v1-section-body">
+                  <div class="v1-scanner-actions v1-iplib-actions">
+                    <button type="button" data-iplib-action="update" id="v1IpLibraryUpdateBtn">Update (PowerShell)</button>
+                    <button type="button" data-iplib-action="load" id="v1IpLibraryLoadBtn">Load cached</button>
+                    <button type="button" data-iplib-action="clear" id="v1IpLibraryClearBtn">Clear base</button>
+                  </div>
+                </div>
+              </li>
+              <li>
+                <div class="v1-section-header">
+                  <strong>Country IP Library • Range Selection</strong>
+                  <span class="v1-collapse-arrow">▼</span>
+                </div>
+                <div class="v1-section-body">
+                  <div class="v1-import-manager-note" id="v1IpLibraryPanelNote">Update the country range library using a local PowerShell script and keep a cached copy.</div>
+                  <div class="v1-iplib-grid">
+                    <div class="v1-iplib-field">
+                      <label id="v1IpLibraryCountriesLabel" for="v1IpLibraryCountryCodes">Country codes</label>
+                      <textarea id="v1IpLibraryCountryCodes" class="v1-iplib-countries" autocomplete="off" rows="3" placeholder="pl,cn,ru,us,de,fr,gb,jp,kr,br,in,au,nl,ua,cz,se,no,fi,tr,ir,sa,za,ar,mx,ca,it,es"></textarea>
+                    </div>
+                    <div class="v1-iplib-field">
+                      <label id="v1IpLibraryTopRangesLabel" for="v1IpLibraryTopRanges">Top ranges per country</label>
+                      <input id="v1IpLibraryTopRanges" class="v1-iplib-topranges" type="number" min="10" max="500" step="10" value="120" />
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div data-sidebar-view="shellcraft" hidden>
+          <div data-sidebar-tool-panel="shellcraft-library" hidden>
+            <ul class="v1-tool-list">
+              <li>
+                <div class="v1-section-header">
+                  <strong>Library</strong>
+                  <span class="v1-collapse-arrow">▼</span>
+                </div>
+                <div class="v1-section-body">
+                  <div class="v1-import-manager-note">ShellCraft library content is empty for now.</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div data-sidebar-tool-panel="shellcraft-inspector" hidden>
+            <ul class="v1-tool-list">
+              <li>
+                <div class="v1-section-header">
+                  <strong>Inspector</strong>
+                  <span class="v1-collapse-arrow">▼</span>
+                </div>
+                <div class="v1-section-body">
+                  <div class="v1-import-manager-note">ShellCraft inspector content is empty for now.</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div data-sidebar-view="results" hidden>
+          <ul class="v1-tool-list">
+            <li id="v1ResultNavIp" data-result-tab="results-ip" class="v1-result-nav-item">🖥 IP Results</li>
+            <li id="v1ResultNavIpLibrary" data-result-tab="ip-library" class="v1-result-nav-item">🗂 IP Library</li>
+            <li id="v1ResultNavPresets" data-result-tab="presets" class="v1-result-nav-item">⭐ Presets</li>
+          </ul>
+        </div>
+      </aside>
+
+      <div class="v1-resizer-v" data-resize="left" title="Resize left panel"></div>
+
+      <!-- Central section -->
+      <section class="v1-editor">
+        <div class="v1-tabs-shell">
+          <button class="v1-tabs-nav" id="v1TabsScrollLeft" type="button" title="Scroll tabs left" aria-label="Scroll tabs left">◀</button>
+          <div class="v1-tabs" id="v1TabsTrack">
+          <button class="v1-tab tab-closed" data-tool="versions" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">📘</span>
+            <span class="v1-tab-title">Versions</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="ip-library" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🗂</span>
+            <span class="v1-tab-title" id="v1TabTitleIpLibrary">IP Library</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="presets" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">⭐</span>
+            <span class="v1-tab-title" id="v1TabTitlePresets">Presets</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="scan-defaults" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">⚙</span>
+            <span class="v1-tab-title" id="v1TabTitleScanDefaults">Default Scan Values</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="import-tool" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">📦</span>
+            <span class="v1-tab-title" id="v1TabTitleImportTool">Import Tool</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="language-manager" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🌐</span>
+            <span class="v1-tab-title" id="v1TabTitleLanguageManager">Language</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="about" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">ℹ️</span>
+            <span class="v1-tab-title" id="v1TabTitleAbout">About</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="license" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">📄</span>
+            <span class="v1-tab-title" id="v1TabTitleLicense">License</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="results-ip" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🖥</span>
+            <span class="v1-tab-title" id="v1TabTitleResultsIp">IP Results</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="shellcraft" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🛠</span>
+            <span class="v1-tab-title" id="v1TabTitleShellCraft">ShellCraft</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="topology" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🕸</span>
+            <span class="v1-tab-title" id="v1TabTitleTopology">Topology</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          <button class="v1-tab tab-closed" data-tool="globe" type="button" hidden>
+            <span class="v1-tab-icon" aria-hidden="true">🌍</span>
+            <span class="v1-tab-title" id="v1TabTitleGlobe">Globe</span>
+            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
+          </button>
+          </div>
+          <button class="v1-tabs-nav" id="v1TabsScrollRight" type="button" title="Scroll tabs right" aria-label="Scroll tabs right">▶</button>
+        </div>
+
+        <div class="v1-content">
+          <article class="v1-card" id="v1MainCard" hidden>
+            <h3 id="v1ToolTitle">Scan Runner</h3>
+
+            <div class="v1-meta" id="v1ScanMeta">
+              <div class="v1-pill">Checked hosts<b>152</b></div>
+              <div class="v1-pill">Active hosts<b>29</b></div>
+              <div class="v1-pill">Open ports<b>188</b></div>
+              <div class="v1-pill">Elapsed<b>00:01:18</b></div>
+            </div>
+
+            <div class="tool-detail" id="v1ToolDetail">
+              <h4>IP Range Scan Control</h4>
+              <div>Tryb bazowy do skanowania hostow, portow i enrichmentu wynikow.</div>
+            </div>
+
+            <div class="v1-actions" id="v1ScanActions">
+              <button data-tool="scan-runner">▶ Start Scan</button>
+              <button data-tool="scan-runner">■ Stop</button>
+              <button data-tool="scan-runner">✕ Clear</button>
+              <button data-tool="scan-runner">⚙ Default Scan Values</button>
+              <button data-tool="scan-runner">📤 Export JSON</button>
+              <button data-tool="scan-runner">📥 Import JSON</button>
+            </div>
+          </article>
+
+          <div class="v1-empty-state" id="v1NoTabsState" hidden>
+            <img src="zebrus.png" alt="Zebrus" class="v1-empty-logo" />
+            <div class="v1-session-welcome" id="v1SessionWelcome">
+              <h3 id="v1SessionWelcomeTitle">Recent sessions</h3>
+              <div class="v1-session-welcome-list" id="v1SessionWelcomeList"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="v1-resizer-h" data-resize="console" title="Resize editor and terminal"></div>
+
+        <section class="v1-console-zone">
+          <div class="v1-console-tabs">
+            <button class="v1-console-tab active" data-v1-console-tab="console" id="v1TerminalTab">Terminal</button>
+            <button class="v1-console-tab" data-v1-console-tab="macro">Macro</button>
+            <button class="v1-console-tab" data-v1-console-tab="info" id="v1ConsoleTab">Console</button>
+            <button class="v1-panel-toggle" data-panel-toggle="bottom" title="Hide bottom section" aria-label="Hide bottom section">▼</button>
+          </div>
+          <div class="v1-console-body">
+            <div class="v1-console-pane active" data-v1-console-pane="console">
+              <div class="v1-ps-shell">
+                <pre class="v1-ps-output" id="v1PsOutput" tabindex="0" role="textbox" aria-label="PowerShell output" aria-multiline="true"></pre>
+                <div class="v1-ps-input-row">
+                  <span class="v1-ps-prompt">PS&gt;</span>
+                  <input type="text" id="v1PsInput" class="v1-ps-input" autocomplete="off" spellcheck="false" placeholder="Type PowerShell command and press Enter" />
+                </div>
+              </div>
+            </div>
+            <div class="v1-console-pane" data-v1-console-pane="macro">macro://quick-lan-scan
+  - set range 192.168.1.1-192.168.1.254
+  - set preset common-lan+iot
+  - run scan
+
+macro://stealth-check
+  - delay 150ms
+  - sequential ports
+  - run lightweight sweep</div>
+            <div class="v1-console-pane" data-v1-console-pane="info">
+              <div class="v1-ps-shell v1-log-shell">
+                <pre class="v1-info-log" id="v1InfoLog" tabindex="0" role="textbox" aria-label="System information log" aria-multiline="true"></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <div class="v1-resizer-v" data-resize="right" title="Resize right panel"></div>
+
+      <!-- Right section -->
+      <aside class="v1-rightbar">
+        <div class="v1-side-head">
+          <div class="v1-right-tabs">
+            <div class="v1-right-tool-tab-wrap is-right-active" data-right-tab="assistant">
+              <button class="v1-right-tab active" data-v1-right-tab="assistant" type="button">AI Assistant</button>
+              <span class="v1-right-tool-tab-close" data-right-tab-close="true" data-tool="assistant" role="button" tabindex="-1" aria-label="Close tab">×</span>
+            </div>
+          </div>
+          <button class="v1-panel-toggle" data-panel-toggle="right" title="Hide right section" aria-label="Hide right section">▶</button>
+        </div>
+        <div class="v1-right-content">
+            <section class="v1-right-pane active" data-v1-right-pane="assistant">
+              <article class="v1-ai-panel">
+                <div class="v1-ai-mode" role="radiogroup" aria-label="Assistant mode">
+                  <span class="v1-ai-mode-label">Mode</span>
+                  <label class="v1-ai-mode-option">
+                    <input type="radio" name="v1AiMode" value="ui" checked />
+                    <span>UI</span>
+                  </label>
+                  <label class="v1-ai-mode-option">
+                    <input type="radio" name="v1AiMode" value="ps" />
+                    <span>PS</span>
+                  </label>
+                  <span class="v1-ai-badge v1-ai-mode-badge">GPT-5.3-Codex</span>
+                </div>
+
+                <div class="v1-ai-chat" id="v1AiChatHistory" aria-live="polite">
+                  <div class="v1-ai-msg assistant">Assistant ready. Choose mode: UI for interface guidance, PS for console-first commands.</div>
+                </div>
+
+                <div class="v1-ai-input">
+                  <textarea id="v1AiPromptInput" class="v1-ai-prompt" rows="3" placeholder="Type prompt for assistant..."></textarea>
+                </div>
+
+                <p class="status-line" id="v1StatusLine" hidden></p>
+              </article>
+            </section>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Bottom info bar -->
+    <footer class="v1-status">
+      <span class="v1-status-left">
+        <span class="v1-status-loader" id="v1StatusLoader" aria-hidden="true">
+          <span class="v1-status-loader-cell"></span>
+          <span class="v1-status-loader-cell"></span>
+          <span class="v1-status-loader-cell"></span>
+          <span class="v1-status-loader-cell"></span>
+          <span class="v1-status-loader-cell"></span>
+          <span class="v1-status-loader-cell"></span>
+        </span>
+        <span class="v1-status-proc-count" id="v1StatusProcCount" aria-hidden="true">0</span>
+        <span class="v1-status-progress" id="v1StatusProgress" aria-hidden="true">
+          <span class="v1-status-progress-bar" id="v1StatusProgressBar" style="width:0%;"></span>
+          <span class="v1-status-progress-text" id="v1StatusProgressLabel">0%</span>
+        </span>
+        <span>main • tauri-desktop • UI mock only</span>
+      </span>
+      <span id="v1StatusRight">active: scan-runner</span>
+    </footer>
+
+    <div id="v1ClippyContainer" class="v1-clippy-hidden" aria-live="polite">
+      <div id="v1ClippyBubble" role="button" tabindex="0" aria-label="Assistant tip bubble">
+        <span id="v1ClippyTipText"></span>
+        <button id="v1ClippyClose" type="button" aria-label="Close assistant">x</button>
+      </div>
+      <button id="v1ClippyChar" type="button" aria-label="Assistant">📎</button>
+    </div>
+  </div>
+
+  <script src="js/new-ui/core/store.js"></script>
+  <script src="js/new-ui/core/i18n.js?v=20260714"></script>
+  <script src="js/new-ui/core/theme.js?v=20260604"></script>
+  <script src="js/new-ui/core/tool-catalog.js?v=20260714"></script>
+  <script src="js/new-ui/core/presets-runtime.js?v=20260604"></script>
+  <script src="js/new-ui/core/versions-data.js?v=20260713b"></script>
+  <script src="js/new-ui/core/utils/net-utils.js?v=20260604"></script>
+  <script src="js/new-ui/core/extensions.js?v=20260604"></script>
+  <script src="js/new-ui/core/ui-definitions.js?v=20260713"></script>
+  <script src="js/new-ui/core/platform-runtime.js?v=20260604"></script>
+  <script src="js/new-ui/core/runtimes/status-log-runtime.js?v=20260604"></script>
+  <script src="js/new-ui/core/runtimes/statusbar-loader-runtime.js?v=20260604"></script>
+  <script src="js/new-ui/core/runtimes/layout-runtime.js?v=20260604"></script>
+  <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js?v=20260713"></script>
+  <script src="js/new-ui/core/runtimes/clippy-runtime.js?v=20260604"></script>
+  <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js?v=20260604"></script>
+  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260713"></script>
+  <script src="js/new-ui/core/panel-content-config.js?v=20260713"></script>
+  <script src="js/new-ui/core/panel-content-runtime.js?v=20260713"></script>
+  <script src="js/new-ui/core/panel-interactions-runtime.js?v=20260713"></script>
+  <script src="js/new-ui/core/panel-renderers-runtime.js?v=20260604"></script>
+  <script src="js/new-ui/core/panels-runtime.js?v=20260713"></script>
+  <script src="js/new-ui/core/extension-manager-runtime.js?v=20260604"></script>
+  <script src="js/new-ui/core/menu-runtime.js?v=20260713"></script>
+  <script src="js/new-ui/core/session-runtime.js?v=20260714"></script>
+  <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260604"></script>
+  <script src="js/new-ui/core/powershell-console-runtime.js?v=20260604"></script>
+    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260714"></script>
+</body>
+</html>
+

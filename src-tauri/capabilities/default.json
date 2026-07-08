@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capability for main window IPC and core APIs",
+  "windows": ["main"],
+  "permissions": [
+    "core:default"
+  ]
+}

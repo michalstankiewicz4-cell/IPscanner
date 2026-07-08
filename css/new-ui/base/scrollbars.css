@@ -1,0 +1,300 @@
+.v1-shell,
+.v1-shell * {
+  scrollbar-width: thin;
+  scrollbar-color: #4f4f4f #1e1e1e;
+}
+
+/* WebView2 can ignore generic universal selectors for native form controls.
+   Force scrollbar styling explicitly on text inputs and multiline outputs. */
+.v1-shell textarea,
+.v1-shell input,
+.v1-shell select,
+.v1-shell pre,
+.v1-shell .v1-lang-manager-output,
+.v1-shell .v1-import-output,
+.v1-shell .v1-ip-extractor-input,
+.v1-shell .v1-ip-extractor-output {
+  scrollbar-width: thin;
+  scrollbar-color: #4f4f4f #1e1e1e;
+}
+
+.v1-shell textarea::-webkit-scrollbar,
+.v1-shell input::-webkit-scrollbar,
+.v1-shell select::-webkit-scrollbar,
+.v1-shell pre::-webkit-scrollbar,
+.v1-shell .v1-lang-manager-output::-webkit-scrollbar,
+.v1-shell .v1-import-output::-webkit-scrollbar,
+.v1-shell .v1-ip-extractor-input::-webkit-scrollbar,
+.v1-shell .v1-ip-extractor-output::-webkit-scrollbar {
+  width: 10px !important;
+  height: 10px !important;
+  background: #1e1e1e !important;
+}
+
+.v1-shell textarea::-webkit-scrollbar-button,
+.v1-shell input::-webkit-scrollbar-button,
+.v1-shell select::-webkit-scrollbar-button,
+.v1-shell pre::-webkit-scrollbar-button,
+.v1-shell .v1-lang-manager-output::-webkit-scrollbar-button,
+.v1-shell .v1-import-output::-webkit-scrollbar-button,
+.v1-shell .v1-ip-extractor-input::-webkit-scrollbar-button,
+.v1-shell .v1-ip-extractor-output::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  color: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.v1-shell textarea::-webkit-scrollbar-button:single-button,
+.v1-shell input::-webkit-scrollbar-button:single-button,
+.v1-shell select::-webkit-scrollbar-button:single-button,
+.v1-shell pre::-webkit-scrollbar-button:single-button,
+.v1-shell textarea::-webkit-scrollbar-button:double-button,
+.v1-shell input::-webkit-scrollbar-button:double-button,
+.v1-shell select::-webkit-scrollbar-button:double-button,
+.v1-shell pre::-webkit-scrollbar-button:double-button,
+.v1-shell textarea::-webkit-scrollbar-button:single-button:vertical:decrement,
+.v1-shell input::-webkit-scrollbar-button:single-button:vertical:decrement,
+.v1-shell select::-webkit-scrollbar-button:single-button:vertical:decrement,
+.v1-shell pre::-webkit-scrollbar-button:single-button:vertical:decrement,
+.v1-shell textarea::-webkit-scrollbar-button:single-button:vertical:increment,
+.v1-shell input::-webkit-scrollbar-button:single-button:vertical:increment,
+.v1-shell select::-webkit-scrollbar-button:single-button:vertical:increment,
+.v1-shell pre::-webkit-scrollbar-button:single-button:vertical:increment,
+.v1-shell textarea::-webkit-scrollbar-button:start:decrement,
+.v1-shell input::-webkit-scrollbar-button:start:decrement,
+.v1-shell select::-webkit-scrollbar-button:start:decrement,
+.v1-shell pre::-webkit-scrollbar-button:start:decrement,
+.v1-shell textarea::-webkit-scrollbar-button:end:increment,
+.v1-shell input::-webkit-scrollbar-button:end:increment,
+.v1-shell select::-webkit-scrollbar-button:end:increment,
+.v1-shell pre::-webkit-scrollbar-button:end:increment {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  color: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+.v1-shell textarea::-webkit-scrollbar-track,
+.v1-shell input::-webkit-scrollbar-track,
+.v1-shell select::-webkit-scrollbar-track,
+.v1-shell pre::-webkit-scrollbar-track,
+.v1-shell .v1-lang-manager-output::-webkit-scrollbar-track,
+.v1-shell .v1-import-output::-webkit-scrollbar-track,
+.v1-shell .v1-ip-extractor-input::-webkit-scrollbar-track,
+.v1-shell .v1-ip-extractor-output::-webkit-scrollbar-track {
+  background: #1e1e1e !important;
+  border: 0 !important;
+}
+
+.v1-shell textarea::-webkit-scrollbar-corner,
+.v1-shell input::-webkit-scrollbar-corner,
+.v1-shell select::-webkit-scrollbar-corner,
+.v1-shell pre::-webkit-scrollbar-corner,
+.v1-shell textarea::-webkit-resizer,
+.v1-shell input::-webkit-resizer,
+.v1-shell select::-webkit-resizer,
+.v1-shell pre::-webkit-resizer {
+  background: #1e1e1e !important;
+  border: 0 !important;
+}
+
+.v1-shell textarea::-webkit-scrollbar-thumb,
+.v1-shell input::-webkit-scrollbar-thumb,
+.v1-shell select::-webkit-scrollbar-thumb,
+.v1-shell pre::-webkit-scrollbar-thumb,
+.v1-shell .v1-lang-manager-output::-webkit-scrollbar-thumb,
+.v1-shell .v1-import-output::-webkit-scrollbar-thumb,
+.v1-shell .v1-ip-extractor-input::-webkit-scrollbar-thumb,
+.v1-shell .v1-ip-extractor-output::-webkit-scrollbar-thumb {
+  background: #4f4f4f !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.v1-shell textarea::-webkit-scrollbar-thumb:hover,
+.v1-shell input::-webkit-scrollbar-thumb:hover,
+.v1-shell select::-webkit-scrollbar-thumb:hover,
+.v1-shell pre::-webkit-scrollbar-thumb:hover,
+.v1-shell .v1-lang-manager-output::-webkit-scrollbar-thumb:hover,
+.v1-shell .v1-import-output::-webkit-scrollbar-thumb:hover,
+.v1-shell .v1-ip-extractor-input::-webkit-scrollbar-thumb:hover,
+.v1-shell .v1-ip-extractor-output::-webkit-scrollbar-thumb:hover {
+  background: #5f5f5f !important;
+}
+
+.v1-shell::-webkit-scrollbar,
+.v1-shell *::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 10px !important;
+  height: 10px !important;
+  background: #1e1e1e !important;
+}
+
+.v1-shell::-webkit-scrollbar-button,
+.v1-shell *::-webkit-scrollbar-button {
+  -webkit-appearance: none;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.v1-shell::-webkit-scrollbar-button:single-button,
+.v1-shell *::-webkit-scrollbar-button:single-button,
+.v1-shell::-webkit-scrollbar-button:double-button,
+.v1-shell *::-webkit-scrollbar-button:double-button,
+.v1-shell::-webkit-scrollbar-button:single-button:vertical:decrement,
+.v1-shell *::-webkit-scrollbar-button:single-button:vertical:decrement,
+.v1-shell::-webkit-scrollbar-button:single-button:vertical:increment,
+.v1-shell *::-webkit-scrollbar-button:single-button:vertical:increment,
+.v1-shell::-webkit-scrollbar-button:single-button:horizontal:decrement,
+.v1-shell *::-webkit-scrollbar-button:single-button:horizontal:decrement,
+.v1-shell::-webkit-scrollbar-button:single-button:horizontal:increment,
+.v1-shell *::-webkit-scrollbar-button:single-button:horizontal:increment,
+.v1-shell::-webkit-scrollbar-button:start:decrement,
+.v1-shell *::-webkit-scrollbar-button:start:decrement,
+.v1-shell::-webkit-scrollbar-button:end:increment,
+.v1-shell *::-webkit-scrollbar-button:end:increment,
+.v1-shell::-webkit-scrollbar-button:start:increment,
+.v1-shell *::-webkit-scrollbar-button:start:increment,
+.v1-shell::-webkit-scrollbar-button:end:decrement,
+.v1-shell *::-webkit-scrollbar-button:end:decrement {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.v1-shell::-webkit-scrollbar-track,
+.v1-shell *::-webkit-scrollbar-track {
+  border-radius: 0 !important;
+  background: #1e1e1e !important;
+  border: 0 !important;
+}
+
+.v1-shell::-webkit-scrollbar-thumb,
+.v1-shell *::-webkit-scrollbar-thumb {
+  -webkit-appearance: none;
+  background: #4f4f4f !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.v1-shell::-webkit-scrollbar-thumb:hover,
+.v1-shell *::-webkit-scrollbar-thumb:hover {
+  background: #5f5f5f !important;
+}
+
+.v1-shell::-webkit-scrollbar-corner,
+.v1-shell *::-webkit-scrollbar-corner {
+  background: #1e1e1e !important;
+  border-radius: 0 !important;
+}
+
+.v1-custom-scroll-host {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none;
+}
+
+.v1-custom-scroll-host::-webkit-scrollbar,
+.v1-custom-scroll-host::-webkit-scrollbar-button,
+.v1-custom-scroll-host::-webkit-scrollbar-thumb,
+.v1-custom-scroll-host::-webkit-scrollbar-track,
+.v1-custom-scroll-host::-webkit-scrollbar-corner {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.v1-faux-scrollbar {
+  position: fixed;
+  width: var(--v1-faux-scrollbar-size);
+  background: #1e1e1e;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.v1-faux-scrollbar-h {
+  position: fixed;
+  height: var(--v1-faux-scrollbar-size);
+  background: #1e1e1e;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.v1-faux-scrollbar-thumb {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 24px;
+  background: #5f5f5f;
+  cursor: pointer;
+}
+
+.v1-faux-scrollbar-thumb-h {
+  right: auto;
+  top: 0;
+  height: var(--v1-faux-scrollbar-size);
+}
+
+.v1-scroll-safe-inline-end {
+  padding-inline-end: var(--v1-scroll-safe-gutter);
+  box-sizing: border-box;
+}
+
+.v1-tool-list.v1-custom-scroll-host,
+.v1-card.v1-custom-scroll-host,
+.v1-detached-tool-body.v1-custom-scroll-host,
+.v1-versions-list.v1-custom-scroll-host,
+.v1-ai-threadlist.v1-custom-scroll-host,
+.v1-ai-chat.v1-custom-scroll-host,
+.v1-ai-prompt.v1-custom-scroll-host,
+.v1-console-pane[data-v1-console-pane="macro"].v1-custom-scroll-host,
+.v1-ps-output.v1-custom-scroll-host,
+.v1-info-log.v1-custom-scroll-host,
+.v1-lang-manager-output.v1-custom-scroll-host,
+.v1-import-output.v1-custom-scroll-host,
+.v1-results-table-scroll--ip.v1-custom-scroll-host,
+.listview-body.v1-custom-scroll-host {
+  padding-inline-end: var(--v1-scroll-safe-gutter);
+  box-sizing: border-box;
+}
+
+.v1-faux-scrollbar-thumb:hover,
+.v1-faux-scrollbar-thumb.dragging {
+  background: #737373;
+}

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "NetRecon IP Auditor",
+  "version": "1.7.0",
+  "identifier": "com.netrecon.ipscanner",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run prepare:app",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../app"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "NetRecon IP Auditor v1.7.0",
+        "url": "index.html",
+        "width": 900,
+        "height": 620,
+        "maximized": true,
+        "center": true,
+        "resizable": true,
+        "decorations": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' data: blob: http: https:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http: https:; connect-src 'self' ipc: http: https: ws: wss:; font-src 'self' data:; frame-src 'self' http: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+      "capabilities": [
+        "default",
+        "clippy"
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "resources": [
+      "../scripts/*.ps1"
+    ],
+    "windows": {
+      "nsis": {
+        "template": "nsis/installer-template.nsi"
+      },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    },
+    "icon": [
+      "icons/icon.ico"
+    ]
+  }
+}
