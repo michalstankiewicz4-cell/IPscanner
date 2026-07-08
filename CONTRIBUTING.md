@@ -2,7 +2,8 @@
 
 ## 1. Aktualny kierunek projektu
 
-Repo zawiera stabilny rdzen skanera oraz kilka wariantow UI. Aktualny kierunek rozwoju to:
+Repo zawiera stabilny rdzen skanera i jedno UI (New UI, uklad podobny do VS Code).
+Aktualny kierunek rozwoju to:
 
 - utrzymanie kompatybilnosci istniejacej logiki skanera,
 - modularyzacja newUI (core + adaptery UI),
@@ -13,44 +14,24 @@ W praktyce: zmiany w warstwie UI powinny byc izolowane od logiki skanowania.
 
 Wizja docelowa (przeksztalcenie w instalowalny/odinstalowywalny dodatek na wspolnej powloce) jest poza biezacym zakresem prac i opisana osobno w `FUTURE_PLUGIN_SHELL.md` - najpierw domykamy w pelni dzialajacy skaner.
 
-### 1a. Model galezi (obowiazkowy)
+### 1a. Historia: model dwoch galezi (zakonczony)
 
-- `main` utrzymuje klasyczny interfejs windowsowy (legacy UI).
-- `feature/new-ui-skins` utrzymuje nowe UI (uklad podobny do VS Code).
-- Galezie rozwijamy niezaleznie: brak mieszania entrypointow i runtime miedzy stackami.
-- Na `feature/new-ui-skins` utrzymujemy tylko zasoby `css/new-ui/**` i `js/new-ui/**` jako source UI; nie przywracamy top-level legacy plikow `css/*.css` i `js/*.js`.
-- Jedyny punkt integracji miedzy tymi galeziami to dual-view host:
-  - lewa strona: `main` (legacy UI),
-  - prawa strona: `feature/new-ui-skins` (new UI).
-- Zmiany na jednej galezi nie moga wymagac obecnosci plikow UI z drugiej galezi, poza powyzszym kontraktem dual-view.
-
-### 1b. Reka synchronizacja na `main` (obowiazkowa dla deployu)
-
-Jesli nowy UI ma byc pokazany w domenie `https://ipscanner.pl/OSINTNETAuditor/`, synchronizujemy go recznie z `feature/new-ui-skins` do `main` w osobnym worktree.
-
-Zasady:
-
-- synchronizujemy tylko katalog `OSINTNETAuditor/` na `main`,
-- nie nadpisujemy rootowego dual view `index.html` / `css/` / `js/` na `main`,
-- nie przenosimy zmian przez automatyczne merge z feature do main, jesli dotycza wyłącznie nowego UI,
-- przed pushem sprawdzamy `git status` w worktree `main`, aby potwierdzic, ze zmienione sa tylko pliki deployowe.
-
-Praktyczny przebieg:
-
-1. utworz lub uzyj osobnego worktree dla `main`,
-2. skopiuj aktualny `index.html`, `clippy.html`, `zebrus.png` oraz tylko zasoby New UI:
-  `css/new-ui/**` -> `OSINTNETAuditor/css/new-ui/**`
-  `js/new-ui/**` -> `OSINTNETAuditor/js/new-ui/**`,
-  zachowujac dokladnie strukture katalogow `new-ui` (bez splaszczania do `OSINTNETAuditor/css/*` lub `OSINTNETAuditor/js/*`),
-3. zweryfikuj diff, commit i push tylko z worktree `main`,
-4. pozostaw root dual view bez zmian, chyba ze jest osobna, jawna migracja.
+Projekt dzialal wczesniej w modelu dwoch galezi: `main` z legacy UI (Windows-95-style)
+i `feature/new-ui-skins` z New UI, pokazywanymi obok siebie przez dual-view host na
+`ipscanner.pl`. Ten model zostal **swiadomie zakonczony** - legacy UI zostal usuniety
+z `main`, a zawartosc `feature/new-ui-skins` zostala przeniesiona na `main` jako
+jedyna, docelowa wersja UI. Galaz `feature/new-ui-skins` jest przeznaczona do
+usuniecia (moze juz nie istniec, w zaleznosci kiedy to czytasz). Repo dziala/bedzie
+dzialac w modelu jednej galezi (`main`). Ten podpunkt zostaje jako notatka
+historyczna - nie ma juz aktywnych zasad synchronizacji miedzy galeziami do
+przestrzegania.
 
 ## 2. Zasady zmian
 
 - Nie mieszaj refaktoru UI z duzymi zmianami backendu skanera w jednym PR.
 - Nie edytuj katalogu app recznie - to mirror generowany skryptem (szczegoly: sekcja 12).
 - W new UI preferuj male moduly w js/new-ui/core zamiast rozbudowy inline script.
-- Na `feature/new-ui-skins` nie dodawaj nowych odwolan do legacy path `css/*.css` i `js/*.js`; wejscie ma ladowac wyłącznie `css/new-ui/**` i `js/new-ui/**`.
+- Nie dodawaj nowych odwolan do starych, usunietych legacy plikow `css/*.css` i `js/*.js` (poza `css/new-ui/**`/`js/new-ui/**`); wejscie ma ladowac wyłącznie `css/new-ui/**` i `js/new-ui/**`.
 - Zanim dodasz nowy tekst UI, dodaj klucze do i18n.
 - Nie zostawiaj hardcoded tekstow user-facing (tooltip, aria-label, status line) w runtime; tekst powinien przechodzic przez i18n.
 - Dla opisow narzedzi (tool catalog) uzywaj kluczy i18n w formacie toolText_<tool_id_z_podkresleniami>.
