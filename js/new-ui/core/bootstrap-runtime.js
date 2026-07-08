@@ -419,6 +419,43 @@
         });
       }
 
+      // shell: opens an extension-contributed tool via whichever surface(s)
+      // its own ui flags declare (LS/RS/CS) - the single place that knows how
+      // to open such a tool, used by the dynamically-created activity-bar icon,
+      // Tools-menu item, and (via window.NetReconNewUI) the Options-menu "ext:"
+      // dispatch in menu-runtime.js.
+      function openExtensionTool(toolKey) {
+        const toolMap = getToolInfoMap();
+        const toolUi = (toolMap[toolKey] && toolMap[toolKey].ui) || {};
+        if (toolUi.showInLeftPanel === true) {
+          document.dispatchEvent(new CustomEvent("newui:sidebar-tab-intent-open", { detail: { tool: toolKey, activate: true } }));
+        }
+        if (toolUi.showInRightPanel === true) {
+          document.dispatchEvent(new CustomEvent("newui:right-tab-intent-open", { detail: { tool: toolKey } }));
+        }
+        if (toolUi.showAsTab !== false) {
+          switchTool(toolKey);
+        }
+      }
+      window.NetReconNewUI = window.NetReconNewUI || {};
+      window.NetReconNewUI.openExtensionTool = openExtensionTool;
+
+      // shell: renders an extension-contributed icon into a container - an
+      // http(s)/data URL (e.g. a catalog icon file) becomes a real <img>,
+      // anything else (emoji/text, the existing convention) stays plain text.
+      function renderExtIcon(container, icon) {
+        const value = String(icon || "");
+        if (/^(https?:|data:)/.test(value)) {
+          const img = document.createElement("img");
+          img.className = "v1-ext-icon-img";
+          img.src = value;
+          img.alt = "";
+          container.appendChild(img);
+        } else {
+          container.appendChild(document.createTextNode(value));
+        }
+      }
+
       function syncExtensionToolUi() {
         clearDynamicExtensionUi();
 
@@ -436,7 +473,6 @@
 
         const toolsDropdown = document.querySelector('[data-menu="tools"] .v1-menu-dropdown');
         const activityBar = document.querySelector('.v1-activity');
-        const activitySpacer = activityBar ? activityBar.querySelector('.v1-activity-spacer') : null;
         const scannerToolList = document.querySelector('.v1-sidebar [data-sidebar-tool-panel="scan-runner"] .v1-tool-list');
         const tabsBar = document.querySelector('.v1-tabs');
         const sidebarToolTabs = document.getElementById('v1SidebarToolTabs');
@@ -580,7 +616,8 @@
             btn.setAttribute("data-dynamic-extension", "1");
 
             const left = document.createElement("span");
-            left.textContent = entry.icon + " " + entry.title;
+            renderExtIcon(left, entry.icon);
+            left.appendChild(document.createTextNode(" " + entry.title));
             const right = document.createElement("span");
             right.className = "shortcut";
 
@@ -590,18 +627,22 @@
               document.querySelectorAll(".v1-menu-group.open").forEach(function (group) {
                 group.classList.remove("open");
               });
+              openExtensionTool(entry.key);
             });
             toolsDropdown.appendChild(btn);
           }
 
-          if (activityBar && activitySpacer && entry.ui.showInActivityBar) {
+          if (activityBar && entry.ui.showInActivityBar) {
             const btn = document.createElement("button");
             btn.setAttribute("data-tool", entry.key);
             btn.setAttribute("data-dynamic-extension", "1");
             btn.setAttribute("title", entry.title);
             btn.setAttribute("aria-label", entry.title);
-            btn.textContent = entry.icon;
-            activityBar.insertBefore(btn, activitySpacer);
+            renderExtIcon(btn, entry.icon);
+            btn.addEventListener("click", function () {
+              openExtensionTool(entry.key);
+            });
+            activityBar.appendChild(btn);
           }
         });
 

@@ -37,9 +37,8 @@
   // objects (~370 keys each) with shell and ip-scanner-tool keys fully
   // interleaved, not loosely grouped. Reordering them safely needs a
   // scripted (not manual) pass with a before/after key-set equality check,
-  // given the size and a few escaped multi-line values (e.g.
-  // importToolManifestPlaceholder). Deferred as its own dedicated future
-  // step; not attempted in this low-risk increment. Shell vs tool
+  // given the size and a few escaped multi-line values. Deferred as its own
+  // dedicated future step; not attempted in this low-risk increment. Shell vs tool
   // classification for tool-id-based keys (toolTitle_<id>/toolText_<id>)
   // should follow tool-catalog.js's split once that pass happens.
   var baseDictionaries = {
@@ -101,14 +100,12 @@
       versionsScrollRightAria: "Scroll versions right",
       versionsTimelineAria: "Published versions timeline",
       importToolEmptyText: "No imported tools yet.",
-      importToolManifestLabel: "Manifest JSON",
-      importToolManifestPlaceholder: "{\n  \"id\": \"com.example.demo\"\n}",
-      importToolUninstallLabel: "Tool id to uninstall",
-      importToolUninstallPlaceholder: "com.example.demo",
-      importToolInstallBtn: "Import",
-      importToolListBtn: "List",
+      importToolInstallBtn: "Install",
       importToolUninstallBtn: "Uninstall",
       importToolLoadFileBtn: "Load from file...",
+      importToolCatalogHeading: "Www addons",
+      importToolCatalogEmpty: "No addons found in the catalog.",
+      importToolCatalogError: "Could not load the addon catalog.",
       presetsListAria: "Port presets",
       presetsAddBtn: "+ Add",
       presetsDeleteBtn: "Delete",
@@ -255,7 +252,6 @@
       aboutZrzutkaLabel: "Support via Zrzutka (fundraiser):",
       aboutZrzutkaUrl: "zrzutka.pl/msa2pj",
       licenseHeading: "MIT License",
-      importOptToolsMenu: "Add imported tools to Tools menu",
       importOptActivityIcon: "Add imported tools icon to activity bar",
       scannerDetectIp: "Detect IP",
       scannerExternalIp: "External IP",
@@ -474,14 +470,12 @@
       versionsScrollRightAria: "Przewin wersje w prawo",
       versionsTimelineAria: "Os czasu opublikowanych wersji",
       importToolEmptyText: "Brak zaimportowanych narzedzi.",
-      importToolManifestLabel: "Manifest JSON",
-      importToolManifestPlaceholder: "{\n  \"id\": \"com.example.demo\"\n}",
-      importToolUninstallLabel: "Id narzedzia do odinstalowania",
-      importToolUninstallPlaceholder: "com.example.demo",
-      importToolInstallBtn: "Importuj",
-      importToolListBtn: "Lista",
+      importToolInstallBtn: "Zainstaluj",
       importToolUninstallBtn: "Odinstaluj",
       importToolLoadFileBtn: "Wczytaj z pliku...",
+      importToolCatalogHeading: "Www addons",
+      importToolCatalogEmpty: "Nie znaleziono dodatkow w katalogu.",
+      importToolCatalogError: "Nie udalo sie zaladowac katalogu dodatkow.",
       presetsListAria: "Presety portow",
       presetsAddBtn: "+ Dodaj",
       presetsDeleteBtn: "Usun",
@@ -629,7 +623,6 @@
       aboutZrzutkaLabel: "Wesprzyj przez Zrzutke (zbiorke):",
       aboutZrzutkaUrl: "zrzutka.pl/msa2pj",
       licenseHeading: "Licencja MIT",
-      importOptToolsMenu: "Dodaj importowane toole do menu Tools",
       importOptActivityIcon: "Dodaj ikone importowanych tooli do panelu activity",
       scannerDetectIp: "Wykryj IP",
       scannerExternalIp: "Zewnetrzne IP",

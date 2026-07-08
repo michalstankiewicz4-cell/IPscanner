@@ -199,16 +199,10 @@
           ? extManifest.contributions.optionsMenu[extActionKey]
           : null;
         var extOpenTools = extEntryDef && Array.isArray(extEntryDef.openTools) ? extEntryDef.openTools : [];
-        var extToolMap = extManifest && extManifest.contributions && extManifest.contributions.tools
-          ? extManifest.contributions.tools
-          : {};
         extOpenTools.forEach(function (toolKey) {
-          var toolUi = (extToolMap[toolKey] && extToolMap[toolKey].ui) || {};
-          if (toolUi.showInLeftPanel === true) requestSidebarToolTabOpen(toolKey);
-          if (toolUi.showInRightPanel === true) {
-            document.dispatchEvent(new CustomEvent("newui:right-tab-intent-open", { detail: { tool: toolKey } }));
+          if (window.NetReconNewUI && typeof window.NetReconNewUI.openExtensionTool === "function") {
+            window.NetReconNewUI.openExtensionTool(toolKey);
           }
-          if (toolUi.showAsTab !== false && onSwitchTool) onSwitchTool(toolKey);
         });
         if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + (extEntryDef && extEntryDef.label ? extEntryDef.label : action));
         return;

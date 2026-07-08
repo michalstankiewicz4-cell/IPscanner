@@ -1,0 +1,15 @@
+{
+  "id": "test-center-tab-demo",
+  "name": "Test Center Tab",
+  "description": "Minimal demo addon - opens a single static test tab in the center panel (CS). No permissions needed.",
+  "version": "0.1.0",
+  "contributions": {
+    "tools": {
+      "test-center-tab": {
+        "title": "Test Center Tab",
+        "text": "This is a plain test tab opened in the center panel by a second demo addon, proving the catalog handles multiple addons with different icons correctly.",
+        "ui": { "showInToolsMenu": true, "showAsTab": true }
+      }
+    }
+  }
+}

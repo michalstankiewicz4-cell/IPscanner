@@ -21,6 +21,7 @@
 
     var name = typeof raw.name === "string" ? raw.name.trim() : id;
     var version = typeof raw.version === "string" ? raw.version.trim() : "0.0.0";
+    var description = typeof raw.description === "string" ? raw.description.trim() : "";
     var contributions = isObject(raw.contributions) ? raw.contributions : {};
     var SUPPORTED_PERMISSIONS = ["powershell"];
     var permissions = Array.isArray(raw.permissions)
@@ -33,6 +34,7 @@
         id: id,
         name: name,
         version: version,
+        description: description,
         permissions: permissions,
         contributions: {
           tools: isObject(contributions.tools) ? cloneObject(contributions.tools) : {},
@@ -105,6 +107,7 @@
         id: manifest.id,
         name: manifest.name,
         version: manifest.version,
+        description: manifest.description,
         permissions: manifest.permissions,
         contributions: manifest.contributions
       });
@@ -185,7 +188,8 @@
         return {
           id: item.id,
           name: item.name,
-          version: item.version
+          version: item.version,
+          description: item.description || ""
         };
       });
     }
@@ -196,6 +200,7 @@
           id: item.id,
           name: item.name,
           version: item.version,
+          description: item.description || "",
           permissions: (item.permissions || []).slice(),
           contributions: item.contributions
         };

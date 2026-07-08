@@ -2285,21 +2285,53 @@
     }
 
     // shell (resumes here after the wireIpLibraryButtons tool block above)
+    var CATALOG_OWNER = "michalstankiewicz4-cell";
+    var CATALOG_REPO = "IPscanner";
+    var CATALOG_BRANCH = "main";
+    var CATALOG_FOLDER = "tools";
+    var CATALOG_API_URL = "https://api.github.com/repos/" + CATALOG_OWNER + "/" + CATALOG_REPO + "/contents/" + CATALOG_FOLDER + "?ref=" + CATALOG_BRANCH;
+    var CATALOG_IMAGE_EXTENSIONS = ["png", "svg", "jpg", "jpeg", "gif", "webp"];
+
+    // shell: fetches the addon catalog from the repo's own tools/ GitHub
+    // folder - groups files by basename so "<name>.json" pairs with a
+    // same-name image file ("<name>.png" etc.) as that addon's icon.
+    function fetchCatalog() {
+      return fetch(CATALOG_API_URL).then(function (res) {
+        if (!res.ok) throw new Error("GitHub API " + res.status);
+        return res.json();
+      }).then(function (files) {
+        var groups = {};
+        (Array.isArray(files) ? files : []).forEach(function (f) {
+          if (!f || f.type !== "file" || typeof f.name !== "string") return;
+          var dot = f.name.lastIndexOf(".");
+          if (dot < 0) return;
+          var base = f.name.slice(0, dot);
+          var ext = f.name.slice(dot + 1).toLowerCase();
+          groups[base] = groups[base] || {};
+          if (ext === "json") groups[base].json = f;
+          else if (CATALOG_IMAGE_EXTENSIONS.indexOf(ext) !== -1) groups[base].icon = f;
+        });
+        var entries = Object.keys(groups).map(function (k) { return groups[k]; }).filter(function (g) { return g.json; });
+        return Promise.all(entries.map(function (entry) {
+          return fetch(entry.json.download_url).then(function (r) { return r.json(); }).then(function (manifest) {
+            return { manifest: manifest, iconUrl: entry.icon ? entry.icon.download_url : "" };
+          }).catch(function () { return null; });
+        }));
+      }).then(function (results) {
+        return results.filter(Boolean);
+      });
+    }
+
     function wireImportToolButtons(rootEl) {
       var root = rootEl && typeof rootEl.querySelector === "function"
         ? rootEl
         : document.getElementById("v1ToolDetail");
       if (!root) return;
 
-      var manifestEl = root.querySelector('[data-import-role="manifest"]') || root.querySelector("#v1ImportManifest");
-      var uninstallEl = root.querySelector('[data-import-role="uninstall-id"]') || root.querySelector("#v1ImportUninstallId");
-      var addMenuEl = root.querySelector('[data-import-role="add-menu"]') || root.querySelector("#v1ImportAddMenu");
       var addActivityEl = root.querySelector('[data-import-role="add-activity"]') || root.querySelector("#v1ImportAddActivity");
       var outputEl = root.querySelector('[data-import-role="output"]') || root.querySelector("#v1ImportOutput");
-
-      if (manifestEl && !manifestEl.value.trim()) {
-        manifestEl.value = "{\n  \"id\": \"com.example.demo\",\n  \"name\": \"Demo Extension\",\n  \"version\": \"0.1.0\",\n  \"contributions\": {\n    \"tools\": {},\n    \"menuActions\": {}\n  }\n}";
-      }
+      var catalogEl = root.querySelector('[data-import-role="catalog"]') || root.querySelector("#v1ImportCatalog");
+      var catalogEntries = [];
 
       function listInstalled() {
         var items = extensionHost && extensionHost.listExtensions ? extensionHost.listExtensions() : [];
@@ -2346,9 +2378,9 @@
         });
       }
 
-      // shell: uninstalls one extension by id - shared by the manual
-      // "Tool id to uninstall" field/button and the per-item Uninstall
-      // button rendered in the installed-extensions list below.
+      // shell: uninstalls one extension by id - shared by the per-item
+      // Uninstall button in the installed-extensions list and the catalog
+      // list's Uninstall button.
       function performUninstall(id) {
         if (!id) {
           if (outputEl) outputEl.textContent = tr("extUninstallPrompt");
@@ -2365,12 +2397,141 @@
           commandBus.unregisterAllFor(removeResult.id);
         }
         listInstalled();
+        renderCatalog();
         if (outputEl) outputEl.textContent = tr("extUninstallOk") + "\n" + removeResult.id;
         if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extUninstallOk") + " - " + removeResult.id);
         if (window.NetReconNewUI && typeof window.NetReconNewUI.syncExtensionToolUi === "function") {
           window.NetReconNewUI.syncExtensionToolUi();
         }
         refreshActiveUI();
+      }
+
+      // shell: installs an already-parsed manifest object - shared by
+      // "Load from file..." and clicking Install on a catalog entry. Applies
+      // the "add to activity bar" checkbox default only to tool keys that
+      // don't already specify that ui flag themselves (Tools-menu visibility
+      // is fully manifest-controlled, no checkbox override), confirms
+      // permissions, then registers commands and syncs the dynamic UI.
+      // iconUrl (only set for catalog installs) becomes each tool's default
+      // icon, so the addon's own tools/<name>.png shows up in the activity
+      // bar/Tools menu without the manifest needing to reference it itself.
+      function installManifestObject(manifest, iconUrl) {
+        if (!manifest || typeof manifest !== "object") {
+          if (outputEl) outputEl.textContent = tr("extInvalidJson");
+          return false;
+        }
+
+        var addToActivity = !!(addActivityEl && addActivityEl.checked);
+        if (manifest.contributions && manifest.contributions.tools && typeof manifest.contributions.tools === "object") {
+          Object.keys(manifest.contributions.tools).forEach(function (toolKey) {
+            var meta = manifest.contributions.tools[toolKey] || {};
+            meta.ui = meta.ui && typeof meta.ui === "object" ? meta.ui : {};
+            if (meta.ui.showInActivityBar === undefined) meta.ui.showInActivityBar = addToActivity;
+            if (meta.ui.showInLeftPanel === undefined) meta.ui.showInLeftPanel = false;
+            if (meta.ui.showAsTab === undefined) meta.ui.showAsTab = true;
+            if (iconUrl && meta.icon === undefined) meta.icon = iconUrl;
+            manifest.contributions.tools[toolKey] = meta;
+          });
+        }
+
+        var requestedPermissions = Array.isArray(manifest.permissions) ? manifest.permissions : [];
+        if (requestedPermissions.length) {
+          var confirmMsg = tr("extPermissionConfirmPrefix") + "\n\n- " + requestedPermissions.join("\n- ") + "\n\n" + tr("extPermissionConfirmSuffix");
+          if (!window.confirm(confirmMsg)) {
+            if (outputEl) outputEl.textContent = tr("extPermissionDeclined");
+            return false;
+          }
+        }
+
+        var result = extensionHost && extensionHost.installExtension ? extensionHost.installExtension(manifest) : { ok: false, error: tr("extInstallFail") };
+        if (!result.ok) {
+          if (outputEl) outputEl.textContent = tr("extInstallFail") + "\n" + result.error;
+          return false;
+        }
+
+        registerExtensionCommands(result.manifest);
+        if (outputEl) outputEl.textContent = tr("extInstallOk") + "\n" + result.manifest.id + "@" + result.manifest.version;
+        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extInstallOk") + " - " + result.manifest.id);
+        if (window.NetReconNewUI && typeof window.NetReconNewUI.syncExtensionToolUi === "function") {
+          window.NetReconNewUI.syncExtensionToolUi();
+        }
+        listInstalled();
+        renderCatalog();
+        refreshActiveUI();
+        return true;
+      }
+
+      function renderCatalog() {
+        if (!catalogEl) return;
+        var installedIds = extensionHost && extensionHost.listExtensions
+          ? extensionHost.listExtensions().map(function (item) { return item.id; })
+          : [];
+
+        catalogEl.innerHTML = "";
+        if (!catalogEntries.length) {
+          var emptyEl = document.createElement("div");
+          emptyEl.className = "v1-import-empty";
+          emptyEl.textContent = tr("importToolCatalogEmpty");
+          catalogEl.appendChild(emptyEl);
+          return;
+        }
+
+        catalogEntries.forEach(function (entry, idx) {
+          var manifest = entry.manifest || {};
+          var isInstalled = installedIds.indexOf(manifest.id) !== -1;
+
+          var itemEl = document.createElement("div");
+          itemEl.className = "v1-catalog-item";
+
+          if (entry.iconUrl) {
+            var img = document.createElement("img");
+            img.className = "v1-catalog-icon";
+            img.src = entry.iconUrl;
+            img.alt = "";
+            itemEl.appendChild(img);
+          } else {
+            var iconFallback = document.createElement("span");
+            iconFallback.className = "v1-catalog-icon-fallback";
+            iconFallback.textContent = "🧩";
+            itemEl.appendChild(iconFallback);
+          }
+
+          var infoEl = document.createElement("div");
+          infoEl.className = "v1-catalog-info";
+          var nameEl = document.createElement("strong");
+          nameEl.textContent = manifest.name || manifest.id || "";
+          var descEl = document.createElement("div");
+          descEl.textContent = manifest.description || "";
+          infoEl.appendChild(nameEl);
+          infoEl.appendChild(descEl);
+          itemEl.appendChild(infoEl);
+
+          var actionBtn = document.createElement("button");
+          actionBtn.type = "button";
+          actionBtn.className = isInstalled ? "v1-import-item-uninstall" : "v1-catalog-install-btn";
+          actionBtn.textContent = isInstalled ? tr("importToolUninstallBtn") : tr("importToolInstallBtn");
+          actionBtn.setAttribute("data-catalog-index", String(idx));
+          actionBtn.setAttribute("data-catalog-action", isInstalled ? "uninstall" : "install");
+          itemEl.appendChild(actionBtn);
+
+          catalogEl.appendChild(itemEl);
+        });
+      }
+
+      if (catalogEl && catalogEl.dataset.catalogBound !== "1") {
+        catalogEl.dataset.catalogBound = "1";
+        catalogEl.addEventListener("click", function (e) {
+          var btn = e.target && e.target.closest ? e.target.closest("[data-catalog-index]") : null;
+          if (!btn) return;
+          var idx = Number(btn.getAttribute("data-catalog-index"));
+          var entry = catalogEntries[idx];
+          if (!entry) return;
+          if (btn.getAttribute("data-catalog-action") === "uninstall") {
+            performUninstall(entry.manifest && entry.manifest.id);
+          } else {
+            installManifestObject(entry.manifest, entry.iconUrl);
+          }
+        });
       }
 
       if (outputEl && outputEl.dataset.uninstallBound !== "1") {
@@ -2382,29 +2543,35 @@
         });
       }
 
+      if (catalogEl && catalogEl.dataset.catalogFetched !== "1") {
+        catalogEl.dataset.catalogFetched = "1";
+        fetchCatalog()
+          .then(function (entries) {
+            catalogEntries = entries;
+            renderCatalog();
+          })
+          .catch(function () {
+            if (catalogEl) catalogEl.textContent = tr("importToolCatalogError");
+          });
+      }
+
       root.querySelectorAll("[data-import-action]").forEach(function (button) {
         if (button.dataset.bound === "1") return;
         button.dataset.bound = "1";
         button.addEventListener("click", function () {
           var actionName = button.getAttribute("data-import-action");
-          var manifestText = manifestEl ? (manifestEl.value || "{}").trim() : "{}";
-
-          if (actionName === "list") {
-            listInstalled();
-            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extListHeader"));
-            return;
-          }
-
-          if (actionName === "uninstall") {
-            var id = uninstallEl ? (uninstallEl.value || "").trim() : "";
-            performUninstall(id);
-            return;
-          }
 
           if (actionName === "load-file") {
             Promise.resolve(platform.invoke("open_extension_manifest_dialog", {}))
               .then(function (text) {
-                if (manifestEl) manifestEl.value = String(text || "");
+                var manifest = null;
+                try {
+                  manifest = JSON.parse(String(text || ""));
+                } catch (_) {
+                  if (outputEl) outputEl.textContent = tr("extInvalidJson");
+                  return;
+                }
+                installManifestObject(manifest);
               })
               .catch(function (err) {
                 var cancelled = err === "cancelled" || (err && err.message === "cancelled");
@@ -2412,57 +2579,6 @@
               });
             return;
           }
-
-          if (!manifestText) {
-            if (outputEl) outputEl.textContent = tr("extInvalidJson");
-            return;
-          }
-
-          var manifest = null;
-          try {
-            manifest = JSON.parse(manifestText);
-          } catch (_) {
-            if (outputEl) outputEl.textContent = tr("extInvalidJson");
-            return;
-          }
-
-          var addToMenu = !addMenuEl || !!addMenuEl.checked;
-          var addToActivity = !!(addActivityEl && addActivityEl.checked);
-          if (manifest && manifest.contributions && manifest.contributions.tools && typeof manifest.contributions.tools === "object") {
-            Object.keys(manifest.contributions.tools).forEach(function (toolKey) {
-              var meta = manifest.contributions.tools[toolKey] || {};
-              meta.ui = meta.ui && typeof meta.ui === "object" ? meta.ui : {};
-              if (meta.ui.showInToolsMenu === undefined) meta.ui.showInToolsMenu = addToMenu;
-              if (meta.ui.showInActivityBar === undefined) meta.ui.showInActivityBar = addToActivity;
-              if (meta.ui.showInLeftPanel === undefined) meta.ui.showInLeftPanel = false;
-              if (meta.ui.showAsTab === undefined) meta.ui.showAsTab = true;
-              manifest.contributions.tools[toolKey] = meta;
-            });
-          }
-
-          var requestedPermissions = Array.isArray(manifest.permissions) ? manifest.permissions : [];
-          if (requestedPermissions.length) {
-            var confirmMsg = tr("extPermissionConfirmPrefix") + "\n\n- " + requestedPermissions.join("\n- ") + "\n\n" + tr("extPermissionConfirmSuffix");
-            if (!window.confirm(confirmMsg)) {
-              if (outputEl) outputEl.textContent = tr("extPermissionDeclined");
-              return;
-            }
-          }
-
-          var result = extensionHost && extensionHost.installExtension ? extensionHost.installExtension(manifest) : { ok: false, error: tr("extInstallFail") };
-          if (!result.ok) {
-            if (outputEl) outputEl.textContent = tr("extInstallFail") + "\n" + result.error;
-            return;
-          }
-
-          registerExtensionCommands(result.manifest);
-          if (outputEl) outputEl.textContent = tr("extInstallOk") + "\n" + result.manifest.id + "@" + result.manifest.version;
-          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extInstallOk") + " - " + result.manifest.id);
-          if (window.NetReconNewUI && typeof window.NetReconNewUI.syncExtensionToolUi === "function") {
-            window.NetReconNewUI.syncExtensionToolUi();
-          }
-          listInstalled();
-          refreshActiveUI();
         });
       });
     }

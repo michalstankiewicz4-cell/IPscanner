@@ -1,6 +1,7 @@
 {
   "id": "ip-scanner-detect-address-poc",
   "name": "IP Scanner: Detect Address (LS/CS/RS demo)",
+  "description": "Demo addon proving the shell's contribution points: a left-sidebar panel, a center result tab, a right-panel tab, and an Options-menu entry that opens all three.",
   "version": "0.1.0",
   "permissions": ["powershell"],
   "contributions": {
@@ -23,7 +24,7 @@
         "actions": [
           { "label": "Wykryj adres", "commandId": "detectAddressPoc", "resultKey": "detect-address-poc-result", "openTool": "detect-address-cs-poc" }
         ],
-        "ui": { "showInLeftPanel": true, "showInToolsMenu": false, "showInActivityBar": false, "showAsTab": false }
+        "ui": { "showInLeftPanel": true, "showInToolsMenu": false, "showInActivityBar": true, "showAsTab": false }
       },
       "detect-address-cs-poc": {
         "title": "Detect Address - Result",

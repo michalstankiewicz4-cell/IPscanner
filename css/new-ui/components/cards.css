@@ -650,6 +650,46 @@
   margin-top: 4px;
 }
 
+/* shell: addon catalog list (Import Tool "Available addons"), fetched from
+   the repo's own tools/ GitHub folder - see panels-runtime.js's
+   fetchCatalog/renderCatalog */
+.v1-catalog-list {
+  display: grid;
+  gap: 8px;
+}
+
+.v1-catalog-item {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #2f3238;
+  background: #202228;
+}
+
+.v1-catalog-icon,
+.v1-ext-icon-img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.v1-catalog-icon-fallback {
+  font-size: 18px;
+  text-align: center;
+}
+
+.v1-catalog-info strong {
+  display: block;
+  color: var(--txt);
+}
+
+.v1-catalog-install-btn {
+  justify-self: end;
+}
+
 /* shell: generic action buttons + output box for extension-contributed
    tools whose manifest declares contributions.tools[key].actions (see
    renderDefaultTool/wireExtensionToolActions) */
