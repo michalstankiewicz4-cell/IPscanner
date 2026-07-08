@@ -651,7 +651,6 @@
   background: #202228;
 }
 
-.v1-catalog-icon,
 .v1-ext-icon-img {
   width: 24px;
   height: 24px;
@@ -665,9 +664,13 @@
   vertical-align: middle;
 }
 
-.v1-catalog-icon-fallback {
+.v1-catalog-icon-cell {
+  width: 32px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 18px;
-  text-align: center;
 }
 
 .v1-catalog-info strong {

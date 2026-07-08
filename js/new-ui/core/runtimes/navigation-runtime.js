@@ -658,7 +658,7 @@
 
     function setRightTabOpen(tool, isOpen) {
       var wrap = document.querySelector('.v1-right-tool-tab-wrap[data-right-tab="' + tool + '"]');
-      if (!wrap) return;
+      if (!wrap) return false;
       wrap.classList.toggle("right-tab-closed", !isOpen);
       if (isOpen) wrap.removeAttribute("hidden");
       else wrap.setAttribute("hidden", "hidden");
@@ -669,11 +669,12 @@
         }
       }
       syncRightTabActivationInvariant();
+      return true;
     }
 
     function ensureRightTabOpen(tool) {
-      if (!tool) return;
-      setRightTabOpen(tool, true);
+      if (!tool) return false;
+      return setRightTabOpen(tool, true);
     }
 
     function syncRightTabActivationInvariant() {
@@ -1114,8 +1115,9 @@
         var tool = typeof detail.tool === "string" ? detail.tool : "";
         if (!tool) return;
 
-        ensureRightTabOpen(tool);
-        setRightTabActive(tool);
+        if (ensureRightTabOpen(tool)) {
+          setRightTabActive(tool);
+        }
       });
     }
 

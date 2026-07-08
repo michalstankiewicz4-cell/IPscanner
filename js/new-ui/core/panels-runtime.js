@@ -1762,7 +1762,8 @@
       actions.forEach(function (action) {
         var commandId = action && action.commandId;
         if (!commandId) return;
-        var btn = root.querySelector('[data-ext-action-command="' + commandId + '"]');
+        var selectorId = window.CSS && typeof window.CSS.escape === "function" ? window.CSS.escape(commandId) : String(commandId).replace(/["\\]/g, "\\$&");
+        var btn = root.querySelector('[data-ext-action-command="' + selectorId + '"]');
         if (!btn || btn.dataset.extActionBound === "1") return;
         btn.dataset.extActionBound = "1";
         btn.addEventListener("click", function () {
@@ -2291,16 +2292,25 @@
     var CATALOG_FOLDER = "tools";
     var CATALOG_API_URL = "https://api.github.com/repos/" + CATALOG_OWNER + "/" + CATALOG_REPO + "/contents/" + CATALOG_FOLDER + "?ref=" + CATALOG_BRANCH;
     var CATALOG_IMAGE_EXTENSIONS = ["png", "svg", "jpg", "jpeg", "gif", "webp"];
+    // shell: catalog fetch is cached at module scope (outside any single
+    // Import Tool mount) because refreshActiveUI() rebuilds #v1ToolDetail's
+    // whole subtree - including #v1ImportCatalog - on every tab switch and
+    // after every install/uninstall, which would otherwise re-trigger a full
+    // GitHub API fetch each time and risk the unauthenticated 60/hour quota.
+    var catalogEntriesCache = null;
+    var catalogFetchPromise = null;
 
     // shell: fetches the addon catalog from the repo's own tools/ GitHub
     // folder - groups files by basename so "<name>.json" pairs with a
-    // same-name image file ("<name>.png" etc.) as that addon's icon.
+    // same-name image file ("<name>.png" etc.) as that addon's icon. Uses a
+    // null-prototype object for grouping so a file literally named
+    // "__proto__.json" can't shadow/pollute Object.prototype.
     function fetchCatalog() {
       return fetch(CATALOG_API_URL).then(function (res) {
         if (!res.ok) throw new Error("GitHub API " + res.status);
         return res.json();
       }).then(function (files) {
-        var groups = {};
+        var groups = Object.create(null);
         (Array.isArray(files) ? files : []).forEach(function (f) {
           if (!f || f.type !== "file" || typeof f.name !== "string") return;
           var dot = f.name.lastIndexOf(".");
@@ -2322,6 +2332,23 @@
       });
     }
 
+    // shell: returns the cached catalog if already fetched this session,
+    // otherwise fetches once and caches (also caches the in-flight promise
+    // so concurrent mounts don't fire duplicate requests).
+    function loadCatalogCached() {
+      if (catalogEntriesCache) return Promise.resolve(catalogEntriesCache);
+      if (catalogFetchPromise) return catalogFetchPromise;
+      catalogFetchPromise = fetchCatalog().then(function (entries) {
+        catalogEntriesCache = entries;
+        catalogFetchPromise = null;
+        return entries;
+      }).catch(function (err) {
+        catalogFetchPromise = null;
+        throw err;
+      });
+      return catalogFetchPromise;
+    }
+
     function wireImportToolButtons(rootEl) {
       var root = rootEl && typeof rootEl.querySelector === "function"
         ? rootEl
@@ -2330,7 +2357,7 @@
 
       var outputEl = root.querySelector('[data-import-role="output"]') || root.querySelector("#v1ImportOutput");
       var catalogEl = root.querySelector('[data-import-role="catalog"]') || root.querySelector("#v1ImportCatalog");
-      var catalogEntries = [];
+      var catalogEntries = catalogEntriesCache || [];
 
       function listInstalled() {
         var items = extensionHost && extensionHost.listExtensions ? extensionHost.listExtensions() : [];
@@ -2431,7 +2458,12 @@
           });
         }
 
-        var requestedPermissions = Array.isArray(manifest.permissions) ? manifest.permissions : [];
+        // Show only permissions that are actually recognized/enforced (per
+        // extensions.js's validateManifest), not the manifest's raw request -
+        // otherwise the dialog could overstate what's really being granted.
+        var core = window.NetReconNewUICore || {};
+        var validated = core.extensions && core.extensions.validateManifest ? core.extensions.validateManifest(manifest) : null;
+        var requestedPermissions = validated && validated.ok ? validated.manifest.permissions : [];
         if (requestedPermissions.length) {
           var confirmMsg = tr("extPermissionConfirmPrefix") + "\n\n- " + requestedPermissions.join("\n- ") + "\n\n" + tr("extPermissionConfirmSuffix");
           if (!window.confirm(confirmMsg)) {
@@ -2480,18 +2512,14 @@
           var itemEl = document.createElement("div");
           itemEl.className = "v1-catalog-item";
 
-          if (entry.iconUrl) {
-            var img = document.createElement("img");
-            img.className = "v1-catalog-icon";
-            img.src = entry.iconUrl;
-            img.alt = "";
-            itemEl.appendChild(img);
+          var iconCell = document.createElement("div");
+          iconCell.className = "v1-catalog-icon-cell";
+          if (window.NetReconNewUI && typeof window.NetReconNewUI.renderExtIcon === "function") {
+            window.NetReconNewUI.renderExtIcon(iconCell, entry.iconUrl || "🧩");
           } else {
-            var iconFallback = document.createElement("span");
-            iconFallback.className = "v1-catalog-icon-fallback";
-            iconFallback.textContent = "🧩";
-            itemEl.appendChild(iconFallback);
+            iconCell.textContent = entry.iconUrl ? "" : "🧩";
           }
+          itemEl.appendChild(iconCell);
 
           var infoEl = document.createElement("div");
           infoEl.className = "v1-catalog-info";
@@ -2540,16 +2568,19 @@
         });
       }
 
-      if (catalogEl && catalogEl.dataset.catalogFetched !== "1") {
-        catalogEl.dataset.catalogFetched = "1";
-        fetchCatalog()
-          .then(function (entries) {
-            catalogEntries = entries;
-            renderCatalog();
-          })
-          .catch(function () {
-            if (catalogEl) catalogEl.textContent = tr("importToolCatalogError");
-          });
+      if (catalogEl) {
+        if (catalogEntriesCache) {
+          renderCatalog();
+        } else {
+          loadCatalogCached()
+            .then(function (entries) {
+              catalogEntries = entries;
+              renderCatalog();
+            })
+            .catch(function () {
+              if (catalogEl) catalogEl.textContent = tr("importToolCatalogError");
+            });
+        }
       }
 
       root.querySelectorAll("[data-import-action]").forEach(function (button) {
@@ -2571,8 +2602,11 @@
                 installManifestObject(manifest);
               })
               .catch(function (err) {
-                var cancelled = err === "cancelled" || (err && err.message === "cancelled");
-                if (!cancelled && outputEl) outputEl.textContent = tr("extInvalidJson");
+                var message = (err && err.message) || err || "";
+                var cancelled = message === "cancelled";
+                var unavailable = message === "tauri invoke unavailable";
+                if (cancelled || !outputEl) return;
+                outputEl.textContent = unavailable ? tr("extDesktopOnlyFeature") : tr("extInvalidJson");
               });
             return;
           }

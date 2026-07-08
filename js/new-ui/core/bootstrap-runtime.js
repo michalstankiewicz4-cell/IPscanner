@@ -422,8 +422,7 @@
       // shell: opens an extension-contributed tool via whichever surface(s)
       // its own ui flags declare (LS/RS/CS) - the single place that knows how
       // to open such a tool, used by the dynamically-created activity-bar icon,
-      // Tools-menu item, and (via window.NetReconNewUI) the Options-menu "ext:"
-      // dispatch in menu-runtime.js.
+      // Tools-menu item, and Options-menu button below (syncExtensionOptionsMenuUi).
       function openExtensionTool(toolKey) {
         const toolMap = getToolInfoMap();
         const toolUi = (toolMap[toolKey] && toolMap[toolKey].ui) || {};
@@ -455,9 +454,50 @@
           container.appendChild(document.createTextNode(value));
         }
       }
+      window.NetReconNewUI.renderExtIcon = renderExtIcon;
+
+      // shell: extension-contributed Options-menu entries (contributions.
+      // optionsMenu), each opening a list of that extension's own tool keys
+      // via whichever surface (LS/RS/CS) their own ui flags declare. Each
+      // button gets a direct click listener closing over the real manifest
+      // id/entry def - no string-encoded action id, so there's nothing for
+      // an extension id containing a colon (or any other character) to break.
+      // Independent of syncExtensionToolUi()'s entries.length early-return,
+      // since an extension may contribute only an optionsMenu and no tools.
+      function syncExtensionOptionsMenuUi() {
+        const optionsDropdown = document.querySelector('.v1-menu-group[data-menu="options"] .v1-menu-dropdown');
+        if (!optionsDropdown || !extensionHost || !extensionHost.getInstalledManifests) return;
+
+        extensionHost.getInstalledManifests().forEach((manifest) => {
+          const optionsMenu = manifest.contributions && manifest.contributions.optionsMenu;
+          if (!optionsMenu || typeof optionsMenu !== "object") return;
+          Object.keys(optionsMenu).forEach((actionKey) => {
+            const entryDef = optionsMenu[actionKey] || {};
+            const btn = document.createElement("button");
+            btn.className = "v1-menu-dd-item";
+            btn.setAttribute("data-dynamic-extension", "1");
+            const label = document.createElement("span");
+            label.textContent = String(entryDef.label || actionKey);
+            const shortcut = document.createElement("span");
+            shortcut.className = "shortcut";
+            btn.appendChild(label);
+            btn.appendChild(shortcut);
+            btn.addEventListener("click", function () {
+              document.querySelectorAll(".v1-menu-group.open").forEach(function (group) {
+                group.classList.remove("open");
+              });
+              const openTools = Array.isArray(entryDef.openTools) ? entryDef.openTools : [];
+              openTools.forEach(function (toolKey) { openExtensionTool(toolKey); });
+              if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + (entryDef.label || actionKey));
+            });
+            optionsDropdown.appendChild(btn);
+          });
+        });
+      }
 
       function syncExtensionToolUi() {
         clearDynamicExtensionUi();
+        syncExtensionOptionsMenuUi();
 
         const entries = extensionToolEntries();
         if (!entries.length) {
@@ -512,7 +552,7 @@
             tabsBar.appendChild(tab);
           }
 
-          if (scannerToolList && entry.ui.showInLeftPanel !== true) {
+          if (scannerToolList && entry.ui.showInLeftPanel !== true && entry.ui.showInRightPanel !== true && entry.ui.showAsTab !== false) {
             const li = document.createElement("li");
             li.className = "v1-extension-tool-item";
             li.setAttribute("data-tool", entry.key);
@@ -646,32 +686,6 @@
             activityBar.appendChild(btn);
           }
         });
-
-        // shell: extension-contributed Options-menu entries (contributions.optionsMenu),
-        // each opening a list of that extension's own tool keys via whichever
-        // surface (LS/RS/CS) their own ui flags declare. See menu-runtime.js's
-        // "ext:" behavior branch for the click-time dispatch.
-        const optionsDropdown = document.querySelector('.v1-menu-group[data-menu="options"] .v1-menu-dropdown');
-        if (optionsDropdown && extensionHost && extensionHost.getInstalledManifests) {
-          extensionHost.getInstalledManifests().forEach((manifest) => {
-            const optionsMenu = manifest.contributions && manifest.contributions.optionsMenu;
-            if (!optionsMenu || typeof optionsMenu !== "object") return;
-            Object.keys(optionsMenu).forEach((actionKey) => {
-              const entryDef = optionsMenu[actionKey] || {};
-              const btn = document.createElement("button");
-              btn.className = "v1-menu-dd-item";
-              btn.setAttribute("data-menu-action", "ext:" + manifest.id + ":" + actionKey);
-              btn.setAttribute("data-dynamic-extension", "1");
-              const label = document.createElement("span");
-              label.textContent = String(entryDef.label || actionKey);
-              const shortcut = document.createElement("span");
-              shortcut.className = "shortcut";
-              btn.appendChild(label);
-              btn.appendChild(shortcut);
-              optionsDropdown.appendChild(btn);
-            });
-          });
-        }
 
         if (navigationRuntime && navigationRuntime.syncLeftTabActivationInvariant) {
           navigationRuntime.syncLeftTabActivationInvariant();
@@ -1036,7 +1050,6 @@
             onOpenExtensionManager: openExtensionManager,
             onOpenLanguageManager: openLanguageManager,
             onSwitchTool: switchTool,
-            extensionHost,
             onToggleClippy: function () {
               if (clippyRuntime && clippyRuntime.toggle) {
                 clippyRuntime.toggle();

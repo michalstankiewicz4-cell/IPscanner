@@ -9,7 +9,6 @@
     var onOpenExtensionManager = deps.onOpenExtensionManager;
     var onOpenLanguageManager = deps.onOpenLanguageManager;
     var onSwitchTool = deps.onSwitchTool;
-    var extensionHost = deps.extensionHost || null;
     var onToggleClippy = deps.onToggleClippy;
     var session = deps.session || null;
     var exitDialogState = {
@@ -184,30 +183,6 @@
     }
 
     function runMenuAction(action) {
-      // shell: extension-contributed Options-menu entries (contributions.
-      // optionsMenu, see bootstrap-runtime.js's syncExtensionToolUi) - opens
-      // each of that entry's declared tool keys via whichever surface (LS/RS/CS)
-      // the tool's own ui flags indicate. Checked on the raw action id since
-      // these have no entry in the static uiDefinitions.menuActions table.
-      if (action && action.indexOf("ext:") === 0) {
-        var extParts = action.slice("ext:".length).split(":");
-        var extId = extParts.shift();
-        var extActionKey = extParts.join(":");
-        var extManifests = extensionHost && extensionHost.getInstalledManifests ? extensionHost.getInstalledManifests() : [];
-        var extManifest = extManifests.filter(function (m) { return m.id === extId; })[0];
-        var extEntryDef = extManifest && extManifest.contributions && extManifest.contributions.optionsMenu
-          ? extManifest.contributions.optionsMenu[extActionKey]
-          : null;
-        var extOpenTools = extEntryDef && Array.isArray(extEntryDef.openTools) ? extEntryDef.openTools : [];
-        extOpenTools.forEach(function (toolKey) {
-          if (window.NetReconNewUI && typeof window.NetReconNewUI.openExtensionTool === "function") {
-            window.NetReconNewUI.openExtensionTool(toolKey);
-          }
-        });
-        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + (extEntryDef && extEntryDef.label ? extEntryDef.label : action));
-        return;
-      }
-
       var actionMap = getActionMap ? getActionMap() : {};
       var label = action && actionMap[action] ? actionMap[action] : action;
       var def = actionDefinition(action);
