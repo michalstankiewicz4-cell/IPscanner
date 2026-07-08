@@ -10,6 +10,17 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.0.0 rebuild",
+      notes: [
+        "Retired the old Windows-95-style UI and dual-branch setup: main now ships the New UI directly, single branch, single source of truth.",
+        "Started the Shell/Tools split across the whole codebase: generic host infrastructure (menus, panels, layout, sessions, scrollbars, i18n) is now clearly separated from IP-Scanner-specific tool code, with zero behavior changes.",
+        "Added save/load/close session support with a real, user-chosen SQLite file (openable in DB Browser for SQLite) and a recent-sessions welcome view.",
+        "Added the first piece of real Shell infrastructure: a Command Bus for registering and invoking named commands, laying groundwork for a future Command Palette and addon system.",
+        "Designed the addon/plugin architecture for the Shell, with WASM confirmed as the sandboxing approach for future user-installable addons.",
+        "Improved SEO and social-share previews (link previews on Facebook/Discord/etc. now show a proper title, description and image)."
+      ]
+    },
+    {
       version: "v1.7.0 reset",
       notes: [
         "New UI",

@@ -154,6 +154,7 @@
       var heading = escapeHtml(tr("aboutHeading")) + " " + currentVersion;
       var contactUrl = "https://" + String(tr("aboutSupportFacebook") || "").trim();
       var projectUrl = "https://" + String(tr("aboutProjectPageUrl") || "").trim();
+      var zrzutkaUrl = "https://" + String(tr("aboutZrzutkaUrl") || "").trim();
       return [
         "<div class=\"v1-about\">",
         "<h4>" + heading + "</h4>",
@@ -174,11 +175,13 @@
         "</ul>",
         "<h4>" + escapeHtml(tr("aboutTotalCostsHeading")) + "</h4>",
         "<ul>",
+        "<li>" + escapeHtml(tr("aboutTotalCostClaude")) + "</li>",
         "<li>" + escapeHtml(tr("aboutTotalCostDomains")) + "</li>",
         "<li>" + escapeHtml(tr("aboutTotalCostCopilot")) + "</li>",
         "<li>" + escapeHtml(tr("aboutTotalCostOther")) + "</li>",
         "<li>" + escapeHtml(tr("aboutTotalCostAds")) + "</li>",
         "</ul>",
+        "<p>" + escapeHtml(tr("aboutZrzutkaLabel")) + " <strong><a href=\"" + escapeHtml(zrzutkaUrl) + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + escapeHtml(zrzutkaUrl) + "</a></strong></p>",
         "</div>"
       ].join("");
     }
