@@ -21,7 +21,7 @@ ${StrLoc}
 !define WEBVIEW2APPGUID "{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
 
 !define MANUFACTURER "netrecon"
-!define PRODUCTNAME "NetRecon IP Auditor"
+!define PRODUCTNAME "OSINT NET Auditor"
 !define VERSION "1.6.5"
 !define VERSIONWITHBUILD "1.6.5.0"
 !define HOMEPAGE ""

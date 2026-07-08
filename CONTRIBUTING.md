@@ -1,18 +1,35 @@
-# NetRecon IP Auditor - CONTRIBUTING
+# OSINT NET Auditor - CONTRIBUTING
 
 ## 1. Aktualny kierunek projektu
 
 Repo zawiera stabilny rdzen skanera i jedno UI (New UI, uklad podobny do VS Code).
+Priorytet zostal swiadomie odwrocony wzgledem pierwotnego zalozenia: zamiast
+najpierw domykac w pelni skaner, a dopiero potem zajmowac sie powloka,
+**priorytetem jest praca nad powloka (shell) i systemem dodatkow** - poprawki
+skanera schodza na dalszy plan, dopoki powloka nie jest gotowa (patrz
+`FUTURE_PLUGIN_SHELL.md`, sekcja "Kolejnosc prac").
+
 Aktualny kierunek rozwoju to:
 
-- utrzymanie kompatybilnosci istniejacej logiki skanera,
-- modularyzacja newUI (core + adaptery UI),
-- przygotowanie systemu rozszerzen (manifest contributions),
+- rozdzielanie kodu na warstwe shell (generyczna, dla dowolnego dodatku) i
+  warstwe tool (specyficzna dla IP Scannera) w calym `js/new-ui/core/**`,
+- rozbudowa systemu rozszerzen (manifest `contributions`) o realne punkty
+  kontrybucji - dzis: `tools`/`menuActions`/`i18n`/`commands`/`optionsMenu`,
+  flagi `ui.showInLeftPanel`/`showInRightPanel`/`showAsTab`, model uprawnien
+  (`permissions`) i katalog dodatkow z GitHuba (patrz sekcja 4),
+  docelowo: pelne API kontrybucji pod WASM opisane w `FUTURE_PLUGIN_SHELL.md`,
+- utrzymanie kompatybilnosci istniejacej logiki skanera (bez regresji, ale bez
+  priorytetu na nowe funkcje skanera),
 - porzadkowanie stylow i i18n bez regresji funkcjonalnych.
 
-W praktyce: zmiany w warstwie UI powinny byc izolowane od logiki skanowania.
+W praktyce: zmiany w warstwie UI powinny byc izolowane od logiki skanowania,
+a nowy kod w miare mozliwosci pisany od razu z podzialem shell/tool w glowie
+(patrz komentarze `// shell:` / `// ip-scanner tool:` w kodzie).
 
-Wizja docelowa (przeksztalcenie w instalowalny/odinstalowywalny dodatek na wspolnej powloce) jest poza biezacym zakresem prac i opisana osobno w `FUTURE_PLUGIN_SHELL.md` - najpierw domykamy w pelni dzialajacy skaner.
+Docelowa wizja (IPscanner jako instalowalny/odinstalowywalny dodatek na
+neutralnej powloce, z sandboxingiem przez WASM) jest opisana w
+`FUTURE_PLUGIN_SHELL.md`. Nie jest w pelni zrealizowana - dzis dziala
+prototyp bez WASM (patrz ten plik, sekcja "Stan obecny").
 
 ### 1a. Historia: model dwoch galezi (zakonczony)
 
@@ -48,19 +65,21 @@ Minimalny podzial odpowiedzialnosci:
 - i18n.js - slowniki i wybor jezyka,
 - theme.js - wybor skinu i podmiana arkusza skinu,
 - tool-catalog.js - katalog metadanych narzedzi,
-- extensions.js - host rozszerzen i contributions.
+- extensions.js - host rozszerzen i contributions (manifest, permissions, install/uninstall, katalog).
 - ui-definitions.js - mapa odpowiedzialnosci menu i paneli.
-- menu-runtime.js - obsluga menubar i akcji menu.
-- panels-runtime.js - routing aktywnego narzedzia i odswiezanie panelu glownego.
-- session-runtime.js - zapis/odczyt/zamkniecie sesji (SQLite), lista ostatnich sesji, przywracanie ukladu zakladek po reload (schemat bazy: `SESSION_DATABASE_SCHEMA.txt`).
-- extension-manager-runtime.js - obsluga panelu rozszerzen i jezykow.
+- menu-runtime.js - obsluga menubar i akcji menu (w tym Options-menu dodane przez rozszerzenia).
+- panels-runtime.js - routing aktywnego narzedzia, odswiezanie panelu glownego, oraz katalog dodatkow z GitHuba (`fetchCatalog`/`renderCatalog`) i instalacja/deinstalacja (`installManifestObject`/`performUninstall`).
+- bootstrap-runtime.js - orkiestracja calej aplikacji (patrz sekcja 12); dla rozszerzen: `syncExtensionToolUi()`/`syncExtensionOptionsMenuUi()` (tworzenie dynamicznego UI dodatkow - zakladki, LS/RS panele, ikony, wpisy menu) i `openExtensionTool()` (jedyne miejsce wiedzace jak otworzyc narzedzie dodatku przez jego flagi `ui`).
+- session-runtime.js - zapis/odczyt/zamkniecie sesji (SQLite), lista ostatnich sesji, przywracanie ukladu zakladek po reload (schemat bazy: `SESSION_DATABASE_SCHEMA.md`).
+- extension-manager-runtime.js - obsluga starszego panelu "Customization" (modal) i jezykow; nie podpiety pod dynamiczne UI dodatkow, patrz sekcja 4.
 - scanner-sidebar-runtime.js - obsluga sidebaru skanera (wykrywanie IP, historia zakresow, extractor).
 - powershell-console-runtime.js - obsluga zintegrowanej konsoli PowerShell.
 - runtimes/status-log-runtime.js - centralny log statusow (dolna zakladka Console / pane info).
 - runtimes/layout-runtime.js - resizery i zachowanie paneli (left/right/bottom).
 - runtimes/custom-scrollbar-runtime.js - faux scrollbar i odswiezanie hostow przewijania.
 - runtimes/ip-inputs-runtime.js - segmentowane pola IP oraz synchronizacja hidden inputow zakresu.
-- runtimes/navigation-runtime.js - obsluga aktywnosci sidebar/results, zakladek dolnego panelu i routingu klikniec data-tool.
+- runtimes/navigation-runtime.js - obsluga aktywnosci sidebar/results, zakladek dolnego panelu i routingu klikniec data-tool; LS/RS otwieranie zakladek dla dodatkow przez zdarzenia `newui:sidebar-tab-intent-open`/`newui:right-tab-intent-open`.
+- runtimes/command-bus-runtime.js - generyczny rejestr nazwanych komend (`register`/`invoke`/`unregisterAllFor`); dzis uzywany przez komendy PowerShell zadeklarowane w `contributions.commands` rozszerzen (patrz sekcja 4).
 
 Skrypty PowerShell (source of truth):
 
@@ -111,33 +130,112 @@ Pliki wejsciowe UI i zasady warstwy zrodlo/mirror: zob. sekcja 12.
 
 ## 4. Rozszerzenia (plugin-like)
 
-System rozszerzen jest oparty o manifest JSON. Dopuszczone contributions:
+System rozszerzen jest oparty o manifest JSON (`js/new-ui/core/extensions.js`).
+To pierwszy, nie-WASM prototyp docelowej wizji z `FUTURE_PLUGIN_SHELL.md` -
+dziala w calosci w JS, bez sandboxingu poza jednym, recznie sprawdzanym
+uprawnieniem (`permissions: ["powershell"]`).
 
-- contributions.tools - dodanie lub nadpisanie wpisow katalogu narzedzi,
-- contributions.menuActions - dodanie lub nadpisanie etykiet akcji menu,
-- contributions.i18n - dodanie slownikow jezykowych (key -> text).
+Pola na poziomie manifestu:
 
-Przykladowy manifest:
+- `id`, `name`, `version` - identyfikacja rozszerzenia (`id` musi byc unikalne
+  i nie powinno zawierac `:` - patrz ponizej przy Options-menu).
+- `description` - krotki opis pokazywany w katalogu dodatkow (Import Tool).
+- `permissions` - tablica uprawnien; dzis jedyna rozpoznawana wartosc to
+  `"powershell"`. Inne wartosci sa po cichu odrzucane przy walidacji manifestu.
+  Przy instalacji uzytkownik widzi okno z prosba o potwierdzenie zadanych
+  uprawnien, zanim rozszerzenie zostanie zarejestrowane.
+
+Dopuszczone `contributions`:
+
+- `contributions.tools` - dodanie lub nadpisanie wpisow katalogu narzedzi.
+  Kazdy wpis moze miec:
+  - `title`, `text`, `points` - tresc statycznej karty (fallback rendering).
+  - `icon` - emoji/tekst LUB pelny URL obrazka (`http(s):`/`data:`) - wtedy
+    renderowany jako `<img>` (patrz `renderExtIcon` w `bootstrap-runtime.js`).
+  - `actions` - lista przyciskow `{label, commandId, resultKey?, openTool?}`;
+    klikniecie wywoluje komende z `contributions.commands` przez command bus
+    (`js/new-ui/core/runtimes/command-bus-runtime.js`). `resultKey` zapisuje
+    wynik w generycznym store pod tym kluczem; `openTool` (opcjonalnie) od
+    razu przelacza na wskazane narzedzie po sukcesie - tak dziala pokazywanie
+    wyniku z LS w zakladce CS.
+  - `resultKey` (na samym narzedziu, nie w `actions`) - narzedzie renderuje
+    ostatnia wartosc zapisana pod tym kluczem (np. zakladka "tylko wynik").
+  - `ui.showInToolsMenu` (domyslnie pokazane, `false` = ukryte),
+    `ui.showInActivityBar` (domyslnie ukryte, `true` = ikona w pasku
+    aktywnosci - wymaga tez sensownej `icon`), `ui.showInLeftPanel` (`true` =
+    dedykowany panel w lewym sidebarze zamiast wpisu w liscie scan-runnera),
+    `ui.showInRightPanel` (`true` = zakladka w prawym panelu),
+    `ui.showAsTab` (domyslnie `true` = zakladka na srodku; `false` gdy
+    narzedzie ma zyc wylacznie w LS/RS).
+- `contributions.commands` - komendy wywolywalne z `actions` powyzej. Dzis
+  jedyny obslugiwany typ: `{"type": "powershell", "script": "..."}` -
+  wykonywany przez istniejacy `run_powershell` (Tauri), gated na
+  `permissions` zawierajace `"powershell"`.
+- `contributions.optionsMenu` - nowy wpis w menu Options otwierajacy naraz
+  liste wlasnych narzedzi rozszerzenia przez ich `ui` flagi:
+  `{"<actionKey>": {"label": "...", "openTools": ["tool-a", "tool-b"]}}`.
+- `contributions.menuActions` - dodanie lub nadpisanie etykiet istniejacych
+  akcji menu (dziala tylko dla juz istniejacych, zaszytych na sztywno
+  `data-menu-action` w `index.html` - to NIE tworzy nowej pozycji menu, do
+  tego sluzy `contributions.optionsMenu` powyzej).
+- `contributions.i18n` - dodanie slownikow jezykowych (key -> text).
+
+Przykladowy manifest (skrocona wersja `tools/ipscanner.json`, demo z LS + CS + RS + Options-menu):
 
 ```json
 {
-  "id": "com.example.demo",
-  "name": "Demo Extension",
+  "id": "ip-scanner-detect-address-poc",
+  "name": "IP Scanner: Detect Address",
+  "description": "Wykrywa adres IP i pokazuje wynik w osobnej zakladce.",
   "version": "0.1.0",
+  "permissions": ["powershell"],
   "contributions": {
-    "tools": {
-      "demo-tool": {
-        "title": "Demo Tool",
-        "text": "Opis narzedzia z rozszerzenia.",
-        "points": ["A", "B", "C"]
+    "commands": {
+      "detectAddressPoc": { "type": "powershell", "script": "..." }
+    },
+    "optionsMenu": {
+      "detectAddressPoc": {
+        "label": "Detect Address",
+        "openTools": ["detect-address-ls", "detect-address-cs"]
       }
     },
-    "menuActions": {
-      "demo-action": "Demo action"
+    "tools": {
+      "detect-address-ls": {
+        "title": "Detect Address",
+        "actions": [{ "label": "Wykryj adres", "commandId": "detectAddressPoc", "resultKey": "detect-address-result", "openTool": "detect-address-cs" }],
+        "ui": { "showInLeftPanel": true, "showAsTab": false }
+      },
+      "detect-address-cs": {
+        "title": "Detect Address - Result",
+        "resultKey": "detect-address-result",
+        "ui": { "showInToolsMenu": false }
+      }
     }
   }
 }
 ```
+
+Instalacja i katalog dodatkow (Options -> Import Tool):
+
+- Zakladka "Www addons" automatycznie wczytuje liste dodatkow z folderu
+  `tools/` w tym repo na GitHubie (`fetchCatalog()` w `panels-runtime.js`) -
+  dla kazdego `<nazwa>.json` paruje plik ikony o tej samej nazwie
+  (`<nazwa>.png`/`.svg`/...), jesli istnieje. Wynik jest cache'owany w
+  ramach sesji aplikacji (nie odpytuje GitHuba przy kazdym otwarciu
+  zakladki), zeby nie wyczerpac limitu nieautoryzowanego API GitHuba
+  (60 zapytan/h na adres IP).
+- Klikniecie "Install" na wpisie katalogu instaluje bezposrednio (po
+  potwierdzeniu uprawnien, jesli manifest je deklaruje); przycisk zmienia
+  sie na "Uninstall", gdy dodatek jest juz zainstalowany.
+- "Load from file..." pozwala zainstalowac manifest z lokalnego pliku
+  `.json` (natywne okno wyboru pliku, Tauri `open_extension_manifest_dialog`).
+- Lista "Installed extensions" pokazuje wszystko, co jest zainstalowane
+  (niezaleznie od zrodla) z przyciskiem Uninstall przy kazdej pozycji.
+- Osobny, starszy panel "Customization" (modal, `extension-manager-runtime.js`)
+  nadal istnieje i tez umie instalowac/odinstalowywac przez wklejenie JSON,
+  ale nie jest podpiety pod `syncExtensionToolUi()` - zainstalowane stamtad
+  dodatki nie tworza dynamicznego UI (menu/aktywnosc/LS/RS) bez restartu
+  aplikacji. Nie jest to sciezka zalecana do testowania nowych dodatkow.
 
 ## 5. Dodawanie nowego jezyka
 

@@ -1,4 +1,4 @@
-# OSINT NET Auditor (NetRecon IP Scanner)
+# OSINT NET Auditor
 
 An amateur project made solely using vibe-coding for scientific purposes.
 
@@ -9,10 +9,10 @@ Desktop IP/port scanner application built with [Tauri](https://tauri.app/).
 ### Ready-to-use installer (recommended)
 
 1. Download the latest installer from the [Releases](../../releases) tab:
-   - `NetRecon IP Scanner_x.x.x_x64_en-US.msi` — MSI installer (Windows)
-   - `NetRecon IP Scanner_x.x.x_x64-setup.exe` — NSIS installer (Windows)
+   - `OSINT NET Auditor_x.x.x_x64_en-US.msi` — MSI installer (Windows)
+   - `OSINT NET Auditor_x.x.x_x64-setup.exe` — NSIS installer (Windows)
 2. Run the downloaded file and follow the installer instructions.
-3. After installation, launch **NetRecon IP Scanner** from the Start Menu or desktop shortcut.
+3. After installation, launch **OSINT NET Auditor** from the Start Menu or desktop shortcut.
 
 ### Build from source
 
@@ -53,6 +53,7 @@ Planned next: a PDF censored-text checker and an email/file analyser, plus IPv6/
 | File | Description |
 | --- | --- |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Project direction and rules for contributing code (written in Polish). |
+| [FUTURE_PLUGIN_SHELL.md](FUTURE_PLUGIN_SHELL.md) | Design notes for the addon/plugin shell architecture (written in Polish). |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community code of conduct. |
 | [SECURITY.md](SECURITY.md) | How to report a security vulnerability. |
 | [LICENSE.MD](LICENSE.MD) | MIT License. |

@@ -1,23 +1,25 @@
-# Wizja: IPscanner jako dodatek na czystej powłoce (na przyszłość)
+# Wizja: IPscanner jako dodatek na czystej powłoce
 
-Ten plik opisuje kierunek rozwoju, który NIE jest realizowany teraz. To notatka
-na przyszłość, żeby nie trzeba było odtwarzać tej rozmowy od zera.
+Ten plik opisywal pierwotnie kierunek rozwoju, ktory NIE byl jeszcze
+realizowany. Od tego czasu czesc wizji zostala sprototypowana (bez WASM -
+patrz sekcja "Stan obecny" nizej) - plik zostaje jako zapis pelnej, docelowej
+wizji i listy tego, co jeszcze nie jest zrobione, zeby nie trzeba bylo
+odtwarzac tej rozmowy od zera.
 
 ## Kolejność prac (zaktualizowana)
 
 Pierwotne zalozenie bylo: najpierw w pelni dokonczyc IP Scanner, dopiero potem
-przeksztalcac go w dodatek na powloce. **To zalozenie jest teraz swiadomie
-odwrocone przez uzytkownika** - priorytetem jest praca nad powloka (shell),
-poprawki/dokonczanie skanera schodza na dalszy plan, dopoki powloka nie jest
-gotowa.
+przeksztalcac go w dodatek na powloce. **To zalozenie zostalo swiadomie
+odwrocone przez uzytkownika** - priorytetem jest praca nad powloka (shell) i
+systemem dodatkow, poprawki/dokonczanie skanera schodza na dalszy plan.
 
 Niezmienna zasada mimo odwrocenia priorytetu: **nic z dzisiejszych funkcji
-skanera nie znika/nie chowa sie, dopoki nie ma czym tego zastapic.** Increment 1
-(patrz `SHELL_PROGRESS.md` i CONTRIBUTING §12a) juz to respektowal - same
-niskoryzykowne, bezbehawioralne kroki. Kolejne inkrementy w strone realnej
-separacji (dotkniecie plikow z listy "HIGH RISK" w CONTRIBUTING §12a) musza
-byc rozbite na male, weryfikowalne kroki, jeden plik na raz, z dzialajacym
-buildem i smoke-testem po kazdym, tak jak dotychczas.
+skanera nie znika/nie chowa sie, dopoki nie ma czym tego zastapic.** Pelny
+podzial shell/tool w calym `js/new-ui/core/**` (11 inkrementow, patrz
+`SHELL_PROGRESS.md` i CONTRIBUTING §12) zostal **ukonczony** - same
+niskoryzykowne, bezbehawioralne kroki, jeden plik na raz, z dzialajacym
+buildem i smoke-testem po kazdym. Ten sam rygor (male, weryfikowalne kroki)
+obowiazuje przy dalszej rozbudowie systemu dodatkow opisanej nizej.
 
 ## Docelowa wizja (punkt 2)
 
@@ -153,39 +155,64 @@ Poniższe propozycje zostały zaakceptowane i dochodzą do ustalonej wizji powy�
    zainstalowany dodatek (nie tylko ta jedna wbudowana pozycja z podstawy),
    żeby dodatki mogły mieć własne, niezależne wejście do lewego panelu.
 
-## Stan obecny (zbadany, stan na dzień tej notatki)
+## Stan obecny (zaktualizowany po pierwszym, nie-WASM prototypie)
 
-Zbadane w kodzie (`js/new-ui/core/extensions.js`,
-`js/new-ui/core/panel-content-runtime.js`, `panels-runtime.js`,
-`runtimes/navigation-runtime.js`, `bootstrap-runtime.js`):
+Pierwsza wersja tej sekcji (ponizej jako "Stan pierwotny (przed prototypem)")
+opisywala punkt wyjscia sprzed rozbudowy systemu dodatkow o realne punkty
+kontrybucji. Ten prototyp **dziala dzis w JS, bez WASM/sandboxingu** - patrz
+CONTRIBUTING §4 po pelny opis manifestu i przyklad. Skrot stanu na dzis
+(zbadane w `js/new-ui/core/extensions.js`, `bootstrap-runtime.js`,
+`panels-runtime.js`, `runtimes/navigation-runtime.js`,
+`runtimes/command-bus-runtime.js`, `menu-runtime.js`):
 
-- **Panel centralny**: jedyna sekcja z jakimkolwiek generycznym mechanizmem
-  rozszerzeń. `contributions.tools` z manifestu ląduje w katalogu narzędzi,
-  a `buildDetailHtml()` ma fallback `renderDefaultTool`, który renderuje
-  `title`/`text`/`points` bez ręcznego markupu. To wystarcza tylko na proste,
-  opisowe "karty" (jak About) - nie na prawdziwe interaktywne narzędzie.
-- **Lewy panel boczny**: w 100% zaszyty na sztywno. `data-sidebar-tool-panel`
-  istnieje tylko dla czterech wbudowanych narzędzi (scan-runner, ip-library,
-  shellcraft-library, shellcraft-inspector) jako statyczne bloki HTML w
-  `index.html`. `syncExtensionToolUi()` potrafi dodać rozszerzeniu zakładkę
-  na górze, wpis w menu Tools, ikonę w pasku aktywności i zwykły tekstowy
-  `<li>` w liście - ale nigdy nie tworzy nowego interaktywnego panelu
-  bocznego. Brak jakiegokolwiek dynamicznego/generycznego mechanizmu
-  renderowania panelu bocznego dla dowolnego id narzędzia.
-- **Prawy panel**: również na sztywno (tylko zakładka "AI Assistant"), bez
-  mechanizmu rozszerzeń.
-- **Dolny panel (terminal/macro/console)**: bespoke, ściśle powiązany z
-  `powershell-console-runtime.js` i `runtimes/status-log-runtime.js`; brak
-  API rozszerzeń.
-- **Pasek menu**: częściowo rozszerzalny już dziś przez
-  `contributions.menuActions` - to jedyny wyjątek od reguły "wszystko na
-  sztywno".
-- **Pasek statusu (dolny, niebieski)**: brak API rozszerzeń.
-- Brak jakiejkolwiek wspólnej magistrali zdarzeń/komend między panelami -
-  każdy runtime ma swój lokalny stan i komunikuje się przez ad-hoc
-  `CustomEvent`y (np. `newui:sidebar-tab-intent-open`,
-  `newui:console-pane-update`) definiowane osobno dla każdego przypadku, a
-  nie przez spójne, udokumentowane API.
+- **Panel centralny**: jak wczesniej - `contributions.tools` + fallback
+  `renderDefaultTool` (title/text/points), rozszerzony dzis o `actions`
+  (przyciski wywolujace komendy) i `resultKey` (wyswietlanie wyniku).
+  Nadal tylko statyczna karta + lista przyciskow - brak dowolnego, wlasnego
+  markupu/interaktywnosci dodatku.
+- **Lewy panel boczny**: **juz nie w 100% na sztywno.** Dodatek z
+  `ui.showInLeftPanel: true` dostaje prawdziwy, dynamicznie tworzony panel
+  (`syncExtensionToolUi()` w `bootstrap-runtime.js`), tresc renderowana tym
+  samym `buildDetailHtml()` co panel centralny. Wciaz brak wlasnego,
+  dowolnego markupu poza tym schematem (title/text/points/actions).
+- **Prawy panel**: **juz nie w 100% na sztywno.** Analogicznie do lewego,
+  przez `ui.showInRightPanel: true` - nowa zakladka + pane w prawym panelu,
+  ta sama tresc co lewy/centralny.
+- **Dolny panel (terminal/macro/console)**: bez zmian - bespoke, scisle
+  powiazany z `powershell-console-runtime.js` i
+  `runtimes/status-log-runtime.js`; brak API rozszerzen.
+- **Pasek menu**: rozszerzalny na dwa sposoby dzis - `contributions.menuActions`
+  (relabeling istniejacych, zaszytych na sztywno pozycji, bez zmiany
+  zachowania) ORAZ (nowe) `contributions.optionsMenu` - realna, nowa pozycja
+  w menu Options tworzona przez dodatek, otwierajaca naraz jego wlasne
+  narzedzia przez ich flagi `ui` (LS/RS/CS).
+- **Pasek statusu (dolny, niebieski)**: bez zmian - brak API rozszerzen.
+- **Magistrala komend**: juz nie brak - `runtimes/command-bus-runtime.js`
+  (generyczny rejestr `register`/`invoke`/`unregisterAllFor`) istnieje i ma
+  realne rejestracje: `contributions.commands` dodatku (dzis tylko typ
+  `"powershell"`) rejestruje sie tam przy instalacji, `actions` na narzedziu
+  wywoluja komende przez ten sam bus. To jeszcze nie pelna "paleta komend"
+  (punkt 1 z listy nizej) - nie ma UI do przegladania/wyszukiwania
+  zarejestrowanych komend, ale mechanizm rejestru juz dziala.
+- **Magistrala zdarzen**: nadal ad-hoc `CustomEvent`y, nie sformalizowany
+  katalog tematow z wersjami/schematem - `newui:sidebar-tab-intent-open` i
+  nowy `newui:right-tab-intent-open` dzialaja analogicznie do siebie, ale to
+  wciaz dwa osobno zdefiniowane zdarzenia, nie jeden udokumentowany system.
+- **Instalacja/dezinstalacja w czasie dzialania aplikacji**: **juz dziala**,
+  ale inaczej niz zaklada sekcja WASM nizej (patrz tam "Uwaga" pod naglowkiem
+  Instalacja/dezinstalacja) - dzis to manifest JSON (plik lub katalog z
+  GitHuba), nie skompilowany `.wasm`; jest realne okno potwierdzenia
+  uprawnien przed instalacja, ale tylko dla jednego uprawnienia
+  (`"powershell"`), nie pelny model capability-based z sekcji nizej.
+
+### Stan pierwotny (przed prototypem, dla kontekstu historycznego)
+
+Przed powyzszym prototypem: panel centralny byl jedynym miejscem z
+jakimkolwiek mechanizmem rozszerzen; lewy i prawy panel byly w 100% zaszyte
+na sztywno bez zadnego dynamicznego mechanizmu; jedynym wyjatkiem od "wszystko
+na sztywno" bylo `contributions.menuActions`; nie istnial zaden rejestr
+komend ani zaden mechanizm instalacji/dezinstalacji w czasie dzialania
+aplikacji poza wklejeniem JSON w Import Tool.
 
 ## Co realnie trzeba zaprojektować, żeby to zrobić dobrze
 
@@ -382,6 +409,16 @@ zaprojektować dla każdego bespoke rozwiązania:
   klawiszowy i kliknięcie w palecie komend wywołują dokładnie tę samą ścieżkę.
 
 ### Instalacja/dezinstalacja (doprecyzowane z rozmowy)
+
+**Uwaga (aktualizacja):** ponizszy opis to docelowa wizja pod WASM, jeszcze
+niezrealizowana. Realnie dzialajacy dzis prototyp (patrz "Stan obecny" wyzej
+i CONTRIBUTING §4) realizuje tylko punkty 2 i czesciowo 4 z listy nizej, bez
+`.wasm` - manifest to nadal czysty JSON (z pliku lub katalogu na GitHubie),
+a `permissions` to dzis jedna wartosc (`"powershell"`), nie pelny model
+capability-based z listy uprawnien ponizej. Punkt 4 (dezinstalacja z pelnym
+wyrejestrowaniem) dziala juz dla istniejacych rejestrow (LS/RS/CS/command
+bus/Options-menu), ale nie dla keybindings/ustawien, bo te jeszcze nie
+istnieja.
 
 Instalacja **nie jest w pełni cicha/automatyczna** - to celowe, bo inaczej
 `permissions` z manifestu nigdy nie byłyby nikomu pokazane:

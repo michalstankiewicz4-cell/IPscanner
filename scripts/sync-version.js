@@ -10,11 +10,14 @@ function writeFile(filePath, content) {
 }
 
 function replaceOrThrow(content, regex, replacement, description) {
-  const next = content.replace(regex, replacement);
-  if (next === content) {
-    throw new Error(`Could not update ${description}`);
+  // Checks that the pattern was actually found, not that the replacement
+  // changed anything - if the target is already in sync (e.g. re-running
+  // after nothing changed), replacing a value with itself is correct
+  // behavior, not a failure to find the pattern.
+  if (!regex.test(content)) {
+    throw new Error(`Could not find ${description}`);
   }
-  return next;
+  return content.replace(regex, replacement);
 }
 
 const root = path.resolve(__dirname, "..");
@@ -34,7 +37,11 @@ writeFile(cargoPath, cargo);
 
 let tauri = fs.readFileSync(tauriPath, "utf8");
 tauri = replaceOrThrow(tauri, /"version"\s*:\s*"[^"]*"/, `"version": "${version}"`, "tauri.conf.json version");
-tauri = replaceOrThrow(tauri, /"title"\s*:\s*"NetRecon IP Auditor v[^"]*"/, `"title": "NetRecon IP Auditor v${version}"`, "tauri.conf.json window title");
+// Matches the product name text before " v<version>" generically, instead of
+// a hardcoded product name string - so renaming the app (productName/title)
+// doesn't silently break this script again like it did when the app was
+// renamed from "NetRecon IP Auditor" to "OSINT NET Auditor".
+tauri = replaceOrThrow(tauri, /("title"\s*:\s*")([^"]*?)\s+v[^"]*(")/, `$1$2 v${version}$3`, "tauri.conf.json window title");
 writeFile(tauriPath, tauri);
 
 console.log(`Version synced to ${version}`);

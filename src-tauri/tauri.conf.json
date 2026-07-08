@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "NetRecon IP Auditor",
+  "productName": "OSINT NET Auditor",
   "version": "1.7.0",
   "identifier": "com.netrecon.ipscanner",
   "build": {
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "NetRecon IP Auditor v1.7.0",
+        "title": "OSINT NET Auditor v1.7.0",
         "url": "index.html",
         "width": 900,
         "height": 620,
