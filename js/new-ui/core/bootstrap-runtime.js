@@ -492,7 +492,7 @@
             const icon = document.createElement("span");
             icon.className = "v1-tab-icon";
             icon.setAttribute("aria-hidden", "true");
-            icon.textContent = entry.icon;
+            renderExtIcon(icon, entry.icon);
 
             const title = document.createElement("span");
             title.className = "v1-tab-title";
@@ -517,7 +517,8 @@
             li.className = "v1-extension-tool-item";
             li.setAttribute("data-tool", entry.key);
             li.setAttribute("data-dynamic-extension", "1");
-            li.textContent = entry.icon + " " + entry.title;
+            renderExtIcon(li, entry.icon);
+            li.appendChild(document.createTextNode(" " + entry.title));
             scannerToolList.appendChild(li);
           }
 

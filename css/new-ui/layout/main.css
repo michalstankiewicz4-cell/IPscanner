@@ -458,6 +458,12 @@
   flex: 0 0 auto;
 }
 
+.v1-tab-icon .v1-ext-icon-img {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+}
+
 .v1-tab-title {
   min-width: 0;
   white-space: nowrap;

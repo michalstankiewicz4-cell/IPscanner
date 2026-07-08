@@ -2328,7 +2328,6 @@
         : document.getElementById("v1ToolDetail");
       if (!root) return;
 
-      var addActivityEl = root.querySelector('[data-import-role="add-activity"]') || root.querySelector("#v1ImportAddActivity");
       var outputEl = root.querySelector('[data-import-role="output"]') || root.querySelector("#v1ImportOutput");
       var catalogEl = root.querySelector('[data-import-role="catalog"]') || root.querySelector("#v1ImportCatalog");
       var catalogEntries = [];
@@ -2407,26 +2406,24 @@
       }
 
       // shell: installs an already-parsed manifest object - shared by
-      // "Load from file..." and clicking Install on a catalog entry. Applies
-      // the "add to activity bar" checkbox default only to tool keys that
-      // don't already specify that ui flag themselves (Tools-menu visibility
-      // is fully manifest-controlled, no checkbox override), confirms
-      // permissions, then registers commands and syncs the dynamic UI.
-      // iconUrl (only set for catalog installs) becomes each tool's default
-      // icon, so the addon's own tools/<name>.png shows up in the activity
-      // bar/Tools menu without the manifest needing to reference it itself.
+      // "Load from file..." and clicking Install on a catalog entry. All
+      // visibility flags (Tools menu / activity bar / left panel / tab) are
+      // fully manifest-controlled - only fills in the shell's own baseline
+      // defaults for whatever a tool key leaves unset, confirms permissions,
+      // then registers commands and syncs the dynamic UI. iconUrl (only set
+      // for catalog installs) becomes each tool's default icon, so the
+      // addon's own tools/<name>.png shows up in the activity bar/Tools menu
+      // without the manifest needing to reference it itself.
       function installManifestObject(manifest, iconUrl) {
         if (!manifest || typeof manifest !== "object") {
           if (outputEl) outputEl.textContent = tr("extInvalidJson");
           return false;
         }
 
-        var addToActivity = !!(addActivityEl && addActivityEl.checked);
         if (manifest.contributions && manifest.contributions.tools && typeof manifest.contributions.tools === "object") {
           Object.keys(manifest.contributions.tools).forEach(function (toolKey) {
             var meta = manifest.contributions.tools[toolKey] || {};
             meta.ui = meta.ui && typeof meta.ui === "object" ? meta.ui : {};
-            if (meta.ui.showInActivityBar === undefined) meta.ui.showInActivityBar = addToActivity;
             if (meta.ui.showInLeftPanel === undefined) meta.ui.showInLeftPanel = false;
             if (meta.ui.showAsTab === undefined) meta.ui.showAsTab = true;
             if (iconUrl && meta.icon === undefined) meta.icon = iconUrl;

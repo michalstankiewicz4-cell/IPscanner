@@ -306,9 +306,6 @@
         "<div class=\"v1-import-manager-actions\">",
         "<button type=\"button\" data-import-action=\"load-file\">" + escapeHtml(trOr("importToolLoadFileBtn", importToolConfig.loadFileBtn || "Load from file...")) + "</button>",
         "</div>",
-        "<div class=\"v1-import-manager-options\">",
-        "<label><input id=\"v1ImportAddActivity\" data-import-role=\"add-activity\" type=\"checkbox\" /> " + tr("importOptActivityIcon") + "</label>",
-        "</div>",
         "</div>"
       ].join("");
     }
