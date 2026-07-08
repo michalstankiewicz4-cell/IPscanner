@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Pytania i dyskusje / Questions & discussions
+  - name: Questions & discussions
     url: https://github.com/michalstankiewicz4-cell/IPscanner/discussions
-    about: Zadaj pytanie lub podziel się pomysłem, zamiast otwierać issue. / Ask a question or share an idea instead of opening an issue.
+    about: Ask a question or share an idea instead of opening an issue.
