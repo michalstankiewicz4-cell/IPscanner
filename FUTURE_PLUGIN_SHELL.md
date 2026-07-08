@@ -316,6 +316,51 @@ zadeklarowanego `network.tcp` = host nie daje dodatkowi żadnej funkcji do
 otwierania połączeń, więc nawet gdyby dodatek chciał, fizycznie nie może.
 `minShellVersion` realizuje punkt 6 (wersjonowanie dodatków) wprost.
 
+### Pozostałe zaakceptowane funkcje - to samo API, nie osobne mechanizmy
+
+Activity bar, ustawienia, powiadomienia i skróty klawiszowe to **nie są nowe
+mechanizmy** - to kolejne typy kontrybucji w tym samym `render`/`handle_event`
++ manifest + `permissions` wzorcu co wyżej. Rozpisane osobno, żeby nie kusiło
+zaprojektować dla każdego bespoke rozwiązania:
+
+- **Activity bar (punkt 7 - wiele ikon)**: `contributions.activityBar` to
+  lista `{id, icon, title}`; kliknięcie ikony to zwykłe wywołanie komendy
+  (`contributions.commands`) przypisanej do tej ikony - żaden nowy mechanizm,
+  tylko kolejny wpis w już zaprojektowanym command bus.
+- **Ustawienia (punkt 2)**: `contributions.settings` to schemat pól (podobnie
+  jak dziś `contributions.tools` opisuje kartę narzędzia) - ujednolicony panel
+  ustawień to po prostu `render()` całego schematu wszystkich dodatków razem,
+  a zapis zmiany to `handle_event()` jak każda inna interakcja panelu.
+- **Powiadomienia (punkt 3)**: nowy temat w event bus (np. `notification.show.v1`
+  z payloadem `{level, text}`), na który dodatek ma uprawnienie *emitować*, ale
+  nie subskrybować cudzych powiadomień. Host renderuje toast - dodatek nigdy
+  nie dotyka DOM-u toastu bezpośrednio, tak jak wszędzie indziej.
+- **Skróty klawiszowe (punkt 4)**: `contributions.keybindings` to mapowanie
+  `key-combo -> command-id` - działa na tym samym command bus, więc skrót
+  klawiszowy i kliknięcie w palecie komend wywołują dokładnie tę samą ścieżkę.
+
+### Instalacja/dezinstalacja (doprecyzowane z rozmowy)
+
+Instalacja **nie jest w pełni cicha/automatyczna** - to celowe, bo inaczej
+`permissions` z manifestu nigdy nie byłyby nikomu pokazane:
+
+1. Użytkownik wskazuje plik/folder z manifestem + skompilowanym `.wasm`
+   (zastępuje to dzisiejsze pole "wklej JSON" w Import Tool - wklejanie tekstu
+   nie ma sensu, gdy w grę wchodzi binarka).
+2. Host parsuje manifest, **pokazuje listę żądanych `permissions`** do
+   potwierdzenia (jak prompt uprawnień w przeglądarce/VS Code) - zanim
+   cokolwiek się załaduje.
+3. Po potwierdzeniu: host kopiuje pliki dodatku do trwałej lokalizacji (żeby
+   przetrwały restart appki), ładuje moduł WASM, rejestruje jego kontrybucje
+   (panele/komendy/ustawienia/skróty/ikona activity bar) ograniczone dokładnie
+   do potwierdzonych uprawnień.
+4. **Dezinstalacja** to operacja odwrotna: wyrejestrowanie wszystkich
+   kontrybucji danego dodatku z każdego rejestru (panele, command bus, event
+   bus, keybindings, activity bar), zwolnienie instancji WASM, usunięcie
+   plików. Wymaga, żeby każdy rejestr wewnętrznie wiedział "co należy do
+   którego dodatku", nie tylko "co jest zarejestrowane" - do uwzględnienia przy
+   projektowaniu samych rejestrów, nie tylko przy samej dezinstalacji.
+
 ### Co jeszcze otwarte (nie rozstrzygać teraz, tylko odnotować)
 
 - Dokładny format "na drucie" między hostem a WASM - JSON (prosty, czytelny,
