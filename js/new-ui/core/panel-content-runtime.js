@@ -9,7 +9,6 @@
     var core = window.NetReconNewUICore || {};
     var contentConfig = core.panelContentConfig || {};
     var versionsConfig = contentConfig.versions || {};
-    var languageManagerConfig = contentConfig.languageManager || {};
     var importToolConfig = contentConfig.importTool || {};
     var resultsIpConfig = contentConfig.resultsIp || {};
     var presetsApi = core.presets || null;
@@ -243,9 +242,8 @@
         langList = [];
       }
       var langOptions = langList.map(function (code) {
-        return "<option value=\"" + escapeHtml(code) + "\">" + escapeHtml(code) + "</option>";
+        return "<option value=\"" + escapeHtml(code) + "\"" + (code === current ? " selected" : "") + ">" + escapeHtml(code) + "</option>";
       }).join("");
-      var dictPlaceholder = trOr("langDictPlaceholder", languageManagerConfig.dictPlaceholder || "{\n  \"menuFile\": \"Datei\"\n}");
 
       return [
         "<div class=\"v1-lang-manager\">",
@@ -258,17 +256,10 @@
         "<div class=\"v1-lang-manager-grid\">",
         "<label for=\"v1LangTabSelect\">" + tr("langListHeader") + "</label>",
         "<select id=\"v1LangTabSelect\" data-lang-role=\"select\">" + langOptions + "</select>",
-        "<label for=\"v1LangTabCode\">" + tr("langCodeLabel") + "</label>",
-        "<input id=\"v1LangTabCode\" data-lang-role=\"code\" type=\"text\" autocomplete=\"off\" placeholder=\"" + tr("langCodePlaceholder") + "\" />",
-        "<label for=\"v1LangTabDict\">" + tr("langDictLabel") + "</label>",
-        "<textarea id=\"v1LangTabDict\" data-lang-role=\"dict\" spellcheck=\"false\" placeholder=\"" + dictPlaceholder.replace(/\"/g, '&quot;') + "\"></textarea>",
         "</div>",
         "<div class=\"v1-lang-manager-actions\">",
-        "<button type=\"button\" data-lang-action=\"add\">" + tr("langAddBtn") + "</button>",
-        "<button type=\"button\" data-lang-action=\"activate\">" + tr("langActivateBtn") + "</button>",
-        "<button type=\"button\" data-lang-action=\"list\">" + tr("langListBtn") + "</button>",
+        "<button type=\"button\" data-lang-action=\"import\">" + tr("langImportBtn") + "</button>",
         "</div>",
-        "<pre id=\"v1LangTabOutput\" data-lang-role=\"output\" class=\"v1-lang-manager-output\"></pre>",
         "</div>"
       ].join("");
     }
@@ -301,11 +292,11 @@
         "</div>",
         "<h4 style=\"margin:0 0 4px;\">" + escapeHtml(trOr("importToolCatalogHeading", importToolConfig.catalogHeading || "Www addons")) + "</h4>",
         "<div id=\"v1ImportCatalog\" data-import-role=\"catalog\" class=\"v1-import-output v1-catalog-list\">" + escapeHtml(trOr("importToolCatalogEmpty", importToolConfig.catalogEmpty || "Loading...")) + "</div>",
-        "<h4 style=\"margin:12px 0 4px;\">" + escapeHtml(tr("extListHeader")) + "</h4>",
-        "<div id=\"v1ImportOutput\" data-import-role=\"output\" class=\"v1-import-output\">" + listHtml + "</div>",
         "<div class=\"v1-import-manager-actions\">",
         "<button type=\"button\" data-import-action=\"load-file\">" + escapeHtml(trOr("importToolLoadFileBtn", importToolConfig.loadFileBtn || "Load from file...")) + "</button>",
         "</div>",
+        "<h4 style=\"margin:12px 0 4px;\">" + escapeHtml(tr("extListHeader")) + "</h4>",
+        "<div id=\"v1ImportOutput\" data-import-role=\"output\" class=\"v1-import-output\">" + listHtml + "</div>",
         "</div>"
       ].join("");
     }

@@ -57,6 +57,44 @@ project direction and rules, see [CONTRIBUTING.md](CONTRIBUTING.md) (Polish).
   the target host, a live results list) — both currently open design questions
   in `FUTURE_PLUGIN_SHELL.md`'s "Co realnie trzeba zaprojektowac" section.
 
+## Backlog (per-feature audit, 2026-07-09)
+
+A pass over every menu/tool, numbered for easy reference in discussion:
+
+1. File → "Import another session data": today a mock (see `SHELL_PROGRESS.md`
+   line 36). Should actually import/merge data from another saved session
+   file into the current one, instead of replacing it.
+2. File → Exit on www: does closing the browser tab/window, or the top-right
+   `[x]`, after a save prompt (or after choosing not to save) actually work
+   the way it should? Needs checking.
+3. www: show a "new version available" popup, but only once per actual
+   version change since the visitor's last visit (not on every page load).
+4. (www/app) Help Assistant: make it context-aware — show a relevant tip for
+   whichever tab/tool is currently active, and update the tip when the user
+   switches tools.
+5. Finish the core IP Scanner (the deprioritized item from "In progress"
+   above).
+6. Country IP Library: work out what can run on www vs. app-only, and add
+   more library update sources.
+7. Port Presets — done, 100%.
+8. Audit the actual session save/load file format more closely (the
+   `.sqlite3` schema shared with sql.js — see the www session-save work).
+9. Default Scan Values — done, 100%.
+10. Language: simplify to just a language picker list (selecting a language
+    applies it immediately) plus an "import language" button that adds an
+    entry to the list — drop everything else in the Language Manager UI.
+11. Addon install/uninstall: move the "Load from file..." button above
+    "Installed extensions".
+12. ShellCraft — ~1% done (just the three tabs exist, no logic).
+13. AI Assistant — ~1.5% done (just the tab exists).
+14. Topology Map — ~1% done (just the tab exists).
+15. Globe — ~1% done (just the tab exists).
+16. "Blur sensitive data" button — usefulness unclear, consider removing.
+17. Down Status Bar shows some info that may not be necessary — review what's
+    actually worth keeping there.
+
+Items 10 and 11 are next up.
+
 ## Considered and rejected
 
 - **WASM as the addon sandboxing mechanism** — a working proof-of-concept

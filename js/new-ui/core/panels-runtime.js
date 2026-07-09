@@ -2614,6 +2614,39 @@
       });
     }
 
+    // Reads a JSON file the user picks: native dialog on desktop (Tauri),
+    // <input type=file> on www (mirrors session-sqlite-runtime.js's pickFile
+    // pattern, but this needs a filename to derive the language code from,
+    // which the desktop dialog path doesn't give us - so path/File.name is
+    // returned alongside the text).
+    function pickLanguageFileText() {
+      var invoke = platform.getInvoke ? platform.getInvoke() : null;
+      if (invoke) {
+        return platform.invoke("open_language_file_dialog", {}).then(function (result) {
+          return { name: (result && result.path) || "", text: (result && result.text) || "" };
+        });
+      }
+      return new Promise(function (resolve, reject) {
+        var input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".json";
+        input.addEventListener("change", function () {
+          var file = input.files && input.files[0];
+          if (!file) { reject(new Error("cancelled")); return; }
+          file.text().then(function (text) {
+            resolve({ name: file.name, text: text });
+          }, reject);
+        });
+        input.addEventListener("cancel", function () { reject(new Error("cancelled")); });
+        input.click();
+      });
+    }
+
+    function deriveLanguageCodeFromFilename(name) {
+      var base = String(name || "").split(/[\\/]/).pop() || "";
+      return base.replace(/\.json$/i, "").trim().toLowerCase();
+    }
+
     function wireLanguageManagerButtons(rootEl) {
       var root = rootEl && typeof rootEl.querySelector === "function"
         ? rootEl
@@ -2621,94 +2654,66 @@
       if (!root) return;
 
       var selectEl = root.querySelector('[data-lang-role="select"]') || root.querySelector("#v1LangTabSelect");
-      var codeEl = root.querySelector('[data-lang-role="code"]') || root.querySelector("#v1LangTabCode");
-      var dictEl = root.querySelector('[data-lang-role="dict"]') || root.querySelector("#v1LangTabDict");
-      var outputEl = root.querySelector('[data-lang-role="output"]') || root.querySelector("#v1LangTabOutput");
+
+      function activate(code) {
+        var before = i18n && i18n.getLang ? i18n.getLang() : "";
+        var after = i18n && i18n.setLang ? i18n.setLang(code) : before;
+        if (before === after && code.toLowerCase() !== after.toLowerCase()) {
+          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langActivateFail") + " - " + code);
+          return false;
+        }
+        if (selectEl) selectEl.value = after;
+        if (window.NetReconNewUI && typeof window.NetReconNewUI.refreshLanguageUi === "function") {
+          window.NetReconNewUI.refreshLanguageUi();
+        }
+        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langActivateOk") + " - " + after);
+        return true;
+      }
 
       if (selectEl && selectEl.dataset.bound !== "1") {
         selectEl.dataset.bound = "1";
         selectEl.addEventListener("change", function () {
-          if (codeEl) codeEl.value = selectEl.value;
+          activate(selectEl.value);
         });
-      }
-
-      if (codeEl && !codeEl.value.trim()) {
-        codeEl.value = (selectEl && selectEl.value) || (i18n && i18n.getLang ? i18n.getLang() : "en");
-      }
-      if (selectEl && codeEl && codeEl.value && !selectEl.value) {
-        selectEl.value = codeEl.value;
-      }
-      if (dictEl && !dictEl.value.trim()) {
-        dictEl.value = "{\n  \"menuFile\": \"Datei\",\n  \"menuOptions\": \"Optionen\",\n  \"menuTools\": \"Werkzeuge\",\n  \"menuHelp\": \"Hilfe\"\n}";
-      }
-      if (outputEl && !outputEl.textContent.trim()) {
-        var langs = i18n && i18n.listLanguages ? i18n.listLanguages() : [];
-        outputEl.textContent = langs.length ? langs.join("\n") : tr("langListHeader") + ": -";
       }
 
       root.querySelectorAll("[data-lang-action]").forEach(function (button) {
         if (button.dataset.bound === "1") return;
         button.dataset.bound = "1";
         button.addEventListener("click", function () {
-          var actionName = button.getAttribute("data-lang-action");
-          var code = ((codeEl && codeEl.value) || (selectEl && selectEl.value) || "").trim();
+          if (button.getAttribute("data-lang-action") !== "import") return;
 
-          if (actionName === "list") {
-            var langs = i18n && i18n.listLanguages ? i18n.listLanguages() : [];
-            if (outputEl) outputEl.textContent = langs.length ? langs.join("\n") : tr("langListHeader") + ": -";
-            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langListHeader"));
-            return;
-          }
-
-          if (!code) {
-            if (outputEl) outputEl.textContent = tr("langInvalidCode");
-            return;
-          }
-
-          if (actionName === "add") {
-            var dict = null;
+          pickLanguageFileText().then(function (picked) {
+            var code = deriveLanguageCodeFromFilename(picked.name);
+            if (!code) {
+              if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langInvalidCode"));
+              return;
+            }
+            var dict;
             try {
-              dict = JSON.parse(dictEl ? (dictEl.value || "{}") : "{}");
+              dict = JSON.parse(picked.text || "{}");
             } catch (_) {
-              if (outputEl) outputEl.textContent = tr("langInvalidDict");
+              if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langInvalidDict"));
               return;
             }
 
             var addResult = i18n && i18n.addLanguage ? i18n.addLanguage(code, dict) : { ok: false, error: tr("langAddFail") };
             if (!addResult.ok) {
-              if (outputEl) outputEl.textContent = tr("langAddFail") + "\n" + addResult.error;
+              if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langAddFail") + " - " + addResult.error);
               return;
             }
 
-            if (outputEl) outputEl.textContent = tr("langAddOk") + "\n" + addResult.code;
             if (selectEl) {
               var option = document.createElement("option");
               option.value = addResult.code;
               option.textContent = addResult.code;
               selectEl.appendChild(option);
-              selectEl.value = addResult.code;
             }
-            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langAddOk") + " - " + addResult.code);
-            return;
-          }
-
-          if (actionName === "activate") {
-            var before = i18n && i18n.getLang ? i18n.getLang() : "";
-            var after = i18n && i18n.setLang ? i18n.setLang(code) : before;
-            if (before === after && code.toLowerCase() !== after.toLowerCase()) {
-              if (outputEl) outputEl.textContent = tr("langActivateFail") + "\n" + code;
-              return;
-            }
-
-            if (selectEl) selectEl.value = after;
-            if (codeEl) codeEl.value = after;
-
-            if (window.NetReconNewUI && typeof window.NetReconNewUI.refreshLanguageUi === "function") {
-              window.NetReconNewUI.refreshLanguageUi();
-            }
-            if (outputEl) outputEl.textContent = tr("langActivateOk") + "\n" + after;
-            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langActivateOk") + " - " + after);
-          }
+            activate(addResult.code);
+          }).catch(function (err) {
+            if (err && err.message === "cancelled") return;
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langAddFail"));
+          });
         });
       });
     }

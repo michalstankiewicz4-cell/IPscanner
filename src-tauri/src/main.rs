@@ -795,6 +795,32 @@ fn open_extension_manifest_dialog() -> Result<String, String> {
     fs::read_to_string(&path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LanguageFilePick {
+    path: String,
+    text: String,
+}
+
+#[tauri::command]
+fn open_language_file_dialog() -> Result<LanguageFilePick, String> {
+    let picked = rfd::FileDialog::new()
+        .set_title("Import Language File")
+        .add_filter("JSON", &["json"])
+        .pick_file();
+
+    let path = match picked {
+        Some(path) => path,
+        None => return Err("cancelled".into()),
+    };
+
+    let text = fs::read_to_string(&path).map_err(|e| format!("Failed to read file: {}", e))?;
+    Ok(LanguageFilePick {
+        path: path.display().to_string(),
+        text,
+    })
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ScanResultRow {
@@ -4222,6 +4248,7 @@ fn main() {
             save_scan_results_dialog,
             open_scan_results_dialog,
             open_extension_manifest_dialog,
+            open_language_file_dialog,
             session_install_dir,
             save_session_dialog,
             open_session_dialog,
