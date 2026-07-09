@@ -3,6 +3,10 @@ name = "ipscanner"
 version = "1.7.0"
 edition = "2021"
 
+[[bin]]
+name = "OSINTNETAuditor"
+path = "src/main.rs"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 

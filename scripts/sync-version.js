@@ -24,6 +24,7 @@ const root = path.resolve(__dirname, "..");
 const pkgPath = path.join(root, "package.json");
 const cargoPath = path.join(root, "src-tauri", "Cargo.toml");
 const tauriPath = path.join(root, "src-tauri", "tauri.conf.json");
+const nsisPath = path.join(root, "src-tauri", "nsis", "installer-template.nsi");
 
 const pkg = readJson(pkgPath);
 const version = String(pkg.version || "").trim();
@@ -43,5 +44,13 @@ tauri = replaceOrThrow(tauri, /"version"\s*:\s*"[^"]*"/, `"version": "${version}
 // renamed from "NetRecon IP Auditor" to "OSINT NET Auditor".
 tauri = replaceOrThrow(tauri, /("title"\s*:\s*")([^"]*?)\s+v[^"]*(")/, `$1$2 v${version}$3`, "tauri.conf.json window title");
 writeFile(tauriPath, tauri);
+
+// The NSIS installer template has its own, separately-defined VERSION -
+// nothing else keeps this in sync, and it silently drifted stale before
+// (still said "1.6.5" while the app had moved on to 1.7.0).
+let nsis = fs.readFileSync(nsisPath, "utf8");
+nsis = replaceOrThrow(nsis, /!define VERSION "[^"]*"/, `!define VERSION "${version}"`, "installer-template.nsi VERSION");
+nsis = replaceOrThrow(nsis, /!define VERSIONWITHBUILD "[^"]*"/, `!define VERSIONWITHBUILD "${version}.0"`, "installer-template.nsi VERSIONWITHBUILD");
+writeFile(nsisPath, nsis);
 
 console.log(`Version synced to ${version}`);

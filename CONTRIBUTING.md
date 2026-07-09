@@ -307,7 +307,7 @@ Checklist przed testowym buildem desktop:
 - Upewnij sie, ze wszystkie zmiany sa w zrodlach root (index.html, css/, js/) i NIE byly robione recznie w app/.
 - Uruchom npm run prepare:app i sprawdz czy mirror app/ zawiera te same zmiany.
 - Dla zmian UI uruchom get_errors na zmienionych plikach przed buildem.
-- Dla testow lokalnych preferuj plik: src-tauri/target/release/ipscanner.exe.
+- Dla testow lokalnych preferuj plik: src-tauri/target/release/OSINTNETAuditor.exe.
 
 ### 7a. Plan rozwoju instalatora (roadmapa)
 
@@ -406,7 +406,7 @@ Minimalny standard testu manualnego po zmianach UI/runtime:
 3. EXE no-bundle
 - Tryb: `npm run prepare:app && npx tauri build --no-bundle`.
 - Oczekiwane:
-  - aplikacja uruchamia sie z `src-tauri/target/release/ipscanner.exe`,
+  - aplikacja uruchamia sie z `src-tauri/target/release/OSINTNETAuditor.exe`,
   - menu dziala,
   - akcje okna (min/max/fullscreen/close) dzialaja,
   - funkcje krytyczne zmieniane w PR przechodza bez regresji.
