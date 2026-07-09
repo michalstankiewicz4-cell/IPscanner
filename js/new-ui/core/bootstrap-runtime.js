@@ -301,7 +301,6 @@
         applyStaticTranslations();
         if (setTooltips) setTooltips();
         if (refreshActiveUI) refreshActiveUI();
-        if (typeof syncLanguageManagerPanel === "function") syncLanguageManagerPanel();
         requestAnimationFrame(function () {
           if (typeof refreshCustomScrollbars === "function") refreshCustomScrollbars();
         });
@@ -706,41 +705,6 @@
         switchTool("language-manager");
       }
 
-      function languageManagerElements() {
-        return {
-          code: document.getElementById("v1LangTabCode"),
-          dict: document.getElementById("v1LangTabDict"),
-          output: document.getElementById("v1LangTabOutput"),
-        };
-      }
-
-      function languageManagerDefaultDict() {
-        return "{\n  \"menuFile\": \"Datei\",\n  \"menuOptions\": \"Optionen\",\n  \"menuTools\": \"Werkzeuge\",\n  \"menuHelp\": \"Hilfe\"\n}";
-      }
-
-      function languageManagerWrite(text) {
-        const els = languageManagerElements();
-        if (els.output) {
-          els.output.textContent = text;
-          els.output.scrollTop = 0;
-        }
-      }
-
-      function syncLanguageManagerPanel() {
-        if (activeTool !== "language-manager") return;
-        const els = languageManagerElements();
-        if (els.code && !els.code.value.trim()) {
-          els.code.value = i18n.getLang ? i18n.getLang() : "en";
-        }
-        if (els.dict && !els.dict.value.trim()) {
-          els.dict.value = languageManagerDefaultDict();
-        }
-        if (els.output && !els.output.textContent.trim()) {
-          const langs = i18n.listLanguages ? i18n.listLanguages() : [];
-          languageManagerWrite(langs.length ? langs.join("\n") : tr("langListHeader") + ": -");
-        }
-      }
-
       function initLanguageManagerUi() {}
 
       let activeTool = store ? store.getState().activeTool : "scan-runner";
@@ -979,7 +943,6 @@
             onAfterRender: function () {
               requestAnimationFrame(function () {
                 refreshCustomScrollbars();
-                syncLanguageManagerPanel();
               });
             },
             initialActiveTool: initialActiveTool,

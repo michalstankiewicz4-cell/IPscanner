@@ -16,6 +16,15 @@ stan aplikacji z chwili zapisu (nie jest to historia zmian, tylko jedna
 Zrodlo w kodzie: src-tauri/src/main.rs, funkcje write_session_data (zapis)
 i read_session_data (odczyt), stala SESSION_SCHEMA_SQL (definicja tabel).
 
+Od wersji z zapisem/odczytem sesji na www (przegladarka, ipscanner.pl) istnieje
+DRUGIE, rownolegle zrodlo tego samego schematu: js/new-ui/core/runtimes/
+session-sqlite-runtime.js (funkcje encodeSessionData/decodeSessionBytes,
+stala SESSION_SCHEMA_SQL w JS), dzialajace przez sql.js zamiast rusqlite -
+bo przegladarka nie ma dostepu do backendu Rust. Oba miejsca musza definiowac
+identyczny schemat i identyczna kolejnosc zapytan (SELECT ... ORDER BY),
+zeby plik zapisany na jednej platformie dal sie poprawnie odczytac na drugiej -
+patrz komentarz na gorze tego pliku JS.
+
 
 TABELA: scan_results
 ---------------------
