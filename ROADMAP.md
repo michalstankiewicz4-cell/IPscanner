@@ -27,6 +27,9 @@ project direction and rules, see [CONTRIBUTING.md](CONTRIBUTING.md) (Polish).
     addons straight from the [`tools/`](tools/) folder of this repo.
 - Rebrand to OSINT NET Auditor, including the compiled binary name, and
   working NSIS/MSI installers with WebView2 auto-detection.
+- Session save/load now also works in the browser build (`ipscanner.pl`),
+  using real `.sqlite3` files via sql.js — round-trip compatible with the
+  desktop app's files, no server/backend involved.
 
 ## In progress
 
@@ -41,6 +44,18 @@ project direction and rules, see [CONTRIBUTING.md](CONTRIBUTING.md) (Polish).
 - PDF censored-text checker.
 - Email/file analyser.
 - IPv6/IPv4 correlation.
+- **WEB Scanner as the first real installable addon** — a small, honestly-scoped
+  www-side scanner (reachability checks on common HTTP(S) ports for public
+  hosts only; real TCP port scanning and local/private-network targets are a
+  hard browser limitation, not a missing feature — see `SHELL_PROGRESS.md`).
+  Chosen deliberately as an addon rather than a built-in shell feature, but
+  today's addon system can't support it yet — it only renders a static
+  title/text/points card and only supports `"powershell"`-type commands. Needs,
+  as prerequisites: (1) a new browser-side `"fetch"` command type in the
+  command bus (`extensions.js`/`registerExtensionCommands`), and (2) some form
+  of custom addon-rendered markup beyond the static card (an input field for
+  the target host, a live results list) — both currently open design questions
+  in `FUTURE_PLUGIN_SHELL.md`'s "Co realnie trzeba zaprojektowac" section.
 
 ## Considered and rejected
 
