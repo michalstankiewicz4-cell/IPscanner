@@ -77,9 +77,27 @@ CONTRIBUTING.md §3a).
 3. **Topology Map** (LSB, TBM-Options -> CS)
 4. **World Globe** (LSB, TBM-Options -> CS)
 
-Funkcje lub część funkcji działających tylko w aplikacji:
-- IP Scanner
-- Shell Craft
-- AI Assistant
-- Topology map - ?
-- Globe - ?
+Funkcje lub czesc funkcji dzialajacych tylko w aplikacji (stan na 2026-07-09,
+po weryfikacji kodu — ShellCraft/AI Assistant/Topology/Globe nie maja dzis
+zadnej logiki, to same statyczne karty w `tool-catalog.js`, wiec ponizszy
+podzial to plan na przyszlosc, nie stan obecny):
+
+- **IP Scanner** — moze na www: UI, presety, biblioteka IP, sesje (zrobione,
+  patrz sql.js session save/load). Tylko desktop: samo skanowanie portow
+  (przegladarka nie ma surowych socketow TCP — twardy limit, nie do obejscia).
+- **Shell Craft** — moze na www: edytor blokow, zapis/wczytanie makr. Tylko
+  desktop: **uruchomienie** makra (PowerShell).
+- **AI Assistant** — moze na www: caly czat, jesli to zwykle zapytania HTTP do
+  API. Tylko desktop: gdyby mial wywolywac PowerShell/pliki lokalne.
+- **Topology map** — moze na www: rysowanie grafu z juz zebranych danych.
+  Tylko desktop: zbieranie danych (traceroute — `run_traceroute` w `main.rs`
+  juz istnieje, ale nie jest jeszcze wywolywana z zadnego JS).
+- **Globe** — moze na www w calosci, jesli dane sa juz zebrane — to czysty
+  rendering (D3), zero zaleznosci od Tauri.
+
+Ogolna zasada: UI/dane/storage/rendering moze dzialac wszedzie (WASM jak sql.js
+pokazal, ze nawet "trudne" rzeczy jak realny plik SQLite sie da); surowe
+sockety TCP/ICMP i PowerShell nie dzialaja na www nigdy — to bariera
+bezpieczenstwa przegladarki, nie brak implementacji.
+
+
