@@ -46,12 +46,13 @@ https://www.virustotal.com/gui/domain/ipscanner.pl
 
 ## Roadmap
 
-Planned next: a PDF censored-text checker and an email/file analyser, plus IPv6/IPv4 correlation.
+See [ROADMAP.md](ROADMAP.md) for what's done, in progress, and planned next.
 
 ## Documentation
 
 | File | Description |
 | --- | --- |
+| [ROADMAP.md](ROADMAP.md) | What's done, in progress, and planned. |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Project direction and rules for contributing code (written in Polish). |
 | [FUTURE_PLUGIN_SHELL.md](FUTURE_PLUGIN_SHELL.md) | Design notes for the addon/plugin shell architecture (written in Polish). |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community code of conduct. |

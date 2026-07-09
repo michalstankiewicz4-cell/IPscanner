@@ -30,6 +30,11 @@
     var switchTool = deps.switchTool;
     var getNavigationRuntime = deps.getNavigationRuntime || function () { return null; };
     var refreshCustomScrollbars = deps.refreshCustomScrollbars || function () {};
+    var sessionSqlite = deps.sessionSqlite || null;
+
+    function isWww() {
+      return !platform.getInvoke || !platform.getInvoke();
+    }
 
     function storage() {
       return (platform && platform.storage) || null;
@@ -298,9 +303,42 @@
       updateSessionNameLabel();
     }
 
+    // --- www save/load via sql.js (real .sqlite3 bytes, no Tauri invoke) ---
+
+    function saveSessionToBrowser() {
+      statusMsg(tr("sessionSqliteEngineLoading"));
+      var data = collectSessionData();
+      return sessionSqlite.encodeSessionData(data).then(function (bytes) {
+        var s = storage();
+        var filename = (s && s.getItem(CURRENT_PATH_KEY)) || DEFAULT_FILENAME;
+        sessionSqlite.downloadBytes(filename, bytes);
+        rememberPathContext(filename);
+        statusMsg(tr("sessionSaveOk") + " (" + filename + ") — " + layoutSummary(data.layout));
+        return true;
+      }).catch(function () {
+        statusMsg(tr("sessionSaveFailed"));
+        return false;
+      });
+    }
+
+    function loadSessionFromBrowser() {
+      return sessionSqlite.pickFile().then(function (file) {
+        if (!file) return false;
+        return file.arrayBuffer().then(function (buffer) {
+          return sessionSqlite.decodeSessionBytes(new Uint8Array(buffer));
+        }).then(function (data) {
+          return applyLoadedSessionData(file.name, data);
+        });
+      }).catch(function () {
+        statusMsg(tr("sessionLoadFailed"));
+        return false;
+      });
+    }
+
     // --- save / save as ---
 
     function saveSessionAs() {
+      if (sessionSqlite && isWww()) return saveSessionToBrowser();
       var data = collectSessionData();
       return resolveDefaultDir().then(function (defaultDir) {
         return platform.invoke("save_session_dialog", {
@@ -319,6 +357,7 @@
     }
 
     function saveSession() {
+      if (sessionSqlite && isWww()) return saveSessionToBrowser();
       var s = storage();
       var currentPath = s ? s.getItem(CURRENT_PATH_KEY) : null;
       if (!currentPath) return saveSessionAs();
@@ -360,6 +399,7 @@
     }
 
     function loadSession() {
+      if (sessionSqlite && isWww()) return loadSessionFromBrowser();
       return resolveDefaultDir().then(function (defaultDir) {
         return platform.invoke("open_session_dialog", { defaultDir: defaultDir });
       }).then(function (result) {
@@ -371,6 +411,7 @@
     }
 
     function loadSessionFromPath(path) {
+      if (sessionSqlite && isWww()) return loadSessionFromBrowser();
       return platform.invoke("read_session_file", { path: path }).then(function (data) {
         return applyLoadedSessionData(path, data);
       }).catch(function (err) {

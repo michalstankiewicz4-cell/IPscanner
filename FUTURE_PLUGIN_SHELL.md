@@ -1,10 +1,19 @@
 # Wizja: IPscanner jako dodatek na czystej powłoce
 
 Ten plik opisywal pierwotnie kierunek rozwoju, ktory NIE byl jeszcze
-realizowany. Od tego czasu czesc wizji zostala sprototypowana (bez WASM -
-patrz sekcja "Stan obecny" nizej) - plik zostaje jako zapis pelnej, docelowej
-wizji i listy tego, co jeszcze nie jest zrobione, zeby nie trzeba bylo
-odtwarzac tej rozmowy od zera.
+realizowany. Od tego czasu czesc wizji zostala sprototypowana - patrz sekcja
+"Stan obecny" nizej - plik zostaje jako zapis pelnej, docelowej wizji i listy
+tego, co jeszcze nie jest zrobione, zeby nie trzeba bylo odtwarzac tej
+rozmowy od zera.
+
+**Aktualizacja (2026-07-09):** WASM byl rozwazany jako mechanizm sandboxingu
+dodatkow i oceniony na dzialajacym prototypie (skompilowany modul `.wasm`,
+wymiana stringow przez pamiec liniowa) - **swiadomie odrzucony**: zbyt duza
+zlozonosc debugowania (pamiec liniowa, brak czytelnych komunikatow bledow
+przy panice) wzgledem korzysci na tym etapie. System dodatkow zostaje w
+calosci w JS (patrz CONTRIBUTING §4) i tak dalej sie rozwija - instalowanie,
+odinstalowywanie i punkty kontrybucji dzialaja i beda dalej rozbudowywane bez
+WASM.
 
 ## Kolejność prac (zaktualizowana)
 
@@ -146,23 +155,24 @@ Poniższe propozycje zostały zaakceptowane i dochodzą do ustalonej wizji powy�
    konkretnych paneli), żeby ograniczyć ryzyko instalacji złośliwego
    dodatku. Bez tego "instalowalne dodatki" to też potencjalna furtka
    bezpieczeństwa, o czym warto pamiętać projektując manager z sekcji wyżej.
-   **Ustalone (2026-07-08): mechanizmem sandboxingu będzie WASM** - patrz
-   nowa sekcja "Magistrala zdarzeń/komend i punkty kontrybucji (pod WASM)"
-   niżej, to już nie jest otwarta opcja tylko podjęta decyzja.
+   Mechanizm sandboxingu pozostaje otwartym pytaniem (WASM byl rozwazany i
+   odrzucony po prototypie - patrz notatka na gorze pliku); dzisiejszy,
+   dzialajacy model to reczne potwierdzenie `permissions` z manifestu przy
+   instalacji (patrz CONTRIBUTING §4), bez izolacji na poziomie runtime.
 6. **Wersjonowanie dodatków** i podstawowe sprawdzanie
    kompatybilności/aktualizacji (dodatek działa z wersją X powłoki wzwyż).
 7. **Wiele jednoczesnych ikon w activity bar** - jedna na każdy
    zainstalowany dodatek (nie tylko ta jedna wbudowana pozycja z podstawy),
    żeby dodatki mogły mieć własne, niezależne wejście do lewego panelu.
 
-## Stan obecny (zaktualizowany po pierwszym, nie-WASM prototypie)
+## Stan obecny
 
 Pierwsza wersja tej sekcji (ponizej jako "Stan pierwotny (przed prototypem)")
 opisywala punkt wyjscia sprzed rozbudowy systemu dodatkow o realne punkty
-kontrybucji. Ten prototyp **dziala dzis w JS, bez WASM/sandboxingu** - patrz
-CONTRIBUTING §4 po pelny opis manifestu i przyklad. Skrot stanu na dzis
-(zbadane w `js/new-ui/core/extensions.js`, `bootstrap-runtime.js`,
-`panels-runtime.js`, `runtimes/navigation-runtime.js`,
+kontrybucji. Ten prototyp **dziala w calosci w JS**, bez sandboxingu na
+poziomie runtime - patrz CONTRIBUTING §4 po pelny opis manifestu i przyklad.
+Skrot stanu na dzis (zbadane w `js/new-ui/core/extensions.js`,
+`bootstrap-runtime.js`, `panels-runtime.js`, `runtimes/navigation-runtime.js`,
 `runtimes/command-bus-runtime.js`, `menu-runtime.js`):
 
 - **Panel centralny**: jak wczesniej - `contributions.tools` + fallback
@@ -198,12 +208,10 @@ CONTRIBUTING §4 po pelny opis manifestu i przyklad. Skrot stanu na dzis
   katalog tematow z wersjami/schematem - `newui:sidebar-tab-intent-open` i
   nowy `newui:right-tab-intent-open` dzialaja analogicznie do siebie, ale to
   wciaz dwa osobno zdefiniowane zdarzenia, nie jeden udokumentowany system.
-- **Instalacja/dezinstalacja w czasie dzialania aplikacji**: **juz dziala**,
-  ale inaczej niz zaklada sekcja WASM nizej (patrz tam "Uwaga" pod naglowkiem
-  Instalacja/dezinstalacja) - dzis to manifest JSON (plik lub katalog z
-  GitHuba), nie skompilowany `.wasm`; jest realne okno potwierdzenia
+- **Instalacja/dezinstalacja w czasie dzialania aplikacji**: **juz dziala** -
+  manifest JSON (plik lub katalog z GitHuba), z realnym oknem potwierdzenia
   uprawnien przed instalacja, ale tylko dla jednego uprawnienia
-  (`"powershell"`), nie pelny model capability-based z sekcji nizej.
+  (`"powershell"`), nie pelny model capability-based.
 
 ### Stan pierwotny (przed prototypem, dla kontekstu historycznego)
 
@@ -246,213 +254,6 @@ zrobić to porządnie, potrzeba:
 
 To dotknie praktycznie każdego pliku runtime w `js/new-ui/core/**` i wymaga
 osobnego, porządnego planowania (patrz sekcja "Kolejność prac" wyżej - robimy
-to dopiero po dokończeniu w pełni działającego skanera).
-
-## Magistrala zdarzeń/komend i punkty kontrybucji (pod WASM)
-
-Ustalone: mechanizmem instalowania/sandboxingu dodatków będzie **WASM** (dodatek
-skompilowany do WebAssembly, uruchamiany w piaskownicy wbudowanej w apkę Rust).
-To nie jest szczegół implementacyjny odłożony na później - **zmienia ksztalt
-calego API kontrybucji już teraz**, więc projektujemy to od razu z tym
-zalozeniem, zamiast projektować "generyczne JS API" i potem je przerabiać.
-
-### Dlaczego WASM zmienia kształt API
-
-Moduł WASM działa w piaskownicy z własną pamięcią liniową. Może wymieniać z
-hostem (JS/Rust) tylko dane **serializowalne** (liczby, stringi/bufory przez
-wspólną pamięć) - nie może:
-
-- trzymać żywej referencji do węzła DOM,
-- otrzymać referencji do funkcji JS jako callbacka,
-- samodzielnie manipulować DOM-em (nie ma dostępu do przeglądarki/DOM-u wprost).
-
-Innymi słowy: **dodatek nie może "zawołać" żywego elementu ani przekazać
-funkcji zwrotnej** tak jak dziś robi to JS-do-JS. Musi to wyglądać jak wymiana
-wiadomości: dodatek dostaje serializowany opis sytuacji, zwraca serializowany
-opis tego co ma się stać, a host (JS shell) faktycznie dotyka DOM-u.
-
-**Dobra wiadomość:** część dzisiejszego kodu już ma dokładnie ten kształt.
-`panel-content-runtime.js`'s `buildDetailHtml(tool)` **już dziś zwraca string
-HTML** zamiast manipulować DOM-em bezpośrednio - host (`panels-runtime.js`)
-wstawia ten string do kontenera. To jest dokładnie wzorzec zgodny z WASM, tylko
-trzeba go sformalizować i zastosować konsekwentnie wszędzie (dziś
-`panel-interactions-runtime.js`'s `wireXXXTool(rootEl)` łamie ten wzorzec,
-bo dostaje żywy `rootEl` i sam podpina listenery - to trzeba będzie przerobić
-na delegację zdarzeń, patrz niżej).
-
-### Gdzie faktycznie działa WASM (dotąd nieustalone, ustalane teraz)
-
-Dwie opcje, trzeba wybrać jedną, bo to zmienia implementację:
-
-**Opcja A - WASM w webview (JS), rekomendowana.** Nowoczesne webview (WebView2
-na Windows, którego używa Tauri) mają wbudowane, natywne wsparcie
-`WebAssembly.instantiate()` w JS - bez żadnego udziału Rusta. Cały system
-kontrybucji (render/handle_event, command bus, event bus) może działać
-wyłącznie po stronie JS. Piaskownica bierze się z samej natury WASM (własna
-pamięć liniowa, zero ambient authority) plus z tego, że host (JS) świadomie
-udostępnia dodatkowi tylko wybrane funkcje importu, zgodnie z `permissions`.
-
-**Opcja B - WASM w backendzie Rust (np. `wasmtime`).** Wymagałoby dodatkowego
-przeskoku JS <-> Tauri `invoke()` <-> Rust-hosted-WASM na każdą interakcję -
-więcej złożoności i opóźnień, bez wyraźnej korzyści, skoro webview i tak już
-umie hostować WASM sam.
-
-**Rekomendacja: Opcja A.** Rust/Tauri zostaje tym, czym jest dziś -
-uprzywilejowaną bramką do rzeczy systemowych (sieć, pliki, PowerShell) poprzez
-`invoke()`. Ważne: **`platform-runtime.js` już dziś jest dokładnie taką bramką**
-(jedyne miejsce z bezpośrednim dostępem do `window.__TAURI__`, patrz
-CONTRIBUTING §14/§12) - model uprawnień dla dodatków to naturalne rozszerzenie
-tego co już istnieje, nie nowy koncept. Dodatek WASM woła funkcję importu JS
-(np. `host_tcp_connect`), ta funkcja **wewnątrz** sprawdza `permissions` danego
-dodatku i dopiero wtedy (albo nie) woła `platform.invoke(...)`. Brak
-uprawnienia = host w ogóle nie rejestruje tej funkcji importu dla tej instancji
-WASM, więc dodatek nie ma nawet czego zawołać.
-
-**Konsekwencja dla wersji www (`ipscanner.pl`, bez backendu Tauri - ustalone w
-rozmowie):** skoro WASM działa w webview (Opcja A), cała warstwa UI dodatku
-(`render`/`handle_event`, panele, zakładki, menu, activity bar) **działa
-identycznie na www i na desktopie** - to czysty JS+WASM, nie potrzebuje
-Tauri. Different jest tylko dostępność uprawnień wymagających realnego
-systemu (`network.tcp`, `shell.powershell`, dostęp do plików): na www host po
-prostu nigdy ich nie przyznaje, niezależnie co deklaruje manifest dodatku -
-dokładnie tak jak dziś działa `platform-runtime.js`'s tryb parity
-(`isParityMode()`, CONTRIBUTING §13 "HTML parity": "akcje desktop-only nie
-wywalają UI"). Czyli: zakładki się otwierają, panele renderują, nawigacja
-działa wszędzie: funkcje wymagające Tauri po prostu nie są dostępne na www,
-bez wywalania reszty interfejsu - nie nowa zasada, tylko zastosowanie już
-istniejącej do nowego systemu dodatków.
-
-### Kształt pojedynczego punktu kontrybucji
-
-Dla każdej sekcji (lewy/prawy/centralny panel, status bar, activity bar, menu)
-dodatek eksportuje dwie funkcje o serializowalnych sygnaturach:
-
-```
-render(context: JSON) -> html: String
-handle_event(event: JSON) -> patch: JSON
-```
-
-- `render` dostaje kontekst (np. `{tool: "results-ip", state: {...}}` jako
-  JSON) i zwraca gotowy HTML string do wstawienia - dokładnie jak dzisiejsze
-  `buildDetailHtml`.
-- Host podpina **jeden generyczny, delegowany listener** na kontener danego
-  panelu (nie per-dodatek), łapie kliknięcia/inputy wewnątrz, buduje z nich
-  serializowalny opis zdarzenia (`{type: "click", target: "[data-preset-action=add]", ...}`)
-  i woła `handle_event` dodatku.
-- `handle_event` zwraca "patch" - opis co ma się zmienić (np. `{rerender: true}`
-  albo `{updateText: {selector, value}}`) - host wykonuje to na prawdziwym DOM-ie.
-  Dodatek nigdy nie dotyka DOM-u sam.
-
-### Command bus (rejestr nazwanych komend)
-
-Wspólny rejestr `command-id -> handler`, do którego wpisuje się zarówno
-podstawa jak i dodatki (przez manifest, `contributions.commands`). Wywołanie
-komendy to zawsze `invoke(commandId, argsJson) -> resultJson` - ten sam
-serializowalny kształt co wyżej, więc działa identycznie dla JS-owych
-wbudowanych komend i dla komend z dodatku WASM. To od razu daje za darmo
-**paletę komend** (punkt 1 z listy dodatkowych możliwości) - paleta to po
-prostu lista wszystkich zarejestrowanych `command-id` z etykietą.
-
-### Event bus (nazwane, wersjonowane tematy)
-
-Dzisiejsze ad-hoc `CustomEvent`y (`newui:sidebar-tab-intent-open`,
-`newui:console-pane-update` itd., patrz sekcja "Stan obecny" wyżej) zostają
-zebrane w jeden udokumentowany katalog tematów, każdy z wersją i schematem
-payloadu (np. `sidebar.tab.open.v1`). Dodatek może subskrybować/emitować tylko
-tematy, na które manifest deklaruje uprawnienie (patrz niżej) - to samo w
-sobie ogranicza co złośliwy dodatek może "podsłuchać".
-
-### Manifest kontrybucji i uprawnień (rozszerzenie dzisiejszego)
-
-Dzisiejszy manifest (`contributions.tools`/`menuActions`/`i18n` w
-`extensions.js`) rozszerza się o:
-
-```json
-{
-  "contributions": {
-    "leftPanel": [...], "rightPanel": [...], "centerPanel": [...],
-    "statusBar": [...], "activityBar": [...], "commands": [...],
-    "settings": [...], "keybindings": [...]
-  },
-  "permissions": ["network.tcp", "shell.powershell", "storage", "panel.left", "panel.center"],
-  "minShellVersion": "2.0.0"
-}
-```
-
-`permissions` decyduje, jakie funkcje hosta (importy) w ogóle są widoczne dla
-instancji WASM tego dodatku - klasyczny model capability-based. Brak
-zadeklarowanego `network.tcp` = host nie daje dodatkowi żadnej funkcji do
-otwierania połączeń, więc nawet gdyby dodatek chciał, fizycznie nie może.
-`minShellVersion` realizuje punkt 6 (wersjonowanie dodatków) wprost.
-
-### Pozostałe zaakceptowane funkcje - to samo API, nie osobne mechanizmy
-
-Activity bar, ustawienia, powiadomienia i skróty klawiszowe to **nie są nowe
-mechanizmy** - to kolejne typy kontrybucji w tym samym `render`/`handle_event`
-+ manifest + `permissions` wzorcu co wyżej. Rozpisane osobno, żeby nie kusiło
-zaprojektować dla każdego bespoke rozwiązania:
-
-- **Activity bar (punkt 7 - wiele ikon)**: `contributions.activityBar` to
-  lista `{id, icon, title}`; kliknięcie ikony to zwykłe wywołanie komendy
-  (`contributions.commands`) przypisanej do tej ikony - żaden nowy mechanizm,
-  tylko kolejny wpis w już zaprojektowanym command bus.
-- **Ustawienia (punkt 2)**: `contributions.settings` to schemat pól (podobnie
-  jak dziś `contributions.tools` opisuje kartę narzędzia) - ujednolicony panel
-  ustawień to po prostu `render()` całego schematu wszystkich dodatków razem,
-  a zapis zmiany to `handle_event()` jak każda inna interakcja panelu.
-- **Powiadomienia (punkt 3)**: nowy temat w event bus (np. `notification.show.v1`
-  z payloadem `{level, text}`), na który dodatek ma uprawnienie *emitować*, ale
-  nie subskrybować cudzych powiadomień. Host renderuje toast - dodatek nigdy
-  nie dotyka DOM-u toastu bezpośrednio, tak jak wszędzie indziej.
-- **Skróty klawiszowe (punkt 4)**: `contributions.keybindings` to mapowanie
-  `key-combo -> command-id` - działa na tym samym command bus, więc skrót
-  klawiszowy i kliknięcie w palecie komend wywołują dokładnie tę samą ścieżkę.
-
-### Instalacja/dezinstalacja (doprecyzowane z rozmowy)
-
-**Uwaga (aktualizacja):** ponizszy opis to docelowa wizja pod WASM, jeszcze
-niezrealizowana. Realnie dzialajacy dzis prototyp (patrz "Stan obecny" wyzej
-i CONTRIBUTING §4) realizuje tylko punkty 2 i czesciowo 4 z listy nizej, bez
-`.wasm` - manifest to nadal czysty JSON (z pliku lub katalogu na GitHubie),
-a `permissions` to dzis jedna wartosc (`"powershell"`), nie pelny model
-capability-based z listy uprawnien ponizej. Punkt 4 (dezinstalacja z pelnym
-wyrejestrowaniem) dziala juz dla istniejacych rejestrow (LS/RS/CS/command
-bus/Options-menu), ale nie dla keybindings/ustawien, bo te jeszcze nie
-istnieja.
-
-Instalacja **nie jest w pełni cicha/automatyczna** - to celowe, bo inaczej
-`permissions` z manifestu nigdy nie byłyby nikomu pokazane:
-
-1. Użytkownik wskazuje plik/folder z manifestem + skompilowanym `.wasm`
-   (zastępuje to dzisiejsze pole "wklej JSON" w Import Tool - wklejanie tekstu
-   nie ma sensu, gdy w grę wchodzi binarka).
-2. Host parsuje manifest, **pokazuje listę żądanych `permissions`** do
-   potwierdzenia (jak prompt uprawnień w przeglądarce/VS Code) - zanim
-   cokolwiek się załaduje.
-3. Po potwierdzeniu: host kopiuje pliki dodatku do trwałej lokalizacji (żeby
-   przetrwały restart appki), ładuje moduł WASM, rejestruje jego kontrybucje
-   (panele/komendy/ustawienia/skróty/ikona activity bar) ograniczone dokładnie
-   do potwierdzonych uprawnień.
-4. **Dezinstalacja** to operacja odwrotna: wyrejestrowanie wszystkich
-   kontrybucji danego dodatku z każdego rejestru (panele, command bus, event
-   bus, keybindings, activity bar), zwolnienie instancji WASM, usunięcie
-   plików. Wymaga, żeby każdy rejestr wewnętrznie wiedział "co należy do
-   którego dodatku", nie tylko "co jest zarejestrowane" - do uwzględnienia przy
-   projektowaniu samych rejestrów, nie tylko przy samej dezinstalacji.
-
-### Co jeszcze otwarte (nie rozstrzygać teraz, tylko odnotować)
-
-- Dokładny format "na drucie" między hostem a WASM - JSON (prosty, czytelny,
-  wolniejszy) vs format binarny typu MessagePack/FlatBuffers (szybszy,
-  bardziej roboty). Dla zaczątku prawdopodobnie JSON - można zmienić później
-  bez zmiany reszty API, bo to szczegół serializacji, nie kształtu API.
-- Dokładne sygnatury funkcji importu/eksportu WASM (jak dokładnie przekazuje
-  się stringi przez pamięć liniową - wskaźnik+długość, czy coś gotowego jak
-  `wasm-bindgen`).
-- Ile z dzisiejszego kodu (`panel-content-runtime.js`, `panel-renderers-runtime.js`)
-  da się bezpośrednio zaadaptować (prawdopodobnie sporo, bo już zwraca HTML
-  string) vs ile trzeba przepisać (`panel-interactions-runtime.js` - żywe
-  listenery na `rootEl`, do przerobienia na delegację + `handle_event`).
-- Czy AI Assistant (ma mieć "dostęp do wszystkiego") dostaje specjalne,
-  szersze uprawnienia domyślnie, czy też deklaruje je w swoim manifeście jak
-  każdy inny dodatek podstawy.
+to dopiero po dokończeniu w pełni działającego skanera). Dalszy rozwój
+punktow kontrybucji (nowe sekcje, event bus, command palette, ustawienia,
+itd.) zostaje w calosci w JS - patrz notatka na gorze pliku.

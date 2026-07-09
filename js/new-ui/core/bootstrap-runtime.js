@@ -1027,6 +1027,10 @@
         initExtensionManagerUi = extensionManagerRuntime.init;
       }
 
+      const sessionSqliteRuntime = runtimeFactory.createSessionSqliteRuntime
+        ? runtimeFactory.createSessionSqliteRuntime()
+        : null;
+
       const sessionRuntime = runtimeFactory.createSessionRuntime
         ? runtimeFactory.createSessionRuntime({
             tr,
@@ -1036,6 +1040,7 @@
             switchTool,
             getNavigationRuntime: function () { return navigationRuntime; },
             refreshCustomScrollbars: function () { refreshCustomScrollbars(); },
+            sessionSqlite: sessionSqliteRuntime,
           })
         : null;
 

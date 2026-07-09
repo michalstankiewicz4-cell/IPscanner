@@ -77,3 +77,9 @@ CONTRIBUTING.md §3a).
 3. **Topology Map** (LSB, TBM-Options -> CS)
 4. **World Globe** (LSB, TBM-Options -> CS)
 
+Funkcje lub część funkcji działających tylko w aplikacji:
+- IP Scanner
+- Shell Craft
+- AI Assistant
+- Topology map - ?
+- Globe - ?

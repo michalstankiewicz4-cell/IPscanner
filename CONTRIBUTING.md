@@ -16,8 +16,9 @@ Aktualny kierunek rozwoju to:
 - rozbudowa systemu rozszerzen (manifest `contributions`) o realne punkty
   kontrybucji - dzis: `tools`/`menuActions`/`i18n`/`commands`/`optionsMenu`,
   flagi `ui.showInLeftPanel`/`showInRightPanel`/`showAsTab`, model uprawnien
-  (`permissions`) i katalog dodatkow z GitHuba (patrz sekcja 4),
-  docelowo: pelne API kontrybucji pod WASM opisane w `FUTURE_PLUGIN_SHELL.md`,
+  (`permissions`) i katalog dodatkow z GitHuba (patrz sekcja 4), docelowo:
+  dalsze punkty kontrybucji (status bar, activity bar, ustawienia, event bus)
+  w calosci w JS, opisane w `FUTURE_PLUGIN_SHELL.md`,
 - utrzymanie kompatybilnosci istniejacej logiki skanera (bez regresji, ale bez
   priorytetu na nowe funkcje skanera),
 - porzadkowanie stylow i i18n bez regresji funkcjonalnych.
@@ -27,9 +28,11 @@ a nowy kod w miare mozliwosci pisany od razu z podzialem shell/tool w glowie
 (patrz komentarze `// shell:` / `// ip-scanner tool:` w kodzie).
 
 Docelowa wizja (IPscanner jako instalowalny/odinstalowywalny dodatek na
-neutralnej powloce, z sandboxingiem przez WASM) jest opisana w
-`FUTURE_PLUGIN_SHELL.md`. Nie jest w pelni zrealizowana - dzis dziala
-prototyp bez WASM (patrz ten plik, sekcja "Stan obecny").
+neutralnej powloce) jest opisana w `FUTURE_PLUGIN_SHELL.md`. Nie jest w pelni
+zrealizowana - dzis dziala prototyp w calosci w JS, bez sandboxingu na
+poziomie runtime (patrz ten plik, sekcja "Stan obecny"; WASM
+jako mechanizm sandboxingu byl rozwazany i odrzucony po prototypie, patrz
+notatka na gorze `FUTURE_PLUGIN_SHELL.md`).
 
 ### 1a. Historia: model dwoch galezi (zakonczony)
 
@@ -131,9 +134,9 @@ Pliki wejsciowe UI i zasady warstwy zrodlo/mirror: zob. sekcja 12.
 ## 4. Rozszerzenia (plugin-like)
 
 System rozszerzen jest oparty o manifest JSON (`js/new-ui/core/extensions.js`).
-To pierwszy, nie-WASM prototyp docelowej wizji z `FUTURE_PLUGIN_SHELL.md` -
-dziala w calosci w JS, bez sandboxingu poza jednym, recznie sprawdzanym
-uprawnieniem (`permissions: ["powershell"]`).
+To pierwszy prototyp docelowej wizji z `FUTURE_PLUGIN_SHELL.md` - dziala w
+calosci w JS, bez sandboxingu poza jednym, recznie sprawdzanym uprawnieniem
+(`permissions: ["powershell"]`).
 
 Pola na poziomie manifestu:
 
@@ -402,6 +405,12 @@ Minimalny standard testu manualnego po zmianach UI/runtime:
   - status zawiera "Desktop parity mode enabled",
   - fallback web dziala bez invoke Tauri,
   - akcje desktop-only nie wywalaja UI.
+- Testuj przez GitHub Pages (`ipscanner.pl`) lub `npm run dev` (http-server na
+  `app/`), nie przez wymuszenie `?nr_parity=1` wewnatrz spakowanego .exe -
+  funkcje ktore w www realnie laduja sql.js (zapis/odczyt sesji) uzywaja WASM,
+  a CSP webview Tauri (`script-src` bez `'wasm-unsafe-eval'`)
+  by to zablokowalo. GitHub Pages i `http-server` nie wysylaja zadnego CSP,
+  wiec tam dziala bez zmian.
 
 3. EXE no-bundle
 - Tryb: `npm run prepare:app && npx tauri build --no-bundle`.
