@@ -254,7 +254,6 @@
 
     function emitScanProgress(detail) {
       writeScanProgressState(detail || {});
-      updateResultsProgressText(detail || {});
       try {
         document.dispatchEvent(new CustomEvent("newui:scan-progress", {
           detail: detail || {},
@@ -267,27 +266,6 @@
         if (!window.localStorage) return;
         window.localStorage.setItem(SCAN_PROGRESS_KEY, JSON.stringify(detail || {}));
       } catch (_) {}
-    }
-
-    function formatProgressText(detail) {
-      var processed = Number(detail && detail.processed);
-      var total = Number(detail && detail.total);
-      var found = Number(detail && detail.found);
-      if (!Number.isFinite(processed)) processed = 0;
-      if (!Number.isFinite(total)) total = 0;
-      if (!Number.isFinite(found)) found = 0;
-
-      var percent = total > 0 ? Math.round((processed / total) * 100) : 0;
-      if (percent < 0) percent = 0;
-      if (percent > 100) percent = 100;
-
-      return "Progress: " + processed + "/" + total + " (" + percent + "%) | found: " + found;
-    }
-
-    function updateResultsProgressText(detail) {
-      var el = document.getElementById("resIpScanProgressTop");
-      if (!el) return;
-      el.textContent = formatProgressText(detail || {});
     }
 
     function countryCodeToFlag(code) {

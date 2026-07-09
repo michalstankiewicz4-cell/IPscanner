@@ -777,61 +777,6 @@
   flex: 1 1 420px;
   min-width: 0;
 }
-.v1-results-progress-note {
-  color: var(--txt-dim);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.v1-results-progress-loader {
-  display: inline-grid;
-  grid-template-columns: repeat(3, 5px);
-  grid-template-rows: repeat(2, 5px);
-  gap: 2px;
-  align-items: center;
-  justify-items: center;
-  vertical-align: middle;
-}
-
-.v1-results-progress-loader .v1-detect-loader-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #7a7a7a;
-  animation: v1-results-progress-loader-dot 1.2s linear infinite;
-}
-
-.v1-results-progress-loader .v1-detect-loader-dot:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.v1-results-progress-loader .v1-detect-loader-dot:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-.v1-results-progress-loader .v1-detect-loader-dot:nth-child(4) {
-  animation-delay: 0.6s;
-}
-
-.v1-results-progress-loader .v1-detect-loader-dot:nth-child(5) {
-  animation-delay: 0.8s;
-}
-
-.v1-results-progress-loader .v1-detect-loader-dot:nth-child(6) {
-  animation-delay: 1s;
-}
-
-@keyframes v1-results-progress-loader-dot {
-  0%,
-  100% {
-    background: #7a7a7a;
-  }
-
-  20% {
-    background: #ffffff;
-  }
-}
 
 .v1-results-controls [data-results-columns] {
   margin-left: auto;

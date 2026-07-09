@@ -397,64 +397,6 @@
     }
 
     function renderResultsIp() {
-      var SCAN_PROGRESS_KEY = "netrecon_scan_progress_v1";
-
-      function buildScanProgressLoaderMarkup() {
-        return [
-          "<span class=\"v1-results-progress-loader\" aria-hidden=\"true\">",
-          "<span class=\"v1-detect-loader-dot\"></span>",
-          "<span class=\"v1-detect-loader-dot\"></span>",
-          "<span class=\"v1-detect-loader-dot\"></span>",
-          "<span class=\"v1-detect-loader-dot\"></span>",
-          "<span class=\"v1-detect-loader-dot\"></span>",
-          "<span class=\"v1-detect-loader-dot\"></span>",
-          "</span>"
-        ].join("");
-      }
-
-      function readScanProgressState() {
-        try {
-          var raw = window.localStorage ? window.localStorage.getItem(SCAN_PROGRESS_KEY) : "";
-          if (!raw) return null;
-          var parsed = JSON.parse(raw);
-          return parsed && typeof parsed === "object" ? parsed : null;
-        } catch (_) {
-          return null;
-        }
-      }
-
-      function formatScanProgress(state) {
-        if (!state || typeof state !== "object") {
-          return {
-            text: trOr("resultsIpScanProgressIdle", "Progress: idle"),
-            showLoader: true,
-          };
-        }
-
-        var processed = Number(state.processed);
-        var total = Number(state.total);
-        var found = Number(state.found);
-        if (!Number.isFinite(processed)) processed = 0;
-        if (!Number.isFinite(total)) total = 0;
-        if (!Number.isFinite(found)) found = 0;
-
-        var percent = total > 0 ? Math.round((processed / total) * 100) : 0;
-        if (percent < 0) percent = 0;
-        if (percent > 100) percent = 100;
-
-        if (total <= 0 && processed <= 0) {
-          return {
-            text: trOr("resultsIpScanProgressIdle", "Progress: idle"),
-            showLoader: true,
-          };
-        }
-
-        return {
-          text: "Progress: " + processed + "/" + total + " (" + percent + "%) | found: " + found,
-          showLoader: false,
-        };
-      }
-
       function readPersistedScanRows() {
         var STORAGE_KEY = "netrecon_scan_results_v1";
         try {
@@ -488,13 +430,6 @@
       }
 
       var persistedRows = readPersistedScanRows();
-      var scanProgress = formatScanProgress(readScanProgressState());
-      var scanProgressText = scanProgress && typeof scanProgress.text === "string"
-        ? scanProgress.text
-        : trOr("resultsIpScanProgressIdle", "Progress: idle");
-      var scanProgressMarkup = scanProgress && scanProgress.showLoader
-        ? buildScanProgressLoaderMarkup()
-        : escapeHtml(scanProgressText);
       var rows = persistedRows.length
         ? persistedRows
         : (Array.isArray(resultsIpConfig.sampleRows) ? resultsIpConfig.sampleRows : []);
@@ -672,7 +607,6 @@
         "<div class=\"v1-results-meta-row\">",
         "<span>" + escapeHtml(trOr("resultsIpHostsLabel", resultsIpConfig.hostsLabel || "Hosty")) + ": <b id=\"resIpHostCount\">" + rows.length + "</b></span>",
         "<span>" + escapeHtml(trOr("resultsIpOpenPortsLabel", resultsIpConfig.openPortsLabel || "Otwarte porty")) + ": <b id=\"resIpPortCount\">" + totalPorts + "</b></span>",
-        "<span id=\"resIpScanProgressTop\" class=\"v1-results-progress-note\" title=\"" + escapeHtml(scanProgressText) + "\">" + scanProgressMarkup + "</span>",
         "<div class=\"v1-results-controls\">",
         filtersHtml,
         "<button type=\"button\" class=\"v1-results-columns-btn\" data-reset-filters>" + escapeHtml(trOr("resultsIpResetFilters", "Reset filters")) + "</button>",
