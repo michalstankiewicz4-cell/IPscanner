@@ -6,6 +6,15 @@
     var runMenuAction = deps.runMenuAction;
     var getScannerSidebarRuntime = deps.getScannerSidebarRuntime;
     var platform = deps.platform || ((window.NetReconNewUICore && window.NetReconNewUICore.platform) || {});
+    var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils
+      ? window.NetReconNewUICore.utils.net
+      : null;
+
+    function lookupPortService(port) {
+      return sharedNet && typeof sharedNet.lookupPortService === "function"
+        ? sharedNet.lookupPortService(port)
+        : "";
+    }
 
     // --- ip-scanner tool keys ---
     // Fallback tab order, scan data keys, and scan-engine state below are all
@@ -390,7 +399,10 @@
         ? payload.open_ports.filter(function (port) {
             var value = Number(port);
             return Number.isFinite(value) && value >= 1 && value <= 65535;
-          }).map(function (port) { return Math.round(Number(port)); })
+          }).map(function (port) {
+            var rounded = Math.round(Number(port));
+            return { port: rounded, protocol: "TCP", service: lookupPortService(rounded) };
+          })
         : [];
 
       var pingMs = Number(payload && payload.ping_ms);

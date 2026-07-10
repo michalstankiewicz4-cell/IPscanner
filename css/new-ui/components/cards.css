@@ -1100,6 +1100,32 @@
   word-break: break-word;
 }
 
+.v1-ip-port-badge {
+  border: 0;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-family: var(--font-ui);
+  letter-spacing: 0.02em;
+  color: var(--txt-dim);
+  background: #2f2f33;
+  white-space: nowrap;
+}
+
+.v1-ip-port-badge--protocol.is-tcp {
+  color: #bcd4ff;
+  background: #22314d;
+}
+
+.v1-ip-port-badge--protocol.is-udp {
+  color: #ffd9b3;
+  background: #4d3822;
+}
+
+.v1-ip-port-badge--service {
+  color: #c7e8c9;
+  background: #253524;
+}
+
 .v1-ip-port-empty {
   color: var(--txt-dim);
   font-style: italic;

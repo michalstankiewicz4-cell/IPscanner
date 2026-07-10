@@ -7,6 +7,7 @@
     var i18n = deps.i18n;
     var extensionHost = deps.extensionHost;
     var core = window.NetReconNewUICore || {};
+    var sharedNet = core.utils ? core.utils.net : null;
     var contentConfig = core.panelContentConfig || {};
     var versionsConfig = contentConfig.versions || {};
     var importToolConfig = contentConfig.importTool || {};
@@ -479,14 +480,21 @@
           return {
             portLabel: String(rawPort || "").replace(/^:/, "").trim(),
             httpPageTitle: String(port.httpPageTitle || port.pageTitle || port.title || "").trim(),
-            accessSnapshot: String(port.accessSnapshot || port.access || port.snapshot || port.url || "").trim()
+            accessSnapshot: String(port.accessSnapshot || port.access || port.snapshot || port.url || "").trim(),
+            protocol: String(port.protocol || "TCP").trim().toUpperCase(),
+            service: String(port.service || "").trim()
           };
         }
 
+        var legacyLabel = String(port || "").replace(/^:/, "").trim();
         return {
-          portLabel: String(port || "").replace(/^:/, "").trim(),
+          portLabel: legacyLabel,
           httpPageTitle: "",
-          accessSnapshot: ""
+          accessSnapshot: "",
+          protocol: "TCP",
+          service: sharedNet && typeof sharedNet.lookupPortService === "function"
+            ? sharedNet.lookupPortService(legacyLabel)
+            : ""
         };
       }
 
@@ -516,12 +524,14 @@
           var portKey = String(row.ip || "").trim() + "|" + portLabel;
           var portHttpTitle = portEntry.httpPageTitle || "-";
           var portAccess = portEntry.accessSnapshot || "-";
+          var portProtocolBadge = "<span class=\"v1-ip-port-badge v1-ip-port-badge--protocol is-" + escapeHtml(portEntry.protocol.toLowerCase()) + "\">" + escapeHtml(portEntry.protocol) + "</span>";
+          var portServiceBadge = portEntry.service ? "<span class=\"v1-ip-port-badge v1-ip-port-badge--service\">" + escapeHtml(portEntry.service) + "</span>" : "";
           return [
             "<tr class=\"v1-ip-port-row\" data-ports-row=\"" + idx + "\" data-port-index=\"" + portIdx + "\" data-port-key=\"" + escapeHtml(portKey) + "\" data-status=\"" + escapeHtml(statusKey) + "\" hidden>",
             "<td class=\"v1-ip-col-check\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-port-action=\"check\" data-port-key=\"" + escapeHtml(portKey) + "\" aria-pressed=\"false\" aria-label=\"Mark port\">✓</button></td>",
             "<td class=\"v1-ip-col-star\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-port-action=\"favorite\" data-port-key=\"" + escapeHtml(portKey) + "\" aria-pressed=\"false\" aria-label=\"Add port to favorites\">★</button></td>",
             "<td class=\"v1-ip-col-status\" aria-hidden=\"true\"></td>",
-            "<td class=\"v1-ip-col-ip\"><span class=\"v1-ip-port-line\"><span class=\"v1-ip-port-chip-emoji\" aria-hidden=\"true\" title=\"" + escapeHtml(selectedPresetLabel) + "\">" + escapeHtml(selectedPresetEmoji) + "</span><span class=\"v1-ip-port-value\">" + escapeHtml(portLabel) + "</span></span></td>",
+            "<td class=\"v1-ip-col-ip\"><span class=\"v1-ip-port-line\"><span class=\"v1-ip-port-chip-emoji\" aria-hidden=\"true\" title=\"" + escapeHtml(selectedPresetLabel) + "\">" + escapeHtml(selectedPresetEmoji) + "</span><span class=\"v1-ip-port-value\">" + escapeHtml(portLabel) + "</span>" + portProtocolBadge + portServiceBadge + "</span></td>",
             "<td class=\"v1-ip-col-expand\" aria-hidden=\"true\"></td>",
             "<td class=\"v1-ip-col-ping\" aria-hidden=\"true\"></td>",
             "<td class=\"v1-ip-col-host\" data-col=\"hostname\" aria-hidden=\"true\"></td>",

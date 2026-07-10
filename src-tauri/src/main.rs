@@ -823,6 +823,14 @@ fn open_language_file_dialog() -> Result<LanguageFilePick, String> {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct ScanPortEntry {
+    port: i64,
+    protocol: String,
+    service: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ScanResultRow {
     ip: String,
     ping: String,
@@ -834,7 +842,7 @@ struct ScanResultRow {
     device_identification: String,
     status: String,
     status_class: String,
-    ports: Vec<i64>,
+    ports: Vec<ScanPortEntry>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -925,7 +933,9 @@ const SESSION_SCHEMA_SQL: &str = "
     CREATE TABLE IF NOT EXISTS scan_result_ports (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       result_id INTEGER NOT NULL REFERENCES scan_results(id) ON DELETE CASCADE,
-      port INTEGER NOT NULL
+      port INTEGER NOT NULL,
+      protocol TEXT NOT NULL DEFAULT 'TCP',
+      service TEXT NOT NULL DEFAULT ''
     );
     CREATE TABLE IF NOT EXISTS ip_library_entries (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -979,6 +989,18 @@ fn open_session_sqlite_conn(path: &Path) -> Result<Connection, String> {
         .map_err(|e| format!("Failed to drop legacy session table: {e}"))?;
     conn.execute_batch(SESSION_SCHEMA_SQL)
         .map_err(|e| format!("Failed to initialize session schema: {e}"))?;
+    // Migration: older session files already have scan_result_ports with
+    // only (id, result_id, port) - CREATE TABLE IF NOT EXISTS above is a
+    // no-op against that pre-existing table, so add the missing columns
+    // explicitly. `prepare` fails at compile time on an unknown column
+    // regardless of row count, unlike `query_row` (which would also fail on
+    // a merely-empty table and false-positive the migration).
+    if conn.prepare("SELECT protocol, service FROM scan_result_ports").is_err() {
+        conn.execute_batch(
+            "ALTER TABLE scan_result_ports ADD COLUMN protocol TEXT NOT NULL DEFAULT 'TCP';
+             ALTER TABLE scan_result_ports ADD COLUMN service TEXT NOT NULL DEFAULT '';"
+        ).map_err(|e| format!("Failed to migrate scan_result_ports schema: {e}"))?;
+    }
     Ok(conn)
 }
 
@@ -995,7 +1017,7 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             .prepare_cached("INSERT INTO scan_results (ip, ping, hostname, flag, isp, as_info, device_identification, status, status_class) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)")
             .map_err(|e| format!("Failed to prepare scan_results insert: {e}"))?;
         let mut insert_port = tx
-            .prepare_cached("INSERT INTO scan_result_ports (result_id, port) VALUES (?1, ?2)")
+            .prepare_cached("INSERT INTO scan_result_ports (result_id, port, protocol, service) VALUES (?1, ?2, ?3, ?4)")
             .map_err(|e| format!("Failed to prepare scan_result_ports insert: {e}"))?;
 
         for row in &data.scan_results {
@@ -1005,7 +1027,7 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             let result_id = tx.last_insert_rowid();
             for port in &row.ports {
                 insert_port
-                    .execute(params![result_id, port])
+                    .execute(params![result_id, port.port, port.protocol, port.service])
                     .map_err(|e| format!("Failed to insert scan_result_ports row: {e}"))?;
             }
         }
@@ -1118,16 +1140,35 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
     }
 
     {
-        let mut ports_stmt = conn
-            .prepare("SELECT result_id, port FROM scan_result_ports ORDER BY id")
-            .map_err(|e| format!("Failed to prepare scan_result_ports read: {e}"))?;
-        let port_rows = ports_stmt
-            .query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?)))
-            .map_err(|e| format!("Failed to query scan_result_ports: {e}"))?;
-        for row in port_rows {
-            let (result_id, port) = row.map_err(|e| format!("Failed to read scan_result_ports row: {e}"))?;
+        // Older session files may not have the protocol/service columns yet
+        // (added after this file was last saved) - reading must not mutate
+        // the file (only a save/write runs the ALTER TABLE migration), so
+        // fall back to defaults here instead.
+        let has_protocol_service = conn.prepare("SELECT protocol, service FROM scan_result_ports").is_ok();
+        let port_rows: Vec<(i64, i64, String, String)> = if has_protocol_service {
+            let mut ports_stmt = conn
+                .prepare("SELECT result_id, port, protocol, service FROM scan_result_ports ORDER BY id")
+                .map_err(|e| format!("Failed to prepare scan_result_ports read: {e}"))?;
+            let rows = ports_stmt
+                .query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?, row.get::<_, String>(2)?, row.get::<_, String>(3)?)))
+                .map_err(|e| format!("Failed to query scan_result_ports: {e}"))?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| format!("Failed to read scan_result_ports row: {e}"))?;
+            rows
+        } else {
+            let mut ports_stmt = conn
+                .prepare("SELECT result_id, port FROM scan_result_ports ORDER BY id")
+                .map_err(|e| format!("Failed to prepare scan_result_ports read (legacy): {e}"))?;
+            let rows = ports_stmt
+                .query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?, "TCP".to_string(), String::new())))
+                .map_err(|e| format!("Failed to query scan_result_ports (legacy): {e}"))?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| format!("Failed to read scan_result_ports row (legacy): {e}"))?;
+            rows
+        };
+        for (result_id, port, protocol, service) in port_rows {
             if let Some(&idx) = scan_result_index.get(&result_id) {
-                scan_results[idx].ports.push(port);
+                scan_results[idx].ports.push(ScanPortEntry { port, protocol, service });
             }
         }
     }

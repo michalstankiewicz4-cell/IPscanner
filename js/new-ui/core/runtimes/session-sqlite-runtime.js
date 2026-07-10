@@ -18,7 +18,9 @@
     "CREATE TABLE IF NOT EXISTS scan_result_ports (",
     "  id INTEGER PRIMARY KEY AUTOINCREMENT,",
     "  result_id INTEGER NOT NULL REFERENCES scan_results(id) ON DELETE CASCADE,",
-    "  port INTEGER NOT NULL",
+    "  port INTEGER NOT NULL,",
+    "  protocol TEXT NOT NULL DEFAULT 'TCP',",
+    "  service TEXT NOT NULL DEFAULT ''",
     ");",
     "CREATE TABLE IF NOT EXISTS ip_library_entries (",
     "  id INTEGER PRIMARY KEY AUTOINCREMENT, country_code TEXT NOT NULL, cidr TEXT NOT NULL",
@@ -85,7 +87,7 @@
         var insertResult = db.prepare(
           "INSERT INTO scan_results (id, ip, ping, hostname, flag, isp, as_info, device_identification, status, status_class) VALUES (?,?,?,?,?,?,?,?,?,?)"
         );
-        var insertPort = db.prepare("INSERT INTO scan_result_ports (result_id, port) VALUES (?, ?)");
+        var insertPort = db.prepare("INSERT INTO scan_result_ports (result_id, port, protocol, service) VALUES (?, ?, ?, ?)");
         scanResults.forEach(function (row, index) {
           row = row || {};
           var id = index + 1;
@@ -103,7 +105,11 @@
           ]);
           var ports = Array.isArray(row.ports) ? row.ports : [];
           ports.forEach(function (port) {
-            insertPort.run([id, Number(port) || 0]);
+            if (port && typeof port === "object") {
+              insertPort.run([id, Number(port.port) || 0, String(port.protocol || "TCP"), String(port.service || "")]);
+            } else {
+              insertPort.run([id, Number(port) || 0, "TCP", ""]);
+            }
           });
         });
         insertResult.free();
@@ -203,11 +209,24 @@
           });
         }
 
-        var portsRows = db.exec("SELECT result_id, port FROM scan_result_ports ORDER BY id");
+        // Older session files may not have the protocol/service columns yet
+        // (added after this file was last saved) - fall back to defaults
+        // rather than failing to load the file.
+        var portsRows;
+        try {
+          portsRows = db.exec("SELECT result_id, port, protocol, service FROM scan_result_ports ORDER BY id");
+        } catch (_) {
+          portsRows = db.exec("SELECT result_id, port FROM scan_result_ports ORDER BY id");
+        }
         if (portsRows.length) {
           portsRows[0].values.forEach(function (row) {
             var idx = indexById[row[0]];
-            if (idx !== undefined && scanResults[idx]) scanResults[idx].ports.push(Number(row[1]) || 0);
+            if (idx === undefined || !scanResults[idx]) return;
+            scanResults[idx].ports.push({
+              port: Number(row[1]) || 0,
+              protocol: row.length > 2 ? String(row[2] || "TCP") : "TCP",
+              service: row.length > 3 ? String(row[3] || "") : "",
+            });
           });
         }
 

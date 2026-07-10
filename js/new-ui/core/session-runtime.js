@@ -31,9 +31,18 @@
     var getNavigationRuntime = deps.getNavigationRuntime || function () { return null; };
     var refreshCustomScrollbars = deps.refreshCustomScrollbars || function () {};
     var sessionSqlite = deps.sessionSqlite || null;
+    var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils
+      ? window.NetReconNewUICore.utils.net
+      : null;
 
     function isWww() {
       return !platform.getInvoke || !platform.getInvoke();
+    }
+
+    function lookupPortService(port) {
+      return sharedNet && typeof sharedNet.lookupPortService === "function"
+        ? sharedNet.lookupPortService(port)
+        : "";
     }
 
     function storage() {
@@ -109,9 +118,17 @@
 
       var scanResults = (Array.isArray(scanResultsRaw) ? scanResultsRaw : []).map(function (row) {
         row = row || {};
-        var ports = Array.isArray(row.ports) ? row.ports.map(Number).filter(function (p) {
-          return Number.isFinite(p);
-        }) : [];
+        var ports = (Array.isArray(row.ports) ? row.ports : []).map(function (p) {
+          if (p && typeof p === "object") {
+            var n = Number(p.port);
+            if (!Number.isFinite(n)) return null;
+            return { port: n, protocol: String(p.protocol || "TCP"), service: String(p.service || "") };
+          }
+          // Legacy bare-number ports (pre-dating protocol/service tagging) -
+          // self-heal into the current shape on next save.
+          var legacy = Number(p);
+          return Number.isFinite(legacy) ? { port: legacy, protocol: "TCP", service: lookupPortService(legacy) } : null;
+        }).filter(Boolean);
         return {
           ip: String(row.ip || ""),
           ping: String(row.ping || "-"),

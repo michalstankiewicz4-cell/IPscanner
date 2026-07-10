@@ -55,6 +55,21 @@ Relacja 1-do-wielu wzgledem scan_results (jeden host moze miec wiele portow).
                przy usunieciu wiersza z scan_results, powiazane porty
                usuwaja sie automatycznie (ON DELETE CASCADE)
   port       - numer portu (np. 80, 443, 22)
+  protocol   - protokol tego portu, dzis zawsze "TCP" (aplikacja nie robi
+               realnego skanowania UDP - to pole istnieje pod przyszla
+               rozbudowe, nie jest wyliczane z numeru portu)
+  service    - rozpoznana nazwa uslugi dla tego portu (np. "HTTP" dla 80),
+               z tabeli w js/new-ui/core/utils/net-utils.js; puste jesli port
+               nie jest rozpoznany. Zapisywane w chwili skanu, nie przeliczane
+               na nowo przy kazdym wczytaniu - zmiana tabeli rozpoznawania w
+               przyszlej wersji aplikacji nie zmieni etykiet w juz zapisanych
+               sesjach
+
+Uwaga (migracja): pliki sesji zapisane przed dodaniem protocol/service maja
+tylko 3 kolumny (id, result_id, port). Zapis takiego pliku dopisuje brakujace
+kolumny automatycznie (ALTER TABLE, patrz open_session_sqlite_conn w
+main.rs); odczyt starego pliku bez zapisywania go od razu dziala tez
+poprawnie - brakujace wartosci pokazuja sie jako protocol="TCP", service="".
 
 
 TABELA: ip_library_entries
