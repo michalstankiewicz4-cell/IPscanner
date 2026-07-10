@@ -304,6 +304,13 @@
         applyStaticTranslations();
         if (setTooltips) setTooltips();
         if (refreshActiveUI) refreshActiveUI();
+        // ShellCraft's Library (LS) and Inspector (RS) render once at
+        // startup into persistent mounts outside #v1ToolDetail, so
+        // refreshActiveUI()'s #v1ToolDetail-only rebuild never reaches them -
+        // re-render them explicitly so their strings pick up the new language.
+        if (panelsRuntime && panelsRuntime.refreshShellCraftPanels) {
+          panelsRuntime.refreshShellCraftPanels();
+        }
         requestAnimationFrame(function () {
           if (typeof refreshCustomScrollbars === "function") refreshCustomScrollbars();
         });

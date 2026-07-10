@@ -1157,6 +1157,8 @@
       cardB.setAttribute("data-detached-tool", toolA);
       cardA.classList.toggle("is-versions-view", toolB === "versions");
       cardB.classList.toggle("is-versions-view", toolA === "versions");
+      cardA.classList.toggle("is-shellcraft-view", toolB === "shellcraft");
+      cardB.classList.toggle("is-shellcraft-view", toolA === "shellcraft");
       detachedCards[toolA] = cardB;
       detachedCards[toolB] = cardA;
     }
@@ -1174,6 +1176,7 @@
       card.className = "v1-card v1-detached-tool-card";
       card.setAttribute("data-detached-tool", tool);
       card.classList.toggle("is-versions-view", tool === "versions");
+      card.classList.toggle("is-shellcraft-view", tool === "shellcraft");
 
       var header = document.createElement("div");
       header.className = "v1-detached-tool-head";
@@ -2811,6 +2814,15 @@
       }).filter(Boolean);
     }
 
+    function refreshShellCraftPanels() {
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireShellCraftLibrary) {
+        panelInteractionsRuntime.wireShellCraftLibrary();
+      }
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireShellCraftInspector) {
+        panelInteractionsRuntime.wireShellCraftInspector();
+      }
+    }
+
     return {
       setTooltips: setTooltips,
       refreshActiveUI: refreshActiveUI,
@@ -2824,6 +2836,7 @@
       initWorkbenchTabs: initWorkbenchTabs,
       buildDetailHtml: buildDetailHtml,
       wireToolRuntime: wireToolRuntime,
+      refreshShellCraftPanels: refreshShellCraftPanels,
     };
   }
 

@@ -16,6 +16,22 @@
   flex-direction: column;
 }
 
+/* Same fix, mirrored for a detached/floating ShellCraft window - it has its
+   own overflow:auto card body (.v1-detached-tool-body) and .tool-detail
+   wrapper, separate from #v1MainCard/#v1ToolDetail. */
+.v1-detached-tool-card.is-shellcraft-view .v1-detached-tool-body {
+  overflow: hidden;
+}
+
+.v1-detached-tool-card.is-shellcraft-view .tool-detail {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .v1-shellcraft-view-switcher {
   flex: 0 0 auto;
   display: flex;

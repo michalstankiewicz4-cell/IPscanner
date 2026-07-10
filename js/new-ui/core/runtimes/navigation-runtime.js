@@ -9,6 +9,7 @@
     var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils
       ? window.NetReconNewUICore.utils.net
       : null;
+    var shellcraftInspectorClosedByUser = false;
 
     function lookupPortService(port) {
       return sharedNet && typeof sharedNet.lookupPortService === "function"
@@ -1146,8 +1147,10 @@
           if (tool === "shellcraft") {
             ensureSidebarTabOpen("shellcraft-library");
             setLeftActiveTab("shellcraft-library");
-            ensureRightTabOpen("shellcraft-inspector");
-            setRightTabActive("shellcraft-inspector");
+            if (!shellcraftInspectorClosedByUser) {
+              ensureRightTabOpen("shellcraft-inspector");
+              setRightTabActive("shellcraft-inspector");
+            }
           }
           switchTool(tool);
           return;
@@ -1171,8 +1174,10 @@
         } else if (tool === "shellcraft") {
           ensureSidebarTabOpen("shellcraft-library");
           setLeftActiveTab("shellcraft-library");
-          ensureRightTabOpen("shellcraft-inspector");
-          setRightTabActive("shellcraft-inspector");
+          if (!shellcraftInspectorClosedByUser) {
+            ensureRightTabOpen("shellcraft-inspector");
+            setRightTabActive("shellcraft-inspector");
+          }
         }
         switchTool(tool);
       });
@@ -1289,6 +1294,9 @@
       function append(line) {
         outputEl.textContent += (outputEl.textContent ? "\n" : "") + line;
         outputEl.scrollTop = outputEl.scrollHeight;
+        document.dispatchEvent(new CustomEvent("newui:console-pane-update", {
+          detail: { pane: "macro", source: "macro-console", text: String(line || "") },
+        }));
       }
 
       function findMacro(query) {
@@ -1323,7 +1331,12 @@
           return;
         }
 
-        macrosApi.runMacro(macro.id);
+        var ran = macrosApi.runMacro(macro.id);
+        if (!ran) {
+          append(tr("statusMacroRunFailed") + ": " + tr(macro.nameKey));
+          if (setStatusLine) setStatusLine(tr("statusMacroRunFailed") + ": " + tr(macro.nameKey));
+          return;
+        }
         append(tr("statusMacroRun") + ": " + tr(macro.nameKey));
         if (setStatusLine) setStatusLine(tr("statusMacroRun") + ": " + tr(macro.nameKey));
       }
@@ -1358,8 +1371,17 @@
           evt.stopPropagation();
           var tab = close.getAttribute("data-tool");
           if (!tab) return;
+          if (tab === "shellcraft-inspector") shellcraftInspectorClosedByUser = true;
           setRightTabOpen(tab, false);
         });
+      });
+
+      document.addEventListener("newui:shellcraft-block-selected", function () {
+        // Selecting a block is a clear signal the user wants to see its
+        // properties again - let the next ShellCraft entry-point click
+        // re-open Inspector rather than leaving it permanently unreachable
+        // after one manual close.
+        shellcraftInspectorClosedByUser = false;
       });
 
       var chat = document.getElementById("v1AiChatHistory");

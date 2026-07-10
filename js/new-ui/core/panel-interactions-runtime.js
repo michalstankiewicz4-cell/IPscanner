@@ -6,6 +6,32 @@
     var renderShellCraftLibrary = typeof deps.renderShellCraftLibrary === "function" ? deps.renderShellCraftLibrary : null;
     var renderCanvasBlockHtml = typeof deps.renderCanvasBlockHtml === "function" ? deps.renderCanvasBlockHtml : null;
     var renderShellCraftInspector = typeof deps.renderShellCraftInspector === "function" ? deps.renderShellCraftInspector : null;
+    // #v1ShellCraftCanvas is torn down and recreated every time the ShellCraft
+    // tab is (re)activated (wireToolRuntime -> wireShellCraftCanvas runs on
+    // every switchTool), so a dataset flag on that element can never prevent
+    // re-registration of the document-level listeners below - only explicit
+    // teardown of the PREVIOUS bind's listeners does. Canvas-local listeners
+    // (dragover/drop/dragstart/click/mousedown) don't need this: they're
+    // discarded along with the old, detached canvasEl automatically.
+    var shellcraftCanvasTeardown = null;
+    // #v1ShellCraftInspector, unlike the canvas, is a stable element that's
+    // never recreated - so its own dataset bind-guard correctly protects
+    // document-level listeners here, as long as selection state lives
+    // outside the function body (it must survive repeat calls, e.g. a
+    // future language-refresh re-render, the same way the guard does).
+    var shellcraftInspectorSelectedBlockId = "";
+    var shellcraftInspectorSuppressNextRender = false;
+
+    // Shared by the canvas block's Run button and the Inspector's Run button
+    // so both report identical, correct status-line feedback - including on
+    // failure (runMacro returns false when the target scanner button isn't
+    // in the DOM), instead of the two call sites drifting independently.
+    function runMacroAndReportStatus(macrosApi, macroId) {
+      var macro = macrosApi ? macrosApi.getMacro(macroId) : null;
+      var ran = macrosApi ? macrosApi.runMacro(macroId) : false;
+      if (!setStatusLine || !macro) return;
+      setStatusLine((ran ? tr("statusMacroRun") : tr("statusMacroRunFailed")) + ": " + tr(macro.nameKey));
+    }
 
     function escapeHtml(value) {
       return String(value == null ? "" : value)
@@ -1005,12 +1031,21 @@
         ? rootEl
         : document.getElementById("v1ToolDetail");
       if (!root) return;
-      var canvasEl = root.querySelector("#v1ShellCraftCanvas");
+      // Detached/floating tool windows render their HTML through
+      // panels-runtime.js's stripIds() (removes every id="..." attribute to
+      // avoid duplicate-id conflicts with the docked view), so this must
+      // resolve the canvas by its class, not its id, to keep working there.
+      var canvasEl = root.querySelector(".v1-shellcraft-canvas");
       if (!canvasEl || !renderCanvasBlockHtml) return;
 
       var canvasApi = (window.NetReconNewUICore && window.NetReconNewUICore.shellcraftCanvas) || null;
       var macrosApi = (window.NetReconNewUICore && window.NetReconNewUICore.macros) || null;
       if (!canvasApi) return;
+
+      if (shellcraftCanvasTeardown) {
+        shellcraftCanvasTeardown();
+        shellcraftCanvasTeardown = null;
+      }
 
       var selectedBlockId = "";
 
@@ -1025,13 +1060,11 @@
 
       render();
 
-      document.addEventListener("newui:shellcraft-canvas-changed", function () {
+      function onCanvasChanged() {
         if (!document.body.contains(canvasEl)) return;
         render();
-      });
-
-      if (canvasEl.dataset.shellcraftBound === "1") return;
-      canvasEl.dataset.shellcraftBound = "1";
+      }
+      document.addEventListener("newui:shellcraft-canvas-changed", onCanvasChanged);
 
       // No visible scrollbars (shell has overflow:hidden) - panning happens
       // by click-and-drag on empty canvas background instead. scrollLeft/Top
@@ -1043,7 +1076,7 @@
       var panScrollLeft = 0;
       var panScrollTop = 0;
 
-      canvasEl.addEventListener("mousedown", function (event) {
+      function onCanvasMouseDown(event) {
         if (event.target !== canvasEl || !canvasShellEl) return;
         isPanning = true;
         panStartX = event.clientX;
@@ -1052,19 +1085,57 @@
         panScrollTop = canvasShellEl.scrollTop;
         canvasEl.classList.add("is-panning");
         event.preventDefault();
-      });
+      }
 
-      document.addEventListener("mousemove", function (event) {
+      function onDocumentMouseMove(event) {
         if (!isPanning || !canvasShellEl) return;
         canvasShellEl.scrollLeft = panScrollLeft - (event.clientX - panStartX);
         canvasShellEl.scrollTop = panScrollTop - (event.clientY - panStartY);
-      });
+      }
 
-      document.addEventListener("mouseup", function () {
+      function onDocumentMouseUp() {
         if (!isPanning) return;
         isPanning = false;
         canvasEl.classList.remove("is-panning");
+      }
+
+      canvasEl.addEventListener("mousedown", onCanvasMouseDown);
+      document.addEventListener("mousemove", onDocumentMouseMove);
+      document.addEventListener("mouseup", onDocumentMouseUp);
+
+      // Click-drag is the only pan input so far - also support mouse wheel /
+      // trackpad scroll and keyboard, matching what overflow:auto would have
+      // given for free before it was replaced with overflow:hidden + manual
+      // panning. These are canvas-local (not document-level), so they don't
+      // need the same teardown/leak handling as the pan listeners above.
+      canvasEl.tabIndex = 0;
+
+      canvasEl.addEventListener("wheel", function (event) {
+        if (!canvasShellEl) return;
+        canvasShellEl.scrollLeft += event.deltaX;
+        canvasShellEl.scrollTop += event.deltaY;
+        event.preventDefault();
+      }, { passive: false });
+
+      canvasEl.addEventListener("keydown", function (event) {
+        if (!canvasShellEl) return;
+        var step = 40;
+        if (event.key === "ArrowLeft") canvasShellEl.scrollLeft -= step;
+        else if (event.key === "ArrowRight") canvasShellEl.scrollLeft += step;
+        else if (event.key === "ArrowUp") canvasShellEl.scrollTop -= step;
+        else if (event.key === "ArrowDown") canvasShellEl.scrollTop += step;
+        else if (event.key === "PageUp") canvasShellEl.scrollTop -= canvasShellEl.clientHeight;
+        else if (event.key === "PageDown") canvasShellEl.scrollTop += canvasShellEl.clientHeight;
+        else if (event.key === "Home") { canvasShellEl.scrollLeft = 0; canvasShellEl.scrollTop = 0; }
+        else return;
+        event.preventDefault();
       });
+
+      shellcraftCanvasTeardown = function () {
+        document.removeEventListener("newui:shellcraft-canvas-changed", onCanvasChanged);
+        document.removeEventListener("mousemove", onDocumentMouseMove);
+        document.removeEventListener("mouseup", onDocumentMouseUp);
+      };
 
       canvasEl.addEventListener("dragover", function (event) {
         event.preventDefault();
@@ -1120,21 +1191,16 @@
 
         var runBtn = event.target && event.target.closest ? event.target.closest("[data-canvas-macro-run]") : null;
         if (runBtn) {
-          var macroId = runBtn.getAttribute("data-canvas-macro-run");
-          if (macrosApi) macrosApi.runMacro(macroId);
-          var macro = macrosApi ? macrosApi.getMacro(macroId) : null;
-          if (setStatusLine && macro) setStatusLine(tr("statusMacroRun") + ": " + tr(macro.nameKey));
-          return;
-        }
-
-        var notRunnableBtn = event.target && event.target.closest ? event.target.closest("[data-block-not-runnable] .v1-canvas-block-run-btn") : null;
-        if (notRunnableBtn) {
-          if (setStatusLine) setStatusLine(tr("statusBlockNotExecutable"));
+          runMacroAndReportStatus(macrosApi, runBtn.getAttribute("data-canvas-macro-run"));
           return;
         }
 
         var blockEl = event.target && event.target.closest ? event.target.closest(".v1-canvas-block") : null;
         if (!blockEl) return;
+
+        if (blockEl.hasAttribute("data-block-not-runnable") && setStatusLine) {
+          setStatusLine(tr("statusBlockNotExecutable"));
+        }
 
         selectedBlockId = blockEl.getAttribute("data-block-id");
         canvasEl.querySelectorAll(".v1-canvas-block.is-selected").forEach(function (el) {
@@ -1158,54 +1224,51 @@
       var macrosApi = (window.NetReconNewUICore && window.NetReconNewUICore.macros) || null;
       if (!canvasApi) return;
 
-      var selectedBlockId = "";
-      var suppressNextRender = false;
-
       function render() {
-        mount.innerHTML = renderShellCraftInspector(selectedBlockId);
+        mount.innerHTML = renderShellCraftInspector(shellcraftInspectorSelectedBlockId);
       }
 
       render();
 
+      if (mount.dataset.shellcraftBound === "1") return;
+      mount.dataset.shellcraftBound = "1";
+
       document.addEventListener("newui:shellcraft-block-selected", function (event) {
-        selectedBlockId = (event && event.detail && event.detail.blockId) || "";
+        shellcraftInspectorSelectedBlockId = (event && event.detail && event.detail.blockId) || "";
         render();
       });
 
       document.addEventListener("newui:shellcraft-canvas-changed", function () {
         if (!document.body.contains(mount)) return;
-        if (suppressNextRender) {
-          suppressNextRender = false;
+        if (shellcraftInspectorSuppressNextRender) {
+          shellcraftInspectorSuppressNextRender = false;
           return;
         }
         var state = canvasApi.getState();
-        if (selectedBlockId && !state.blocks.some(function (b) { return b.id === selectedBlockId; })) {
-          selectedBlockId = "";
+        if (shellcraftInspectorSelectedBlockId && !state.blocks.some(function (b) { return b.id === shellcraftInspectorSelectedBlockId; })) {
+          shellcraftInspectorSelectedBlockId = "";
         }
         render();
       });
 
-      if (mount.dataset.shellcraftBound === "1") return;
-      mount.dataset.shellcraftBound = "1";
-
       mount.addEventListener("input", function (event) {
         var target = event.target;
         if (!target || !target.matches || !target.matches("[data-inspector-field]")) return;
-        if (!selectedBlockId) return;
+        if (!shellcraftInspectorSelectedBlockId) return;
 
         var field = target.getAttribute("data-inspector-field");
         var value = (field === "maxIterations" || field === "intervalMinutes") ? Number(target.value) : target.value;
         var patch = {};
         patch[field] = value;
 
-        suppressNextRender = true;
-        canvasApi.updateBlockProperties(selectedBlockId, patch);
+        shellcraftInspectorSuppressNextRender = true;
+        canvasApi.updateBlockProperties(shellcraftInspectorSelectedBlockId, patch);
       });
 
       mount.addEventListener("click", function (event) {
         var runBtn = event.target && event.target.closest ? event.target.closest("[data-canvas-macro-run]") : null;
-        if (!runBtn || !macrosApi) return;
-        macrosApi.runMacro(runBtn.getAttribute("data-canvas-macro-run"));
+        if (!runBtn) return;
+        runMacroAndReportStatus(macrosApi, runBtn.getAttribute("data-canvas-macro-run"));
       });
     }
 
