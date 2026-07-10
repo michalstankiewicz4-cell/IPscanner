@@ -14,6 +14,7 @@
     ".v1-import-output",
     ".listview-body",
     ".v1-session-welcome-list",
+    ".v1-menu-dd-flyout",
   ];
 
   var TOOL_IP_SCANNER_SCROLL_TARGETS = [

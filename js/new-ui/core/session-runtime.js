@@ -34,6 +34,10 @@
     var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils
       ? window.NetReconNewUICore.utils.net
       : null;
+    var sharedDom = window.NetReconNewUICore && window.NetReconNewUICore.utils
+      ? window.NetReconNewUICore.utils.dom
+      : null;
+    var escapeHtml = (sharedDom && sharedDom.escapeHtml) || function (value) { return String(value == null ? "" : value); };
 
     function isWww() {
       return !platform.getInvoke || !platform.getInvoke();
@@ -331,17 +335,30 @@
 
     // --- www save/load via sql.js (real .sqlite3 bytes, no Tauri invoke) ---
 
-    function saveSessionToBrowser() {
+    // usePicker=true (Save As, or plain Save with no path yet) opens the
+    // native folder picker. usePicker=false (plain Save on an already-saved
+    // session) silently re-downloads to the same suggested filename, mirroring
+    // desktop's "Save" (write_session_file) which never re-prompts - only
+    // "Save As" should ever interrupt the user with a location dialog.
+    function saveSessionToBrowser(usePicker) {
       statusMsg(tr("sessionSqliteEngineLoading"));
       var data = collectSessionData();
       return sessionSqlite.encodeSessionData(data).then(function (bytes) {
         var s = storage();
-        var filename = (s && s.getItem(CURRENT_PATH_KEY)) || DEFAULT_FILENAME;
-        sessionSqlite.downloadBytes(filename, bytes);
-        rememberPathContext(filename);
-        statusMsg(tr("sessionSaveOk") + " (" + filename + ") — " + layoutSummary(data.layout));
-        return true;
-      }).catch(function () {
+        var suggestedName = (s && s.getItem(CURRENT_PATH_KEY)) || DEFAULT_FILENAME;
+        if (!usePicker) {
+          sessionSqlite.downloadBytes(suggestedName, bytes);
+          rememberPathContext(suggestedName);
+          statusMsg(tr("sessionSaveOk") + " (" + suggestedName + ") — " + layoutSummary(data.layout));
+          return true;
+        }
+        return sessionSqlite.saveBytesWithPicker(suggestedName, bytes).then(function (savedName) {
+          rememberPathContext(savedName || suggestedName);
+          statusMsg(tr("sessionSaveOk") + " (" + (savedName || suggestedName) + ") — " + layoutSummary(data.layout));
+          return true;
+        });
+      }).catch(function (err) {
+        if (isCancelled(err)) return false;
         statusMsg(tr("sessionSaveFailed"));
         return false;
       });
@@ -364,7 +381,7 @@
     // --- save / save as ---
 
     function saveSessionAs() {
-      if (sessionSqlite && isWww()) return saveSessionToBrowser();
+      if (sessionSqlite && isWww()) return saveSessionToBrowser(true);
       var data = collectSessionData();
       return resolveDefaultDir().then(function (defaultDir) {
         return platform.invoke("save_session_dialog", {
@@ -383,7 +400,10 @@
     }
 
     function saveSession() {
-      if (sessionSqlite && isWww()) return saveSessionToBrowser();
+      if (sessionSqlite && isWww()) {
+        var wwwCurrentPath = storage() ? storage().getItem(CURRENT_PATH_KEY) : null;
+        return saveSessionToBrowser(!wwwCurrentPath);
+      }
       var s = storage();
       var currentPath = s ? s.getItem(CURRENT_PATH_KEY) : null;
       if (!currentPath) return saveSessionAs();
@@ -562,6 +582,7 @@
         empty.className = "v1-menu-dd-flyout-empty";
         empty.textContent = tr("sessionListEmpty");
         flyout.appendChild(empty);
+        refreshCustomScrollbars();
         return;
       }
 
@@ -570,21 +591,23 @@
         btn.type = "button";
         btn.className = "v1-menu-dd-item v1-menu-dd-flyout-item";
         btn.title = item.path;
-        btn.innerHTML = "<span>" + escapeHtmlLocal(item.name) + "</span><span class=\"shortcut\"></span>";
+        btn.innerHTML = "<span>" + escapeHtml(item.name) + "</span><span class=\"shortcut\"></span>";
         btn.addEventListener("click", function (event) {
           event.stopPropagation();
           var fileGroup = document.querySelector('.v1-menu-group[data-menu="file"]');
           if (fileGroup) fileGroup.classList.remove("open");
+          var submenu = flyout.closest(".v1-menu-dd-submenu");
+          if (submenu) {
+            submenu.classList.remove("open");
+            var trigger = submenu.querySelector("[data-menu-submenu-trigger]");
+            if (trigger) trigger.setAttribute("aria-expanded", "false");
+          }
           loadSessionFromPath(item.path);
         });
         flyout.appendChild(btn);
       });
-    }
 
-    function escapeHtmlLocal(value) {
-      return String(value || "").replace(/[&<>"']/g, function (ch) {
-        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[ch];
-      });
+      refreshCustomScrollbars();
     }
 
     function initWelcomeView() {

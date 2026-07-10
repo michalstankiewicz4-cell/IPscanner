@@ -11,18 +11,6 @@
     var onSwitchTool = deps.onSwitchTool;
     var onToggleClippy = deps.onToggleClippy;
     var session = deps.session || null;
-    var exitDialogState = {
-      root: null,
-      title: null,
-      message: null,
-      saveBtn: null,
-      discardBtn: null,
-      cancelBtn: null,
-      resolver: null,
-      keyHandler: null,
-      backdropHandler: null,
-      lastFocused: null,
-    };
 
     function actionDefinition(action) {
       return (uiDefinitions.menuActions && uiDefinitions.menuActions[action]) || null;
@@ -56,130 +44,174 @@
       return true;
     }
 
-    function ensureExitDialog() {
-      if (exitDialogState.root && exitDialogState.root.isConnected) return exitDialogState;
+    // Shared factory behind both the app-exit dialog (3 buttons) and the
+    // generic OK/Cancel confirm dialog (2 buttons), replacing window.confirm()
+    // (unstyled, pinned to the top of the webview, not centered/themed).
+    // A single dialog instance can only show one request at a time; calls
+    // made while it's already open are queued instead of clobbering the
+    // in-flight one's resolver, and Tab is trapped within the button row so
+    // background controls stay unreachable while the dialog is open - both
+    // properties window.confirm() had "for free" as a native blocking modal.
+    function buildButtonDialog(idPrefix, buttonKeys) {
+      var state = { root: null, title: null, message: null, buttons: {}, resolver: null, queue: [], lastFocused: null };
 
-      var root = document.createElement("div");
-      root.className = "v1-exit-modal";
-      root.setAttribute("hidden", "hidden");
-      root.setAttribute("role", "dialog");
-      root.setAttribute("aria-modal", "true");
-      root.setAttribute("aria-labelledby", "v1ExitModalTitle");
-      root.setAttribute("aria-describedby", "v1ExitModalMessage");
+      function focusableButtons() {
+        return buttonKeys
+          .map(function (key) { return state.buttons[key]; })
+          .filter(function (btn) { return btn && btn.offsetParent !== null; });
+      }
 
-      var panel = document.createElement("div");
-      panel.className = "v1-exit-panel";
-
-      var head = document.createElement("div");
-      head.className = "v1-exit-head";
-
-      var title = document.createElement("h3");
-      title.id = "v1ExitModalTitle";
-      head.appendChild(title);
-
-      var message = document.createElement("p");
-      message.id = "v1ExitModalMessage";
-      message.className = "v1-exit-message";
-
-      var actions = document.createElement("div");
-      actions.className = "v1-exit-actions";
-
-      var saveBtn = document.createElement("button");
-      saveBtn.type = "button";
-      saveBtn.className = "v1-exit-btn v1-exit-btn--primary";
-      saveBtn.dataset.exitChoice = "save";
-
-      var discardBtn = document.createElement("button");
-      discardBtn.type = "button";
-      discardBtn.className = "v1-exit-btn";
-      discardBtn.dataset.exitChoice = "discard";
-
-      var cancelBtn = document.createElement("button");
-      cancelBtn.type = "button";
-      cancelBtn.className = "v1-exit-btn";
-      cancelBtn.dataset.exitChoice = "cancel";
-
-      actions.appendChild(saveBtn);
-      actions.appendChild(discardBtn);
-      actions.appendChild(cancelBtn);
-
-      panel.appendChild(head);
-      panel.appendChild(message);
-      panel.appendChild(actions);
-      root.appendChild(panel);
-      document.body.appendChild(root);
-
-      function resolveChoice(choice) {
-        if (typeof exitDialogState.resolver === "function") {
-          var done = exitDialogState.resolver;
-          exitDialogState.resolver = null;
-          done(choice || "cancel");
+      function finish(choice) {
+        state.root.setAttribute("hidden", "hidden");
+        document.removeEventListener("keydown", state._keyHandler, true);
+        state.root.removeEventListener("mousedown", state._backdropHandler);
+        if (state.lastFocused && typeof state.lastFocused.focus === "function") {
+          try { state.lastFocused.focus(); } catch (_) {}
+        }
+        var done = state.resolver;
+        state.resolver = null;
+        if (typeof done === "function") done(choice || "cancel");
+        if (state.queue.length) {
+          var nextRequest = state.queue.shift();
+          showNow(nextRequest.texts, nextRequest.resolve);
         }
       }
 
-      root.addEventListener("click", function (event) {
-        var target = event.target;
-        var choice = target && target.dataset ? target.dataset.exitChoice : "";
-        if (!choice) return;
-        root.setAttribute("hidden", "hidden");
-        if (exitDialogState.lastFocused && typeof exitDialogState.lastFocused.focus === "function") {
-          try { exitDialogState.lastFocused.focus(); } catch (_) {}
-        }
-        resolveChoice(choice);
-      });
+      function ensure() {
+        if (state.root && state.root.isConnected) return state;
 
-      exitDialogState.keyHandler = function (event) {
-        if (event.key !== "Escape") return;
-        event.preventDefault();
+        var root = document.createElement("div");
+        root.className = "v1-exit-modal";
         root.setAttribute("hidden", "hidden");
-        if (exitDialogState.lastFocused && typeof exitDialogState.lastFocused.focus === "function") {
-          try { exitDialogState.lastFocused.focus(); } catch (_) {}
-        }
-        resolveChoice("cancel");
-      };
+        root.setAttribute("role", "dialog");
+        root.setAttribute("aria-modal", "true");
+        root.setAttribute("aria-labelledby", idPrefix + "Title");
+        root.setAttribute("aria-describedby", idPrefix + "Message");
 
-      exitDialogState.backdropHandler = function (event) {
-        if (event.target !== root) return;
-        root.setAttribute("hidden", "hidden");
-        if (exitDialogState.lastFocused && typeof exitDialogState.lastFocused.focus === "function") {
-          try { exitDialogState.lastFocused.focus(); } catch (_) {}
-        }
-        resolveChoice("cancel");
-      };
+        var panel = document.createElement("div");
+        panel.className = "v1-exit-panel";
 
-      exitDialogState.root = root;
-      exitDialogState.title = title;
-      exitDialogState.message = message;
-      exitDialogState.saveBtn = saveBtn;
-      exitDialogState.discardBtn = discardBtn;
-      exitDialogState.cancelBtn = cancelBtn;
-      return exitDialogState;
+        var head = document.createElement("div");
+        head.className = "v1-exit-head";
+
+        var title = document.createElement("h3");
+        title.id = idPrefix + "Title";
+        head.appendChild(title);
+
+        var message = document.createElement("p");
+        message.id = idPrefix + "Message";
+        message.className = "v1-exit-message";
+
+        var actions = document.createElement("div");
+        actions.className = "v1-exit-actions";
+
+        buttonKeys.forEach(function (key, index) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "v1-exit-btn" + (index === 0 ? " v1-exit-btn--primary" : "");
+          btn.dataset.dialogChoice = key;
+          actions.appendChild(btn);
+          state.buttons[key] = btn;
+        });
+
+        panel.appendChild(head);
+        panel.appendChild(message);
+        panel.appendChild(actions);
+        root.appendChild(panel);
+        document.body.appendChild(root);
+
+        root.addEventListener("click", function (event) {
+          var target = event.target;
+          var choice = target && target.dataset ? target.dataset.dialogChoice : "";
+          if (!choice) return;
+          finish(choice);
+        });
+
+        state._keyHandler = function (event) {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            finish("cancel");
+            return;
+          }
+          if (event.key !== "Tab") return;
+          var list = focusableButtons();
+          if (!list.length) return;
+          event.preventDefault();
+          var current = list.indexOf(document.activeElement);
+          var next = event.shiftKey
+            ? (current <= 0 ? list.length - 1 : current - 1)
+            : (current === -1 || current === list.length - 1 ? 0 : current + 1);
+          try { list[next].focus(); } catch (_) {}
+        };
+
+        state._backdropHandler = function (event) {
+          if (event.target !== root) return;
+          finish("cancel");
+        };
+
+        state.root = root;
+        state.title = title;
+        state.message = message;
+        return state;
+      }
+
+      function showNow(texts, resolve) {
+        var modal = ensure();
+        modal.title.textContent = texts.title;
+        modal.message.textContent = texts.message;
+        buttonKeys.forEach(function (key) {
+          if (modal.buttons[key]) modal.buttons[key].textContent = (texts.labels && texts.labels[key]) || "";
+        });
+        modal.lastFocused = document.activeElement;
+        modal.root.removeAttribute("hidden");
+        document.addEventListener("keydown", modal._keyHandler, true);
+        modal.root.addEventListener("mousedown", modal._backdropHandler);
+        modal.resolver = resolve;
+        var focusKey = texts.focusKey || buttonKeys[0];
+        setTimeout(function () {
+          var btn = modal.buttons[focusKey];
+          if (btn) { try { btn.focus(); } catch (_) {} }
+        }, 0);
+      }
+
+      function open(texts) {
+        return new Promise(function (resolve) {
+          var modal = ensure();
+          var busy = modal.root && !modal.root.hasAttribute("hidden");
+          if (busy) {
+            state.queue.push({ texts: texts, resolve: resolve });
+            return;
+          }
+          showNow(texts, resolve);
+        });
+      }
+
+      return { open: open };
     }
 
+    var exitDialog = buildButtonDialog("v1ExitModal", ["save", "discard", "cancel"]);
+    var confirmDialog = buildButtonDialog("v1ConfirmModal", ["ok", "cancel"]);
+
     function openExitConfirmDialog() {
-      var modal = ensureExitDialog();
-      modal.title.textContent = tr("exitDialogTitle");
-      modal.message.textContent = tr("exitDialogMessage");
-      modal.saveBtn.textContent = tr("exitPromptSaveAndExit");
-      modal.discardBtn.textContent = tr("exitPromptExitWithoutSave");
-      modal.cancelBtn.textContent = tr("exitPromptCancel");
-      modal.lastFocused = document.activeElement;
-
-      modal.root.removeAttribute("hidden");
-      document.addEventListener("keydown", modal.keyHandler, true);
-      modal.root.addEventListener("mousedown", modal.backdropHandler);
-      setTimeout(function () {
-        try { modal.saveBtn.focus(); } catch (_) {}
-      }, 0);
-
-      return new Promise(function (resolve) {
-        modal.resolver = function (choice) {
-          modal.root.setAttribute("hidden", "hidden");
-          document.removeEventListener("keydown", modal.keyHandler, true);
-          modal.root.removeEventListener("mousedown", modal.backdropHandler);
-          resolve(choice || "cancel");
-        };
+      return exitDialog.open({
+        title: tr("exitDialogTitle"),
+        message: tr("exitDialogMessage"),
+        labels: {
+          save: tr("exitPromptSaveAndExit"),
+          discard: tr("exitPromptExitWithoutSave"),
+          cancel: tr("exitPromptCancel"),
+        },
+        focusKey: "save",
       });
+    }
+
+    function openConfirmDialog(titleText, messageText, okLabel, cancelLabel) {
+      return confirmDialog.open({
+        title: titleText,
+        message: messageText,
+        labels: { ok: okLabel, cancel: cancelLabel },
+        focusKey: "ok",
+      }).then(function (choice) { return choice === "ok"; });
     }
 
     function runMenuAction(action) {
@@ -365,10 +397,17 @@
         return;
       }
 
-      if (behavior === "close-session") {
+      if (behavior === "close-session" || behavior === "new-session") {
         if (!session) return;
-        if (!window.confirm(tr("sessionCloseConfirm"))) return;
-        session.closeSession();
+        var isNew = behavior === "new-session";
+        openConfirmDialog(
+          tr(isNew ? "sessionNewConfirmTitle" : "sessionCloseConfirmTitle"),
+          tr(isNew ? "sessionNewConfirm" : "sessionCloseConfirm"),
+          tr(isNew ? "sessionNewConfirmOk" : "sessionCloseConfirmOk"),
+          tr("exitPromptCancel")
+        ).then(function (confirmed) {
+          if (confirmed) session.closeSession();
+        });
         return;
       }
 
@@ -431,8 +470,24 @@
 
       var groups = Array.from(menubar.querySelectorAll(".v1-menu-group"));
 
+      function closeAllSubmenus() {
+        menubar.querySelectorAll(".v1-menu-dd-submenu.open").forEach(function (submenu) {
+          submenu.classList.remove("open");
+          var trigger = submenu.querySelector("[data-menu-submenu-trigger]");
+          if (trigger) trigger.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      function openSubmenu(submenu) {
+        closeAllSubmenus();
+        submenu.classList.add("open");
+        var trigger = submenu.querySelector("[data-menu-submenu-trigger]");
+        if (trigger) trigger.setAttribute("aria-expanded", "true");
+      }
+
       function closeAllMenus() {
         groups.forEach(function (group) { group.classList.remove("open"); });
+        closeAllSubmenus();
       }
 
       function openMenu(group) {
@@ -468,8 +523,39 @@
       });
 
       menubar.querySelectorAll(".v1-menu-dd-item").forEach(function (item) {
+        if (item.hasAttribute("data-menu-submenu-trigger")) return;
         item.addEventListener("click", function () {
+          if (item.getAttribute("aria-disabled") === "true") return;
           closeAllMenus();
+        });
+      });
+
+      menubar.querySelectorAll("[data-menu-submenu-trigger]").forEach(function (trigger) {
+        var submenu = trigger.closest(".v1-menu-dd-submenu");
+        if (!submenu) return;
+
+        trigger.addEventListener("click", function (event) {
+          event.stopPropagation();
+          if (submenu.classList.contains("open")) {
+            closeAllSubmenus();
+          } else {
+            openSubmenu(submenu);
+          }
+        });
+
+        trigger.addEventListener("keydown", function (event) {
+          if (event.key === "Enter" || event.key === " " || event.key === "ArrowRight" || event.key === "ArrowDown") {
+            event.preventDefault();
+            openSubmenu(submenu);
+            var firstItem = submenu.querySelector(".v1-menu-dd-flyout-item");
+            if (firstItem) { try { firstItem.focus(); } catch (_) {} }
+            return;
+          }
+          if ((event.key === "Escape" || event.key === "ArrowLeft") && submenu.classList.contains("open")) {
+            event.preventDefault();
+            closeAllSubmenus();
+            try { trigger.focus(); } catch (_) {}
+          }
         });
       });
 
@@ -504,6 +590,7 @@
       initMenuActions: initMenuActions,
       applyMenuAndPanelDefinitions: applyMenuAndPanelDefinitions,
       runMenuAction: runMenuAction,
+      openConfirmDialog: openConfirmDialog,
     };
   }
 

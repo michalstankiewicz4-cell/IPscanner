@@ -28,7 +28,7 @@
       label: "New",
       purposeKey: "tipActionNewSession",
       purpose: "Zamkniecie biezacej sesji i rozpoczecie nowej (jak Close).",
-      behavior: "close-session",
+      behavior: "new-session",
     },
     "save-session": {
       label: "Save",

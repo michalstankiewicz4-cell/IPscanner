@@ -282,7 +282,8 @@
 .v1-info-log.v1-custom-scroll-host,
 .v1-import-output.v1-custom-scroll-host,
 .v1-results-table-scroll--ip.v1-custom-scroll-host,
-.listview-body.v1-custom-scroll-host {
+.listview-body.v1-custom-scroll-host,
+.v1-menu-dd-flyout.v1-custom-scroll-host {
   padding-inline-end: var(--v1-scroll-safe-gutter);
   box-sizing: border-box;
 }

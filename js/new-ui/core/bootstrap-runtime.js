@@ -1047,6 +1047,8 @@
         initMenuBar = menuRuntime.initMenuBar;
         initMenuActions = menuRuntime.initMenuActions;
         applyMenuAndPanelDefinitions = menuRuntime.applyMenuAndPanelDefinitions;
+        window.NetReconNewUI = window.NetReconNewUI || {};
+        window.NetReconNewUI.openConfirmDialog = menuRuntime.openConfirmDialog;
       }
 
       const navigationRuntimeFactory = runtimeFactory.createNavigationRuntime

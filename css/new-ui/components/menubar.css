@@ -292,7 +292,8 @@
   z-index: 10021;
 }
 
-.v1-menu-dd-submenu:hover .v1-menu-dd-flyout {
+.v1-menu-dd-submenu:hover .v1-menu-dd-flyout,
+.v1-menu-dd-submenu.open .v1-menu-dd-flyout {
   display: block;
 }
 

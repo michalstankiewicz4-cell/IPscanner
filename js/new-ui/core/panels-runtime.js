@@ -1577,10 +1577,15 @@
           event.preventDefault();
           event.stopPropagation();
           if (event.stopImmediatePropagation) event.stopImmediatePropagation();
-          var shouldReset = window.confirm("Reset app memory and clear all saved state? The app will reload.");
-          if (!shouldReset) return;
-          resetPersistentMemory();
-          window.location.reload();
+          var confirmDialog = window.NetReconNewUI && window.NetReconNewUI.openConfirmDialog;
+          var confirmed = confirmDialog
+            ? confirmDialog(tr("devFullResetConfirmTitle"), tr("devFullResetConfirmMessage"), tr("devFullResetConfirmOk"), tr("exitPromptCancel"))
+            : Promise.resolve(window.confirm(tr("devFullResetConfirmMessage")));
+          confirmed.then(function (shouldReset) {
+            if (!shouldReset) return;
+            resetPersistentMemory();
+            window.location.reload();
+          });
         });
       }
 
@@ -2444,7 +2449,7 @@
       function installManifestObject(manifest, iconUrl) {
         if (!manifest || typeof manifest !== "object") {
           if (outputEl) outputEl.textContent = tr("extInvalidJson");
-          return false;
+          return Promise.resolve(false);
         }
 
         if (manifest.contributions && manifest.contributions.tools && typeof manifest.contributions.tools === "object") {
@@ -2458,36 +2463,48 @@
           });
         }
 
+        function finishInstall() {
+          var result = extensionHost && extensionHost.installExtension ? extensionHost.installExtension(manifest) : { ok: false, error: tr("extInstallFail") };
+          if (!result.ok) {
+            if (outputEl) outputEl.textContent = tr("extInstallFail") + "\n" + result.error;
+            return false;
+          }
+
+          registerExtensionCommands(result.manifest);
+          if (outputEl) outputEl.textContent = tr("extInstallOk") + "\n" + result.manifest.id + "@" + result.manifest.version;
+          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extInstallOk") + " - " + result.manifest.id);
+          if (window.NetReconNewUI && typeof window.NetReconNewUI.syncExtensionToolUi === "function") {
+            window.NetReconNewUI.syncExtensionToolUi();
+          }
+          listInstalled();
+          renderCatalog();
+          refreshActiveUI();
+          return true;
+        }
+
         // Show only permissions that are actually recognized/enforced (per
         // extensions.js's validateManifest), not the manifest's raw request -
         // otherwise the dialog could overstate what's really being granted.
         var core = window.NetReconNewUICore || {};
         var validated = core.extensions && core.extensions.validateManifest ? core.extensions.validateManifest(manifest) : null;
         var requestedPermissions = validated && validated.ok ? validated.manifest.permissions : [];
-        if (requestedPermissions.length) {
-          var confirmMsg = tr("extPermissionConfirmPrefix") + "\n\n- " + requestedPermissions.join("\n- ") + "\n\n" + tr("extPermissionConfirmSuffix");
-          if (!window.confirm(confirmMsg)) {
+        if (!requestedPermissions.length) {
+          return Promise.resolve(finishInstall());
+        }
+
+        var confirmMsg = tr("extPermissionConfirmPrefix") + "\n\n- " + requestedPermissions.join("\n- ") + "\n\n" + tr("extPermissionConfirmSuffix");
+        var confirmDialog = window.NetReconNewUI && window.NetReconNewUI.openConfirmDialog;
+        var confirmed = confirmDialog
+          ? confirmDialog(tr("extPermissionConfirmTitle"), confirmMsg, tr("extPermissionConfirmOk"), tr("exitPromptCancel"))
+          : Promise.resolve(window.confirm(confirmMsg));
+
+        return confirmed.then(function (ok) {
+          if (!ok) {
             if (outputEl) outputEl.textContent = tr("extPermissionDeclined");
             return false;
           }
-        }
-
-        var result = extensionHost && extensionHost.installExtension ? extensionHost.installExtension(manifest) : { ok: false, error: tr("extInstallFail") };
-        if (!result.ok) {
-          if (outputEl) outputEl.textContent = tr("extInstallFail") + "\n" + result.error;
-          return false;
-        }
-
-        registerExtensionCommands(result.manifest);
-        if (outputEl) outputEl.textContent = tr("extInstallOk") + "\n" + result.manifest.id + "@" + result.manifest.version;
-        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extInstallOk") + " - " + result.manifest.id);
-        if (window.NetReconNewUI && typeof window.NetReconNewUI.syncExtensionToolUi === "function") {
-          window.NetReconNewUI.syncExtensionToolUi();
-        }
-        listInstalled();
-        renderCatalog();
-        refreshActiveUI();
-        return true;
+          return finishInstall();
+        });
       }
 
       function renderCatalog() {

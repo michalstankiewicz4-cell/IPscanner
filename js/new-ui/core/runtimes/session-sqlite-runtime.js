@@ -312,6 +312,37 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
+  // Blob + <a download> always saves silently to the browser's configured
+  // downloads folder - there's no way to make that prompt for a location,
+  // that's a browser setting, not something a page can control. Chromium
+  // browsers (Chrome/Edge, not Firefox/Safari) expose the File System Access
+  // API instead, which DOES open a real native "Save As" folder picker
+  // regardless of that setting - use it when available, otherwise fall back
+  // to the plain download (still saves the file, just not folder-pickable).
+  function saveBytesWithPicker(filename, bytes) {
+    if (typeof window.showSaveFilePicker === "function") {
+      // Only a user cancelling the picker itself ("AbortError") is a
+      // non-failure. Any error from here on (picker refused, write() failed
+      // mid-transfer, close() failed to finalize) is a real save failure and
+      // must propagate - silently falling back to a Downloads-folder copy
+      // would report success while the file was never written to the
+      // location the user actually chose.
+      return window.showSaveFilePicker({
+        suggestedName: filename || "OSINT-session.sqlite3",
+        types: [{ description: "SQLite session", accept: { "application/x-sqlite3": [".sqlite3"] } }],
+      }).catch(function (err) {
+        if (err && err.name === "AbortError") throw new Error("cancelled");
+        throw err;
+      }).then(function (handle) {
+        return handle.createWritable().then(function (writable) {
+          return writable.write(bytes).then(function () { return writable.close(); });
+        }).then(function () { return handle.name; });
+      });
+    }
+    downloadBytes(filename, bytes);
+    return Promise.resolve(filename || "OSINT-session.sqlite3");
+  }
+
   function pickFile() {
     return new Promise(function (resolve) {
       var input = document.createElement("input");
@@ -339,6 +370,7 @@
       encodeSessionData: encodeSessionData,
       decodeSessionBytes: decodeSessionBytes,
       downloadBytes: downloadBytes,
+      saveBytesWithPicker: saveBytesWithPicker,
       pickFile: pickFile,
     };
   }
