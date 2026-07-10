@@ -396,13 +396,19 @@
       if (!ip) return;
 
       var openPorts = Array.isArray(payload && payload.open_ports)
-        ? payload.open_ports.filter(function (port) {
-            var value = Number(port);
-            return Number.isFinite(value) && value >= 1 && value <= 65535;
-          }).map(function (port) {
-            var rounded = Math.round(Number(port));
-            return { port: rounded, protocol: "TCP", service: lookupPortService(rounded) };
-          })
+        ? payload.open_ports.map(function (entry) {
+            var rawPort = entry && typeof entry === "object" ? entry.port : entry;
+            var value = Number(rawPort);
+            if (!Number.isFinite(value) || value < 1 || value > 65535) return null;
+            var rounded = Math.round(value);
+            var ms = entry && typeof entry === "object" ? Number(entry.ms) : NaN;
+            return {
+              port: rounded,
+              protocol: "TCP",
+              service: lookupPortService(rounded),
+              ping: Number.isFinite(ms) && ms >= 0 ? (String(Math.round(ms)) + " ms") : "-",
+            };
+          }).filter(Boolean)
         : [];
 
       var pingMs = Number(payload && payload.ping_ms);

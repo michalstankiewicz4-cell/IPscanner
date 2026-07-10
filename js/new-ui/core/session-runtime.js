@@ -122,12 +122,12 @@
           if (p && typeof p === "object") {
             var n = Number(p.port);
             if (!Number.isFinite(n)) return null;
-            return { port: n, protocol: String(p.protocol || "TCP"), service: String(p.service || "") };
+            return { port: n, protocol: String(p.protocol || "TCP"), service: String(p.service || ""), ping: String(p.ping || "-").trim() || "-" };
           }
           // Legacy bare-number ports (pre-dating protocol/service tagging) -
           // self-heal into the current shape on next save.
           var legacy = Number(p);
-          return Number.isFinite(legacy) ? { port: legacy, protocol: "TCP", service: lookupPortService(legacy) } : null;
+          return Number.isFinite(legacy) ? { port: legacy, protocol: "TCP", service: lookupPortService(legacy), ping: "-" } : null;
         }).filter(Boolean);
         return {
           ip: String(row.ip || ""),

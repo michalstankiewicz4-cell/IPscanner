@@ -482,7 +482,8 @@
             httpPageTitle: String(port.httpPageTitle || port.pageTitle || port.title || "").trim(),
             accessSnapshot: String(port.accessSnapshot || port.access || port.snapshot || port.url || "").trim(),
             protocol: String(port.protocol || "TCP").trim().toUpperCase(),
-            service: String(port.service || "").trim()
+            service: String(port.service || "").trim(),
+            ping: String(port.ping || "-").trim() || "-"
           };
         }
 
@@ -494,7 +495,8 @@
           protocol: "TCP",
           service: sharedNet && typeof sharedNet.lookupPortService === "function"
             ? sharedNet.lookupPortService(legacyLabel)
-            : ""
+            : "",
+          ping: "-"
         };
       }
 
@@ -531,10 +533,10 @@
             "<td class=\"v1-ip-col-check\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-port-action=\"check\" data-port-key=\"" + escapeHtml(portKey) + "\" aria-pressed=\"false\" aria-label=\"Mark port\">✓</button></td>",
             "<td class=\"v1-ip-col-star\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-port-action=\"favorite\" data-port-key=\"" + escapeHtml(portKey) + "\" aria-pressed=\"false\" aria-label=\"Add port to favorites\">★</button></td>",
             "<td class=\"v1-ip-col-status\" aria-hidden=\"true\"></td>",
-            "<td class=\"v1-ip-col-ip\"><span class=\"v1-ip-port-line\"><span class=\"v1-ip-port-chip-emoji\" aria-hidden=\"true\" title=\"" + escapeHtml(selectedPresetLabel) + "\">" + escapeHtml(selectedPresetEmoji) + "</span><span class=\"v1-ip-port-value\">" + escapeHtml(portLabel) + "</span>" + portProtocolBadge + portServiceBadge + "</span></td>",
+            "<td class=\"v1-ip-col-ip\"><span class=\"v1-ip-port-line\"><span class=\"v1-ip-port-line-start\"><span class=\"v1-ip-port-chip-emoji\" aria-hidden=\"true\" title=\"" + escapeHtml(selectedPresetLabel) + "\">" + escapeHtml(selectedPresetEmoji) + "</span><span class=\"v1-ip-port-value\">" + escapeHtml(portLabel) + "</span></span>" + portProtocolBadge + "</span></td>",
             "<td class=\"v1-ip-col-expand\" aria-hidden=\"true\"></td>",
-            "<td class=\"v1-ip-col-ping\" aria-hidden=\"true\"></td>",
-            "<td class=\"v1-ip-col-host\" data-col=\"hostname\" aria-hidden=\"true\"></td>",
+            "<td class=\"v1-ip-col-ping\">" + escapeHtml(portEntry.ping) + "</td>",
+            "<td class=\"v1-ip-col-host\" data-col=\"hostname\">" + portServiceBadge + "</td>",
             "<td class=\"v1-ip-col-flag\" data-col=\"flag\" aria-hidden=\"true\"></td>",
             "<td class=\"v1-ip-col-isp\" data-col=\"isp\" aria-hidden=\"true\"></td>",
             "<td class=\"v1-ip-col-as\" data-col=\"as\" aria-hidden=\"true\"></td>",

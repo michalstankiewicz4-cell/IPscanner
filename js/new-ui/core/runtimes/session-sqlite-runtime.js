@@ -20,7 +20,8 @@
     "  result_id INTEGER NOT NULL REFERENCES scan_results(id) ON DELETE CASCADE,",
     "  port INTEGER NOT NULL,",
     "  protocol TEXT NOT NULL DEFAULT 'TCP',",
-    "  service TEXT NOT NULL DEFAULT ''",
+    "  service TEXT NOT NULL DEFAULT '',",
+    "  ping TEXT NOT NULL DEFAULT '-'",
     ");",
     "CREATE TABLE IF NOT EXISTS ip_library_entries (",
     "  id INTEGER PRIMARY KEY AUTOINCREMENT, country_code TEXT NOT NULL, cidr TEXT NOT NULL",
@@ -87,7 +88,7 @@
         var insertResult = db.prepare(
           "INSERT INTO scan_results (id, ip, ping, hostname, flag, isp, as_info, device_identification, status, status_class) VALUES (?,?,?,?,?,?,?,?,?,?)"
         );
-        var insertPort = db.prepare("INSERT INTO scan_result_ports (result_id, port, protocol, service) VALUES (?, ?, ?, ?)");
+        var insertPort = db.prepare("INSERT INTO scan_result_ports (result_id, port, protocol, service, ping) VALUES (?, ?, ?, ?, ?)");
         scanResults.forEach(function (row, index) {
           row = row || {};
           var id = index + 1;
@@ -106,9 +107,9 @@
           var ports = Array.isArray(row.ports) ? row.ports : [];
           ports.forEach(function (port) {
             if (port && typeof port === "object") {
-              insertPort.run([id, Number(port.port) || 0, String(port.protocol || "TCP"), String(port.service || "")]);
+              insertPort.run([id, Number(port.port) || 0, String(port.protocol || "TCP"), String(port.service || ""), String(port.ping || "-") || "-"]);
             } else {
-              insertPort.run([id, Number(port) || 0, "TCP", ""]);
+              insertPort.run([id, Number(port) || 0, "TCP", "", "-"]);
             }
           });
         });
@@ -209,14 +210,19 @@
           });
         }
 
-        // Older session files may not have the protocol/service columns yet
-        // (added after this file was last saved) - fall back to defaults
-        // rather than failing to load the file.
+        // Older session files may be missing protocol/service/ping (added
+        // incrementally over time) - fall back to defaults for whichever
+        // columns aren't there yet, newest-shape first, rather than failing
+        // to load the file.
         var portsRows;
         try {
-          portsRows = db.exec("SELECT result_id, port, protocol, service FROM scan_result_ports ORDER BY id");
+          portsRows = db.exec("SELECT result_id, port, protocol, service, ping FROM scan_result_ports ORDER BY id");
         } catch (_) {
-          portsRows = db.exec("SELECT result_id, port FROM scan_result_ports ORDER BY id");
+          try {
+            portsRows = db.exec("SELECT result_id, port, protocol, service FROM scan_result_ports ORDER BY id");
+          } catch (__) {
+            portsRows = db.exec("SELECT result_id, port FROM scan_result_ports ORDER BY id");
+          }
         }
         if (portsRows.length) {
           portsRows[0].values.forEach(function (row) {
@@ -226,6 +232,7 @@
               port: Number(row[1]) || 0,
               protocol: row.length > 2 ? String(row[2] || "TCP") : "TCP",
               service: row.length > 3 ? String(row[3] || "") : "",
+              ping: row.length > 4 ? (String(row[4] || "-") || "-") : "-",
             });
           });
         }

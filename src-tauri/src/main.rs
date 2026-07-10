@@ -72,9 +72,15 @@ struct PortResult {
 }
 
 #[derive(Serialize, Clone)]
+struct PortLatency {
+    port: u16,
+    ms: Option<u64>,
+}
+
+#[derive(Serialize, Clone)]
 struct HostFound {
     ip: String,
-    open_ports: Vec<u16>,
+    open_ports: Vec<PortLatency>,
     ping_ms: Option<u64>,
 }
 
@@ -335,7 +341,7 @@ async fn scan_port(ip: String, port: u16, timeout_ms: u64) -> PortResult {
 }
 
 /// Probe a single IP across all given ports; returns open ports + best latency.
-async fn probe_host(ip: String, ports: Vec<u16>, timeout_ms: u64) -> (Vec<u16>, Option<u64>) {
+async fn probe_host(ip: String, ports: Vec<u16>, timeout_ms: u64) -> (Vec<PortLatency>, Option<u64>) {
     let mut set: tokio::task::JoinSet<(u16, bool, Option<u64>)> = tokio::task::JoinSet::new();
     for port in ports {
         let ip_c = ip.clone();
@@ -352,17 +358,17 @@ async fn probe_host(ip: String, ports: Vec<u16>, timeout_ms: u64) -> (Vec<u16>, 
             }
         });
     }
-    let mut open_ports: Vec<u16> = Vec::new();
+    let mut open_ports: Vec<PortLatency> = Vec::new();
     let mut best_ms: Option<u64> = None;
     while let Some(res) = set.join_next().await {
         if let Ok((port, true, ms)) = res {
-            open_ports.push(port);
+            open_ports.push(PortLatency { port, ms });
             if let Some(m) = ms {
                 best_ms = Some(best_ms.map_or(m, |prev: u64| prev.min(m)));
             }
         }
     }
-    open_ports.sort_unstable();
+    open_ports.sort_unstable_by_key(|p| p.port);
     (open_ports, best_ms)
 }
 
@@ -827,6 +833,7 @@ struct ScanPortEntry {
     port: i64,
     protocol: String,
     service: String,
+    ping: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -935,7 +942,8 @@ const SESSION_SCHEMA_SQL: &str = "
       result_id INTEGER NOT NULL REFERENCES scan_results(id) ON DELETE CASCADE,
       port INTEGER NOT NULL,
       protocol TEXT NOT NULL DEFAULT 'TCP',
-      service TEXT NOT NULL DEFAULT ''
+      service TEXT NOT NULL DEFAULT '',
+      ping TEXT NOT NULL DEFAULT '-'
     );
     CREATE TABLE IF NOT EXISTS ip_library_entries (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -990,16 +998,32 @@ fn open_session_sqlite_conn(path: &Path) -> Result<Connection, String> {
     conn.execute_batch(SESSION_SCHEMA_SQL)
         .map_err(|e| format!("Failed to initialize session schema: {e}"))?;
     // Migration: older session files already have scan_result_ports with
-    // only (id, result_id, port) - CREATE TABLE IF NOT EXISTS above is a
-    // no-op against that pre-existing table, so add the missing columns
-    // explicitly. `prepare` fails at compile time on an unknown column
-    // regardless of row count, unlike `query_row` (which would also fail on
-    // a merely-empty table and false-positive the migration).
-    if conn.prepare("SELECT protocol, service FROM scan_result_ports").is_err() {
-        conn.execute_batch(
-            "ALTER TABLE scan_result_ports ADD COLUMN protocol TEXT NOT NULL DEFAULT 'TCP';
-             ALTER TABLE scan_result_ports ADD COLUMN service TEXT NOT NULL DEFAULT '';"
-        ).map_err(|e| format!("Failed to migrate scan_result_ports schema: {e}"))?;
+    // only a subset of today's columns - CREATE TABLE IF NOT EXISTS above is
+    // a no-op against that pre-existing table, so add whatever's missing
+    // explicitly. PRAGMA table_info reflects the real on-disk schema
+    // regardless of row count (unlike a SELECT/query_row probe, which would
+    // also fail on a merely-empty table).
+    {
+        let existing: Vec<String> = {
+            let mut stmt = conn.prepare("PRAGMA table_info(scan_result_ports)")
+                .map_err(|e| format!("Failed to inspect scan_result_ports schema: {e}"))?;
+            let names = stmt.query_map([], |row| row.get::<_, String>(1))
+                .map_err(|e| format!("Failed to read scan_result_ports columns: {e}"))?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| format!("Failed to read scan_result_ports column name: {e}"))?;
+            names
+        };
+        let migrations: [(&str, &str); 3] = [
+            ("protocol", "ALTER TABLE scan_result_ports ADD COLUMN protocol TEXT NOT NULL DEFAULT 'TCP'"),
+            ("service", "ALTER TABLE scan_result_ports ADD COLUMN service TEXT NOT NULL DEFAULT ''"),
+            ("ping", "ALTER TABLE scan_result_ports ADD COLUMN ping TEXT NOT NULL DEFAULT '-'"),
+        ];
+        for (column, ddl) in migrations {
+            if !existing.iter().any(|c| c == column) {
+                conn.execute_batch(ddl)
+                    .map_err(|e| format!("Failed to migrate scan_result_ports.{column}: {e}"))?;
+            }
+        }
     }
     Ok(conn)
 }
@@ -1017,7 +1041,7 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             .prepare_cached("INSERT INTO scan_results (ip, ping, hostname, flag, isp, as_info, device_identification, status, status_class) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)")
             .map_err(|e| format!("Failed to prepare scan_results insert: {e}"))?;
         let mut insert_port = tx
-            .prepare_cached("INSERT INTO scan_result_ports (result_id, port, protocol, service) VALUES (?1, ?2, ?3, ?4)")
+            .prepare_cached("INSERT INTO scan_result_ports (result_id, port, protocol, service, ping) VALUES (?1, ?2, ?3, ?4, ?5)")
             .map_err(|e| format!("Failed to prepare scan_result_ports insert: {e}"))?;
 
         for row in &data.scan_results {
@@ -1027,7 +1051,7 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             let result_id = tx.last_insert_rowid();
             for port in &row.ports {
                 insert_port
-                    .execute(params![result_id, port.port, port.protocol, port.service])
+                    .execute(params![result_id, port.port, port.protocol, port.service, port.ping])
                     .map_err(|e| format!("Failed to insert scan_result_ports row: {e}"))?;
             }
         }
@@ -1140,35 +1164,44 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
     }
 
     {
-        // Older session files may not have the protocol/service columns yet
-        // (added after this file was last saved) - reading must not mutate
-        // the file (only a save/write runs the ALTER TABLE migration), so
-        // fall back to defaults here instead.
-        let has_protocol_service = conn.prepare("SELECT protocol, service FROM scan_result_ports").is_ok();
-        let port_rows: Vec<(i64, i64, String, String)> = if has_protocol_service {
-            let mut ports_stmt = conn
-                .prepare("SELECT result_id, port, protocol, service FROM scan_result_ports ORDER BY id")
-                .map_err(|e| format!("Failed to prepare scan_result_ports read: {e}"))?;
-            let rows = ports_stmt
-                .query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?, row.get::<_, String>(2)?, row.get::<_, String>(3)?)))
-                .map_err(|e| format!("Failed to query scan_result_ports: {e}"))?
-                .collect::<Result<Vec<_>, _>>()
-                .map_err(|e| format!("Failed to read scan_result_ports row: {e}"))?;
+        // Older session files may be missing protocol/service/ping (added
+        // incrementally over time) - reading must not mutate the file (only
+        // a save/write runs the ALTER TABLE migration), so fall back to
+        // defaults for whichever columns aren't there yet, newest-shape
+        // first.
+        type PortRow = (i64, i64, String, String, String);
+        let full: Result<Vec<PortRow>, rusqlite::Error> = (|| {
+            let mut stmt = conn.prepare("SELECT result_id, port, protocol, service, ping FROM scan_result_ports ORDER BY id")?;
+            let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)))?
+                .collect();
             rows
-        } else {
-            let mut ports_stmt = conn
-                .prepare("SELECT result_id, port FROM scan_result_ports ORDER BY id")
-                .map_err(|e| format!("Failed to prepare scan_result_ports read (legacy): {e}"))?;
-            let rows = ports_stmt
-                .query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?, "TCP".to_string(), String::new())))
-                .map_err(|e| format!("Failed to query scan_result_ports (legacy): {e}"))?
-                .collect::<Result<Vec<_>, _>>()
-                .map_err(|e| format!("Failed to read scan_result_ports row (legacy): {e}"))?;
-            rows
+        })();
+        let port_rows: Vec<PortRow> = match full {
+            Ok(rows) => rows,
+            Err(_) => {
+                let mid: Result<Vec<PortRow>, rusqlite::Error> = (|| {
+                    let mut stmt = conn.prepare("SELECT result_id, port, protocol, service FROM scan_result_ports ORDER BY id")?;
+                    let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, "-".to_string())))?
+                        .collect();
+                    rows
+                })();
+                match mid {
+                    Ok(rows) => rows,
+                    Err(_) => {
+                        let mut stmt = conn.prepare("SELECT result_id, port FROM scan_result_ports ORDER BY id")
+                            .map_err(|e| format!("Failed to prepare scan_result_ports read (legacy): {e}"))?;
+                        let rows = stmt.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?, "TCP".to_string(), String::new(), "-".to_string())))
+                            .map_err(|e| format!("Failed to query scan_result_ports (legacy): {e}"))?
+                            .collect::<Result<Vec<_>, _>>()
+                            .map_err(|e| format!("Failed to read scan_result_ports row (legacy): {e}"))?;
+                        rows
+                    }
+                }
+            }
         };
-        for (result_id, port, protocol, service) in port_rows {
+        for (result_id, port, protocol, service, ping) in port_rows {
             if let Some(&idx) = scan_result_index.get(&result_id) {
-                scan_results[idx].ports.push(ScanPortEntry { port, protocol, service });
+                scan_results[idx].ports.push(ScanPortEntry { port, protocol, service, ping });
             }
         }
     }

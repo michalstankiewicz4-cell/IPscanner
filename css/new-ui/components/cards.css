@@ -1018,11 +1018,13 @@
 
 .v1-ip-port-row .v1-ip-col-status,
 .v1-ip-port-row .v1-ip-col-expand,
-.v1-ip-port-row .v1-ip-col-ping,
-.v1-ip-port-row .v1-ip-col-host,
 .v1-ip-port-row .v1-ip-col-flag,
 .v1-ip-port-row .v1-ip-col-isp {
   color: transparent;
+}
+
+.v1-ip-port-row .v1-ip-col-ping {
+  font-weight: 700;
 }
 
 .v1-ip-port-row .v1-ip-col-as,
@@ -1081,9 +1083,18 @@
 }
 
 .v1-ip-port-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.v1-ip-port-line-start {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .v1-ip-port-chip-emoji {
