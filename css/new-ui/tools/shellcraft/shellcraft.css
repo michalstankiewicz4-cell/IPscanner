@@ -1,5 +1,56 @@
 /* shell: ShellCraft - Library (LS), canvas (CS), Inspector (RS) */
 
+/* .v1-card's own overflow:auto (cards.css) would add a second, outer
+   scrollbar around the canvas shell - kill it specifically for ShellCraft's
+   CS view, mirroring the existing #v1MainCard.is-versions-view pattern. */
+#v1MainCard.is-shellcraft-view {
+  overflow: hidden;
+}
+
+#v1MainCard.is-shellcraft-view #v1ToolDetail {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.v1-shellcraft-view-switcher {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--bg-elev);
+  border-bottom: 1px solid #2a2b30;
+}
+
+.v1-shellcraft-view-btn {
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #2a2d31;
+  color: var(--txt);
+  font-size: 11px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.v1-shellcraft-view-btn:hover:not(:disabled) {
+  border-color: #555b66;
+  background: #333845;
+}
+
+.v1-shellcraft-view-btn.is-active {
+  border-color: var(--brand);
+  color: #ffffff;
+  background: color-mix(in oklab, var(--brand) 20%, #2a2d31);
+}
+
+.v1-shellcraft-view-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .v1-shellcraft-library {
   flex: 1 1 auto;
   min-height: 0;
@@ -37,8 +88,9 @@
 }
 
 .v1-shellcraft-canvas-shell {
-  height: 100%;
-  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
   background: var(--bg-elev);
 }
 
@@ -46,10 +98,15 @@
   position: relative;
   width: 3000px;
   height: 2000px;
+  cursor: grab;
   background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 24px 24px;
+}
+
+.v1-shellcraft-canvas.is-panning {
+  cursor: grabbing;
 }
 
 .v1-canvas-block {
@@ -85,6 +142,29 @@
 
 .v1-canvas-block-icon {
   font-size: 13px;
+}
+
+.v1-canvas-block-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v1-canvas-block-remove {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--txt-dim);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+.v1-canvas-block-remove:hover {
+  color: #ff6b6b;
 }
 
 .v1-canvas-block[data-block-not-runnable] {

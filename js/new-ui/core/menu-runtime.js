@@ -366,6 +366,34 @@
         return;
       }
 
+      if (behavior === "toggle-unfinished-tools") {
+        var unfinishedSelectors = [
+          "#v1ActivityTopology",
+          "#v1ActivityGlobe",
+          ".v1-menu-dd-item[data-tool=\"topology\"]",
+          ".v1-menu-dd-item[data-tool=\"globe\"]",
+        ];
+        var unfinishedBtn = document.querySelector('[data-menu-action="show-unfinished-tools"]');
+        var nextShowState = !(unfinishedBtn && unfinishedBtn.classList.contains("is-active"));
+        unfinishedSelectors.forEach(function (selector) {
+          var el = document.querySelector(selector);
+          if (!el) return;
+          if (nextShowState) el.removeAttribute("hidden");
+          else el.setAttribute("hidden", "hidden");
+        });
+        try {
+          localStorage.setItem("netrecon_show_unfinished_tools", nextShowState ? "1" : "0");
+        } catch (_) {}
+        if (unfinishedBtn) {
+          unfinishedBtn.classList.toggle("is-active", nextShowState);
+          unfinishedBtn.setAttribute("aria-pressed", nextShowState ? "true" : "false");
+        }
+        if (setStatusLine) {
+          setStatusLine(tr("menuPrefix") + ": " + (nextShowState ? tr("statusUnfinishedToolsOn") : tr("statusUnfinishedToolsOff")));
+        }
+        return;
+      }
+
       if (behavior === "toggle-blur-ip") {
         var nextBlurState = !document.body.classList.contains("v1-blur-ip");
         document.body.classList.toggle("v1-blur-ip", nextBlurState);

@@ -144,6 +144,12 @@
       purpose: "Rozmywa widoczne adresy IP/hostname na ekranie (bezpieczne udostepnianie ekranu).",
       behavior: "toggle-blur-ip",
     },
+    "show-unfinished-tools": {
+      label: "Show unfinished tools",
+      purposeKey: "tipActionShowUnfinishedTools",
+      purpose: "Pokazuje/ukrywa niedokonczone narzedzia (Topology, Globe) w menu Tools i LSB.",
+      behavior: "toggle-unfinished-tools",
+    },
     "window-close": {
       label: "Window close",
       purposeKey: "tipActionWindowClose",

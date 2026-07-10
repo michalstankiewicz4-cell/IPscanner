@@ -704,7 +704,7 @@
 
       return [
         "<div class=\"v1-canvas-block\" draggable=\"true\" data-block-id=\"" + escapeHtml(block.id) + "\" data-block-type=\"" + escapeHtml(block.type) + "\"" + (runnable ? "" : " data-block-not-runnable=\"true\"") + " style=\"left:" + block.x + "px;top:" + block.y + "px;\">",
-        "<div class=\"v1-canvas-block-head\"><span class=\"v1-canvas-block-icon\" aria-hidden=\"true\">" + escapeHtml(iconGlyph) + "</span><span>" + escapeHtml(titleText) + "</span></div>",
+        "<div class=\"v1-canvas-block-head\"><span class=\"v1-canvas-block-icon\" aria-hidden=\"true\">" + escapeHtml(iconGlyph) + "</span><span class=\"v1-canvas-block-title\">" + escapeHtml(titleText) + "</span><button type=\"button\" class=\"v1-canvas-block-remove\" data-canvas-block-remove=\"" + escapeHtml(block.id) + "\" aria-label=\"" + escapeHtml(tr("shellcraftBlockDeleteBtn")) + "\" title=\"" + escapeHtml(tr("shellcraftBlockDeleteBtn")) + "\">&times;</button></div>",
         bodyHtml,
         "</div>"
       ].join("");
@@ -780,11 +780,31 @@
       return "";
     }
 
+    var SHELLCRAFT_VIEWS = [
+      { id: "flow", labelKey: "shellcraftViewFlowLabel", enabled: true },
+      { id: "timeline", labelKey: "shellcraftViewTimelineLabel", enabled: false },
+      { id: "tree", labelKey: "shellcraftViewTreeLabel", enabled: false },
+      { id: "layered", labelKey: "shellcraftViewLayeredLabel", enabled: false },
+    ];
+
+    function renderShellCraftViewSwitcher() {
+      var buttonsHtml = SHELLCRAFT_VIEWS.map(function (view) {
+        var attrs = "type=\"button\" class=\"v1-shellcraft-view-btn" + (view.id === "flow" ? " is-active" : "") + "\" data-shellcraft-view=\"" + view.id + "\"";
+        if (!view.enabled) {
+          attrs += " disabled title=\"" + escapeHtml(tr("shellcraftViewNotImplementedNote")) + "\"";
+        }
+        return "<button " + attrs + ">" + escapeHtml(tr(view.labelKey)) + "</button>";
+      }).join("");
+
+      return "<div class=\"v1-shellcraft-view-switcher\">" + buttonsHtml + "</div>";
+    }
+
     function renderShellCraftCanvasTool() {
       var state = shellcraftCanvasApi ? shellcraftCanvasApi.getState() : { blocks: [] };
       var blocksHtml = state.blocks.map(renderCanvasBlockHtml).join("");
 
       return [
+        renderShellCraftViewSwitcher(),
         "<div class=\"v1-shellcraft-canvas-shell\">",
         "<div class=\"v1-shellcraft-canvas\" id=\"v1ShellCraftCanvas\">",
         blocksHtml,

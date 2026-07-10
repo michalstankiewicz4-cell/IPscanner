@@ -1033,6 +1033,39 @@
       if (canvasEl.dataset.shellcraftBound === "1") return;
       canvasEl.dataset.shellcraftBound = "1";
 
+      // No visible scrollbars (shell has overflow:hidden) - panning happens
+      // by click-and-drag on empty canvas background instead. scrollLeft/Top
+      // can still be set programmatically even with overflow:hidden.
+      var canvasShellEl = canvasEl.closest(".v1-shellcraft-canvas-shell") || canvasEl.parentElement;
+      var isPanning = false;
+      var panStartX = 0;
+      var panStartY = 0;
+      var panScrollLeft = 0;
+      var panScrollTop = 0;
+
+      canvasEl.addEventListener("mousedown", function (event) {
+        if (event.target !== canvasEl || !canvasShellEl) return;
+        isPanning = true;
+        panStartX = event.clientX;
+        panStartY = event.clientY;
+        panScrollLeft = canvasShellEl.scrollLeft;
+        panScrollTop = canvasShellEl.scrollTop;
+        canvasEl.classList.add("is-panning");
+        event.preventDefault();
+      });
+
+      document.addEventListener("mousemove", function (event) {
+        if (!isPanning || !canvasShellEl) return;
+        canvasShellEl.scrollLeft = panScrollLeft - (event.clientX - panStartX);
+        canvasShellEl.scrollTop = panScrollTop - (event.clientY - panStartY);
+      });
+
+      document.addEventListener("mouseup", function () {
+        if (!isPanning) return;
+        isPanning = false;
+        canvasEl.classList.remove("is-panning");
+      });
+
       canvasEl.addEventListener("dragover", function (event) {
         event.preventDefault();
         if (event.dataTransfer) event.dataTransfer.dropEffect = event.dataTransfer.types.indexOf("application/x-shellcraft-move") >= 0 ? "move" : "copy";
@@ -1079,6 +1112,12 @@
       });
 
       canvasEl.addEventListener("click", function (event) {
+        var removeBtn = event.target && event.target.closest ? event.target.closest("[data-canvas-block-remove]") : null;
+        if (removeBtn) {
+          canvasApi.removeBlock(removeBtn.getAttribute("data-canvas-block-remove"));
+          return;
+        }
+
         var runBtn = event.target && event.target.closest ? event.target.closest("[data-canvas-macro-run]") : null;
         if (runBtn) {
           var macroId = runBtn.getAttribute("data-canvas-macro-run");

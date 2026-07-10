@@ -1886,6 +1886,7 @@
         }
         if (v1MainCard) {
           v1MainCard.classList.remove("is-versions-view");
+          v1MainCard.classList.remove("is-shellcraft-view");
         }
         if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + tr("noActiveTab"));
         if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + tr("noActiveTab");
@@ -1922,6 +1923,7 @@
       }
       if (v1MainCard) {
         v1MainCard.classList.toggle("is-versions-view", activeTool === "versions");
+        v1MainCard.classList.toggle("is-shellcraft-view", activeTool === "shellcraft");
       }
       applyDetachedCardState();
       if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + activeTool);

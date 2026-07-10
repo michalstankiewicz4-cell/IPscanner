@@ -14,7 +14,6 @@
     ".listview-body",
     ".v1-session-welcome-list",
     ".v1-menu-dd-flyout",
-    ".v1-shellcraft-library",
   ];
 
   var TOOL_IP_SCANNER_SCROLL_TARGETS = [
