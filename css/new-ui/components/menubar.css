@@ -403,6 +403,8 @@
   border: none;
   background: none;
   padding: 3px 4px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .v1-session-row:hover {
@@ -421,7 +423,12 @@
   font: 500 12px/1.4 var(--font-ui);
   text-decoration: none;
   cursor: pointer;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .v1-session-row-name:hover,

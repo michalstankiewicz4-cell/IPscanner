@@ -581,7 +581,7 @@
   position: relative;
   z-index: 1;
   pointer-events: auto;
-  width: min(360px, 84vw);
+  width: min(480px, 90vw);
   max-height: 80%;
   display: grid;
   gap: 10px;
