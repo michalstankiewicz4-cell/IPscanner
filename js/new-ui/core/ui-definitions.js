@@ -24,32 +24,38 @@
     // base shell per FUTURE_PLUGIN_SHELL.md. Only 3 entries below route to
     // IP-Scanner-specific tools (see "ip-scanner tool keys" marker further
     // down) - everything else here is shell chrome.
+    "new-session": {
+      label: "New",
+      purposeKey: "tipActionNewSession",
+      purpose: "Zamkniecie biezacej sesji i rozpoczecie nowej (jak Close).",
+      behavior: "close-session",
+    },
     "save-session": {
-      label: "Save session",
+      label: "Save",
       purposeKey: "tipActionSaveSession",
       purpose: "Zapis aktualnej sesji.",
       behavior: "save-session",
     },
     "save-session-as": {
-      label: "Save session as...",
+      label: "Save as...",
       purposeKey: "tipActionSaveSessionAs",
       purpose: "Zapis aktualnej sesji pod nowa nazwa.",
       behavior: "save-session-as",
     },
     "load-session": {
-      label: "Load session",
+      label: "Open",
       purposeKey: "tipActionLoadSession",
       purpose: "Wczytanie zapisanej sesji.",
       behavior: "load-session",
     },
     "close-session": {
-      label: "Close session",
+      label: "Close",
       purposeKey: "tipActionCloseSession",
       purpose: "Zamkniecie aktywnej sesji.",
       behavior: "close-session",
     },
     "import-another-session": {
-      label: "Import another session data (mock)",
+      label: "Import (mock)",
       purposeKey: "tipActionImportAnotherSession",
       purpose: "Import danych z innej sesji.",
       behavior: "status",

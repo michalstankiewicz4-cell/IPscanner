@@ -297,17 +297,26 @@
       return platform.invoke("session_install_dir").catch(function () { return ""; });
     }
 
+    function hasActiveSession() {
+      var s = storage();
+      return !!(s && s.getItem(CURRENT_PATH_KEY));
+    }
+
     function updateSessionNameLabel() {
       var label = document.getElementById("v1SessionNameLabel");
-      if (!label) return;
-      var s = storage();
-      var currentPath = s ? s.getItem(CURRENT_PATH_KEY) : null;
-      if (currentPath) {
-        label.textContent = basename(currentPath);
-        label.title = currentPath;
-      } else {
-        label.textContent = tr("sessionNoneLabel");
-        label.title = "";
+      var currentPath = hasActiveSession() ? storage().getItem(CURRENT_PATH_KEY) : null;
+      if (label) {
+        if (currentPath) {
+          label.textContent = basename(currentPath);
+          label.title = currentPath;
+        } else {
+          label.textContent = tr("sessionNoneLabel");
+          label.title = "";
+        }
+      }
+      var importItem = document.getElementById("v1MenuFileImport");
+      if (importItem) {
+        importItem.setAttribute("aria-disabled", currentPath ? "false" : "true");
       }
     }
 
@@ -481,6 +490,8 @@
     }
 
     function renderRecentSessionsList() {
+      renderFileMenuFlyout();
+
       var list = document.getElementById("v1SessionWelcomeList");
       if (!list) return;
       list.innerHTML = "";
@@ -538,6 +549,42 @@
       });
 
       refreshCustomScrollbars();
+    }
+
+    function renderFileMenuFlyout() {
+      var flyout = document.getElementById("v1FileOpenRecentFlyout");
+      if (!flyout) return;
+      flyout.innerHTML = "";
+
+      var recent = readRecent();
+      if (!recent.length) {
+        var empty = document.createElement("div");
+        empty.className = "v1-menu-dd-flyout-empty";
+        empty.textContent = tr("sessionListEmpty");
+        flyout.appendChild(empty);
+        return;
+      }
+
+      recent.forEach(function (item) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "v1-menu-dd-item v1-menu-dd-flyout-item";
+        btn.title = item.path;
+        btn.innerHTML = "<span>" + escapeHtmlLocal(item.name) + "</span><span class=\"shortcut\"></span>";
+        btn.addEventListener("click", function (event) {
+          event.stopPropagation();
+          var fileGroup = document.querySelector('.v1-menu-group[data-menu="file"]');
+          if (fileGroup) fileGroup.classList.remove("open");
+          loadSessionFromPath(item.path);
+        });
+        flyout.appendChild(btn);
+      });
+    }
+
+    function escapeHtmlLocal(value) {
+      return String(value || "").replace(/[&<>"']/g, function (ch) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[ch];
+      });
     }
 
     function initWelcomeView() {

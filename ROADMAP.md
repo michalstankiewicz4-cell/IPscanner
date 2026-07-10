@@ -56,6 +56,21 @@ project direction and rules, see [CONTRIBUTING.md](CONTRIBUTING.md) (Polish).
   of custom addon-rendered markup beyond the static card (an input field for
   the target host, a live results list) — both currently open design questions
   in `FUTURE_PLUGIN_SHELL.md`'s "Co realnie trzeba zaprojektowac" section.
+- **Selective IP-blur inside Terminal/Console output** — today the IP blur
+  toggle blurs those panes whole-pane (see item 16 in the backlog below)
+  because their output is free-form text concatenated as one string into a
+  single `<pre>` (`#v1PsOutput`/`#v1InfoLog`, fed by 4 separate append
+  functions across `powershell-console-runtime.js`/`status-log-runtime.js`/
+  `panels-runtime.js`/`navigation-runtime.js`), with no per-line/per-token DOM
+  structure to target. Doing this precisely would need: switching all 4
+  append paths from `textContent` concatenation to real DOM node
+  construction, a global (not first-match) IP-regex pass per appended chunk
+  (a `/g` variant of `navigation-runtime.js`'s existing `firstIpv4`), and
+  rewriting the 400-line trim logic to operate on DOM nodes instead of
+  string-slicing. Deliberately deferred — a real rendering rewrite, and even
+  then regex-based detection would miss non-IPv4 leaks (hostnames, IPv6),
+  which risks false confidence worse than today's honest "we blur the whole
+  thing" behavior.
 
 ## Backlog (per-feature audit, 2026-07-09)
 
@@ -89,11 +104,16 @@ A pass over every menu/tool, numbered for easy reference in discussion:
 13. AI Assistant — ~1.5% done (just the tab exists).
 14. Topology Map — ~1% done (just the tab exists).
 15. Globe — ~1% done (just the tab exists).
-16. "Blur sensitive data" button — usefulness unclear, consider removing.
+16. ~~"Blur sensitive data" button — usefulness unclear, consider removing.~~
+    **Done** — implemented as a `body.v1-blur-ip` CSS toggle (persisted,
+    restored on launch) covering the IP Results table, IP detection results,
+    range inputs, IP Extractor, Range History, and — blanket, whole-pane —
+    Terminal/Console/PowerShell Console and the info log. Console output
+    can't be selectively substring-matched today (see "Planned" below).
 17. Down Status Bar shows some info that may not be necessary — review what's
     actually worth keeping there.
 
-Items 10 and 11 are next up.
+Items 10 and 11 are done; next up is auditing DSB (item 17).
 
 ## Considered and rejected
 

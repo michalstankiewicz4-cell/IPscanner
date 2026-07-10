@@ -341,11 +341,12 @@
       // literal duplicate here rather than re-deriving from uiDefinitions,
       // since it exists specifically as the fallback for when that's absent.
       const fallbackActionMap = {
-        "save-session": "Save session",
-        "save-session-as": "Save session as...",
-        "load-session": "Load session",
-        "close-session": "Close session",
-        "import-another-session": "Import another session data (mock)",
+        "new-session": "New",
+        "save-session": "Save",
+        "save-session-as": "Save as...",
+        "load-session": "Open",
+        "close-session": "Close",
+        "import-another-session": "Import (mock)",
         exit: "Exit (mock)",
         countries: "Country IP Library", // ip-scanner tool
         presets: "Port Presets (mock)", // ip-scanner tool

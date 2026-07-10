@@ -485,6 +485,10 @@
           ? event.target.closest("[data-menu-action]")
           : null;
         if (!item) return;
+        if (item.getAttribute("aria-disabled") === "true") {
+          event.stopPropagation();
+          return;
+        }
         var action = item.getAttribute("data-menu-action");
         if (!action) return;
         runMenuAction(action);
