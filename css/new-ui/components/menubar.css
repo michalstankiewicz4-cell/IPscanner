@@ -232,6 +232,10 @@
   cursor: pointer;
 }
 
+.v1-menu-dd-item[hidden] {
+  display: none;
+}
+
 .v1-menu-dd-item:hover,
 .v1-menu-dd-item.active {
   background: #094771;

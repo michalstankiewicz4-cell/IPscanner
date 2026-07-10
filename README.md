@@ -55,6 +55,7 @@ See [ROADMAP.md](ROADMAP.md) for what's done, in progress, and planned next.
 | [ROADMAP.md](ROADMAP.md) | What's done, in progress, and planned. |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Project direction and rules for contributing code (written in Polish). |
 | [FUTURE_PLUGIN_SHELL.md](FUTURE_PLUGIN_SHELL.md) | Design notes for the addon/plugin shell architecture (written in Polish). |
+| [SHELL_PROGRESS.md](SHELL_PROGRESS.md) | Map of the shell layout (menu/panels/status bar) and where each tool opens (written in Polish). |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community code of conduct. |
 | [SECURITY.md](SECURITY.md) | How to report a security vulnerability. |
 | [LICENSE.MD](LICENSE.MD) | MIT License. |

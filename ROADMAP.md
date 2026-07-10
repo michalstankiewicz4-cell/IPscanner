@@ -30,6 +30,18 @@ project direction and rules, see [CONTRIBUTING.md](CONTRIBUTING.md) (Polish).
 - Session save/load now also works in the browser build (`ipscanner.pl`),
   using real `.sqlite3` files via sql.js — round-trip compatible with the
   desktop app's files, no server/backend involved.
+- File/Tools menu reorganized to match the target UX spec: "New" aliases
+  "Close", an "Open Recent" flyout submenu (the app's first nested menu),
+  gated "Import" (enabled only with an active session), Tools menu reordered.
+- Custom styled confirm dialogs (matching the app's "Exit" dialog look)
+  replace every native `window.confirm()` call in the app (session
+  close/new, dev full reset, extension install permission).
+- www builds get a real native folder-picker "Save As" via the File System
+  Access API (Chromium), falling back to a plain download on browsers
+  without it (Firefox/Safari).
+- Open ports now carry a protocol (TCP) and inferred service-name badge
+  (e.g. "HTTP", "SSH"), plus per-port ping, shown on each port row and
+  persisted in the session `.sqlite3` schema (with migration for old files).
 
 ## In progress
 
@@ -110,10 +122,14 @@ A pass over every menu/tool, numbered for easy reference in discussion:
     range inputs, IP Extractor, Range History, and — blanket, whole-pane —
     Terminal/Console/PowerShell Console and the info log. Console output
     can't be selectively substring-matched today (see "Planned" below).
-17. Down Status Bar shows some info that may not be necessary — review what's
-    actually worth keeping there.
+17. ~~Down Status Bar shows some info that may not be necessary — review what's
+    actually worth keeping there.~~ **Done** — audited: the loader, active
+    process count, and 0-100% progress bar are real and wired to actual work
+    (`newui:busy-state`/`newui:scan-progress` events from PowerShell commands
+    and IP scans). The static `"main • tauri-desktop • UI mock only"` label
+    was dead text with no JS reference and has been removed.
 
-Items 10 and 11 are done; next up is auditing DSB (item 17).
+Items 10, 11, and 17 are done.
 
 ## Considered and rejected
 

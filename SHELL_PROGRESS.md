@@ -40,7 +40,7 @@ IP Scanner (LSB, TBM-Tools -> LS)
    c. Przyciski: zamykanie, zarzadzanie ukladem okien, ukrywanie wrazliwych danych, full reset.
 2. **Left Section (LS)**
 3. **Right Section (RS)**
-   a. AI Assistant (dostep: LSB, TBM-Tools -> otwiera sie w: RS)
+   a. AI Assistant (dostep: TBM-Tools -> otwiera sie w: RS; brak ikony na LSB)
 4. **Center Section (CS)**
    a. logo w tle
    b. ladowanie ostatnich sesji (widok powitalny "Recent sessions")
@@ -74,8 +74,8 @@ CONTRIBUTING.md §3a).
 2. **Country IP Library** (TBM-Options)
    - edytor -> LS, jako "IP Library (edytor)"
    - podglad -> CS, jako "IP Library (widok)"
-3. **Topology Map** (LSB, TBM-Options -> CS)
-4. **World Globe** (LSB, TBM-Options -> CS)
+3. **Topology Map** (LSB, TBM-Tools -> CS)
+4. **World Globe** (LSB, TBM-Tools -> CS)
 
 Funkcje lub czesc funkcji dzialajacych tylko w aplikacji (stan na 2026-07-09,
 po weryfikacji kodu — ShellCraft/AI Assistant/Topology/Globe nie maja dzis
