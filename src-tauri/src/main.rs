@@ -1397,10 +1397,29 @@ fn window_minimize(window: WebviewWindow) -> Result<(), String> {
 #[tauri::command]
 fn window_toggle_maximize(window: WebviewWindow) -> Result<(), String> {
     if window.is_maximized().map_err(|e| e.to_string())? {
-        window.unmaximize().map_err(|e| e.to_string())
-    } else {
-        window.maximize().map_err(|e| e.to_string())
+        return window.unmaximize().map_err(|e| e.to_string());
     }
+
+    window.maximize().map_err(|e| e.to_string())?;
+
+    // Frameless (decorations:false) windows don't get Windows' normal
+    // maximize-to-work-area clipping (that relies on WS_CAPTION/WS_THICKFRAME
+    // styles this window lacks), so maximize() alone sizes the window to the
+    // full physical monitor - covering the taskbar with unpainted black
+    // backbuffer instead of leaving it visible. Correct the bounds to the
+    // monitor's actual work area afterward; still calling maximize() first
+    // (rather than only set_size/set_position) keeps the OS-level maximized
+    // flag correct so unmaximize()/is_maximized() keep working normally.
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(Some(monitor)) = window.current_monitor() {
+            let work_area = monitor.work_area();
+            window.set_position(work_area.position).map_err(|e| e.to_string())?;
+            window.set_size(work_area.size).map_err(|e| e.to_string())?;
+        }
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -4272,6 +4291,24 @@ fn main() {
     tauri::Builder::default()
         .manage(Arc::new(ScanState { stop: AtomicBool::new(false) }))
         .manage(Arc::new(ScanWatchState { events: Mutex::new(Vec::new()) }))
+        .setup(|app| {
+            // tauri.conf.json starts the main window maximized, which hits the
+            // same frameless-window work-area bug as window_toggle_maximize
+            // (see its comment) - correct it once at startup too.
+            #[cfg(target_os = "windows")]
+            {
+                if let Some(window) = app.get_webview_window("main") {
+                    if window.is_maximized().unwrap_or(false) {
+                        if let Ok(Some(monitor)) = window.current_monitor() {
+                            let work_area = monitor.work_area();
+                            let _ = window.set_position(work_area.position);
+                            let _ = window.set_size(work_area.size);
+                        }
+                    }
+                }
+            }
+            Ok(())
+        })
         .on_window_event(|window, event| {
             if window.label() == "main" {
                 if matches!(event, WindowEvent::Destroyed) {
