@@ -334,6 +334,23 @@
         return;
       }
 
+      if (behavior === "toggle-blur-ip") {
+        var nextBlurState = !document.body.classList.contains("v1-blur-ip");
+        document.body.classList.toggle("v1-blur-ip", nextBlurState);
+        try {
+          localStorage.setItem("netrecon_blur_ip", nextBlurState ? "1" : "0");
+        } catch (_) {}
+        var blurBtn = document.querySelector('[data-menu-action="blur-ip-soon"]');
+        if (blurBtn) {
+          blurBtn.classList.toggle("is-active", nextBlurState);
+          blurBtn.setAttribute("aria-pressed", nextBlurState ? "true" : "false");
+        }
+        if (setStatusLine) {
+          setStatusLine(tr("menuPrefix") + ": " + (nextBlurState ? tr("statusBlurIpOn") : tr("statusBlurIpOff")));
+        }
+        return;
+      }
+
       if (behavior === "save-session") {
         return session ? session.saveSession() : undefined;
       }

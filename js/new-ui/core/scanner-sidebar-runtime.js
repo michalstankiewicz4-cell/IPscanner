@@ -39,7 +39,8 @@
         return parsed.filter(function (item) {
           return item && isValidIpv4(item.from) && isValidIpv4(item.to);
         });
-      } catch (_) {
+      } catch (err) {
+        console.error("[range-history] load failed:", err);
         return [];
       }
     }
@@ -47,8 +48,11 @@
     function saveRangeHistory(items) {
       try {
         localStorage.setItem(RANGE_HISTORY_KEY, JSON.stringify((items || []).slice(0, 24)));
-      } catch (_) {
-        // ignore storage errors
+      } catch (err) {
+        console.error("[range-history] save failed:", err);
+        if (typeof setStatusLine === "function") {
+          setStatusLine(t("statusRangeHistorySaveFailed") + " (" + (err && err.message ? err.message : err) + ")");
+        }
       }
     }
 
@@ -74,7 +78,13 @@
     }
 
     function addRangeHistory(fromIp, toIp) {
-      if (!isValidIpv4(fromIp) || !isValidIpv4(toIp)) return;
+      if (!isValidIpv4(fromIp) || !isValidIpv4(toIp)) {
+        console.error("[range-history] rejected invalid range:", fromIp, toIp);
+        if (typeof setStatusLine === "function") {
+          setStatusLine(t("statusRangeHistoryInvalid") + " (" + fromIp + " - " + toIp + ")");
+        }
+        return;
+      }
       var key = fromIp + "|" + toIp;
       var items = loadRangeHistory().filter(function (item) {
         return (item.from + "|" + item.to) !== key;

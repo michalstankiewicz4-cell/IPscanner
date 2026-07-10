@@ -119,6 +119,18 @@
   transform: translateY(1px);
 }
 
+.v1-menubar-action--square.is-active {
+  background: linear-gradient(180deg, #1f3a52 0%, #16283a 100%);
+  border-color: #4a90d9;
+  color: #9fd4ff;
+}
+
+.v1-menubar-action--square.is-active:hover {
+  background: linear-gradient(180deg, #244a68 0%, #1c3348 100%);
+  border-color: #5fa4ea;
+  color: #c3e4ff;
+}
+
 .v1-menubar-toggle {
   height: 100%;
   display: inline-flex;

@@ -283,6 +283,9 @@
         if (blurIpSoonButton) {
           blurIpSoonButton.setAttribute("title", tr("blurIpSoonButtonTitle"));
           blurIpSoonButton.setAttribute("aria-label", tr("blurIpSoonButtonTitle"));
+          var blurActive = document.body.classList.contains("v1-blur-ip");
+          blurIpSoonButton.classList.toggle("is-active", blurActive);
+          blurIpSoonButton.setAttribute("aria-pressed", blurActive ? "true" : "false");
         }
         if (autoArrangeToggle) {
           autoArrangeToggle.setAttribute("title", tr("autoArrangeOnUndockTitle"));
@@ -1076,6 +1079,12 @@
             setStatusLine,
           })
         : null;
+
+      try {
+        if (localStorage.getItem("netrecon_blur_ip") === "1") {
+          document.body.classList.add("v1-blur-ip");
+        }
+      } catch (_) {}
 
       applyStaticTranslations();
       applyMenuAndPanelDefinitions();

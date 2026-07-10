@@ -1158,3 +1158,22 @@
   color: var(--txt-dim);
   font-style: italic;
 }
+
+/* IP blur toggle (top menu bar, [data-menu-action="blur-ip-soon"]) - visual
+   masking only (screen-share safety), not data redaction: the underlying
+   text is still selectable in the DOM/devtools, just not on-screen. Covers
+   every surface that renders a raw IP/hostname today; a future new surface
+   (Terminal/Console/AI Assistant panels) just needs one of these selectors
+   added, no new logic. */
+body.v1-blur-ip .v1-ip-result-row .v1-ip-col-ip,
+body.v1-blur-ip .v1-ip-result-row .v1-ip-col-host,
+body.v1-blur-ip #v1DetectExtIp,
+body.v1-blur-ip #v1DetectLocalIp,
+body.v1-blur-ip #v1DetectSubnets,
+body.v1-blur-ip [data-ip-box] .v1-octet,
+body.v1-blur-ip #v1IpExtractorInput,
+body.v1-blur-ip #v1IpExtractorOutput,
+body.v1-blur-ip .v1-range-history-text {
+  filter: blur(5px);
+  user-select: none;
+}

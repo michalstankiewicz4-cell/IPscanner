@@ -132,6 +132,12 @@
       purpose: "Automatyczne rozmieszczenie odpiętych okien.",
       behavior: "auto-arrange-windows",
     },
+    "blur-ip-soon": {
+      label: "Blur IP addresses",
+      purposeKey: "tipActionBlurIp",
+      purpose: "Rozmywa widoczne adresy IP/hostname na ekranie (bezpieczne udostepnianie ekranu).",
+      behavior: "toggle-blur-ip",
+    },
     "window-close": {
       label: "Window close",
       purposeKey: "tipActionWindowClose",
