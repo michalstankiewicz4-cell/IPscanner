@@ -3,6 +3,9 @@
     var versionsData = Array.isArray(deps.versionsData) ? deps.versionsData : [];
     var tr = typeof deps.tr === "function" ? deps.tr : function (key) { return key; };
     var setStatusLine = typeof deps.setStatusLine === "function" ? deps.setStatusLine : null;
+    var renderShellCraftLibrary = typeof deps.renderShellCraftLibrary === "function" ? deps.renderShellCraftLibrary : null;
+    var renderCanvasBlockHtml = typeof deps.renderCanvasBlockHtml === "function" ? deps.renderCanvasBlockHtml : null;
+    var renderShellCraftInspector = typeof deps.renderShellCraftInspector === "function" ? deps.renderShellCraftInspector : null;
 
     function escapeHtml(value) {
       return String(value == null ? "" : value)
@@ -997,9 +1000,214 @@
       });
     }
 
+    function wireShellCraftCanvas(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
+      if (!root) return;
+      var canvasEl = root.querySelector("#v1ShellCraftCanvas");
+      if (!canvasEl || !renderCanvasBlockHtml) return;
+
+      var canvasApi = (window.NetReconNewUICore && window.NetReconNewUICore.shellcraftCanvas) || null;
+      var macrosApi = (window.NetReconNewUICore && window.NetReconNewUICore.macros) || null;
+      if (!canvasApi) return;
+
+      var selectedBlockId = "";
+
+      function render() {
+        var state = canvasApi.getState();
+        canvasEl.innerHTML = state.blocks.map(renderCanvasBlockHtml).join("");
+        if (selectedBlockId) {
+          var selectedEl = canvasEl.querySelector('[data-block-id="' + selectedBlockId + '"]');
+          if (selectedEl) selectedEl.classList.add("is-selected");
+        }
+      }
+
+      render();
+
+      document.addEventListener("newui:shellcraft-canvas-changed", function () {
+        if (!document.body.contains(canvasEl)) return;
+        render();
+      });
+
+      if (canvasEl.dataset.shellcraftBound === "1") return;
+      canvasEl.dataset.shellcraftBound = "1";
+
+      canvasEl.addEventListener("dragover", function (event) {
+        event.preventDefault();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = event.dataTransfer.types.indexOf("application/x-shellcraft-move") >= 0 ? "move" : "copy";
+      });
+
+      canvasEl.addEventListener("drop", function (event) {
+        event.preventDefault();
+        var rect = canvasEl.getBoundingClientRect();
+        var x = event.clientX - rect.left;
+        var y = event.clientY - rect.top;
+
+        var moveRaw = event.dataTransfer.getData("application/x-shellcraft-move");
+        if (moveRaw) {
+          try {
+            var movePayload = JSON.parse(moveRaw);
+            canvasApi.updateBlockPosition(movePayload.id, x - movePayload.offsetX, y - movePayload.offsetY);
+          } catch (_) {
+            // ignore malformed move payload
+          }
+          return;
+        }
+
+        var raw = event.dataTransfer.getData("application/x-shellcraft-block");
+        if (!raw) return;
+        try {
+          var payload = JSON.parse(raw);
+          canvasApi.addBlock(payload.type, x, y, payload.properties);
+        } catch (_) {
+          // ignore malformed drop payload
+        }
+      });
+
+      canvasEl.addEventListener("dragstart", function (event) {
+        var blockEl = event.target && event.target.closest ? event.target.closest(".v1-canvas-block") : null;
+        if (!blockEl) return;
+        var blockRect = blockEl.getBoundingClientRect();
+        var movePayload = {
+          id: blockEl.getAttribute("data-block-id"),
+          offsetX: event.clientX - blockRect.left,
+          offsetY: event.clientY - blockRect.top,
+        };
+        event.dataTransfer.setData("application/x-shellcraft-move", JSON.stringify(movePayload));
+        event.dataTransfer.effectAllowed = "move";
+      });
+
+      canvasEl.addEventListener("click", function (event) {
+        var runBtn = event.target && event.target.closest ? event.target.closest("[data-canvas-macro-run]") : null;
+        if (runBtn) {
+          var macroId = runBtn.getAttribute("data-canvas-macro-run");
+          if (macrosApi) macrosApi.runMacro(macroId);
+          var macro = macrosApi ? macrosApi.getMacro(macroId) : null;
+          if (setStatusLine && macro) setStatusLine(tr("statusMacroRun") + ": " + tr(macro.nameKey));
+          return;
+        }
+
+        var notRunnableBtn = event.target && event.target.closest ? event.target.closest("[data-block-not-runnable] .v1-canvas-block-run-btn") : null;
+        if (notRunnableBtn) {
+          if (setStatusLine) setStatusLine(tr("statusBlockNotExecutable"));
+          return;
+        }
+
+        var blockEl = event.target && event.target.closest ? event.target.closest(".v1-canvas-block") : null;
+        if (!blockEl) return;
+
+        selectedBlockId = blockEl.getAttribute("data-block-id");
+        canvasEl.querySelectorAll(".v1-canvas-block.is-selected").forEach(function (el) {
+          el.classList.remove("is-selected");
+        });
+        blockEl.classList.add("is-selected");
+
+        try {
+          document.dispatchEvent(new CustomEvent("newui:shellcraft-block-selected", { detail: { blockId: selectedBlockId } }));
+        } catch (_) {
+          // ignore event dispatch failures
+        }
+      });
+    }
+
+    function wireShellCraftInspector() {
+      var mount = document.getElementById("v1ShellCraftInspector");
+      if (!mount || !renderShellCraftInspector) return;
+
+      var canvasApi = (window.NetReconNewUICore && window.NetReconNewUICore.shellcraftCanvas) || null;
+      var macrosApi = (window.NetReconNewUICore && window.NetReconNewUICore.macros) || null;
+      if (!canvasApi) return;
+
+      var selectedBlockId = "";
+      var suppressNextRender = false;
+
+      function render() {
+        mount.innerHTML = renderShellCraftInspector(selectedBlockId);
+      }
+
+      render();
+
+      document.addEventListener("newui:shellcraft-block-selected", function (event) {
+        selectedBlockId = (event && event.detail && event.detail.blockId) || "";
+        render();
+      });
+
+      document.addEventListener("newui:shellcraft-canvas-changed", function () {
+        if (!document.body.contains(mount)) return;
+        if (suppressNextRender) {
+          suppressNextRender = false;
+          return;
+        }
+        var state = canvasApi.getState();
+        if (selectedBlockId && !state.blocks.some(function (b) { return b.id === selectedBlockId; })) {
+          selectedBlockId = "";
+        }
+        render();
+      });
+
+      if (mount.dataset.shellcraftBound === "1") return;
+      mount.dataset.shellcraftBound = "1";
+
+      mount.addEventListener("input", function (event) {
+        var target = event.target;
+        if (!target || !target.matches || !target.matches("[data-inspector-field]")) return;
+        if (!selectedBlockId) return;
+
+        var field = target.getAttribute("data-inspector-field");
+        var value = (field === "maxIterations" || field === "intervalMinutes") ? Number(target.value) : target.value;
+        var patch = {};
+        patch[field] = value;
+
+        suppressNextRender = true;
+        canvasApi.updateBlockProperties(selectedBlockId, patch);
+      });
+
+      mount.addEventListener("click", function (event) {
+        var runBtn = event.target && event.target.closest ? event.target.closest("[data-canvas-macro-run]") : null;
+        if (!runBtn || !macrosApi) return;
+        macrosApi.runMacro(runBtn.getAttribute("data-canvas-macro-run"));
+      });
+    }
+
+    function wireShellCraftLibrary() {
+      var mount = document.getElementById("v1ShellCraftLibrary");
+      if (!mount || !renderShellCraftLibrary) return;
+
+      mount.innerHTML = renderShellCraftLibrary();
+
+      if (mount.dataset.shellcraftBound === "1") return;
+      mount.dataset.shellcraftBound = "1";
+
+      mount.addEventListener("dragstart", function (event) {
+        var row = event.target && event.target.closest ? event.target.closest(".v1-lib-block-row") : null;
+        if (!row) return;
+
+        var blockType = row.getAttribute("data-block-type");
+        var properties = {};
+        if (blockType === "macro") {
+          properties = { macroId: row.getAttribute("data-macro-id") };
+        } else if (blockType === "repeat-until") {
+          properties = { condition: "", maxIterations: 10 };
+        } else if (blockType === "if") {
+          properties = { condition: "" };
+        } else if (blockType === "powershell") {
+          properties = { command: "" };
+        } else if (blockType === "time-trigger") {
+          properties = { time: "", intervalMinutes: 0 };
+        }
+
+        event.dataTransfer.setData("application/x-shellcraft-block", JSON.stringify({ type: blockType, properties: properties }));
+        event.dataTransfer.effectAllowed = "copy";
+      });
+    }
+
     return {
       // shell
       wireVersionsTimeline: wireVersionsTimeline,
+      wireShellCraftLibrary: wireShellCraftLibrary,
+      wireShellCraftCanvas: wireShellCraftCanvas,
+      wireShellCraftInspector: wireShellCraftInspector,
       // ip-scanner tool
       wireResultsIpTable: wireResultsIpTable,
       wirePresetsTool: wirePresetsTool,

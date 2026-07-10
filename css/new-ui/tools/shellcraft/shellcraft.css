@@ -1,0 +1,141 @@
+/* shell: ShellCraft - Library (LS), canvas (CS), Inspector (RS) */
+
+.v1-shellcraft-library {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.v1-lib-block-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: grab;
+  user-select: none;
+}
+
+.v1-lib-block-row:hover {
+  background: #222326;
+  border-color: #3f3f46;
+}
+
+.v1-lib-block-row:active {
+  cursor: grabbing;
+}
+
+.v1-lib-block-icon {
+  font-size: 13px;
+  color: var(--txt-dim);
+}
+
+.v1-lib-block-name {
+  font-size: 12px;
+  color: var(--txt);
+}
+
+.v1-shellcraft-canvas-shell {
+  height: 100%;
+  overflow: auto;
+  background: var(--bg-elev);
+}
+
+.v1-shellcraft-canvas {
+  position: relative;
+  width: 3000px;
+  height: 2000px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.v1-canvas-block {
+  position: absolute;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: #1f2024;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+}
+
+.v1-canvas-block:active {
+  cursor: grabbing;
+}
+
+.v1-canvas-block.is-selected {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand);
+}
+
+.v1-canvas-block-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--txt);
+}
+
+.v1-canvas-block-icon {
+  font-size: 13px;
+}
+
+.v1-canvas-block[data-block-not-runnable] {
+  opacity: 0.75;
+}
+
+.v1-canvas-block-run-btn {
+  align-self: flex-start;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #2a2d31;
+  color: var(--txt);
+  font-size: 11px;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+
+.v1-canvas-block-run-btn:hover {
+  border-color: #555b66;
+  background: #333845;
+}
+
+.v1-canvas-block-not-runnable-note {
+  font-size: 10px;
+  color: var(--txt-dim);
+  font-style: italic;
+}
+
+.v1-shellcraft-inspector {
+  padding: 4px;
+}
+
+.v1-shellcraft-inspector-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.v1-shellcraft-inspector-field label {
+  color: var(--txt-dim);
+  font-size: 12px;
+}
+
+.v1-shellcraft-inspector-field textarea,
+.v1-shellcraft-inspector-field input {
+  border: 1px solid #31333a;
+  background: #1f2024;
+  color: var(--txt);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  width: 100%;
+}

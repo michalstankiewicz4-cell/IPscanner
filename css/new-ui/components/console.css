@@ -109,11 +109,7 @@
 }
 
 .v1-console-pane[data-v1-console-pane="macro"] {
-  padding: 8px;
-  background: #0f1012;
-  border: 1px solid #2f3338;
-  border-radius: 6px;
-  overflow: auto;
+  padding: 0;
 }
 
 .v1-console-pane[data-v1-console-pane="info"] {
@@ -122,6 +118,11 @@
 }
 
 .v1-console-pane.active[data-v1-console-pane="console"] {
+  display: flex;
+  flex-direction: column;
+}
+
+.v1-console-pane.active[data-v1-console-pane="macro"] {
   display: flex;
   flex-direction: column;
 }

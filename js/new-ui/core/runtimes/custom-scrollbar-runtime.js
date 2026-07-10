@@ -7,7 +7,6 @@
     ".v1-ai-threadlist",
     ".v1-ai-chat",
     ".v1-ai-prompt",
-    ".v1-console-pane[data-v1-console-pane=\"macro\"]",
     ".v1-ps-output",
     ".v1-info-log",
     ".v1-import-manager-grid textarea",
@@ -15,6 +14,7 @@
     ".listview-body",
     ".v1-session-welcome-list",
     ".v1-menu-dd-flyout",
+    ".v1-shellcraft-library",
   ];
 
   var TOOL_IP_SCANNER_SCROLL_TARGETS = [

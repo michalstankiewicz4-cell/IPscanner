@@ -277,13 +277,13 @@
 .v1-ai-threadlist.v1-custom-scroll-host,
 .v1-ai-chat.v1-custom-scroll-host,
 .v1-ai-prompt.v1-custom-scroll-host,
-.v1-console-pane[data-v1-console-pane="macro"].v1-custom-scroll-host,
 .v1-ps-output.v1-custom-scroll-host,
 .v1-info-log.v1-custom-scroll-host,
 .v1-import-output.v1-custom-scroll-host,
 .v1-results-table-scroll--ip.v1-custom-scroll-host,
 .listview-body.v1-custom-scroll-host,
-.v1-menu-dd-flyout.v1-custom-scroll-host {
+.v1-menu-dd-flyout.v1-custom-scroll-host,
+.v1-shellcraft-library.v1-custom-scroll-host {
   padding-inline-end: var(--v1-scroll-safe-gutter);
   box-sizing: border-box;
 }

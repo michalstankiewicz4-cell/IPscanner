@@ -19,7 +19,7 @@
     // --- ip-scanner tool keys ---
     // Fallback tab order, scan data keys, and scan-engine state below are all
     // IP-Scanner-specific, not generic shell state.
-    var sidebarFallbackOrder = ["scan-runner", "shellcraft-library", "shellcraft-inspector", "results-ip", "ip-library"];
+    var sidebarFallbackOrder = ["scan-runner", "shellcraft-library", "results-ip", "ip-library"];
     var SCAN_DEFAULTS_KEY = "netrecon_scan_defaults_v1";
     var SCAN_RESULTS_KEY = "netrecon_scan_results_v1";
     var SCAN_PROGRESS_KEY = "netrecon_scan_progress_v1";
@@ -1145,8 +1145,9 @@
         if (fromCenterTabs) {
           if (tool === "shellcraft") {
             ensureSidebarTabOpen("shellcraft-library");
-            ensureSidebarTabOpen("shellcraft-inspector");
             setLeftActiveTab("shellcraft-library");
+            ensureRightTabOpen("shellcraft-inspector");
+            setRightTabActive("shellcraft-inspector");
           }
           switchTool(tool);
           return;
@@ -1169,8 +1170,9 @@
           activateSidebarTool(tool);
         } else if (tool === "shellcraft") {
           ensureSidebarTabOpen("shellcraft-library");
-          ensureSidebarTabOpen("shellcraft-inspector");
           setLeftActiveTab("shellcraft-library");
+          ensureRightTabOpen("shellcraft-inspector");
+          setRightTabActive("shellcraft-inspector");
         }
         switchTool(tool);
       });
@@ -1274,6 +1276,73 @@
       });
     }
 
+    // shell: Down Section "Macro" console tab - a small, fixed list of
+    // shortcuts, each reproducing an existing LS Detect-button click 1:1.
+    function bindMacroConsolePane() {
+      var outputEl = document.getElementById("v1MacroOutput");
+      var inputEl = document.getElementById("v1MacroInput");
+      if (!outputEl || !inputEl) return;
+
+      var macrosApi = (window.NetReconNewUICore && window.NetReconNewUICore.macros) || null;
+      if (!macrosApi) return;
+
+      function append(line) {
+        outputEl.textContent += (outputEl.textContent ? "\n" : "") + line;
+        outputEl.scrollTop = outputEl.scrollHeight;
+      }
+
+      function findMacro(query) {
+        var needle = query.trim().toLowerCase();
+        return macrosApi.getMacros().find(function (macro) {
+          return macro.id.toLowerCase() === needle || tr(macro.nameKey).toLowerCase() === needle;
+        }) || null;
+      }
+
+      function listMacros() {
+        macrosApi.getMacros().forEach(function (macro) {
+          append(macro.iconGlyph + " " + macro.id + " - " + tr(macro.nameKey));
+        });
+      }
+
+      function runCommand() {
+        var raw = String(inputEl.value || "").trim();
+        if (!raw) return;
+
+        append("M> " + raw);
+        inputEl.value = "";
+
+        var normalized = raw.toLowerCase();
+        if (normalized === "help" || normalized === "?") {
+          listMacros();
+          return;
+        }
+
+        var macro = findMacro(raw);
+        if (!macro) {
+          append(tr("macroUnknownCommand") + " \"" + raw + "\" - " + tr("macroHelpHint"));
+          return;
+        }
+
+        macrosApi.runMacro(macro.id);
+        append(tr("statusMacroRun") + ": " + tr(macro.nameKey));
+        if (setStatusLine) setStatusLine(tr("statusMacroRun") + ": " + tr(macro.nameKey));
+      }
+
+      if (inputEl.dataset.macroBound !== "1") {
+        inputEl.dataset.macroBound = "1";
+        inputEl.addEventListener("keydown", function (event) {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          runCommand();
+        });
+      }
+
+      if (outputEl.dataset.macroBound !== "1") {
+        outputEl.dataset.macroBound = "1";
+        append(tr("macroHelpHint"));
+      }
+    }
+
     function bindRightTabsAndAssistant() {
       document.querySelectorAll(".v1-right-tab").forEach(function (tab) {
         tab.addEventListener("click", function () {
@@ -1357,6 +1426,7 @@
       bindToolClicks();
       bindSidebarTabClosers();
       bindConsoleTabs();
+      bindMacroConsolePane();
       bindRightTabsAndAssistant();
     }
 

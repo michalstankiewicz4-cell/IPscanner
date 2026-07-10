@@ -13,6 +13,8 @@
     var importToolConfig = contentConfig.importTool || {};
     var resultsIpConfig = contentConfig.resultsIp || {};
     var presetsApi = core.presets || null;
+    var macrosApi = core.macros || null;
+    var shellcraftCanvasApi = core.shellcraftCanvas || null;
 
     function trOr(key, fallback) {
       var value = tr(key);
@@ -299,6 +301,50 @@
         "<h4 style=\"margin:12px 0 4px;\">" + escapeHtml(tr("extListHeader")) + "</h4>",
         "<div id=\"v1ImportOutput\" data-import-role=\"output\" class=\"v1-import-output\">" + listHtml + "</div>",
         "</div>"
+      ].join("");
+    }
+
+    var SHELLCRAFT_FUNCTIONAL_BLOCKS = [
+      { type: "if", icon: "🔀", labelKey: "shellcraftBlockIfLabel" },
+      { type: "repeat-until", icon: "🔁", labelKey: "shellcraftBlockRepeatUntilLabel" },
+      { type: "powershell", icon: "⌨", labelKey: "shellcraftBlockPowerShellLabel" },
+      { type: "time-trigger", icon: "⏰", labelKey: "shellcraftBlockTimeTriggerLabel" },
+    ];
+
+    function shellcraftBlockRowHtml(attrs, icon, label) {
+      return [
+        "<div class=\"v1-lib-block-row\" draggable=\"true\" " + attrs + ">",
+        "<span class=\"v1-lib-block-icon\" aria-hidden=\"true\">" + escapeHtml(icon) + "</span>",
+        "<span class=\"v1-lib-block-name\">" + escapeHtml(label) + "</span>",
+        "</div>"
+      ].join("");
+    }
+
+    function renderShellCraftLibrary() {
+      var functionalHtml = SHELLCRAFT_FUNCTIONAL_BLOCKS.map(function (block) {
+        return shellcraftBlockRowHtml("data-block-type=\"" + block.type + "\"", block.icon, tr(block.labelKey));
+      }).join("");
+
+      var macros = macrosApi ? macrosApi.getMacros() : [];
+      var macrosHtml = macros.map(function (macro) {
+        return shellcraftBlockRowHtml(
+          "data-block-type=\"macro\" data-macro-id=\"" + escapeHtml(macro.id) + "\"",
+          macro.iconGlyph,
+          tr(macro.nameKey)
+        );
+      }).join("");
+
+      return [
+        "<ul class=\"v1-tool-list\">",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("shellcraftLibraryFunctionalHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">" + functionalHtml + "</div>",
+        "</li>",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("shellcraftLibraryMacrosHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">" + macrosHtml + "</div>",
+        "</li>",
+        "</ul>"
       ].join("");
     }
 
@@ -637,6 +683,116 @@
       ].join("");
     }
 
+    function renderCanvasBlockHtml(block) {
+      var runnable = block.type === "macro";
+      var iconGlyph = "⚙";
+      var titleText = block.type;
+      var bodyHtml = "";
+
+      if (block.type === "macro") {
+        var macro = macrosApi ? macrosApi.getMacro(block.properties.macroId) : null;
+        iconGlyph = macro ? macro.iconGlyph : "🌐";
+        titleText = macro ? tr(macro.nameKey) : block.properties.macroId;
+        bodyHtml = "<button type=\"button\" class=\"v1-canvas-block-run-btn\" data-canvas-macro-run=\"" + escapeHtml(block.properties.macroId) + "\">" + escapeHtml(tr("macroRunBtn")) + "</button>";
+      } else {
+        if (block.type === "if") { iconGlyph = "🔀"; titleText = tr("shellcraftBlockIfLabel"); }
+        else if (block.type === "repeat-until") { iconGlyph = "🔁"; titleText = tr("shellcraftBlockRepeatUntilLabel"); }
+        else if (block.type === "powershell") { iconGlyph = "⌨"; titleText = tr("shellcraftBlockPowerShellLabel"); }
+        else if (block.type === "time-trigger") { iconGlyph = "⏰"; titleText = tr("shellcraftBlockTimeTriggerLabel"); }
+        bodyHtml = "<div class=\"v1-canvas-block-not-runnable-note\">" + escapeHtml(tr("shellcraftBlockNotRunnableNote")) + "</div>";
+      }
+
+      return [
+        "<div class=\"v1-canvas-block\" draggable=\"true\" data-block-id=\"" + escapeHtml(block.id) + "\" data-block-type=\"" + escapeHtml(block.type) + "\"" + (runnable ? "" : " data-block-not-runnable=\"true\"") + " style=\"left:" + block.x + "px;top:" + block.y + "px;\">",
+        "<div class=\"v1-canvas-block-head\"><span class=\"v1-canvas-block-icon\" aria-hidden=\"true\">" + escapeHtml(iconGlyph) + "</span><span>" + escapeHtml(titleText) + "</span></div>",
+        bodyHtml,
+        "</div>"
+      ].join("");
+    }
+
+    function renderShellCraftInspector(blockId) {
+      var state = shellcraftCanvasApi ? shellcraftCanvasApi.getState() : { blocks: [] };
+      var block = state.blocks.find(function (b) { return b.id === blockId; });
+
+      if (!block) {
+        return "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("shellcraftInspectorEmptyNote")) + "</div>";
+      }
+
+      if (block.type === "macro") {
+        var macro = macrosApi ? macrosApi.getMacro(block.properties.macroId) : null;
+        return [
+          "<div class=\"v1-shellcraft-inspector-field\">",
+          "<label>" + escapeHtml(tr("shellcraftInspectorMacroNameLabel")) + "</label>",
+          "<div>" + escapeHtml(macro ? tr(macro.nameKey) : block.properties.macroId) + "</div>",
+          "</div>",
+          "<div class=\"v1-shellcraft-inspector-field\">",
+          "<label>" + escapeHtml(tr("shellcraftInspectorMacroActionLabel")) + "</label>",
+          "<div>" + escapeHtml(macro ? macro.scannerAction : "") + "</div>",
+          "</div>",
+          "<button type=\"button\" class=\"v1-canvas-block-run-btn\" data-canvas-macro-run=\"" + escapeHtml(block.properties.macroId) + "\">" + escapeHtml(tr("shellcraftInspectorRunBtn")) + "</button>"
+        ].join("");
+      }
+
+      if (block.type === "if") {
+        return [
+          "<div class=\"v1-shellcraft-inspector-field\">",
+          "<label for=\"v1InspectorCondition\">" + escapeHtml(tr("shellcraftInspectorConditionLabel")) + "</label>",
+          "<textarea id=\"v1InspectorCondition\" rows=\"3\" data-inspector-field=\"condition\">" + escapeHtml(block.properties.condition) + "</textarea>",
+          "</div>"
+        ].join("");
+      }
+
+      if (block.type === "repeat-until") {
+        return [
+          "<div class=\"v1-shellcraft-inspector-field\">",
+          "<label for=\"v1InspectorCondition\">" + escapeHtml(tr("shellcraftInspectorConditionLabel")) + "</label>",
+          "<textarea id=\"v1InspectorCondition\" rows=\"3\" data-inspector-field=\"condition\">" + escapeHtml(block.properties.condition) + "</textarea>",
+          "</div>",
+          "<div class=\"v1-shellcraft-inspector-field\">",
+          "<label for=\"v1InspectorMaxIterations\">" + escapeHtml(tr("shellcraftInspectorMaxIterationsLabel")) + "</label>",
+          "<input id=\"v1InspectorMaxIterations\" type=\"number\" min=\"1\" data-inspector-field=\"maxIterations\" value=\"" + escapeHtml(String(block.properties.maxIterations)) + "\" />",
+          "</div>"
+        ].join("");
+      }
+
+      if (block.type === "powershell") {
+        return [
+          "<div class=\"v1-shellcraft-inspector-field\">",
+          "<label for=\"v1InspectorCommand\">" + escapeHtml(tr("shellcraftInspectorCommandLabel")) + "</label>",
+          "<textarea id=\"v1InspectorCommand\" rows=\"3\" data-inspector-field=\"command\">" + escapeHtml(block.properties.command) + "</textarea>",
+          "</div>"
+        ].join("");
+      }
+
+      if (block.type === "time-trigger") {
+        return [
+          "<div class=\"v1-shellcraft-inspector-field\">",
+          "<label for=\"v1InspectorTime\">" + escapeHtml(tr("shellcraftInspectorTimeLabel")) + "</label>",
+          "<input id=\"v1InspectorTime\" type=\"text\" placeholder=\"HH:MM\" data-inspector-field=\"time\" value=\"" + escapeHtml(block.properties.time) + "\" />",
+          "</div>",
+          "<div class=\"v1-shellcraft-inspector-field\">",
+          "<label for=\"v1InspectorIntervalMinutes\">" + escapeHtml(tr("shellcraftInspectorIntervalMinutesLabel")) + "</label>",
+          "<input id=\"v1InspectorIntervalMinutes\" type=\"number\" min=\"0\" data-inspector-field=\"intervalMinutes\" value=\"" + escapeHtml(String(block.properties.intervalMinutes)) + "\" />",
+          "</div>"
+        ].join("");
+      }
+
+      return "";
+    }
+
+    function renderShellCraftCanvasTool() {
+      var state = shellcraftCanvasApi ? shellcraftCanvasApi.getState() : { blocks: [] };
+      var blocksHtml = state.blocks.map(renderCanvasBlockHtml).join("");
+
+      return [
+        "<div class=\"v1-shellcraft-canvas-shell\">",
+        "<div class=\"v1-shellcraft-canvas\" id=\"v1ShellCraftCanvas\">",
+        blocksHtml,
+        "</div>",
+        "</div>"
+      ].join("");
+    }
+
     var toolRenderers = {
       // --- shell keys ---
       versions: renderVersionsTool,
@@ -644,6 +800,7 @@
       license: renderLicenseTool,
       "import-tool": renderImportTool,
       "language-manager": renderLanguageManagerTool,
+      shellcraft: renderShellCraftCanvasTool,
 
       // --- ip-scanner tool keys ---
       "ip-library": renderIpLibraryTool,
@@ -659,6 +816,9 @@
 
     return {
       buildDetailHtml: buildDetailHtml,
+      renderShellCraftLibrary: renderShellCraftLibrary,
+      renderCanvasBlockHtml: renderCanvasBlockHtml,
+      renderShellCraftInspector: renderShellCraftInspector,
     };
   }
 

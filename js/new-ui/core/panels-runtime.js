@@ -1475,6 +1475,9 @@
         versionsData: versionsData,
         tr: tr,
         setStatusLine: setStatusLine,
+        renderShellCraftLibrary: panelContentRuntime && panelContentRuntime.renderShellCraftLibrary,
+        renderCanvasBlockHtml: panelContentRuntime && panelContentRuntime.renderCanvasBlockHtml,
+        renderShellCraftInspector: panelContentRuntime && panelContentRuntime.renderShellCraftInspector,
       });
     }
 
@@ -1587,6 +1590,14 @@
             window.location.reload();
           });
         });
+      }
+
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireShellCraftLibrary) {
+        panelInteractionsRuntime.wireShellCraftLibrary();
+      }
+
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireShellCraftInspector) {
+        panelInteractionsRuntime.wireShellCraftInspector();
       }
 
       ensureAllTabControls();
@@ -1713,6 +1724,13 @@
       if (tool === "versions") { // shell
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireVersionsTimeline) {
           panelInteractionsRuntime.wireVersionsTimeline(scope);
+        }
+        return;
+      }
+
+      if (tool === "shellcraft") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireShellCraftCanvas) {
+          panelInteractionsRuntime.wireShellCraftCanvas(scope);
         }
         return;
       }
