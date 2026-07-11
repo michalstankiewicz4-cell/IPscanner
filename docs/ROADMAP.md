@@ -3,7 +3,7 @@
 High-level view of what's done, what's in progress, and what's planned. For
 the detailed architectural vision behind the addon system, see
 [FUTURE_PLUGIN_SHELL.md](FUTURE_PLUGIN_SHELL.md) (Polish). For the day-to-day
-project direction and rules, see [CONTRIBUTING.md](CONTRIBUTING.md) (Polish).
+project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
 
 ## Done
 
@@ -24,7 +24,7 @@ project direction and rules, see [CONTRIBUTING.md](CONTRIBUTING.md) (Polish).
   - A generic command bus (`register` / `invoke`) that both the shell and
     addons register commands on.
   - A GitHub-backed addon catalog (Import Tool) that lists and installs
-    addons straight from the [`tools/`](tools/) folder of this repo.
+    addons straight from the [`tools/`](../tools/) folder of this repo.
 - Rebrand to OSINT NET Auditor, including the compiled binary name, and
   working NSIS/MSI installers with WebView2 auto-detection.
 - Session save/load now also works in the browser build (`ipscanner.pl`),

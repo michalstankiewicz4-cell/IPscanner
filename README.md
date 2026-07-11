@@ -46,16 +46,18 @@ https://www.virustotal.com/gui/domain/ipscanner.pl
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md) for what's done, in progress, and planned next.
+See [docs/ROADMAP.md](docs/ROADMAP.md) for what's done, in progress, and planned next.
 
 ## Documentation
 
 | File | Description |
 | --- | --- |
-| [ROADMAP.md](ROADMAP.md) | What's done, in progress, and planned. |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | What's done, in progress, and planned. |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Notable changes, newest first. |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Non-obvious problems hit in this repo and their causes (written in Polish). |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Project direction and rules for contributing code (written in Polish). |
-| [FUTURE_PLUGIN_SHELL.md](FUTURE_PLUGIN_SHELL.md) | Design notes for the addon/plugin shell architecture (written in Polish). |
-| [SHELL_PROGRESS.md](SHELL_PROGRESS.md) | Map of the shell layout (menu/panels/status bar) and where each tool opens (written in Polish). |
+| [docs/FUTURE_PLUGIN_SHELL.md](docs/FUTURE_PLUGIN_SHELL.md) | Design notes for the addon/plugin shell architecture (written in Polish). |
+| [docs/SHELL_PROGRESS.md](docs/SHELL_PROGRESS.md) | Map of the shell layout (menu/panels/status bar) and where each tool opens (written in Polish). |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community code of conduct. |
 | [SECURITY.md](SECURITY.md) | How to report a security vulnerability. |
 | [LICENSE.MD](LICENSE.MD) | MIT License. |
