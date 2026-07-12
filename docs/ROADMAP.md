@@ -56,8 +56,9 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   version + radio-button activation (no uninstall), and a new list below
   fetches installable language packs from this repo's `languages/` folder —
   same mechanism as the `tools/` addon catalog, just for i18n dictionaries.
-  German (`languages/de.json`) is the first complete translation (433
-  strings).
+  German (`languages/de.json`) and Polish (`languages/pl.json`, published
+  even though `pl` is built-in) are the first two catalog entries, both
+  the full 433-string dictionary.
 
 ## In progress
 

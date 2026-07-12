@@ -17,6 +17,17 @@ of prior context — for full history use `git log`.
   (`languages/de.json`) as the first catalog language — a complete,
   hand-translated 433-string dictionary. Cleaned up 8 dead i18n keys left
   over from an older paste-JSON language UI.
+- Added `languages/pl.json` — Polish published in the same catalog format
+  as German, even though `pl` is a built-in language (shows as "already
+  installed" in the catalog, matching the built-in `en`/`pl` behavior).
+  While assembling it, found and fixed real drift in `i18n.js`'s PL
+  dictionary: a stray `resultsIpHeaderIpAddress` key that only ever
+  existed in PL (no EN counterpart, unused anywhere), and 13 keys
+  (`resultsIpColumn*`/`resultsIpHeader*`) that were defined **twice**
+  inside the PL dictionary object - a copy-pasted block sitting between
+  `statusRangeSet` and `statusRangeRecalled` (which are adjacent in EN),
+  silently overridden by JS object-literal semantics but confusing source.
+  PL and EN now have exactly the same 433 keys, no duplicates.
 
 ## 2026-07-12
 
