@@ -51,6 +51,13 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   Functional blocks (If / Repeat Until / PowerShell) are placeable and
   editable but honestly non-executable — no interpreter yet (backlog
   item 12).
+- Language Manager redesigned around a GitHub-backed catalog (Options →
+  Language...), mirroring Import Tool: installed languages get a flag +
+  version + radio-button activation (no uninstall), and a new list below
+  fetches installable language packs from this repo's `languages/` folder —
+  same mechanism as the `tools/` addon catalog, just for i18n dictionaries.
+  German (`languages/de.json`) is the first complete translation (433
+  strings).
 
 ## In progress
 
@@ -62,6 +69,9 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
 
 ## Planned
 
+- Spanish and Russian language dictionaries (Latin/Cyrillic, no RTL
+  complexity) — just adding a `languages/<code>.json` manifest to the repo,
+  reusing the GitHub-backed language catalog mechanism (see "Done" above).
 - PDF censored-text checker.
 - Email/file analyser.
 - IPv6/IPv4 correlation.
@@ -92,6 +102,19 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   then regex-based detection would miss non-IPv4 leaks (hostnames, IPv6),
   which risks false confidence worse than today's honest "we blur the whole
   thing" behavior.
+
+- **RTL language support (Arabic, Hebrew)** — adding the translation
+  dictionaries themselves is trivial (existing Language Manager /
+  `contributions.i18n` mechanism). The real cost is RTL layout: today there
+  is zero `dir` handling anywhere (`setLang()` only sets the `lang`
+  attribute) and the CSS is full of hardcoded `left`/`right` rather than
+  logical properties, compounded by the shell literally having sections
+  named LS/RS (Left/Right Section) with directional resizer arrows and
+  drag-to-resize math that isn't pure CSS. Also an open design decision, not
+  just mechanical find-replace: should LS/RS physically mirror position in
+  RTL mode, or stay put with RTL text inside? Font stack (IBM Plex
+  Sans/Space Grotesk) also lacks Arabic/Hebrew glyphs, needs a fallback
+  check. Estimate: a real multi-day project, not a drop-in new language.
 
 ## Backlog (per-feature audit, 2026-07-09)
 

@@ -6,6 +6,18 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-07-13
+
+- Language Manager (Options → Language...) redesigned to match Import
+  Tool's look: the old raw-code combobox is replaced by an installed-languages
+  list (flag emoji + version, radio-button activation, no uninstall) and a
+  new GitHub-backed catalog below it, fetched from this repo's `languages/`
+  folder exactly like the `tools/` addon catalog. Local `.json` import
+  ("Import language...") still works unchanged. Added German
+  (`languages/de.json`) as the first catalog language — a complete,
+  hand-translated 433-string dictionary. Cleaned up 8 dead i18n keys left
+  over from an older paste-JSON language UI.
+
 ## 2026-07-12
 
 - New TBM Options -> **General** screen: per-setting checkboxes controlling

@@ -2295,6 +2295,49 @@
       return catalogFetchPromise;
     }
 
+    // shell: Language Manager's "Import language" catalog - same repo/branch
+    // as the tools/ catalog above, but pointed at languages/ and simpler:
+    // no icon-file pairing (flag is a manifest field, not a paired image)
+    // and no extensionHost/permissions involvement (a language dictionary
+    // isn't an extension, just data). Same module-scope session cache
+    // rationale as catalogEntriesCache/catalogFetchPromise.
+    var LANG_CATALOG_FOLDER = "languages";
+    var LANG_CATALOG_API_URL = "https://api.github.com/repos/" + CATALOG_OWNER + "/" + CATALOG_REPO + "/contents/" + LANG_CATALOG_FOLDER + "?ref=" + CATALOG_BRANCH;
+    var langCatalogEntriesCache = null;
+    var langCatalogFetchPromise = null;
+
+    function fetchLanguageCatalog() {
+      return fetch(LANG_CATALOG_API_URL).then(function (res) {
+        if (!res.ok) throw new Error("GitHub API " + res.status);
+        return res.json();
+      }).then(function (files) {
+        var jsonFiles = (Array.isArray(files) ? files : []).filter(function (f) {
+          return f && f.type === "file" && typeof f.name === "string" && /\.json$/i.test(f.name);
+        });
+        return Promise.all(jsonFiles.map(function (f) {
+          return fetch(f.download_url).then(function (r) { return r.json(); }).catch(function () { return null; });
+        }));
+      }).then(function (results) {
+        return results.filter(function (m) {
+          return m && typeof m === "object" && typeof m.code === "string" && m.code.trim();
+        });
+      });
+    }
+
+    function loadLanguageCatalogCached() {
+      if (langCatalogEntriesCache) return Promise.resolve(langCatalogEntriesCache);
+      if (langCatalogFetchPromise) return langCatalogFetchPromise;
+      langCatalogFetchPromise = fetchLanguageCatalog().then(function (entries) {
+        langCatalogEntriesCache = entries;
+        langCatalogFetchPromise = null;
+        return entries;
+      }).catch(function (err) {
+        langCatalogFetchPromise = null;
+        throw err;
+      });
+      return langCatalogFetchPromise;
+    }
+
     function wireImportToolButtons(rootEl) {
       var root = rootEl && typeof rootEl.querySelector === "function"
         ? rootEl
@@ -2611,7 +2654,25 @@
         : document.getElementById("v1ToolDetail");
       if (!root) return;
 
-      var selectEl = root.querySelector('[data-lang-role="select"]') || root.querySelector("#v1LangTabSelect");
+      var installedListEl = root.querySelector("#v1LangInstalledList");
+      var catalogEl = root.querySelector("#v1LangCatalog");
+      var langCatalogEntries = langCatalogEntriesCache || [];
+
+      function renderInstalledList() {
+        if (!installedListEl) return;
+        var current = i18n && i18n.getLang ? i18n.getLang() : (document.documentElement.getAttribute("lang") || "en");
+        var details = i18n && i18n.listLanguageDetails ? i18n.listLanguageDetails() : [];
+        installedListEl.innerHTML = details.map(function (item) {
+          var checked = item.code === current ? " checked" : "";
+          var versionHtml = item.version ? " <span>@ " + escapeHtml(item.version) + "</span>" : "";
+          return "<label class=\"v1-lang-item\">"
+            + "<input type=\"radio\" name=\"v1LangActive\" data-lang-radio=\"" + escapeHtml(item.code) + "\"" + checked + " />"
+            + "<span class=\"v1-lang-flag\" aria-hidden=\"true\">" + escapeHtml(item.flag || "🌐") + "</span>"
+            + "<strong>" + escapeHtml(item.name || item.code.toUpperCase()) + "</strong>"
+            + versionHtml
+            + "</label>";
+        }).join("");
+      }
 
       function activate(code) {
         var before = i18n && i18n.getLang ? i18n.getLang() : "";
@@ -2620,7 +2681,7 @@
           if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langActivateFail") + " - " + code);
           return false;
         }
-        if (selectEl) selectEl.value = after;
+        renderInstalledList();
         if (window.NetReconNewUI && typeof window.NetReconNewUI.refreshLanguageUi === "function") {
           window.NetReconNewUI.refreshLanguageUi();
         }
@@ -2628,10 +2689,77 @@
         return true;
       }
 
-      if (selectEl && selectEl.dataset.bound !== "1") {
-        selectEl.dataset.bound = "1";
-        selectEl.addEventListener("change", function () {
-          activate(selectEl.value);
+      function renderCatalog() {
+        if (!catalogEl) return;
+        var installedCodes = i18n && i18n.listLanguages ? i18n.listLanguages() : [];
+        catalogEl.innerHTML = "";
+        if (!langCatalogEntries.length) {
+          var emptyEl = document.createElement("div");
+          emptyEl.className = "v1-import-empty";
+          emptyEl.textContent = tr("langCatalogEmpty");
+          catalogEl.appendChild(emptyEl);
+          return;
+        }
+        langCatalogEntries.forEach(function (manifest, idx) {
+          var isInstalled = installedCodes.indexOf(manifest.code) !== -1;
+
+          var itemEl = document.createElement("div");
+          itemEl.className = "v1-catalog-item";
+
+          var iconCell = document.createElement("div");
+          iconCell.className = "v1-catalog-icon-cell";
+          iconCell.textContent = manifest.flag || "🌐";
+          itemEl.appendChild(iconCell);
+
+          var infoEl = document.createElement("div");
+          infoEl.className = "v1-catalog-info";
+          var nameEl = document.createElement("strong");
+          nameEl.textContent = manifest.name || manifest.code;
+          var descEl = document.createElement("div");
+          descEl.textContent = manifest.version ? "v" + manifest.version : "";
+          infoEl.appendChild(nameEl);
+          infoEl.appendChild(descEl);
+          itemEl.appendChild(infoEl);
+
+          if (isInstalled) {
+            var badge = document.createElement("span");
+            badge.className = "v1-catalog-installed-badge";
+            badge.textContent = tr("langCatalogInstalledBadge");
+            itemEl.appendChild(badge);
+          } else {
+            var installBtn = document.createElement("button");
+            installBtn.type = "button";
+            installBtn.className = "v1-catalog-install-btn";
+            installBtn.textContent = tr("importToolInstallBtn");
+            installBtn.setAttribute("data-lang-catalog-index", String(idx));
+            itemEl.appendChild(installBtn);
+          }
+
+          catalogEl.appendChild(itemEl);
+        });
+      }
+
+      function installLanguageManifest(manifest) {
+        if (!manifest || typeof manifest.code !== "string" || !manifest.code.trim()) return;
+        if (!manifest.dictionary || typeof manifest.dictionary !== "object" || Array.isArray(manifest.dictionary)) return;
+        var addResult = i18n && i18n.addLanguage
+          ? i18n.addLanguage(manifest.code, manifest.dictionary, { name: manifest.name, version: manifest.version, flag: manifest.flag })
+          : { ok: false, error: tr("langAddFail") };
+        if (!addResult.ok) {
+          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langAddFail") + " - " + addResult.error);
+          return;
+        }
+        renderInstalledList();
+        renderCatalog();
+        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langCatalogInstallOk") + " - " + addResult.code);
+      }
+
+      if (installedListEl && installedListEl.dataset.bound !== "1") {
+        installedListEl.dataset.bound = "1";
+        installedListEl.addEventListener("change", function (event) {
+          var radio = event.target && event.target.closest ? event.target.closest("[data-lang-radio]") : null;
+          if (!radio) return;
+          activate(radio.getAttribute("data-lang-radio"));
         });
       }
 
@@ -2661,18 +2789,40 @@
               return;
             }
 
-            if (selectEl) {
-              var option = document.createElement("option");
-              option.value = addResult.code;
-              option.textContent = addResult.code;
-              selectEl.appendChild(option);
-            }
+            renderCatalog();
             activate(addResult.code);
           }).catch(function (err) {
             if (err && err.message === "cancelled") return;
             if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langAddFail"));
           });
         });
+      });
+
+      if (catalogEl && catalogEl.dataset.langCatalogBound !== "1") {
+        catalogEl.dataset.langCatalogBound = "1";
+        catalogEl.addEventListener("click", function (e) {
+          var btn = e.target && e.target.closest ? e.target.closest("[data-lang-catalog-index]") : null;
+          if (!btn) return;
+          var idx = Number(btn.getAttribute("data-lang-catalog-index"));
+          var manifest = langCatalogEntries[idx];
+          if (manifest) installLanguageManifest(manifest);
+        });
+      }
+
+      renderInstalledList();
+      renderCatalog();
+
+      loadLanguageCatalogCached().then(function (entries) {
+        langCatalogEntries = entries;
+        renderCatalog();
+      }).catch(function () {
+        if (catalogEl) {
+          catalogEl.innerHTML = "";
+          var errEl = document.createElement("div");
+          errEl.className = "v1-import-empty";
+          errEl.textContent = tr("langCatalogError");
+          catalogEl.appendChild(errEl);
+        }
       });
     }
 

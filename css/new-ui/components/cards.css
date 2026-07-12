@@ -308,62 +308,44 @@
   line-height: 1.4;
 }
 
-/* shell: Language Manager */
-.v1-lang-manager {
-  display: grid;
-  gap: 12px;
+/* shell: Language Manager - reuses the shared .v1-import-manager and
+   .v1-catalog-item families below (styled to look like Import Tool, per
+   request). Installed-language rows are a single horizontal line (flag +
+   name + version + radio), so they get their own row class instead of
+   .v1-import-item (a vertical id/name/version stack, wrong shape here). */
+.v1-lang-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #2f3238;
+  background: #202228;
+  cursor: pointer;
 }
 
-.v1-lang-manager-note {
+.v1-lang-item:hover {
+  border-color: #4d535c;
+}
+
+.v1-lang-item input[type="radio"] {
+  margin: 0;
+  accent-color: var(--activity);
+  flex: 0 0 auto;
+}
+
+.v1-lang-flag {
+  font-size: 15px;
+  line-height: 1;
+  width: 20px;
+  text-align: center;
+}
+
+.v1-catalog-installed-badge {
   color: var(--txt-dim);
   font-size: 12px;
-}
-
-.v1-lang-manager-grid {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px 12px;
-  align-items: start;
-}
-
-.v1-lang-manager-grid label {
-  color: var(--txt);
-  font-size: 12px;
-  padding-top: 8px;
-}
-
-.v1-lang-manager-grid select {
-  width: 100%;
-  border: 1px solid #31333a;
-  background: #1f2024;
-  color: var(--txt);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  padding: 8px 10px;
-  padding-right: 30px;
-  appearance: none;
-  cursor: pointer;
-}
-
-.v1-lang-manager-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.v1-lang-manager-actions button {
-  border: 0;
-  background: #2f2f33;
-  color: var(--txt);
-  font-size: 12px;
   font-family: var(--font-ui);
-  padding: 8px 11px;
-  cursor: pointer;
-}
-
-.v1-lang-manager-actions button:hover {
-  background: color-mix(in oklab, var(--bg-soft) 70%, var(--brand) 30%);
-  color: #ffffff;
+  padding: 6px 4px;
+  white-space: nowrap;
 }
 
 /* SHARED: base "v1-import-manager*" card/grid classes originally styled

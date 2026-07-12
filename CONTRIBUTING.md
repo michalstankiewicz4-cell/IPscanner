@@ -236,12 +236,27 @@ Instalacja i katalog dodatkow (Options -> Import Tool):
 
 ## 5. Dodawanie nowego jezyka
 
-Mozliwe sa dwie sciezki:
+Mozliwe sa trzy sciezki:
 
-- przez UI: Options -> Language (otwiera Language Manager),
+- przez UI, lokalny plik: Options -> Language... (Language Manager) ->
+  "Import language..." -> wybor pliku `.json`,
+- przez UI, katalog GitHub: ta sama zakladka, sekcja ponizej -
+  automatycznie wczytuje liste jezykow z folderu `languages/` w tym repo na
+  GitHubie (`fetchLanguageCatalog()` w `panels-runtime.js`, analogicznie do
+  katalogu dodatkow z `tools/` - patrz sekcja 4), z przyciskiem Install,
 - przez rozszerzenie: `contributions.i18n` w manifescie.
 
-Minimalny format slownika to obiekt JSON `key -> text`, np.:
+Language Manager pokazuje liste **zainstalowanych** jezykow (flaga emoji +
+nazwa + wersja jesli dotyczy, radio-button do wyboru aktywnego jezyka; bez
+mozliwosci odinstalowania - dotyczy to takze jezykow zaimportowanych z
+katalogu lub pliku lokalnego).
+
+Dwa formaty pliku jezykowego, w zaleznosci od sciezki importu:
+
+**Lokalny plik (`Import language...`)** - plaski slownik JSON `key -> text`,
+kod jezyka brany jest z nazwy pliku (np. `de.json` -> kod `de`); bez
+metadanych (flaga/nazwa/wersja dostaja wartosci domyslne: 🌐, kod wielkimi
+literami, brak wersji):
 
 ```json
 {
@@ -251,6 +266,29 @@ Minimalny format slownika to obiekt JSON `key -> text`, np.:
   "menuHelp": "Hilfe"
 }
 ```
+
+**Katalog GitHub (`languages/<code>.json`)** - "bogaty" manifest, mirrorujacy
+`tools/*.json`; bez pliku ikony do parowania - flaga to pole tekstowe w
+manifescie, nie osobny obrazek:
+
+```json
+{
+  "code": "de",
+  "name": "Deutsch",
+  "version": "1.0.0",
+  "flag": "🇩🇪",
+  "dictionary": {
+    "menuFile": "Datei",
+    "menuOptions": "Optionen"
+  }
+}
+```
+
+Zeby dodac nowy jezyk do katalogu: dodaj plik `languages/<code>.json` (pelny
+slownik, wszystkie klucze z `baseDictionaries.en` w `i18n.js`) w tym
+repo na `main` - katalog czyta zywe API GitHuba, wiec nie trzeba nic
+dodatkowo budowac/publikowac (patrz sekcja 4 - identyczna zasada dla
+`tools/`).
 
 Przykladowy fragment manifestu rozszerzenia z jezykiem:
 

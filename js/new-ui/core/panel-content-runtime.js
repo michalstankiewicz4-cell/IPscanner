@@ -228,33 +228,50 @@
       ].join("");
     }
 
+    // shell: Language Manager row markup for one installed language - kept
+    // as a standalone helper (not just inlined into renderLanguageManagerTool)
+    // because panels-runtime.js's wireLanguageManagerButtons() needs the
+    // exact same row shape to re-render #v1LangInstalledList after a radio
+    // change / local import / catalog install, mirroring how Import Tool's
+    // listInstalled()/renderCatalog() independently rebuild their own
+    // sub-regions rather than re-running the initial render function.
+    function renderLangInstalledRow(item, current) {
+      var checked = item.code === current ? " checked" : "";
+      var versionHtml = item.version ? " <span>@ " + escapeHtml(item.version) + "</span>" : "";
+      return [
+        "<label class=\"v1-lang-item\">",
+        "<input type=\"radio\" name=\"v1LangActive\" data-lang-radio=\"" + escapeHtml(item.code) + "\"" + checked + " />",
+        "<span class=\"v1-lang-flag\" aria-hidden=\"true\">" + escapeHtml(item.flag || "🌐") + "</span>",
+        "<strong>" + escapeHtml(item.name || item.code.toUpperCase()) + "</strong>",
+        versionHtml,
+        "</label>"
+      ].join("");
+    }
+
     function renderLanguageManagerTool() {
       var current = document.documentElement.getAttribute("lang") || "en";
-      var langList = [];
+      var langDetails = [];
       try {
-        langList = i18n && i18n.listLanguages ? i18n.listLanguages() : [];
+        langDetails = i18n && i18n.listLanguageDetails ? i18n.listLanguageDetails() : [];
       } catch (_) {
-        langList = [];
+        langDetails = [];
       }
-      var langOptions = langList.map(function (code) {
-        return "<option value=\"" + escapeHtml(code) + "\"" + (code === current ? " selected" : "") + ">" + escapeHtml(code) + "</option>";
+      var installedHtml = langDetails.map(function (item) {
+        return renderLangInstalledRow(item, current);
       }).join("");
 
       return [
-        "<div class=\"v1-lang-manager\">",
-        "<div class=\"v1-lang-manager-head\">",
-        "<div>",
+        "<div class=\"v1-import-manager\">",
+        "<div class=\"v1-import-manager-head\">",
         "<h4 style=\"margin:0 0 4px;\">" + tr("langManagerTitle") + "</h4>",
-        "<div class=\"v1-lang-manager-note\">" + tr("langListHeader") + ": " + current + "</div>",
         "</div>",
-        "</div>",
-        "<div class=\"v1-lang-manager-grid\">",
-        "<label for=\"v1LangTabSelect\">" + tr("langListHeader") + "</label>",
-        "<select id=\"v1LangTabSelect\" data-lang-role=\"select\">" + langOptions + "</select>",
-        "</div>",
-        "<div class=\"v1-lang-manager-actions\">",
+        "<h4 style=\"margin:12px 0 4px;\">" + tr("langInstalledHeading") + "</h4>",
+        "<div id=\"v1LangInstalledList\">" + installedHtml + "</div>",
+        "<div class=\"v1-import-manager-actions\">",
         "<button type=\"button\" data-lang-action=\"import\">" + tr("langImportBtn") + "</button>",
         "</div>",
+        "<h4 style=\"margin:12px 0 4px;\">" + tr("langCatalogHeading") + "</h4>",
+        "<div id=\"v1LangCatalog\" data-lang-role=\"catalog\" class=\"v1-import-output v1-catalog-list\">" + escapeHtml(tr("langCatalogEmpty")) + "</div>",
         "</div>"
       ].join("");
     }

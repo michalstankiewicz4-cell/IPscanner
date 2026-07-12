@@ -1,6 +1,7 @@
 (function () {
   var LANG_KEY = "netrecon_lang";
   var CUSTOM_DICTS_KEY = "netrecon_custom_i18n";
+  var LANG_META_KEY = "netrecon_lang_meta_v1";
 
   function getStorageAdapter() {
     var core = window.NetReconNewUICore || {};
@@ -197,15 +198,13 @@
       extCloseBtn: "Close",
       extManagerReady: "Ready. Install, list, or uninstall extensions.",
       langManagerTitle: "Language Manager",
+      langInstalledHeading: "Installed languages",
       langImportBtn: "Import language...",
-      langCodeLabel: "Language code",
-      langCodePlaceholder: "e.g. de",
-      langDictLabel: "Language dictionary JSON",
-      langDictPlaceholder: "{\n  \"menuFile\": \"Datei\"\n}",
-      langAddBtn: "Add language",
-      langActivateBtn: "Activate language",
-      langListBtn: "List languages",
-      langAddOk: "Language added",
+      langCatalogHeading: "Import language",
+      langCatalogEmpty: "Loading...",
+      langCatalogError: "Could not load the language catalog.",
+      langCatalogInstalledBadge: "✓ Installed",
+      langCatalogInstallOk: "Language installed",
       langAddFail: "Language add failed",
       langActivateOk: "Language activated",
       langActivateFail: "Language activation failed",
@@ -635,15 +634,13 @@
       extCloseBtn: "Zamknij",
       extManagerReady: "Gotowe. Zainstaluj, wyswietl liste lub odinstaluj rozszerzenia.",
       langManagerTitle: "Menedzer jezykow",
+      langInstalledHeading: "Zainstalowane jezyki",
       langImportBtn: "Importuj jezyk...",
-      langCodeLabel: "Kod jezyka",
-      langCodePlaceholder: "np. de",
-      langDictLabel: "JSON slownika jezyka",
-      langDictPlaceholder: "{\n  \"menuFile\": \"Datei\"\n}",
-      langAddBtn: "Dodaj jezyk",
-      langActivateBtn: "Aktywuj jezyk",
-      langListBtn: "Lista jezykow",
-      langAddOk: "Jezyk dodany",
+      langCatalogHeading: "Importuj jezyk",
+      langCatalogEmpty: "Wczytywanie...",
+      langCatalogError: "Nie udalo sie wczytac katalogu jezykow.",
+      langCatalogInstalledBadge: "✓ Zainstalowano",
+      langCatalogInstallOk: "Jezyk zainstalowany",
       langAddFail: "Dodanie jezyka nieudane",
       langActivateOk: "Jezyk aktywowany",
       langActivateFail: "Aktywacja jezyka nieudana",
@@ -942,6 +939,20 @@
 
   var dictionaries = cloneDictionaries(baseDictionaries);
 
+  // Language Manager -> installed-languages list (flag/name/version per
+  // language). Parallel to `dictionaries` but never merged into it - lookup
+  // text (`t()`) never touches this. Built-ins get a fixed identity (no
+  // version - they're not an importable "package"); imported/catalog
+  // languages get whatever metadata addLanguage() was given, if any.
+  function makeBuiltInLangMeta() {
+    return {
+      en: { name: "English", flag: "🇬🇧", version: "" },
+      pl: { name: "Polski", flag: "🇵🇱", version: "" },
+    };
+  }
+
+  var langMeta = makeBuiltInLangMeta();
+
   function normalizeLangCode(code) {
     if (typeof code !== "string") return "";
     var normalized = code.trim().toLowerCase();
@@ -989,12 +1000,56 @@
     });
   }
 
+  function saveLangMeta() {
+    var custom = {};
+    Object.keys(langMeta).forEach(function (code) {
+      if (!baseDictionaries[code]) {
+        custom[code] = Object.assign({}, langMeta[code]);
+      }
+    });
+
+    try {
+      storageSet(LANG_META_KEY, JSON.stringify(custom));
+    } catch (_) {}
+  }
+
+  function loadLangMeta() {
+    var payload = null;
+    try {
+      payload = storageGet(LANG_META_KEY);
+    } catch (_) {
+      payload = null;
+    }
+
+    if (!payload) return;
+
+    var parsed = null;
+    try {
+      parsed = JSON.parse(payload);
+    } catch (_) {
+      parsed = null;
+    }
+
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return;
+
+    Object.keys(parsed).forEach(function (code) {
+      var normalizedCode = normalizeLangCode(code);
+      var meta = parsed[code];
+      if (!normalizedCode || !meta || typeof meta !== "object" || Array.isArray(meta)) return;
+      langMeta[normalizedCode] = {
+        name: String(meta.name || normalizedCode.toUpperCase()),
+        flag: String(meta.flag || "🌐"),
+        version: String(meta.version || ""),
+      };
+    });
+  }
+
   function getCurrentLang() {
     var raw = storageGet(LANG_KEY) || "en";
     return dictionaries[raw] ? raw : "en";
   }
 
-  function addLanguage(code, dictionary, persist) {
+  function addLanguage(code, dictionary, meta, persist) {
     var normalizedCode = normalizeLangCode(code);
     if (!normalizedCode) {
       return { ok: false, error: "Invalid language code" };
@@ -1005,7 +1060,15 @@
     }
 
     dictionaries[normalizedCode] = Object.assign({}, dictionary);
-    if (persist !== false) saveCustomDictionaries();
+    langMeta[normalizedCode] = {
+      name: String((meta && meta.name) || normalizedCode.toUpperCase()),
+      flag: String((meta && meta.flag) || "🌐"),
+      version: String((meta && meta.version) || ""),
+    };
+    if (persist !== false) {
+      saveCustomDictionaries();
+      saveLangMeta();
+    }
     return { ok: true, code: normalizedCode };
   }
 
@@ -1013,9 +1076,23 @@
     return Object.keys(dictionaries).sort();
   }
 
+  // Language Manager -> installed-languages list: same set as
+  // listLanguages(), enriched with display metadata for each code. Always
+  // returns a usable {name,flag,version} even for a code that somehow has
+  // no langMeta entry (shouldn't happen via addLanguage, but stay
+  // defensive since dictionaries/langMeta are two separate maps).
+  function listLanguageDetails() {
+    return listLanguages().map(function (code) {
+      var meta = langMeta[code] || { name: code.toUpperCase(), flag: "🌐", version: "" };
+      return { code: code, name: meta.name, flag: meta.flag, version: meta.version };
+    });
+  }
+
   function resetLanguages() {
     dictionaries = cloneDictionaries(baseDictionaries);
+    langMeta = makeBuiltInLangMeta();
     loadCustomDictionaries();
+    loadLangMeta();
   }
 
   function createI18n() {
@@ -1049,10 +1126,12 @@
       setLang: setLang,
       addLanguage: addLanguage,
       listLanguages: listLanguages,
+      listLanguageDetails: listLanguageDetails,
     };
   }
 
   loadCustomDictionaries();
+  loadLangMeta();
 
   window.NetReconNewUICore = window.NetReconNewUICore || {};
   window.NetReconNewUICore.i18n = {
@@ -1060,6 +1139,7 @@
     getCurrentLang: getCurrentLang,
     addLanguage: addLanguage,
     listLanguages: listLanguages,
+    listLanguageDetails: listLanguageDetails,
     resetLanguages: resetLanguages,
   };
 })();

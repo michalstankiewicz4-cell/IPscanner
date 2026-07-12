@@ -22,9 +22,18 @@ Klucze sa podzielone na dwie grupy, bo maja rozny cykl zycia:
 - Fallback: `"en"`.
 
 `netrecon_custom_i18n`
-- Wlasne slowniki dodane przez Language Manager / extension host.
+- Wlasne slowniki dodane przez Language Manager (import lokalny lub katalog
+  GitHub `languages/`) / extension host.
 - Typ: JSON object (`code -> dictionary`).
 - Fallback: brak klucza = tylko slowniki bazowe.
+
+`netrecon_lang_meta_v1`
+- Metadane jezykow spoza wbudowanych en/pl: nazwa, flaga emoji, wersja
+  (`{code -> {name, flag, version}}`). Rownolegle do `netrecon_custom_i18n`,
+  nigdy nie scalane ze slownikiem tlumaczen.
+- Typ: JSON object.
+- Fallback: brak klucza = jezyki importowane lokalnie (bez metadanych z
+  manifestu) dostaja domyslne 🌐/KOD/brak wersji.
 
 ### 2) Motyw UI
 
