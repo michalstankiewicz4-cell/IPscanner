@@ -1,77 +1,6 @@
-.v1-ext-modal[hidden] {
-  display: none;
-}
-
-.v1-ext-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 1200;
-  background: rgba(10, 10, 12, 0.72);
-  display: grid;
-  place-items: center;
-  padding: 18px;
-}
-
-.v1-ext-panel {
-  width: min(760px, 100%);
-  max-height: min(86vh, 860px);
-  overflow: auto;
-  border: 1px solid var(--line);
-  background: linear-gradient(180deg, #252528 0%, #1a1a1d 100%);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
-  padding: 14px;
-  display: grid;
-  grid-template-rows: auto auto auto auto;
-  gap: 10px;
-}
-
-.v1-ext-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.v1-ext-head h3 {
-  margin: 0;
-  font: 600 17px/1.2 var(--font-head);
-  color: var(--txt);
-}
-
-.v1-ext-close {
-  min-width: 32px;
-  height: 28px;
-  border: 1px solid var(--line);
-  background: #2b2b2f;
-  color: var(--txt);
-  cursor: pointer;
-}
-
-.v1-ext-grid {
-  display: grid;
-  gap: 8px;
-}
-
-.v1-ext-grid label {
-  color: var(--txt-dim);
-  font-size: 12px;
-}
-
-.v1-ext-grid textarea,
-.v1-ext-grid input {
-  width: 100%;
-  border: 1px solid var(--line);
-  background: #151518;
-  color: var(--txt);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  padding: 8px;
-}
-
-.v1-ext-grid textarea {
-  min-height: 160px;
-  resize: vertical;
-}
+/* Extension tool action buttons (rendered in the tool detail card).
+   Icon, per-button, and output styling live in cards.css; this file only
+   owns the action-row container. */
 
 .v1-ext-actions {
   display: flex;
@@ -96,23 +25,7 @@
   border-color: #4d535c;
 }
 
-.v1-ext-output {
-  border: 1px solid var(--line);
-  background: #111215;
-  color: #95c89d;
-  font: 12px/1.45 var(--font-mono);
-  min-height: 90px;
-  max-height: 180px;
-  overflow: auto;
-  padding: 8px;
-  white-space: pre-wrap;
-}
-
 @media (max-width: 740px) {
-  .v1-ext-panel {
-    padding: 10px;
-  }
-
   .v1-ext-actions button {
     flex: 1 1 45%;
   }

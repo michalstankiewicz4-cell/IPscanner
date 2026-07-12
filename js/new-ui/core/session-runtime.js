@@ -486,7 +486,6 @@
         s.removeItem(PRESETS_KEY);
         s.removeItem(DEFAULTS_KEY);
         // shell
-        s.removeItem("netrecon_active_tool");
         s.removeItem(PENDING_LAYOUT_KEY);
         s.removeItem(CURRENT_PATH_KEY);
       }

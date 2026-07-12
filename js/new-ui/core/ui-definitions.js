@@ -61,7 +61,7 @@
       behavior: "status",
     },
     exit: {
-      label: "Exit (mock)",
+      label: "Exit",
       purposeKey: "tipActionExit",
       purpose: "Wyjscie z aplikacji.",
       behavior: "app-exit",
@@ -91,7 +91,7 @@
       behavior: "open-github-download",
     },
     about: {
-      label: "About (mock)",
+      label: "About",
       purposeKey: "tipActionAbout",
       purpose: "Informacje o projekcie.",
       behavior: "switch-tool:about",
@@ -138,7 +138,7 @@
       purpose: "Automatyczne rozmieszczenie odpiętych okien.",
       behavior: "auto-arrange-windows",
     },
-    "blur-ip-soon": {
+    "blur-ip": {
       label: "Blur IP addresses",
       purposeKey: "tipActionBlurIp",
       purpose: "Rozmywa widoczne adresy IP/hostname na ekranie (bezpieczne udostepnianie ekranu).",
@@ -168,13 +168,13 @@
       behavior: "switch-tool:ip-library",
     },
     presets: {
-      label: "Port Presets (mock)",
+      label: "Port Presets",
       purposeKey: "tipActionPresets",
       purpose: "Zarzadzanie presetami portow.",
       behavior: "switch-tool:presets",
     },
     defaults: {
-      label: "Default Scan Values (mock)",
+      label: "Default Scan Values",
       purposeKey: "tipActionDefaults",
       purpose: "Domyslne wartosci skanowania.",
       behavior: "switch-tool:scan-defaults",

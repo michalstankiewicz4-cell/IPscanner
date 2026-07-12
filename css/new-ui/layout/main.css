@@ -27,10 +27,6 @@
   gap: 8px;
 }
 
-.v1-activity-spacer {
-  flex: 1 1 auto;
-}
-
 .v1-activity button {
   width: 34px;
   height: 34px;
@@ -613,28 +609,6 @@
 #v1MainCard {
   position: relative;
   z-index: 1;
-}
-
-#v1MainCard.v1-maincard-detached {
-  position: fixed;
-  top: 64px;
-  left: 96px;
-  width: min(980px, calc(100vw - 160px));
-  height: min(72vh, calc(100vh - 120px));
-  z-index: 50;
-  border: 1px solid #3c414a;
-  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.55);
-  resize: both;
-  overflow: auto;
-}
-
-#v1MainCard.v1-maincard-detached #v1ToolTitle {
-  cursor: move;
-  user-select: none;
-}
-
-#v1MainCard.v1-maincard-detached.is-dragging {
-  box-shadow: 0 24px 54px rgba(0, 0, 0, 0.62);
 }
 
 .v1-detached-tool-card {

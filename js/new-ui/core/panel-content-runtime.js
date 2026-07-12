@@ -49,18 +49,9 @@
     }
 
     function getPresetsState() {
-      var fallbackState = {
-        defaultPresetId: "all-ports",
-        presets: [
-          { id: "cameras", emoji: "📷", name: "Cameras", ports: "80,443,554,8080,8081,9000,34567,37777" },
-          { id: "printers", emoji: "🖨", name: "Printers", ports: "80,443,631,8080,9100" },
-          { id: "folders-http", emoji: "📁", name: "Folders / HTTP", ports: "21,80,3000,5000,8000,8080,8888" },
-          { id: "routers", emoji: "📡", name: "Routers", ports: "80,443,8080,8443,10000" },
-          { id: "nas-servers", emoji: "🗄", name: "NAS / Servers", ports: "80,443,5000,5001,8006,8080,9090" },
-          { id: "windows-smb", emoji: "🪟", name: "Windows / SMB", ports: "135,139,445,3389,5985,5986" },
-          { id: "all-ports", emoji: "🌐", name: "All ports", ports: "21,80,135,139,443,445,554,631,3000,3389,5000,5001,5985,5986,8000,8006,8080,8081,8443,8888,9000,9090,9100,10000,34567,37777" }
-        ]
-      };
+      var fallbackState = presetsApi && typeof presetsApi.getDefaultState === "function"
+        ? presetsApi.getDefaultState()
+        : { defaultPresetId: "all-ports", presets: [] };
 
       function hasPresetData(state) {
         var presets = state && Array.isArray(state.presets) ? state.presets : [];
@@ -282,10 +273,7 @@
           }).join("")
         : "<div class=\"v1-import-empty\">" + escapeHtml(trOr("importToolEmptyText", importToolConfig.emptyText || "No imported tools yet.")) + "</div>";
 
-      var subtitleText = tr("importToolSubtitle");
-      if (subtitleText === "importToolSubtitle") {
-        subtitleText = trOr("importToolSubtitle", importToolConfig.subtitle || "This area is still under development, so tool imports are temporarily unavailable.");
-      }
+      var subtitleText = trOr("importToolSubtitle", importToolConfig.subtitle || "Install addons from the GitHub catalog or load a manifest from a local file.");
 
       return [
         "<div class=\"v1-import-manager\">",
@@ -370,21 +358,8 @@
     }
 
     function renderPresetsTool() {
-      var fallbackPresets = [
-        { id: "cameras", emoji: "📷", name: "Cameras", ports: "80,443,554,8080,8081,9000,34567,37777" },
-        { id: "printers", emoji: "🖨", name: "Printers", ports: "80,443,631,8080,9100" },
-        { id: "folders-http", emoji: "📁", name: "Folders / HTTP", ports: "21,80,3000,5000,8000,8080,8888" },
-        { id: "routers", emoji: "📡", name: "Routers", ports: "80,443,8080,8443,10000" },
-        { id: "nas-servers", emoji: "🗄", name: "NAS / Servers", ports: "80,443,5000,5001,8006,8080,9090" },
-        { id: "windows-smb", emoji: "🪟", name: "Windows / SMB", ports: "135,139,445,3389,5985,5986" },
-        { id: "all-ports", emoji: "🌐", name: "All ports", ports: "21,80,135,139,443,445,554,631,3000,3389,5000,5001,5985,5986,8000,8006,8080,8081,8443,8888,9000,9090,9100,10000,34567,37777" }
-      ];
-
       var state = getPresetsState();
       var presets = Array.isArray(state.presets) ? state.presets : [];
-      if (!presets.length) {
-        presets = fallbackPresets.slice();
-      }
       var selected = presets[0] || { id: "", emoji: "", name: "", ports: "" };
 
       var rowsHtml = presets.map(function (item) {

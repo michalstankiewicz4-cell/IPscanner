@@ -47,6 +47,28 @@ Klucze sa podzielone na dwie grupy, bo maja rozny cykl zycia:
 - Typ: `"1"` albo `"0"`.
 - Fallback: traktowane jak `"0"` (wylaczone).
 
+### 4a) Przelaczniki UI na pasku menu (TBM)
+
+`netrecon_blur_ip`
+- Czy wlaczone jest rozmycie wrazliwych danych (przycisk 👁 na TBM).
+- Typ: `"1"` albo `"0"`.
+- Fallback: `"0"` (wylaczone).
+
+`netrecon_show_unfinished_tools`
+- Czy pokazywac niedokonczone narzedzia (Topology/Globe) w menu Tools i na
+  LSB (przycisk 🚧 na TBM).
+- Typ: `"1"` albo `"0"`.
+- Fallback: `"0"` (ukryte).
+
+### 4b) ShellCraft
+
+`netrecon_shellcraft_canvas_v1`
+- Bloki umieszczone na canvasie ShellCraft (typ, pozycja x/y, wlasciwosci).
+- Typ: JSON object `{ blocks: [...] }`.
+- Fallback: pusty canvas.
+- Uwaga: to stan aplikacji (grupa A) — nie jest czescia pliku sesji
+  `.sqlite3` i Close Session go nie czysci.
+
 ### 5) Historia i widoki pomocnicze (wygoda, nie tresc sesji)
 
 `netrecon_range_history`
@@ -147,11 +169,6 @@ Klucze sa podzielone na dwie grupy, bo maja rozny cykl zycia:
 
 ### 4) Uklad i biezaca sesja
 
-`netrecon_active_tool`
-- Ostatnie aktywowane narzedzie (poza scan-runner).
-- Typ: string.
-- Uwaga: w aktualnym kodzie klucz jest zapisywany, ale nie jest odczytywany przy zwyklym starcie — odczytywany tylko posrednio przez `session-runtime.js` przy Close Session.
-
 `netrecon_session_pending_layout_v1`
 - Jednorazowy znacznik ukladu zakladek (center/left/right) do przywrocenia zaraz po `window.location.reload()` wywolanym przez Load Session.
 - Typ: JSON object, kasowany natychmiast po odczycie.
@@ -167,7 +184,7 @@ Klucze sa podzielone na dwie grupy, bo maja rozny cykl zycia:
 
 Program zapamietuje dane w dwoch niezaleznych warstwach:
 
-- **Ustawienia** (grupa A) — dotycza calej instalacji, nie sesji: jezyk, skin, stan Clippy, historia zakresow, rozszerzenia, uklad undocked okien, lista "Recent sessions".
+- **Ustawienia** (grupa A) — dotycza calej instalacji, nie sesji: jezyk, skin, stan Clippy, przelaczniki TBM (blur, show unfinished tools), canvas ShellCraft, historia zakresow, rozszerzenia, uklad undocked okien, lista "Recent sessions".
 - **Dane sesji** (grupa B) — dotycza konkretnego projektu/pliku: wyniki skanu, biblioteka IP, presety, domyslne wartosci skanu, uklad zakladek, sciezka biezacego pliku sesji.
 
-Blad znaleziony przy tej analizie: `closeSession()` w `session-runtime.js` dzisiaj czysci tylko `netrecon_scan_results_v1`, `netrecon_scan_progress_v1`, `netrecon_active_tool`, `netrecon_session_pending_layout_v1`, `netrecon_session_current_path` — **nie czysci** `netrecon_country_ip_library_json`, `netrecon_country_ip_library_updated_at`, `netrecon_scan_presets_v1`, `netrecon_scan_defaults_v1`, mimo ze wszystkie te klucze naleza do grupy B. Do naprawy w ramach planowanej zmiany "nowa sesja przy otwarciu/zamknieciu projektu".
+Blad znaleziony przy tej analizie: `closeSession()` w `session-runtime.js` dzisiaj czysci tylko `netrecon_scan_results_v1`, `netrecon_scan_progress_v1`, `netrecon_session_pending_layout_v1`, `netrecon_session_current_path` — **nie czysci** `netrecon_country_ip_library_json`, `netrecon_country_ip_library_updated_at`, `netrecon_scan_presets_v1`, `netrecon_scan_defaults_v1`, mimo ze wszystkie te klucze naleza do grupy B. Do naprawy w ramach planowanej zmiany "nowa sesja przy otwarciu/zamknieciu projektu".

@@ -126,11 +126,14 @@ podstawy):
     zmiennych/wartości/powiadomień - slot, w którym każdy dodatek (i sama
     podstawa) może wystawić własny mini-widget statusu.
 
-### Manager zarządzania dodatkami (do zrobienia)
+### Manager zarządzania dodatkami (częściowo zrobiony)
 
-- **Instalacja** dodatków.
-- **Dezinstalacja** dodatków.
-- **Ustawienia** - konfiguracja per-dodatek, widoczna w jednym miejscu.
+- **Instalacja** dodatków - dziala (katalog z GitHuba w Import Tool + plik
+  lokalny; patrz "Stan obecny" nizej i CONTRIBUTING §4).
+- **Dezinstalacja** dodatków - dziala (z pelnym sprzataniem dynamicznie
+  utworzonych zakladek, paneli i wpisow menu).
+- **Ustawienia** - konfiguracja per-dodatek, widoczna w jednym miejscu -
+  **do zrobienia**.
 
 ## Dodatkowe możliwości (zaakceptowane, dorzucone przez Claude'a)
 
@@ -253,7 +256,8 @@ zrobić to porządnie, potrzeba:
    samego API kontrybucji pod te funkcje.
 
 To dotknie praktycznie każdego pliku runtime w `js/new-ui/core/**` i wymaga
-osobnego, porządnego planowania (patrz sekcja "Kolejność prac" wyżej - robimy
-to dopiero po dokończeniu w pełni działającego skanera). Dalszy rozwój
+osobnego, porządnego planowania (patrz sekcja "Kolejność prac" wyżej -
+priorytet zostal odwrocony: najpierw powloka i system dodatkow, dokonczenie
+skanera schodzi na dalszy plan). Dalszy rozwój
 punktow kontrybucji (nowe sekcje, event bus, command palette, ustawienia,
 itd.) zostaje w calosci w JS - patrz notatka na gorze pliku.

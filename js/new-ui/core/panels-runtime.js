@@ -14,6 +14,7 @@
     var versionsData = Array.isArray(deps.versionsData) ? deps.versionsData : [];
     var platform = deps.platform || ((window.NetReconNewUICore && window.NetReconNewUICore.platform) || {});
     var storage = platform.storage || null;
+    var escapeHtml = window.NetReconNewUICore.utils.dom.escapeHtml;
     var store = deps.store;
     var extensionHost = deps.extensionHost;
     var commandBus = deps.commandBus || null;
@@ -1385,14 +1386,6 @@
 
       updateTabPopoutUi();
     }
-    function escapeHtml(value) {
-      return String(value == null ? "" : value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
 
     function infoFor(tool) {
       var tools = getToolInfoMap ? getToolInfoMap() : {};
@@ -1870,23 +1863,11 @@
       var v1Title = document.getElementById("v1ToolTitle");
       var v1Detail = document.getElementById("v1ToolDetail");
       var v1StatusRight = document.getElementById("v1StatusRight");
-      var v1ScanMeta = document.getElementById("v1ScanMeta");
-      var v1ScanActions = document.getElementById("v1ScanActions");
       var v1MainCard = document.getElementById("v1MainCard");
 
       if (!activeTool) {
         if (v1Title) v1Title.textContent = "";
         if (v1Detail) v1Detail.innerHTML = "";
-        if (v1ScanMeta) {
-          v1ScanMeta.setAttribute("hidden", "hidden");
-          v1ScanMeta.style.display = "none";
-          v1ScanMeta.setAttribute("aria-hidden", "true");
-        }
-        if (v1ScanActions) {
-          v1ScanActions.setAttribute("hidden", "hidden");
-          v1ScanActions.style.display = "none";
-          v1ScanActions.setAttribute("aria-hidden", "true");
-        }
         if (v1MainCard) {
           v1MainCard.classList.remove("is-versions-view");
           v1MainCard.classList.remove("is-shellcraft-view");
@@ -1899,31 +1880,8 @@
 
       // Ustaw zawartość dla aktywnej zakładki
       var info = infoFor(activeTool);
-      var isScanRunner = activeTool === "scan-runner";
       if (v1Title) v1Title.textContent = info.title;
       if (v1Detail) v1Detail.innerHTML = buildDetailHtml(activeTool);
-      if (v1ScanMeta) {
-        if (isScanRunner) {
-          v1ScanMeta.removeAttribute("hidden");
-          v1ScanMeta.style.display = "grid";
-          v1ScanMeta.setAttribute("aria-hidden", "false");
-        } else {
-          v1ScanMeta.setAttribute("hidden", "hidden");
-          v1ScanMeta.style.display = "none";
-          v1ScanMeta.setAttribute("aria-hidden", "true");
-        }
-      }
-      if (v1ScanActions) {
-        if (isScanRunner) {
-          v1ScanActions.removeAttribute("hidden");
-          v1ScanActions.style.display = "flex";
-          v1ScanActions.setAttribute("aria-hidden", "false");
-        } else {
-          v1ScanActions.setAttribute("hidden", "hidden");
-          v1ScanActions.style.display = "none";
-          v1ScanActions.setAttribute("aria-hidden", "true");
-        }
-      }
       if (v1MainCard) {
         v1MainCard.classList.toggle("is-versions-view", activeTool === "versions");
         v1MainCard.classList.toggle("is-shellcraft-view", activeTool === "shellcraft");
@@ -2059,59 +2017,12 @@
         if (lastUpdateEls.center) lastUpdateEls.center.textContent = text;
       }
 
-      function pickAddressFromItem(item) {
-        if (!item || typeof item !== "object") return "-";
-
-        if (item.cidr) return String(item.cidr);
-        if (item.range) return String(item.range);
-        if (item.network) return String(item.network);
-        if (item.address) return String(item.address);
-        if (item.ip_range) return String(item.ip_range);
-
-        if (Array.isArray(item.ranges) && item.ranges.length) {
-          return item.ranges.slice(0, 3).map(function (entry) {
-            if (entry && typeof entry === "object") {
-              return String(entry.cidr || entry.range || entry.network || entry.address || entry.ip_range || "");
-            }
-            return String(entry || "").trim();
-          }).filter(Boolean).join(", ");
-        }
-
-        return "-";
-      }
-
-
       function renderCenterRows(data) {
         var centerRowsEl = getCenterRowsEl();
-        if (!centerRowsEl) return;
+        if (!centerRowsEl || !panelRenderersRuntime) return;
 
         var rows = Array.isArray(data) ? data : [];
-        if (panelRenderersRuntime && typeof panelRenderersRuntime.renderIpLibraryRows === "function") {
-          centerRowsEl.innerHTML = panelRenderersRuntime.renderIpLibraryRows(rows);
-          return;
-        }
-
-        if (!rows.length) {
-          centerRowsEl.innerHTML = '<tr><td colspan="2" class="v1-iplib-empty">' + escapeHtml(tr("ipLibraryTableEmpty")) + '</td></tr>';
-          return;
-        }
-
-        var html = [];
-        rows.forEach(function (item) {
-          var country = pickCountryFromItem(item);
-          var ranges = extractRanges(item);
-
-          if (!ranges.length) {
-            html.push('<tr><td class="v1-iplib-col-country">' + escapeHtml(country) + '</td><td class="v1-iplib-col-address">' + escapeHtml(pickAddressFromItem(item)) + '</td></tr>');
-            return;
-          }
-
-          ranges.forEach(function (address) {
-            html.push('<tr><td class="v1-iplib-col-country">' + escapeHtml(country) + '</td><td class="v1-iplib-col-address">' + escapeHtml(address) + '</td></tr>');
-          });
-        });
-
-        centerRowsEl.innerHTML = html.join("");
+        centerRowsEl.innerHTML = panelRenderersRuntime.renderIpLibraryRows(rows);
       }
 
       function getInvoke() {
@@ -2784,9 +2695,6 @@
 
       activeTool = tool;
       if (store && store.setState) store.setState({ activeTool: tool });
-      try {
-        if (tool !== "scan-runner") storageSet("netrecon_active_tool", tool);
-      } catch (_) {}
       refreshActiveUI();
       updateEmptyState();
       updateTabPopoutUi();

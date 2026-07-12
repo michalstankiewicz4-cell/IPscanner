@@ -1386,7 +1386,6 @@
 
       var chat = document.getElementById("v1AiChatHistory");
       var promptInput = document.getElementById("v1AiPromptInput");
-      var sendBtn = document.getElementById("v1AiSendBtn");
       if (!chat || !promptInput) return;
 
       function currentMode() {
@@ -1425,9 +1424,6 @@
         }
       }
 
-      if (sendBtn) {
-        sendBtn.addEventListener("click", sendPrompt);
-      }
       promptInput.addEventListener("keydown", function (event) {
         if (event.key !== "Enter") return;
         if (event.shiftKey) return;

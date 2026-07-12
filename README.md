@@ -58,6 +58,8 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for what's done, in progress, and planned
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Project direction and rules for contributing code (written in Polish). |
 | [docs/FUTURE_PLUGIN_SHELL.md](docs/FUTURE_PLUGIN_SHELL.md) | Design notes for the addon/plugin shell architecture (written in Polish). |
 | [docs/SHELL_PROGRESS.md](docs/SHELL_PROGRESS.md) | Map of the shell layout (menu/panels/status bar) and where each tool opens (written in Polish). |
+| [docs/MEMORY_SESSION.md](docs/MEMORY_SESSION.md) | Every localStorage key the app uses, split into app settings vs. session data (written in Polish). |
+| [docs/SESSION_DATABASE_SCHEMA.md](docs/SESSION_DATABASE_SCHEMA.md) | Structure of the session `.sqlite3` file, table by table (written in Polish). |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community code of conduct. |
 | [SECURITY.md](SECURITY.md) | How to report a security vulnerability. |
 | [LICENSE.MD](LICENSE.MD) | MIT License. |

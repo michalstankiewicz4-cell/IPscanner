@@ -6,7 +6,6 @@
     var platform = deps.platform || ((window.NetReconNewUICore && window.NetReconNewUICore.platform) || {});
     var getActionMap = deps.getActionMap;
     var setStatusLine = deps.setStatusLine;
-    var onOpenExtensionManager = deps.onOpenExtensionManager;
     var onOpenLanguageManager = deps.onOpenLanguageManager;
     var onSwitchTool = deps.onSwitchTool;
     var onToggleClippy = deps.onToggleClippy;
@@ -267,11 +266,6 @@
 
 
       // Otwieranie zakładek przez switchTool
-      if (behavior === "open-extension-manager") {
-        if (onSwitchTool) onSwitchTool("import-tool");
-        if (onOpenExtensionManager) onOpenExtensionManager("extensions");
-        return;
-      }
       if (behavior === "open-language-manager") {
         if (onSwitchTool) onSwitchTool("language-manager");
         if (onOpenLanguageManager) onOpenLanguageManager("languages");
@@ -400,7 +394,7 @@
         try {
           localStorage.setItem("netrecon_blur_ip", nextBlurState ? "1" : "0");
         } catch (_) {}
-        var blurBtn = document.querySelector('[data-menu-action="blur-ip-soon"]');
+        var blurBtn = document.querySelector('[data-menu-action="blur-ip"]');
         if (blurBtn) {
           blurBtn.classList.toggle("is-active", nextBlurState);
           blurBtn.setAttribute("aria-pressed", nextBlurState ? "true" : "false");

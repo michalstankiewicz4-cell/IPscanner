@@ -33,11 +33,18 @@ IP Scanner (LSB, TBM-Tools -> LS)
 1. **Top Bar Menu**
    a. Logo — logo + tooltip z nazwa + aktualna wersja.
    b. Menu:
-      - File: save, save as, load, close, **import (mock — jeszcze bez dzialajacej logiki)**, exit
-      - Options: language, import tools
-      - Tools: ShellCraft, AI Assistant
+      - File: new, open, open recent (flyout), **import (mock — jeszcze bez
+        dzialajacej logiki; aktywny tylko przy otwartej sesji)**, save,
+        save as, close, exit
+      - Options: Country IP Library, Port Presets, Default Scan Values,
+        language, import tools (trzy pierwsze to docelowo domena dodatku
+        IPscanner, nie podstawy — patrz FUTURE_PLUGIN_SHELL.md)
+      - Tools: AI Assistant, ShellCraft, IP Scanner (+ ukryte Topology i
+        Globe — pokazuje je dopiero "Show unfinished tools" na TBM)
       - Help: version, download, about, license, assistant
-   c. Przyciski: zamykanie, zarzadzanie ukladem okien, ukrywanie wrazliwych danych, full reset.
+   c. Przyciski: zamykanie, zarzadzanie ukladem okien, ukrywanie wrazliwych
+      danych, full reset, "Show unfinished tools" (🚧 — pokazuje ukryte
+      Topology/Globe w TBM-Tools i na LSB; stan trzymany w localStorage).
 2. **Left Section (LS)**
 3. **Right Section (RS)**
    a. AI Assistant (dostep: TBM-Tools -> otwiera sie w: RS; brak ikony na LSB)
@@ -58,9 +65,12 @@ IP Scanner (LSB, TBM-Tools -> LS)
    b. pozostale ikony to skroty do narzedzi z listy `## Tools` ponizej
 
 8. **Shell Craft** (TBM-Tools) — zostaje w Shell, nie jest to IPscanner-owy tool
-   a. Library -> LS
-   b. Inspector -> LS
-   - glowny widok -> CS
+   a. Library -> LS (kategorie blokow: funkcyjne + makra; drag-and-drop na canvas)
+   b. Inspector -> RS (wlasciwosci kliknietego bloku; przeniesiony z LS 2026-07-10)
+   - glowny widok -> CS (canvas blokow; przelacznik widokow
+     Flow/Timeline/Tree/Layered — dziala tylko Flow, reszta wyszarzona)
+   - makra: DS zakladka "Macro" (wiersz polecen w stylu terminala;
+     `help`/`?` = lista makr)
 
 LS, RS, CS powinny miec identyczny system zakladek (parytet tab/window, patrz
 CONTRIBUTING.md §3a).
@@ -74,24 +84,32 @@ CONTRIBUTING.md §3a).
 2. **Country IP Library** (TBM-Options)
    - edytor -> LS, jako "IP Library (edytor)"
    - podglad -> CS, jako "IP Library (widok)"
-3. **Topology Map** (LSB, TBM-Tools -> CS)
-4. **World Globe** (LSB, TBM-Tools -> CS)
+3. **Topology Map** (LSB, TBM-Tools -> CS; domyslnie ukryty — widoczny po
+   wlaczeniu "Show unfinished tools" na TBM)
+4. **World Globe** (LSB, TBM-Tools -> CS; domyslnie ukryty — jak wyzej)
 
-Funkcje lub czesc funkcji dzialajacych tylko w aplikacji (stan na 2026-07-09,
-po weryfikacji kodu — ShellCraft/AI Assistant/Topology/Globe nie maja dzis
-zadnej logiki, to same statyczne karty w `tool-catalog.js`, wiec ponizszy
-podzial to plan na przyszlosc, nie stan obecny):
+Funkcje lub czesc funkcji dzialajacych tylko w aplikacji (stan na 2026-07-11,
+po weryfikacji kodu — AI Assistant/Topology/Globe nie maja dzis zadnej
+logiki, to same statyczne karty w `tool-catalog.js`, wiec dla nich ponizszy
+podzial to plan na przyszlosc; ShellCraft ma juz realny edytor blokow i
+makra, patrz jego punkt nizej):
 
 - **IP Scanner** — moze na www: UI, presety, biblioteka IP, sesje (zrobione,
   patrz sql.js session save/load). Tylko desktop: samo skanowanie portow
   (przegladarka nie ma surowych socketow TCP — twardy limit, nie do obejscia).
-- **Shell Craft** — moze na www: edytor blokow, zapis/wczytanie makr. Tylko
-  desktop: **uruchomienie** makra (PowerShell).
+- **Shell Craft** — zaimplementowane (2026-07-10/11): edytor blokow (canvas
+  CS + Library LS + Inspector RS, dziala www i desktop, stan w localStorage)
+  oraz 3 makra (External IP / Local IP / Subnets) uruchamiane z zakladki
+  Macro w DS albo z bloku na canvas. **Uruchomienie** makra odpala realne
+  akcje Detect (PowerShell) — dziala tylko na desktopie. Bloki If/Repeat
+  Until/PowerShell sa przeciagalne i edytowalne, ale jeszcze nie wykonywalne
+  (brak interpretera — patrz ROADMAP, backlog pkt 12).
 - **AI Assistant** — moze na www: caly czat, jesli to zwykle zapytania HTTP do
   API. Tylko desktop: gdyby mial wywolywac PowerShell/pliki lokalne.
 - **Topology map** — moze na www: rysowanie grafu z juz zebranych danych.
-  Tylko desktop: zbieranie danych (traceroute — `run_traceroute` w `main.rs`
-  juz istnieje, ale nie jest jeszcze wywolywana z zadnego JS).
+  Tylko desktop: zbieranie danych (traceroute — do zaimplementowania od zera;
+  wczesniejszy martwy `run_traceroute` w `main.rs` zostal usuniety w ramach
+  sprzatania backendu, patrz `docs/CHANGELOG.md`).
 - **Globe** — moze na www w calosci, jesli dane sa juz zebrane — to czysty
   rendering (D3), zero zaleznosci od Tauri.
 

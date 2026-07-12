@@ -33,14 +33,7 @@
       setStatusLine((ran ? tr("statusMacroRun") : tr("statusMacroRunFailed")) + ": " + tr(macro.nameKey));
     }
 
-    function escapeHtml(value) {
-      return String(value == null ? "" : value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
+    var escapeHtml = window.NetReconNewUICore.utils.dom.escapeHtml;
 
     // --- shell keys ---
     function wireVersionsTimeline(rootEl) {
@@ -718,18 +711,9 @@
       }
 
       function getState() {
-        var fallbackState = {
-          defaultPresetId: "all-ports",
-          presets: [
-            { id: "cameras", emoji: "📷", name: "Cameras", ports: "80,443,554,8080,8081,9000,34567,37777" },
-            { id: "printers", emoji: "🖨", name: "Printers", ports: "80,443,631,8080,9100" },
-            { id: "folders-http", emoji: "📁", name: "Folders / HTTP", ports: "21,80,3000,5000,8000,8080,8888" },
-            { id: "routers", emoji: "📡", name: "Routers", ports: "80,443,8080,8443,10000" },
-            { id: "nas-servers", emoji: "🗄", name: "NAS / Servers", ports: "80,443,5000,5001,8006,8080,9090" },
-            { id: "windows-smb", emoji: "🪟", name: "Windows / SMB", ports: "135,139,445,3389,5985,5986" },
-            { id: "all-ports", emoji: "🌐", name: "All ports", ports: "21,80,135,139,443,445,554,631,3000,3389,5000,5001,5985,5986,8000,8006,8080,8081,8443,8888,9000,9090,9100,10000,34567,37777" }
-          ]
-        };
+        var fallbackState = typeof presetsApi.getDefaultState === "function"
+          ? presetsApi.getDefaultState()
+          : { defaultPresetId: "all-ports", presets: [] };
 
         var state = cloneState(presetsApi.getState());
         var hasData = Array.isArray(state.presets) && state.presets.some(function (item) {
@@ -791,7 +775,7 @@
           }
 
           rowEl.innerHTML = [
-            '<td class="v1-presets-col-default"><input type="radio" name="v1PresetDefault" data-preset-default="' + item.id + '"' + (item.id === state.defaultPresetId ? ' checked' : '') + ' /></td>',
+            '<td class="v1-presets-col-default"><input type="radio" name="v1PresetDefault" data-preset-default="' + item.id + '"' + (item.id === state.defaultPresetId ? ' checked' : '') + ' aria-label="' + escapeHtml(tr("presetsDefaultCol")) + '" /></td>',
             '<td class="v1-presets-col-emoji"><input type="text" maxlength="4" data-preset-field="emoji" data-preset-id="' + item.id + '" value="' + escapeHtml(item.emoji || "") + '" placeholder="⭐" /></td>',
             '<td class="v1-presets-col-name"><input type="text" data-preset-field="name" data-preset-id="' + item.id + '" value="' + escapeHtml(item.name || "") + '" placeholder="' + escapeHtml(tr("presetsNameLabel")) + '" /></td>',
             '<td class="v1-presets-col-ports"><input type="text" data-preset-field="ports" data-preset-id="' + item.id + '" value="' + escapeHtml(item.ports || "") + '" placeholder="80,443,8080" /></td>'
@@ -968,12 +952,6 @@
           if (window.localStorage) {
             window.localStorage.setItem(DEFAULTS_KEY, JSON.stringify(safe));
           }
-        } catch (_) {}
-
-        try {
-          document.dispatchEvent(new CustomEvent("newui:scan-defaults-changed", {
-            detail: Object.assign({}, safe),
-          }));
         } catch (_) {}
 
         return safe;

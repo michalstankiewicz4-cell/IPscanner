@@ -188,6 +188,7 @@
   window.NetReconNewUICore.presets = {
     STORAGE_KEY: STORAGE_KEY,
     getState: getState,
+    getDefaultState: makeDefaultState,
     replaceState: replaceState,
     resetDefaults: resetDefaults,
   };

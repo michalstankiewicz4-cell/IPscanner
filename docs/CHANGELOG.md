@@ -8,6 +8,22 @@ of prior context — for full history use `git log`.
 
 ## 2026-07-11
 
+- Repo-wide dead-code cleanup (audit): removed ~26 unreachable Tauri backend
+  commands and their helpers/structs from `src-tauri/src/main.rs` (WiFi,
+  Bluetooth, GNSS, LTE, sniffer, phone lookup, image metadata, traceroute,
+  AI provider/secure-key commands, the separate tool-window + native-clippy
+  window subsystem, JSON export/import dialogs) — none were called from any
+  JS. `main.rs` shrank from ~4370 to ~1280 lines; 4 unused crates dropped
+  (`btleplug`, `serialport`, `keyring`, `if-addrs`); `cargo check` is clean.
+  On the front end: deleted the orphaned extension-manager modal
+  (`extension-manager-runtime.js`), ~9 never-used CSS rule groups, a batch of
+  dead i18n keys, and the fake static scan metrics + Export/Import buttons in
+  the main card. Consolidated the port-preset defaults (4 drifting copies →
+  one canonical source) and `escapeHtml` (→ shared util). Renamed the stale
+  `blur-ip-soon` action to `blur-ip` (the feature has shipped), refreshed the
+  now-inaccurate ShellCraft/Import-Tool descriptions, and dropped the
+  write-only `netrecon_active_tool` localStorage key. See
+  [ROADMAP.md](ROADMAP.md) "Removed" for details.
 - ShellCraft: fixed 10 issues found by a code review of the block-canvas
   editor — listener leaks in the canvas/inspector wiring (accumulated on
   every tab switch), the detached/floating ShellCraft window being fully

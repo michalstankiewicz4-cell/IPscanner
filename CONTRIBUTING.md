@@ -7,7 +7,7 @@ Priorytet zostal swiadomie odwrocony wzgledem pierwotnego zalozenia: zamiast
 najpierw domykac w pelni skaner, a dopiero potem zajmowac sie powloka,
 **priorytetem jest praca nad powloka (shell) i systemem dodatkow** - poprawki
 skanera schodza na dalszy plan, dopoki powloka nie jest gotowa (patrz
-`FUTURE_PLUGIN_SHELL.md`, sekcja "Kolejnosc prac").
+`docs/FUTURE_PLUGIN_SHELL.md`, sekcja "Kolejnosc prac").
 
 Aktualny kierunek rozwoju to:
 
@@ -18,7 +18,7 @@ Aktualny kierunek rozwoju to:
   flagi `ui.showInLeftPanel`/`showInRightPanel`/`showAsTab`, model uprawnien
   (`permissions`) i katalog dodatkow z GitHuba (patrz sekcja 4), docelowo:
   dalsze punkty kontrybucji (status bar, activity bar, ustawienia, event bus)
-  w calosci w JS, opisane w `FUTURE_PLUGIN_SHELL.md`,
+  w calosci w JS, opisane w `docs/FUTURE_PLUGIN_SHELL.md`,
 - utrzymanie kompatybilnosci istniejacej logiki skanera (bez regresji, ale bez
   priorytetu na nowe funkcje skanera),
 - porzadkowanie stylow i i18n bez regresji funkcjonalnych.
@@ -28,11 +28,11 @@ a nowy kod w miare mozliwosci pisany od razu z podzialem shell/tool w glowie
 (patrz komentarze `// shell:` / `// ip-scanner tool:` w kodzie).
 
 Docelowa wizja (IPscanner jako instalowalny/odinstalowywalny dodatek na
-neutralnej powloce) jest opisana w `FUTURE_PLUGIN_SHELL.md`. Nie jest w pelni
+neutralnej powloce) jest opisana w `docs/FUTURE_PLUGIN_SHELL.md`. Nie jest w pelni
 zrealizowana - dzis dziala prototyp w calosci w JS, bez sandboxingu na
 poziomie runtime (patrz ten plik, sekcja "Stan obecny"; WASM
 jako mechanizm sandboxingu byl rozwazany i odrzucony po prototypie, patrz
-notatka na gorze `FUTURE_PLUGIN_SHELL.md`).
+notatka na gorze `docs/FUTURE_PLUGIN_SHELL.md`).
 
 ### 1a. Historia: model dwoch galezi (zakonczony)
 
@@ -73,8 +73,7 @@ Minimalny podzial odpowiedzialnosci:
 - menu-runtime.js - obsluga menubar i akcji menu (w tym Options-menu dodane przez rozszerzenia).
 - panels-runtime.js - routing aktywnego narzedzia, odswiezanie panelu glownego, oraz katalog dodatkow z GitHuba (`fetchCatalog`/`renderCatalog`) i instalacja/deinstalacja (`installManifestObject`/`performUninstall`).
 - bootstrap-runtime.js - orkiestracja calej aplikacji (patrz sekcja 12); dla rozszerzen: `syncExtensionToolUi()`/`syncExtensionOptionsMenuUi()` (tworzenie dynamicznego UI dodatkow - zakladki, LS/RS panele, ikony, wpisy menu) i `openExtensionTool()` (jedyne miejsce wiedzace jak otworzyc narzedzie dodatku przez jego flagi `ui`).
-- session-runtime.js - zapis/odczyt/zamkniecie sesji (SQLite), lista ostatnich sesji, przywracanie ukladu zakladek po reload (schemat bazy: `SESSION_DATABASE_SCHEMA.md`).
-- extension-manager-runtime.js - obsluga starszego panelu "Customization" (modal) i jezykow; nie podpiety pod dynamiczne UI dodatkow, patrz sekcja 4.
+- session-runtime.js - zapis/odczyt/zamkniecie sesji (SQLite), lista ostatnich sesji, przywracanie ukladu zakladek po reload (schemat bazy: `docs/SESSION_DATABASE_SCHEMA.md`).
 - scanner-sidebar-runtime.js - obsluga sidebaru skanera (wykrywanie IP, historia zakresow, extractor).
 - powershell-console-runtime.js - obsluga zintegrowanej konsoli PowerShell.
 - runtimes/status-log-runtime.js - centralny log statusow (dolna zakladka Console / pane info).
@@ -134,7 +133,7 @@ Pliki wejsciowe UI i zasady warstwy zrodlo/mirror: zob. sekcja 12.
 ## 4. Rozszerzenia (plugin-like)
 
 System rozszerzen jest oparty o manifest JSON (`js/new-ui/core/extensions.js`).
-To pierwszy prototyp docelowej wizji z `FUTURE_PLUGIN_SHELL.md` - dziala w
+To pierwszy prototyp docelowej wizji z `docs/FUTURE_PLUGIN_SHELL.md` - dziala w
 calosci w JS, bez sandboxingu poza jednym, recznie sprawdzanym uprawnieniem
 (`permissions: ["powershell"]`).
 
@@ -234,17 +233,12 @@ Instalacja i katalog dodatkow (Options -> Import Tool):
   `.json` (natywne okno wyboru pliku, Tauri `open_extension_manifest_dialog`).
 - Lista "Installed extensions" pokazuje wszystko, co jest zainstalowane
   (niezaleznie od zrodla) z przyciskiem Uninstall przy kazdej pozycji.
-- Osobny, starszy panel "Customization" (modal, `extension-manager-runtime.js`)
-  nadal istnieje i tez umie instalowac/odinstalowywac przez wklejenie JSON,
-  ale nie jest podpiety pod `syncExtensionToolUi()` - zainstalowane stamtad
-  dodatki nie tworza dynamicznego UI (menu/aktywnosc/LS/RS) bez restartu
-  aplikacji. Nie jest to sciezka zalecana do testowania nowych dodatkow.
 
 ## 5. Dodawanie nowego jezyka
 
 Mozliwe sa dwie sciezki:
 
-- przez UI: Options -> Customization -> Language Manager,
+- przez UI: Options -> Language (otwiera Language Manager),
 - przez rozszerzenie: `contributions.i18n` w manifescie.
 
 Minimalny format slownika to obiekt JSON `key -> text`, np.:
@@ -291,6 +285,11 @@ Zasady:
 ## 6. Scrollbar policy (New UI)
 
 - W New UI nie mieszamy natywnych i custom scrollbar w tym samym przeplywie widoku.
+- Wyjatek (decyzja 2026-07-11): krotkie listy, ktore praktycznie nigdy nie
+  przekraczaja wysokosci panelu (np. Library ShellCrafta), moga uzywac
+  natywnego `overflow-y: auto` zamiast rejestracji w `SHELL_SCROLL_TARGETS` -
+  rejestracja bezwarunkowo rezerwuje gutter, co dla takiej listy wyglada jak
+  martwy czarny pasek (szczegoly: `docs/TROUBLESHOOTING.md`).
 - Jezeli nowy kontener ma `overflow: auto`, upewnij sie, ze jest hostem custom scrollbar albo jest wewnatrz hosta obslugujacego przewijanie.
 - Po zmianie layoutu i po renderze dynamicznej zawartosci odswiez `refreshCustomScrollbars()`.
 - Dla widokow centralnych wymagajacych parytetu `tab` vs `window` nie wprowadzaj trwalego bypassu custom-scrollbar (np. `data-native-hscroll`) bez jawnej decyzji architektonicznej.

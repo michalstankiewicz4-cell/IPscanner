@@ -93,7 +93,7 @@
       <div class="v1-menu-spacer"></div>
       <button class="v1-menubar-action v1-menubar-action--square" data-menu-action="show-unfinished-tools" title="Show unfinished tools" aria-label="Show unfinished tools" aria-pressed="false">🚧</button>
       <button class="v1-menubar-action v1-menubar-action--square" data-menu-action="reset-memory" title="Dev full reset button" aria-label="Dev full reset button">⟲</button>
-      <button class="v1-menubar-action v1-menubar-action--square" data-menu-action="blur-ip-soon" title="Blur IP addresses" aria-label="Blur IP addresses" aria-pressed="false">👁</button>
+      <button class="v1-menubar-action v1-menubar-action--square" data-menu-action="blur-ip" title="Blur IP addresses" aria-label="Blur IP addresses" aria-pressed="false">👁</button>
       <span class="v1-menubar-separator" aria-hidden="true"></span>
       <label class="v1-menubar-toggle" title="Auto arrange when tabs are opened in floating windows" aria-label="Auto arrange when tabs are opened in floating windows">
         <input type="checkbox" id="v1AutoArrangeToggle" checked />
@@ -356,28 +356,9 @@
 
         <div class="v1-content">
           <article class="v1-card" id="v1MainCard" hidden>
-            <h3 id="v1ToolTitle">Scan Runner</h3>
+            <h3 id="v1ToolTitle"></h3>
 
-            <div class="v1-meta" id="v1ScanMeta">
-              <div class="v1-pill">Checked hosts<b>152</b></div>
-              <div class="v1-pill">Active hosts<b>29</b></div>
-              <div class="v1-pill">Open ports<b>188</b></div>
-              <div class="v1-pill">Elapsed<b>00:01:18</b></div>
-            </div>
-
-            <div class="tool-detail" id="v1ToolDetail">
-              <h4>IP Range Scan Control</h4>
-              <div>Tryb bazowy do skanowania hostow, portow i enrichmentu wynikow.</div>
-            </div>
-
-            <div class="v1-actions" id="v1ScanActions">
-              <button data-tool="scan-runner">▶ Start Scan</button>
-              <button data-tool="scan-runner">■ Stop</button>
-              <button data-tool="scan-runner">✕ Clear</button>
-              <button data-tool="scan-runner">⚙ Default Scan Values</button>
-              <button data-tool="scan-runner">📤 Export JSON</button>
-              <button data-tool="scan-runner">📥 Import JSON</button>
-            </div>
+            <div class="tool-detail" id="v1ToolDetail"></div>
           </article>
 
           <div class="v1-empty-state" id="v1NoTabsState" hidden>
@@ -507,17 +488,17 @@
   </div>
 
   <script src="js/new-ui/core/store.js"></script>
-  <script src="js/new-ui/core/i18n.js?v=20260816"></script>
+  <script src="js/new-ui/core/i18n.js?v=20260817"></script>
   <script src="js/new-ui/core/theme.js?v=20260604"></script>
   <script src="js/new-ui/core/tool-catalog.js?v=20260714"></script>
-  <script src="js/new-ui/core/presets-runtime.js?v=20260604"></script>
+  <script src="js/new-ui/core/presets-runtime.js?v=20260817"></script>
   <script src="js/new-ui/core/macros-runtime.js?v=20260810"></script>
   <script src="js/new-ui/core/shellcraft-canvas-runtime.js?v=20260812"></script>
   <script src="js/new-ui/core/versions-data.js?v=20260715"></script>
   <script src="js/new-ui/core/utils/net-utils.js?v=20260728"></script>
   <script src="js/new-ui/core/utils/dom-utils.js?v=20260804"></script>
   <script src="js/new-ui/core/extensions.js?v=20260720"></script>
-  <script src="js/new-ui/core/ui-definitions.js?v=20260814"></script>
+  <script src="js/new-ui/core/ui-definitions.js?v=20260817"></script>
   <script src="js/new-ui/core/platform-runtime.js?v=20260604"></script>
   <script src="js/new-ui/core/runtimes/status-log-runtime.js?v=20260604"></script>
   <script src="js/new-ui/core/runtimes/command-bus-runtime.js?v=20260708"></script>
@@ -526,19 +507,18 @@
   <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js?v=20260813"></script>
   <script src="js/new-ui/core/runtimes/clippy-runtime.js?v=20260604"></script>
   <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js?v=20260604"></script>
-  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260816"></script>
+  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260817"></script>
   <script src="js/new-ui/core/runtimes/session-sqlite-runtime.js?v=20260804"></script>
   <script src="js/new-ui/core/panel-content-config.js?v=20260713"></script>
-  <script src="js/new-ui/core/panel-content-runtime.js?v=20260815"></script>
-  <script src="js/new-ui/core/panel-interactions-runtime.js?v=20260816"></script>
+  <script src="js/new-ui/core/panel-content-runtime.js?v=20260817"></script>
+  <script src="js/new-ui/core/panel-interactions-runtime.js?v=20260817"></script>
   <script src="js/new-ui/core/panel-renderers-runtime.js?v=20260717"></script>
-  <script src="js/new-ui/core/panels-runtime.js?v=20260816"></script>
-  <script src="js/new-ui/core/extension-manager-runtime.js?v=20260604"></script>
-  <script src="js/new-ui/core/menu-runtime.js?v=20260814"></script>
-  <script src="js/new-ui/core/session-runtime.js?v=20260804"></script>
+  <script src="js/new-ui/core/panels-runtime.js?v=20260817"></script>
+  <script src="js/new-ui/core/menu-runtime.js?v=20260817"></script>
+  <script src="js/new-ui/core/session-runtime.js?v=20260817"></script>
   <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260730"></script>
   <script src="js/new-ui/core/powershell-console-runtime.js?v=20260604"></script>
-    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260816"></script>
+    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260817"></script>
 </body>
 </html>
 

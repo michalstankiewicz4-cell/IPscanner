@@ -7,8 +7,10 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
 
 ## Done
 
-- Core IP/port scanner (range scanning, results browser, topology and globe
-  views, port presets, country IP library, session save/load).
+- Core IP/port scanner (range scanning, results browser, port presets,
+  country IP library, session save/load). Topology and globe views existed
+  in the legacy UI only — in the New UI they are unfinished placeholders,
+  hidden by default (see backlog items 14-15).
 - New UI shell (VS Code-style layout: menu bar, activity bar, left/right/center
   panels, bottom terminal/console).
 - Shell vs. tool code split across `js/new-ui/core/**` so the UI layer isn't
@@ -42,6 +44,13 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
 - Open ports now carry a protocol (TCP) and inferred service-name badge
   (e.g. "HTTP", "SSH"), plus per-port ping, shown on each port row and
   persisted in the session `.sqlite3` schema (with migration for old files).
+- ShellCraft v1: a real drag-and-drop block canvas (center section) with a
+  categorized block Library (left), an Inspector with live property editing
+  (right), and 3 working macros (External IP / Local IP / Subnets) runnable
+  from a terminal-style "Macro" console tab or from canvas blocks.
+  Functional blocks (If / Repeat Until / PowerShell) are placeable and
+  editable but honestly non-executable — no interpreter yet (backlog
+  item 12).
 
 ## In progress
 
@@ -88,9 +97,9 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
 
 A pass over every menu/tool, numbered for easy reference in discussion:
 
-1. File → "Import another session data": today a mock (see `SHELL_PROGRESS.md`
-   line 36). Should actually import/merge data from another saved session
-   file into the current one, instead of replacing it.
+1. File → "Import another session data": today a mock (see the File menu
+   entry in `SHELL_PROGRESS.md`). Should actually import/merge data from
+   another saved session file into the current one, instead of replacing it.
 2. File → Exit on www: does closing the browser tab/window, or the top-right
    `[x]`, after a save prompt (or after choosing not to save) actually work
    the way it should? Needs checking.
@@ -112,10 +121,15 @@ A pass over every menu/tool, numbered for easy reference in discussion:
     entry to the list — drop everything else in the Language Manager UI.
 11. Addon install/uninstall: move the "Load from file..." button above
     "Installed extensions".
-12. ShellCraft — ~1% done (just the three tabs exist, no logic).
+12. ShellCraft — block editor v1 done (see "Done" above); still missing: an
+    interpreter for If / Repeat Until / PowerShell blocks, block
+    nesting/connections, and the Timeline/Tree/Layered views (the switcher
+    exists, only Flow works).
 13. AI Assistant — ~1.5% done (just the tab exists).
-14. Topology Map — ~1% done (just the tab exists).
-15. Globe — ~1% done (just the tab exists).
+14. Topology Map — ~1% done (just the tab exists). Hidden from the LSB and
+    Tools menu by default; the top-bar "Show unfinished tools" toggle
+    reveals it.
+15. Globe — ~1% done (just the tab exists). Hidden by default, same as 14.
 16. ~~"Blur sensitive data" button — usefulness unclear, consider removing.~~
     **Done** — implemented as a `body.v1-blur-ip` CSS toggle (persisted,
     restored on launch) covering the IP Results table, IP detection results,
@@ -129,7 +143,25 @@ A pass over every menu/tool, numbered for easy reference in discussion:
     and IP scans). The static `"main • tauri-desktop • UI mock only"` label
     was dead text with no JS reference and has been removed.
 
-Items 10, 11, and 17 are done.
+Items 7, 9, 10, 11, 16, and 17 are done.
+
+## Removed (dead code cleanup, 2026-07-11)
+
+A repo-wide audit removed code that was unreachable or misleading:
+
+- **~26 dead Tauri backend commands** in `src-tauri/src/main.rs` (WiFi,
+  Bluetooth, GNSS, LTE, connection sniffer, phone lookup, image-meta parsing,
+  traceroute, the AI multi-provider/secure-key commands, the separate
+  tool-window and native-clippy-window system, and the JSON export/import
+  dialogs) — none were invoked from any JS. `main.rs` dropped from ~4370 to
+  ~1280 lines and 4 now-unused crates were removed (`btleplug`,
+  `serialport`, `keyring`, `if-addrs`). Recoverable from git if any is
+  revived. The legacy `clippy.html` window went with it (the live Clippy is
+  the DOM-based `clippy-runtime.js`).
+- **Dead front-end**: the orphaned extension-manager modal
+  (`extension-manager-runtime.js`), several never-rendered CSS rule groups,
+  a batch of unused i18n keys, and fake static scan metrics / Export-Import
+  buttons in the main card.
 
 ## Considered and rejected
 

@@ -92,22 +92,17 @@
       let setTooltips = function () {};
       let refreshActiveUI = function () {};
       let switchTool = function () {};
-      // Same pattern: reassigned once menuRuntime/extensionManagerRuntime are
-      // created (below) to the real implementations. Their original local
-      // bodies (and the extension-manager-modal helper cluster that only
-      // those bodies called) were dead code - found during shell/tools
-      // delimiting (CONTRIBUTING 12a) and removed here, since they matched
-      // the exact already-fixed setTooltips/refreshActiveUI/switchTool
-      // pattern: reassigned before their first real use, so the local
-      // reimplementation was unreachable in practice.
+      // Same pattern: reassigned once menuRuntime is created (below) to the
+      // real implementations. Their original local bodies were dead code -
+      // found during shell/tools delimiting (CONTRIBUTING 12a) and removed
+      // here, since they matched the exact already-fixed
+      // setTooltips/refreshActiveUI/switchTool pattern: reassigned before
+      // their first real use, so the local reimplementation was unreachable
+      // in practice.
       let applyMenuAndPanelDefinitions = function () {};
       let initMenuBar = function () {};
       let initMenuActions = function () {};
       let runMenuAction = function () {};
-      let openExtensionManager = function () {};
-      let closeExtensionManager = function () {};
-      let isExtModalOpen = function () { return false; };
-      let initExtensionManagerUi = function () {};
 
       // MIXED: this function's DOM lookups and translations below are shell
       // (menu triggers, About/License/Import Tool/Language Manager tab
@@ -126,23 +121,6 @@
         const helpTrigger = document.querySelector('[data-menu="help"] .v1-menu-trigger');
         const explorerHead = document.getElementById("v1SidebarTitle");
         const assistantHead = document.querySelector('.v1-rightbar .v1-head-title');
-        const extTitle = document.getElementById("v1ExtTitle");
-        const extManifestLabel = document.getElementById("v1ExtManifestLabel");
-        const extManifest = document.getElementById("v1ExtManifest");
-        const extUninstallLabel = document.getElementById("v1ExtUninstallLabel");
-        const extUninstallId = document.getElementById("v1ExtUninstallId");
-        const extInstallBtn = document.getElementById("v1ExtInstallBtn");
-        const extListBtn = document.getElementById("v1ExtListBtn");
-        const extUninstallBtn = document.getElementById("v1ExtUninstallBtn");
-        const langCodeLabel = document.getElementById("v1LangCodeLabel");
-        const langCode = document.getElementById("v1LangCode");
-        const langDictLabel = document.getElementById("v1LangDictLabel");
-        const langDict = document.getElementById("v1LangDict");
-        const langAddBtn = document.getElementById("v1LangAddBtn");
-        const langActivateBtn = document.getElementById("v1LangActivateBtn");
-        const langListBtn = document.getElementById("v1LangListBtn");
-        const extCloseBtn = document.getElementById("v1ExtCloseBtn");
-        const extClose = document.getElementById("v1ExtClose");
         const activityResultsBtn = document.getElementById("v1ActivityResults");
         const activityScannerBtn = document.getElementById("v1ActivityScanner");
         const activityTopologyBtn = document.getElementById("v1ActivityTopology");
@@ -184,7 +162,7 @@
         const aboutMenuLabel = document.querySelector('[data-menu-action="about"] span:first-child');
         const licenseMenuLabel = document.querySelector('[data-menu-action="license"] span:first-child');
         const resetMemoryButton = document.querySelector('[data-menu-action="reset-memory"]');
-        const blurIpSoonButton = document.querySelector('[data-menu-action="blur-ip-soon"]');
+        const blurIpSoonButton = document.querySelector('[data-menu-action="blur-ip"]');
         const autoArrangeToggle = document.getElementById("v1AutoArrangeToggle");
         const autoArrangeToggleWrap = autoArrangeToggle ? autoArrangeToggle.closest(".v1-menubar-toggle") : null;
         const clippyClose = document.getElementById("v1ClippyClose");
@@ -195,23 +173,6 @@
         if (helpTrigger) helpTrigger.textContent = tr("menuHelp");
         if (explorerHead) explorerHead.textContent = tr("ipScanner");
         if (assistantHead) assistantHead.textContent = tr("assistant");
-        if (extTitle) extTitle.textContent = tr("extManagerTitle");
-        if (extManifestLabel) extManifestLabel.textContent = tr("extManifestLabel");
-        if (extManifest) extManifest.setAttribute("placeholder", tr("extManifestPlaceholder"));
-        if (langCodeLabel) langCodeLabel.textContent = tr("langCodeLabel");
-        if (langCode) langCode.setAttribute("placeholder", tr("langCodePlaceholder"));
-        if (langDictLabel) langDictLabel.textContent = tr("langDictLabel");
-        if (langDict) langDict.setAttribute("placeholder", tr("langDictPlaceholder"));
-        if (extUninstallLabel) extUninstallLabel.textContent = tr("extUninstallLabel");
-        if (extUninstallId) extUninstallId.setAttribute("placeholder", tr("extUninstallPlaceholder"));
-        if (extInstallBtn) extInstallBtn.textContent = tr("extInstallBtn");
-        if (extListBtn) extListBtn.textContent = tr("extListBtn");
-        if (extUninstallBtn) extUninstallBtn.textContent = tr("extUninstallBtn");
-        if (langAddBtn) langAddBtn.textContent = tr("langAddBtn");
-        if (langActivateBtn) langActivateBtn.textContent = tr("langActivateBtn");
-        if (langListBtn) langListBtn.textContent = tr("langListBtn");
-        if (extCloseBtn) extCloseBtn.textContent = tr("extCloseBtn");
-        if (extClose) extClose.setAttribute("aria-label", tr("extCloseBtn"));
 
         if (activityResultsBtn) {
           activityResultsBtn.setAttribute("title", tr("resultsBrowser"));
@@ -354,15 +315,15 @@
         "load-session": "Open",
         "close-session": "Close",
         "import-another-session": "Import (mock)",
-        exit: "Exit (mock)",
+        exit: "Exit",
         countries: "Country IP Library", // ip-scanner tool
-        presets: "Port Presets (mock)", // ip-scanner tool
-        defaults: "Default Scan Values (mock)", // ip-scanner tool
+        presets: "Port Presets", // ip-scanner tool
+        defaults: "Default Scan Values", // ip-scanner tool
         language: "Language manager",
-        customization: "Customization (extensions)",
-        versions: "Versions (mock)",
-        download: "Download (mock)",
-        about: "About (mock)",
+        customization: "Import Tool",
+        versions: "Versions",
+        download: "Download",
+        about: "About",
         license: "License",
         assistant: "Assistant",
         "window-min": "Window minimize",
@@ -716,8 +677,6 @@
         switchTool("language-manager");
       }
 
-      function initLanguageManagerUi() {}
-
       let activeTool = store ? store.getState().activeTool : "scan-runner";
 
       function scrollTabTrackToElement(element) {
@@ -979,28 +938,6 @@
 
       syncExtensionToolUi();
 
-      const extensionManagerRuntime = runtimeFactory.createExtensionManagerRuntime
-        ? runtimeFactory.createExtensionManagerRuntime({
-            tr,
-            extensionHost,
-            i18n,
-            applyStaticTranslations,
-            setStatusLine,
-            setTooltips,
-            refreshActiveUI,
-            switchTool,
-            getActiveTool: panelsRuntime ? panelsRuntime.getActiveTool : function () { return activeTool; },
-            hasTool: panelsRuntime ? panelsRuntime.hasTool : function (tool) { return !!getToolInfoMap()[tool]; },
-          })
-        : null;
-
-      if (extensionManagerRuntime) {
-        openExtensionManager = extensionManagerRuntime.open;
-        closeExtensionManager = extensionManagerRuntime.close;
-        isExtModalOpen = extensionManagerRuntime.isOpen;
-        initExtensionManagerUi = extensionManagerRuntime.init;
-      }
-
       const sessionSqliteRuntime = runtimeFactory.createSessionSqliteRuntime
         ? runtimeFactory.createSessionSqliteRuntime()
         : null;
@@ -1026,7 +963,6 @@
             appLinks,
             getActionMap,
             setStatusLine,
-            onOpenExtensionManager: openExtensionManager,
             onOpenLanguageManager: openLanguageManager,
             onSwitchTool: switchTool,
             onToggleClippy: function () {
@@ -1112,8 +1048,6 @@
 
       applyStaticTranslations();
       applyMenuAndPanelDefinitions();
-      initExtensionManagerUi();
-      initLanguageManagerUi();
       setTooltips();
       initMenuBar();
       initMenuActions();
@@ -1185,12 +1119,6 @@
         requestAnimationFrame(() => {
           refreshCustomScrollbars();
         });
-      });
-
-      document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && isExtModalOpen()) {
-          closeExtensionManager();
-        }
       });
 
       window.addEventListener("netrecon:language-changed", refreshLanguageUi);

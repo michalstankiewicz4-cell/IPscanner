@@ -130,15 +130,6 @@
   overflow: hidden;
 }
 
-.v1-notes-pane {
-  border: 0;
-  background: #1a1a1c;
-  color: var(--txt-dim);
-  padding: 10px;
-  height: 100%;
-  box-sizing: border-box;
-}
-
 .v1-ai-panel {
   display: flex;
   flex-direction: column;
