@@ -255,7 +255,22 @@
         return false;
       }
 
+      // General settings -> "Remember open tabs": snapshot which LS/RS/CS
+      // tabs are open/active right before the window actually closes (the
+      // native close command destroys the window, so this must run first,
+      // not in the .then() below). Always writes; the "remember" checkbox
+      // is enforced by clearing this key at boot, same convention as every
+      // other General-governed setting.
+      function persistOpenTabsSnapshot() {
+        if (!session || typeof session.collectLayoutOnly !== "function") return;
+        try {
+          var layout = session.collectLayoutOnly();
+          if (window.localStorage) window.localStorage.setItem("netrecon_open_tabs_v1", JSON.stringify(layout));
+        } catch (_) {}
+      }
+
       function closeAppWindow(labelText) {
+        persistOpenTabsSnapshot();
         runNativeWindowAction("close").then(function (handled) {
           if (!handled) {
             try { window.close(); } catch (_) {}
@@ -331,8 +346,24 @@
         return;
       }
 
+      // General settings -> "Remember window state": snapshot the resulting
+      // mode (normal/maximized/fullscreen) after any successful native
+      // toggle, so it can be restored on next launch (bootstrap-runtime.js).
+      // Always writes; the "remember" checkbox is enforced by clearing this
+      // key at boot, not by gating the write - same convention as every
+      // other General-governed setting.
+      function persistWindowState() {
+        if (!platform || typeof platform.invoke !== "function") return;
+        platform.invoke("window_get_state").then(function (state) {
+          try {
+            if (window.localStorage) window.localStorage.setItem("netrecon_window_state_v1", String(state || ""));
+          } catch (_) {}
+        }).catch(function () {});
+      }
+
       if (behavior === "window-maximize") {
         runNativeWindowAction("maximize").then(function (handled) {
+          if (handled) persistWindowState();
           if (setStatusLine) {
             setStatusLine(
               tr("menuPrefix") + ": " + label + (handled ? "" : tr("statusDesktopOnlySuffix"))
@@ -345,6 +376,7 @@
       if (behavior === "window-fullscreen") {
         runNativeWindowAction("fullscreen").then(function (handled) {
           if (handled) {
+            persistWindowState();
             if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
             return;
           }

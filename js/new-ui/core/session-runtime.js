@@ -109,6 +109,18 @@
       return { open: open, active: active || null };
     }
 
+    // General settings -> "Remember open tabs": same shape as
+    // collectSessionData().layout, but without any of the ip-scanner-tool
+    // session data around it - used to snapshot just the tab layout to a
+    // Program-scope (not session-file) key on app close.
+    function collectLayoutOnly() {
+      return {
+        center: collectCenterLayout(),
+        left: collectLeftLayout(),
+        right: collectRightLayout(),
+      };
+    }
+
     // ip-scanner tool: the fields below (scanResults/scanProgress/ipLibrary/
     // presets/scanDefaults) are IP-Scanner-specific; only "layout" is shell.
     function collectSessionData() {
@@ -254,18 +266,19 @@
 
     function restoreLayoutAfterReload() {
       var s = storage();
-      if (!s) return;
+      if (!s) return false;
       var raw = s.getItem(PENDING_LAYOUT_KEY);
-      if (!raw) return;
+      if (!raw) return false;
       s.removeItem(PENDING_LAYOUT_KEY);
       var layout;
       try {
         layout = JSON.parse(raw);
       } catch (_) {
-        return;
+        return false;
       }
       applyLayout(layout);
       statusMsg(tr("sessionLoadOk") + " — " + layoutSummary(layout));
+      return true;
     }
 
     // --- recent sessions (MRU, shown on the center welcome view) ---
@@ -274,6 +287,11 @@
       var s = storage();
       var raw = s ? s.getJson(RECENT_KEY, []) : [];
       return Array.isArray(raw) ? raw : [];
+    }
+
+    function getMostRecentPath() {
+      var list = readRecent();
+      return (list[0] && list[0].path) || "";
     }
 
     function writeRecent(list) {
@@ -619,6 +637,8 @@
 
     return {
       collectSessionData: collectSessionData,
+      collectLayoutOnly: collectLayoutOnly,
+      applyLayout: applyLayout,
       saveSession: saveSession,
       saveSessionAs: saveSessionAs,
       loadSession: loadSession,
@@ -626,6 +646,7 @@
       closeSession: closeSession,
       restoreLayoutAfterReload: restoreLayoutAfterReload,
       initWelcomeView: initWelcomeView,
+      getMostRecentPath: getMostRecentPath,
     };
   }
 

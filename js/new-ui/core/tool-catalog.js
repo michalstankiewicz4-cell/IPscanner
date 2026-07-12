@@ -5,6 +5,11 @@
     // FUTURE_PLUGIN_SHELL.md; Help menu items (versions/about/license) also
     // stay in the base shell per SHELL_PROGRESS.md. Judgment call, not settled
     // fact — flag if a future split disagrees.
+    general: {
+      titleKey: "toolTitle_general",
+      textKey: "toolText_general",
+      points: ["Auto load last session", "Per-setting remember toggles", "Applies on next launch"]
+    },
     "import-tool": {
       titleKey: "toolTitle_import_tool",
       textKey: "toolText_import_tool",

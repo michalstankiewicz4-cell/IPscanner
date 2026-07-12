@@ -72,6 +72,12 @@
       purpose: "Dodawanie i aktywacja jezykow UI.",
       behavior: "open-language-manager",
     },
+    general: {
+      label: "General",
+      purposeKey: "tipActionGeneral",
+      purpose: "Wybor, ktore ustawienia powloki maja byc pamietane przy nastepnym uruchomieniu.",
+      behavior: "switch-tool:general",
+    },
     customization: {
       label: "Import Tool",
       purposeKey: "tipActionCustomization",

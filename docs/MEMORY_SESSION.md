@@ -60,6 +60,62 @@ Klucze sa podzielone na dwie grupy, bo maja rozny cykl zycia:
 - Typ: `"1"` albo `"0"`.
 - Fallback: `"0"` (ukryte).
 
+### 4a-0) Stan okna
+
+`netrecon_window_state_v1`
+- Ostatni tryb glownego okna: `"normal"`, `"maximized"` albo `"fullscreen"`.
+- Zapisywany po kazdym udanym przelaczeniu maximize/fullscreen z TBM
+  (`window_get_state` w `main.rs`, wywolywane z `menu-runtime.js`).
+- Odczytywany raz na starcie (`bootstrap-runtime.js`) — okno zawsze startuje
+  zmaksymalizowane (`tauri.conf.json`), wiec dla `"normal"`/`"fullscreen"`
+  wywolywany jest odpowiedni istniejacy toggle dokladnie raz.
+- Fallback: brak klucza = zostaje zmaksymalizowane (dzisiejsze zachowanie).
+- Desktop-only (na www nie ma natywnego okna do przelaczania).
+
+### 4a-0b) Otwarte zakladki (LS/RS/CS)
+
+`netrecon_open_tabs_v1`
+- Ktore zakladki byly otwarte i ktora aktywna w kazdej z trzech sekcji
+  (center/left/right), niezaleznie od jakiegokolwiek pliku sesji.
+- Typ: JSON object, ten sam ksztalt co `layout` w danych sesji —
+  `{center:{open,active}, left:{open,active}, right:{open,active}}`
+  (`collectLayoutOnly()` w `session-runtime.js`).
+- Zapisywany przy kazdym zamknieciu aplikacji przez jej wlasny przycisk
+  Exit/close (`persistOpenTabsSnapshot()` w `menu-runtime.js`, tuz przed
+  faktycznym zamknieciem okna) — zamkniecie przez Alt+F4/pasek zadan nie
+  jest lapane.
+- Odczytywany raz na starcie (`bootstrap-runtime.js`, przez istniejace
+  `applyLayout()`), ale **pomijany**, jesli w tym samym boocie i tak
+  odpala sie przywrocenie layoutu z pliku sesji (manualny save/load albo
+  Auto Load last session) — layout z sesji ma pierwszenstwo.
+- Fallback: brak klucza = normalny ekran powitalny "Recent sessions".
+
+### 4a-1) Rozmiary paneli (LS/RS/DS)
+
+`netrecon_panel_sizes_v1`
+- Szerokosc LS/RS i wysokosc DS ustawiona przeciaganiem uchwytow, oraz stan
+  zwiniecia kazdego z tych trzech paneli (przyciski ◀/▶/▼).
+- Typ: JSON object `{ left, right, console, leftCollapsed, rightCollapsed,
+  bottomCollapsed }` (px + bool).
+- Fallback: `{left:320, right:300, console:200, *Collapsed:false}`
+  (`layout-runtime.js`).
+- Dodane 2026-07-12 razem z zakladka General — wczesniej te rozmiary w ogole
+  nie byly zapisywane.
+
+### 4a-2) General settings (TBM Options -> General)
+
+`netrecon_general_settings_v1`
+- Checkboxy "pamietaj X przy nastepnym uruchomieniu" dla ustawien powloki
+  (jezyk, skin, rozmiary paneli, blur IP, show-unfinished-tools, uklad
+  odczepionych okien, Clippy, rozszerzenia, historia zakresow IP) oraz
+  "Auto Load last session".
+- Typ: JSON object, 10 pol boolean (`autoLoadLastSession`, `remember*`).
+- Fallback: wszystko `true` poza `autoLoadLastSession` (`false`).
+- Wymuszanie dziala w `bootstrap-runtime.js`'s `applyRememberedSettingsGate()`
+  — dla kazdego `remember*===false` czysci odpowiedni klucz(e) przed ich
+  pierwszym odczytem przy starcie. Sam ten klucz jest zawsze pamietany
+  (nie ma checkboxa "pamietaj ustawienia General").
+
 ### 4b) ShellCraft
 
 `netrecon_shellcraft_canvas_v1`
@@ -184,7 +240,7 @@ Klucze sa podzielone na dwie grupy, bo maja rozny cykl zycia:
 
 Program zapamietuje dane w dwoch niezaleznych warstwach:
 
-- **Ustawienia** (grupa A) — dotycza calej instalacji, nie sesji: jezyk, skin, stan Clippy, przelaczniki TBM (blur, show unfinished tools), canvas ShellCraft, historia zakresow, rozszerzenia, uklad undocked okien, lista "Recent sessions".
+- **Ustawienia** (grupa A) — dotycza calej instalacji, nie sesji: jezyk, skin, rozmiary paneli, stan Clippy, przelaczniki TBM (blur, show unfinished tools), canvas ShellCraft, historia zakresow, rozszerzenia, uklad undocked okien, lista "Recent sessions", checkboxy General ("pamietaj X").
 - **Dane sesji** (grupa B) — dotycza konkretnego projektu/pliku: wyniki skanu, biblioteka IP, presety, domyslne wartosci skanu, uklad zakladek, sciezka biezacego pliku sesji.
 
 Blad znaleziony przy tej analizie: `closeSession()` w `session-runtime.js` dzisiaj czysci tylko `netrecon_scan_results_v1`, `netrecon_scan_progress_v1`, `netrecon_session_pending_layout_v1`, `netrecon_session_current_path` — **nie czysci** `netrecon_country_ip_library_json`, `netrecon_country_ip_library_updated_at`, `netrecon_scan_presets_v1`, `netrecon_scan_defaults_v1`, mimo ze wszystkie te klucze naleza do grupy B. Do naprawy w ramach planowanej zmiany "nowa sesja przy otwarciu/zamknieciu projektu".

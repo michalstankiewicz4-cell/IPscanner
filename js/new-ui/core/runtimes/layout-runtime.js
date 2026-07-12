@@ -129,6 +129,39 @@
         document.documentElement.style.cursor = cursorForDirection(direction);
       }, true);
 
+      var PANEL_SIZES_KEY = "netrecon_panel_sizes_v1";
+
+      function loadPersistedSizes() {
+        try {
+          var raw = window.localStorage ? window.localStorage.getItem(PANEL_SIZES_KEY) : "";
+          if (!raw) return null;
+          var parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return null;
+          return parsed;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      // General settings -> "Remember panel sizes" also covers collapsed
+      // state (left/right/bottom), not just widths/heights - a panel left
+      // collapsed is as much a remembered layout choice as its width.
+      function persistSizes() {
+        try {
+          if (!window.localStorage) return;
+          window.localStorage.setItem(PANEL_SIZES_KEY, JSON.stringify({
+            left: size.left,
+            right: size.right,
+            console: size.console,
+            leftCollapsed: panelState.leftCollapsed,
+            rightCollapsed: panelState.rightCollapsed,
+            bottomCollapsed: panelState.bottomCollapsed,
+          }));
+        } catch (_) {
+          // ignore persistence failures
+        }
+      }
+
       var size = {
         left: 320,
         right: 300,
@@ -140,6 +173,17 @@
         rightCollapsed: false,
         bottomCollapsed: false,
       };
+
+      (function applyPersistedSizes() {
+        var persisted = loadPersistedSizes();
+        if (!persisted) return;
+        if (typeof persisted.left === "number") size.left = Math.max(180, Math.min(460, persisted.left));
+        if (typeof persisted.right === "number") size.right = Math.max(220, Math.min(520, persisted.right));
+        if (typeof persisted.console === "number") size.console = Math.max(90, Math.min(360, persisted.console));
+        if (typeof persisted.leftCollapsed === "boolean") panelState.leftCollapsed = persisted.leftCollapsed;
+        if (typeof persisted.rightCollapsed === "boolean") panelState.rightCollapsed = persisted.rightCollapsed;
+        if (typeof persisted.bottomCollapsed === "boolean") panelState.bottomCollapsed = persisted.bottomCollapsed;
+      })();
 
       function syncToggleLabels() {
         leftToggle.textContent = panelState.leftCollapsed ? "▶" : "◀";
@@ -207,6 +251,8 @@
         leftHandle.classList.remove("dragging");
         rightHandle.classList.remove("dragging");
         consoleHandle.classList.remove("dragging");
+
+        if (currentDrag) persistSizes();
 
         if (currentDrag && (currentDrag.type === "left" || currentDrag.type === "console") && statusRight) {
           statusRight.textContent = statusRightBeforeDrag || statusRight.textContent;
@@ -301,21 +347,25 @@
         panelState.leftCollapsed = false;
         size.left = 320;
         applySizes();
+        persistSizes();
       });
 
       leftToggle.addEventListener("click", function () {
         panelState.leftCollapsed = !panelState.leftCollapsed;
         applySizes();
+        persistSizes();
       });
 
       rightToggle.addEventListener("click", function () {
         panelState.rightCollapsed = !panelState.rightCollapsed;
         applySizes();
+        persistSizes();
       });
 
       bottomToggle.addEventListener("click", function () {
         panelState.bottomCollapsed = !panelState.bottomCollapsed;
         applySizes();
+        persistSizes();
       });
 
       window.addEventListener("resize", applySizes);

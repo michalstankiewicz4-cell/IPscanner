@@ -1173,6 +1173,20 @@ fn window_toggle_fullscreen(window: WebviewWindow) -> Result<(), String> {
     window.set_fullscreen(true).map_err(|e| e.to_string())
 }
 
+// General settings -> "Remember window state": queried by the frontend
+// right after a maximize/fullscreen toggle so it can persist the resulting
+// mode (see menu-runtime.js). Read-only - does not itself change the window.
+#[tauri::command]
+fn window_get_state(window: WebviewWindow) -> Result<String, String> {
+    if window.is_fullscreen().map_err(|e| e.to_string())? {
+        return Ok("fullscreen".to_string());
+    }
+    if window.is_maximized().map_err(|e| e.to_string())? {
+        return Ok("maximized".to_string());
+    }
+    Ok("normal".to_string())
+}
+
 #[tauri::command]
 fn window_start_dragging(window: WebviewWindow) -> Result<(), String> {
     window.start_dragging().map_err(|e| e.to_string())
@@ -1267,6 +1281,7 @@ fn main() {
             window_minimize,
             window_toggle_maximize,
             window_toggle_fullscreen,
+            window_get_state,
             window_start_dragging,
             window_close,
             open_extension_manifest_dialog,

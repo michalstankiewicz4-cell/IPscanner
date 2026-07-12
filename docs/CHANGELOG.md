@@ -6,6 +6,38 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-07-12
+
+- New TBM Options -> **General** screen: per-setting checkboxes controlling
+  whether a shell preference (UI language, skin, panel sizes, "Blur IP
+  addresses", "Show unfinished tools", detached-window layout, Clippy
+  enabled, installed addons, IP range history) is remembered across app
+  restarts or reset to default on next launch. All default to remembered
+  (today's behavior), applied via a new `applyRememberedSettingsGate()` in
+  `bootstrap-runtime.js` that runs before any of those settings are read.
+- New **Auto Load last session** toggle (first item in General, off by
+  default): on desktop, automatically reopens the most recently saved/opened
+  session on startup instead of showing the "Recent sessions" welcome
+  screen. Reuses the existing dialog-free `loadSessionFromPath()`; the
+  triggered reload happens while the window is still hidden, so there's no
+  visible flash of the welcome screen first. Not available on the www build
+  (no dialog-free file-read primitive in the browser).
+- Panel sizes (left/right/bottom section widths/heights) **and** their
+  collapsed/expanded state are now persisted across restarts by default
+  (`netrecon_panel_sizes_v1`) — previously they silently reset to the
+  hardcoded defaults on every launch.
+- Added a "Remember window state" toggle to General: the app now remembers
+  whether it was windowed, maximized, or fullscreen and reopens in that same
+  mode (default on). New Rust command `window_get_state` (read-only) backs
+  it; restoring reuses the existing `window_toggle_maximize`/
+  `window_toggle_fullscreen` commands rather than duplicating their
+  frameless-window work-area fix.
+- Added a "Remember open tabs" toggle to General: which LS/RS/CS tabs were
+  open (and which was active per section) at last graceful exit are now
+  restored on the next launch, independent of any saved session file.
+  Yields to a session's own saved layout when one is about to load (Auto
+  Load last session, or a pending manual save/load reload).
+
 ## 2026-07-11
 
 - Repo-wide dead-code cleanup (audit): removed ~26 unreachable Tauri backend

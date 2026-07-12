@@ -5,6 +5,52 @@
       // ip-scanner-tool-specific) are labeled individually below rather than
       // splitting this file, per CONTRIBUTING 12a.
       const core = window.NetReconNewUICore || {};
+
+      // General settings (TBM Options -> General): for every "remember X"
+      // toggle the user turned off, wipe that setting's storage key (and, for
+      // language, also reset the already-parsed in-memory dictionaries - see
+      // below) BEFORE anything reads it. Must run before literally any other
+      // line in this file, since netrecon_lang/netrecon_newui_skin are read
+      // just a few lines below, and netrecon_custom_i18n was already merged
+      // into i18n.js's in-memory dictionaries at script-parse time, earlier
+      // than this file even started executing.
+      (function applyRememberedSettingsGate() {
+        var gs = core.generalSettings;
+        if (!gs || typeof gs.getState !== "function") return;
+        var settings;
+        try {
+          settings = gs.getState();
+        } catch (_) {
+          return;
+        }
+
+        function clear(key) {
+          try { window.localStorage.removeItem(key); } catch (_) {}
+        }
+
+        if (!settings.rememberLanguage) {
+          clear("netrecon_custom_i18n");
+          clear("netrecon_lang");
+          if (core.i18n && typeof core.i18n.resetLanguages === "function") {
+            core.i18n.resetLanguages();
+          }
+        }
+        if (!settings.rememberSkin) clear("netrecon_newui_skin");
+        if (!settings.rememberPanelSizes) clear("netrecon_panel_sizes_v1");
+        if (!settings.rememberBlurIp) clear("netrecon_blur_ip");
+        if (!settings.rememberShowUnfinishedTools) clear("netrecon_show_unfinished_tools");
+        if (!settings.rememberDetachedWindows) {
+          clear("netrecon_detached_layouts_v1");
+          clear("netrecon_detached_arrange_state_v1");
+          clear("netrecon_detached_auto_arrange_enabled_v1");
+        }
+        if (!settings.rememberWindowState) clear("netrecon_window_state_v1");
+        if (!settings.rememberOpenTabs) clear("netrecon_open_tabs_v1");
+        if (!settings.rememberClippyEnabled) clear("netrecon_newui_clippy_enabled");
+        if (!settings.rememberExtensions) clear("netrecon_newui_extensions");
+        if (!settings.rememberRangeHistory) clear("netrecon_range_history");
+      })();
+
       const i18n = core.i18n && core.i18n.createI18n
         ? core.i18n.createI18n()
         : { t: function (k) { return k; }, getLang: function () { return document.documentElement.getAttribute("lang") || "en"; } };
@@ -150,6 +196,7 @@
         const tabTitleIpLibrary = document.getElementById("v1TabTitleIpLibrary");
         const tabTitlePresets = document.getElementById("v1TabTitlePresets");
         const tabTitleScanDefaults = document.getElementById("v1TabTitleScanDefaults");
+        const tabTitleGeneral = document.getElementById("v1TabTitleGeneral");
         const tabTitleImportTool = document.getElementById("v1TabTitleImportTool");
         const tabTitleLanguageManager = document.getElementById("v1TabTitleLanguageManager");
         const tabTitleAbout = document.getElementById("v1TabTitleAbout");
@@ -222,6 +269,7 @@
         if (tabTitleIpLibrary) tabTitleIpLibrary.textContent = tr("ipLibraryTabTitle");
         if (tabTitlePresets) tabTitlePresets.textContent = tr("tabPresetsTitle");
         if (tabTitleScanDefaults) tabTitleScanDefaults.textContent = tr("tabScanDefaultsTitle");
+        if (tabTitleGeneral) tabTitleGeneral.textContent = tr("tabGeneralTitle");
         if (tabTitleImportTool) tabTitleImportTool.textContent = tr("importToolTitle");
         if (tabTitleLanguageManager) tabTitleLanguageManager.textContent = tr("langManagerTitle");
         if (tabTitleAbout) tabTitleAbout.textContent = tr("tabAboutTitle");
@@ -1062,13 +1110,30 @@
       }
       initResizableLayout();
       initCustomScrollbars();
+
+      // General settings -> "Remember window state": the window always
+      // launches maximized (tauri.conf.json), so calling the matching
+      // native toggle exactly once deterministically reaches "normal" or
+      // "fullscreen" if that's what was last saved (see menu-runtime.js's
+      // persistWindowState). Reuses the existing toggle commands - already
+      // fix the frameless work-area bug - instead of duplicating that logic
+      // here. No-op on www (no native window to toggle).
+      if (platform && typeof platform.getInvoke === "function" && platform.getInvoke()) {
+        try {
+          var savedWindowState = window.localStorage ? window.localStorage.getItem("netrecon_window_state_v1") : "";
+          if (savedWindowState === "fullscreen") {
+            platform.invoke("window_toggle_fullscreen").catch(function () {});
+          } else if (savedWindowState === "normal") {
+            platform.invoke("window_toggle_maximize").catch(function () {});
+          }
+        } catch (_) {}
+      }
+
       switchTool(initialActiveTool);
-      if (sessionRuntime && sessionRuntime.restoreLayoutAfterReload) {
-        sessionRuntime.restoreLayoutAfterReload();
-      }
-      if (sessionRuntime && sessionRuntime.initWelcomeView) {
-        sessionRuntime.initWelcomeView();
-      }
+
+      var hadPendingReload = sessionRuntime && sessionRuntime.restoreLayoutAfterReload
+        ? !!sessionRuntime.restoreLayoutAfterReload()
+        : false;
 
       function revealUi() {
         if (!document.body) return;
@@ -1080,13 +1145,56 @@
         requestAnimationFrame(revealUi);
       }
 
-      if (document.fonts && document.fonts.ready) {
-        Promise.race([
-          document.fonts.ready,
-          new Promise(function (resolve) { setTimeout(resolve, 220); })
-        ]).then(revealUiNextFrame).catch(revealUiNextFrame);
+      function finishBootReveal() {
+        if (sessionRuntime && sessionRuntime.initWelcomeView) {
+          sessionRuntime.initWelcomeView();
+        }
+        if (document.fonts && document.fonts.ready) {
+          Promise.race([
+            document.fonts.ready,
+            new Promise(function (resolve) { setTimeout(resolve, 220); })
+          ]).then(revealUiNextFrame).catch(revealUiNextFrame);
+        } else {
+          revealUiNextFrame();
+        }
+      }
+
+      // General settings (TBM Options -> General) -> "Auto Load last
+      // session": desktop-only (www can't read a session file by path
+      // without a live user gesture, see loadSessionFromPath). Runs before
+      // revealUi/initWelcomeView so a successful auto-load's reload happens
+      // while the app is still hidden (body.v1-preload-hidden) - no flash of
+      // the empty welcome screen. hadPendingReload guards against re-loading
+      // right after a manual save/load already triggered one.
+      var autoLoadPath = "";
+      if (!hadPendingReload && platform && typeof platform.getInvoke === "function" && platform.getInvoke()
+          && core.generalSettings && typeof core.generalSettings.getState === "function"
+          && core.generalSettings.getState().autoLoadLastSession
+          && sessionRuntime && typeof sessionRuntime.getMostRecentPath === "function") {
+        autoLoadPath = sessionRuntime.getMostRecentPath();
+      }
+
+      // General settings -> "Remember open tabs": which LS/RS/CS tabs were
+      // open (and which was active in each section) when the app was last
+      // closed via its own Exit/close action - independent of any saved
+      // session file. Skipped when a session is about to auto-load instead
+      // (that session's own saved layout takes priority) or right after a
+      // manual save/load reload (which just restored its own layout).
+      if (!hadPendingReload && !autoLoadPath && sessionRuntime && typeof sessionRuntime.applyLayout === "function") {
+        try {
+          var savedTabsRaw = window.localStorage ? window.localStorage.getItem("netrecon_open_tabs_v1") : "";
+          if (savedTabsRaw) sessionRuntime.applyLayout(JSON.parse(savedTabsRaw));
+        } catch (_) {}
+      }
+
+      if (autoLoadPath) {
+        sessionRuntime.loadSessionFromPath(autoLoadPath).then(function (ok) {
+          if (!ok) finishBootReveal();
+          // ok === true: window.location.reload() already fired inside
+          // applyLoadedSessionData; nothing else to do this boot.
+        });
       } else {
-        revealUiNextFrame();
+        finishBootReveal();
       }
 
       window.NetReconNewUI = window.NetReconNewUI || {};

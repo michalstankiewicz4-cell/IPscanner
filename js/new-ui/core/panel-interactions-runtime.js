@@ -1282,9 +1282,44 @@
       });
     }
 
+    // shell: TBM Options -> General settings screen (per-setting "remember
+    // across restarts" checkboxes). Applies instantly on toggle, no separate
+    // Save button - the actual "remember" enforcement runs at next launch,
+    // in bootstrap-runtime.js's applyRememberedSettingsGate().
+    function wireGeneralSettingsTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
+      if (!root) return;
+      if (!root.querySelector("[data-general-setting]")) return;
+      if (root.dataset.generalSettingsBound === "1") return;
+      root.dataset.generalSettingsBound = "1";
+
+      var core = window.NetReconNewUICore || {};
+      var generalSettingsApi = core.generalSettings;
+      if (!generalSettingsApi) return;
+
+      root.addEventListener("change", function (event) {
+        var checkbox = event.target && event.target.closest ? event.target.closest("[data-general-setting]") : null;
+        if (!checkbox) return;
+        var key = checkbox.getAttribute("data-general-setting");
+        if (!key) return;
+
+        var current = generalSettingsApi.getState();
+        var next = Object.assign({}, current);
+        next[key] = !!checkbox.checked;
+        generalSettingsApi.replaceState(next);
+
+        if (setStatusLine) {
+          setStatusLine(tr("menuPrefix") + ": " + tr("tipActionGeneral"));
+        }
+      });
+    }
+
     return {
       // shell
       wireVersionsTimeline: wireVersionsTimeline,
+      wireGeneralSettingsTool: wireGeneralSettingsTool,
       wireShellCraftLibrary: wireShellCraftLibrary,
       wireShellCraftCanvas: wireShellCraftCanvas,
       wireShellCraftInspector: wireShellCraftInspector,

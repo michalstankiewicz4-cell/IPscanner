@@ -37,8 +37,10 @@ IP Scanner (LSB, TBM-Tools -> LS)
         dzialajacej logiki; aktywny tylko przy otwartej sesji)**, save,
         save as, close, exit
       - Options: Country IP Library, Port Presets, Default Scan Values,
-        language, import tools (trzy pierwsze to docelowo domena dodatku
-        IPscanner, nie podstawy — patrz FUTURE_PLUGIN_SHELL.md)
+        language, **General** (checkboxy "pamietaj X przy nastepnym
+        uruchomieniu" dla ustawien powloki, w tym "Auto Load last session"),
+        import tools (trzy pierwsze to docelowo domena dodatku IPscanner,
+        nie podstawy — patrz FUTURE_PLUGIN_SHELL.md)
       - Tools: AI Assistant, ShellCraft, IP Scanner (+ ukryte Topology i
         Globe — pokazuje je dopiero "Show unfinished tools" na TBM)
       - Help: version, download, about, license, assistant

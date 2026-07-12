@@ -15,6 +15,7 @@
     var presetsApi = core.presets || null;
     var macrosApi = core.macros || null;
     var shellcraftCanvasApi = core.shellcraftCanvas || null;
+    var generalSettingsApi = core.generalSettings || null;
 
     function trOr(key, fallback) {
       var value = tr(key);
@@ -254,6 +255,67 @@
         "<div class=\"v1-lang-manager-actions\">",
         "<button type=\"button\" data-lang-action=\"import\">" + tr("langImportBtn") + "</button>",
         "</div>",
+        "</div>"
+      ].join("");
+    }
+
+    // shell: settings screen letting the user pick, per shell-level setting,
+    // whether it should be remembered across app restarts (TBM Options ->
+    // General). Actual "remember" enforcement lives in bootstrap-runtime.js's
+    // applyRememberedSettingsGate() - this function only renders/reads the
+    // toggle state.
+    function renderGeneralSettingsTool() {
+      var settings = generalSettingsApi ? generalSettingsApi.getState() : {};
+
+      function checkboxRow(key, icon, labelKey, labelFallback) {
+        var checked = !!settings[key];
+        return [
+          "<label class=\"v1-results-columns-item v1-general-settings-item\">",
+          "<input type=\"checkbox\" data-general-setting=\"" + escapeHtml(key) + "\"" + (checked ? " checked" : "") + " />",
+          "<span class=\"v1-results-columns-icon\" aria-hidden=\"true\">" + escapeHtml(icon) + "</span>",
+          "<span>" + escapeHtml(trOr(labelKey, labelFallback)) + "</span>",
+          "</label>"
+        ].join("");
+      }
+
+      function groupHeading(key, fallback) {
+        return "<h4 class=\"v1-general-settings-group\">" + escapeHtml(trOr(key, fallback)) + "</h4>";
+      }
+
+      return [
+        "<div class=\"v1-import-manager\">",
+        "<div class=\"v1-import-manager-head\">",
+        "<h4 style=\"margin:0 0 4px;\">" + escapeHtml(trOr("tipActionGeneral", "General")) + "</h4>",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("generalIntroNote", "Choose which preferences should be remembered the next time you launch the app.")) + "</div>",
+        "</div>",
+
+        groupHeading("generalGroupSession", "Session"),
+        checkboxRow("autoLoadLastSession", "🗂", "generalAutoLoadLastSession", "Auto Load last session"),
+
+        groupHeading("generalGroupAppearance", "Appearance"),
+        checkboxRow("rememberLanguage", "🌐", "generalRememberLanguage", "Remember UI language"),
+        checkboxRow("rememberSkin", "🎨", "generalRememberSkin", "Remember skin / theme"),
+        checkboxRow("rememberPanelSizes", "↔️", "generalRememberPanelSizes", "Remember panel sizes and collapsed state"),
+
+        groupHeading("generalGroupPrivacyTools", "Privacy & tools"),
+        checkboxRow("rememberBlurIp", "👁", "generalRememberBlurIp", "Remember \"Blur IP addresses\" state"),
+        checkboxRow("rememberShowUnfinishedTools", "🚧", "generalRememberShowUnfinishedTools", "Remember \"Show unfinished tools\" state"),
+
+        groupHeading("generalGroupWindows", "Windows"),
+        checkboxRow("rememberWindowState", "🖥️", "generalRememberWindowState", "Remember window state (windowed / maximized / fullscreen)"),
+        checkboxRow("rememberDetachedWindows", "🗔", "generalRememberDetachedWindows", "Remember detached window layout"),
+        checkboxRow("rememberOpenTabs", "📑", "generalRememberOpenTabs", "Remember open tabs (LS/RS/CS)"),
+
+        groupHeading("generalGroupAssistant", "Assistant"),
+        checkboxRow("rememberClippyEnabled", "📎", "generalRememberClippyEnabled", "Remember Clippy enabled state"),
+
+        groupHeading("generalGroupAddons", "Addons"),
+        checkboxRow("rememberExtensions", "📦", "generalRememberExtensions", "Remember installed addons"),
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("generalExtensionsCautionNote", "If unchecked, installed addons will need to be reinstalled every time the app starts.")) + "</div>",
+
+        groupHeading("generalGroupHistory", "History"),
+        checkboxRow("rememberRangeHistory", "🕓", "generalRememberRangeHistory", "Remember IP range history"),
+
         "</div>"
       ].join("");
     }
@@ -793,6 +855,7 @@
       versions: renderVersionsTool,
       about: renderAboutTool,
       license: renderLicenseTool,
+      general: renderGeneralSettingsTool,
       "import-tool": renderImportTool,
       "language-manager": renderLanguageManagerTool,
       shellcraft: renderShellCraftCanvasTool,

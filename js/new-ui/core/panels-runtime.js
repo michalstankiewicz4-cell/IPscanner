@@ -1757,6 +1757,13 @@
         return;
       }
 
+      if (tool === "general") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireGeneralSettingsTool) {
+          panelInteractionsRuntime.wireGeneralSettingsTool(scope);
+        }
+        return;
+      }
+
       if (tool === "import-tool") { // shell
         wireImportToolButtons(scope);
         return;

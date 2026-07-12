@@ -416,6 +416,22 @@
   flex-wrap: wrap;
 }
 
+/* shell: General settings screen (TBM Options -> General) - group headings
+   inside the shared .v1-import-manager grid, extra breathing room above each
+   new group beyond the grid's base 12px gap. First heading (Session) keeps
+   the base gap only, so it doesn't float away from the intro note. */
+.v1-general-settings-group {
+  margin: 8px 0 0;
+  color: var(--txt);
+  font: 600 12px/1.3 var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.v1-general-settings-group:first-of-type {
+  margin-top: 0;
+}
+
 /* ip-scanner tool: Presets */
 .v1-presets-shell {
   display: grid;
