@@ -5,6 +5,7 @@
     return {
       autoLoadLastSession: false,
       panelSideRight: false,
+      checkForUpdates: true,
       rememberLanguage: true,
       rememberSkin: true,
       rememberPanelSizes: true,

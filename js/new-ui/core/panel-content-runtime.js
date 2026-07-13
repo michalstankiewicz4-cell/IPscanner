@@ -421,6 +421,9 @@
         groupHeading("generalGroupSession", "Session"),
         checkboxRow("autoLoadLastSession", "🗂", "generalAutoLoadLastSession", "Auto Load last session"),
 
+        groupHeading("generalGroupUpdates", "Updates"),
+        checkboxRow("checkForUpdates", "🔔", "generalCheckForUpdates", "Check for updates on startup"),
+
         groupHeading("generalGroupAppearance", "Appearance"),
         checkboxRow("panelSideRight", "🔀", "generalPanelSideRight", "Swap panel sides (activity bar/LS on the right, RS on the left)"),
         checkboxRow("rememberLanguage", "🌐", "generalRememberLanguage", "Remember UI language"),

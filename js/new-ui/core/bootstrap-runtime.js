@@ -1311,6 +1311,17 @@
         finishBootReveal();
       }
 
+      // General settings -> "Check for updates on startup": fire-and-forget,
+      // never blocks UI reveal. Compares the running build's version against
+      // the latest GitHub release and shows a dialog (via openConfirmDialog,
+      // wired below) if a newer one is available.
+      var updateCheckRuntime = runtimeFactory.createUpdateCheckRuntime
+        ? runtimeFactory.createUpdateCheckRuntime({ tr, platform, generalSettings: core.generalSettings })
+        : null;
+      if (updateCheckRuntime && updateCheckRuntime.checkForUpdate) {
+        updateCheckRuntime.checkForUpdate();
+      }
+
       window.NetReconNewUI = window.NetReconNewUI || {};
       window.NetReconNewUI.syncExtensionToolUi = syncExtensionToolUi;
 

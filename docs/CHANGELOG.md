@@ -8,6 +8,16 @@ of prior context — for full history use `git log`.
 
 ## 2026-07-15
 
+- Added an update-check-on-launch feature (desktop + www): the app now has
+  runtime access to its own version for the first time, via a generated
+  `js/new-ui/core/app-version.js` (written by an extended
+  `scripts/sync-version.js`, previously only synced `Cargo.toml`/
+  `tauri.conf.json`/the NSIS installer template). A new
+  `update-check-runtime.js` compares it against the latest GitHub release on
+  every launch and shows the existing confirm-dialog component with a
+  download link if a newer version is out, throttled to once per released
+  version via `localStorage` rather than once per day. Gated behind a new
+  "Check for updates on startup" toggle in Options → General (default on).
 - First step toward exploring an alternate UI (see `STYLELIST.md`, new): a
   "Lorem Ipsum" placeholder tool (icon in the activity bar / LRSB, gated
   behind "Show unfinished tools" like Topology/Globe) that opens all three
