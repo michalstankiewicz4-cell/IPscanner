@@ -1110,6 +1110,7 @@
             setStatusLine,
             runMenuAction: (menuRuntime && menuRuntime.runMenuAction) ? menuRuntime.runMenuAction : runMenuAction,
             getScannerSidebarRuntime: function () { return scannerSidebarRuntime; },
+            refreshDetachedTool: (panelsRuntime && panelsRuntime.refreshDetachedTool) ? panelsRuntime.refreshDetachedTool : function () { return false; },
           })
         : null;
 

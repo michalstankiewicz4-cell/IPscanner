@@ -2895,6 +2895,24 @@
       }).filter(Boolean);
     }
 
+    // shell: detached tool cards are built once (createDetachedCard()) and
+    // never rebuilt afterward - switchTool()'s detached-card branch only
+    // brings the card to front, it doesn't re-render. Live-updating tools
+    // (results-ip during a scan) need an explicit rebuild path instead,
+    // mirroring exactly what createDetachedCard() does at creation time.
+    function refreshDetachedTool(tool) {
+      var card = tool ? getDetachedCard(tool) : null;
+      if (!card) return false;
+      var detailRoot = card.querySelector(".tool-detail");
+      if (!detailRoot) return false;
+      detailRoot.innerHTML = stripIds(buildDetailHtml(tool));
+      if (tool === "results-ip") {
+        wireDetachedResultsIp(detailRoot);
+      }
+      wireToolRuntime(tool, detailRoot);
+      return true;
+    }
+
     function refreshShellCraftPanels() {
       if (panelInteractionsRuntime && panelInteractionsRuntime.wireShellCraftLibrary) {
         panelInteractionsRuntime.wireShellCraftLibrary();
@@ -2918,6 +2936,7 @@
       buildDetailHtml: buildDetailHtml,
       wireToolRuntime: wireToolRuntime,
       refreshShellCraftPanels: refreshShellCraftPanels,
+      refreshDetachedTool: refreshDetachedTool,
     };
   }
 

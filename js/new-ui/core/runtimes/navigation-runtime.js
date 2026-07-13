@@ -5,6 +5,7 @@
     var setStatusLine = deps.setStatusLine;
     var runMenuAction = deps.runMenuAction;
     var getScannerSidebarRuntime = deps.getScannerSidebarRuntime;
+    var refreshDetachedTool = deps.refreshDetachedTool;
     var platform = deps.platform || ((window.NetReconNewUICore && window.NetReconNewUICore.platform) || {});
     var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils
       ? window.NetReconNewUICore.utils.net
@@ -509,6 +510,15 @@
     }
 
     function refreshResultsViewIfVisible() {
+      // Docked: results-ip only re-renders (via switchTool -> refreshActiveUI)
+      // if it's the active tab. Detached: it's a separate floating card with
+      // no "active tab" of its own, and switchTool()'s detached branch only
+      // brings it to front without rebuilding content - so it needs its own
+      // explicit refresh, independent of whichever tab is active in the dock.
+      if (typeof refreshDetachedTool === "function") {
+        refreshDetachedTool("results-ip");
+      }
+
       var activeTab = document.querySelector('.v1-tab.active[data-tool]');
       var activeTool = activeTab ? String(activeTab.getAttribute("data-tool") || "").trim() : "";
       if (!activeTool) return;
