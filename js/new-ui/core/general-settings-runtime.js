@@ -34,17 +34,13 @@
     return result;
   }
 
-  function sanitizeState(raw) {
-    return cloneState(raw);
-  }
-
   function loadState() {
     try {
       var raw = window.localStorage ? window.localStorage.getItem(STORAGE_KEY) : "";
-      if (!raw) return sanitizeState(makeDefaultState());
-      return sanitizeState(JSON.parse(raw));
+      if (!raw) return cloneState(makeDefaultState());
+      return cloneState(JSON.parse(raw));
     } catch (_) {
-      return sanitizeState(makeDefaultState());
+      return cloneState(makeDefaultState());
     }
   }
 
@@ -72,7 +68,7 @@
   }
 
   function replaceState(nextState) {
-    currentState = sanitizeState(nextState);
+    currentState = cloneState(nextState);
     saveState(currentState);
     emitChanged();
     return getState();

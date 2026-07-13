@@ -230,9 +230,8 @@
     }
 
     // shell: throwaway placeholder tool (static lorem ipsum) - a first,
-    // deliberately minimal step toward exploring an alternate UI later; not
-    // gated behind "Show unfinished tools" like Topology/Globe, since it's
-    // meant to always be reachable for iterating on.
+    // deliberately minimal step toward exploring an alternate UI later;
+    // gated behind "Show unfinished tools" like Topology/Globe.
     function renderLoremIpsumTool() {
       var paragraphs = [
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
@@ -322,7 +321,7 @@
       }
 
       return [
-        "<div class=\"v1-lorem-ipsum\">",
+        "<div>",
         "<h4>" + escapeHtml(tr("toolTitle_lorem_ipsum")) + "</h4>",
         paragraphs.map(function (p) { return "<p>" + escapeHtml(p) + "</p>"; }).join(""),
         "</div>",

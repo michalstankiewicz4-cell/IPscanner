@@ -1061,10 +1061,11 @@
   white-space: nowrap;
 }
 
-/* RTL (Arabic etc.): IP addresses, ping ms, AS numbers, and HTTP status
-   codes are inherently LTR data - force them to stay left-to-right and
-   isolated from the surrounding bidi context regardless of active
-   language, instead of letting the bidi algorithm reorder/misalign them. */
+/* Not RTL-gated - applies in every language. IP addresses, ping ms, AS
+   numbers, and HTTP status codes are inherently LTR data - force them to
+   stay left-to-right and isolated from the surrounding bidi context,
+   instead of letting the bidi algorithm reorder/misalign them under RTL
+   languages (Arabic etc.). */
 .v1-ip-col-ip,
 .v1-ip-col-ping,
 .v1-ip-col-as,
