@@ -35,6 +35,11 @@
       textKey: "toolText_license",
       points: ["MIT license", "Permission notice", "Copyright notice"]
     },
+    "lorem-ipsum": {
+      titleKey: "toolTitle_lorem_ipsum",
+      textKey: "toolText_lorem_ipsum",
+      points: []
+    },
     // ShellCraft stays in the base shell (confirmed by the user, not a
     // judgment call like the ones above) - see SHELL_PROGRESS.md.
     shellcraft: {

@@ -1188,6 +1188,14 @@
             ensureRightTabOpen("shellcraft-inspector");
             setRightTabActive("shellcraft-inspector");
           }
+        } else if (tool === "lorem-ipsum") {
+          // Placeholder tool: one click opens all three surfaces (CS via
+          // switchTool() below, plus LS and RS here) instead of each being
+          // independently always-visible.
+          ensureSidebarTabOpen("lorem-ipsum");
+          setLeftActiveTab("lorem-ipsum");
+          ensureRightTabOpen("lorem-ipsum");
+          setRightTabActive("lorem-ipsum");
         }
         switchTool(tool);
       });

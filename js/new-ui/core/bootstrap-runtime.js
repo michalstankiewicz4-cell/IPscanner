@@ -188,9 +188,11 @@
         const assistantHead = document.querySelector('.v1-rightbar .v1-head-title');
         const activityResultsBtn = document.getElementById("v1ActivityResults");
         const activityScannerBtn = document.getElementById("v1ActivityScanner");
+        const activityLoremIpsumBtn = document.getElementById("v1ActivityLoremIpsum");
         const activityTopologyBtn = document.getElementById("v1ActivityTopology");
         const activityGlobeBtn = document.getElementById("v1ActivityGlobe");
         const toolsMenuIpScanner = document.getElementById("v1ToolsMenuIpScanner");
+        const toolsMenuLoremIpsum = document.getElementById("v1ToolsMenuLoremIpsum");
         const toolsMenuTopology = document.getElementById("v1ToolsMenuTopology");
         const toolsMenuGlobe = document.getElementById("v1ToolsMenuGlobe");
         tabsTrack = document.getElementById("v1TabsTrack");
@@ -199,6 +201,10 @@
         const sidebarTabScanner = document.getElementById("v1SidebarTabScanner");
         const sidebarTabIpLibrary = document.getElementById("v1SidebarTabIpLibrary");
         const sidebarTabResults = document.getElementById("v1SidebarTabResults");
+        const sidebarTabLoremIpsum = document.getElementById("v1SidebarTabLoremIpsum");
+        const rightTabLoremIpsum = document.getElementById("v1RightTabLoremIpsum");
+        const loremIpsumLsHeading = document.getElementById("v1LoremIpsumLsHeading");
+        const loremIpsumRsHeading = document.getElementById("v1LoremIpsumRsHeading");
         const ipLibraryPanelTitle = document.getElementById("v1IpLibraryPanelTitle");
         const ipLibraryPanelNote = document.getElementById("v1IpLibraryPanelNote");
         const ipLibraryCountriesLabel = document.getElementById("v1IpLibraryCountriesLabel");
@@ -220,6 +226,7 @@
         const tabTitleLanguageManager = document.getElementById("v1TabTitleLanguageManager");
         const tabTitleAbout = document.getElementById("v1TabTitleAbout");
         const tabTitleLicense = document.getElementById("v1TabTitleLicense");
+        const tabTitleLoremIpsum = document.getElementById("v1TabTitleLoremIpsum");
         const tabTitleTopology = document.getElementById("v1TabTitleTopology");
         const tabTitleGlobe = document.getElementById("v1TabTitleGlobe");
         const terminalTab = document.getElementById("v1TerminalTab");
@@ -271,6 +278,10 @@
           activityScannerBtn.setAttribute("title", tr("ipScanner"));
           activityScannerBtn.setAttribute("aria-label", tr("ipScanner"));
         }
+        if (activityLoremIpsumBtn) {
+          activityLoremIpsumBtn.setAttribute("title", tr("toolTitle_lorem_ipsum"));
+          activityLoremIpsumBtn.setAttribute("aria-label", tr("toolTitle_lorem_ipsum"));
+        }
         if (activityTopologyBtn) {
           activityTopologyBtn.setAttribute("title", tr("toolTitle_topology"));
           activityTopologyBtn.setAttribute("aria-label", tr("toolTitle_topology"));
@@ -288,11 +299,16 @@
           tabsScrollRightBtn.setAttribute("aria-label", tr("tabScrollRight"));
         }
         if (toolsMenuIpScanner) toolsMenuIpScanner.textContent = tr("ipScanner");
+        if (toolsMenuLoremIpsum) toolsMenuLoremIpsum.textContent = tr("toolTitle_lorem_ipsum");
         if (toolsMenuTopology) toolsMenuTopology.textContent = tr("toolTitle_topology");
         if (toolsMenuGlobe) toolsMenuGlobe.textContent = tr("toolTitle_globe");
         if (sidebarTabScanner) sidebarTabScanner.textContent = tr("ipScanner");
         if (sidebarTabIpLibrary) sidebarTabIpLibrary.textContent = tr("ipLibraryTabTitle");
         if (sidebarTabResults) sidebarTabResults.textContent = tr("resultsSidebarTitle");
+        if (sidebarTabLoremIpsum) sidebarTabLoremIpsum.textContent = tr("toolTitle_lorem_ipsum");
+        if (rightTabLoremIpsum) rightTabLoremIpsum.textContent = tr("toolTitle_lorem_ipsum");
+        if (loremIpsumLsHeading) loremIpsumLsHeading.textContent = tr("toolTitle_lorem_ipsum");
+        if (loremIpsumRsHeading) loremIpsumRsHeading.textContent = tr("toolTitle_lorem_ipsum");
         if (ipLibraryPanelTitle) ipLibraryPanelTitle.textContent = tr("ipLibraryTitle");
         if (ipLibraryCountriesInput) ipLibraryCountriesInput.setAttribute("placeholder", "pl,cn,ru,us,de,fr,gb,jp,kr,br,in,au,nl,ua,cz,se,no,fi,tr,ir,sa,za,ar,mx,ca,it,es");
         if (ipLibraryTopRangesLabel) ipLibraryTopRangesLabel.textContent = tr("ipLibraryTopRangesLabel");
@@ -316,6 +332,7 @@
         if (tabTitleLanguageManager) tabTitleLanguageManager.textContent = tr("langManagerTitle");
         if (tabTitleAbout) tabTitleAbout.textContent = tr("tabAboutTitle");
         if (tabTitleLicense) tabTitleLicense.textContent = tr("tabLicenseTitle");
+        if (tabTitleLoremIpsum) tabTitleLoremIpsum.textContent = tr("toolTitle_lorem_ipsum");
         if (tabTitleTopology) tabTitleTopology.textContent = tr("toolTitle_topology");
         if (tabTitleGlobe) tabTitleGlobe.textContent = tr("toolTitle_globe");
         if (terminalTab) terminalTab.textContent = tr("terminalTab");
@@ -1179,7 +1196,7 @@
 
       try {
         if (localStorage.getItem("netrecon_show_unfinished_tools") === "1") {
-          ["#v1ActivityTopology", "#v1ActivityGlobe", ".v1-menu-dd-item[data-tool=\"topology\"]", ".v1-menu-dd-item[data-tool=\"globe\"]"].forEach(function (selector) {
+          ["#v1ActivityLoremIpsum", "#v1ActivityTopology", "#v1ActivityGlobe", ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]", ".v1-menu-dd-item[data-tool=\"topology\"]", ".v1-menu-dd-item[data-tool=\"globe\"]"].forEach(function (selector) {
             var el = document.querySelector(selector);
             if (el) el.removeAttribute("hidden");
           });

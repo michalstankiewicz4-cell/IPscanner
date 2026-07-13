@@ -14,6 +14,9 @@
     ".listview-body",
     ".v1-session-welcome-list",
     ".v1-menu-dd-flyout",
+    ".v1-stylelist-textarea",
+    ".v1-stylelist-scroll-v-demo",
+    ".v1-stylelist-scroll-h-demo",
   ];
 
   var TOOL_IP_SCANNER_SCROLL_TARGETS = [
@@ -86,7 +89,7 @@
       document.body.appendChild(rail);
 
       // TODO(shell-split): tool-specific, see targetSelector()
-      var useHorizontalRail = el.classList.contains("v1-results-table-scroll--ip");
+      var useHorizontalRail = el.classList.contains("v1-results-table-scroll--ip") || el.classList.contains("v1-stylelist-scroll-h-demo");
       var hRail = null;
       var hThumb = null;
       if (useHorizontalRail) {

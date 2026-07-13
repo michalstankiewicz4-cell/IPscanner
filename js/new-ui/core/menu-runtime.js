@@ -394,8 +394,10 @@
 
       if (behavior === "toggle-unfinished-tools") {
         var unfinishedSelectors = [
+          "#v1ActivityLoremIpsum",
           "#v1ActivityTopology",
           "#v1ActivityGlobe",
+          ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]",
           ".v1-menu-dd-item[data-tool=\"topology\"]",
           ".v1-menu-dd-item[data-tool=\"globe\"]",
         ];
@@ -425,6 +427,9 @@
         document.body.classList.toggle("v1-blur-ip", nextBlurState);
         try {
           localStorage.setItem("netrecon_blur_ip", nextBlurState ? "1" : "0");
+        } catch (_) {}
+        try {
+          window.dispatchEvent(new CustomEvent("newui:blur-ip-changed", { detail: { active: nextBlurState } }));
         } catch (_) {}
         var blurBtn = document.querySelector('[data-menu-action="blur-ip"]');
         if (blurBtn) {

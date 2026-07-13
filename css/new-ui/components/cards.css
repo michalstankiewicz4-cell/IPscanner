@@ -62,6 +62,126 @@
   padding-left: 18px;
 }
 
+/* shell: STYLELIST.md preview tab - one row per <input> type, label+desc on
+   the left, the live element on the right. Two sections (Inputy / Inne
+   style) sit side by side in a 2-column grid, with a single divider above
+   both and a vertical divider between them, instead of each section having
+   its own horizontal-only divider. */
+.v1-stylelist-columns {
+  display: grid;
+  grid-template-columns: 400px 400px;
+  gap: 20px;
+  margin-top: 16px;
+  border-top: 1px solid #3c3c3c;
+  padding-top: 12px;
+  align-items: start;
+}
+
+.v1-stylelist-columns-second {
+  border-left: 1px solid #3c3c3c;
+  padding-left: 20px;
+}
+
+.v1-stylelist-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #2c2c2e;
+}
+
+.v1-stylelist-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.v1-stylelist-meta strong {
+  color: var(--txt);
+  font-size: 12px;
+}
+
+.v1-stylelist-meta span {
+  color: var(--txt-dim);
+  font-size: 11px;
+}
+
+.v1-stylelist-demo {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.v1-stylelist-demo input,
+.v1-stylelist-demo select,
+.v1-stylelist-demo textarea {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--txt);
+  background: #2b2b2e;
+  border: 1px solid #3c3c3c;
+  padding: 4px 6px;
+}
+
+.v1-stylelist-demo textarea {
+  min-width: 180px;
+  resize: vertical;
+}
+
+.v1-stylelist-hidden-note {
+  color: var(--txt-dim);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.v1-stylelist-scroll-v-demo {
+  height: 70px;
+  width: 180px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #2b2b2e;
+  border: 1px solid #3c3c3c;
+  padding: 4px 6px;
+  box-sizing: border-box;
+}
+
+.v1-stylelist-scroll-v-demo p {
+  margin: 0 0 4px;
+  color: var(--txt-dim);
+  font-size: 11px;
+}
+
+.v1-stylelist-scroll-h-demo {
+  width: 180px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: #2b2b2e;
+  border: 1px solid #3c3c3c;
+  box-sizing: border-box;
+}
+
+.v1-stylelist-scroll-h-track {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  width: max-content;
+}
+
+.v1-stylelist-scroll-h-track span {
+  flex: 0 0 auto;
+  color: var(--txt-dim);
+  font-size: 11px;
+  background: #333337;
+  border: 1px solid #3c3c3c;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
 /* shell: Versions */
 .v1-versions-list {
   display: grid;

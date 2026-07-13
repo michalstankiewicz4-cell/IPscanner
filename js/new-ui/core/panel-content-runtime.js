@@ -228,6 +228,118 @@
       ].join("");
     }
 
+    // shell: throwaway placeholder tool (static lorem ipsum) - a first,
+    // deliberately minimal step toward exploring an alternate UI later; not
+    // gated behind "Show unfinished tools" like Topology/Globe, since it's
+    // meant to always be reachable for iterating on.
+    function renderLoremIpsumTool() {
+      var paragraphs = [
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+        "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.",
+        "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet.",
+        "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.",
+        "Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio.",
+        "Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus.",
+        "Vitae dicta sunt explicabo nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt neque porro quisquam est.",
+        "Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse.",
+        "Quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque.",
+        "Corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga et harum quidem rerum.",
+        "Facilis est et expedita distinctio nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est omnis dolor.",
+        "Repellendus temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae itaque earum rerum hic tenetur a sapiente.",
+        "Delectus ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos curabitur.",
+      ];
+      // shell: STYLELIST.md - live preview of every native <input> type
+      // (+ textarea/select/button), pure markup, no data wiring yet ("source
+      // of truth" for these is still to be decided, per the STYLELIST.md
+      // note) - this tab exists specifically to LOOK at every style at once.
+      var styleListItems = [
+        { n: 1, type: "text", desc: "Standardowe jednolinijkowe pole tekstowe.", html: "<input type=\"text\" placeholder=\"Tekst...\" />" },
+        { n: 2, type: "password", desc: "Pole tekstowe maskujące wpisane znaki kropkami.", html: "<input type=\"password\" placeholder=\"Hasło...\" />" },
+        { n: 3, type: "email", desc: "Pole sprawdzające poprawność formatu adresu e-mail.", html: "<input type=\"email\" placeholder=\"nazwa@domena.pl\" />" },
+        { n: 4, type: "number", desc: "Pole akceptujące tylko cyfry z suwakiem góra/dół.", html: "<input type=\"number\" placeholder=\"0\" />" },
+        { n: 5, type: "checkbox", desc: "Kwadratowe pole wielokrotnego wyboru (zaznacz/odznacz).", html: "<input type=\"checkbox\" />" },
+        { n: 6, type: "radio", desc: "Okrągły przycisk jednokrotnego wyboru w ramach jednej grupy.", html: "<label><input type=\"radio\" name=\"v1StyleListRadioDemo\" checked /> A</label> <label><input type=\"radio\" name=\"v1StyleListRadioDemo\" /> B</label>" },
+        { n: 7, type: "file", desc: "Przycisk umożliwiający przesłanie pliku z dysku komputera.", html: "<input type=\"file\" />" },
+        { n: 8, type: "date", desc: "Kalendarz do wyboru konkretnego dnia, miesiąca i roku.", html: "<input type=\"date\" />" },
+        { n: 9, type: "datetime-local", desc: "Pole do wyboru daty oraz godziny bez strefy czasowej.", html: "<input type=\"datetime-local\" />" },
+        { n: 10, type: "time", desc: "Pole do wyboru konkretnej godziny (godziny i minuty).", html: "<input type=\"time\" />" },
+        { n: 11, type: "month", desc: "Pole ograniczone do wyboru wyłącznie miesiąca i roku.", html: "<input type=\"month\" />" },
+        { n: 12, type: "week", desc: "Pole ograniczone do wyboru numeru tygodnia oraz roku.", html: "<input type=\"week\" />" },
+        { n: 13, type: "color", desc: "Przycisk otwierający paletę do wyboru koloru.", html: "<input type=\"color\" value=\"#3794ff\" />" },
+        { n: 14, type: "range", desc: "Suwak do wyboru przybliżonej wartości numerycznej.", html: "<input type=\"range\" min=\"0\" max=\"100\" value=\"50\" />" },
+        { n: 15, type: "search", desc: "Pole tekstowe zoptymalizowane pod kątem wpisywania fraz wyszukiwania.", html: "<input type=\"search\" placeholder=\"Szukaj...\" />" },
+        { n: 16, type: "tel", desc: "Pole zoptymalizowane do wprowadzania numerów telefonów.", html: "<input type=\"tel\" placeholder=\"+48 000 000 000\" />" },
+        { n: 17, type: "url", desc: "Pole sprawdzające poprawność formatu adresu internetowego.", html: "<input type=\"url\" placeholder=\"https://example.com\" />" },
+        { n: 18, type: "hidden", desc: "Ukryte pole przechowujące dane niewidoczne dla użytkownika.", html: "<input type=\"hidden\" value=\"ukryta-wartosc\" /><span class=\"v1-stylelist-hidden-note\">(niewidoczne - wartość: \"ukryta-wartosc\")</span>" },
+        { n: 19, type: "button (input)", desc: "Zwykły przycisk aktywowany najczęściej przez JavaScript.", html: "<input type=\"button\" value=\"Button\" />" },
+        { n: 20, type: "submit (input)", desc: "Przycisk wysyłający dane z całego formularza na serwer.", html: "<input type=\"submit\" value=\"Submit\" />" },
+        { n: 21, type: "reset (input)", desc: "Przycisk przywracający wszystkim polom wartości domyślne.", html: "<input type=\"reset\" value=\"Reset\" />" },
+        { n: 22, type: "image (input)", desc: "Przycisk graficzny działający tak samo jak submit.", html: "<input type=\"image\" src=\"zebrus.png\" alt=\"Image submit\" width=\"22\" height=\"22\" />" },
+        { n: 23, type: "textarea", desc: "Pole do wprowadzania wielu linijek tekstu (np. komentarze).", html: "<textarea class=\"v1-stylelist-textarea\" rows=\"2\" placeholder=\"Wiele linijek tekstu...\">Linia 1\nLinia 2\nLinia 3\nLinia 4\nLinia 5\nLinia 6</textarea>" },
+        { n: 24, type: "select", desc: "Rozwijana lista wyboru zawierająca znaczniki option.", html: "<select><option>Opcja 1</option><option>Opcja 2</option><option>Opcja 3</option></select>" },
+        { n: 25, type: "button (tag)", desc: "Znacznik <button> do klikania, mogący zawierać tekst lub grafikę.", html: "<button type=\"button\">🖼️ Przycisk</button>" },
+      ];
+
+      // shell: STYLELIST.md "Inne style" section - starts with the custom
+      // faux-scrollbar system (vertical/horizontal), since that's what's
+      // used app-wide instead of native browser scrollbars (see
+      // custom-scrollbar-runtime.js). Both demo boxes are real, functional
+      // scroll containers registered in SHELL_SCROLL_TARGETS - not static
+      // mockups - so the thumb you see is the actual live mechanism.
+      var styleListOtherItems = [
+        {
+          n: 1,
+          type: "pasek pionowy (custom scrollbar)",
+          desc: "Wlasny system zamiast natywnego paska przegladarki - .v1-faux-scrollbar / .v1-faux-scrollbar-thumb.",
+          html: "<div class=\"v1-stylelist-scroll-v-demo\">" +
+            [1, 2, 3, 4, 5, 6, 7, 8].map(function (n) { return "<p>Linia " + n + " przykladowej tresci do przewijania w pionie.</p>"; }).join("") +
+            "</div>"
+        },
+        {
+          n: 2,
+          type: "pasek poziomy (custom scrollbar)",
+          desc: "Ten sam system w wariancie poziomym - .v1-faux-scrollbar-h / .v1-faux-scrollbar-thumb-h.",
+          html: "<div class=\"v1-stylelist-scroll-h-demo\"><div class=\"v1-stylelist-scroll-h-track\">" +
+            [1, 2, 3, 4, 5, 6, 7, 8].map(function (n) { return "<span>Kolumna " + n + "</span>"; }).join("") +
+            "</div></div>"
+        },
+      ];
+
+      function renderStyleListRows(items) {
+        return items.map(function (item) {
+          return [
+            "<div class=\"v1-stylelist-row\">",
+            "<div class=\"v1-stylelist-meta\">",
+            "<strong>" + item.n + ". " + escapeHtml(item.type) + "</strong>",
+            "<span>" + escapeHtml(item.desc) + "</span>",
+            "</div>",
+            "<div class=\"v1-stylelist-demo\">" + item.html + "</div>",
+            "</div>"
+          ].join("");
+        }).join("");
+      }
+
+      return [
+        "<div class=\"v1-lorem-ipsum\">",
+        "<h4>" + escapeHtml(tr("toolTitle_lorem_ipsum")) + "</h4>",
+        paragraphs.map(function (p) { return "<p>" + escapeHtml(p) + "</p>"; }).join(""),
+        "</div>",
+        "<div class=\"v1-stylelist-columns\">",
+        "<div class=\"v1-stylelist\">",
+        "<h4>Style List &mdash; Inputy</h4>",
+        "<p>Zywy podglad kazdego natywnego typu input + textarea/select/button. Zrodlo prawdy jeszcze nieustalone - patrz STYLELIST.md.</p>",
+        renderStyleListRows(styleListItems),
+        "</div>",
+        "<div class=\"v1-stylelist v1-stylelist-columns-second\">",
+        "<h4>Style List &mdash; Inne style</h4>",
+        "<p>Pozostale elementy wizualne aplikacji, poza inputami - patrz STYLELIST.md.</p>",
+        renderStyleListRows(styleListOtherItems),
+        "</div>",
+        "</div>"
+      ].join("");
+    }
+
     // shell: Language Manager row markup for one installed language - kept
     // as a standalone helper (not just inlined into renderLanguageManagerTool)
     // because panels-runtime.js's wireLanguageManagerButtons() needs the
@@ -873,6 +985,7 @@
       versions: renderVersionsTool,
       about: renderAboutTool,
       license: renderLicenseTool,
+      "lorem-ipsum": renderLoremIpsumTool,
       general: renderGeneralSettingsTool,
       "import-tool": renderImportTool,
       "language-manager": renderLanguageManagerTool,

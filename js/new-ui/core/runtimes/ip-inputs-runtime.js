@@ -33,7 +33,23 @@
       return true;
     }
 
+    // shell: the browser's native "remembered field values" dropdown (driven
+    // by the octet inputs' `name` attribute below) renders outside the page's
+    // DOM, so the app's CSS-based "Blur IP addresses" privacy toggle
+    // (body.v1-blur-ip) can't touch it - a screen-share could still leak past
+    // octets through that dropdown even while blur is on. Toggling
+    // `autocomplete` off/on to match keeps the two features honest together.
+    function applyOctetAutocompleteForBlurState() {
+      var blurred = document.body.classList.contains("v1-blur-ip");
+      document.querySelectorAll("[data-ip-box] .v1-octet").forEach(function (input) {
+        input.setAttribute("autocomplete", blurred ? "off" : "on");
+      });
+    }
+
     function initSegmentedIpInputs() {
+      applyOctetAutocompleteForBlurState();
+      window.addEventListener("newui:blur-ip-changed", applyOctetAutocompleteForBlurState);
+
       document.querySelectorAll("[data-ip-box]").forEach(function (box) {
         var type = box.getAttribute("data-ip-box");
         var hiddenId = type === "from" ? "v1ScanFrom" : "v1ScanTo";

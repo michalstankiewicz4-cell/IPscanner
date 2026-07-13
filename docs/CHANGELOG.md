@@ -8,6 +8,31 @@ of prior context — for full history use `git log`.
 
 ## 2026-07-15
 
+- First step toward exploring an alternate UI (see `STYLELIST.md`, new): a
+  "Lorem Ipsum" placeholder tool (icon in the activity bar / LRSB, gated
+  behind "Show unfinished tools" like Topology/Globe) that opens all three
+  surfaces at once - a Center Section tab, a Left Section tab, and a
+  closable Right Section tab - each with its own independent filler text.
+  The CS tab doubles as a living style catalog: a live, working preview of
+  every native `<input>` type plus textarea/select/button (25 items,
+  `STYLELIST.md` tracks which ones have a settled "source of truth"), laid
+  out in two columns alongside a growing "other UI styles" section that
+  starts with the app's custom vertical/horizontal scrollbar
+  (`.v1-faux-scrollbar`) - generalized `custom-scrollbar-runtime.js`'s
+  horizontal-rail support (previously hardcoded to one results-table
+  selector) to work for any registered target.
+
+- Added `name` attributes to the 8 IP-range octet inputs (From/To ×4) so
+  the browser's native "remembered field values" dropdown can suggest
+  previously-typed octets - shared per octet position (`ip-octet-1..4`)
+  across both boxes, since the same range of plausible values applies
+  either way. That dropdown renders outside the page's DOM, so the
+  CSS-based "Blur IP addresses" toggle can't touch it - added
+  `applyOctetAutocompleteForBlurState()` (`ip-inputs-runtime.js`) to
+  toggle `autocomplete` off/on to match, on boot and live via a new
+  `newui:blur-ip-changed` event dispatched from `menu-runtime.js`'s
+  blur-ip toggle handler, so the two privacy features stay honest
+  together instead of the dropdown leaking octets around the blur.
 - Fixed two more physical-direction assumptions in the RTL mirror, found
   during manual testing: LS/RS's collapse-toggle arrows (`◀`/`▶`) were
   hardcoded assuming LS is always physically left and RS always physically
