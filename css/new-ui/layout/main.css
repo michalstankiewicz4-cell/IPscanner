@@ -4,6 +4,17 @@
   min-height: 0;
   overflow: hidden;
   height: 100%;
+  /* Keep activity bar / LS / CS / RS docked on their physical side regardless
+     of language direction - grid column order otherwise follows `direction`
+     the same way flex row order does. Text-direction RTL is restored for
+     each panel's own content below (html[dir="rtl"] .v1-sidebar etc). */
+  direction: ltr;
+}
+
+html[dir="rtl"] .v1-sidebar,
+html[dir="rtl"] .v1-editor,
+html[dir="rtl"] .v1-rightbar {
+  direction: rtl;
 }
 
 .v1-resizer-v {

@@ -825,7 +825,7 @@
 }
 
 .v1-results-table th {
-  text-align: left;
+  text-align: start;
   padding: 6px 10px;
   background: #1f1f23;
   color: var(--txt);
@@ -939,6 +939,19 @@
 .v1-ip-results-table .v1-ip-col-http {
   min-width: 200px;
   white-space: nowrap;
+}
+
+/* RTL (Arabic etc.): IP addresses, ping ms, AS numbers, and HTTP status
+   codes are inherently LTR data - force them to stay left-to-right and
+   isolated from the surrounding bidi context regardless of active
+   language, instead of letting the bidi algorithm reorder/misalign them. */
+.v1-ip-col-ip,
+.v1-ip-col-ping,
+.v1-ip-col-as,
+.v1-ip-col-http {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: left;
 }
 
 .v1-ip-results-table .v1-ip-col-access {

@@ -2743,7 +2743,7 @@
         if (!manifest || typeof manifest.code !== "string" || !manifest.code.trim()) return;
         if (!manifest.dictionary || typeof manifest.dictionary !== "object" || Array.isArray(manifest.dictionary)) return;
         var addResult = i18n && i18n.addLanguage
-          ? i18n.addLanguage(manifest.code, manifest.dictionary, { name: manifest.name, version: manifest.version, flag: manifest.flag })
+          ? i18n.addLanguage(manifest.code, manifest.dictionary, { name: manifest.name, version: manifest.version, flag: manifest.flag, rtl: !!manifest.rtl })
           : { ok: false, error: tr("langAddFail") };
         if (!addResult.ok) {
           if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langAddFail") + " - " + addResult.error);
@@ -2770,20 +2770,36 @@
           if (button.getAttribute("data-lang-action") !== "import") return;
 
           pickLanguageFileText().then(function (picked) {
-            var code = deriveLanguageCodeFromFilename(picked.name);
-            if (!code) {
-              if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langInvalidCode"));
-              return;
-            }
-            var dict;
+            var parsed;
             try {
-              dict = JSON.parse(picked.text || "{}");
+              parsed = JSON.parse(picked.text || "{}");
             } catch (_) {
               if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langInvalidDict"));
               return;
             }
 
-            var addResult = i18n && i18n.addLanguage ? i18n.addLanguage(code, dict) : { ok: false, error: tr("langAddFail") };
+            // Accept both local-import shapes: a flat key->text dictionary
+            // (the documented local-import format, CONTRIBUTING §5), and
+            // the "rich" catalog manifest shape (code/name/version/flag/
+            // rtl/dictionary, CONTRIBUTING §5's languages/<code>.json) - a
+            // user pointing this file picker at a catalog-style file (e.g.
+            // one they downloaded from languages/) should get the real
+            // translations and metadata, not a silent dictionary-shaped
+            // wrapper with no matching keys (which used to fall back to
+            // English with no error).
+            var isRichManifest = parsed && typeof parsed === "object" && !Array.isArray(parsed)
+              && parsed.dictionary && typeof parsed.dictionary === "object" && !Array.isArray(parsed.dictionary);
+            var dict = isRichManifest ? parsed.dictionary : parsed;
+            var code = isRichManifest && typeof parsed.code === "string" && parsed.code.trim()
+              ? parsed.code.trim().toLowerCase()
+              : deriveLanguageCodeFromFilename(picked.name);
+            if (!code) {
+              if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langInvalidCode"));
+              return;
+            }
+            var meta = isRichManifest ? { name: parsed.name, version: parsed.version, flag: parsed.flag, rtl: !!parsed.rtl } : undefined;
+
+            var addResult = i18n && i18n.addLanguage ? i18n.addLanguage(code, dict, meta) : { ok: false, error: tr("langAddFail") };
             if (!addResult.ok) {
               if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langAddFail") + " - " + addResult.error);
               return;

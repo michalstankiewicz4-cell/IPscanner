@@ -6,6 +6,38 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-07-14
+
+- Added text-direction RTL support and Arabic (`languages/ar.json`) as the
+  first RTL language, installable through the Language Manager catalog
+  exactly like German/Polish. Language catalog manifests can now carry an
+  `"rtl": true` field; `i18n.js` reads it and sets `<html dir="rtl">` on
+  every language switch (and at boot for whichever language was last
+  active). Scope is deliberately narrow: LS/RS/activity bar stay
+  physically where they are today — only text direction flips (3
+  `text-align: left → start` CSS fixes). Added a `unicode-bidi: isolate`
+  rule for the results table's IP/ping/AS/HTTP-status columns so that
+  inherently left-to-right data (addresses, port numbers) never gets
+  visually reordered by the bidi algorithm under RTL. Full structural
+  mirroring (LS/RS swapping sides) is a separate, larger, deferred item —
+  see ROADMAP.md.
+- Fixed local `Import language...` silently falling back to English when
+  pointed at a "rich" catalog-shaped file (e.g. a `languages/<code>.json`
+  downloaded manually) instead of the plain local dictionary format — it
+  now detects both shapes and unwraps the rich one correctly, including
+  its `rtl` flag.
+- Fixed the top menu bar's dropdowns overflowing off-screen under RTL
+  (Arabic): setting `<html dir="rtl">` doesn't just flip text — it also
+  reverses the physical order of any flex/grid container using the
+  default axis (menu bar row, the activity-bar/LS/CS/RS grid, the status
+  bar row), which pushed left-anchored menu dropdowns past the right edge
+  of the window and moved LS/RS/activity bar off their stated physical
+  side. Pinned `direction: ltr` on `.v1-menubar`/`.v1-main`/`.v1-status`
+  (the structural chrome) and re-declared `direction: rtl` on the actual
+  panel content (`.v1-sidebar`/`.v1-editor`/`.v1-rightbar`) and menu
+  dropdown text under `html[dir="rtl"]`, so chrome position stays fixed
+  while text keeps reading right-to-left.
+
 ## 2026-07-13
 
 - Language Manager (Options → Language...) redesigned to match Import

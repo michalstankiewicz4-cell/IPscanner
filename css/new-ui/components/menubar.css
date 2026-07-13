@@ -8,6 +8,15 @@
   overflow: visible;
   position: relative;
   z-index: 10000;
+  /* Keep menu trigger order (and each dropdown's left-anchored position)
+     physically fixed regardless of language direction - a flex row
+     otherwise reverses under RTL, pushing dropdowns off-screen. Dropdown
+     item text still reads RTL via the override below. */
+  direction: ltr;
+}
+
+html[dir="rtl"] .v1-menu-dropdown {
+  direction: rtl;
 }
 
 .v1-menu-brand {
@@ -220,7 +229,7 @@
   border: 0;
   background: transparent;
   color: #cccccc;
-  text-align: left;
+  text-align: start;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;

@@ -269,20 +269,35 @@ literami, brak wersji):
 
 **Katalog GitHub (`languages/<code>.json`)** - "bogaty" manifest, mirrorujacy
 `tools/*.json`; bez pliku ikony do parowania - flaga to pole tekstowe w
-manifescie, nie osobny obrazek:
+manifescie, nie osobny obrazek. Opcjonalne pole `rtl` (boolean, domyslnie
+`false`) oznacza jezyk pisany od prawej do lewej (RTL, np. arabski) -
+Language Manager po aktywacji takiego jezyka sam ustawia
+`document.documentElement`'s `dir="rtl"` (patrz `i18n.js`'s
+`applyDirForLang()`). Dzisiejszy zakres RTL to **tylko kierunek tekstu**
+- LS/RS/pasek aktywnosci zostaja fizycznie tam gdzie sa, pelne lustrzane
+odbicie ukladu to osobny, przyszly temat (patrz ROADMAP.md):
 
 ```json
 {
-  "code": "de",
-  "name": "Deutsch",
+  "code": "ar",
+  "name": "العربية",
   "version": "1.0.0",
-  "flag": "🇩🇪",
+  "flag": "🇸🇦",
+  "rtl": true,
   "dictionary": {
-    "menuFile": "Datei",
-    "menuOptions": "Optionen"
+    "menuFile": "ملف",
+    "menuOptions": "خيارات"
   }
 }
 ```
+
+**Uwaga**: `Import language...` (lokalny plik) rozpoznaje oba formaty
+automatycznie - jesli wybrany plik ma ksztalt bogatego manifestu
+(`code`/`name`/`version`/`flag`/`rtl`/`dictionary`), uzywa go w calosci
+(wlacznie z `rtl`); jesli to plaski slownik `key -> text`, dziala jak
+dotychczas (kod jezyka z nazwy pliku, `rtl: false`). Dzieki temu wskazanie
+lokalnie pliku pobranego z `languages/` (np. `ar.json`) dziala tak samo jak
+instalacja z katalogu GitHub, zamiast po cichu wpadac w angielski fallback.
 
 Zeby dodac nowy jezyk do katalogu: dodaj plik `languages/<code>.json` (pelny
 slownik, wszystkie klucze z `baseDictionaries.en` w `i18n.js`) w tym

@@ -15,7 +15,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0;
-  text-align: left;
+  text-align: start;
 }
 
 .v1-detect-icon {

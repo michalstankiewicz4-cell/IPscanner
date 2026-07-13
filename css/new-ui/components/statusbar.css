@@ -17,6 +17,10 @@
   overflow: hidden;
   box-sizing: border-box;
   font-family: var(--font-mono);
+  /* Keep the loader/proc-count group on the left and the active-tool label
+     on the right regardless of language direction, matching the menu bar
+     and main grid (see main.css .v1-main / menubar.css .v1-menubar). */
+  direction: ltr;
 }
 
 .v1-status-left {

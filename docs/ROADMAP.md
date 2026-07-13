@@ -59,6 +59,15 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   German (`languages/de.json`) and Polish (`languages/pl.json`, published
   even though `pl` is built-in) are the first two catalog entries, both
   the full 433-string dictionary.
+- Text-direction RTL support, with Arabic (`languages/ar.json`) as the
+  first RTL language: catalog manifests can carry an `"rtl": true` field,
+  read by `i18n.js`'s new `applyDirForLang()` to set `<html dir>` on every
+  language switch/boot. Scoped deliberately narrow — LS/RS/activity bar
+  stay physically where they are, only text direction flips (3
+  `text-align: left → start` fixes) — plus a `unicode-bidi: isolate`
+  guard on IP/ping/AS/HTTP-status table columns so that inherently-LTR
+  data never gets bidi-reordered under RTL. Full structural mirroring is a
+  separate, larger, deferred item (see "Planned" below).
 
 ## In progress
 
@@ -104,18 +113,20 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   which risks false confidence worse than today's honest "we blur the whole
   thing" behavior.
 
-- **RTL language support (Arabic, Hebrew)** — adding the translation
-  dictionaries themselves is trivial (existing Language Manager /
-  `contributions.i18n` mechanism). The real cost is RTL layout: today there
-  is zero `dir` handling anywhere (`setLang()` only sets the `lang`
-  attribute) and the CSS is full of hardcoded `left`/`right` rather than
-  logical properties, compounded by the shell literally having sections
-  named LS/RS (Left/Right Section) with directional resizer arrows and
-  drag-to-resize math that isn't pure CSS. Also an open design decision, not
-  just mechanical find-replace: should LS/RS physically mirror position in
-  RTL mode, or stay put with RTL text inside? Font stack (IBM Plex
-  Sans/Space Grotesk) also lacks Arabic/Hebrew glyphs, needs a fallback
-  check. Estimate: a real multi-day project, not a drop-in new language.
+- **Full RTL structural mirror** (LS↔RS physically swap sides, activity bar
+  moves to the right edge, menu item order reverses) — deliberately
+  deferred when text-direction-only RTL shipped (see "Done" above). The
+  narrow slice was low-risk (~15 lines); this one touches the layout
+  engine's pixel math, not just CSS: `layout-runtime.js`'s resize-drag
+  delta math (`event.clientX` arithmetic assuming the left handle is
+  physically on the left) and its dynamically-generated
+  `grid-template-columns` string would both need to become
+  direction-aware, on top of ~50 physical `left`/`right`/`margin-*`/
+  `padding-*`/`border-*` CSS properties across 8+ files (`main.css` alone
+  has 16). Also an open design call: window controls (min/max/close)
+  conventionally stay physically right-pinned even in RTL apps, so a
+  correct mirror can't just blindly reverse everything. Real multi-day
+  project, not mechanical find-replace.
 
 ## Backlog (per-feature audit, 2026-07-09)
 

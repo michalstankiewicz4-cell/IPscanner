@@ -932,8 +932,8 @@
   // languages get whatever metadata addLanguage() was given, if any.
   function makeBuiltInLangMeta() {
     return {
-      en: { name: "English", flag: "🇬🇧", version: "" },
-      pl: { name: "Polski", flag: "🇵🇱", version: "" },
+      en: { name: "English", flag: "🇬🇧", version: "", rtl: false },
+      pl: { name: "Polski", flag: "🇵🇱", version: "", rtl: false },
     };
   }
 
@@ -1026,6 +1026,7 @@
         name: String(meta.name || normalizedCode.toUpperCase()),
         flag: String(meta.flag || "🌐"),
         version: String(meta.version || ""),
+        rtl: !!meta.rtl,
       };
     });
   }
@@ -1050,6 +1051,7 @@
       name: String((meta && meta.name) || normalizedCode.toUpperCase()),
       flag: String((meta && meta.flag) || "🌐"),
       version: String((meta && meta.version) || ""),
+      rtl: !!(meta && meta.rtl),
     };
     if (persist !== false) {
       saveCustomDictionaries();
@@ -1069,8 +1071,8 @@
   // defensive since dictionaries/langMeta are two separate maps).
   function listLanguageDetails() {
     return listLanguages().map(function (code) {
-      var meta = langMeta[code] || { name: code.toUpperCase(), flag: "🌐", version: "" };
-      return { code: code, name: meta.name, flag: meta.flag, version: meta.version };
+      var meta = langMeta[code] || { name: code.toUpperCase(), flag: "🌐", version: "", rtl: false };
+      return { code: code, name: meta.name, flag: meta.flag, version: meta.version, rtl: !!meta.rtl };
     });
   }
 
@@ -1079,6 +1081,18 @@
     langMeta = makeBuiltInLangMeta();
     loadCustomDictionaries();
     loadLangMeta();
+  }
+
+  // Language Manager -> Arabic/RTL support: whichever language is active,
+  // <html dir> must match its langMeta.rtl flag (built-ins are always ltr;
+  // catalog-installed languages carry their own "rtl" manifest field, see
+  // installLanguageManifest() in panels-runtime.js). Text-direction-only
+  // RTL - the shell's LS/RS/activity-bar layout stays physically where it
+  // is; only text direction flips. See docs/ROADMAP.md for the deferred
+  // full-mirror approach.
+  function applyDirForLang(code) {
+    var meta = langMeta[code];
+    document.documentElement.setAttribute("dir", meta && meta.rtl ? "rtl" : "ltr");
   }
 
   function createI18n() {
@@ -1094,6 +1108,7 @@
       lang = normalized;
       storageSet(LANG_KEY, normalized);
       document.documentElement.setAttribute("lang", normalized);
+      applyDirForLang(normalized);
       try {
         window.dispatchEvent(new CustomEvent("netrecon:language-changed", { detail: { lang: normalized } }));
       } catch (_) {}
@@ -1105,6 +1120,7 @@
     }
 
     document.documentElement.setAttribute("lang", lang);
+    applyDirForLang(lang);
 
     return {
       t: t,
