@@ -519,8 +519,6 @@
           switchTool(toolKey);
         }
       }
-      window.NetReconNewUI = window.NetReconNewUI || {};
-      window.NetReconNewUI.openExtensionTool = openExtensionTool;
 
       // shell: renders an extension-contributed icon into a container - an
       // http(s)/data URL (e.g. a catalog icon file) becomes a real <img>,
@@ -997,8 +995,6 @@
       const commandBusRuntime = runtimeFactory.createCommandBusRuntime
         ? runtimeFactory.createCommandBusRuntime()
         : null;
-      window.NetReconNewUI = window.NetReconNewUI || {};
-      window.NetReconNewUI.commandBus = commandBusRuntime;
 
       const ipInputsRuntimeFactory = runtimeFactory.createIpInputsRuntime
         ? runtimeFactory.createIpInputsRuntime()
@@ -1262,7 +1258,6 @@
       }
 
       window.NetReconNewUI = window.NetReconNewUI || {};
-      window.NetReconNewUI.extensions = extensionHost;
       window.NetReconNewUI.syncExtensionToolUi = syncExtensionToolUi;
 
       function openExternalUrl(url) {

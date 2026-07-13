@@ -15,7 +15,7 @@ use std::time::{Duration, Instant, SystemTime};
 
 use serde::{Deserialize, Serialize};
 use rusqlite::{Connection, params};
-use tauri::{AppHandle, Emitter, Manager, WebviewWindow, WindowEvent};
+use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
@@ -26,26 +26,6 @@ use std::os::windows::process::CommandExt;
 struct ScanState {
     stop: AtomicBool,
 }
-
-const TOOL_WINDOW_LABELS: &[&str] = &[
-    "tool-console",
-    "tool-macro",
-    "tool-speed",
-    "tool-proto",
-    "tool-globe",
-    "tool-topology",
-    "tool-radar",
-    "tool-gnss",
-    "tool-lte",
-    "tool-sniffer",
-    "tool-imgmeta",
-    "tool-ai-assistant",
-    "tool-bt-detector",
-    "tool-phone-lookup",
-    "tool-wifi-detector",
-    "tool-scan-watch",
-    "clippy",
-];
 
 // ─── DTOs ────────────────────────────────────────────────────────────────────
 #[derive(Serialize, Clone)]
@@ -1194,9 +1174,6 @@ fn window_start_dragging(window: WebviewWindow) -> Result<(), String> {
 
 #[tauri::command]
 fn window_close(window: WebviewWindow) -> Result<(), String> {
-    if window.label() == "main" {
-        close_tool_windows(&window.app_handle());
-    }
     window.close().map_err(|e| e.to_string())
 }
 
@@ -1211,15 +1188,6 @@ fn u32_to_ip(n: u32) -> String {
     let [a, b, c, d] = n.to_be_bytes();
     format!("{}.{}.{}.{}", a, b, c, d)
 }
-
-fn close_tool_windows(app: &AppHandle) {
-    for label in TOOL_WINDOW_LABELS {
-        if let Some(win) = app.get_webview_window(label) {
-            let _ = win.close();
-        }
-    }
-}
-
 
 // ─── Main ────────────────────────────────────────────────────────────────────────────
 
@@ -1259,18 +1227,6 @@ fn main() {
                 }
             }
             Ok(())
-        })
-        .on_window_event(|window, event| {
-            if window.label() == "main" {
-                if matches!(event, WindowEvent::Destroyed) {
-                    close_tool_windows(&window.app_handle());
-                }
-            }
-            if window.label() == "clippy" {
-                if matches!(event, WindowEvent::Destroyed) {
-                    let _ = window.app_handle().emit("clippy-window-closed", ());
-                }
-            }
         })
         .invoke_handler(tauri::generate_handler![
             scan_range,

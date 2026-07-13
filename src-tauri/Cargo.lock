@@ -1858,7 +1858,6 @@ dependencies = [
  "rfd",
  "rusqlite",
  "serde",
- "serde_json",
  "tauri",
  "tauri-build",
  "tokio",

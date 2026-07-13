@@ -28,8 +28,7 @@
     "security": {
       "csp": "default-src 'self' data: blob: http: https:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http: https:; connect-src 'self' ipc: http: https: ws: wss:; font-src 'self' data:; frame-src 'self' http: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
       "capabilities": [
-        "default",
-        "clippy"
+        "default"
       ]
     }
   },
