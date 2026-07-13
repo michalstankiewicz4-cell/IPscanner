@@ -169,6 +169,7 @@
         "<div class=\"v1-about\">",
         "<h4>" + heading + "</h4>",
         "<p>" + escapeHtml(tr("aboutByAuthor")) + "</p>",
+        "<p>" + escapeHtml(tr("aboutVibecodingNote")) + "</p>",
         "<h4>" + escapeHtml(tr("aboutSupportHeading")) + "</h4>",
         "<p>" + escapeHtml(tr("aboutSupportBody")) + "</p>",
         "<p><strong>" + escapeHtml(tr("aboutSupportQuick")) + "</strong></p>",

@@ -42,9 +42,14 @@
         : document.getElementById("v1ToolDetail");
       if (!root) return;
 
-      if (root.dataset.versionsTimelineBound === "1") return;
-      root.dataset.versionsTimelineBound = "1";
-
+      // No bind-guard here on purpose: #v1ToolDetail is a persistent container
+      // whose innerHTML gets replaced on every tool switch (unlike, say, the
+      // ShellCraft canvas element which is itself torn down/recreated) - a
+      // dataset flag on it would survive across renders and wrongly skip
+      // re-binding to the fresh .v1-version-point elements after navigating
+      // away and back. All listeners below are local to elements inside
+      // root, so they're discarded automatically when innerHTML is replaced;
+      // re-running this on every render is safe and necessary.
       var track = root.querySelector("[data-version-role=\"track\"]") || root.querySelector("#v1VersionTrack");
       var versionsList = root.querySelector("[data-version-role=\"list\"]") || root.querySelector("#v1VersionsList");
       var physics = root.querySelector("[data-version-role=\"physics\"]") || root.querySelector("#v1VersionPhysics");
