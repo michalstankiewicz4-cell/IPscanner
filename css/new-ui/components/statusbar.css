@@ -25,7 +25,8 @@
 
 /* Full RTL mirror: justify-content: space-between + flex order reversal
    alone swap which side each group sits on, no physical left/right values
-   to fix here (unlike the menu bar's absolutely-positioned dropdowns). */
+   to fix here (unlike the menu bar's absolutely-positioned dropdowns) -
+   except the progress bar fill below, which is absolutely positioned too. */
 html[dir="rtl"] .v1-status {
   direction: rtl;
 }
@@ -107,6 +108,14 @@ html[dir="rtl"] .v1-status {
   width: 0%;
   background: #3bd16f;
   transition: width 140ms linear;
+}
+
+/* RTL mirror: the fill is driven purely by width% (set from JS, unchanged)
+   - flipping the anchor from left to right makes the same width% grow from
+   the opposite edge, no JS/logic change needed. */
+html[dir="rtl"] .v1-status-progress-bar {
+  left: auto;
+  right: 0;
 }
 
 .v1-status-progress-text {
