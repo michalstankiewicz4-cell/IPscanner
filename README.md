@@ -62,7 +62,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for what's done, in progress, and planned
 | [docs/SESSION_DATABASE_SCHEMA.md](docs/SESSION_DATABASE_SCHEMA.md) | Structure of the session `.sqlite3` file, table by table (written in Polish). |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community code of conduct. |
 | [SECURITY.md](SECURITY.md) | How to report a security vulnerability. |
-| [LICENSE.MD](LICENSE.MD) | MIT License. |
+| [LICENSE.md](LICENSE.md) | MIT License. |
 
 ## Questions & discussions
 
