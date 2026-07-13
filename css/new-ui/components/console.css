@@ -26,6 +26,11 @@
   color: #c8c9ce;
 }
 
+html[dir="rtl"] .v1-console-tabs .v1-panel-toggle {
+  margin-left: 0;
+  margin-right: auto;
+}
+
 .v1-console-tabs .v1-panel-toggle:hover {
   background: #2f3338;
   color: #ffffff;

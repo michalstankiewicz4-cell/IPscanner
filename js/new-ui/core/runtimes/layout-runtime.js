@@ -187,11 +187,22 @@
       })();
 
       function syncToggleLabels() {
-        leftToggle.textContent = panelState.leftCollapsed ? "▶" : "◀";
+        // Under a real RTL language, LS/RS physically swap sides (see
+        // applySizes()'s isRtl branch) - the arrow glyphs point toward the
+        // panel's own outer edge when expanded (collapse direction) and
+        // back toward center when collapsed (restore direction), so they
+        // need to flip along with the panel each arrow belongs to.
+        var isRtl = document.documentElement.getAttribute("dir") === "rtl";
+        var leftExpandedGlyph = isRtl ? "▶" : "◀";
+        var leftCollapsedGlyph = isRtl ? "◀" : "▶";
+        var rightExpandedGlyph = isRtl ? "◀" : "▶";
+        var rightCollapsedGlyph = isRtl ? "▶" : "◀";
+
+        leftToggle.textContent = panelState.leftCollapsed ? leftCollapsedGlyph : leftExpandedGlyph;
         leftToggle.setAttribute("title", panelState.leftCollapsed ? tr("panelRestoreLeft") : tr("panelHideLeft"));
         leftToggle.setAttribute("aria-label", panelState.leftCollapsed ? tr("panelRestoreLeft") : tr("panelHideLeft"));
 
-        rightToggle.textContent = panelState.rightCollapsed ? "◀" : "▶";
+        rightToggle.textContent = panelState.rightCollapsed ? rightCollapsedGlyph : rightExpandedGlyph;
         rightToggle.setAttribute("title", panelState.rightCollapsed ? tr("panelRestoreRight") : tr("panelHideRight"));
         rightToggle.setAttribute("aria-label", panelState.rightCollapsed ? tr("panelRestoreRight") : tr("panelHideRight"));
 

@@ -8,6 +8,17 @@ of prior context — for full history use `git log`.
 
 ## 2026-07-15
 
+- Fixed two more physical-direction assumptions in the RTL mirror, found
+  during manual testing: LS/RS's collapse-toggle arrows (`◀`/`▶`) were
+  hardcoded assuming LS is always physically left and RS always physically
+  right, so they pointed the wrong way once a real RTL language swapped
+  their sides — `layout-runtime.js`'s `syncToggleLabels()` now flips the
+  glyphs to match. The Down Section's collapse-toggle button used
+  `margin-left: auto` (a physical flex-spacer trick) to sit at the end of
+  its tab row, which doesn't respond to `direction` - added an
+  `html[dir="rtl"]` override so it sits flush at the true start of the row
+  under RTL instead of floating mid-row.
+
 - Added a "Swap panel sides" toggle to Options -> General: relocates just
   the activity bar (LRSB) to the opposite edge of the screen, independent
   of language. Implemented via CSS `order` (not `direction`), so LS/RS keep
