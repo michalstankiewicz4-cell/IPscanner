@@ -400,6 +400,7 @@
           ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]",
           ".v1-menu-dd-item[data-tool=\"topology\"]",
           ".v1-menu-dd-item[data-tool=\"globe\"]",
+          ".v1-menu-dd-item[data-menu-action=\"assistant-right\"]",
         ];
         var unfinishedBtn = document.querySelector('[data-menu-action="show-unfinished-tools"]');
         var nextShowState = !(unfinishedBtn && unfinishedBtn.classList.contains("is-active"));

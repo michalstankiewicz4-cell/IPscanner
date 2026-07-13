@@ -1453,6 +1453,7 @@
     function init() {
       setLeftActiveTab("");
       syncLeftTabActivationInvariant();
+      syncRightTabActivationInvariant();
       setScanButtonsState(false);
       bindScannerActions();
       bindResultTabs();

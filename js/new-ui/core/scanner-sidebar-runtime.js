@@ -3,6 +3,7 @@
     var tr = deps.tr;
     var setStatusLine = deps.setStatusLine;
     var setRangeInputs = deps.setRangeInputs;
+    var applyCidrValue = deps.applyCidrValue;
 
     var RANGE_HISTORY_KEY = "netrecon_range_history";
     var presetsListenerBound = false;
@@ -102,15 +103,31 @@
     }
 
     function applyDetectedRange(ip) {
-      var base = String(ip || "").split("/")[0];
-      var parts = base.split(".");
-      if (parts.length !== 4) return false;
-      var prefix = parts.slice(0, 3).join(".");
-      var fromIp = prefix + ".0";
-      var toIp = prefix + ".255";
-      if (typeof setRangeInputs === "function" && setRangeInputs(fromIp, toIp)) {
+      // Subnets detection already yields a real "a.b.c.d/n" CIDR (any
+      // prefix length); External/Local IP detection yields a bare address,
+      // which keeps the previous /24-assumption default range. Either way,
+      // both modes (Range and CIDR) end up driven through cidrToRange() so
+      // the actual detected prefix is respected instead of always being
+      // truncated to /24.
+      var raw = String(ip || "").trim();
+      var cidrStr = raw.indexOf("/") >= 0 ? raw : raw + "/24";
+
+      var cidrModeActive = document.querySelector('[data-range-mode-panel="cidr"]:not([hidden])');
+      if (cidrModeActive) {
+        if (typeof applyCidrValue === "function" && applyCidrValue(cidrStr)) {
+          if (typeof setStatusLine === "function") {
+            setStatusLine(t("statusRangeSet") + " " + cidrStr);
+          }
+          return true;
+        }
+        return false;
+      }
+
+      var range = sharedNet && typeof sharedNet.cidrToRange === "function" ? sharedNet.cidrToRange(cidrStr) : null;
+      if (!range) return false;
+      if (typeof setRangeInputs === "function" && setRangeInputs(range.from, range.to)) {
         if (typeof setStatusLine === "function") {
-          setStatusLine(t("statusRangeSet") + " " + fromIp + " - " + toIp);
+          setStatusLine(t("statusRangeSet") + " " + range.from + " - " + range.to);
         }
         return true;
       }
@@ -314,8 +331,11 @@
       var useLocalBtn = document.getElementById("v1UseLocalIp");
       var useSubnetsBtn = document.getElementById("v1UseSubnets");
       var ipRangeTitle = document.getElementById("v1IpRangeTitle");
+      var rangeModeRangeLabel = document.getElementById("v1RangeModeRangeLabel");
+      var rangeModeCidrLabel = document.getElementById("v1RangeModeCidrLabel");
       var fromLabel = document.getElementById("v1IpLabelFrom");
       var toLabel = document.getElementById("v1IpLabelTo");
+      var cidrLabel = document.getElementById("v1IpLabelCidr");
       var portsLabel = document.getElementById("v1PortsLabel");
       var portPreset = document.getElementById("v1PortPreset");
       var startBtn = document.querySelector('[data-scanner-action="start"]');
@@ -358,8 +378,11 @@
         useSubnetsBtn.setAttribute("aria-label", t("scannerTipUseDetectedRange"));
       }
       if (ipRangeTitle) ipRangeTitle.textContent = t("scannerIpRange");
+      if (rangeModeRangeLabel) rangeModeRangeLabel.textContent = t("scannerRangeModeRange");
+      if (rangeModeCidrLabel) rangeModeCidrLabel.textContent = t("scannerRangeModeCidr");
       if (fromLabel) fromLabel.textContent = t("scannerFrom");
       if (toLabel) toLabel.textContent = t("scannerTo");
+      if (cidrLabel) cidrLabel.textContent = t("scannerRangeModeCidr");
       if (portsLabel) portsLabel.textContent = t("scannerPorts");
       if (startBtn) startBtn.textContent = "▶ " + t("scannerStart");
       if (stopBtn) stopBtn.textContent = "■ " + t("scannerStop");

@@ -996,6 +996,11 @@
         return ipInputsRuntime.setRangeInputs(fromIp, toIp);
       }
 
+      function applyCidrValue(cidrStr) {
+        if (!ipInputsRuntime || !ipInputsRuntime.applyCidrValue) return false;
+        return ipInputsRuntime.applyCidrValue(cidrStr);
+      }
+
       function initSegmentedIpInputs() {
         if (!ipInputsRuntime || !ipInputsRuntime.initSegmentedIpInputs) return;
         ipInputsRuntime.initSegmentedIpInputs();
@@ -1181,6 +1186,7 @@
             tr,
             setStatusLine,
             setRangeInputs,
+            applyCidrValue,
           })
         : null;
 
@@ -1200,7 +1206,7 @@
 
       try {
         if (localStorage.getItem("netrecon_show_unfinished_tools") === "1") {
-          ["#v1ActivityLoremIpsum", "#v1ActivityTopology", "#v1ActivityGlobe", ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]", ".v1-menu-dd-item[data-tool=\"topology\"]", ".v1-menu-dd-item[data-tool=\"globe\"]"].forEach(function (selector) {
+          ["#v1ActivityLoremIpsum", "#v1ActivityTopology", "#v1ActivityGlobe", ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]", ".v1-menu-dd-item[data-tool=\"topology\"]", ".v1-menu-dd-item[data-tool=\"globe\"]", ".v1-menu-dd-item[data-menu-action=\"assistant-right\"]"].forEach(function (selector) {
             var el = document.querySelector(selector);
             if (el) el.removeAttribute("hidden");
           });

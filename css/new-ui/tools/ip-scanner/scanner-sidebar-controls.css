@@ -308,3 +308,56 @@ html[dir="rtl"] .v1-range-history-actions {
   line-height: 1;
   user-select: none;
 }
+
+.v1-range-mode-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.v1-range-mode-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--txt-dim);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.v1-range-mode-option input[type="radio"] {
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
+.v1-cidr-input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  background: #1f1f23;
+  color: var(--txt);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  padding: 5px 8px;
+  outline: none;
+}
+
+.v1-cidr-input:focus {
+  border-color: var(--brand);
+}
+
+/* .v1-ip-row's own "display: flex" ties in specificity with the browser's
+   default "[hidden] { display: none }" UA rule, and author CSS wins ties
+   over UA styles - so the CIDR row (which is both .v1-ip-row and a
+   [data-range-mode-panel]) stayed visible despite the [hidden] attribute
+   toggled by initRangeModeToggle(). Higher-specificity override forces it
+   to actually hide. */
+[data-range-mode-panel][hidden] {
+  display: none;
+}
+
+.v1-cidr-input.is-invalid {
+  border-color: #c94b4b;
+}

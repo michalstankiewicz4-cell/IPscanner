@@ -33,6 +33,28 @@
       return true;
     }
 
+    // CIDR mode's single point of truth: on success this also drives
+    // #v1ScanFrom/#v1ScanTo via setRangeInputs, so Start/Range History/
+    // scan_range (which only ever read those two hidden inputs) work
+    // unchanged regardless of which mode (Range vs CIDR) is active.
+    function applyCidrValue(cidrStr) {
+      var range = sharedNet && typeof sharedNet.cidrToRange === "function"
+        ? sharedNet.cidrToRange(cidrStr)
+        : null;
+      var cidrInput = document.getElementById("v1ScanCidr");
+
+      if (!range) {
+        if (cidrInput) cidrInput.classList.add("is-invalid");
+        return false;
+      }
+
+      if (cidrInput) {
+        cidrInput.value = String(cidrStr || "").trim();
+        cidrInput.classList.remove("is-invalid");
+      }
+      return setRangeInputs(range.from, range.to);
+    }
+
     // shell: the browser's native "remembered field values" dropdown (driven
     // by the octet inputs' `name` attribute below) renders outside the page's
     // DOM, so the app's CSS-based "Blur IP addresses" privacy toggle
@@ -44,11 +66,51 @@
       document.querySelectorAll("[data-ip-box] .v1-octet").forEach(function (input) {
         input.setAttribute("autocomplete", blurred ? "off" : "on");
       });
+      var cidrInput = document.getElementById("v1ScanCidr");
+      if (cidrInput) cidrInput.setAttribute("autocomplete", blurred ? "off" : "on");
+    }
+
+    function initRangeModeToggle() {
+      var radios = Array.from(document.querySelectorAll('input[name="v1RangeMode"]'));
+      if (!radios.length) return;
+
+      function applyMode(mode) {
+        document.querySelectorAll("[data-range-mode-panel]").forEach(function (panel) {
+          panel.hidden = panel.getAttribute("data-range-mode-panel") !== mode;
+        });
+        if (mode === "cidr") {
+          var cidrInput = document.getElementById("v1ScanCidr");
+          if (cidrInput) applyCidrValue(cidrInput.value);
+        }
+      }
+
+      radios.forEach(function (radio) {
+        radio.addEventListener("change", function () {
+          if (radio.checked) applyMode(radio.value);
+        });
+      });
+
+      var checked = radios.find(function (radio) { return radio.checked; });
+      applyMode(checked ? checked.value : "range");
+    }
+
+    function initCidrInput() {
+      var cidrInput = document.getElementById("v1ScanCidr");
+      if (!cidrInput) return;
+
+      cidrInput.addEventListener("input", function () {
+        applyCidrValue(cidrInput.value);
+      });
+      cidrInput.addEventListener("blur", function () {
+        applyCidrValue(cidrInput.value);
+      });
     }
 
     function initSegmentedIpInputs() {
       applyOctetAutocompleteForBlurState();
       window.addEventListener("newui:blur-ip-changed", applyOctetAutocompleteForBlurState);
+      initRangeModeToggle();
+      initCidrInput();
 
       document.querySelectorAll("[data-ip-box]").forEach(function (box) {
         var type = box.getAttribute("data-ip-box");
@@ -111,6 +173,7 @@
     function init() {
       return {
         setRangeInputs: setRangeInputs,
+        applyCidrValue: applyCidrValue,
         initSegmentedIpInputs: initSegmentedIpInputs,
       };
     }
@@ -118,6 +181,7 @@
     return {
       init: init,
       setRangeInputs: setRangeInputs,
+      applyCidrValue: applyCidrValue,
       initSegmentedIpInputs: initSegmentedIpInputs,
     };
   }

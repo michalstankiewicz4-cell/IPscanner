@@ -68,7 +68,7 @@
       <div class="v1-menu-group" data-menu="tools">
         <button class="v1-menu-trigger">Tools</button>
         <div class="v1-menu-dropdown">
-          <button class="v1-menu-dd-item" data-menu-action="assistant-right"><span>🤖 AI Assistant</span><span class="shortcut"></span></button>
+          <button class="v1-menu-dd-item" data-menu-action="assistant-right" hidden><span>🤖 AI Assistant</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-tool="shellcraft"><span id="v1ToolsMenuShellCraft">ShellCraft</span><span class="shortcut"></span></button>
           <div class="v1-menu-dd-sep"></div>
           <button class="v1-menu-dd-item" data-tool="results-ip"><span id="v1ToolsMenuIpScanner">IP Scanner</span><span class="shortcut"></span></button>
@@ -170,6 +170,17 @@
                 <span class="v1-collapse-arrow">▼</span>
               </div>
               <div class="v1-section-body">
+              <div class="v1-range-mode-row">
+                <label class="v1-range-mode-option">
+                  <input type="radio" name="v1RangeMode" value="range" checked />
+                  <span id="v1RangeModeRangeLabel">Range</span>
+                </label>
+                <label class="v1-range-mode-option">
+                  <input type="radio" name="v1RangeMode" value="cidr" />
+                  <span id="v1RangeModeCidrLabel">CIDR</span>
+                </label>
+              </div>
+              <div data-range-mode-panel="range">
               <div class="v1-ip-row">
                 <span class="v1-ip-label" id="v1IpLabelFrom">From</span>
                 <div class="v1-ip-box" data-ip-box="from">
@@ -195,6 +206,11 @@
                   <input class="v1-octet" type="text" inputmode="numeric" maxlength="3" name="ip-octet-4" aria-label="To IP octet 4" />
                 </div>
                 <input id="v1ScanTo" type="hidden" value="192.168.1.254" />
+              </div>
+              </div>
+              <div class="v1-ip-row" data-range-mode-panel="cidr" hidden>
+                <span class="v1-ip-label" id="v1IpLabelCidr">CIDR</span>
+                <input id="v1ScanCidr" class="v1-cidr-input" type="text" value="192.168.1.0/24" aria-label="CIDR" />
               </div>
               <div class="v1-port-preset-row">
                 <label class="v1-ip-label" id="v1PortsLabel" for="v1PortPreset">Ports</label>
@@ -447,8 +463,8 @@
       <aside class="v1-rightbar">
         <div class="v1-side-head">
           <div class="v1-right-tabs">
-            <div class="v1-right-tool-tab-wrap is-right-active" data-right-tab="assistant">
-              <button class="v1-right-tab active" data-v1-right-tab="assistant" type="button">AI Assistant</button>
+            <div class="v1-right-tool-tab-wrap right-tab-closed" data-right-tab="assistant" hidden>
+              <button class="v1-right-tab" data-v1-right-tab="assistant" type="button">AI Assistant</button>
               <span class="v1-right-tool-tab-close" data-right-tab-close="true" data-tool="assistant" role="button" tabindex="-1" aria-label="Close tab">×</span>
             </div>
             <div class="v1-right-tool-tab-wrap right-tab-closed" data-right-tab="shellcraft-inspector" hidden>
@@ -463,7 +479,7 @@
           <button class="v1-panel-toggle" data-panel-toggle="right" title="Hide right section" aria-label="Hide right section">▶</button>
         </div>
         <div class="v1-right-content">
-            <section class="v1-right-pane active" data-v1-right-pane="assistant">
+            <section class="v1-right-pane" data-v1-right-pane="assistant">
               <article class="v1-ai-panel">
                 <div class="v1-ai-mode" role="radiogroup" aria-label="Assistant mode">
                   <span class="v1-ai-mode-label">Mode</span>
@@ -546,7 +562,7 @@
 
   <script src="js/new-ui/core/app-version.js?v=2.1.0"></script>
   <script src="js/new-ui/core/store.js"></script>
-  <script src="js/new-ui/core/i18n.js?v=20260908"></script>
+  <script src="js/new-ui/core/i18n.js?v=20260911"></script>
   <script src="js/new-ui/core/theme.js?v=20260604"></script>
   <script src="js/new-ui/core/tool-catalog.js?v=20260901"></script>
   <script src="js/new-ui/core/presets-runtime.js?v=20260817"></script>
@@ -554,7 +570,7 @@
   <script src="js/new-ui/core/macros-runtime.js?v=20260810"></script>
   <script src="js/new-ui/core/shellcraft-canvas-runtime.js?v=20260812"></script>
   <script src="js/new-ui/core/versions-data.js?v=20260906"></script>
-  <script src="js/new-ui/core/utils/net-utils.js?v=20260728"></script>
+  <script src="js/new-ui/core/utils/net-utils.js?v=20260911"></script>
   <script src="js/new-ui/core/utils/dom-utils.js?v=20260804"></script>
   <script src="js/new-ui/core/extensions.js?v=20260720"></script>
   <script src="js/new-ui/core/ui-definitions.js?v=20260831"></script>
@@ -565,8 +581,8 @@
   <script src="js/new-ui/core/runtimes/layout-runtime.js?v=20260901"></script>
   <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js?v=20260904"></script>
   <script src="js/new-ui/core/runtimes/clippy-runtime.js?v=20260604"></script>
-  <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js?v=20260604"></script>
-  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260902"></script>
+  <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js?v=20260911"></script>
+  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260911"></script>
   <script src="js/new-ui/core/runtimes/session-sqlite-runtime.js?v=20260804"></script>
   <script src="js/new-ui/core/runtimes/update-check-runtime.js?v=20260906"></script>
   <script src="js/new-ui/core/panel-content-config.js?v=20260713"></script>
@@ -574,11 +590,11 @@
   <script src="js/new-ui/core/panel-interactions-runtime.js?v=20260908"></script>
   <script src="js/new-ui/core/panel-renderers-runtime.js?v=20260717"></script>
   <script src="js/new-ui/core/panels-runtime.js?v=20260828"></script>
-  <script src="js/new-ui/core/menu-runtime.js?v=20260902"></script>
-  <script src="js/new-ui/core/session-runtime.js?v=20260821"></script>
-  <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260730"></script>
+  <script src="js/new-ui/core/menu-runtime.js?v=20260910"></script>
+  <script src="js/new-ui/core/session-runtime.js?v=20260911"></script>
+  <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260911"></script>
   <script src="js/new-ui/core/powershell-console-runtime.js?v=20260604"></script>
-    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260909"></script>
+    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260911"></script>
 </body>
 </html>
 

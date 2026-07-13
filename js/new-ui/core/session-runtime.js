@@ -262,6 +262,18 @@
       if (right.active && nav && nav.setRightTabActive) {
         nav.setRightTabActive(right.active);
       }
+      // Saved layouts can have a tool in `open` without a matching `active`
+      // (e.g. an older snapshot saved before a tool's default-open state
+      // changed) - without this, the tab shows as open but no pane is
+      // marked active, so #v1-right-content stays visible with its own
+      // background instead of collapsing to the empty state, and no pane
+      // renders. syncRightTabActivationInvariant() has the same "at least
+      // one active if something's open" fallback ensureRightTabOpen/
+      // setRightTabOpen already rely on - re-running it here guarantees the
+      // invariant holds regardless of what fields the saved layout had.
+      if (nav && nav.syncRightTabActivationInvariant) {
+        nav.syncRightTabActivationInvariant();
+      }
     }
 
     function restoreLayoutAfterReload() {
