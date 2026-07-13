@@ -8,6 +8,22 @@ of prior context — for full history use `git log`.
 
 ## 2026-07-15
 
+- First real slice of the "Full RTL structural mirror" (see ROADMAP): the top
+  menu bar (TBM) and the bottom status bar (DSB) now fully mirror under RTL
+  languages, not just text direction. Under `dir="rtl"` the menu bar's flex
+  order reverses (logo/File/Options/Tools/Help move to the right edge,
+  window controls to the left, matching native RTL app conventions), with
+  matching fixes for the dropdown/submenu-flyout anchor position (was
+  hardcoded `left: 0`/`left: 100%`, now flips to `right`), the submenu arrow
+  glyph (mirrored via `transform: scaleX(-1)`), and the brand-logo/
+  window-controls edge margins. The status bar mirrors via the same
+  `direction: rtl` toggle (`justify-content: space-between` handles the rest
+  automatically, no physical left/right values to fix). Deliberately scoped
+  to just these two chrome bars — the activity bar/LS/CS/RS grid (`.v1-main`)
+  stays pinned physically LTR for now, since mirroring it needs
+  `layout-runtime.js`'s resize-drag pixel math to become direction-aware
+  first (see ROADMAP "Full RTL structural mirror").
+
 - Fixed the top menu bar (TBM) largely not being translated: `applyStaticTranslations()`
   only ever covered the File/Options/Tools/Help triggers plus About/License/Assistant
   — every other dropdown item (New/Open/Open Recent/Import/Save/Save as.../Close/Exit,

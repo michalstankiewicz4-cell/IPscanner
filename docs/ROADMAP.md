@@ -68,6 +68,14 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   guard on IP/ping/AS/HTTP-status table columns so that inherently-LTR
   data never gets bidi-reordered under RTL. Full structural mirroring is a
   separate, larger, deferred item (see "Planned" below).
+- First slice of the full RTL structural mirror: the top menu bar and
+  bottom status bar now fully mirror under RTL (flex order reverses, menu
+  dropdown/submenu-flyout anchors flip from `left` to `right`, window
+  controls move to the left edge with the rest of the bar) instead of just
+  flipping text direction. Chosen as the starting point because both bars
+  are pure flex-order chrome with no pixel-math dependency. The
+  activity-bar/LS/CS/RS grid is intentionally still excluded (see
+  "Planned" below).
 
 ## In progress
 
@@ -113,20 +121,17 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   which risks false confidence worse than today's honest "we blur the whole
   thing" behavior.
 
-- **Full RTL structural mirror** (LS↔RS physically swap sides, activity bar
-  moves to the right edge, menu item order reverses) — deliberately
-  deferred when text-direction-only RTL shipped (see "Done" above). The
-  narrow slice was low-risk (~15 lines); this one touches the layout
+- **Full RTL structural mirror, remaining piece** (LS↔RS physically swap
+  sides, activity bar moves to the right edge) — the menu bar and status
+  bar are done (see "Done" above; window controls mirror too, by explicit
+  choice over staying right-pinned). What's left touches the layout
   engine's pixel math, not just CSS: `layout-runtime.js`'s resize-drag
   delta math (`event.clientX` arithmetic assuming the left handle is
   physically on the left) and its dynamically-generated
   `grid-template-columns` string would both need to become
   direction-aware, on top of ~50 physical `left`/`right`/`margin-*`/
   `padding-*`/`border-*` CSS properties across 8+ files (`main.css` alone
-  has 16). Also an open design call: window controls (min/max/close)
-  conventionally stay physically right-pinned even in RTL apps, so a
-  correct mirror can't just blindly reverse everything. Real multi-day
-  project, not mechanical find-replace.
+  has 16). Real multi-day project, not mechanical find-replace.
 
 ## Backlog (per-feature audit, 2026-07-09)
 

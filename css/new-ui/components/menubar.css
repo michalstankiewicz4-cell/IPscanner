@@ -8,15 +8,47 @@
   overflow: visible;
   position: relative;
   z-index: 10000;
-  /* Keep menu trigger order (and each dropdown's left-anchored position)
-     physically fixed regardless of language direction - a flex row
-     otherwise reverses under RTL, pushing dropdowns off-screen. Dropdown
-     item text still reads RTL via the override below. */
+  /* Base (LTR) order: logo/File/Options/Tools/Help on the left, window
+     controls on the right. Full mirror below flips this for RTL. */
   direction: ltr;
 }
 
-html[dir="rtl"] .v1-menu-dropdown {
+/* Full RTL mirror: flex order reverses on its own once direction flips
+   (window controls -> left edge, logo/menu triggers -> right edge) - these
+   overrides fix the pieces that don't mirror automatically: each dropdown's
+   physical left-anchor, the submenu flyout's left-anchor, the submenu
+   arrow glyph, and the brand/window-controls edge margins. */
+html[dir="rtl"] .v1-menubar {
   direction: rtl;
+}
+
+html[dir="rtl"] .v1-menu-dropdown {
+  left: auto;
+  right: 0;
+}
+
+html[dir="rtl"] .v1-menu-dd-flyout {
+  left: auto;
+  right: 100%;
+}
+
+html[dir="rtl"] .v1-menu-dd-arrow {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+html[dir="rtl"] .v1-menu-brand {
+  margin: 0 2px 0 6px;
+}
+
+html[dir="rtl"] .v1-menubar-action--square {
+  margin-right: 0;
+  margin-left: 6px;
+}
+
+html[dir="rtl"] .v1-window-controls {
+  margin-right: 0;
+  margin-left: -4px;
 }
 
 .v1-menu-brand {
