@@ -6,6 +6,20 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-07-15
+
+- Fixed the top menu bar (TBM) largely not being translated: `applyStaticTranslations()`
+  only ever covered the File/Options/Tools/Help triggers plus About/License/Assistant
+  — every other dropdown item (New/Open/Open Recent/Import/Save/Save as.../Close/Exit,
+  Country IP Library.../Port Presets.../Default Scan Values.../Language.../General.../
+  Import Tool..., AI Assistant, Versions/Download), the 4 window control buttons
+  (Minimize/Maximize/Fullscreen/Close), and the "Show unfinished tools"/"Auto Arrange
+  windows" button titles stayed hardcoded English regardless of active language. Added
+  23 new i18n keys and wired them in, bringing every shipped dictionary (English,
+  Polish, and the German/Arabic catalog files) to 456 keys, 1:1. Bumped
+  `languages/de.json`, `languages/ar.json`, and `languages/pl.json` to version 1.0.1
+  since their dictionary content changed.
+
 ## 2026-07-14
 
 - Added text-direction RTL support and Arabic (`languages/ar.json`) as the

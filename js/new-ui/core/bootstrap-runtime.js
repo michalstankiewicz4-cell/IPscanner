@@ -213,6 +213,29 @@
         const autoArrangeToggle = document.getElementById("v1AutoArrangeToggle");
         const autoArrangeToggleWrap = autoArrangeToggle ? autoArrangeToggle.closest(".v1-menubar-toggle") : null;
         const clippyClose = document.getElementById("v1ClippyClose");
+        const fileNewLabel = document.querySelector('[data-menu-action="new-session"] span:first-child');
+        const fileOpenLabel = document.querySelector('[data-menu-action="load-session"] span:first-child');
+        const fileOpenRecentLabel = document.querySelector('[data-menu-submenu-trigger="open-recent"] span:first-child');
+        const fileImportLabel = document.querySelector('#v1MenuFileImport span:first-child');
+        const fileSaveLabel = document.querySelector('[data-menu-action="save-session"] span:first-child');
+        const fileSaveAsLabel = document.querySelector('[data-menu-action="save-session-as"] span:first-child');
+        const fileCloseLabel = document.querySelector('[data-menu-action="close-session"] span:first-child');
+        const fileExitLabel = document.querySelector('[data-menu-action="exit"] span:first-child');
+        const optionsCountriesLabel = document.querySelector('[data-menu-action="countries"] span:first-child');
+        const optionsPresetsLabel = document.querySelector('[data-menu-action="presets"] span:first-child');
+        const optionsDefaultsLabel = document.querySelector('[data-menu-action="defaults"] span:first-child');
+        const optionsLanguageLabel = document.querySelector('[data-menu-action="language"] span:first-child');
+        const optionsGeneralLabel = document.querySelector('[data-menu-action="general"] span:first-child');
+        const optionsImportToolLabel = document.querySelector('[data-menu-action="customization"] span:first-child');
+        const toolsAiAssistantLabel = document.querySelector('[data-menu-action="assistant-right"] span:first-child');
+        const helpVersionsLabel = document.querySelector('[data-menu-action="versions"] span:first-child');
+        const helpDownloadLabel = document.querySelector('[data-menu-action="download"] span:first-child');
+        const windowMinBtn = document.querySelector('[data-menu-action="window-min"]');
+        const windowMaxBtn = document.querySelector('[data-menu-action="window-max"]');
+        const windowFullscreenBtn = document.querySelector('[data-menu-action="window-fullscreen"]');
+        const windowCloseBtn = document.querySelector('[data-menu-action="window-close"]');
+        const showUnfinishedToolsBtn = document.querySelector('[data-menu-action="show-unfinished-tools"]');
+        const autoArrangeWindowsBtn = document.querySelector('[data-menu-action="auto-arrange-windows"]');
 
         if (fileTrigger) fileTrigger.textContent = tr("menuFile");
         if (optionsTrigger) optionsTrigger.textContent = tr("menuOptions");
@@ -281,6 +304,47 @@
         if (aboutMenuLabel) aboutMenuLabel.textContent = tr("helpAboutTitle");
         if (licenseMenuLabel) licenseMenuLabel.textContent = tr("helpLicenseTitle");
         if (assistantMenuLabel) assistantMenuLabel.textContent = "📎 " + tr("assistant");
+        if (fileNewLabel) fileNewLabel.textContent = tr("menuFileNew");
+        if (fileOpenLabel) fileOpenLabel.textContent = tr("menuFileOpen");
+        if (fileOpenRecentLabel) fileOpenRecentLabel.textContent = tr("menuFileOpenRecent");
+        if (fileImportLabel) fileImportLabel.textContent = tr("menuFileImport");
+        if (fileSaveLabel) fileSaveLabel.textContent = tr("menuFileSave");
+        if (fileSaveAsLabel) fileSaveAsLabel.textContent = tr("menuFileSaveAs");
+        if (fileCloseLabel) fileCloseLabel.textContent = tr("menuFileClose");
+        if (fileExitLabel) fileExitLabel.textContent = tr("menuFileExit");
+        if (optionsCountriesLabel) optionsCountriesLabel.textContent = tr("menuOptionsCountries");
+        if (optionsPresetsLabel) optionsPresetsLabel.textContent = tr("menuOptionsPresets");
+        if (optionsDefaultsLabel) optionsDefaultsLabel.textContent = tr("menuOptionsDefaults");
+        if (optionsLanguageLabel) optionsLanguageLabel.textContent = tr("menuOptionsLanguage");
+        if (optionsGeneralLabel) optionsGeneralLabel.textContent = tr("menuOptionsGeneral");
+        if (optionsImportToolLabel) optionsImportToolLabel.textContent = tr("menuOptionsImportTool");
+        if (toolsAiAssistantLabel) toolsAiAssistantLabel.textContent = "🤖 " + tr("menuToolsAiAssistant");
+        if (helpVersionsLabel) helpVersionsLabel.textContent = tr("menuHelpVersions");
+        if (helpDownloadLabel) helpDownloadLabel.textContent = tr("menuHelpDownload");
+        if (windowMinBtn) {
+          windowMinBtn.setAttribute("title", tr("windowMinimizeTitle"));
+          windowMinBtn.setAttribute("aria-label", tr("windowMinimizeTitle"));
+        }
+        if (windowMaxBtn) {
+          windowMaxBtn.setAttribute("title", tr("windowMaximizeTitle"));
+          windowMaxBtn.setAttribute("aria-label", tr("windowMaximizeTitle"));
+        }
+        if (windowFullscreenBtn) {
+          windowFullscreenBtn.setAttribute("title", tr("windowFullscreenTitle"));
+          windowFullscreenBtn.setAttribute("aria-label", tr("windowFullscreenTitle"));
+        }
+        if (windowCloseBtn) {
+          windowCloseBtn.setAttribute("title", tr("windowCloseTitle"));
+          windowCloseBtn.setAttribute("aria-label", tr("windowCloseTitle"));
+        }
+        if (showUnfinishedToolsBtn) {
+          showUnfinishedToolsBtn.setAttribute("title", tr("showUnfinishedToolsTitle"));
+          showUnfinishedToolsBtn.setAttribute("aria-label", tr("showUnfinishedToolsTitle"));
+        }
+        if (autoArrangeWindowsBtn) {
+          autoArrangeWindowsBtn.setAttribute("title", tr("autoArrangeWindowsBtnTitle"));
+          autoArrangeWindowsBtn.setAttribute("aria-label", tr("autoArrangeWindowsBtnTitle"));
+        }
         if (autoArrangeToggleWrap) {
           autoArrangeToggleWrap.setAttribute("title", tr("autoArrangeOnUndockTitle"));
           autoArrangeToggleWrap.setAttribute("aria-label", tr("autoArrangeOnUndockTitle"));
