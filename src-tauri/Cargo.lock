@@ -1851,7 +1851,7 @@ checksum = "d98f6fed1fde3f8c21bc40a1abb88dd75e67924f9cffc3ef95607bad8017f8e2"
 
 [[package]]
 name = "ipscanner"
-version = "1.7.0"
+version = "2.1.0"
 dependencies = [
  "dns-lookup",
  "reqwest 0.12.28",

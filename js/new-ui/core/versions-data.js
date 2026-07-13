@@ -10,6 +10,14 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.1.0",
+      notes: [
+        "Added update checking on launch: the app now compares its version against the latest GitHub release on every startup (desktop and www alike), and shows a notification with a download link if a newer version is available.",
+        "The update notification is shown at most once per released version, not once per day - it will not nag you again for a version you have already seen.",
+        "Added a new \"Check for updates on startup\" toggle in Options -> General (enabled by default) for anyone who wants to turn the check off entirely."
+      ]
+    },
+    {
       version: "v2.0.0 rebuild",
       notes: [
         "Retired the old Windows-95-style UI and dual-branch setup: main now ships the New UI directly, single branch, single source of truth.",

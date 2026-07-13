@@ -152,10 +152,10 @@
     }
 
     function getCurrentVersion() {
-      if (!versionsData.length) return "v1.7.0";
+      if (!versionsData.length) return "v2.1.0";
       var first = versionsData[0] || {};
       var version = first.version;
-      if (!version) return "v1.7.0";
+      if (!version) return "v2.1.0";
       return String(version);
     }
 
