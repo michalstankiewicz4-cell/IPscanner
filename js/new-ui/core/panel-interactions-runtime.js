@@ -958,15 +958,15 @@
       }
 
       function setInputValues(state) {
-        var timeoutInput = root.querySelector("#v1DefaultsTimeout");
-        var concurrencyInput = root.querySelector("#v1DefaultsConcurrency");
+        var timeoutInput = root.querySelector('[data-defaults-role="timeout"]') || root.querySelector("#v1DefaultsTimeout");
+        var concurrencyInput = root.querySelector('[data-defaults-role="concurrency"]') || root.querySelector("#v1DefaultsConcurrency");
         if (timeoutInput) timeoutInput.value = String(state.timeoutMs);
         if (concurrencyInput) concurrencyInput.value = String(state.concurrency);
       }
 
       function readInputs() {
-        var timeoutInput = root.querySelector("#v1DefaultsTimeout");
-        var concurrencyInput = root.querySelector("#v1DefaultsConcurrency");
+        var timeoutInput = root.querySelector('[data-defaults-role="timeout"]') || root.querySelector("#v1DefaultsTimeout");
+        var concurrencyInput = root.querySelector('[data-defaults-role="concurrency"]') || root.querySelector("#v1DefaultsConcurrency");
         return sanitizeDefaults({
           timeoutMs: timeoutInput ? Number(timeoutInput.value) : RECOMMENDED_DEFAULTS.timeoutMs,
           concurrency: concurrencyInput ? Number(concurrencyInput.value) : RECOMMENDED_DEFAULTS.concurrency,

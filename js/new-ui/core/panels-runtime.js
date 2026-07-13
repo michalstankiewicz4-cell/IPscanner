@@ -2654,8 +2654,8 @@
         : document.getElementById("v1ToolDetail");
       if (!root) return;
 
-      var installedListEl = root.querySelector("#v1LangInstalledList");
-      var catalogEl = root.querySelector("#v1LangCatalog");
+      var installedListEl = root.querySelector('[data-lang-role="installed-list"]') || root.querySelector("#v1LangInstalledList");
+      var catalogEl = root.querySelector('[data-lang-role="catalog"]') || root.querySelector("#v1LangCatalog");
       var langCatalogEntries = langCatalogEntriesCache || [];
 
       function renderInstalledList() {
