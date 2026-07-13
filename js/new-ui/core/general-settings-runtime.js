@@ -4,6 +4,7 @@
   function makeDefaultState() {
     return {
       autoLoadLastSession: false,
+      panelSideRight: false,
       rememberLanguage: true,
       rememberSkin: true,
       rememberPanelSizes: true,

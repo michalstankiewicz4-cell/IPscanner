@@ -51,6 +51,25 @@
         if (!settings.rememberRangeHistory) clear("netrecon_range_history");
       })();
 
+      // TBM Options -> General -> "Swap panel sides": independent of language
+      // direction - a `body.v1-panel-side-right` class that main.css ORs
+      // alongside `html[dir="rtl"]` to mirror the activity bar/LS/RS grid.
+      // RTL languages (Arabic) get the mirror unconditionally via the
+      // `dir="rtl"` half of that OR, regardless of this toggle; non-RTL
+      // languages get it only when this is checked. Applied on boot and live
+      // on every change (general-settings-runtime.js's replaceState() always
+      // dispatches newui:general-settings-changed), unlike the "remember X"
+      // meta-toggles above, which only take effect on next launch.
+      function applyPanelSidePreference() {
+        var gs = core.generalSettings;
+        var settings = gs && typeof gs.getState === "function" ? gs.getState() : null;
+        if (document.body) {
+          document.body.classList.toggle("v1-panel-side-right", !!(settings && settings.panelSideRight));
+        }
+      }
+      applyPanelSidePreference();
+      document.addEventListener("newui:general-settings-changed", applyPanelSidePreference);
+
       const i18n = core.i18n && core.i18n.createI18n
         ? core.i18n.createI18n()
         : { t: function (k) { return k; }, getLang: function () { return document.documentElement.getAttribute("lang") || "en"; } };

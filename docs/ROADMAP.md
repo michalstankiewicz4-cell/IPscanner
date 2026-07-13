@@ -68,14 +68,23 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   guard on IP/ping/AS/HTTP-status table columns so that inherently-LTR
   data never gets bidi-reordered under RTL. Full structural mirroring is a
   separate, larger, deferred item (see "Planned" below).
-- First slice of the full RTL structural mirror: the top menu bar and
-  bottom status bar now fully mirror under RTL (flex order reverses, menu
-  dropdown/submenu-flyout anchors flip from `left` to `right`, window
-  controls move to the left edge with the rest of the bar) instead of just
-  flipping text direction. Chosen as the starting point because both bars
-  are pure flex-order chrome with no pixel-math dependency. The
-  activity-bar/LS/CS/RS grid is intentionally still excluded (see
-  "Planned" below).
+- Full RTL structural mirror: the top menu bar and bottom status bar fully
+  mirror under RTL (flex order reverses, menu dropdown/submenu-flyout
+  anchors flip from `left` to `right`, window controls move to the left
+  edge with the rest of the bar). The activity-bar/LS/CS/RS grid mirrors
+  too — LS↔RS physically swap sides under a real RTL language, with a
+  matching sign flip in `layout-runtime.js`'s resize-drag delta math and
+  CS/DS content direction restored via targeted `direction: rtl` overrides
+  on `.v1-sidebar`/`.v1-editor`/`.v1-rightbar`. Turned out far smaller in
+  practice than the original ~50-property estimate below suggested — a
+  systematic audit found ~10 concrete physical `left`/`right`/`margin-*`/
+  `padding-*` fixes, not a full rewrite.
+- Added a "Swap panel sides" toggle (Options -> General) that relocates
+  just the activity bar (LRSB) independently of language, via CSS `order`
+  rather than `direction` — so it composes with the RTL mirror above
+  instead of being overridden by it: toggling it always flips the
+  activity bar to whichever end it *isn't* currently on, whether that's
+  due to the toggle itself or a real RTL language's own mirror.
 
 ## In progress
 
@@ -121,18 +130,6 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   which risks false confidence worse than today's honest "we blur the whole
   thing" behavior.
 
-- **Full RTL structural mirror, remaining piece** (LS↔RS physically swap
-  sides, activity bar moves to the right edge) — the menu bar and status
-  bar are done (see "Done" above; window controls mirror too, by explicit
-  choice over staying right-pinned). What's left touches the layout
-  engine's pixel math, not just CSS: `layout-runtime.js`'s resize-drag
-  delta math (`event.clientX` arithmetic assuming the left handle is
-  physically on the left) and its dynamically-generated
-  `grid-template-columns` string would both need to become
-  direction-aware, on top of ~50 physical `left`/`right`/`margin-*`/
-  `padding-*`/`border-*` CSS properties across 8+ files (`main.css` alone
-  has 16). Real multi-day project, not mechanical find-replace.
-
 ## Backlog (per-feature audit, 2026-07-09)
 
 A pass over every menu/tool, numbered for easy reference in discussion:
@@ -166,7 +163,7 @@ A pass over every menu/tool, numbered for easy reference in discussion:
     nesting/connections, and the Timeline/Tree/Layered views (the switcher
     exists, only Flow works).
 13. AI Assistant — ~1.5% done (just the tab exists).
-14. Topology Map — ~1% done (just the tab exists). Hidden from the LSB and
+14. Topology Map — ~1% done (just the tab exists). Hidden from the LRSB and
     Tools menu by default; the top-bar "Show unfinished tools" toggle
     reveals it.
 15. Globe — ~1% done (just the tab exists). Hidden by default, same as 14.

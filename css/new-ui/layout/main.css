@@ -4,17 +4,72 @@
   min-height: 0;
   overflow: hidden;
   height: 100%;
-  /* Keep activity bar / LS / CS / RS docked on their physical side regardless
-     of language direction - grid column order otherwise follows `direction`
-     the same way flex row order does. Text-direction RTL is restored for
-     each panel's own content below (html[dir="rtl"] .v1-sidebar etc). */
+  /* Base (LTR) order: activity bar / LS docked left, RS docked right - grid
+     column order follows `direction` the same way flex row order does. Full
+     RTL mirror below flips this (LS -> right, RS -> left, plus CS/DS content
+     direction, matching a real RTL language) - tied to `dir="rtl"` only.
+     layout-runtime.js's resize-drag delta math has a matching sign flip,
+     also dir="rtl"-only. The activity bar's own side is handled separately
+     below (General -> "Swap panel sides"), independent of dir="rtl": since
+     `order` assigns track NUMBERS regardless of `direction` (direction only
+     flips which physical side track 1 vs track 6 render on), the same
+     `order: 6` on the activity bar lands it on the opposite physical side
+     from wherever dir="rtl" already put it, in both directions - "swap
+     panel sides" always means "flip the activity bar to the other end",
+     not "force it right". See .v1-activity's rules further down for the
+     matching button-alignment/indicator overrides this needs per direction. */
   direction: ltr;
 }
 
-html[dir="rtl"] .v1-sidebar,
-html[dir="rtl"] .v1-editor,
-html[dir="rtl"] .v1-rightbar {
+html[dir="rtl"] .v1-main {
   direction: rtl;
+}
+
+/* General -> "Swap panel sides": relocates the activity bar via `order`
+   (not `direction`), so LS/RS's relative position to CS and CS/DS content
+   direction are untouched - independent of dir="rtl" (see comment above).
+   layout-runtime.js's applySizes() toggles this class and regenerates
+   gridTemplateColumns to match the reordered track sizes, since grid
+   auto-placement fills tracks in `order` sequence regardless of direction. */
+body.v1-activity-last .v1-sidebar {
+  order: 1;
+}
+
+body.v1-activity-last [data-resize="left"] {
+  order: 2;
+}
+
+body.v1-activity-last .v1-editor {
+  order: 3;
+}
+
+body.v1-activity-last [data-resize="right"] {
+  order: 4;
+}
+
+body.v1-activity-last .v1-rightbar {
+  order: 5;
+}
+
+body.v1-activity-last .v1-activity {
+  order: 6;
+}
+
+/* .v1-activity's own flex-column cross-axis alignment (buttons flush-left
+   vs flush-right) needs to match whichever physical side it actually ends
+   up on - which depends on BOTH dir="rtl" and v1-activity-last together
+   (order: 6 lands on the opposite side depending on direction, see above),
+   not either one alone. Icon-only buttons, no text to mirror, so flipping
+   direction here is always safe. */
+html:not([dir="rtl"]) body.v1-activity-last .v1-activity {
+  /* LTR + toggle: order: 6 -> physical right (inherits nothing, needs rtl). */
+  direction: rtl;
+}
+
+html[dir="rtl"] body.v1-activity-last .v1-activity {
+  /* RTL + toggle: order: 6 -> physical LEFT (cancel the rtl it would
+     otherwise inherit from .v1-main, since it's no longer on the right). */
+  direction: ltr;
 }
 
 .v1-resizer-v {
@@ -67,6 +122,25 @@ html[dir="rtl"] .v1-rightbar {
   background: #3794ff;
 }
 
+/* Physically-right cases only: (dir="rtl" AND NOT toggle) OR (NOT dir="rtl"
+   AND toggle) - the same "opposite side" logic as .v1-activity's direction
+   rules above. The remaining two combinations (both true or both false)
+   land the activity bar on the LEFT, where the base left: -6px above is
+   already correct without any override. */
+html[dir="rtl"] body:not(.v1-activity-last) .v1-activity button.active::before,
+html:not([dir="rtl"]) body.v1-activity-last .v1-activity button.active::before {
+  /* Not a mirrored -6px (poking 6px past the button's own box, into
+     .v1-activity's padding gutter) - when the activity bar is the
+     rightmost grid column, its right edge sits flush against .v1-main's
+     right edge (0 buffer), so pushing content past the button's box out
+     that way gets clipped by .v1-main's overflow: hidden. Sitting flush
+     with the button's own edge (right: 0) stays inside the button's box,
+     so it can never be clipped, regardless of exactly how much padding
+     buffer the activity bar has on that side. */
+  left: auto;
+  right: 0;
+}
+
 .v1-activity button:hover:not(.active) {
   background: #2a2d31;
   border-color: #3f3f46;
@@ -112,6 +186,10 @@ html[dir="rtl"] .v1-rightbar {
   justify-content: space-between;
   gap: 8px;
   padding: 0 6px 0 0;
+}
+
+html[dir="rtl"] .v1-side-head {
+  padding: 0 0 0 6px;
 }
 
 .v1-head-title {
@@ -271,6 +349,11 @@ html[dir="rtl"] .v1-rightbar {
   padding-left: 4px;
   transform: rotate(-180deg);
 }
+
+html[dir="rtl"] .v1-collapse-arrow {
+  padding-left: 0;
+  padding-right: 4px;
+}
 .v1-tool-list li.v1-collapsed .v1-collapse-arrow {
   transform: rotate(0deg);
 }
@@ -314,9 +397,17 @@ html[dir="rtl"] .v1-rightbar {
   padding: 0 4px 0 0;
 }
 
+html[dir="rtl"] .v1-sidebar.collapsed .v1-side-head {
+  padding: 0 0 0 4px;
+}
+
 .v1-rightbar.collapsed .v1-side-head {
   justify-content: flex-start;
   padding: 0 0 0 6px;
+}
+
+html[dir="rtl"] .v1-rightbar.collapsed .v1-side-head {
+  padding: 0 6px 0 0;
 }
 
 .v1-rightbar.collapsed .v1-panel-toggle {

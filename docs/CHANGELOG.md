@@ -8,6 +8,21 @@ of prior context — for full history use `git log`.
 
 ## 2026-07-15
 
+- Added a "Swap panel sides" toggle to Options -> General: relocates just
+  the activity bar (LRSB) to the opposite edge of the screen, independent
+  of language. Implemented via CSS `order` (not `direction`), so LS/RS keep
+  their normal relative position to CS and CS/DS content direction is
+  untouched - deliberately narrower than a real RTL language's full
+  structural mirror. Works together with RTL languages rather than being
+  overridden by them: since `order` assigns track numbers regardless of
+  `direction`, the same rule lands the activity bar on the opposite
+  physical side from wherever a real RTL language's own mirror already put
+  it - so the toggle always means "flip the activity bar to the other
+  end," in both directions, rather than forcing an absolute side.
+- Renamed the "LSB" abbreviation to "LRSB" (Left/Right Shortcut Bar) in
+  `docs/SHELL_PROGRESS.md` and the few user-facing strings that referenced
+  it, now that the activity bar isn't always on the left.
+
 - First real slice of the "Full RTL structural mirror" (see ROADMAP): the top
   menu bar (TBM) and the bottom status bar (DSB) now fully mirror under RTL
   languages, not just text direction. Under `dir="rtl"` the menu bar's flex

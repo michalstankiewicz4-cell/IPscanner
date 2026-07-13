@@ -1,7 +1,7 @@
 ## Skroty
 
 - TBM — Top Bar Menu
-- LSB — Left Shortcut Bar (activity bar, ikony)
+- LRSB — Left Shortcut Bar (activity bar, ikony)
 - LS — Left Section (panel boczny)
 - RS — Right Section
 - CS — Central Section
@@ -16,7 +16,7 @@ podobnego skrotu — latwo je pomylic przy szybkim czytaniu, stad to zaznaczenie
 
 Format: `(dostep -> miejsce)`.
 
-- "dostep" = skad mozna to otworzyc (LSB, TBM - Tools, TBM - Options...). Moze byc
+- "dostep" = skad mozna to otworzyc (LRSB, TBM - Tools, TBM - Options...). Moze byc
   wiecej niz jedno miejsce dostepu naraz, wtedy rozdzielone przecinkiem.
 - "miejsce" = gdzie sie to faktycznie otwiera (LS/RS/CS). Jesli narzedzie otwiera
   wiecej niz jedna zakladke w roznych miejscach, kazda dostaje wlasna linie.
@@ -24,7 +24,7 @@ Format: `(dostep -> miejsce)`.
 Przyklad:
 
 ```
-IP Scanner (LSB, TBM-Tools -> LS)
+IP Scanner (LRSB, TBM-Tools -> LS)
   - wynik otwiera sie osobno: (-> CS, jako "IP Results")
 ```
 
@@ -46,10 +46,10 @@ IP Scanner (LSB, TBM-Tools -> LS)
       - Help: version, download, about, license, assistant
    c. Przyciski: zamykanie, zarzadzanie ukladem okien, ukrywanie wrazliwych
       danych, full reset, "Show unfinished tools" (🚧 — pokazuje ukryte
-      Topology/Globe w TBM-Tools i na LSB; stan trzymany w localStorage).
+      Topology/Globe w TBM-Tools i na LRSB; stan trzymany w localStorage).
 2. **Left Section (LS)**
 3. **Right Section (RS)**
-   a. AI Assistant (dostep: TBM-Tools -> otwiera sie w: RS; brak ikony na LSB)
+   a. AI Assistant (dostep: TBM-Tools -> otwiera sie w: RS; brak ikony na LRSB)
 4. **Center Section (CS)**
    a. logo w tle
    b. ladowanie ostatnich sesji (widok powitalny "Recent sessions")
@@ -62,7 +62,7 @@ IP Scanner (LSB, TBM-Tools -> LS)
    b. ilosc aktywnych procesow
    c. pasek ladowania 0-100%
    d. dodatkowe miejsce na informacje
-7. **Left Shortcut Bar (LSB)**
+7. **Left Shortcut Bar (LRSB)**
    a. pierwsza ikona zawsze wskazuje dane do zapisywania sesji (Result Data List)
    b. pozostale ikony to skroty do narzedzi z listy `## Tools` ponizej
 
@@ -79,16 +79,16 @@ CONTRIBUTING.md §3a).
 
 ## Tools
 
-1. **IP Scanner** (LSB, TBM-Tools -> LS)
+1. **IP Scanner** (LRSB, TBM-Tools -> LS)
    - wynik -> CS, jako "IP Results"
    - ST a. Port Presets (TBM-Options -> CS, jako "Presets")
    - ST b. Default Scan Values (TBM-Options -> CS, jako "Scan Values")
 2. **Country IP Library** (TBM-Options)
    - edytor -> LS, jako "IP Library (edytor)"
    - podglad -> CS, jako "IP Library (widok)"
-3. **Topology Map** (LSB, TBM-Tools -> CS; domyslnie ukryty — widoczny po
+3. **Topology Map** (LRSB, TBM-Tools -> CS; domyslnie ukryty — widoczny po
    wlaczeniu "Show unfinished tools" na TBM)
-4. **World Globe** (LSB, TBM-Tools -> CS; domyslnie ukryty — jak wyzej)
+4. **World Globe** (LRSB, TBM-Tools -> CS; domyslnie ukryty — jak wyzej)
 
 Funkcje lub czesc funkcji dzialajacych tylko w aplikacji (stan na 2026-07-11,
 po weryfikacji kodu — AI Assistant/Topology/Globe nie maja dzis zadnej

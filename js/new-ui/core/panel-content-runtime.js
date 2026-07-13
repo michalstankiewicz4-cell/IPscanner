@@ -310,6 +310,7 @@
         checkboxRow("autoLoadLastSession", "🗂", "generalAutoLoadLastSession", "Auto Load last session"),
 
         groupHeading("generalGroupAppearance", "Appearance"),
+        checkboxRow("panelSideRight", "🔀", "generalPanelSideRight", "Swap panel sides (activity bar/LS on the right, RS on the left)"),
         checkboxRow("rememberLanguage", "🌐", "generalRememberLanguage", "Remember UI language"),
         checkboxRow("rememberSkin", "🎨", "generalRememberSkin", "Remember skin / theme"),
         checkboxRow("rememberPanelSizes", "↔️", "generalRememberPanelSizes", "Remember panel sizes and collapsed state"),

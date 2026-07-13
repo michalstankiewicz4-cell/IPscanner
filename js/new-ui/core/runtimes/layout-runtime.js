@@ -10,6 +10,7 @@
       var menubar = document.querySelector(".v1-menubar");
       var sidebar = document.querySelector(".v1-sidebar");
       var rightbar = document.querySelector(".v1-rightbar");
+      var activity = document.querySelector(".v1-activity");
       var leftHandle = document.querySelector('[data-resize="left"]');
       var rightHandle = document.querySelector('[data-resize="right"]');
       var consoleHandle = document.querySelector('[data-resize="console"]');
@@ -17,7 +18,7 @@
       var rightToggle = document.querySelector('[data-panel-toggle="right"]');
       var bottomToggle = document.querySelector('[data-panel-toggle="bottom"]');
       var statusRight = document.getElementById("v1StatusRight");
-      if (!main || !editor || !sidebar || !rightbar || !leftHandle || !rightHandle || !consoleHandle || !leftToggle || !rightToggle || !bottomToggle) return;
+      if (!main || !editor || !sidebar || !rightbar || !activity || !leftHandle || !rightHandle || !consoleHandle || !leftToggle || !rightToggle || !bottomToggle) return;
 
       function getTauriInvoke() {
         if (platform && typeof platform.getInvoke === "function") {
@@ -202,7 +203,26 @@
       function applySizes() {
         var leftWidth = panelState.leftCollapsed ? 26 : size.left;
         var rightWidth = panelState.rightCollapsed ? 26 : size.right;
-        main.style.gridTemplateColumns = "48px " + leftWidth + "px 6px minmax(0, 1fr) 6px " + rightWidth + "px";
+
+        // General -> "Swap panel sides": relocates just the activity bar
+        // (via CSS `order` on body.v1-activity-last, see main.css), leaving
+        // LS/RS's relative order to CS and CS/DS reading direction alone -
+        // deliberately narrower than the dir="rtl" full mirror. Independent
+        // of isRtl (not guarded by it): under a real RTL language, the
+        // activity bar already sits on the side dir="rtl" put it via the
+        // grid's own reversal, so toggling this setting moves it to
+        // whichever side is currently NOT that one - i.e. it always flips
+        // the activity bar to the opposite end of wherever it already is,
+        // rather than forcing an absolute side. main.css has matching
+        // dir="rtl"-aware overrides for the activity bar's own button
+        // alignment and active-icon indicator, since "order: 6" lands on a
+        // different physical side depending on isRtl.
+        var isRtl = document.documentElement.getAttribute("dir") === "rtl";
+        var activityLast = document.body.classList.contains("v1-panel-side-right");
+        document.body.classList.toggle("v1-activity-last", activityLast);
+        main.style.gridTemplateColumns = activityLast
+          ? leftWidth + "px 6px minmax(0, 1fr) 6px " + rightWidth + "px 48px"
+          : "48px " + leftWidth + "px 6px minmax(0, 1fr) 6px " + rightWidth + "px";
 
         sidebar.classList.toggle("collapsed", panelState.leftCollapsed);
         rightbar.classList.toggle("collapsed", panelState.rightCollapsed);
@@ -303,13 +323,26 @@
           return;
         }
 
+        // Under a real RTL language's structural mirror (.v1-main gets
+        // direction: rtl, reversing the grid so LS/activity dock right and
+        // RS docks left - see main.css), both resize handles sit on the
+        // opposite physical side from LTR, so dragging the same physical
+        // direction must grow/shrink the opposite way. Flipping the delta's
+        // sign here is the only change needed - applySizes()'s
+        // gridTemplateColumns string stays identical, CSS direction handles
+        // the physical placement. NOT tied to the "Swap panel sides" General
+        // setting - that only relocates the activity bar (see applySizes()),
+        // LS/RS keep their normal relative position to CS, so no sign flip
+        // is needed for that case.
+        var rtlSign = document.documentElement.getAttribute("dir") === "rtl" ? -1 : 1;
+
         if (drag.type === "left") {
-          size.left = Math.max(180, Math.min(460, drag.left + (event.clientX - drag.startX)));
+          size.left = Math.max(180, Math.min(460, drag.left + rtlSign * (event.clientX - drag.startX)));
           if (statusRight) statusRight.textContent = "left width: " + size.left + "px";
         }
 
         if (drag.type === "right") {
-          size.right = Math.max(220, Math.min(520, drag.right - (event.clientX - drag.startX)));
+          size.right = Math.max(220, Math.min(520, drag.right - rtlSign * (event.clientX - drag.startX)));
         }
 
         if (drag.type === "console") {
@@ -369,6 +402,11 @@
       });
 
       window.addEventListener("resize", applySizes);
+      // Re-run whenever the "Swap panel sides" General setting or the
+      // active language changes - both feed applySizes()'s isRtl/
+      // activityLast computation above.
+      document.addEventListener("newui:general-settings-changed", applySizes);
+      window.addEventListener("netrecon:language-changed", applySizes);
       syncToggleLabels();
       applySizes();
     }

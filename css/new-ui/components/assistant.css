@@ -97,6 +97,10 @@
   padding: 0 0 0 6px;
 }
 
+html[dir="rtl"] .v1-rightbar.right-tabs-empty .v1-side-head {
+  padding: 0 6px 0 0;
+}
+
 .v1-rightbar.right-tabs-empty .v1-right-tabs {
   display: none;
 }
@@ -173,6 +177,11 @@
 
 .v1-ai-mode-badge {
   margin-left: auto;
+}
+
+html[dir="rtl"] .v1-ai-mode-badge {
+  margin-left: 0;
+  margin-right: auto;
 }
 
 .v1-ai-chat {
