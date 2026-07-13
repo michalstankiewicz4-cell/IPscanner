@@ -791,13 +791,17 @@
 
       function scrollTabTrackToElement(element) {
         if (!element || !tabsTrack) return;
-        const maxScrollLeft = Math.max(0, tabsTrack.scrollWidth - tabsTrack.clientWidth);
-        const nextScrollLeft = Math.max(0, Math.min(
-          maxScrollLeft,
-          Math.round(element.offsetLeft - (tabsTrack.clientWidth - element.offsetWidth) / 2)
-        ));
-        if (Math.abs(tabsTrack.scrollLeft - nextScrollLeft) < 2) return;
-        tabsTrack.scrollLeft = nextScrollLeft;
+        // Physical bounding-rect delta + scrollBy(), not an absolute scrollLeft
+        // assignment - under RTL, Chromium's scrollLeft range/sign convention
+        // differs from LTR (0 sits at the physical right edge, valid values go
+        // negative), so clamping to [0, scrollWidth-clientWidth] like before
+        // silently no-ops under RTL. A relative physical delta via scrollBy()
+        // shifts the viewport the same way regardless of direction.
+        const trackRect = tabsTrack.getBoundingClientRect();
+        const elRect = element.getBoundingClientRect();
+        const delta = (elRect.left + elRect.width / 2) - (trackRect.left + trackRect.width / 2);
+        if (Math.abs(delta) < 2) return;
+        tabsTrack.scrollBy({ left: delta });
       }
 
       function scheduleScrollActiveTabIntoView() {
@@ -819,29 +823,42 @@
         const visibleTabs = Array.from(tabsTrack.querySelectorAll('.v1-tab')).filter((tab) => {
           return !tab.classList.contains('tab-closed') && !tab.classList.contains('tab-detached-hidden') && !tab.hasAttribute('hidden');
         });
-        const visibleTabsWidth = visibleTabs.reduce(function (sum, tab) {
-          return sum + Math.ceil(tab.getBoundingClientRect().width || tab.offsetWidth || 0);
-        }, 0);
         const trackRect = tabsTrack.getBoundingClientRect();
-        const firstVisibleTab = visibleTabs.length ? visibleTabs[0] : null;
-        const lastVisibleTab = visibleTabs.length ? visibleTabs[visibleTabs.length - 1] : null;
-        const firstRect = firstVisibleTab ? firstVisibleTab.getBoundingClientRect() : null;
-        const lastRect = lastVisibleTab ? lastVisibleTab.getBoundingClientRect() : null;
-        const hasLeftOverflow = !!(firstRect && firstRect.left < trackRect.left - 1);
-        const hasRightOverflow = !!(lastRect && lastRect.right > trackRect.right + 1);
+
+        // Physically leftmost/rightmost visible tab - NOT DOM order
+        // (visibleTabs[0]/[length-1]), which only matches physical
+        // left-to-right order under LTR. Under RTL the tab strip's flex
+        // order reverses (DOM-first tab renders visually rightmost), so
+        // picking by DOM position checked the wrong tab against the wrong
+        // edge and made the scroll-arrow overlays appear/intercept clicks
+        // where they shouldn't.
+        let leftmostRect = null;
+        let rightmostRect = null;
+        const visibleTabsWidth = visibleTabs.reduce(function (sum, tab) {
+          const rect = tab.getBoundingClientRect();
+          if (!leftmostRect || rect.left < leftmostRect.left) leftmostRect = rect;
+          if (!rightmostRect || rect.right > rightmostRect.right) rightmostRect = rect;
+          return sum + Math.ceil(rect.width || tab.offsetWidth || 0);
+        }, 0);
+        const hasLeftOverflow = !!(leftmostRect && leftmostRect.left < trackRect.left - 1);
+        const hasRightOverflow = !!(rightmostRect && rightmostRect.right > trackRect.right + 1);
         const maxScrollLeft = Math.max(0, Math.ceil((tabsTrack.scrollWidth || 0) - (tabsTrack.clientWidth || 0)));
         const widthOverflow = visibleTabsWidth > (tabsTrack.clientWidth || 0) + 2;
         const hasOverflow = widthOverflow || maxScrollLeft > 1 || hasLeftOverflow || hasRightOverflow;
-        const effectiveMaxScrollLeft = Math.max(0, Math.ceil(Math.max(maxScrollLeft, visibleTabsWidth - (tabsTrack.clientWidth || 0))));
 
         if (tabsShell) {
           tabsShell.classList.toggle('has-overflow', hasOverflow);
         }
 
         if (tabsScrollLeftBtn && tabsScrollRightBtn) {
-          const currentScrollLeft = tabsTrack.scrollLeft;
-          tabsScrollLeftBtn.disabled = !hasOverflow || currentScrollLeft <= 1;
-          tabsScrollRightBtn.disabled = !hasOverflow || currentScrollLeft >= effectiveMaxScrollLeft - 1;
+          // Physical hasLeftOverflow/hasRightOverflow (from bounding rects,
+          // computed above) rather than comparing tabsTrack.scrollLeft against
+          // a [0, max] range - under RTL, Chromium's scrollLeft for this
+          // container is 0-or-negative (spec range is [-max, 0]), so that
+          // range check permanently disabled the left arrow and never
+          // disabled the right one. The physical flags are direction-agnostic.
+          tabsScrollLeftBtn.disabled = !hasOverflow || !hasLeftOverflow;
+          tabsScrollRightBtn.disabled = !hasOverflow || !hasRightOverflow;
         }
       }
 
