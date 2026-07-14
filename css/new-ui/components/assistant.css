@@ -255,8 +255,12 @@ html[dir="rtl"] .v1-ai-mode-badge {
   color: #ffffff;
 }
 
-/* RS "Config" tab (opened alongside the IP Scanner's LS/CS tabs) - not
-   wired to real scan settings yet, static scaffolding only. */
+/* RS "Config" tab (opened alongside the IP Scanner's LS/CS tabs). Most
+   fields are still static scaffolding, not wired to real scan behavior -
+   the exception is Performance's Host timeout / Max concurrent hosts,
+   which are real, localStorage-backed settings (migrated from the old
+   Default Scan Values tool - see initConfigPerformanceInputs() in
+   scanner-sidebar-runtime.js). */
 .v1-config-checkbox-row {
   display: flex;
   align-items: center;
@@ -308,4 +312,123 @@ html[dir="rtl"] .v1-ai-mode-badge {
 
 .v1-config-field-row input[type="number"]:focus {
   border-color: var(--brand);
+}
+
+.v1-config-subgroup-heading {
+  margin-top: 10px;
+  color: var(--txt-dim);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.v1-config-subgroup-heading:first-child {
+  margin-top: 0;
+}
+
+/* RS "Config" tab's "Profiles" section (moved here from the LS scan-runner
+   panel - it's a Config-tab feature, so its CSS belongs alongside the rest
+   of Config's styles instead of the ip-scanner-tool-scoped stylesheet). */
+.v1-profile-add-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.v1-profile-color-input {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #1f1f23;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.v1-profile-name-input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #1f1f23;
+  color: var(--txt);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  padding: 5px 8px;
+  outline: none;
+}
+
+.v1-profile-name-input:focus {
+  border-color: var(--brand);
+}
+
+.v1-profile-add-btn {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--txt);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.v1-profile-add-btn:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.v1-profiles-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.v1-profile-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  background: #22252a;
+  padding: 5px 6px;
+}
+
+.v1-profile-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+.v1-profile-name {
+  min-width: 0;
+  font-size: 12px;
+  color: var(--txt);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v1-profile-delete-btn {
+  border: 1px solid #3f3f46;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--txt);
+  font-size: 10px;
+  font-family: var(--font-ui);
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.v1-profile-delete-btn:hover {
+  border-color: #c94b4b;
+  color: #ffd2d2;
 }

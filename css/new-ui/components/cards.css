@@ -696,7 +696,7 @@
 }
 
 /* shell: Import Tool's installed-extensions list display (not shared with
-   IP Library/Scan Defaults, unlike the "-manager-" family above) */
+   IP Library, unlike the "-manager-" family above) */
 .v1-import-output {
   display: grid;
   gap: 8px;

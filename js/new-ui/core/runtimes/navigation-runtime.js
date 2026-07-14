@@ -535,6 +535,17 @@
         return;
       }
 
+      // Ports vs ICMP is a deliberate scan-type choice (see
+      // scanner-sidebar-runtime.js's initScanModeToggle()), not a pre-filter
+      // before port scanning. ICMP itself needs raw sockets/admin rights in
+      // the Rust backend and isn't implemented yet - report that honestly
+      // instead of silently running a port scan the user didn't ask for.
+      var icmpModeActive = document.querySelector('[data-scan-mode-panel="icmp"]:not([hidden])');
+      if (icmpModeActive) {
+        if (setStatusLine) setStatusLine(tr("statusIcmpNotImplemented"));
+        return;
+      }
+
       var runtime = scannerRuntime();
       var range = runtime && runtime.addCurrentRangeFromInputs
         ? runtime.addCurrentRangeFromInputs()

@@ -211,7 +211,17 @@
                 <span class="v1-ip-label" id="v1IpLabelCidr">CIDR</span>
                 <input id="v1ScanCidr" class="v1-cidr-input" type="text" value="192.168.1.0/24" aria-label="CIDR" />
               </div>
-              <div class="v1-port-preset-row">
+              <div class="v1-scan-mode-row">
+                <label class="v1-scan-mode-option">
+                  <input type="radio" name="v1ScanMode" value="ports" checked />
+                  <span id="v1ScanModePortsLabel">Ports</span>
+                </label>
+                <label class="v1-scan-mode-option">
+                  <input type="radio" name="v1ScanMode" value="icmp" />
+                  <span id="v1ScanModeIcmpLabel">ICMP</span>
+                </label>
+              </div>
+              <div class="v1-port-preset-row" data-scan-mode-panel="ports">
                 <label class="v1-ip-label" id="v1PortsLabel" for="v1PortPreset">Ports</label>
                 <select id="v1PortPreset" class="v1-port-preset-select">
                   <option value="all-ports">🌐 All ports</option>
@@ -223,6 +233,9 @@
                   <option value="windows-smb">🪟 Windows / SMB</option>
                 </select>
                 <input id="v1ScanPorts" type="hidden" value="" />
+              </div>
+              <div class="v1-scan-mode-note" data-scan-mode-panel="icmp" hidden>
+                <span id="v1ScanModeIcmpNote">ICMP pings every host in the range - no ports needed.</span>
               </div>
               <div class="v1-scanner-actions v1-scanner-actions--spaced">
                 <button type="button" data-scanner-action="start">▶ Start</button>
@@ -528,13 +541,31 @@
               <ul class="v1-tool-list">
                 <li>
                   <div class="v1-section-header">
+                    <strong id="v1ProfilesTitle">Profiles</strong>
+                    <span class="v1-collapse-arrow">▼</span>
+                  </div>
+                  <div class="v1-section-body">
+                    <div class="v1-profile-add-row">
+                      <input type="color" id="v1ProfileColorInput" class="v1-profile-color-input" value="#4aa3ff" aria-label="Profile color" />
+                      <input type="text" id="v1ProfileNameInput" class="v1-profile-name-input" placeholder="Profile name" />
+                      <button type="button" id="v1ProfileAddBtn" class="v1-profile-add-btn" aria-label="Add profile">+</button>
+                    </div>
+                    <div id="v1ProfilesList" class="v1-profiles-list"></div>
+                  </div>
+                </li>
+                <li>
+                  <div class="v1-section-header">
                     <strong id="v1ConfigProtocolTitle">Protocol</strong>
                     <span class="v1-collapse-arrow">▼</span>
                   </div>
                   <div class="v1-section-body">
                     <label class="v1-config-checkbox-row">
                       <input type="checkbox" id="v1ConfigProtocolTcp" checked />
-                      <span id="v1ConfigProtocolTcpLabel">TCP</span>
+                      <span id="v1ConfigProtocolTcpLabel">TCP Connect</span>
+                    </label>
+                    <label class="v1-config-checkbox-row">
+                      <input type="checkbox" id="v1ConfigProtocolTcpSyn" />
+                      <span id="v1ConfigProtocolTcpSynLabel">TCP SYN</span>
                     </label>
                     <label class="v1-config-checkbox-row">
                       <input type="checkbox" id="v1ConfigProtocolUdp" />
@@ -556,6 +587,14 @@
                       <label for="v1ConfigMaxConcurrentHosts" id="v1ConfigMaxConcurrentHostsLabel">Max concurrent hosts</label>
                       <input id="v1ConfigMaxConcurrentHosts" type="number" min="1" max="256" step="1" value="128" />
                     </div>
+                    <div class="v1-config-field-row">
+                      <label for="v1ConfigMaxConcurrentPorts" id="v1ConfigMaxConcurrentPortsLabel">Max concurrent ports per host</label>
+                      <input id="v1ConfigMaxConcurrentPorts" type="number" min="1" max="512" step="1" value="64" />
+                    </div>
+                    <div class="v1-config-field-row">
+                      <label for="v1ConfigRetries" id="v1ConfigRetriesLabel">Retries</label>
+                      <input id="v1ConfigRetries" type="number" min="0" max="10" step="1" value="1" />
+                    </div>
                   </div>
                 </li>
                 <li>
@@ -564,13 +603,47 @@
                     <span class="v1-collapse-arrow">▼</span>
                   </div>
                   <div class="v1-section-body">
+                    <div class="v1-config-subgroup-heading" id="v1ConfigDetectServiceProbingHeading">Service Probing</div>
+                    <label class="v1-config-checkbox-row">
+                      <input type="checkbox" id="v1ConfigBannerGrabbing" />
+                      <span id="v1ConfigBannerGrabbingLabel">Banner Grabbing</span>
+                    </label>
+                    <label class="v1-config-checkbox-row">
+                      <input type="checkbox" id="v1ConfigHttpPageTitle" checked />
+                      <span id="v1ConfigHttpPageTitleLabel">HTTP Page Title</span>
+                    </label>
+                    <label class="v1-config-checkbox-row">
+                      <input type="checkbox" id="v1ConfigAccessSnapshot" checked />
+                      <span id="v1ConfigAccessSnapshotLabel">Access / Snapshot</span>
+                    </label>
+                    <label class="v1-config-checkbox-row">
+                      <input type="checkbox" id="v1ConfigSslCertInfo" />
+                      <span id="v1ConfigSslCertInfoLabel">SSL/TLS Certificate Info</span>
+                    </label>
+                    <div class="v1-config-subgroup-heading" id="v1ConfigDetectHostEnrichmentHeading">Host Enrichment</div>
                     <label class="v1-config-checkbox-row">
                       <input type="checkbox" id="v1ConfigReverseDns" checked />
                       <span id="v1ConfigReverseDnsLabel">Reverse DNS</span>
                     </label>
                     <label class="v1-config-checkbox-row">
-                      <input type="checkbox" id="v1ConfigBannerGrabbing" />
-                      <span id="v1ConfigBannerGrabbingLabel">Banner Grabbing</span>
+                      <input type="checkbox" id="v1ConfigOsDetection" />
+                      <span id="v1ConfigOsDetectionLabel">OS Detection</span>
+                    </label>
+                    <label class="v1-config-checkbox-row">
+                      <input type="checkbox" id="v1ConfigCountryFlag" checked />
+                      <span id="v1ConfigCountryFlagLabel">Country Flag</span>
+                    </label>
+                    <label class="v1-config-checkbox-row">
+                      <input type="checkbox" id="v1ConfigIsp" checked />
+                      <span id="v1ConfigIspLabel">ISP</span>
+                    </label>
+                    <label class="v1-config-checkbox-row">
+                      <input type="checkbox" id="v1ConfigAs" checked />
+                      <span id="v1ConfigAsLabel">AS</span>
+                    </label>
+                    <label class="v1-config-checkbox-row">
+                      <input type="checkbox" id="v1ConfigDeviceIdentification" checked />
+                      <span id="v1ConfigDeviceIdentificationLabel">Device Identification</span>
                     </label>
                   </div>
                 </li>
@@ -588,6 +661,10 @@
                       <input type="checkbox" id="v1ConfigRandomizeHosts" />
                       <span id="v1ConfigRandomizeHostsLabel">Randomize hosts</span>
                     </label>
+                    <div class="v1-config-field-row">
+                      <label for="v1ConfigScanDelay" id="v1ConfigScanDelayLabel">Scan delay (ms)</label>
+                      <input id="v1ConfigScanDelay" type="number" min="0" max="5000" step="50" value="0" />
+                    </div>
                   </div>
                 </li>
               </ul>
@@ -627,7 +704,7 @@
 
   <script src="js/new-ui/core/app-version.js?v=2.1.0"></script>
   <script src="js/new-ui/core/store.js"></script>
-  <script src="js/new-ui/core/i18n.js?v=20260913"></script>
+  <script src="js/new-ui/core/i18n.js?v=20260919"></script>
   <script src="js/new-ui/core/theme.js?v=20260604"></script>
   <script src="js/new-ui/core/tool-catalog.js?v=20260913"></script>
   <script src="js/new-ui/core/presets-runtime.js?v=20260817"></script>
@@ -647,7 +724,7 @@
   <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js?v=20260904"></script>
   <script src="js/new-ui/core/runtimes/clippy-runtime.js?v=20260604"></script>
   <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js?v=20260911"></script>
-  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260913"></script>
+  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260916"></script>
   <script src="js/new-ui/core/runtimes/session-sqlite-runtime.js?v=20260804"></script>
   <script src="js/new-ui/core/runtimes/update-check-runtime.js?v=20260906"></script>
   <script src="js/new-ui/core/panel-content-config.js?v=20260713"></script>
@@ -657,7 +734,7 @@
   <script src="js/new-ui/core/panels-runtime.js?v=20260913"></script>
   <script src="js/new-ui/core/menu-runtime.js?v=20260910"></script>
   <script src="js/new-ui/core/session-runtime.js?v=20260911"></script>
-  <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260913"></script>
+  <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260921"></script>
   <script src="js/new-ui/core/powershell-console-runtime.js?v=20260604"></script>
     <script src="js/new-ui/core/bootstrap-runtime.js?v=20260913"></script>
 </body>

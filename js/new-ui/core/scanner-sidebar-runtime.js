@@ -16,6 +16,9 @@
     var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils
       ? window.NetReconNewUICore.utils.net
       : null;
+    var escapeHtml = window.NetReconNewUICore && window.NetReconNewUICore.utils && window.NetReconNewUICore.utils.dom
+      ? window.NetReconNewUICore.utils.dom.escapeHtml
+      : function (value) { return String(value == null ? "" : value); };
 
     function isValidIpv4(value) {
       if (sharedNet && typeof sharedNet.isValidIpv4 === "function") {
@@ -169,6 +172,122 @@
       renderRangeHistory();
     }
 
+    // Scanner sidebar "Profiles" - named/colored labels the user can create
+    // and delete, on top of the app's usual localStorage-list pattern (same
+    // shape as Range History above). Not wired to any real scan-settings
+    // save/restore yet - just the add/list/delete UI for now. The first
+    // "Default" entry is synthesized (not stored) until a real profile gets
+    // added, and can never be deleted (no delete button rendered for it,
+    // plus a defensive check in the click handler).
+    var PROFILES_KEY = "netrecon_scanner_profiles_v1";
+    var DEFAULT_PROFILE = { id: "default", name: "Default", color: "#f2c94c", locked: true };
+
+    function isValidHexColor(value) {
+      return /^#[0-9a-fA-F]{3,8}$/.test(String(value || ""));
+    }
+
+    function loadProfiles() {
+      try {
+        var raw = localStorage.getItem(PROFILES_KEY);
+        var parsed = raw ? JSON.parse(raw) : null;
+        if (!Array.isArray(parsed) || !parsed.length) return [Object.assign({}, DEFAULT_PROFILE)];
+
+        var sanitized = parsed.filter(function (item) {
+          return item && typeof item.name === "string" && isValidHexColor(item.color);
+        });
+        var hasDefault = sanitized.some(function (item) { return item.id === "default"; });
+        if (!hasDefault) sanitized.unshift(Object.assign({}, DEFAULT_PROFILE));
+        return sanitized;
+      } catch (err) {
+        console.error("[profiles] load failed:", err);
+        return [Object.assign({}, DEFAULT_PROFILE)];
+      }
+    }
+
+    function saveProfiles(items) {
+      try {
+        localStorage.setItem(PROFILES_KEY, JSON.stringify((items || []).slice(0, 48)));
+      } catch (err) {
+        console.error("[profiles] save failed:", err);
+      }
+    }
+
+    function renderProfiles() {
+      var root = document.getElementById("v1ProfilesList");
+      if (!root) return;
+      var items = loadProfiles();
+
+      root.innerHTML = items.map(function (item, idx) {
+        var name = escapeHtml(item.locked ? t("scannerProfileDefaultName") : item.name);
+        var color = isValidHexColor(item.color) ? item.color : "#4aa3ff";
+        var deleteBtn = item.locked
+          ? ""
+          : "<button type=\"button\" class=\"v1-profile-delete-btn\" data-profile-index=\"" + idx + "\" title=\"" + escapeHtml(t("scannerProfileDeleteAria")) + "\" aria-label=\"" + escapeHtml(t("scannerProfileDeleteAria")) + "\">x</button>";
+        return "<div class=\"v1-profile-item\">"
+          + "<span class=\"v1-profile-swatch\" style=\"background:" + color + "\"></span>"
+          + "<span class=\"v1-profile-name\" title=\"" + name + "\">" + name + "</span>"
+          + deleteBtn
+          + "</div>";
+      }).join("");
+    }
+
+    function addProfile(name, color) {
+      var trimmedName = String(name || "").trim();
+      if (!trimmedName) {
+        if (typeof setStatusLine === "function") setStatusLine(t("statusProfileNameRequired"));
+        return false;
+      }
+      var safeColor = isValidHexColor(color) ? color : "#4aa3ff";
+      var items = loadProfiles();
+      items.push({
+        id: "p" + Date.now().toString(36) + Math.floor(Math.random() * 1000),
+        name: trimmedName,
+        color: safeColor,
+      });
+      saveProfiles(items);
+      renderProfiles();
+      if (typeof setStatusLine === "function") setStatusLine(t("statusProfileAdded") + " " + trimmedName);
+      return true;
+    }
+
+    function initProfilesUi() {
+      var listRoot = document.getElementById("v1ProfilesList");
+      var addBtn = document.getElementById("v1ProfileAddBtn");
+      var nameInput = document.getElementById("v1ProfileNameInput");
+      var colorInput = document.getElementById("v1ProfileColorInput");
+      if (!listRoot || !addBtn || !nameInput || !colorInput) return;
+
+      addBtn.addEventListener("click", function () {
+        if (addProfile(nameInput.value, colorInput.value)) {
+          nameInput.value = "";
+          nameInput.focus();
+        }
+      });
+
+      nameInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          addBtn.click();
+        }
+      });
+
+      listRoot.addEventListener("click", function (event) {
+        var btn = event.target.closest("[data-profile-index]");
+        if (!btn) return;
+        var idx = Number(btn.getAttribute("data-profile-index"));
+        var items = loadProfiles();
+        var item = items[idx];
+        if (!item || item.locked) return;
+
+        items.splice(idx, 1);
+        saveProfiles(items);
+        renderProfiles();
+        if (typeof setStatusLine === "function") setStatusLine(t("statusProfileDeleted"));
+      });
+
+      renderProfiles();
+    }
+
     function resolveDomainToIp(domain) {
       var endpoint = "https://dns.google/resolve?name=" + encodeURIComponent(domain) + "&type=A";
       return fetch(endpoint, { method: "GET" }).then(function (response) {
@@ -183,6 +302,31 @@
       }).catch(function () {
         return null;
       });
+    }
+
+    // Ports vs ICMP is a deliberate, user-chosen scan type - not a silent
+    // pre-filter before port scanning (which would risk skipping hosts that
+    // block ping but still have open ports). ICMP itself isn't implemented
+    // yet (needs raw sockets / admin rights in the Rust backend); Start
+    // just reports that honestly instead of pretending to scan.
+    function initScanModeToggle() {
+      var radios = Array.from(document.querySelectorAll('input[name="v1ScanMode"]'));
+      if (!radios.length) return;
+
+      function applyMode(mode) {
+        document.querySelectorAll("[data-scan-mode-panel]").forEach(function (panel) {
+          panel.hidden = panel.getAttribute("data-scan-mode-panel") !== mode;
+        });
+      }
+
+      radios.forEach(function (radio) {
+        radio.addEventListener("change", function () {
+          if (radio.checked) applyMode(radio.value);
+        });
+      });
+
+      var checked = radios.find(function (radio) { return radio.checked; });
+      applyMode(checked ? checked.value : "ports");
     }
 
     // RS "Config" tab's Performance section - the real timeout/concurrency
@@ -401,8 +545,10 @@
       var fromLabel = document.getElementById("v1IpLabelFrom");
       var toLabel = document.getElementById("v1IpLabelTo");
       var cidrLabel = document.getElementById("v1IpLabelCidr");
+      var scanModePortsLabel = document.getElementById("v1ScanModePortsLabel");
+      var scanModeIcmpLabel = document.getElementById("v1ScanModeIcmpLabel");
+      var scanModeIcmpNote = document.getElementById("v1ScanModeIcmpNote");
       var portsLabel = document.getElementById("v1PortsLabel");
-      var portPreset = document.getElementById("v1PortPreset");
       var startBtn = document.querySelector('[data-scanner-action="start"]');
       var stopBtn = document.querySelector('[data-scanner-action="stop"]');
       var clearBtn = document.querySelector('[data-scanner-action="clear"]');
@@ -412,6 +558,10 @@
       var extractorBtn = document.getElementById("v1IpExtractBtn");
       var extractorOutput = document.getElementById("v1IpExtractorOutput");
       var historyTitle = document.getElementById("v1RangeHistoryTitle");
+      var profilesTitle = document.getElementById("v1ProfilesTitle");
+      var profileNameInput = document.getElementById("v1ProfileNameInput");
+      var profileColorInput = document.getElementById("v1ProfileColorInput");
+      var profileAddBtn = document.getElementById("v1ProfileAddBtn");
 
       if (detectTitle) detectTitle.textContent = t("scannerDetectIp");
       if (extLabel) extLabel.textContent = t("scannerExternalIp");
@@ -447,6 +597,9 @@
       if (fromLabel) fromLabel.textContent = t("scannerFrom");
       if (toLabel) toLabel.textContent = t("scannerTo");
       if (cidrLabel) cidrLabel.textContent = t("scannerRangeModeCidr");
+      if (scanModePortsLabel) scanModePortsLabel.textContent = t("scannerModePorts");
+      if (scanModeIcmpLabel) scanModeIcmpLabel.textContent = t("scannerModeIcmp");
+      if (scanModeIcmpNote) scanModeIcmpNote.textContent = t("scannerModeIcmpNote");
       if (portsLabel) portsLabel.textContent = t("scannerPorts");
       if (startBtn) startBtn.textContent = "▶ " + t("scannerStart");
       if (stopBtn) stopBtn.textContent = "■ " + t("scannerStop");
@@ -477,6 +630,11 @@
       }
       if (extractorOutput) extractorOutput.setAttribute("placeholder", t("scannerExtractedPlaceholder"));
       if (historyTitle) historyTitle.textContent = t("scannerRangeHistory");
+      if (profilesTitle) profilesTitle.textContent = t("scannerProfilesTitle");
+      if (profileNameInput) profileNameInput.setAttribute("placeholder", t("scannerProfileNamePlaceholder"));
+      if (profileColorInput) profileColorInput.setAttribute("aria-label", t("scannerProfileColorAria"));
+      if (profileAddBtn) profileAddBtn.setAttribute("aria-label", t("scannerProfileAddAria"));
+      renderProfiles();
 
       // RS "Config" tab, opened alongside the LS/CS tabs when IP Scanner is
       // clicked - static scaffolding only, not wired to real scan settings
@@ -484,30 +642,58 @@
       var rightTabConfigBtn = document.getElementById("v1RightTabConfig");
       var configProtocolTitle = document.getElementById("v1ConfigProtocolTitle");
       var configProtocolTcpLabel = document.getElementById("v1ConfigProtocolTcpLabel");
+      var configProtocolTcpSynLabel = document.getElementById("v1ConfigProtocolTcpSynLabel");
       var configProtocolUdpLabel = document.getElementById("v1ConfigProtocolUdpLabel");
       var configPerformanceTitle = document.getElementById("v1ConfigPerformanceTitle");
       var configHostTimeoutLabel = document.getElementById("v1ConfigHostTimeoutLabel");
       var configMaxConcurrentHostsLabel = document.getElementById("v1ConfigMaxConcurrentHostsLabel");
+      var configMaxConcurrentPortsLabel = document.getElementById("v1ConfigMaxConcurrentPortsLabel");
+      var configRetriesLabel = document.getElementById("v1ConfigRetriesLabel");
       var configDetectTitle = document.getElementById("v1ConfigDetectTitle");
+      var configDetectServiceProbingHeading = document.getElementById("v1ConfigDetectServiceProbingHeading");
+      var configDetectHostEnrichmentHeading = document.getElementById("v1ConfigDetectHostEnrichmentHeading");
       var configReverseDnsLabel = document.getElementById("v1ConfigReverseDnsLabel");
       var configBannerGrabbingLabel = document.getElementById("v1ConfigBannerGrabbingLabel");
+      var configOsDetectionLabel = document.getElementById("v1ConfigOsDetectionLabel");
+      var configSslCertInfoLabel = document.getElementById("v1ConfigSslCertInfoLabel");
+      var configCountryFlagLabel = document.getElementById("v1ConfigCountryFlagLabel");
+      var configIspLabel = document.getElementById("v1ConfigIspLabel");
+      var configAsLabel = document.getElementById("v1ConfigAsLabel");
+      var configDeviceIdentificationLabel = document.getElementById("v1ConfigDeviceIdentificationLabel");
+      var configHttpPageTitleLabel = document.getElementById("v1ConfigHttpPageTitleLabel");
+      var configAccessSnapshotLabel = document.getElementById("v1ConfigAccessSnapshotLabel");
       var configSecurityTitle = document.getElementById("v1ConfigSecurityTitle");
       var configRandomizePortsLabel = document.getElementById("v1ConfigRandomizePortsLabel");
       var configRandomizeHostsLabel = document.getElementById("v1ConfigRandomizeHostsLabel");
+      var configScanDelayLabel = document.getElementById("v1ConfigScanDelayLabel");
 
       if (rightTabConfigBtn) rightTabConfigBtn.textContent = t("rightTabConfig");
       if (configProtocolTitle) configProtocolTitle.textContent = t("configGroupProtocol");
       if (configProtocolTcpLabel) configProtocolTcpLabel.textContent = t("configProtocolTcp");
+      if (configProtocolTcpSynLabel) configProtocolTcpSynLabel.textContent = t("configProtocolTcpSyn");
       if (configProtocolUdpLabel) configProtocolUdpLabel.textContent = t("configProtocolUdp");
       if (configPerformanceTitle) configPerformanceTitle.textContent = t("configGroupPerformance");
       if (configHostTimeoutLabel) configHostTimeoutLabel.textContent = t("configHostTimeout");
       if (configMaxConcurrentHostsLabel) configMaxConcurrentHostsLabel.textContent = t("configMaxConcurrentHosts");
+      if (configMaxConcurrentPortsLabel) configMaxConcurrentPortsLabel.textContent = t("configMaxConcurrentPorts");
+      if (configRetriesLabel) configRetriesLabel.textContent = t("configRetries");
       if (configDetectTitle) configDetectTitle.textContent = t("configGroupDetect");
+      if (configDetectServiceProbingHeading) configDetectServiceProbingHeading.textContent = t("configDetectServiceProbing");
+      if (configDetectHostEnrichmentHeading) configDetectHostEnrichmentHeading.textContent = t("configDetectHostEnrichment");
       if (configReverseDnsLabel) configReverseDnsLabel.textContent = t("configReverseDns");
       if (configBannerGrabbingLabel) configBannerGrabbingLabel.textContent = t("configBannerGrabbing");
+      if (configOsDetectionLabel) configOsDetectionLabel.textContent = t("configOsDetection");
+      if (configSslCertInfoLabel) configSslCertInfoLabel.textContent = t("configSslCertInfo");
+      if (configCountryFlagLabel) configCountryFlagLabel.textContent = t("resultsIpColumnCountryFlag");
+      if (configIspLabel) configIspLabel.textContent = t("resultsIpColumnIsp");
+      if (configAsLabel) configAsLabel.textContent = t("resultsIpColumnAs");
+      if (configDeviceIdentificationLabel) configDeviceIdentificationLabel.textContent = t("resultsIpColumnDeviceIdentification");
+      if (configHttpPageTitleLabel) configHttpPageTitleLabel.textContent = t("resultsIpColumnHttpPageTitle");
+      if (configAccessSnapshotLabel) configAccessSnapshotLabel.textContent = t("resultsIpColumnAccessSnapshot");
       if (configSecurityTitle) configSecurityTitle.textContent = t("configGroupSecurity");
       if (configRandomizePortsLabel) configRandomizePortsLabel.textContent = t("configRandomizePorts");
       if (configRandomizeHostsLabel) configRandomizeHostsLabel.textContent = t("configRandomizeHosts");
+      if (configScanDelayLabel) configScanDelayLabel.textContent = t("configScanDelay");
 
       renderPortPresetOptions();
 
@@ -517,6 +703,8 @@
     function init() {
       initIpExtractor();
       initRangeHistoryUi();
+      initProfilesUi();
+      initScanModeToggle();
       initConfigPerformanceInputs();
       var portPreset = document.getElementById("v1PortPreset");
       if (portPreset && !portPresetListenerBound) {
