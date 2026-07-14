@@ -1217,6 +1217,18 @@
           setStatusLine(tr("menuPrefix") + ": " + tr("tipActionGeneral"));
         }
       });
+
+      // "UI" test switch - deliberately NOT persisted (no generalSettingsApi
+      // involved here at all). Picking "Test" just navigates to
+      // test-ui.html; a normal relaunch always lands back on index.html
+      // since nothing records the choice anywhere.
+      root.addEventListener("change", function (event) {
+        var radio = event.target && event.target.closest ? event.target.closest("input[name=\"v1UiSwitch\"]") : null;
+        if (!radio || !radio.checked) return;
+        if (radio.value === "test") {
+          window.location.href = "test-ui.html";
+        }
+      });
     }
 
     return {

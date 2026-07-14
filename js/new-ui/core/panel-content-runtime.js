@@ -411,6 +411,33 @@
         return "<h4 class=\"v1-general-settings-group\">" + escapeHtml(trOr(key, fallback)) + "</h4>";
       }
 
+      // Small, deliberately non-persisted test: a live "switch UI" toggle,
+      // gated behind "Show unfinished tools" like every other unfinished
+      // feature. Never written to localStorage on purpose - picking "Test"
+      // just navigates to test-ui.html (a placeholder proving the swap
+      // works via a plain page load); a normal relaunch always lands back
+      // on the default UI (index.html) since nothing records the choice.
+      function uiSwitchRow() {
+        var unfinishedVisible = false;
+        try {
+          unfinishedVisible = localStorage.getItem("netrecon_show_unfinished_tools") === "1";
+        } catch (_) {}
+
+        return [
+          "<div class=\"v1-general-settings-ui-switch\" data-general-ui-switch" + (unfinishedVisible ? "" : " hidden") + ">",
+          "<span class=\"v1-general-settings-ui-switch-label\">" + escapeHtml(trOr("generalUiSwitchLabel", "UI")) + "</span>",
+          "<label class=\"v1-general-settings-ui-switch-option\">",
+          "<input type=\"radio\" name=\"v1UiSwitch\" value=\"default\" checked />",
+          "<span>" + escapeHtml(trOr("generalUiSwitchDefault", "Default")) + "</span>",
+          "</label>",
+          "<label class=\"v1-general-settings-ui-switch-option\">",
+          "<input type=\"radio\" name=\"v1UiSwitch\" value=\"test\" />",
+          "<span>" + escapeHtml(trOr("generalUiSwitchTest", "Test")) + "</span>",
+          "</label>",
+          "</div>"
+        ].join("");
+      }
+
       return [
         "<div class=\"v1-import-manager\">",
         "<div class=\"v1-import-manager-head\">",
@@ -428,6 +455,7 @@
         checkboxRow("panelSideRight", "🔀", "generalPanelSideRight", "Swap panel sides (activity bar/LS on the right, RS on the left)"),
         checkboxRow("rememberLanguage", "🌐", "generalRememberLanguage", "Remember UI language"),
         checkboxRow("rememberSkin", "🎨", "generalRememberSkin", "Remember skin / theme"),
+        uiSwitchRow(),
         checkboxRow("rememberPanelSizes", "↔️", "generalRememberPanelSizes", "Remember panel sizes and collapsed state"),
 
         groupHeading("generalGroupPrivacyTools", "Privacy & tools"),

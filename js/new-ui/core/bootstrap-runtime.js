@@ -1202,7 +1202,7 @@
 
       try {
         if (localStorage.getItem("netrecon_show_unfinished_tools") === "1") {
-          ["#v1ActivityLoremIpsum", "#v1ActivityTopology", "#v1ActivityGlobe", ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]", ".v1-menu-dd-item[data-tool=\"topology\"]", ".v1-menu-dd-item[data-tool=\"globe\"]", ".v1-menu-dd-item[data-menu-action=\"assistant-right\"]", ".v1-menu-dd-item[data-menu-action=\"countries\"]"].forEach(function (selector) {
+          ["#v1ActivityLoremIpsum", "#v1ActivityTopology", "#v1ActivityGlobe", ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]", ".v1-menu-dd-item[data-tool=\"topology\"]", ".v1-menu-dd-item[data-tool=\"globe\"]", ".v1-menu-dd-item[data-menu-action=\"assistant-right\"]", ".v1-menu-dd-item[data-menu-action=\"countries\"]", "[data-general-ui-switch]"].forEach(function (selector) {
             var el = document.querySelector(selector);
             if (el) el.removeAttribute("hidden");
           });
