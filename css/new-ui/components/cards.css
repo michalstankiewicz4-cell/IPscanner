@@ -469,10 +469,10 @@
 }
 
 /* SHARED: base "v1-import-manager*" card/grid classes originally styled
-   Import Tool (shell), but renderIpLibraryTool/renderScanDefaultsTool
-   (ip-scanner tool, panel-content-runtime.js) reuse these same classes for
-   their own generic form layout. Do not treat as exclusively shell or tool -
-   do not move without checking all 3 render functions. */
+   Import Tool (shell), reused by several other shell and ip-scanner tools
+   (panel-content-runtime.js) for their own generic form layout. Do not
+   treat as exclusively shell or tool - grep render*Tool() functions using
+   "v1-import-manager" before moving. */
 .v1-import-manager {
   display: grid;
   gap: 12px;

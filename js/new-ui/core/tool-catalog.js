@@ -74,11 +74,6 @@
       textKey: "toolText_presets",
       points: ["Built-in scan groups", "Editable custom ports", "Default preset choice"]
     },
-    "scan-defaults": {
-      titleKey: "toolTitle_scan_defaults",
-      textKey: "toolText_scan_defaults",
-      points: ["Timeout and retries", "Concurrency limits", "Default port profile"]
-    },
     "results-ip": {
       titleKey: "toolTitle_results_ip",
       textKey: "toolText_results_ip",

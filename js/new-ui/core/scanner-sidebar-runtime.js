@@ -185,6 +185,71 @@
       });
     }
 
+    // RS "Config" tab's Performance section - the real timeout/concurrency
+    // settings, migrated here from the old Options -> Default Scan Values
+    // tool (now removed). Shares the same netrecon_scan_defaults_v1
+    // localStorage key readScanDefaults() (navigation-runtime.js) already
+    // reads at scan-start, so no changes were needed there - only where
+    // these two values are edited moved.
+    function initConfigPerformanceInputs() {
+      var DEFAULTS_KEY = "netrecon_scan_defaults_v1";
+      var RECOMMENDED_DEFAULTS = { timeoutMs: 1000, concurrency: 128 };
+
+      function sanitize(value) {
+        var next = Object.assign({}, RECOMMENDED_DEFAULTS, value || {});
+        var timeout = Number(next.timeoutMs);
+        var concurrency = Number(next.concurrency);
+
+        if (!Number.isFinite(timeout)) timeout = RECOMMENDED_DEFAULTS.timeoutMs;
+        if (!Number.isFinite(concurrency)) concurrency = RECOMMENDED_DEFAULTS.concurrency;
+
+        timeout = Math.max(200, Math.min(5000, Math.round(timeout)));
+        concurrency = Math.max(1, Math.min(256, Math.round(concurrency)));
+
+        return { timeoutMs: timeout, concurrency: concurrency };
+      }
+
+      function readSaved() {
+        try {
+          var raw = window.localStorage ? window.localStorage.getItem(DEFAULTS_KEY) : "";
+          if (!raw) return Object.assign({}, RECOMMENDED_DEFAULTS);
+          var parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return Object.assign({}, RECOMMENDED_DEFAULTS);
+          return sanitize(parsed);
+        } catch (_) {
+          return Object.assign({}, RECOMMENDED_DEFAULTS);
+        }
+      }
+
+      function writeSaved(next) {
+        var safe = sanitize(next);
+        try {
+          if (window.localStorage) window.localStorage.setItem(DEFAULTS_KEY, JSON.stringify(safe));
+        } catch (_) {}
+        return safe;
+      }
+
+      var timeoutInput = document.getElementById("v1ConfigHostTimeout");
+      var concurrencyInput = document.getElementById("v1ConfigMaxConcurrentHosts");
+      if (!timeoutInput || !concurrencyInput) return;
+
+      var saved = readSaved();
+      timeoutInput.value = String(saved.timeoutMs);
+      concurrencyInput.value = String(saved.concurrency);
+
+      function persist() {
+        var next = writeSaved({
+          timeoutMs: Number(timeoutInput.value),
+          concurrency: Number(concurrencyInput.value),
+        });
+        timeoutInput.value = String(next.timeoutMs);
+        concurrencyInput.value = String(next.concurrency);
+      }
+
+      timeoutInput.addEventListener("change", persist);
+      concurrencyInput.addEventListener("change", persist);
+    }
+
     function initIpExtractor() {
       var input = document.getElementById("v1IpExtractorInput");
       var output = document.getElementById("v1IpExtractorOutput");
@@ -341,7 +406,6 @@
       var startBtn = document.querySelector('[data-scanner-action="start"]');
       var stopBtn = document.querySelector('[data-scanner-action="stop"]');
       var clearBtn = document.querySelector('[data-scanner-action="clear"]');
-      var scanSpeedBtn = document.querySelector('[data-scanner-action="scan-speed"]');
       var presetsBtn = document.querySelector('[data-scanner-action="presets"]');
       var extractorTitle = document.getElementById("v1IpExtractorTitle");
       var extractorInput = document.getElementById("v1IpExtractorInput");
@@ -387,7 +451,6 @@
       if (startBtn) startBtn.textContent = "▶ " + t("scannerStart");
       if (stopBtn) stopBtn.textContent = "■ " + t("scannerStop");
       if (clearBtn) clearBtn.textContent = "✕ " + t("scannerClear");
-      if (scanSpeedBtn) scanSpeedBtn.textContent = "⏱ " + t("scannerScanSpeed");
       if (presetsBtn) presetsBtn.textContent = "⭐ " + t("scannerPortPresets");
       if (startBtn) {
         startBtn.setAttribute("title", t("scannerTipStart"));
@@ -400,10 +463,6 @@
       if (clearBtn) {
         clearBtn.setAttribute("title", t("scannerTipClear"));
         clearBtn.setAttribute("aria-label", t("scannerTipClear"));
-      }
-      if (scanSpeedBtn) {
-        scanSpeedBtn.setAttribute("title", t("scannerTipScanSpeed"));
-        scanSpeedBtn.setAttribute("aria-label", t("scannerTipScanSpeed"));
       }
       if (presetsBtn) {
         presetsBtn.setAttribute("title", t("scannerTipPortPresets"));
@@ -419,6 +478,37 @@
       if (extractorOutput) extractorOutput.setAttribute("placeholder", t("scannerExtractedPlaceholder"));
       if (historyTitle) historyTitle.textContent = t("scannerRangeHistory");
 
+      // RS "Config" tab, opened alongside the LS/CS tabs when IP Scanner is
+      // clicked - static scaffolding only, not wired to real scan settings
+      // yet, so this just handles labels/translations.
+      var rightTabConfigBtn = document.getElementById("v1RightTabConfig");
+      var configProtocolTitle = document.getElementById("v1ConfigProtocolTitle");
+      var configProtocolTcpLabel = document.getElementById("v1ConfigProtocolTcpLabel");
+      var configProtocolUdpLabel = document.getElementById("v1ConfigProtocolUdpLabel");
+      var configPerformanceTitle = document.getElementById("v1ConfigPerformanceTitle");
+      var configHostTimeoutLabel = document.getElementById("v1ConfigHostTimeoutLabel");
+      var configMaxConcurrentHostsLabel = document.getElementById("v1ConfigMaxConcurrentHostsLabel");
+      var configDetectTitle = document.getElementById("v1ConfigDetectTitle");
+      var configReverseDnsLabel = document.getElementById("v1ConfigReverseDnsLabel");
+      var configBannerGrabbingLabel = document.getElementById("v1ConfigBannerGrabbingLabel");
+      var configSecurityTitle = document.getElementById("v1ConfigSecurityTitle");
+      var configRandomizePortsLabel = document.getElementById("v1ConfigRandomizePortsLabel");
+      var configRandomizeHostsLabel = document.getElementById("v1ConfigRandomizeHostsLabel");
+
+      if (rightTabConfigBtn) rightTabConfigBtn.textContent = t("rightTabConfig");
+      if (configProtocolTitle) configProtocolTitle.textContent = t("configGroupProtocol");
+      if (configProtocolTcpLabel) configProtocolTcpLabel.textContent = t("configProtocolTcp");
+      if (configProtocolUdpLabel) configProtocolUdpLabel.textContent = t("configProtocolUdp");
+      if (configPerformanceTitle) configPerformanceTitle.textContent = t("configGroupPerformance");
+      if (configHostTimeoutLabel) configHostTimeoutLabel.textContent = t("configHostTimeout");
+      if (configMaxConcurrentHostsLabel) configMaxConcurrentHostsLabel.textContent = t("configMaxConcurrentHosts");
+      if (configDetectTitle) configDetectTitle.textContent = t("configGroupDetect");
+      if (configReverseDnsLabel) configReverseDnsLabel.textContent = t("configReverseDns");
+      if (configBannerGrabbingLabel) configBannerGrabbingLabel.textContent = t("configBannerGrabbing");
+      if (configSecurityTitle) configSecurityTitle.textContent = t("configGroupSecurity");
+      if (configRandomizePortsLabel) configRandomizePortsLabel.textContent = t("configRandomizePorts");
+      if (configRandomizeHostsLabel) configRandomizeHostsLabel.textContent = t("configRandomizeHosts");
+
       renderPortPresetOptions();
 
       renderRangeHistory();
@@ -427,6 +517,7 @@
     function init() {
       initIpExtractor();
       initRangeHistoryUi();
+      initConfigPerformanceInputs();
       var portPreset = document.getElementById("v1PortPreset");
       if (portPreset && !portPresetListenerBound) {
         portPreset.addEventListener("change", function () {

@@ -179,7 +179,7 @@
       // (activityScannerBtn/activityTopologyBtn/activityGlobeBtn,
       // toolsMenuIpScanner/Topology/Globe, sidebarTabScanner/IpLibrary,
       // ipLibrary* labels, resultNavIp/IpLibrary/Presets,
-      // tabTitleIpLibrary/Presets/ScanDefaults/Topology/Globe). Not split
+      // tabTitleIpLibrary/Presets/Topology/Globe). Not split
       // line-by-line here (too fine-grained to bracket cleanly without
       // restructuring); grouping by shell vs tool is future work once this
       // file gets its own dedicated pass.
@@ -224,7 +224,6 @@
         const tabResultsIp = document.getElementById("v1TabTitleResultsIp");
         const tabTitleIpLibrary = document.getElementById("v1TabTitleIpLibrary");
         const tabTitlePresets = document.getElementById("v1TabTitlePresets");
-        const tabTitleScanDefaults = document.getElementById("v1TabTitleScanDefaults");
         const tabTitleGeneral = document.getElementById("v1TabTitleGeneral");
         const tabTitleImportTool = document.getElementById("v1TabTitleImportTool");
         const tabTitleLanguageManager = document.getElementById("v1TabTitleLanguageManager");
@@ -253,7 +252,6 @@
         const fileExitLabel = document.querySelector('[data-menu-action="exit"] span:first-child');
         const optionsCountriesLabel = document.querySelector('[data-menu-action="countries"] span:first-child');
         const optionsPresetsLabel = document.querySelector('[data-menu-action="presets"] span:first-child');
-        const optionsDefaultsLabel = document.querySelector('[data-menu-action="defaults"] span:first-child');
         const optionsLanguageLabel = document.querySelector('[data-menu-action="language"] span:first-child');
         const optionsGeneralLabel = document.querySelector('[data-menu-action="general"] span:first-child');
         const optionsImportToolLabel = document.querySelector('[data-menu-action="customization"] span:first-child');
@@ -330,7 +328,6 @@
         if (tabResultsIp) tabResultsIp.textContent = tr("tabResultsIp");
         if (tabTitleIpLibrary) tabTitleIpLibrary.textContent = tr("ipLibraryTabTitle");
         if (tabTitlePresets) tabTitlePresets.textContent = tr("tabPresetsTitle");
-        if (tabTitleScanDefaults) tabTitleScanDefaults.textContent = tr("tabScanDefaultsTitle");
         if (tabTitleGeneral) tabTitleGeneral.textContent = tr("tabGeneralTitle");
         if (tabTitleImportTool) tabTitleImportTool.textContent = tr("importToolTitle");
         if (tabTitleLanguageManager) tabTitleLanguageManager.textContent = tr("langManagerTitle");
@@ -354,7 +351,6 @@
         if (fileExitLabel) fileExitLabel.textContent = tr("menuFileExit");
         if (optionsCountriesLabel) optionsCountriesLabel.textContent = tr("menuOptionsCountries");
         if (optionsPresetsLabel) optionsPresetsLabel.textContent = tr("menuOptionsPresets");
-        if (optionsDefaultsLabel) optionsDefaultsLabel.textContent = tr("menuOptionsDefaults");
         if (optionsLanguageLabel) optionsLanguageLabel.textContent = tr("menuOptionsLanguage");
         if (optionsGeneralLabel) optionsGeneralLabel.textContent = tr("menuOptionsGeneral");
         if (optionsImportToolLabel) optionsImportToolLabel.textContent = tr("menuOptionsImportTool");

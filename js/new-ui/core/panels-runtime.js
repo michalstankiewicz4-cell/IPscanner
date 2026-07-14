@@ -1745,13 +1745,6 @@
         return;
       }
 
-      if (tool === "scan-defaults") { // ip-scanner tool
-        if (panelInteractionsRuntime && panelInteractionsRuntime.wireScanDefaultsTool) {
-          panelInteractionsRuntime.wireScanDefaultsTool(scope);
-        }
-        return;
-      }
-
       if (tool === "ip-library") { // ip-scanner tool
         wireIpLibraryButtons(scope);
         return;

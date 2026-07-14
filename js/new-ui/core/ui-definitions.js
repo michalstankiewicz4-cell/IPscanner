@@ -179,12 +179,6 @@
       purpose: "Zarzadzanie presetami portow.",
       behavior: "switch-tool:presets",
     },
-    defaults: {
-      label: "Default Scan Values",
-      purposeKey: "tipActionDefaults",
-      purpose: "Domyslne wartosci skanowania.",
-      behavior: "switch-tool:scan-defaults",
-    },
   };
 
   var panelDefinitions = {

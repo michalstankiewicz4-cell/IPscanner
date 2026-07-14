@@ -591,28 +591,6 @@
       ].join("");
     }
 
-    function renderScanDefaultsTool() {
-      return [
-        "<div class=\"v1-import-manager\">",
-        "<div class=\"v1-import-manager-head\">",
-        "<h4 style=\"margin:0 0 4px;\">" + escapeHtml(tr("defaultsPanelTitle")) + "</h4>",
-        "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("defaultsPanelNote")) + "</div>",
-        "</div>",
-        "<div class=\"v1-import-manager-grid\" data-scan-defaults-form>",
-        "<label for=\"v1DefaultsTimeout\">" + escapeHtml(tr("defaultsTimeoutLabel")) + "</label>",
-        "<input id=\"v1DefaultsTimeout\" data-defaults-role=\"timeout\" type=\"number\" min=\"200\" max=\"5000\" step=\"50\" value=\"1000\" />",
-        "<label for=\"v1DefaultsConcurrency\">" + escapeHtml(tr("defaultsConcurrencyLabel")) + "</label>",
-        "<input id=\"v1DefaultsConcurrency\" data-defaults-role=\"concurrency\" type=\"number\" min=\"1\" max=\"256\" step=\"1\" value=\"128\" />",
-        "</div>",
-        "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("defaultsPresetsManagedInPresets")) + "</div>",
-        "<div class=\"v1-import-manager-actions\">",
-        "<button type=\"button\" data-defaults-action=\"save\">" + escapeHtml(tr("defaultsSaveBtn")) + "</button>",
-        "<button type=\"button\" data-defaults-action=\"restore\">" + escapeHtml(tr("defaultsRestoreBtn")) + "</button>",
-        "</div>",
-        "</div>"
-      ].join("");
-    }
-
     function renderResultsIp() {
       function readPersistedScanRows() {
         var STORAGE_KEY = "netrecon_scan_results_v1";
@@ -997,7 +975,6 @@
       // --- ip-scanner tool keys ---
       "ip-library": renderIpLibraryTool,
       presets: renderPresetsTool,
-      "scan-defaults": renderScanDefaultsTool,
       "results-ip": renderResultsIp,
     };
 

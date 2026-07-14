@@ -254,3 +254,58 @@ html[dir="rtl"] .v1-ai-mode-badge {
   background: color-mix(in oklab, var(--brand) 34%, var(--bg-soft));
   color: #ffffff;
 }
+
+/* RS "Config" tab (opened alongside the IP Scanner's LS/CS tabs) - not
+   wired to real scan settings yet, static scaffolding only. */
+.v1-config-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--txt-dim);
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.v1-config-checkbox-row:first-child {
+  margin-top: 0;
+}
+
+.v1-config-checkbox-row input[type="checkbox"] {
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
+.v1-config-field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.v1-config-field-row:first-child {
+  margin-top: 0;
+}
+
+.v1-config-field-row label {
+  color: var(--txt-dim);
+  font-size: 12px;
+}
+
+.v1-config-field-row input[type="number"] {
+  width: 84px;
+  box-sizing: border-box;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #1f1f23;
+  color: var(--txt);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  padding: 4px 6px;
+  outline: none;
+}
+
+.v1-config-field-row input[type="number"]:focus {
+  border-color: var(--brand);
+}

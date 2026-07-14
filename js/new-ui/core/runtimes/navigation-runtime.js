@@ -872,10 +872,6 @@
             if (setStatusLine) setStatusLine(tr("statusScanClear"));
             return;
           }
-          if (action === "scan-speed") {
-            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("tabScanDefaultsTitle"));
-            if (switchTool) switchTool("scan-defaults");
-          }
           if (action === "presets") {
             if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("scannerPortPresets"));
             if (switchTool) switchTool("presets");
@@ -1089,6 +1085,7 @@
           if (tool === "scan-runner") {
             ensureSidebarTabOpen("scan-runner");
             setLeftActiveTab("scan-runner");
+            ensureRightTabOpen("config");
             if (switchTool) switchTool("results-ip");
             return;
           }
@@ -1178,6 +1175,7 @@
           } else if (fromToolsMenu) {
             ensureSidebarTabOpen("scan-runner");
             setLeftActiveTab("scan-runner");
+            ensureRightTabOpen("config");
           }
         } else if (tool === "scan-runner" || tool === "ip-library") {
           activateSidebarTool(tool);

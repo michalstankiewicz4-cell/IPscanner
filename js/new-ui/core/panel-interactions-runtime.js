@@ -208,8 +208,8 @@
     }
 
     // --- ip-scanner tool keys ---
-    // wireResultsIpTable/wirePresetsTool/wireScanDefaultsTool below are all
-    // IP-Scanner-specific interaction wiring.
+    // wireResultsIpTable/wirePresetsTool below are all IP-Scanner-specific
+    // interaction wiring.
     function wireResultsIpTable(rootEl) {
       var root = rootEl && typeof rootEl.querySelector === "function"
         ? rootEl
@@ -907,108 +907,6 @@
       renderFromState(getState());
     }
 
-    function wireScanDefaultsTool(rootEl) {
-      var root = rootEl && typeof rootEl.querySelector === "function"
-        ? rootEl
-        : document.getElementById("v1ToolDetail");
-      if (!root) return;
-      if (!root.querySelector("[data-scan-defaults-form]")) return;
-
-      var DEFAULTS_KEY = "netrecon_scan_defaults_v1";
-      var RECOMMENDED_DEFAULTS = {
-        timeoutMs: 1000,
-        concurrency: 128,
-      };
-
-      function sanitizeDefaults(value) {
-        var next = Object.assign({}, RECOMMENDED_DEFAULTS, value || {});
-        var timeout = Number(next.timeoutMs);
-        var concurrency = Number(next.concurrency);
-
-        if (!Number.isFinite(timeout)) timeout = RECOMMENDED_DEFAULTS.timeoutMs;
-        if (!Number.isFinite(concurrency)) concurrency = RECOMMENDED_DEFAULTS.concurrency;
-
-        timeout = Math.max(200, Math.min(5000, Math.round(timeout)));
-        concurrency = Math.max(1, Math.min(256, Math.round(concurrency)));
-
-        return {
-          timeoutMs: timeout,
-          concurrency: concurrency,
-        };
-      }
-
-      function readDefaults() {
-        try {
-          var raw = window.localStorage ? window.localStorage.getItem(DEFAULTS_KEY) : "";
-          if (!raw) return Object.assign({}, RECOMMENDED_DEFAULTS);
-          var parsed = JSON.parse(raw);
-          if (!parsed || typeof parsed !== "object") {
-            return Object.assign({}, RECOMMENDED_DEFAULTS);
-          }
-          return sanitizeDefaults(parsed);
-        } catch (_) {
-          return Object.assign({}, RECOMMENDED_DEFAULTS);
-        }
-      }
-
-      function writeDefaults(next) {
-        var safe = sanitizeDefaults(next);
-        try {
-          if (window.localStorage) {
-            window.localStorage.setItem(DEFAULTS_KEY, JSON.stringify(safe));
-          }
-        } catch (_) {}
-
-        return safe;
-      }
-
-      function setInputValues(state) {
-        var timeoutInput = root.querySelector('[data-defaults-role="timeout"]') || root.querySelector("#v1DefaultsTimeout");
-        var concurrencyInput = root.querySelector('[data-defaults-role="concurrency"]') || root.querySelector("#v1DefaultsConcurrency");
-        if (timeoutInput) timeoutInput.value = String(state.timeoutMs);
-        if (concurrencyInput) concurrencyInput.value = String(state.concurrency);
-      }
-
-      function readInputs() {
-        var timeoutInput = root.querySelector('[data-defaults-role="timeout"]') || root.querySelector("#v1DefaultsTimeout");
-        var concurrencyInput = root.querySelector('[data-defaults-role="concurrency"]') || root.querySelector("#v1DefaultsConcurrency");
-        return sanitizeDefaults({
-          timeoutMs: timeoutInput ? Number(timeoutInput.value) : RECOMMENDED_DEFAULTS.timeoutMs,
-          concurrency: concurrencyInput ? Number(concurrencyInput.value) : RECOMMENDED_DEFAULTS.concurrency,
-        });
-      }
-
-      setInputValues(readDefaults());
-
-      if (root.dataset.scanDefaultsBound === "1") return;
-      root.dataset.scanDefaultsBound = "1";
-
-      root.addEventListener("click", function (event) {
-        var button = event.target && typeof event.target.closest === "function"
-          ? event.target.closest("[data-defaults-action]")
-          : null;
-        if (!button || !root.contains(button)) return;
-
-        var action = button.getAttribute("data-defaults-action");
-        if (!action) return;
-
-        if (action === "save") {
-          var next = writeDefaults(readInputs());
-          setInputValues(next);
-          if (setStatusLine) {
-            setStatusLine(tr("defaultsSavedStatus") + " " + next.timeoutMs + "ms / c=" + next.concurrency);
-          }
-          return;
-        }
-
-        if (action === "restore") {
-          var restored = writeDefaults(RECOMMENDED_DEFAULTS);
-          setInputValues(restored);
-          if (setStatusLine) setStatusLine(tr("defaultsRestoredStatus"));
-        }
-      });
-    }
-
     function wireShellCraftCanvas(rootEl) {
       var root = rootEl && typeof rootEl.querySelector === "function"
         ? rootEl
@@ -1331,7 +1229,6 @@
       // ip-scanner tool
       wireResultsIpTable: wireResultsIpTable,
       wirePresetsTool: wirePresetsTool,
-      wireScanDefaultsTool: wireScanDefaultsTool,
     };
   }
 
