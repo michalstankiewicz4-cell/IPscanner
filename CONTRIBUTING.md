@@ -85,10 +85,21 @@ Minimalny podzial odpowiedzialnosci:
 
 Skrypty PowerShell (source of truth):
 
-- katalog `scripts/` zawiera skrypty uruchamiane przez runtime/desktop (Tauri `run_powershell`),
-- wykrywanie IP jest rozdzielone na osobne skrypty: `detect-external-ip.ps1`, `detect-local-ip.ps1`, `detect-subnet-cidr.ps1`,
-- aktualizacja biblioteki krajow jest realizowana przez `update-country-ip-library.ps1`,
-- przy zmianie logiki preferuj edycje skryptu w `scripts/` zamiast rozbudowy inline command string w JS.
+- wykrywanie IP (`detectExternalIpCommand`/`detectLocalIpCommand`/`detectSubnetCidrCommand`
+  w `runtimes/navigation-runtime.js`) jest inline w JS, nie jako osobne pliki -
+  wczesniej to byly osobne skrypty w `scripts/`, ale `Join-Path (Get-Location)
+  'scripts\...'` psulo sie dla kazdego portable exe (`tauri build --no-bundle`
+  pomija `tauri.conf.json`'s `bundle.resources`, wiec `scripts/` nigdy nie
+  ladowal sie obok samodzielnego .exe) - rzucalo "Missing script" przy
+  wykrywaniu IP. Przy zmianie tej logiki edytuj bezposrednio te funkcje w JS,
+  nie twórz ponownie osobnych plikow `.ps1` dla nich,
+- katalog `scripts/` nadal zawiera `update-country-ip-library.ps1`
+  (uruchamiany przez Tauri `run_powershell`, wciaz przez ten sam
+  `Join-Path (Get-Location) ...` wzorzec - ma ten sam bug dla portable exe,
+  jeszcze nie naprawiony),
+- przy dodawaniu nowej logiki PowerShell wywolywanej z JS preferuj inline
+  command string (jak detect-*) zamiast osobnego pliku `.ps1`, chyba ze
+  skrypt jest naprawde duzy/zlozony.
 
 index.html powinien byc glownie adapterem DOM i eventow.
 

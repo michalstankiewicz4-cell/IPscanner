@@ -81,13 +81,95 @@
       });
     }
 
-    function scriptInvokeCommand(scriptRelativePath) {
+    // Inlined verbatim from scripts/detect-*.ps1 (kept byte-identical - see
+    // those files for the human-readable originals). Previously these ran
+    // via `Join-Path (Get-Location) 'scripts\...'`, which only resolved
+    // correctly when a scripts/ folder happened to sit near the process's
+    // working directory - true during dev, but a portable release (built
+    // with `tauri build --no-bundle`, which skips tauri.conf.json's
+    // bundle.resources copy step entirely) ships as a single bare .exe with
+    // no scripts/ folder anywhere nearby, so this always threw "Missing
+    // script" for portable-build users. Inlining removes the file
+    // dependency entirely - same technique the addon system's inline
+    // "powershell"-type commands already use.
+    function detectExternalIpCommand() {
       return [
-        "$ErrorActionPreference='Stop'",
-        "$scriptPath = Join-Path (Get-Location) '" + String(scriptRelativePath || "") + "'",
-        "if (!(Test-Path $scriptPath)) { throw \"Missing script: $scriptPath\" }",
-        "& $scriptPath"
-      ].join("; ");
+        "$ErrorActionPreference = 'Stop'",
+        "",
+        "$ip = (Invoke-RestMethod -UseBasicParsing 'https://api.ipify.org').ToString().Trim()",
+        "if (-not $ip) {",
+        "  throw 'No external IP detected'",
+        "}",
+        "",
+        "$ip",
+      ].join("\n");
+    }
+
+    function detectLocalIpCommand() {
+      return [
+        "$ErrorActionPreference = 'Stop'",
+        "",
+        "$ip = (",
+        "  Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |",
+        "  Where-Object {",
+        "    $_.IPAddress -notmatch '^(127\\.|169\\.254\\.)' -and",
+        "    $_.InterfaceAlias -notmatch 'Loopback'",
+        "  } |",
+        "  Select-Object -First 1 -ExpandProperty IPAddress",
+        ")",
+        "",
+        "if (-not $ip) {",
+        "  $ip = (",
+        "    ipconfig |",
+        "    Select-String 'IPv4 Address|Adres IPv4' |",
+        "    ForEach-Object { $_.ToString().Split(':')[-1].Trim() } |",
+        "    Where-Object { $_ -and $_ -notmatch '^(127\\.|169\\.254\\.)' } |",
+        "    Select-Object -First 1",
+        "  )",
+        "}",
+        "",
+        "if (-not $ip) {",
+        "  throw 'No local IPv4 detected'",
+        "}",
+        "",
+        "$ip",
+      ].join("\n");
+    }
+
+    function detectSubnetCidrCommand() {
+      return [
+        "$ErrorActionPreference = 'Stop'",
+        "",
+        "$entry = (",
+        "  Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |",
+        "  Where-Object {",
+        "    $_.IPAddress -notmatch '^(127\\.|169\\.254\\.)' -and",
+        "    $_.InterfaceAlias -notmatch 'Loopback'",
+        "  } |",
+        "  Select-Object -First 1",
+        ")",
+        "",
+        "if ($entry) {",
+        "  $oct = $entry.IPAddress.Split('.')",
+        "  \"$($oct[0]).$($oct[1]).$($oct[2]).0/$($entry.PrefixLength)\"",
+        "  exit 0",
+        "}",
+        "",
+        "$ip = (",
+        "  ipconfig |",
+        "  Select-String 'IPv4 Address|Adres IPv4' |",
+        "  ForEach-Object { $_.ToString().Split(':')[-1].Trim() } |",
+        "  Where-Object { $_ -and $_ -notmatch '^(127\\.|169\\.254\\.)' } |",
+        "  Select-Object -First 1",
+        ")",
+        "",
+        "if (-not $ip) {",
+        "  throw 'No subnet CIDR detected'",
+        "}",
+        "",
+        "$oct = $ip.Split('.')",
+        "\"$($oct[0]).$($oct[1]).$($oct[2]).0/24\"",
+      ].join("\n");
     }
 
     // ip-scanner tool: detect-IP/subnet regex parsing + loader UI, used only
@@ -896,7 +978,7 @@
             startDetectLoader(extEl);
             if (extBtn) extBtn.hidden = true;
 
-            var psCmd = scriptInvokeCommand("scripts\\detect-external-ip.ps1");
+            var psCmd = detectExternalIpCommand();
             var invoke = getInvoke();
 
             if (!invoke) {
@@ -948,7 +1030,7 @@
             startDetectLoader(localEl);
             if (localBtn) localBtn.hidden = true;
 
-            var psLocalCmd = scriptInvokeCommand("scripts\\detect-local-ip.ps1");
+            var psLocalCmd = detectLocalIpCommand();
             var invoke = getInvoke();
 
             if (!invoke) {
@@ -1000,7 +1082,7 @@
             startDetectLoader(subEl);
             if (subBtn) subBtn.hidden = true;
 
-            var psSubnetCmd = scriptInvokeCommand("scripts\\detect-subnet-cidr.ps1");
+            var psSubnetCmd = detectSubnetCidrCommand();
             var invoke = getInvoke();
 
             if (!invoke) {

@@ -154,11 +154,17 @@ A pass over every menu/tool, numbered for easy reference in discussion:
 4. Finish the core IP Scanner (the deprioritized item from "In progress"
    above).
 5. Country IP Library: work out what can run on www vs. app-only, and add
-   more library update sources.
+   more library update sources. Hidden from the Options menu by default,
+   same as Topology/Globe (14/15 below) — the "Show unfinished tools"
+   toggle reveals it.
 6. Port Presets — done, 100%.
 7. Audit the actual session save/load file format more closely (the
    `.sqlite3` schema shared with sql.js — see the www session-save work).
-8. Default Scan Values — done, 100%.
+8. ~~Default Scan Values~~ — **removed**. The tool (Options menu entry, its
+   own CS tab) was deleted entirely; its two real settings (host timeout,
+   max concurrent hosts) were migrated into the new RS "Config" tab's
+   Performance section (still backed by the same `netrecon_scan_defaults_v1`
+   localStorage key `readScanDefaults()` reads at scan start).
 9. Language: simplify to just a language picker list (selecting a language
     applies it immediately) plus an "import language" button that adds an
     entry to the list — drop everything else in the Language Manager UI.
@@ -185,6 +191,33 @@ A pass over every menu/tool, numbered for easy reference in discussion:
     (`newui:busy-state`/`newui:scan-progress` events from PowerShell commands
     and IP scans). The static `"main • tauri-desktop • UI mock only"` label
     was dead text with no JS reference and has been removed.
+18. **Real IP Scanner functionality** — most of the new RS "Config" tab
+    (Protocol's TCP Connect/TCP SYN/UDP, Detect's Service Probing/Host
+    Enrichment checkboxes, the Ports/ICMP scan-mode toggle, Performance's
+    Retries/Max concurrent ports per host, Security's Randomize ports/hosts
+    and Scan delay) is still UI-only scaffolding, not wired to real scan
+    behavior. Performance's Host timeout/Max concurrent hosts and the
+    Profiles section are the only genuinely functional pieces built so far.
+19. Rename "Www addons" catalog heading (Import Tool) to lowercase
+    "www addons".
+20. Add a loading indicator where addons appear in the Import Tool catalog
+    list, shown in the bottom-left corner, while the GitHub-backed catalog
+    fetch is in flight.
+21. Add a loading indicator when loading languages from the GitHub-backed
+    language catalog (Language Manager), also shown bottom-left.
+22. Prettify the color picker in RS "Config"'s Profiles section — should be
+    a square swatch-style picker matching `.v1-profile-swatch`'s look,
+    instead of the default browser `<input type="color">` appearance.
+23. Match the CS "Lorem Ipsum" tab's color-picker demo (STYLELIST.md
+    scaffolding, see "Inne style"/other-styles section) to whatever the
+    improved RS Config color picker ends up looking like (item 22).
+24. `scripts/update-country-ip-library.ps1` has the same "Missing script"
+    bug that was fixed for the IP-detect scripts (a portable `.exe` built
+    with `tauri build --no-bundle` never ships a `scripts/` folder next to
+    it — see the "Removed" section below once this is fixed). Needs the
+    same inline-in-JS fix, just bigger/more complex than the detect
+    scripts (149 lines, takes `-TopRanges`/`-CountryCodes` params that need
+    to survive the switch from a script file to an inline command string).
 
 Items 7, 9, 10, 11, 16, and 17 are done.
 

@@ -8,6 +8,25 @@ of prior context — for full history use `git log`.
 
 ## 2026-07-15
 
+- Fixed "Missing script" errors on the External IP / Local IP / Subnets
+  detect buttons for anyone running the portable `.exe` (not the installer):
+  those three PowerShell scripts lived in `scripts/*.ps1` and were resolved
+  at runtime via `Join-Path (Get-Location) 'scripts\...'`, which only ever
+  worked when a `scripts/` folder happened to sit near the process's
+  working directory (true during dev). `tauri.conf.json`'s
+  `bundle.resources` declares these as bundled resources, but that only
+  applies to a full `tauri build` (the installer) - `tauri build
+  --no-bundle` (used for every portable release so far) skips that step
+  entirely, so the portable `.exe` never had a `scripts/` folder anywhere
+  near it and always threw. Fixed by inlining all three scripts directly
+  into `navigation-runtime.js` as plain JS strings (byte-identical to the
+  old `.ps1` files, verified via a diff script before switching over) -
+  same technique the addon system's inline `"powershell"`-type commands
+  already use, so there's no file dependency left to break. The old
+  `scripts/detect-*.ps1` files and the now-unused `scriptInvokeCommand()`
+  helper were deleted. `scripts/update-country-ip-library.ps1` has the
+  exact same underlying bug and hasn't been fixed yet (bigger/more complex
+  script, separate follow-up).
 - Added an update-check-on-launch feature (desktop + www): the app now has
   runtime access to its own version for the first time, via a generated
   `js/new-ui/core/app-version.js` (written by an extended
