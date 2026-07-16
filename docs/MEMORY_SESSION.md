@@ -116,10 +116,16 @@ Klucze sa podzielone na dwie grupy, bo maja rozny cykl zycia:
 `netrecon_general_settings_v1`
 - Checkboxy "pamietaj X przy nastepnym uruchomieniu" dla ustawien powloki
   (jezyk, skin, rozmiary paneli, blur IP, show-unfinished-tools, uklad
-  odczepionych okien, Clippy, rozszerzenia, historia zakresow IP) oraz
-  "Auto Load last session".
-- Typ: JSON object, 10 pol boolean (`autoLoadLastSession`, `remember*`).
-- Fallback: wszystko `true` poza `autoLoadLastSession` (`false`).
+  odczepionych okien, stan okna, otwarte zakladki, Clippy, rozszerzenia,
+  historia zakresow IP) oraz "Auto Load last session", "Swap panel sides"
+  i "Check for updates on startup".
+- Typ: JSON object, 14 pol boolean (`autoLoadLastSession`, `panelSideRight`,
+  `checkForUpdates`, `remember*` x11: `rememberLanguage`, `rememberSkin`,
+  `rememberPanelSizes`, `rememberBlurIp`, `rememberShowUnfinishedTools`,
+  `rememberDetachedWindows`, `rememberWindowState`, `rememberOpenTabs`,
+  `rememberClippyEnabled`, `rememberExtensions`, `rememberRangeHistory`).
+- Fallback: wszystko `true` poza `autoLoadLastSession` i `panelSideRight`
+  (oba `false`).
 - Wymuszanie dziala w `bootstrap-runtime.js`'s `applyRememberedSettingsGate()`
   — dla kazdego `remember*===false` czysci odpowiedni klucz(e) przed ich
   pierwszym odczytem przy starcie. Sam ten klucz jest zawsze pamietany
@@ -252,4 +258,4 @@ Program zapamietuje dane w dwoch niezaleznych warstwach:
 - **Ustawienia** (grupa A) — dotycza calej instalacji, nie sesji: jezyk, skin, rozmiary paneli, stan Clippy, przelaczniki TBM (blur, show unfinished tools), canvas ShellCraft, historia zakresow, rozszerzenia, uklad undocked okien, lista "Recent sessions", checkboxy General ("pamietaj X").
 - **Dane sesji** (grupa B) — dotycza konkretnego projektu/pliku: wyniki skanu, biblioteka IP, presety, domyslne wartosci skanu, uklad zakladek, sciezka biezacego pliku sesji.
 
-Blad znaleziony przy tej analizie: `closeSession()` w `session-runtime.js` dzisiaj czysci tylko `netrecon_scan_results_v1`, `netrecon_scan_progress_v1`, `netrecon_session_pending_layout_v1`, `netrecon_session_current_path` — **nie czysci** `netrecon_country_ip_library_json`, `netrecon_country_ip_library_updated_at`, `netrecon_scan_presets_v1`, `netrecon_scan_defaults_v1`, mimo ze wszystkie te klucze naleza do grupy B. Do naprawy w ramach planowanej zmiany "nowa sesja przy otwarciu/zamknieciu projektu".
+`closeSession()` w `session-runtime.js` czysci wszystkie 8 kluczy grupy B: `netrecon_scan_results_v1`, `netrecon_scan_progress_v1`, `netrecon_country_ip_library_json`, `netrecon_country_ip_library_updated_at`, `netrecon_scan_presets_v1`, `netrecon_scan_defaults_v1`, `netrecon_session_pending_layout_v1`, `netrecon_session_current_path` (wczesniej opisany tu jako otwarty bug — bledny zakres czyszczenia zostal od tego czasu naprawiony w kodzie).

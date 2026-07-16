@@ -14,7 +14,6 @@ IPscanner/
 ├── zebrus.png                     # logo aplikacji
 ├── README.md
 ├── CONTRIBUTING.md                # glowny dokument zasad projektu
-├── STYLELIST.md
 ├── CODE_OF_CONDUCT.md / SECURITY.md / LICENSE.md
 ├── CNAME / .nojekyll / google....html   # konfiguracja GitHub Pages
 │
@@ -26,7 +25,8 @@ IPscanner/
 │   ├── SHELL_PROGRESS.md
 │   ├── SESSION_DATABASE_SCHEMA.md
 │   ├── MEMORY_SESSION.md
-│   └── TROUBLESHOOTING.md
+│   ├── TROUBLESHOOTING.md
+│   └── STYLELIST.md
 │
 ├── css/new-ui/
 │   ├── new-ui.css                 # glowny import calego lancucha
@@ -122,8 +122,6 @@ IPscanner/
 - `CONTRIBUTING.md` - glowny dokument zasad: architektura New UI, podzial
   shell/tool, konwencje nazewnictwa, system dodatkow, jezyki, smoke-test
   matrix. Punkt startowy przed kazda wieksza zmiana.
-- `STYLELIST.md` - notatki z powolnego, przyrostowego eksperymentu z
-  alternatywnym UI (scaffolding "Lorem Ipsum").
 - `CODE_OF_CONDUCT.md`, `SECURITY.md`, `LICENSE.md` - standardowe
   dokumenty spolecznosciowe/prawne.
 - `.gitignore` - m.in. wyklucza `app/` (mirror buildowy) i `node_modules/`.
@@ -144,6 +142,8 @@ Dokumentacja pomocnicza, nie ladowana przez aplikacje:
   odczytu sesji (zakladki, layout, historia).
 - `MEMORY_SESSION.md` - notatki miedzy-sesyjne (kontekst dla dalszej pracy).
 - `TROUBLESHOOTING.md` - znane problemy i ich rozwiazania.
+- `STYLELIST.md` - notatki z powolnego, przyrostowego eksperymentu z
+  alternatywnym UI (scaffolding "Lorem Ipsum").
 - `PROJECT_STRUCTURE.md` - ten plik.
 
 ## `css/new-ui/`

@@ -36,17 +36,20 @@ IP Scanner (LRSB, TBM-Tools -> LS)
       - File: new, open, open recent (flyout), **import (mock — jeszcze bez
         dzialajacej logiki; aktywny tylko przy otwartej sesji)**, save,
         save as, close, exit
-      - Options: Country IP Library, Port Presets, Default Scan Values,
+      - Options: Country IP Library (ukryte, patrz nizej), Port Presets,
         language, **General** (checkboxy "pamietaj X przy nastepnym
-        uruchomieniu" dla ustawien powloki, w tym "Auto Load last session"),
-        import tools (trzy pierwsze to docelowo domena dodatku IPscanner,
-        nie podstawy — patrz FUTURE_PLUGIN_SHELL.md)
-      - Tools: AI Assistant, ShellCraft, IP Scanner (+ ukryte Topology i
+        uruchomieniu" dla ustawien powloki, w tym "Auto Load last session";
+        pod "Remember skin/theme" tez ukryty test-switcher "UI"), import
+        tools (docelowo domena dodatku IPscanner, nie podstawy — patrz
+        FUTURE_PLUGIN_SHELL.md)
+      - Tools: ShellCraft, IP Scanner (+ ukryte AI Assistant, Topology i
         Globe — pokazuje je dopiero "Show unfinished tools" na TBM)
       - Help: version, download, about, license, assistant
    c. Przyciski: zamykanie, zarzadzanie ukladem okien, ukrywanie wrazliwych
       danych, full reset, "Show unfinished tools" (🚧 — pokazuje ukryte
-      Topology/Globe w TBM-Tools i na LRSB; stan trzymany w localStorage).
+      AI Assistant/Topology/Globe w TBM-Tools, Country IP Library w
+      TBM-Options i test-switcher "UI" w General; stan trzymany w
+      localStorage).
 2. **Left Section (LS)**
 3. **Right Section (RS)**
    a. AI Assistant (dostep: TBM-Tools -> otwiera sie w: RS; brak ikony na LRSB)
@@ -81,9 +84,15 @@ CONTRIBUTING.md §3a).
 
 1. **IP Scanner** (LRSB, TBM-Tools -> LS)
    - wynik -> CS, jako "IP Results"
+   - LS "IP Range": przelacznik Range/CIDR (jeden zakres, dwa tryby wpisywania)
+     i przelacznik Ports/ICMP (tryb skanu)
+   - RS "Config" (otwiera sie razem z LS/CS przy aktywnym IP Scannerze):
+     Protocol/Detect/Performance/Security — wiekszosc pol to jeszcze UI-only
+     scaffolding (patrz ROADMAP item 17); Performance's Host timeout/Max
+     concurrent hosts i sekcja Profiles sa realnie podlaczone
    - ST a. Port Presets (TBM-Options -> CS, jako "Presets")
-   - ST b. Default Scan Values (TBM-Options -> CS, jako "Scan Values")
-2. **Country IP Library** (TBM-Options)
+2. **Country IP Library** (TBM-Options; domyslnie ukryty — widoczny po
+   wlaczeniu "Show unfinished tools" na TBM)
    - edytor -> LS, jako "IP Library (edytor)"
    - podglad -> CS, jako "IP Library (widok)"
 3. **Topology Map** (LRSB, TBM-Tools -> CS; domyslnie ukryty — widoczny po
@@ -105,7 +114,7 @@ makra, patrz jego punkt nizej):
   Macro w DS albo z bloku na canvas. **Uruchomienie** makra odpala realne
   akcje Detect (PowerShell) — dziala tylko na desktopie. Bloki If/Repeat
   Until/PowerShell sa przeciagalne i edytowalne, ale jeszcze nie wykonywalne
-  (brak interpretera — patrz ROADMAP, backlog pkt 12).
+  (brak interpretera — patrz ROADMAP, backlog pkt 11).
 - **AI Assistant** — moze na www: caly czat, jesli to zwykle zapytania HTTP do
   API. Tylko desktop: gdyby mial wywolywac PowerShell/pliki lokalne.
 - **Topology map** — moze na www: rysowanie grafu z juz zebranych danych.

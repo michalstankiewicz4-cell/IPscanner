@@ -6,6 +6,67 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-07-16
+
+- Added a Range/CIDR toggle to the IP Scanner's "IP Range" section (LS): a
+  radio switch between the existing From/To octet boxes and a new single
+  `#v1ScanCidr` field, both writing into the same hidden
+  `#v1ScanFrom`/`#v1ScanTo` inputs the rest of the pipeline (Start, range
+  history, `estimateRangeTotal()`'s large-range warning) already reads, so
+  no downstream code needed to change. Added a real `cidrToRange()` utility
+  (`utils/net-utils.js`) and fixed an existing bug in
+  `applyDetectedRange()` that always assumed a `/24` for a detected
+  subnet's prefix instead of using the real one. Also hid the AI Assistant
+  RS tab behind "Show unfinished tools" and fixed an RS empty-state
+  invariant bug found along the way.
+- Added a Ports/ICMP scan-mode toggle to the IP Scanner's "IP Range"
+  section, alongside the Range/CIDR one, and a new RS "Config" tab for the
+  IP Scanner (Protocol/Detect/Performance/Security sections) opened
+  alongside LS/CS when IP Scanner is active.
+- Migrated the IP Scanner's real scan settings (host timeout, max
+  concurrent hosts) from the "Default Scan Values" CS tab into the new RS
+  Config tab's Performance section, then **removed "Default Scan Values"
+  entirely** — menu entry, CS tab, render/wire functions, dispatch branch,
+  catalog/action-map entries, and its ~17 i18n keys across all 4
+  dictionaries. Both scan settings still read/write the same
+  `netrecon_scan_defaults_v1` localStorage key as before.
+- Expanded the Config tab: added TCP Connect/TCP SYN/UDP to Protocol; OS
+  Detection, Country Flag/ISP/AS/Device Identification/HTTP Page
+  Title/Access-Snapshot to Detect (split into "Service Probing" and "Host
+  Enrichment" subgroups); Retries and Max concurrent ports per host to
+  Performance; SSL/TLS Certificate Info to Detect; Scan delay (ms) to
+  Security. Added a "Profiles" system to the Config tab (color picker,
+  name field, add/delete, a locked default "Default" entry) — fully
+  functional, not scaffolding. Everything else added to Config this round
+  is UI-only, not yet wired to real scan behavior (see ROADMAP item 17).
+- Removed the second demo addon (`tools/testcenter.json` /
+  `tools/testcenter.png`) from the addon catalog, leaving `tools/ipscanner.json`
+  as the sole entry.
+- Hid the "Country IP Library..." Options menu entry behind "Show
+  unfinished tools" (same mechanism as Topology/Globe/AI Assistant) — in
+  addition to the portable-`.exe` "Missing script" fix already documented
+  under 2026-07-15.
+- Added a small, deliberately non-persisted "UI" test switch to Options →
+  General (hidden behind "Show unfinished tools"): a "Default"/"Test"
+  radio pair that navigates to a new placeholder `test-ui.html` page when
+  "Test" is picked. The choice is never written to `localStorage`, so a
+  normal relaunch always lands back on the default UI without needing to
+  clear any stored state — a small proof that switching UIs only needs a
+  page navigation, not an app restart, given the current architecture.
+- Split `panels-runtime.js` (2939 lines, the largest file in the New UI
+  split) by extracting its three most independent tool sections — none of
+  which touched the file's generic detached-card/workbench-tab engine that
+  had previously ruled out a physical split — into their own sibling
+  runtime files, following the same instantiation/dispatch pattern the
+  file already used for `panelContentRuntime`/`panelRenderersRuntime`/
+  `panelInteractionsRuntime`: `runtimes/language-catalog-runtime.js`
+  (Language Manager's GitHub catalog), `runtimes/ip-library-runtime.js`
+  (Country IP Library), and `runtimes/addon-catalog-runtime.js` (the
+  GitHub addon catalog / "www addons"). `panels-runtime.js` is now 1991
+  lines. Also added `docs/PROJECT_STRUCTURE.md`, a top-level map of every
+  folder/file in the repo with an ASCII tree, and moved `STYLELIST.md`
+  into `docs/`.
+
 ## 2026-07-15
 
 - Fixed "Missing script" errors on the External IP / Local IP / Subnets
@@ -246,7 +307,7 @@ of prior context — for full history use `git log`.
   title (only Flow is implemented; the rest are shown disabled).
 - Top Bar Menu: "Show unfinished tools" toggle, revealing Topology Map and
   Globe (hidden from the LSB and Tools menu by default since they have no
-  real logic yet — see ROADMAP backlog items 14-15).
+  real logic yet — see ROADMAP backlog items 13-14).
 - Hid Topology Map and Globe from the LSB and Tools menu.
 - Reorganized the File and Tools menus; unified custom confirm dialogs
   (session close/new, dev full reset, extension install permission) to

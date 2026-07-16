@@ -64,12 +64,19 @@ Relacja 1-do-wielu wzgledem scan_results (jeden host moze miec wiele portow).
                na nowo przy kazdym wczytaniu - zmiana tabeli rozpoznawania w
                przyszlej wersji aplikacji nie zmieni etykiet w juz zapisanych
                sesjach
+  ping       - czas odpowiedzi (ping) zmierzony dla hosta przy tym porcie,
+               jako tekst gotowy do wyswietlenia (np. "12 ms"); domyslnie "-"
+               gdy nieznany
 
-Uwaga (migracja): pliki sesji zapisane przed dodaniem protocol/service maja
-tylko 3 kolumny (id, result_id, port). Zapis takiego pliku dopisuje brakujace
-kolumny automatycznie (ALTER TABLE, patrz open_session_sqlite_conn w
-main.rs); odczyt starego pliku bez zapisywania go od razu dziala tez
-poprawnie - brakujace wartosci pokazuja sie jako protocol="TCP", service="".
+Uwaga (migracja): pliki sesji zapisane przed dodaniem protocol/service/ping
+maja tylko 3 kolumny (id, result_id, port). Zapis takiego pliku dopisuje
+brakujace kolumny automatycznie (ALTER TABLE, patrz open_session_sqlite_conn
+w main.rs, migracja per-kolumna: protocol -> DEFAULT 'TCP', service ->
+DEFAULT '', ping -> DEFAULT '-'); odczyt starego pliku bez zapisywania go od
+razu dziala tez poprawnie - ma osobny fallback co najmniej 3-tier (pelny
+SELECT z protocol/service/ping, potem coraz wezsze warianty dla starszych
+plikow), brakujace wartosci pokazuja sie jako protocol="TCP", service="",
+ping="-".
 
 
 TABELA: ip_library_entries

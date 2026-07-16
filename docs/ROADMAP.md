@@ -50,7 +50,7 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   from a terminal-style "Macro" console tab or from canvas blocks.
   Functional blocks (If / Repeat Until / PowerShell) are placeable and
   editable but honestly non-executable — no interpreter yet (backlog
-  item 12).
+  item 11).
 - Language Manager redesigned around a GitHub-backed catalog (Options →
   Language...), mirroring Import Tool: installed languages get a flag +
   version + radio-button activation (no uninstall), and a new list below
@@ -123,7 +123,7 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   the target host, a live results list) — both currently open design questions
   in `FUTURE_PLUGIN_SHELL.md`'s "Co realnie trzeba zaprojektowac" section.
 - **Selective IP-blur inside Terminal/Console output** — today the IP blur
-  toggle blurs those panes whole-pane (see item 16 in the backlog below)
+  toggle blurs those panes whole-pane (see item 15 in the backlog below)
   because their output is free-form text concatenated as one string into a
   single `<pre>` (`#v1PsOutput`/`#v1InfoLog`, fed by 4 separate append
   functions across `powershell-console-runtime.js`/`status-log-runtime.js`/
@@ -138,7 +138,7 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   which risks false confidence worse than today's honest "we blur the whole
   thing" behavior.
 
-## Backlog (per-feature audit, 2026-07-09)
+## Backlog
 
 A pass over every menu/tool, numbered for easy reference in discussion:
 
@@ -155,7 +155,7 @@ A pass over every menu/tool, numbered for easy reference in discussion:
    above).
 5. Country IP Library: work out what can run on www vs. app-only, and add
    more library update sources. Hidden from the Options menu by default,
-   same as Topology/Globe (14/15 below) — the "Show unfinished tools"
+   same as Topology/Globe (13/14 below) — the "Show unfinished tools"
    toggle reveals it.
 6. Port Presets — done, 100%.
 7. Audit the actual session save/load file format more closely (the
@@ -174,52 +174,50 @@ A pass over every menu/tool, numbered for easy reference in discussion:
     interpreter for If / Repeat Until / PowerShell blocks, block
     nesting/connections, and the Timeline/Tree/Layered views (the switcher
     exists, only Flow works).
-13. AI Assistant — ~1.5% done (just the tab exists).
-14. Topology Map — ~1% done (just the tab exists). Hidden from the LRSB and
+12. AI Assistant — ~1.5% done (just the tab exists).
+13. Topology Map — ~1% done (just the tab exists). Hidden from the LRSB and
     Tools menu by default; the top-bar "Show unfinished tools" toggle
     reveals it.
-15. Globe — ~1% done (just the tab exists). Hidden by default, same as 14.
-16. ~~"Blur sensitive data" button — usefulness unclear, consider removing.~~
+14. Globe — ~1% done (just the tab exists). Hidden by default, same as 13.
+15. ~~"Blur sensitive data" button — usefulness unclear, consider removing.~~
     **Done** — implemented as a `body.v1-blur-ip` CSS toggle (persisted,
     restored on launch) covering the IP Results table, IP detection results,
     range inputs, IP Extractor, Range History, and — blanket, whole-pane —
     Terminal/Console/PowerShell Console and the info log. Console output
     can't be selectively substring-matched today (see "Planned" below).
-17. ~~Down Status Bar shows some info that may not be necessary — review what's
+16. ~~Down Status Bar shows some info that may not be necessary — review what's
     actually worth keeping there.~~ **Done** — audited: the loader, active
     process count, and 0-100% progress bar are real and wired to actual work
     (`newui:busy-state`/`newui:scan-progress` events from PowerShell commands
     and IP scans). The static `"main • tauri-desktop • UI mock only"` label
     was dead text with no JS reference and has been removed.
-18. **Real IP Scanner functionality** — most of the new RS "Config" tab
+17. **Real IP Scanner functionality** — most of the new RS "Config" tab
     (Protocol's TCP Connect/TCP SYN/UDP, Detect's Service Probing/Host
     Enrichment checkboxes, the Ports/ICMP scan-mode toggle, Performance's
     Retries/Max concurrent ports per host, Security's Randomize ports/hosts
     and Scan delay) is still UI-only scaffolding, not wired to real scan
     behavior. Performance's Host timeout/Max concurrent hosts and the
     Profiles section are the only genuinely functional pieces built so far.
-19. Rename "Www addons" catalog heading (Import Tool) to lowercase
+18. Rename "Www addons" catalog heading (Import Tool) to lowercase
     "www addons".
-20. Add a loading indicator where addons appear in the Import Tool catalog
+19. Add a loading indicator where addons appear in the Import Tool catalog
     list, shown in the bottom-left corner, while the GitHub-backed catalog
     fetch is in flight.
-21. Add a loading indicator when loading languages from the GitHub-backed
+20. Add a loading indicator when loading languages from the GitHub-backed
     language catalog (Language Manager), also shown bottom-left.
-22. Prettify the color picker in RS "Config"'s Profiles section — should be
+21. Prettify the color picker in RS "Config"'s Profiles section — should be
     a square swatch-style picker matching `.v1-profile-swatch`'s look,
     instead of the default browser `<input type="color">` appearance.
-23. Match the CS "Lorem Ipsum" tab's color-picker demo (STYLELIST.md
+22. Match the CS "Lorem Ipsum" tab's color-picker demo (STYLELIST.md
     scaffolding, see "Inne style"/other-styles section) to whatever the
-    improved RS Config color picker ends up looking like (item 22).
-24. `scripts/update-country-ip-library.ps1` has the same "Missing script"
+    improved RS Config color picker ends up looking like (item 21).
+23. `scripts/update-country-ip-library.ps1` has the same "Missing script"
     bug that was fixed for the IP-detect scripts (a portable `.exe` built
     with `tauri build --no-bundle` never ships a `scripts/` folder next to
     it — see the "Removed" section below once this is fixed). Needs the
     same inline-in-JS fix, just bigger/more complex than the detect
     scripts (149 lines, takes `-TopRanges`/`-CountryCodes` params that need
     to survive the switch from a script file to an inline command string).
-
-Items 7, 9, 10, 11, 16, and 17 are done.
 
 ## Removed (dead code cleanup, 2026-07-11)
 

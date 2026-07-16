@@ -71,7 +71,7 @@ Minimalny podzial odpowiedzialnosci:
 - extensions.js - host rozszerzen i contributions (manifest, permissions, install/uninstall, katalog).
 - ui-definitions.js - mapa odpowiedzialnosci menu i paneli.
 - menu-runtime.js - obsluga menubar i akcji menu (w tym Options-menu dodane przez rozszerzenia).
-- panels-runtime.js - routing aktywnego narzedzia, odswiezanie panelu glownego, oraz katalog dodatkow z GitHuba (`fetchCatalog`/`renderCatalog`) i instalacja/deinstalacja (`installManifestObject`/`performUninstall`).
+- panels-runtime.js - routing aktywnego narzedzia, odswiezanie panelu glownego, generyczny silnik detached-card/workbench-tab (open/close/detach/arrange/resize).
 - bootstrap-runtime.js - orkiestracja calej aplikacji (patrz sekcja 12); dla rozszerzen: `syncExtensionToolUi()`/`syncExtensionOptionsMenuUi()` (tworzenie dynamicznego UI dodatkow - zakladki, LS/RS panele, ikony, wpisy menu) i `openExtensionTool()` (jedyne miejsce wiedzace jak otworzyc narzedzie dodatku przez jego flagi `ui`).
 - session-runtime.js - zapis/odczyt/zamkniecie sesji (SQLite), lista ostatnich sesji, przywracanie ukladu zakladek po reload (schemat bazy: `docs/SESSION_DATABASE_SCHEMA.md`).
 - scanner-sidebar-runtime.js - obsluga sidebaru skanera (wykrywanie IP, historia zakresow, extractor).
@@ -82,6 +82,9 @@ Minimalny podzial odpowiedzialnosci:
 - runtimes/ip-inputs-runtime.js - segmentowane pola IP oraz synchronizacja hidden inputow zakresu.
 - runtimes/navigation-runtime.js - obsluga aktywnosci sidebar/results, zakladek dolnego panelu i routingu klikniec data-tool; LS/RS otwieranie zakladek dla dodatkow przez zdarzenia `newui:sidebar-tab-intent-open`/`newui:right-tab-intent-open`.
 - runtimes/command-bus-runtime.js - generyczny rejestr nazwanych komend (`register`/`invoke`/`unregisterAllFor`); dzis uzywany przez komendy PowerShell zadeklarowane w `contributions.commands` rozszerzen (patrz sekcja 4).
+- runtimes/ip-library-runtime.js - narzedzie Country IP Library: parsowanie wpisow, cache (localStorage + pamiec), wywolanie PowerShell (`update-country-ip-library.ps1`).
+- runtimes/addon-catalog-runtime.js - katalog dodatkow z GitHuba (`fetchCatalog`/`renderCatalog`) i instalacja/deinstalacja (`installManifestObject`/`performUninstall`) dla zakladki "Import Tool" ("www addons").
+- runtimes/language-catalog-runtime.js - katalog jezykow z GitHuba (`fetchLanguageCatalog`/`renderCatalog`) dla Language Managera (patrz sekcja 5).
 
 Skrypty PowerShell (source of truth):
 
@@ -231,7 +234,7 @@ Przykladowy manifest (skrocona wersja `tools/ipscanner.json`, demo z LS + CS + R
 Instalacja i katalog dodatkow (Options -> Import Tool):
 
 - Zakladka "Www addons" automatycznie wczytuje liste dodatkow z folderu
-  `tools/` w tym repo na GitHubie (`fetchCatalog()` w `panels-runtime.js`) -
+  `tools/` w tym repo na GitHubie (`fetchCatalog()` w `runtimes/addon-catalog-runtime.js`) -
   dla kazdego `<nazwa>.json` paruje plik ikony o tej samej nazwie
   (`<nazwa>.png`/`.svg`/...), jesli istnieje. Wynik jest cache'owany w
   ramach sesji aplikacji (nie odpytuje GitHuba przy kazdym otwarciu
@@ -253,7 +256,7 @@ Mozliwe sa trzy sciezki:
   "Import language..." -> wybor pliku `.json`,
 - przez UI, katalog GitHub: ta sama zakladka, sekcja ponizej -
   automatycznie wczytuje liste jezykow z folderu `languages/` w tym repo na
-  GitHubie (`fetchLanguageCatalog()` w `panels-runtime.js`, analogicznie do
+  GitHubie (`fetchLanguageCatalog()` w `runtimes/language-catalog-runtime.js`, analogicznie do
   katalogu dodatkow z `tools/` - patrz sekcja 4), z przyciskiem Install,
 - przez rozszerzenie: `contributions.i18n` w manifescie.
 
@@ -423,7 +426,8 @@ Zasada zgodnosci wstecznej:
 
 ## 12. System podzialu projektu na pliki
 
-Repo ma formalny podzial warstw. Trzymaj sie go w kazdym PR.
+Repo ma formalny podzial warstw. Trzymaj sie go w kazdym PR. Pelna mapa
+folderow i plikow (z drzewkiem ASCII) jest w `docs/PROJECT_STRUCTURE.md`.
 
 Warstwa zrodlowa (source of truth):
 

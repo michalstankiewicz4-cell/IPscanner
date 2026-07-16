@@ -54,6 +54,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for what's done, in progress, and planned
 | --- | --- |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | What's done, in progress, and planned. |
 | [docs/CHANGELOG.md](docs/CHANGELOG.md) | Notable changes, newest first. |
+| [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) | Map of every folder and file in the repo, with an ASCII tree (written in Polish). |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Non-obvious problems hit in this repo and their causes (written in Polish). |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Project direction and rules for contributing code (written in Polish). |
 | [docs/FUTURE_PLUGIN_SHELL.md](docs/FUTURE_PLUGIN_SHELL.md) | Design notes for the addon/plugin shell architecture (written in Polish). |
