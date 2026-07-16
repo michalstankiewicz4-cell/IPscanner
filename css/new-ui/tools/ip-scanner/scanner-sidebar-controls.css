@@ -363,6 +363,18 @@ html[dir="rtl"] .v1-range-history-actions {
   cursor: pointer;
 }
 
+/* ICMP mode isn't implemented yet - grayed out (disabled, not hidden)
+   until "Show unfinished tools" is on, see menu-runtime.js's
+   unfinishedDisabledSelectors. */
+.v1-scan-mode-option:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.v1-scan-mode-option input:disabled {
+  cursor: not-allowed;
+}
+
 .v1-scan-mode-note {
   margin-top: 6px;
   color: var(--txt-dim);

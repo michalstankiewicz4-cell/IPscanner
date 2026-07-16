@@ -93,6 +93,20 @@
   cursor: grabbing;
 }
 
+/* Functional blocks (if / repeat-until / powershell / time-trigger) have no
+   interpreter yet - dim them and swap the cursor until "Show unfinished
+   tools" is on. The actual drag is blocked live in the dragstart handler
+   (panel-interactions-runtime.js), this is just the visual match; see
+   body.v1-unfinished-tools-on toggled by menu-runtime.js/bootstrap-runtime.js. */
+body:not(.v1-unfinished-tools-on) .v1-lib-block-row[data-block-category="functional"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+body:not(.v1-unfinished-tools-on) .v1-lib-block-row[data-block-category="functional"]:active {
+  cursor: not-allowed;
+}
+
 .v1-lib-block-icon {
   font-size: 13px;
   color: var(--txt-dim);

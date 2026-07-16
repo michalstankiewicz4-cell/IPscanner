@@ -281,6 +281,18 @@ html[dir="rtl"] .v1-ai-mode-badge {
   cursor: pointer;
 }
 
+/* TCP SYN/UDP/OS Detection aren't implemented yet - grayed out (disabled,
+   not hidden) until "Show unfinished tools" is on, see menu-runtime.js's
+   unfinishedDisabledSelectors. */
+.v1-config-checkbox-row:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.v1-config-checkbox-row input:disabled {
+  cursor: not-allowed;
+}
+
 .v1-config-field-row {
   display: flex;
   align-items: center;

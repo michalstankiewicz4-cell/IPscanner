@@ -1206,6 +1206,11 @@
             var el = document.querySelector(selector);
             if (el) el.removeAttribute("hidden");
           });
+          ["#v1ConfigProtocolTcpSyn", "#v1ConfigProtocolUdp", "#v1ConfigOsDetection", "#v1ScanModeIcmp"].forEach(function (selector) {
+            var el = document.querySelector(selector);
+            if (el) el.removeAttribute("disabled");
+          });
+          document.body.classList.add("v1-unfinished-tools-on");
           var unfinishedBtn = document.querySelector('[data-menu-action="show-unfinished-tools"]');
           if (unfinishedBtn) {
             unfinishedBtn.classList.add("is-active");

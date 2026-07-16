@@ -533,7 +533,11 @@
 
     function renderShellCraftLibrary() {
       var functionalHtml = SHELLCRAFT_FUNCTIONAL_BLOCKS.map(function (block) {
-        return shellcraftBlockRowHtml("data-block-type=\"" + block.type + "\"", block.icon, tr(block.labelKey));
+        return shellcraftBlockRowHtml(
+          "data-block-type=\"" + block.type + "\" data-block-category=\"functional\"",
+          block.icon,
+          tr(block.labelKey)
+        );
       }).join("");
 
       var macros = macrosApi ? macrosApi.getMacros() : [];

@@ -404,6 +404,17 @@
           ".v1-menu-dd-item[data-menu-action=\"countries\"]",
           "[data-general-ui-switch]",
         ];
+        // Not-yet-implemented scan techniques (TCP SYN/UDP/OS Detection all
+        // need raw sockets; ICMP mode needs the same) - grayed out
+        // (disabled, not hidden) so they're visible-but-unselectable until
+        // "Show unfinished tools" is on, instead of only failing after
+        // Start is pressed.
+        var unfinishedDisabledSelectors = [
+          "#v1ConfigProtocolTcpSyn",
+          "#v1ConfigProtocolUdp",
+          "#v1ConfigOsDetection",
+          "#v1ScanModeIcmp",
+        ];
         var unfinishedBtn = document.querySelector('[data-menu-action="show-unfinished-tools"]');
         var nextShowState = !(unfinishedBtn && unfinishedBtn.classList.contains("is-active"));
         unfinishedSelectors.forEach(function (selector) {
@@ -412,9 +423,20 @@
           if (nextShowState) el.removeAttribute("hidden");
           else el.setAttribute("hidden", "hidden");
         });
+        unfinishedDisabledSelectors.forEach(function (selector) {
+          var el = document.querySelector(selector);
+          if (!el) return;
+          if (nextShowState) el.removeAttribute("disabled");
+          else el.setAttribute("disabled", "disabled");
+        });
         try {
           localStorage.setItem("netrecon_show_unfinished_tools", nextShowState ? "1" : "0");
         } catch (_) {}
+        // ShellCraft Library's functional block rows are dimmed/blocked via
+        // this body class + CSS instead of a per-row disabled attribute
+        // (they're draggable divs, not form controls - see the dragstart
+        // guard in panel-interactions-runtime.js's wireShellCraftLibrary()).
+        document.body.classList.toggle("v1-unfinished-tools-on", nextShowState);
         if (unfinishedBtn) {
           unfinishedBtn.classList.toggle("is-active", nextShowState);
           unfinishedBtn.setAttribute("aria-pressed", nextShowState ? "true" : "false");
