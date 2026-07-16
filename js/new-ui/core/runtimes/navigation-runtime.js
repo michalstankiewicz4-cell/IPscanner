@@ -23,6 +23,7 @@
     // IP-Scanner-specific, not generic shell state.
     var sidebarFallbackOrder = ["scan-runner", "shellcraft-library", "results-ip", "ip-library"];
     var SCAN_DEFAULTS_KEY = "netrecon_scan_defaults_v1";
+    var CONFIG_FORM_STATE_KEY = "netrecon_scanner_config_form_v1";
     var SCAN_RESULTS_KEY = "netrecon_scan_results_v1";
     var SCAN_PROGRESS_KEY = "netrecon_scan_progress_v1";
     var hostFoundUnlisten = null;
@@ -32,6 +33,7 @@
     var enrichQueue = [];
     var enrichInFlight = 0;
     var enrichPendingByIp = Object.create(null);
+    var currentScanEnrichmentConfig = null;
     var resultsRefreshTimer = 0;
 
     function getInvoke() {
@@ -301,6 +303,58 @@
       }
     }
 
+    // Reads the RS Config tab's generic autosaved snapshot (written by
+    // scanner-sidebar-runtime.js's initConfigFormAutosave(), independent of
+    // any named profile - see CONFIG_FORM_STATE_KEY there) and maps it to
+    // the subset of fields the scan engine actually consumes. Booleans
+    // default to false, matching this session's "TCP Connect + rest
+    // unchecked" fresh-install defaults.
+    function readConfigFormSnapshot() {
+      var snapshot = {
+        retries: 1,
+        scanDelayMs: 0,
+        maxConcurrentPorts: 64,
+        randomizePorts: false,
+        randomizeHosts: false,
+        reverseDns: false,
+        countryFlag: false,
+        isp: false,
+        as: false,
+        deviceIdentification: false,
+        tcpSynMode: false,
+        udpChecked: false,
+      };
+      try {
+        var raw = window.localStorage ? window.localStorage.getItem(CONFIG_FORM_STATE_KEY) : "";
+        if (!raw) return snapshot;
+        var parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return snapshot;
+
+        var retries = Number(parsed.v1ConfigRetries);
+        if (Number.isFinite(retries)) snapshot.retries = Math.max(0, Math.min(10, Math.round(retries)));
+
+        var scanDelay = Number(parsed.v1ConfigScanDelay);
+        if (Number.isFinite(scanDelay)) snapshot.scanDelayMs = Math.max(0, Math.min(5000, Math.round(scanDelay)));
+
+        var maxPorts = Number(parsed.v1ConfigMaxConcurrentPorts);
+        if (Number.isFinite(maxPorts)) snapshot.maxConcurrentPorts = Math.max(1, Math.min(512, Math.round(maxPorts)));
+
+        snapshot.randomizePorts = !!parsed.v1ConfigRandomizePorts;
+        snapshot.randomizeHosts = !!parsed.v1ConfigRandomizeHosts;
+        snapshot.reverseDns = !!parsed.v1ConfigReverseDns;
+        snapshot.countryFlag = !!parsed.v1ConfigCountryFlag;
+        snapshot.isp = !!parsed.v1ConfigIsp;
+        snapshot.as = !!parsed.v1ConfigAs;
+        snapshot.deviceIdentification = !!parsed.v1ConfigDeviceIdentification;
+        snapshot.tcpSynMode = !!parsed.v1ConfigProtocolTcpSyn;
+        snapshot.udpChecked = !!parsed.v1ConfigProtocolUdp;
+
+        return snapshot;
+      } catch (_) {
+        return snapshot;
+      }
+    }
+
     function parsePortsCsv(csv) {
       var unique = Object.create(null);
       var values = String(csv || "")
@@ -411,20 +465,32 @@
       var keyIp = String(ip || "").trim();
       if (!keyIp) return Promise.resolve();
 
+      // Gated by the RS Config tab's Detect/Host Enrichment checkboxes
+      // (captured once per scan in currentScanEnrichmentConfig, set by
+      // startScanWithCurrentSettings()) - hostname_lookup/geo_lookup used to
+      // run unconditionally for every found host regardless of these
+      // checkboxes; skip whichever Rust call(s) nothing needs.
+      var cfg = currentScanEnrichmentConfig || {
+        reverseDns: false, countryFlag: false, isp: false, as: false, deviceIdentification: false,
+      };
+      var needsHostname = cfg.reverseDns;
+      var needsGeo = cfg.countryFlag || cfg.isp || cfg.as || cfg.deviceIdentification;
+      if (!needsHostname && !needsGeo) return Promise.resolve();
+
       return Promise.allSettled([
-        invokeCommand("hostname_lookup", { ip: keyIp }),
-        invokeCommand("geo_lookup", { ip: keyIp }),
+        needsHostname ? invokeCommand("hostname_lookup", { ip: keyIp }) : Promise.resolve(null),
+        needsGeo ? invokeCommand("geo_lookup", { ip: keyIp }) : Promise.resolve(null),
       ]).then(function (results) {
         var hostnameResult = results[0] || {};
         var geoResult = results[1] || {};
-        var hostname = hostnameResult.status === "fulfilled" ? String(hostnameResult.value || "").trim() : "";
-        var geo = geoResult.status === "fulfilled" && geoResult.value && typeof geoResult.value === "object"
+        var hostname = needsHostname && hostnameResult.status === "fulfilled" ? String(hostnameResult.value || "").trim() : "";
+        var geo = needsGeo && geoResult.status === "fulfilled" && geoResult.value && typeof geoResult.value === "object"
           ? geoResult.value
           : null;
 
         mutateScanRow(keyIp, function (row) {
           var normalized = Object.assign({}, row);
-          normalized.hostname = hostname || normalized.hostname || "-";
+          if (needsHostname) normalized.hostname = hostname || normalized.hostname || "-";
 
           if (geo) {
             var countryCode = String(geo.country_code || geo.countryCode || "").trim();
@@ -434,10 +500,10 @@
             if (geo.proxy === true) deviceHints.push("Proxy");
             if (geo.hosting === true) deviceHints.push("Hosting");
 
-            if (countryCode) normalized.flag = countryCodeToFlag(countryCode);
-            if (isp) normalized.isp = isp;
-            if (asInfo) normalized.as = asInfo;
-            if (deviceHints.length) normalized.deviceIdentification = deviceHints.join(" / ");
+            if (cfg.countryFlag && countryCode) normalized.flag = countryCodeToFlag(countryCode);
+            if (cfg.isp && isp) normalized.isp = isp;
+            if (cfg.as && asInfo) normalized.as = asInfo;
+            if (cfg.deviceIdentification && deviceHints.length) normalized.deviceIdentification = deviceHints.join(" / ");
           }
 
           return normalized;
@@ -628,6 +694,17 @@
         return;
       }
 
+      // TCP SYN needs raw sockets/admin rights, same story as ICMP above -
+      // not implemented yet, so block rather than silently running a normal
+      // TCP Connect scan under the SYN label. UDP (an independent checkbox,
+      // not a mode switch) only gets an informational status-line note
+      // further down since a normal TCP scan should still proceed.
+      var configSnapshot = readConfigFormSnapshot();
+      if (configSnapshot.tcpSynMode) {
+        if (setStatusLine) setStatusLine(tr("statusTcpSynNotImplemented"));
+        return;
+      }
+
       var runtime = scannerRuntime();
       var range = runtime && runtime.addCurrentRangeFromInputs
         ? runtime.addCurrentRangeFromInputs()
@@ -703,8 +780,13 @@
         if (selectedPresetLabel) {
           status += " | " + tr("scannerPortPresets") + ": " + selectedPresetLabel + " (" + ports.length + ")";
         }
+        if (configSnapshot.udpChecked) {
+          status += " | " + tr("statusUdpNotImplementedNote");
+        }
         setStatusLine(status);
       }
+
+      currentScanEnrichmentConfig = configSnapshot;
 
       var promise;
       try {
@@ -714,6 +796,11 @@
           ports: ports,
           concurrency: defaults.concurrency,
           timeoutMs: defaults.timeoutMs,
+          retries: configSnapshot.retries,
+          scanDelayMs: configSnapshot.scanDelayMs,
+          maxConcurrentPorts: configSnapshot.maxConcurrentPorts,
+          randomizePorts: configSnapshot.randomizePorts,
+          randomizeHosts: configSnapshot.randomizeHosts,
         });
       } catch (err) {
         promise = Promise.reject(err);

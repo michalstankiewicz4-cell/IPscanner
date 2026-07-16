@@ -179,22 +179,70 @@ fn resolve_scripts_base_dir(app: &AppHandle) -> Option<PathBuf> {
 
 // ─── Commands ────────────────────────────────────────────────────────────────
 
+/// Dependency-free Fisher-Yates shuffle (splitmix64 PRNG seeded from the
+/// current time) - used by the Config tab's "Randomize ports"/"Randomize
+/// hosts" options. Not cryptographic, just needs to look shuffled enough to
+/// avoid an always-sequential scan pattern.
+fn shuffle_vec<T>(v: &mut Vec<T>) {
+    let mut seed = SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos() as u64)
+        .unwrap_or(0x2545F4914F6CDD1D);
+    let mut next_rand = || {
+        seed = seed.wrapping_add(0x9E3779B97F4A7C15);
+        let mut z = seed;
+        z = (z ^ (z >> 30)).wrapping_mul(0xBF58476D1CE4E5B9);
+        z = (z ^ (z >> 27)).wrapping_mul(0x94D049BB133111EB);
+        z ^ (z >> 31)
+    };
+    let len = v.len();
+    for i in (1..len).rev() {
+        let j = (next_rand() as usize) % (i + 1);
+        v.swap(i, j);
+    }
+}
+
 /// Probe a single IP across all given ports; returns open ports + best latency.
-async fn probe_host(ip: String, ports: Vec<u16>, timeout_ms: u64) -> (Vec<PortLatency>, Option<u64>) {
+async fn probe_host(
+    ip: String,
+    mut ports: Vec<u16>,
+    timeout_ms: u64,
+    retries: u32,
+    scan_delay_ms: u64,
+    max_concurrent_ports: usize,
+    randomize_ports: bool,
+) -> (Vec<PortLatency>, Option<u64>) {
+    if randomize_ports {
+        shuffle_vec(&mut ports);
+    }
+    let port_sem = Arc::new(tokio::sync::Semaphore::new(max_concurrent_ports.max(1)));
     let mut set: tokio::task::JoinSet<(u16, bool, Option<u64>)> = tokio::task::JoinSet::new();
     for port in ports {
         let ip_c = ip.clone();
+        let permit = port_sem.clone().acquire_owned().await.unwrap();
         set.spawn(async move {
+            let _permit = permit;
             let addr_str = format!("{}:{}", ip_c, port);
             let addr: SocketAddr = match addr_str.parse() {
                 Ok(a) => a,
                 Err(_) => return (port, false, None::<u64>),
             };
-            let t0 = Instant::now();
-            match timeout(Duration::from_millis(timeout_ms), TcpStream::connect(addr)).await {
-                Ok(Ok(_)) => (port, true, Some(t0.elapsed().as_millis() as u64)),
-                _ => (port, false, None),
+            if scan_delay_ms > 0 {
+                tokio::time::sleep(Duration::from_millis(scan_delay_ms)).await;
             }
+            let t0 = Instant::now();
+            let attempts = retries.saturating_add(1);
+            for attempt in 0..attempts {
+                match timeout(Duration::from_millis(timeout_ms), TcpStream::connect(addr)).await {
+                    Ok(Ok(_)) => return (port, true, Some(t0.elapsed().as_millis() as u64)),
+                    _ => {
+                        if attempt + 1 == attempts {
+                            return (port, false, None);
+                        }
+                    }
+                }
+            }
+            (port, false, None)
         });
     }
     let mut open_ports: Vec<PortLatency> = Vec::new();
@@ -220,6 +268,11 @@ async fn scan_range(
     ports: Vec<u16>,
     concurrency: usize,
     timeout_ms: u64,
+    retries: u32,
+    scan_delay_ms: u64,
+    max_concurrent_ports: usize,
+    randomize_ports: bool,
+    randomize_hosts: bool,
 ) -> Result<u32, String> {
     let start = ip_to_u32(&from_ip).map_err(|e| e.to_string())?;
     let end   = ip_to_u32(&to_ip).map_err(|e| e.to_string())?;
@@ -243,7 +296,12 @@ async fn scan_range(
         stopped: false,
     });
 
-    for i in 0..total {
+    let mut offsets: Vec<u32> = (0..total).collect();
+    if randomize_hosts {
+        shuffle_vec(&mut offsets);
+    }
+
+    for i in offsets {
         if stop.stop.load(Ordering::Relaxed) { break; }
         let ip      = u32_to_ip(start + i);
         let ports_c = ports.clone();
@@ -256,7 +314,15 @@ async fn scan_range(
             if stop_c.stop.load(Ordering::Relaxed) {
                 return false;
             }
-            let (open_ports, ping_ms) = probe_host(ip.clone(), ports_c, timeout_ms).await;
+            let (open_ports, ping_ms) = probe_host(
+                ip.clone(),
+                ports_c,
+                timeout_ms,
+                retries,
+                scan_delay_ms,
+                max_concurrent_ports,
+                randomize_ports,
+            ).await;
             if !open_ports.is_empty() {
                 let _ = app_c.emit("host-found", HostFound { ip, open_ports, ping_ms });
                 true

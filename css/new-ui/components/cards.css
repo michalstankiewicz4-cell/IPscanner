@@ -963,6 +963,16 @@
   opacity: 1;
 }
 
+/* Separates the "Columns" menu's port-level group (Banner Grabbing/HTTP
+   Page Title/Access-Snapshot/SSL-TLS Cert Info) from its host/IP-level
+   group (Hostname/Country Flag/ISP/AS/Device Identification) - mirrors the
+   RS Config tab's Detect "Service Probing" vs "Host Enrichment" split. */
+.v1-results-columns-separator {
+  height: 1px;
+  margin: 6px 16px;
+  background: var(--line);
+}
+
 .v1-results-meta-row b {
   color: var(--txt);
 }
@@ -1107,6 +1117,16 @@
 
 .v1-ip-results-table .v1-ip-col-access {
   min-width: 260px;
+  white-space: nowrap;
+}
+
+.v1-ip-results-table .v1-ip-col-banner {
+  min-width: 220px;
+  white-space: nowrap;
+}
+
+.v1-ip-results-table .v1-ip-col-sslCert {
+  min-width: 220px;
   white-space: nowrap;
 }
 

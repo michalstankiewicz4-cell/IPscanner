@@ -659,14 +659,22 @@
       var selectedPreset = getSelectedPresetInfo();
       var selectedPresetEmoji = selectedPreset.emoji || "🔎";
       var selectedPresetLabel = selectedPreset.name || selectedPreset.id || "";
+      // Menu order here deliberately mirrors the RS Config tab's Detect
+      // grouping (Service Probing = port-level, then Host Enrichment =
+      // host/IP-level), with a visual separator between the two - NOT the
+      // actual table column order below, which stays as-is (hostname/flag/
+      // isp/as/device/http/access/banner/sslCert) so existing layouts don't
+      // shift.
       var columnItems = [
-        { key: "hostname", icon: "🧭", label: trOr("resultsIpColumnHostname", "Hostname"), defaultVisible: true },
+        { key: "banner", icon: "📡", label: trOr("resultsIpColumnBanner", "Banner Grabbing"), defaultVisible: true },
+        { key: "http", icon: "📄", label: trOr("resultsIpColumnHttpPageTitle", "HTTP Page Title"), defaultVisible: true },
+        { key: "access", icon: "🔑", label: trOr("resultsIpColumnAccessSnapshot", "Access / Snapshot"), defaultVisible: true },
+        { key: "sslCert", icon: "🔒", label: trOr("resultsIpColumnSslCert", "SSL/TLS Certificate Info"), defaultVisible: true },
+        { key: "hostname", icon: "🧭", label: trOr("resultsIpColumnHostname", "Hostname"), defaultVisible: true, groupStart: true },
         { key: "flag", icon: "🌎", label: trOr("resultsIpColumnCountryFlag", "Country Flag"), defaultVisible: true },
         { key: "isp", icon: "🏢", label: trOr("resultsIpColumnIsp", "ISP"), defaultVisible: true },
-        { key: "as", icon: "🕷", label: trOr("resultsIpColumnAs", "AS"), defaultVisible: false },
-        { key: "device", icon: "📱", label: trOr("resultsIpColumnDeviceIdentification", "Device Identification"), defaultVisible: false },
-        { key: "http", icon: "📄", label: trOr("resultsIpColumnHttpPageTitle", "HTTP Page Title"), defaultVisible: false },
-        { key: "access", icon: "🔑", label: trOr("resultsIpColumnAccessSnapshot", "Access / Snapshot"), defaultVisible: false }
+        { key: "as", icon: "🕷", label: trOr("resultsIpColumnAs", "AS"), defaultVisible: true },
+        { key: "device", icon: "📱", label: trOr("resultsIpColumnDeviceIdentification", "Device Identification"), defaultVisible: true }
       ];
       var filterGroups = [
         {
@@ -703,6 +711,8 @@
             portLabel: String(rawPort || "").replace(/^:/, "").trim(),
             httpPageTitle: String(port.httpPageTitle || port.pageTitle || port.title || "").trim(),
             accessSnapshot: String(port.accessSnapshot || port.access || port.snapshot || port.url || "").trim(),
+            banner: String(port.banner || "").trim(),
+            sslCertInfo: String(port.sslCertInfo || port.sslCert || port.certInfo || "").trim(),
             protocol: String(port.protocol || "TCP").trim().toUpperCase(),
             service: String(port.service || "").trim(),
             ping: String(port.ping || "-").trim() || "-"
@@ -714,6 +724,8 @@
           portLabel: legacyLabel,
           httpPageTitle: "",
           accessSnapshot: "",
+          banner: "",
+          sslCertInfo: "",
           protocol: "TCP",
           service: sharedNet && typeof sharedNet.lookupPortService === "function"
             ? sharedNet.lookupPortService(legacyLabel)
@@ -748,6 +760,8 @@
           var portKey = String(row.ip || "").trim() + "|" + portLabel;
           var portHttpTitle = portEntry.httpPageTitle || "-";
           var portAccess = portEntry.accessSnapshot || "-";
+          var portBanner = portEntry.banner || "-";
+          var portSslCert = portEntry.sslCertInfo || "-";
           var portProtocolBadge = "<span class=\"v1-ip-port-badge v1-ip-port-badge--protocol is-" + escapeHtml(portEntry.protocol.toLowerCase()) + "\">" + escapeHtml(portEntry.protocol) + "</span>";
           var portServiceBadge = portEntry.service ? "<span class=\"v1-ip-port-badge v1-ip-port-badge--service\">" + escapeHtml(portEntry.service) + "</span>" : "";
           return [
@@ -765,6 +779,8 @@
             "<td class=\"v1-ip-col-device\" data-col=\"device\" aria-hidden=\"true\"></td>",
             "<td class=\"v1-ip-col-http\" data-col=\"http\">" + escapeHtml(portHttpTitle) + "</td>",
             "<td class=\"v1-ip-col-access\" data-col=\"access\"><span class=\"v1-ip-port-link\">" + escapeHtml(portAccess) + "</span></td>",
+            "<td class=\"v1-ip-col-banner\" data-col=\"banner\">" + escapeHtml(portBanner) + "</td>",
+            "<td class=\"v1-ip-col-sslCert\" data-col=\"sslCert\">" + escapeHtml(portSslCert) + "</td>",
             "</tr>"
           ].join("");
         }).join("") : [
@@ -782,6 +798,8 @@
           "<td class=\"v1-ip-col-device\" data-col=\"device\" aria-hidden=\"true\"></td>",
           "<td class=\"v1-ip-col-http\" data-col=\"http\">-</td>",
           "<td class=\"v1-ip-col-access\" data-col=\"access\">-</td>",
+          "<td class=\"v1-ip-col-banner\" data-col=\"banner\">-</td>",
+          "<td class=\"v1-ip-col-sslCert\" data-col=\"sslCert\">-</td>",
           "</tr>"
         ].join("");
 
@@ -803,6 +821,8 @@
           "<td class=\"v1-ip-col-device\" data-col=\"device\">" + escapeHtml(rowDevice) + "</td>",
           "<td class=\"v1-ip-col-http\" data-col=\"http\">-</td>",
           "<td class=\"v1-ip-col-access\" data-col=\"access\">-</td>",
+          "<td class=\"v1-ip-col-banner\" data-col=\"banner\">-</td>",
+          "<td class=\"v1-ip-col-sslCert\" data-col=\"sslCert\">-</td>",
           "</tr>",
           portsHtml
         ].join("");
@@ -810,7 +830,8 @@
 
       var headers = resultsIpConfig.headers || {};
       var columnsMenuHtml = columnItems.map(function (item) {
-        return [
+        var separator = item.groupStart ? "<div class=\"v1-results-columns-separator\" role=\"separator\"></div>" : "";
+        return separator + [
           "<label class=\"v1-results-columns-item\">",
           "<input type=\"checkbox\" data-column-key=\"" + escapeHtml(item.key) + "\"" + (item.defaultVisible ? " checked" : "") + " />",
           "<span class=\"v1-results-columns-icon\" aria-hidden=\"true\">" + escapeHtml(item.icon) + "</span>",
@@ -852,7 +873,7 @@
         "</div>",
         "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\">",
         "<table class=\"v1-results-table v1-ip-results-table\">",
-        "<thead><tr><th class=\"v1-ip-col-check\">✓</th><th class=\"v1-ip-col-star\">★</th><th class=\"v1-ip-col-status\">●</th><th class=\"v1-ip-col-ip\">" + escapeHtml(trOr("resultsIpHeaderIpAddressPort", headers.ipAddressPort || "IP Adress / Port")) + "</th><th class=\"v1-ip-col-expand\">+</th><th class=\"v1-ip-col-ping\">" + escapeHtml(trOr("resultsIpHeaderPing", headers.ping || "Ping")) + "</th><th class=\"v1-ip-col-host\" data-col=\"hostname\">" + escapeHtml(trOr("resultsIpHeaderHostname", headers.hostname || "Hostname")) + "</th><th class=\"v1-ip-col-flag\" data-col=\"flag\">" + escapeHtml(trOr("resultsIpHeaderFlag", headers.flag || "Flag")) + "</th><th class=\"v1-ip-col-isp\" data-col=\"isp\">" + escapeHtml(trOr("resultsIpHeaderIsp", headers.isp || "ISP")) + "</th><th class=\"v1-ip-col-as\" data-col=\"as\">" + escapeHtml(trOr("resultsIpHeaderAs", headers.as || "AS")) + "</th><th class=\"v1-ip-col-device\" data-col=\"device\">" + escapeHtml(trOr("resultsIpHeaderDeviceIdentification", headers.deviceIdentification || "Device Identification")) + "</th><th class=\"v1-ip-col-http\" data-col=\"http\">" + escapeHtml(trOr("resultsIpHeaderHttpPageTitle", headers.httpPageTitle || "HTTP Page Title")) + "</th><th class=\"v1-ip-col-access\" data-col=\"access\">" + escapeHtml(trOr("resultsIpHeaderAccessSnapshot", headers.accessSnapshot || "Access / Snapshot")) + "</th></tr></thead>",
+        "<thead><tr><th class=\"v1-ip-col-check\">✓</th><th class=\"v1-ip-col-star\">★</th><th class=\"v1-ip-col-status\">●</th><th class=\"v1-ip-col-ip\">" + escapeHtml(trOr("resultsIpHeaderIpAddressPort", headers.ipAddressPort || "IP Adress / Port")) + "</th><th class=\"v1-ip-col-expand\">+</th><th class=\"v1-ip-col-ping\">" + escapeHtml(trOr("resultsIpHeaderPing", headers.ping || "Ping")) + "</th><th class=\"v1-ip-col-host\" data-col=\"hostname\">" + escapeHtml(trOr("resultsIpHeaderHostname", headers.hostname || "Hostname")) + "</th><th class=\"v1-ip-col-flag\" data-col=\"flag\">" + escapeHtml(trOr("resultsIpHeaderFlag", headers.flag || "Flag")) + "</th><th class=\"v1-ip-col-isp\" data-col=\"isp\">" + escapeHtml(trOr("resultsIpHeaderIsp", headers.isp || "ISP")) + "</th><th class=\"v1-ip-col-as\" data-col=\"as\">" + escapeHtml(trOr("resultsIpHeaderAs", headers.as || "AS")) + "</th><th class=\"v1-ip-col-device\" data-col=\"device\">" + escapeHtml(trOr("resultsIpHeaderDeviceIdentification", headers.deviceIdentification || "Device Identification")) + "</th><th class=\"v1-ip-col-http\" data-col=\"http\">" + escapeHtml(trOr("resultsIpHeaderHttpPageTitle", headers.httpPageTitle || "HTTP Page Title")) + "</th><th class=\"v1-ip-col-access\" data-col=\"access\">" + escapeHtml(trOr("resultsIpHeaderAccessSnapshot", headers.accessSnapshot || "Access / Snapshot")) + "</th><th class=\"v1-ip-col-banner\" data-col=\"banner\">" + escapeHtml(trOr("resultsIpHeaderBanner", headers.banner || "Banner Grabbing")) + "</th><th class=\"v1-ip-col-sslCert\" data-col=\"sslCert\">" + escapeHtml(trOr("resultsIpHeaderSslCert", headers.sslCert || "SSL/TLS Certificate Info")) + "</th></tr></thead>",
         "<tbody>" + bodyHtml + "</tbody>",
         "</table>",
         "</div>"

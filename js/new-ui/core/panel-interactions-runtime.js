@@ -223,10 +223,12 @@
         hostname: true,
         flag: true,
         isp: true,
-        as: false,
-        device: false,
-        http: false,
-        access: false,
+        as: true,
+        device: true,
+        http: true,
+        access: true,
+        banner: true,
+        sslCert: true,
       };
       var DEFAULT_FILTERS = {
         type: {
