@@ -10,6 +10,15 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.2.0",
+      notes: [
+        "IP Scanner (Config tab) is now real: Reverse DNS/Country Flag/ISP/AS/Device Identification enrichment, Retries, Scan delay, Max concurrent ports per host, and Randomize ports/hosts all actually apply to the scan instead of being inert placeholders.",
+        "TCP SYN, UDP, and OS Detection are honestly marked as not-yet-implemented (need raw sockets) instead of silently doing nothing - they, along with ICMP mode, are grayed out until \"Show unfinished tools\" is enabled.",
+        "Added Banner Grabbing and SSL/TLS Certificate Info columns to IP Results, and reorganized the Columns filter to match the Config tab's Detect grouping.",
+        "Added the foundation of ShellCraft: a drag-and-drop block Library, Canvas, and Inspector, plus 3 working macros (External IP, Local IP, Subnets). The If/Repeat Until/PowerShell/Time Trigger blocks are placeable but not yet executable, and are grayed out until \"Show unfinished tools\" is enabled."
+      ]
+    },
+    {
       version: "v2.1.0",
       notes: [
         "Added update checking on launch: the app now compares its version against the latest GitHub release on every startup (desktop and www alike), and shows a notification with a download link if a newer version is available.",
