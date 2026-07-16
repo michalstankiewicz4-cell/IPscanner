@@ -1,13 +1,17 @@
 (function () {
   // shell: generic detached-card/workbench-tab engine (open/close/detach/
   // arrange/resize any tool's card) makes up most of this file. Three
-  // contiguous ip-scanner tool blocks are labeled where they start:
-  // extractRanges/pickCountryFromItem/flattenIpLibraryEntries (IP Library
-  // parsing), wireDetachedResultsIp (Results IP detached-window wiring),
-  // wireIpLibraryButtons (IP Library, incl. PowerShell invocation). A couple
-  // of small hardcoded tool-id checks are labeled inline (wireToolRuntime,
-  // switchTool). Largest and most tangled file in this shell/tools split -
-  // no physical move attempted, comments only, per CONTRIBUTING 12a.
+  // formerly-tangled tool sections have been extracted to sibling runtimes,
+  // instantiated alongside panelContentRuntime etc. and dispatched via
+  // wireToolRuntime exactly as before: IP Library (runtimes/ip-library-runtime.js),
+  // the Language Manager catalog (runtimes/language-catalog-runtime.js), and
+  // the GitHub addon catalog / "www addons" (runtimes/addon-catalog-runtime.js).
+  // None of the three referenced this file's shared detach/redock state;
+  // the addon-catalog runtime does call back into this file's own
+  // refreshActiveUI/registerExtensionCommands, passed in as deps.
+  // wireDetachedResultsIp (Results IP detached-window wiring) remains here
+  // since it's part of the generic engine itself. A couple of small
+  // hardcoded tool-id checks are labeled inline (wireToolRuntime, switchTool).
   function createPanelsRuntime(deps) {
     var tr = deps.tr;
     var getToolInfoMap = deps.getToolInfoMap;
@@ -301,53 +305,6 @@
 
     function isDetachedHiddenTab(tabEl) {
       return !!(tabEl && tabEl.classList.contains("tab-detached-hidden"));
-    }
-
-    // --- ip-scanner tool keys ---
-    // IP Library raw-shape parsing, used by flattenIpLibraryEntries below
-    // (session-runtime.js's collectSessionData) and wireIpLibraryButtons.
-    function extractRanges(item) {
-      if (!item || typeof item !== "object") return [];
-
-      var direct = String(item.cidr || item.range || item.network || item.address || item.ip_range || "").trim();
-      if (direct) return [direct];
-
-      if (Array.isArray(item.ranges) && item.ranges.length) {
-        return item.ranges.map(function (entry) {
-          if (entry && typeof entry === "object") {
-            return String(entry.cidr || entry.range || entry.network || entry.address || entry.ip_range || "").trim();
-          }
-          return String(entry || "").trim();
-        }).filter(Boolean);
-      }
-
-      return [];
-    }
-
-    function pickCountryFromItem(item) {
-      if (!item || typeof item !== "object") return "-";
-      return String(
-        item.country_code ||
-        item.countryCode ||
-        item.country ||
-        item.code ||
-        item.flag ||
-        item.name ||
-        "-"
-      ).toUpperCase();
-    }
-
-    function flattenIpLibraryEntries(rawArray) {
-      var items = Array.isArray(rawArray) ? rawArray : [];
-      var entries = [];
-      items.forEach(function (item) {
-        var countryCode = pickCountryFromItem(item);
-        extractRanges(item).forEach(function (cidr) {
-          if (!cidr) return;
-          entries.push({ cidr: cidr, countryCode: countryCode });
-        });
-      });
-      return entries;
     }
 
     function hideDetachedTab(tool) {
@@ -1477,6 +1434,43 @@
       });
     }
 
+    var languageCatalogRuntime = null;
+    if (window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes && window.NetReconNewUICore.newUiRuntimes.createLanguageCatalogRuntime) {
+      languageCatalogRuntime = window.NetReconNewUICore.newUiRuntimes.createLanguageCatalogRuntime({
+        tr: tr,
+        i18n: i18n,
+        setStatusLine: setStatusLine,
+        escapeHtml: escapeHtml,
+        platform: platform,
+      });
+    }
+
+    var ipLibraryRuntime = null;
+    if (window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes && window.NetReconNewUICore.newUiRuntimes.createIpLibraryRuntime) {
+      ipLibraryRuntime = window.NetReconNewUICore.newUiRuntimes.createIpLibraryRuntime({
+        tr: tr,
+        setStatusLine: setStatusLine,
+        platform: platform,
+        storageGet: storageGet,
+        storageSet: storageSet,
+        panelRenderersRuntime: panelRenderersRuntime,
+      });
+    }
+
+    var addonCatalogRuntime = null;
+    if (window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes && window.NetReconNewUICore.newUiRuntimes.createAddonCatalogRuntime) {
+      addonCatalogRuntime = window.NetReconNewUICore.newUiRuntimes.createAddonCatalogRuntime({
+        tr: tr,
+        setStatusLine: setStatusLine,
+        platform: platform,
+        extensionHost: extensionHost,
+        commandBus: commandBus,
+        panelRenderersRuntime: panelRenderersRuntime,
+        refreshActiveUI: refreshActiveUI,
+        registerExtensionCommands: registerExtensionCommands,
+      });
+    }
+
     function setTooltips() {
       document.querySelectorAll("[data-tool]").forEach(function (el) {
         var tool = el.getAttribute("data-tool");
@@ -1534,7 +1528,7 @@
     function initWorkbenchTabs() {
       if (document.body && document.body.dataset.v1TabsBound === "1") {
         ensureAllTabControls();
-        wireIpLibraryButtons(document);
+        if (ipLibraryRuntime) ipLibraryRuntime.wireIpLibraryButtons(document);
         updateTabPopoutUi();
         return;
       }
@@ -1701,7 +1695,7 @@
       });
 
       updateEmptyState();
-      wireIpLibraryButtons();
+      if (ipLibraryRuntime) ipLibraryRuntime.wireIpLibraryButtons();
       updateTabPopoutUi();
     }
 
@@ -1746,7 +1740,7 @@
       }
 
       if (tool === "ip-library") { // ip-scanner tool
-        wireIpLibraryButtons(scope);
+        if (ipLibraryRuntime) ipLibraryRuntime.wireIpLibraryButtons(scope);
         return;
       }
 
@@ -1758,12 +1752,12 @@
       }
 
       if (tool === "import-tool") { // shell
-        wireImportToolButtons(scope);
+        if (addonCatalogRuntime) addonCatalogRuntime.wireImportToolButtons(scope);
         return;
       }
 
       if (tool === "language-manager") { // shell
-        wireLanguageManagerButtons(scope);
+        if (languageCatalogRuntime) languageCatalogRuntime.wireLanguageManagerButtons(scope);
         return;
       }
 
@@ -1893,948 +1887,6 @@
       if (typeof onAfterRender === "function") onAfterRender(activeTool);
     }
 
-    // --- ip-scanner tool keys ---
-    // IP Library wiring, incl. PowerShell invocation for
-    // update-country-ip-library.ps1. Whole block through loadCached() below
-    // is ip-scanner tool.
-    function wireIpLibraryButtons(rootEl) {
-      var root = rootEl && typeof rootEl.querySelector === "function" ? rootEl : document;
-
-      var countriesEl = root.querySelector("#v1IpLibraryCountryCodes") || root.querySelector(".v1-iplib-countries");
-      var topRangesEl = root.querySelector("#v1IpLibraryTopRanges") || root.querySelector(".v1-iplib-topranges");
-      var actionButtons = root.querySelectorAll("[data-iplib-action]");
-
-      function getLastUpdateEls() {
-        var sidebar = root.querySelector("#v1IpLibraryLastUpdate") || root.querySelector('[data-iplib-role="last-update-sidebar"]');
-        var center = root.querySelector("#v1IpLibraryCenterLastUpdate") || root.querySelector('[data-iplib-role="last-update-center"]');
-        if (root !== document) {
-          if (!sidebar) sidebar = document.getElementById("v1IpLibraryLastUpdate");
-          if (!center) center = document.getElementById("v1IpLibraryCenterLastUpdate");
-        }
-        return {
-          sidebar: sidebar,
-          center: center,
-        };
-      }
-
-      function getStatusEls() {
-        var sidebar = root.querySelector("#v1IpLibraryStatus") || root.querySelector('[data-iplib-role="status-sidebar"]');
-        var center = root.querySelector("#v1IpLibraryCenterStatus") || root.querySelector('[data-iplib-role="status-center"]');
-        if (root !== document) {
-          if (!sidebar) sidebar = document.getElementById("v1IpLibraryStatus");
-          if (!center) center = document.getElementById("v1IpLibraryCenterStatus");
-        }
-        return {
-          sidebar: sidebar,
-          center: center,
-        };
-      }
-
-      function getCenterRowsEl() {
-        return root.querySelector("#v1IpLibraryCenterRows") || root.querySelector('[data-iplib-role="rows"]');
-      }
-
-      if (!actionButtons.length && !getCenterRowsEl()) return;
-
-      var DEFAULT_CODES = "pl,cn,ru,us,de,fr,gb,jp,kr,br,in,au,nl,ua,cz,se,no,fi,tr,ir,sa,za,ar,mx,ca,it,es";
-      var CACHE_KEY = "netrecon_country_ip_library_json";
-      var CACHE_UPDATED_KEY = "netrecon_country_ip_library_updated_at";
-      var MEMORY_CACHE_KEY = "__netreconIpLibraryCache";
-
-      if (countriesEl && !countriesEl.value.trim()) countriesEl.value = DEFAULT_CODES;
-      if (topRangesEl && !topRangesEl.value.trim()) topRangesEl.value = "120";
-
-      function writeStatus(text) {
-        var value = String(text || "");
-        var statusEls = getStatusEls();
-        if (statusEls.sidebar) statusEls.sidebar.textContent = value;
-        if (statusEls.center) statusEls.center.textContent = value;
-      }
-
-      function nowStamp() {
-        var d = new Date();
-        return d.toLocaleTimeString();
-      }
-
-      function appendTerminalLine(line) {
-        var value = String(line || "");
-        if (!value) return;
-
-        var out = document.getElementById("v1PsOutput");
-        if (out) {
-          var next = (out.textContent ? out.textContent + "\n" : "") + value;
-          var rows = next.split("\n");
-          out.textContent = rows.length > 400 ? rows.slice(rows.length - 400).join("\n") : next;
-          out.scrollTop = out.scrollHeight;
-        }
-
-        document.dispatchEvent(new CustomEvent("newui:console-pane-update", {
-          detail: {
-            pane: "console",
-            source: "ip-library",
-            text: value,
-          },
-        }));
-      }
-
-      function writeOutput(text) {
-        var value = String(text || "").trim();
-        if (!value) return;
-
-        var clipped = value.length > 12000 ? (value.slice(0, 12000) + "\n...[truncated]") : value;
-        appendTerminalLine(clipped);
-      }
-
-      function readMemoryCache() {
-        try {
-          var core = window.NetReconNewUICore = window.NetReconNewUICore || {};
-          var payload = core[MEMORY_CACHE_KEY];
-          if (!payload || typeof payload !== "object") return null;
-          var data = Array.isArray(payload.data) ? payload.data : [];
-          var updatedAt = String(payload.updatedAt || "-");
-          return { data: data, updatedAt: updatedAt };
-        } catch (_) {
-          return null;
-        }
-      }
-
-      function writeMemoryCache(data, updatedAt) {
-        try {
-          var core = window.NetReconNewUICore = window.NetReconNewUICore || {};
-          core[MEMORY_CACHE_KEY] = {
-            data: Array.isArray(data) ? data : [],
-            updatedAt: String(updatedAt || "-")
-          };
-        } catch (_) {
-          // ignore memory-cache write failures
-        }
-      }
-
-      function setLastUpdate(value) {
-        var text = String(value || "-");
-        var lastUpdateEls = getLastUpdateEls();
-        if (lastUpdateEls.sidebar) lastUpdateEls.sidebar.textContent = text;
-        if (lastUpdateEls.center) lastUpdateEls.center.textContent = text;
-      }
-
-      function renderCenterRows(data) {
-        var centerRowsEl = getCenterRowsEl();
-        if (!centerRowsEl || !panelRenderersRuntime) return;
-
-        var rows = Array.isArray(data) ? data : [];
-        centerRowsEl.innerHTML = panelRenderersRuntime.renderIpLibraryRows(rows);
-      }
-
-      function getInvoke() {
-        if (platform && typeof platform.getInvoke === "function") {
-          return platform.getInvoke();
-        }
-        return null;
-      }
-
-      function emitBusyDelta(delta) {
-        try {
-          document.dispatchEvent(new CustomEvent("newui:busy-state", {
-            detail: {
-              source: "panels-runtime",
-              delta: delta,
-            },
-          }));
-        } catch (_) {
-          // ignore busy-state event errors
-        }
-      }
-
-      function runPowerShell(command) {
-        emitBusyDelta(1);
-
-        var promise;
-        try {
-          if (platform && typeof platform.invoke === "function") {
-            promise = platform.invoke("run_powershell", { command: command });
-          } else {
-            var invoke = getInvoke();
-            if (!invoke) {
-              promise = Promise.reject(new Error("tauri invoke unavailable"));
-            } else {
-              promise = invoke("run_powershell", { command: command });
-            }
-          }
-        } catch (err) {
-          promise = Promise.reject(err);
-        }
-
-        return Promise.resolve(promise).finally(function () {
-          emitBusyDelta(-1);
-        });
-      }
-
-      function parseCountries(text) {
-        return String(text || "")
-          .split(/[\s,;]+/)
-          .map(function (v) { return v.trim().toLowerCase(); })
-          .filter(function (v) { return /^[a-z]{2}$/.test(v); });
-      }
-
-      function loadCached() {
-        var memory = readMemoryCache();
-        if (memory && Array.isArray(memory.data) && memory.data.length) {
-          var memCount = memory.data.length;
-          setLastUpdate(memory.updatedAt || "-");
-          writeStatus(tr("ipLibraryStatusLoaded") + " " + memCount + " | " + tr("ipLibraryStatusUpdatedAt") + " " + (memory.updatedAt || "-"));
-          renderCenterRows(memory.data);
-          return;
-        }
-
-        var raw = storageGet(CACHE_KEY) || "";
-        var updatedAt = storageGet(CACHE_UPDATED_KEY) || "-";
-        setLastUpdate(updatedAt);
-        if (!raw) {
-          writeStatus(tr("ipLibraryStatusEmpty"));
-          renderCenterRows([]);
-          return;
-        }
-
-        try {
-          var data = JSON.parse(raw);
-          var normalized = Array.isArray(data) ? data : (data && typeof data === "object" ? [data] : []);
-          var count = normalized.length;
-          writeMemoryCache(normalized, updatedAt);
-          writeStatus(tr("ipLibraryStatusLoaded") + " " + count + " | " + tr("ipLibraryStatusUpdatedAt") + " " + updatedAt);
-          renderCenterRows(normalized);
-        } catch (_) {
-          writeStatus(tr("ipLibraryStatusInvalidCache"));
-          renderCenterRows([]);
-        }
-      }
-
-      actionButtons.forEach(function (button) {
-        if (button.dataset.bound === "1") return;
-        button.dataset.bound = "1";
-
-        button.addEventListener("click", function () {
-          var actionName = button.getAttribute("data-iplib-action");
-          if (actionName === "load") {
-            loadCached();
-            return;
-          }
-
-          if (actionName === "clear") {
-            storageSet(CACHE_KEY, "");
-            storageSet(CACHE_UPDATED_KEY, "");
-            writeMemoryCache([], "-");
-            setLastUpdate("-");
-            writeStatus(tr("ipLibraryStatusCleared"));
-            renderCenterRows([]);
-            appendTerminalLine("[" + nowStamp() + "] " + tr("ipLibraryStatusCleared"));
-            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("ipLibraryStatusCleared"));
-            return;
-          }
-
-          var countryCodes = parseCountries(countriesEl ? countriesEl.value : "");
-          if (!countryCodes.length) {
-            writeStatus(tr("ipLibraryStatusBadCountries"));
-            return;
-          }
-
-          var topRanges = Number(topRangesEl ? topRangesEl.value : "120");
-          if (!Number.isFinite(topRanges)) topRanges = 120;
-          topRanges = Math.max(10, Math.min(500, Math.round(topRanges)));
-          if (topRangesEl) topRangesEl.value = String(topRanges);
-
-          var countriesArg = "@('" + countryCodes.join("','") + "')";
-          var psCommand = [
-            "$ErrorActionPreference='Stop'",
-            "$scriptPath = Join-Path (Get-Location) 'scripts\\update-country-ip-library.ps1'",
-            "if (!(Test-Path $scriptPath)) { throw \"Missing script: $scriptPath\" }",
-            "& $scriptPath -TopRanges " + topRanges + " -CountryCodes " + countriesArg
-          ].join('; ');
-
-          writeStatus(tr("ipLibraryStatusUpdating"));
-          appendTerminalLine("[" + nowStamp() + "] PS> " + psCommand);
-          appendTerminalLine("[" + nowStamp() + "] " + tr("psConsoleRunning"));
-
-          runPowerShell(psCommand).then(function (res) {
-            var stdout = res && res.stdout ? String(res.stdout).trim() : "";
-            var stderr = res && res.stderr ? String(res.stderr).trim() : "";
-            var exitCode = (res && typeof res.exit_code === "number") ? res.exit_code : -1;
-
-            if (stdout) writeOutput(stdout);
-            if (stderr) writeOutput(stderr);
-            appendTerminalLine("[" + nowStamp() + "] exit code: " + exitCode);
-
-            var jsonText = stdout;
-            var arrayStart = stdout.indexOf("[");
-            var arrayEnd = stdout.lastIndexOf("]");
-            var objectStart = stdout.indexOf("{");
-            var objectEnd = stdout.lastIndexOf("}");
-            if (arrayStart >= 0 && arrayEnd > arrayStart) {
-              jsonText = stdout.slice(arrayStart, arrayEnd + 1);
-            } else if (objectStart >= 0 && objectEnd > objectStart) {
-              jsonText = stdout.slice(objectStart, objectEnd + 1);
-            }
-
-            try {
-              var parsed = JSON.parse(jsonText || "[]");
-              var normalized = Array.isArray(parsed) ? parsed : (parsed && typeof parsed === "object" ? [parsed] : []);
-              var count = normalized.length;
-              if (count === 0) {
-                var mergedEmpty = [stdout, stderr].filter(Boolean).join("\n\n");
-                writeStatus(tr("ipLibraryStatusUpdateFailed"));
-                writeOutput(mergedEmpty || tr("ipLibraryStatusUpdateFailed"));
-                renderCenterRows([]);
-                if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("ipLibraryStatusUpdateFailed"));
-                return;
-              }
-
-              var payload = JSON.stringify(normalized);
-              storageSet(CACHE_KEY, payload);
-              var updatedAt = new Date().toISOString();
-              storageSet(CACHE_UPDATED_KEY, updatedAt);
-              writeMemoryCache(normalized, updatedAt);
-              setLastUpdate(updatedAt);
-
-              writeStatus(tr("ipLibraryStatusUpdated") + " " + count + " | " + tr("ipLibraryStatusUpdatedAt") + " " + updatedAt);
-              var mergedSuccess = [JSON.stringify(normalized, null, 2)].filter(Boolean).join("\n\n");
-              writeOutput(mergedSuccess);
-              loadCached();
-              if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("ipLibraryStatusUpdated") + " " + count);
-            } catch (_) {
-              var merged = [stdout, stderr].filter(Boolean).join("\n\n");
-              writeStatus(tr("ipLibraryStatusUpdateFailed"));
-              writeOutput(merged || tr("ipLibraryStatusUpdateFailed"));
-              renderCenterRows([]);
-            }
-          }).catch(function (err) {
-            var errMsg = (err && err.message) ? String(err.message) : "";
-            if (errMsg.toLowerCase().indexOf("tauri invoke unavailable") >= 0) {
-              writeStatus(tr("statusDesktopOnlyShort"));
-              writeOutput(tr("psConsoleDesktopOnly"));
-              renderCenterRows([]);
-              return;
-            }
-
-            writeStatus(tr("ipLibraryStatusUpdateFailed"));
-            writeOutput(errMsg || tr("ipLibraryStatusUpdateFailed"));
-            renderCenterRows([]);
-          });
-        });
-      });
-
-      loadCached();
-    }
-
-    // shell (resumes here after the wireIpLibraryButtons tool block above)
-    var CATALOG_OWNER = "michalstankiewicz4-cell";
-    var CATALOG_REPO = "IPscanner";
-    var CATALOG_BRANCH = "main";
-    var CATALOG_FOLDER = "tools";
-    var CATALOG_API_URL = "https://api.github.com/repos/" + CATALOG_OWNER + "/" + CATALOG_REPO + "/contents/" + CATALOG_FOLDER + "?ref=" + CATALOG_BRANCH;
-    var CATALOG_IMAGE_EXTENSIONS = ["png", "svg", "jpg", "jpeg", "gif", "webp"];
-    // shell: catalog fetch is cached at module scope (outside any single
-    // Import Tool mount) because refreshActiveUI() rebuilds #v1ToolDetail's
-    // whole subtree - including #v1ImportCatalog - on every tab switch and
-    // after every install/uninstall, which would otherwise re-trigger a full
-    // GitHub API fetch each time and risk the unauthenticated 60/hour quota.
-    var catalogEntriesCache = null;
-    var catalogFetchPromise = null;
-
-    // shell: fetches the addon catalog from the repo's own tools/ GitHub
-    // folder - groups files by basename so "<name>.json" pairs with a
-    // same-name image file ("<name>.png" etc.) as that addon's icon. Uses a
-    // null-prototype object for grouping so a file literally named
-    // "__proto__.json" can't shadow/pollute Object.prototype.
-    function fetchCatalog() {
-      return fetch(CATALOG_API_URL).then(function (res) {
-        if (!res.ok) throw new Error("GitHub API " + res.status);
-        return res.json();
-      }).then(function (files) {
-        var groups = Object.create(null);
-        (Array.isArray(files) ? files : []).forEach(function (f) {
-          if (!f || f.type !== "file" || typeof f.name !== "string") return;
-          var dot = f.name.lastIndexOf(".");
-          if (dot < 0) return;
-          var base = f.name.slice(0, dot);
-          var ext = f.name.slice(dot + 1).toLowerCase();
-          groups[base] = groups[base] || {};
-          if (ext === "json") groups[base].json = f;
-          else if (CATALOG_IMAGE_EXTENSIONS.indexOf(ext) !== -1) groups[base].icon = f;
-        });
-        var entries = Object.keys(groups).map(function (k) { return groups[k]; }).filter(function (g) { return g.json; });
-        return Promise.all(entries.map(function (entry) {
-          return fetch(entry.json.download_url).then(function (r) { return r.json(); }).then(function (manifest) {
-            return { manifest: manifest, iconUrl: entry.icon ? entry.icon.download_url : "" };
-          }).catch(function () { return null; });
-        }));
-      }).then(function (results) {
-        return results.filter(Boolean);
-      });
-    }
-
-    // shell: returns the cached catalog if already fetched this session,
-    // otherwise fetches once and caches (also caches the in-flight promise
-    // so concurrent mounts don't fire duplicate requests).
-    function loadCatalogCached() {
-      if (catalogEntriesCache) return Promise.resolve(catalogEntriesCache);
-      if (catalogFetchPromise) return catalogFetchPromise;
-      catalogFetchPromise = fetchCatalog().then(function (entries) {
-        catalogEntriesCache = entries;
-        catalogFetchPromise = null;
-        return entries;
-      }).catch(function (err) {
-        catalogFetchPromise = null;
-        throw err;
-      });
-      return catalogFetchPromise;
-    }
-
-    // shell: Language Manager's "Import language" catalog - same repo/branch
-    // as the tools/ catalog above, but pointed at languages/ and simpler:
-    // no icon-file pairing (flag is a manifest field, not a paired image)
-    // and no extensionHost/permissions involvement (a language dictionary
-    // isn't an extension, just data). Same module-scope session cache
-    // rationale as catalogEntriesCache/catalogFetchPromise.
-    var LANG_CATALOG_FOLDER = "languages";
-    var LANG_CATALOG_API_URL = "https://api.github.com/repos/" + CATALOG_OWNER + "/" + CATALOG_REPO + "/contents/" + LANG_CATALOG_FOLDER + "?ref=" + CATALOG_BRANCH;
-    var langCatalogEntriesCache = null;
-    var langCatalogFetchPromise = null;
-
-    function fetchLanguageCatalog() {
-      return fetch(LANG_CATALOG_API_URL).then(function (res) {
-        if (!res.ok) throw new Error("GitHub API " + res.status);
-        return res.json();
-      }).then(function (files) {
-        var jsonFiles = (Array.isArray(files) ? files : []).filter(function (f) {
-          return f && f.type === "file" && typeof f.name === "string" && /\.json$/i.test(f.name);
-        });
-        return Promise.all(jsonFiles.map(function (f) {
-          return fetch(f.download_url).then(function (r) { return r.json(); }).catch(function () { return null; });
-        }));
-      }).then(function (results) {
-        return results.filter(function (m) {
-          return m && typeof m === "object" && typeof m.code === "string" && m.code.trim();
-        });
-      });
-    }
-
-    function loadLanguageCatalogCached() {
-      if (langCatalogEntriesCache) return Promise.resolve(langCatalogEntriesCache);
-      if (langCatalogFetchPromise) return langCatalogFetchPromise;
-      langCatalogFetchPromise = fetchLanguageCatalog().then(function (entries) {
-        langCatalogEntriesCache = entries;
-        langCatalogFetchPromise = null;
-        return entries;
-      }).catch(function (err) {
-        langCatalogFetchPromise = null;
-        throw err;
-      });
-      return langCatalogFetchPromise;
-    }
-
-    function wireImportToolButtons(rootEl) {
-      var root = rootEl && typeof rootEl.querySelector === "function"
-        ? rootEl
-        : document.getElementById("v1ToolDetail");
-      if (!root) return;
-
-      var outputEl = root.querySelector('[data-import-role="output"]') || root.querySelector("#v1ImportOutput");
-      var catalogEl = root.querySelector('[data-import-role="catalog"]') || root.querySelector("#v1ImportCatalog");
-      var catalogEntries = catalogEntriesCache || [];
-
-      function listInstalled() {
-        var items = extensionHost && extensionHost.listExtensions ? extensionHost.listExtensions() : [];
-        if (!outputEl) return;
-        if (panelRenderersRuntime && typeof panelRenderersRuntime.renderExtensionList === "function") {
-          outputEl.innerHTML = panelRenderersRuntime.renderExtensionList(items);
-          return;
-        }
-
-        outputEl.textContent = "";
-
-        if (!items.length) {
-          var emptyEl = document.createElement("div");
-          emptyEl.className = "v1-import-empty";
-          emptyEl.textContent = "No imported tools yet.";
-          outputEl.appendChild(emptyEl);
-          return;
-        }
-
-        items.forEach(function (item) {
-          var itemEl = document.createElement("div");
-          itemEl.className = "v1-import-item";
-
-          var strong = document.createElement("strong");
-          strong.textContent = item.id;
-          itemEl.appendChild(strong);
-
-          var ver = document.createElement("span");
-          ver.textContent = "@ " + item.version;
-          itemEl.appendChild(ver);
-
-          var name = document.createElement("div");
-          name.textContent = item.name;
-          itemEl.appendChild(name);
-
-          var uninstallBtn = document.createElement("button");
-          uninstallBtn.type = "button";
-          uninstallBtn.className = "v1-import-item-uninstall";
-          uninstallBtn.setAttribute("data-import-uninstall-id", item.id);
-          uninstallBtn.textContent = tr("importToolUninstallBtn");
-          itemEl.appendChild(uninstallBtn);
-
-          outputEl.appendChild(itemEl);
-        });
-      }
-
-      // shell: uninstalls one extension by id - shared by the per-item
-      // Uninstall button in the installed-extensions list and the catalog
-      // list's Uninstall button.
-      function performUninstall(id) {
-        if (!id) {
-          if (outputEl) outputEl.textContent = tr("extUninstallPrompt");
-          return;
-        }
-
-        var removeResult = extensionHost && extensionHost.uninstallExtension ? extensionHost.uninstallExtension(id) : { ok: false, error: tr("extUninstallFail") };
-        if (!removeResult.ok) {
-          if (outputEl) outputEl.textContent = tr("extUninstallFail") + "\n" + removeResult.error;
-          return;
-        }
-
-        if (commandBus && commandBus.unregisterAllFor) {
-          commandBus.unregisterAllFor(removeResult.id);
-        }
-        listInstalled();
-        renderCatalog();
-        if (outputEl) outputEl.textContent = tr("extUninstallOk") + "\n" + removeResult.id;
-        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extUninstallOk") + " - " + removeResult.id);
-        if (window.NetReconNewUI && typeof window.NetReconNewUI.syncExtensionToolUi === "function") {
-          window.NetReconNewUI.syncExtensionToolUi();
-        }
-        refreshActiveUI();
-      }
-
-      // shell: installs an already-parsed manifest object - shared by
-      // "Load from file..." and clicking Install on a catalog entry. All
-      // visibility flags (Tools menu / activity bar / left panel / tab) are
-      // fully manifest-controlled - only fills in the shell's own baseline
-      // defaults for whatever a tool key leaves unset, confirms permissions,
-      // then registers commands and syncs the dynamic UI. iconUrl (only set
-      // for catalog installs) becomes each tool's default icon, so the
-      // addon's own tools/<name>.png shows up in the activity bar/Tools menu
-      // without the manifest needing to reference it itself.
-      function installManifestObject(manifest, iconUrl) {
-        if (!manifest || typeof manifest !== "object") {
-          if (outputEl) outputEl.textContent = tr("extInvalidJson");
-          return Promise.resolve(false);
-        }
-
-        if (manifest.contributions && manifest.contributions.tools && typeof manifest.contributions.tools === "object") {
-          Object.keys(manifest.contributions.tools).forEach(function (toolKey) {
-            var meta = manifest.contributions.tools[toolKey] || {};
-            meta.ui = meta.ui && typeof meta.ui === "object" ? meta.ui : {};
-            if (meta.ui.showInLeftPanel === undefined) meta.ui.showInLeftPanel = false;
-            if (meta.ui.showAsTab === undefined) meta.ui.showAsTab = true;
-            if (iconUrl && meta.icon === undefined) meta.icon = iconUrl;
-            manifest.contributions.tools[toolKey] = meta;
-          });
-        }
-
-        function finishInstall() {
-          var result = extensionHost && extensionHost.installExtension ? extensionHost.installExtension(manifest) : { ok: false, error: tr("extInstallFail") };
-          if (!result.ok) {
-            if (outputEl) outputEl.textContent = tr("extInstallFail") + "\n" + result.error;
-            return false;
-          }
-
-          registerExtensionCommands(result.manifest);
-          if (outputEl) outputEl.textContent = tr("extInstallOk") + "\n" + result.manifest.id + "@" + result.manifest.version;
-          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extInstallOk") + " - " + result.manifest.id);
-          if (window.NetReconNewUI && typeof window.NetReconNewUI.syncExtensionToolUi === "function") {
-            window.NetReconNewUI.syncExtensionToolUi();
-          }
-          listInstalled();
-          renderCatalog();
-          refreshActiveUI();
-          return true;
-        }
-
-        // Show only permissions that are actually recognized/enforced (per
-        // extensions.js's validateManifest), not the manifest's raw request -
-        // otherwise the dialog could overstate what's really being granted.
-        var core = window.NetReconNewUICore || {};
-        var validated = core.extensions && core.extensions.validateManifest ? core.extensions.validateManifest(manifest) : null;
-        var requestedPermissions = validated && validated.ok ? validated.manifest.permissions : [];
-        if (!requestedPermissions.length) {
-          return Promise.resolve(finishInstall());
-        }
-
-        var confirmMsg = tr("extPermissionConfirmPrefix") + "\n\n- " + requestedPermissions.join("\n- ") + "\n\n" + tr("extPermissionConfirmSuffix");
-        var confirmDialog = window.NetReconNewUI && window.NetReconNewUI.openConfirmDialog;
-        var confirmed = confirmDialog
-          ? confirmDialog(tr("extPermissionConfirmTitle"), confirmMsg, tr("extPermissionConfirmOk"), tr("exitPromptCancel"))
-          : Promise.resolve(window.confirm(confirmMsg));
-
-        return confirmed.then(function (ok) {
-          if (!ok) {
-            if (outputEl) outputEl.textContent = tr("extPermissionDeclined");
-            return false;
-          }
-          return finishInstall();
-        });
-      }
-
-      function renderCatalog() {
-        if (!catalogEl) return;
-        var installedIds = extensionHost && extensionHost.listExtensions
-          ? extensionHost.listExtensions().map(function (item) { return item.id; })
-          : [];
-
-        catalogEl.innerHTML = "";
-        if (!catalogEntries.length) {
-          var emptyEl = document.createElement("div");
-          emptyEl.className = "v1-import-empty";
-          emptyEl.textContent = tr("importToolCatalogEmpty");
-          catalogEl.appendChild(emptyEl);
-          return;
-        }
-
-        catalogEntries.forEach(function (entry, idx) {
-          var manifest = entry.manifest || {};
-          var isInstalled = installedIds.indexOf(manifest.id) !== -1;
-
-          var itemEl = document.createElement("div");
-          itemEl.className = "v1-catalog-item";
-
-          var iconCell = document.createElement("div");
-          iconCell.className = "v1-catalog-icon-cell";
-          if (window.NetReconNewUI && typeof window.NetReconNewUI.renderExtIcon === "function") {
-            window.NetReconNewUI.renderExtIcon(iconCell, entry.iconUrl || "🧩");
-          } else {
-            iconCell.textContent = entry.iconUrl ? "" : "🧩";
-          }
-          itemEl.appendChild(iconCell);
-
-          var infoEl = document.createElement("div");
-          infoEl.className = "v1-catalog-info";
-          var nameEl = document.createElement("strong");
-          nameEl.textContent = manifest.name || manifest.id || "";
-          var descEl = document.createElement("div");
-          descEl.textContent = manifest.description || "";
-          infoEl.appendChild(nameEl);
-          infoEl.appendChild(descEl);
-          itemEl.appendChild(infoEl);
-
-          var actionBtn = document.createElement("button");
-          actionBtn.type = "button";
-          actionBtn.className = isInstalled ? "v1-import-item-uninstall" : "v1-catalog-install-btn";
-          actionBtn.textContent = isInstalled ? tr("importToolUninstallBtn") : tr("importToolInstallBtn");
-          actionBtn.setAttribute("data-catalog-index", String(idx));
-          actionBtn.setAttribute("data-catalog-action", isInstalled ? "uninstall" : "install");
-          itemEl.appendChild(actionBtn);
-
-          catalogEl.appendChild(itemEl);
-        });
-      }
-
-      if (catalogEl && catalogEl.dataset.catalogBound !== "1") {
-        catalogEl.dataset.catalogBound = "1";
-        catalogEl.addEventListener("click", function (e) {
-          var btn = e.target && e.target.closest ? e.target.closest("[data-catalog-index]") : null;
-          if (!btn) return;
-          var idx = Number(btn.getAttribute("data-catalog-index"));
-          var entry = catalogEntries[idx];
-          if (!entry) return;
-          if (btn.getAttribute("data-catalog-action") === "uninstall") {
-            performUninstall(entry.manifest && entry.manifest.id);
-          } else {
-            installManifestObject(entry.manifest, entry.iconUrl);
-          }
-        });
-      }
-
-      if (outputEl && outputEl.dataset.uninstallBound !== "1") {
-        outputEl.dataset.uninstallBound = "1";
-        outputEl.addEventListener("click", function (e) {
-          var btn = e.target && e.target.closest ? e.target.closest("[data-import-uninstall-id]") : null;
-          if (!btn) return;
-          performUninstall(btn.getAttribute("data-import-uninstall-id") || "");
-        });
-      }
-
-      if (catalogEl) {
-        if (catalogEntriesCache) {
-          renderCatalog();
-        } else {
-          loadCatalogCached()
-            .then(function (entries) {
-              catalogEntries = entries;
-              renderCatalog();
-            })
-            .catch(function () {
-              if (catalogEl) catalogEl.textContent = tr("importToolCatalogError");
-            });
-        }
-      }
-
-      root.querySelectorAll("[data-import-action]").forEach(function (button) {
-        if (button.dataset.bound === "1") return;
-        button.dataset.bound = "1";
-        button.addEventListener("click", function () {
-          var actionName = button.getAttribute("data-import-action");
-
-          if (actionName === "load-file") {
-            Promise.resolve(platform.invoke("open_extension_manifest_dialog", {}))
-              .then(function (text) {
-                var manifest = null;
-                try {
-                  manifest = JSON.parse(String(text || ""));
-                } catch (_) {
-                  if (outputEl) outputEl.textContent = tr("extInvalidJson");
-                  return;
-                }
-                installManifestObject(manifest);
-              })
-              .catch(function (err) {
-                var message = (err && err.message) || err || "";
-                var cancelled = message === "cancelled";
-                var unavailable = message === "tauri invoke unavailable";
-                if (cancelled || !outputEl) return;
-                outputEl.textContent = unavailable ? tr("extDesktopOnlyFeature") : tr("extInvalidJson");
-              });
-            return;
-          }
-        });
-      });
-    }
-
-    // Reads a JSON file the user picks: native dialog on desktop (Tauri),
-    // <input type=file> on www (mirrors session-sqlite-runtime.js's pickFile
-    // pattern, but this needs a filename to derive the language code from,
-    // which the desktop dialog path doesn't give us - so path/File.name is
-    // returned alongside the text).
-    function pickLanguageFileText() {
-      var invoke = platform.getInvoke ? platform.getInvoke() : null;
-      if (invoke) {
-        return platform.invoke("open_language_file_dialog", {}).then(function (result) {
-          return { name: (result && result.path) || "", text: (result && result.text) || "" };
-        });
-      }
-      return new Promise(function (resolve, reject) {
-        var input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".json";
-        input.addEventListener("change", function () {
-          var file = input.files && input.files[0];
-          if (!file) { reject(new Error("cancelled")); return; }
-          file.text().then(function (text) {
-            resolve({ name: file.name, text: text });
-          }, reject);
-        });
-        input.addEventListener("cancel", function () { reject(new Error("cancelled")); });
-        input.click();
-      });
-    }
-
-    function deriveLanguageCodeFromFilename(name) {
-      var base = String(name || "").split(/[\\/]/).pop() || "";
-      return base.replace(/\.json$/i, "").trim().toLowerCase();
-    }
-
-    function wireLanguageManagerButtons(rootEl) {
-      var root = rootEl && typeof rootEl.querySelector === "function"
-        ? rootEl
-        : document.getElementById("v1ToolDetail");
-      if (!root) return;
-
-      var installedListEl = root.querySelector('[data-lang-role="installed-list"]') || root.querySelector("#v1LangInstalledList");
-      var catalogEl = root.querySelector('[data-lang-role="catalog"]') || root.querySelector("#v1LangCatalog");
-      var langCatalogEntries = langCatalogEntriesCache || [];
-
-      function renderInstalledList() {
-        if (!installedListEl) return;
-        var current = i18n && i18n.getLang ? i18n.getLang() : (document.documentElement.getAttribute("lang") || "en");
-        var details = i18n && i18n.listLanguageDetails ? i18n.listLanguageDetails() : [];
-        installedListEl.innerHTML = details.map(function (item) {
-          var checked = item.code === current ? " checked" : "";
-          var versionHtml = item.version ? " <span>@ " + escapeHtml(item.version) + "</span>" : "";
-          return "<label class=\"v1-lang-item\">"
-            + "<input type=\"radio\" name=\"v1LangActive\" data-lang-radio=\"" + escapeHtml(item.code) + "\"" + checked + " />"
-            + "<span class=\"v1-lang-flag\" aria-hidden=\"true\">" + escapeHtml(item.flag || "🌐") + "</span>"
-            + "<strong>" + escapeHtml(item.name || item.code.toUpperCase()) + "</strong>"
-            + versionHtml
-            + "</label>";
-        }).join("");
-      }
-
-      function activate(code) {
-        var before = i18n && i18n.getLang ? i18n.getLang() : "";
-        var after = i18n && i18n.setLang ? i18n.setLang(code) : before;
-        if (before === after && code.toLowerCase() !== after.toLowerCase()) {
-          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langActivateFail") + " - " + code);
-          return false;
-        }
-        renderInstalledList();
-        if (window.NetReconNewUI && typeof window.NetReconNewUI.refreshLanguageUi === "function") {
-          window.NetReconNewUI.refreshLanguageUi();
-        }
-        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langActivateOk") + " - " + after);
-        return true;
-      }
-
-      function renderCatalog() {
-        if (!catalogEl) return;
-        var installedCodes = i18n && i18n.listLanguages ? i18n.listLanguages() : [];
-        catalogEl.innerHTML = "";
-        if (!langCatalogEntries.length) {
-          var emptyEl = document.createElement("div");
-          emptyEl.className = "v1-import-empty";
-          emptyEl.textContent = tr("langCatalogEmpty");
-          catalogEl.appendChild(emptyEl);
-          return;
-        }
-        langCatalogEntries.forEach(function (manifest, idx) {
-          var isInstalled = installedCodes.indexOf(manifest.code) !== -1;
-
-          var itemEl = document.createElement("div");
-          itemEl.className = "v1-catalog-item";
-
-          var iconCell = document.createElement("div");
-          iconCell.className = "v1-catalog-icon-cell";
-          iconCell.textContent = manifest.flag || "🌐";
-          itemEl.appendChild(iconCell);
-
-          var infoEl = document.createElement("div");
-          infoEl.className = "v1-catalog-info";
-          var nameEl = document.createElement("strong");
-          nameEl.textContent = manifest.name || manifest.code;
-          var descEl = document.createElement("div");
-          descEl.textContent = manifest.version ? "v" + manifest.version : "";
-          infoEl.appendChild(nameEl);
-          infoEl.appendChild(descEl);
-          itemEl.appendChild(infoEl);
-
-          if (isInstalled) {
-            var badge = document.createElement("span");
-            badge.className = "v1-catalog-installed-badge";
-            badge.textContent = tr("langCatalogInstalledBadge");
-            itemEl.appendChild(badge);
-          } else {
-            var installBtn = document.createElement("button");
-            installBtn.type = "button";
-            installBtn.className = "v1-catalog-install-btn";
-            installBtn.textContent = tr("importToolInstallBtn");
-            installBtn.setAttribute("data-lang-catalog-index", String(idx));
-            itemEl.appendChild(installBtn);
-          }
-
-          catalogEl.appendChild(itemEl);
-        });
-      }
-
-      function installLanguageManifest(manifest) {
-        if (!manifest || typeof manifest.code !== "string" || !manifest.code.trim()) return;
-        if (!manifest.dictionary || typeof manifest.dictionary !== "object" || Array.isArray(manifest.dictionary)) return;
-        var addResult = i18n && i18n.addLanguage
-          ? i18n.addLanguage(manifest.code, manifest.dictionary, { name: manifest.name, version: manifest.version, flag: manifest.flag, rtl: !!manifest.rtl })
-          : { ok: false, error: tr("langAddFail") };
-        if (!addResult.ok) {
-          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langAddFail") + " - " + addResult.error);
-          return;
-        }
-        renderInstalledList();
-        renderCatalog();
-        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langCatalogInstallOk") + " - " + addResult.code);
-      }
-
-      if (installedListEl && installedListEl.dataset.bound !== "1") {
-        installedListEl.dataset.bound = "1";
-        installedListEl.addEventListener("change", function (event) {
-          var radio = event.target && event.target.closest ? event.target.closest("[data-lang-radio]") : null;
-          if (!radio) return;
-          activate(radio.getAttribute("data-lang-radio"));
-        });
-      }
-
-      root.querySelectorAll("[data-lang-action]").forEach(function (button) {
-        if (button.dataset.bound === "1") return;
-        button.dataset.bound = "1";
-        button.addEventListener("click", function () {
-          if (button.getAttribute("data-lang-action") !== "import") return;
-
-          pickLanguageFileText().then(function (picked) {
-            var parsed;
-            try {
-              parsed = JSON.parse(picked.text || "{}");
-            } catch (_) {
-              if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langInvalidDict"));
-              return;
-            }
-
-            // Accept both local-import shapes: a flat key->text dictionary
-            // (the documented local-import format, CONTRIBUTING §5), and
-            // the "rich" catalog manifest shape (code/name/version/flag/
-            // rtl/dictionary, CONTRIBUTING §5's languages/<code>.json) - a
-            // user pointing this file picker at a catalog-style file (e.g.
-            // one they downloaded from languages/) should get the real
-            // translations and metadata, not a silent dictionary-shaped
-            // wrapper with no matching keys (which used to fall back to
-            // English with no error).
-            var isRichManifest = parsed && typeof parsed === "object" && !Array.isArray(parsed)
-              && parsed.dictionary && typeof parsed.dictionary === "object" && !Array.isArray(parsed.dictionary);
-            var dict = isRichManifest ? parsed.dictionary : parsed;
-            var code = isRichManifest && typeof parsed.code === "string" && parsed.code.trim()
-              ? parsed.code.trim().toLowerCase()
-              : deriveLanguageCodeFromFilename(picked.name);
-            if (!code) {
-              if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langInvalidCode"));
-              return;
-            }
-            var meta = isRichManifest ? { name: parsed.name, version: parsed.version, flag: parsed.flag, rtl: !!parsed.rtl } : undefined;
-
-            var addResult = i18n && i18n.addLanguage ? i18n.addLanguage(code, dict, meta) : { ok: false, error: tr("langAddFail") };
-            if (!addResult.ok) {
-              if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langAddFail") + " - " + addResult.error);
-              return;
-            }
-
-            renderCatalog();
-            activate(addResult.code);
-          }).catch(function (err) {
-            if (err && err.message === "cancelled") return;
-            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("langAddFail"));
-          });
-        });
-      });
-
-      if (catalogEl && catalogEl.dataset.langCatalogBound !== "1") {
-        catalogEl.dataset.langCatalogBound = "1";
-        catalogEl.addEventListener("click", function (e) {
-          var btn = e.target && e.target.closest ? e.target.closest("[data-lang-catalog-index]") : null;
-          if (!btn) return;
-          var idx = Number(btn.getAttribute("data-lang-catalog-index"));
-          var manifest = langCatalogEntries[idx];
-          if (manifest) installLanguageManifest(manifest);
-        });
-      }
-
-      renderInstalledList();
-      renderCatalog();
-
-      loadLanguageCatalogCached().then(function (entries) {
-        langCatalogEntries = entries;
-        renderCatalog();
-      }).catch(function () {
-        if (catalogEl) {
-          catalogEl.innerHTML = "";
-          var errEl = document.createElement("div");
-          errEl.className = "v1-import-empty";
-          errEl.textContent = tr("langCatalogError");
-          catalogEl.appendChild(errEl);
-        }
-      });
-    }
-
     function switchTool(tool) {
       ensureAllTabControls();
       var detachedCard = tool ? getDetachedCard(tool) : null;
@@ -2924,7 +1976,7 @@
       getDetachedTools: getDetachedTools,
       getOpenCenterTools: getOpenCenterTools,
       closeCenterTool: closeToolTab,
-      flattenIpLibraryEntries: flattenIpLibraryEntries,
+      flattenIpLibraryEntries: ipLibraryRuntime && ipLibraryRuntime.flattenIpLibraryEntries,
       initWorkbenchTabs: initWorkbenchTabs,
       buildDetailHtml: buildDetailHtml,
       wireToolRuntime: wireToolRuntime,
