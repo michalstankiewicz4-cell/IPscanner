@@ -87,6 +87,18 @@
   min-width: 0;
 }
 
+/* "Profile" is longer than the other short labels (From/To/Ports) sharing
+   .v1-ip-label's fixed 32px column - give this row's label an auto-width
+   column instead of squeezing/overflowing the fixed one. */
+.v1-port-preset-row--profile {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.v1-port-preset-row--profile .v1-ip-label {
+  width: auto;
+  white-space: nowrap;
+}
+
 .v1-port-preset-select {
   width: 100%;
   min-width: 0;

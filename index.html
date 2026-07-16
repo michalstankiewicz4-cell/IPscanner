@@ -237,6 +237,17 @@
               <div class="v1-scan-mode-note" data-scan-mode-panel="icmp" hidden>
                 <span id="v1ScanModeIcmpNote">ICMP pings every host in the range - no ports needed.</span>
               </div>
+              <div class="v1-port-preset-row v1-port-preset-row--profile">
+                <label class="v1-ip-label" id="v1ProfileSelectLabel">Profile</label>
+                <div class="v1-profile-dropdown" data-profile-dropdown>
+                  <button type="button" class="v1-profile-dropdown-trigger" id="v1ProfileSelectTrigger" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="v1-profile-swatch v1-profile-swatch--select" id="v1ProfileSelectSwatch"></span>
+                    <span class="v1-profile-dropdown-label" id="v1ProfileSelectValueLabel">—</span>
+                    <span class="v1-profile-dropdown-arrow" aria-hidden="true">▾</span>
+                  </button>
+                  <div class="v1-profile-dropdown-menu" id="v1ProfileSelectMenu" role="listbox" hidden></div>
+                </div>
+              </div>
               <div class="v1-scanner-actions v1-scanner-actions--spaced">
                 <button type="button" data-scanner-action="start">▶ Start</button>
                 <button type="button" data-scanner-action="stop">■ Stop</button>
@@ -560,11 +571,11 @@
                   </div>
                   <div class="v1-section-body">
                     <label class="v1-config-checkbox-row">
-                      <input type="checkbox" id="v1ConfigProtocolTcp" checked />
+                      <input type="radio" name="v1ConfigProtocolTcpMode" id="v1ConfigProtocolTcp" value="connect" checked />
                       <span id="v1ConfigProtocolTcpLabel">TCP Connect</span>
                     </label>
                     <label class="v1-config-checkbox-row">
-                      <input type="checkbox" id="v1ConfigProtocolTcpSyn" />
+                      <input type="radio" name="v1ConfigProtocolTcpMode" id="v1ConfigProtocolTcpSyn" value="syn" />
                       <span id="v1ConfigProtocolTcpSynLabel">TCP SYN</span>
                     </label>
                     <label class="v1-config-checkbox-row">
@@ -609,11 +620,11 @@
                       <span id="v1ConfigBannerGrabbingLabel">Banner Grabbing</span>
                     </label>
                     <label class="v1-config-checkbox-row">
-                      <input type="checkbox" id="v1ConfigHttpPageTitle" checked />
+                      <input type="checkbox" id="v1ConfigHttpPageTitle" />
                       <span id="v1ConfigHttpPageTitleLabel">HTTP Page Title</span>
                     </label>
                     <label class="v1-config-checkbox-row">
-                      <input type="checkbox" id="v1ConfigAccessSnapshot" checked />
+                      <input type="checkbox" id="v1ConfigAccessSnapshot" />
                       <span id="v1ConfigAccessSnapshotLabel">Access / Snapshot</span>
                     </label>
                     <label class="v1-config-checkbox-row">
@@ -622,7 +633,7 @@
                     </label>
                     <div class="v1-config-subgroup-heading" id="v1ConfigDetectHostEnrichmentHeading">Host Enrichment</div>
                     <label class="v1-config-checkbox-row">
-                      <input type="checkbox" id="v1ConfigReverseDns" checked />
+                      <input type="checkbox" id="v1ConfigReverseDns" />
                       <span id="v1ConfigReverseDnsLabel">Reverse DNS</span>
                     </label>
                     <label class="v1-config-checkbox-row">
@@ -630,19 +641,19 @@
                       <span id="v1ConfigOsDetectionLabel">OS Detection</span>
                     </label>
                     <label class="v1-config-checkbox-row">
-                      <input type="checkbox" id="v1ConfigCountryFlag" checked />
+                      <input type="checkbox" id="v1ConfigCountryFlag" />
                       <span id="v1ConfigCountryFlagLabel">Country Flag</span>
                     </label>
                     <label class="v1-config-checkbox-row">
-                      <input type="checkbox" id="v1ConfigIsp" checked />
+                      <input type="checkbox" id="v1ConfigIsp" />
                       <span id="v1ConfigIspLabel">ISP</span>
                     </label>
                     <label class="v1-config-checkbox-row">
-                      <input type="checkbox" id="v1ConfigAs" checked />
+                      <input type="checkbox" id="v1ConfigAs" />
                       <span id="v1ConfigAsLabel">AS</span>
                     </label>
                     <label class="v1-config-checkbox-row">
-                      <input type="checkbox" id="v1ConfigDeviceIdentification" checked />
+                      <input type="checkbox" id="v1ConfigDeviceIdentification" />
                       <span id="v1ConfigDeviceIdentificationLabel">Device Identification</span>
                     </label>
                   </div>
@@ -704,7 +715,7 @@
 
   <script src="js/new-ui/core/app-version.js?v=2.1.0"></script>
   <script src="js/new-ui/core/store.js"></script>
-  <script src="js/new-ui/core/i18n.js?v=20260923"></script>
+  <script src="js/new-ui/core/i18n.js?v=20260928"></script>
   <script src="js/new-ui/core/theme.js?v=20260604"></script>
   <script src="js/new-ui/core/tool-catalog.js?v=20260913"></script>
   <script src="js/new-ui/core/presets-runtime.js?v=20260817"></script>
@@ -737,7 +748,7 @@
   <script src="js/new-ui/core/panels-runtime.js?v=20260924"></script>
   <script src="js/new-ui/core/menu-runtime.js?v=20260923"></script>
   <script src="js/new-ui/core/session-runtime.js?v=20260911"></script>
-  <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260921"></script>
+  <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260929"></script>
   <script src="js/new-ui/core/powershell-console-runtime.js?v=20260604"></script>
     <script src="js/new-ui/core/bootstrap-runtime.js?v=20260923"></script>
 </body>

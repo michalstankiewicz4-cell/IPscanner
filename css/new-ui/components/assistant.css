@@ -275,7 +275,8 @@ html[dir="rtl"] .v1-ai-mode-badge {
   margin-top: 0;
 }
 
-.v1-config-checkbox-row input[type="checkbox"] {
+.v1-config-checkbox-row input[type="checkbox"],
+.v1-config-checkbox-row input[type="radio"] {
   accent-color: var(--brand);
   cursor: pointer;
 }
@@ -399,6 +400,12 @@ html[dir="rtl"] .v1-ai-mode-badge {
   border-radius: 8px;
   background: #22252a;
   padding: 5px 6px;
+  cursor: pointer;
+}
+
+.v1-profile-item.is-active {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand) inset;
 }
 
 .v1-profile-swatch {
@@ -406,6 +413,90 @@ html[dir="rtl"] .v1-ai-mode-badge {
   height: 16px;
   border-radius: 4px;
   flex: 0 0 auto;
+}
+
+/* LS IP Scanner "Profile" dropdown (custom, not a native <select> - a
+   native <option> can't show a colored swatch separately from its text,
+   and the closed-select display ignores an <option>'s own color, only
+   using the <select>'s own style - see scanner-sidebar-runtime.js's
+   renderProfileSelectOptions()). */
+.v1-profile-dropdown {
+  position: relative;
+}
+
+.v1-profile-dropdown-trigger {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #1f1f23;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  color: var(--txt);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  padding: 4px 6px;
+  cursor: pointer;
+  outline: none;
+}
+
+.v1-profile-dropdown-trigger:focus {
+  border-color: var(--brand);
+}
+
+.v1-profile-swatch--select {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+}
+
+.v1-profile-dropdown-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  color: var(--txt);
+}
+
+.v1-profile-dropdown-arrow {
+  flex: 0 0 auto;
+  color: var(--txt-dim);
+  font-size: 10px;
+}
+
+.v1-profile-dropdown-menu {
+  /* position:fixed with left/top/width set in JS (see
+     positionProfileDropdownMenu() in scanner-sidebar-runtime.js) - a local
+     position:absolute was found to paint behind later sidebar sections
+     (sibling <li> content with no z-index still wins locally in some
+     stacking contexts); fixed positioning escapes that entirely, mirroring
+     panels-runtime.js's positionFloatingMenu(). */
+  position: fixed;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #252526;
+  border: 1px solid #3c3c3c;
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.v1-profile-dropdown-menu[hidden] {
+  display: none;
+}
+
+.v1-profile-dropdown-menu .v1-profile-item:hover {
+  border-color: var(--brand);
 }
 
 .v1-profile-name {

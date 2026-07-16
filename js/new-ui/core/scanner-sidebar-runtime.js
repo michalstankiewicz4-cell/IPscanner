@@ -8,6 +8,7 @@
     var RANGE_HISTORY_KEY = "netrecon_range_history";
     var presetsListenerBound = false;
     var portPresetListenerBound = false;
+    var profileSelectListenerBound = false;
 
     function t(key) {
       return typeof tr === "function" ? tr(key) : key;
@@ -174,13 +175,96 @@
 
     // Scanner sidebar "Profiles" - named/colored labels the user can create
     // and delete, on top of the app's usual localStorage-list pattern (same
-    // shape as Range History above). Not wired to any real scan-settings
-    // save/restore yet - just the add/list/delete UI for now. The first
-    // "Default" entry is synthesized (not stored) until a real profile gets
-    // added, and can never be deleted (no delete button rendered for it,
-    // plus a defensive check in the click handler).
+    // shape as Range History above). Clicking a profile row snapshots/restores
+    // every field in the RS Config tab (see CONFIG_FIELD_IDS below) - most of
+    // those fields are still UI-only scaffolding with no other reader/writer;
+    // the 2 fields that DO have real backing state (host timeout/max
+    // concurrent hosts, netrecon_scan_defaults_v1) get a "change" event
+    // dispatched after restoring so their own persist() listener (see
+    // initConfigPerformanceInputs) fires too. There is no synthesized
+    // "Default" entry - the list can be genuinely empty; when it is (or
+    // nothing is selected), the Config tab's own live state is driven by the
+    // form-state autosave layer below (initConfigFormAutosave), not by any
+    // profile.
     var PROFILES_KEY = "netrecon_scanner_profiles_v1";
-    var DEFAULT_PROFILE = { id: "default", name: "Default", color: "#f2c94c", locked: true };
+    var ACTIVE_PROFILE_KEY = "netrecon_scanner_active_profile_v1";
+
+    // RS Config tab field ids a profile snapshots/restores (Protocol,
+    // Performance, Detect, Security) - checkbox vs number-input handled by
+    // each element's own .type, so this stays a flat list.
+    var CONFIG_FIELD_IDS = [
+      "v1ConfigProtocolTcp", "v1ConfigProtocolTcpSyn", "v1ConfigProtocolUdp",
+      "v1ConfigHostTimeout", "v1ConfigMaxConcurrentHosts", "v1ConfigMaxConcurrentPorts", "v1ConfigRetries",
+      "v1ConfigBannerGrabbing", "v1ConfigHttpPageTitle", "v1ConfigAccessSnapshot", "v1ConfigSslCertInfo",
+      "v1ConfigReverseDns", "v1ConfigOsDetection", "v1ConfigCountryFlag", "v1ConfigIsp", "v1ConfigAs",
+      "v1ConfigDeviceIdentification", "v1ConfigRandomizePorts", "v1ConfigRandomizeHosts", "v1ConfigScanDelay",
+    ];
+
+    function captureConfigFieldsSnapshot() {
+      var snapshot = {};
+      CONFIG_FIELD_IDS.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        snapshot[id] = (el.type === "checkbox" || el.type === "radio") ? el.checked : el.value;
+      });
+      return snapshot;
+    }
+
+    function applyConfigFieldsSnapshot(snapshot) {
+      if (!snapshot || typeof snapshot !== "object") return;
+      CONFIG_FIELD_IDS.forEach(function (id) {
+        if (!Object.prototype.hasOwnProperty.call(snapshot, id)) return;
+        var el = document.getElementById(id);
+        if (!el) return;
+        if (el.type === "checkbox" || el.type === "radio") {
+          el.checked = !!snapshot[id];
+        } else {
+          el.value = String(snapshot[id]);
+        }
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    }
+
+    // Generic "whatever's currently on screen" continuity for the Config
+    // tab, independent of named profiles: autosaves on every field change
+    // and restores on boot, so a reload/relaunch without picking any
+    // profile still comes back to the last-used form state instead of
+    // always resetting to the HTML defaults above.
+    var CONFIG_FORM_STATE_KEY = "netrecon_scanner_config_form_v1";
+    var configFormAutosaveListenerBound = false;
+
+    function loadConfigFormState() {
+      try {
+        var raw = localStorage.getItem(CONFIG_FORM_STATE_KEY);
+        var parsed = raw ? JSON.parse(raw) : null;
+        return parsed && typeof parsed === "object" ? parsed : null;
+      } catch (err) {
+        console.error("[config-form] load failed:", err);
+        return null;
+      }
+    }
+
+    function saveConfigFormState(snapshot) {
+      try {
+        localStorage.setItem(CONFIG_FORM_STATE_KEY, JSON.stringify(snapshot || {}));
+      } catch (err) {
+        console.error("[config-form] save failed:", err);
+      }
+    }
+
+    function initConfigFormAutosave() {
+      var saved = loadConfigFormState();
+      if (saved) applyConfigFieldsSnapshot(saved);
+
+      if (!configFormAutosaveListenerBound) {
+        document.addEventListener("change", function (event) {
+          var id = event.target && event.target.id;
+          if (!id || CONFIG_FIELD_IDS.indexOf(id) === -1) return;
+          saveConfigFormState(captureConfigFieldsSnapshot());
+        });
+        configFormAutosaveListenerBound = true;
+      }
+    }
 
     function isValidHexColor(value) {
       return /^#[0-9a-fA-F]{3,8}$/.test(String(value || ""));
@@ -190,17 +274,14 @@
       try {
         var raw = localStorage.getItem(PROFILES_KEY);
         var parsed = raw ? JSON.parse(raw) : null;
-        if (!Array.isArray(parsed) || !parsed.length) return [Object.assign({}, DEFAULT_PROFILE)];
+        if (!Array.isArray(parsed) || !parsed.length) return [];
 
-        var sanitized = parsed.filter(function (item) {
+        return parsed.filter(function (item) {
           return item && typeof item.name === "string" && isValidHexColor(item.color);
         });
-        var hasDefault = sanitized.some(function (item) { return item.id === "default"; });
-        if (!hasDefault) sanitized.unshift(Object.assign({}, DEFAULT_PROFILE));
-        return sanitized;
       } catch (err) {
         console.error("[profiles] load failed:", err);
-        return [Object.assign({}, DEFAULT_PROFILE)];
+        return [];
       }
     }
 
@@ -212,23 +293,127 @@
       }
     }
 
+    function getActiveProfileId() {
+      try {
+        return localStorage.getItem(ACTIVE_PROFILE_KEY) || "";
+      } catch (err) {
+        console.error("[profiles] read active id failed:", err);
+        return "";
+      }
+    }
+
+    function setActiveProfileId(id) {
+      try {
+        localStorage.setItem(ACTIVE_PROFILE_KEY, String(id || ""));
+      } catch (err) {
+        console.error("[profiles] write active id failed:", err);
+      }
+    }
+
+    function closeProfileDropdownMenu() {
+      var menu = document.getElementById("v1ProfileSelectMenu");
+      var trigger = document.getElementById("v1ProfileSelectTrigger");
+      if (menu) menu.hidden = true;
+      if (trigger) trigger.setAttribute("aria-expanded", "false");
+    }
+
+    // position:fixed placement computed from the trigger's viewport rect -
+    // a local position:absolute previously let later sidebar sections paint
+    // over the menu (see the CSS comment on .v1-profile-dropdown-menu).
+    // Mirrors panels-runtime.js's positionFloatingMenu(): measure the
+    // menu's natural height first, decide up/down from that, then CLAMP the
+    // resulting top into the viewport before deriving maxHeight from the
+    // clamped position - deriving maxHeight from an unclamped top (the
+    // previous version) could place the menu partially off-screen on short
+    // windows.
+    function positionProfileDropdownMenu() {
+      var menu = document.getElementById("v1ProfileSelectMenu");
+      var trigger = document.getElementById("v1ProfileSelectTrigger");
+      if (!menu || !trigger) return;
+
+      var margin = 8;
+      var gap = 4;
+      var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 768;
+      var triggerRect = trigger.getBoundingClientRect();
+
+      menu.style.left = Math.round(triggerRect.left) + "px";
+      menu.style.width = Math.round(triggerRect.width) + "px";
+      menu.style.maxHeight = "";
+
+      var menuHeight = Math.max(120, Math.ceil(menu.offsetHeight || 0));
+      var openUp = (triggerRect.bottom + gap + menuHeight + margin > viewportHeight)
+        && (triggerRect.top - gap - menuHeight > margin);
+
+      var top = openUp ? (triggerRect.top - menuHeight - gap) : (triggerRect.bottom + gap);
+      top = Math.max(margin, Math.min(top, viewportHeight - margin - menuHeight));
+
+      menu.style.bottom = "";
+      menu.style.top = Math.round(top) + "px";
+      menu.style.maxHeight = Math.max(120, viewportHeight - margin - top) + "px";
+    }
+
+    function renderProfileSelectOptions() {
+      var menu = document.getElementById("v1ProfileSelectMenu");
+      var swatch = document.getElementById("v1ProfileSelectSwatch");
+      var valueLabel = document.getElementById("v1ProfileSelectValueLabel");
+      if (!menu || !swatch || !valueLabel) return;
+      var items = loadProfiles();
+
+      var activeId = getActiveProfileId();
+      var hasActive = items.some(function (item) { return item.id === activeId; });
+      if (!hasActive) {
+        activeId = "";
+        setActiveProfileId(activeId);
+      }
+
+      menu.innerHTML = items.map(function (item) {
+        var label = escapeHtml(item.name);
+        var color = isValidHexColor(item.color) ? item.color : "#4aa3ff";
+        var activeClass = item.id === activeId ? " is-active" : "";
+        return "<div class=\"v1-profile-item" + activeClass + "\" data-profile-select-id=\"" + escapeHtml(String(item.id)) + "\" role=\"option\">"
+          + "<span class=\"v1-profile-swatch\" style=\"background:" + color + "\"></span>"
+          + "<span class=\"v1-profile-name\" title=\"" + label + "\">" + label + "</span>"
+          + "</div>";
+      }).join("");
+
+      var activeItem = items.find(function (item) { return item.id === activeId; });
+      swatch.style.background = isValidHexColor(activeItem && activeItem.color) ? activeItem.color : "transparent";
+      valueLabel.textContent = activeItem ? activeItem.name : t("scannerProfileNone");
+    }
+
+    function selectProfile(id) {
+      var items = loadProfiles();
+      var item = items.find(function (entry) { return entry.id === id; });
+      if (!item) return;
+
+      applyConfigFieldsSnapshot(item.settings);
+      setActiveProfileId(item.id);
+      renderProfiles();
+      closeProfileDropdownMenu();
+      if (typeof setStatusLine === "function") {
+        setStatusLine(t("statusProfileLoaded") + " " + item.name);
+      }
+    }
+
     function renderProfiles() {
       var root = document.getElementById("v1ProfilesList");
       if (!root) return;
       var items = loadProfiles();
+      var activeId = getActiveProfileId();
 
       root.innerHTML = items.map(function (item, idx) {
-        var name = escapeHtml(item.locked ? t("scannerProfileDefaultName") : item.name);
+        var name = escapeHtml(item.name);
         var color = isValidHexColor(item.color) ? item.color : "#4aa3ff";
-        var deleteBtn = item.locked
-          ? ""
-          : "<button type=\"button\" class=\"v1-profile-delete-btn\" data-profile-index=\"" + idx + "\" title=\"" + escapeHtml(t("scannerProfileDeleteAria")) + "\" aria-label=\"" + escapeHtml(t("scannerProfileDeleteAria")) + "\">x</button>";
-        return "<div class=\"v1-profile-item\">"
+        var activeClass = item.id === activeId ? " is-active" : "";
+        var deleteBtn = "<button type=\"button\" class=\"v1-profile-delete-btn\" data-profile-index=\"" + idx + "\" title=\"" + escapeHtml(t("scannerProfileDeleteAria")) + "\" aria-label=\"" + escapeHtml(t("scannerProfileDeleteAria")) + "\">x</button>";
+        return "<div class=\"v1-profile-item" + activeClass + "\" data-profile-index=\"" + idx + "\">"
           + "<span class=\"v1-profile-swatch\" style=\"background:" + color + "\"></span>"
           + "<span class=\"v1-profile-name\" title=\"" + name + "\">" + name + "</span>"
           + deleteBtn
           + "</div>";
       }).join("");
+
+      renderProfileSelectOptions();
     }
 
     function addProfile(name, color) {
@@ -243,6 +428,7 @@
         id: "p" + Date.now().toString(36) + Math.floor(Math.random() * 1000),
         name: trimmedName,
         color: safeColor,
+        settings: captureConfigFieldsSnapshot(),
       });
       saveProfiles(items);
       renderProfiles();
@@ -272,17 +458,33 @@
       });
 
       listRoot.addEventListener("click", function (event) {
-        var btn = event.target.closest("[data-profile-index]");
-        if (!btn) return;
-        var idx = Number(btn.getAttribute("data-profile-index"));
-        var items = loadProfiles();
-        var item = items[idx];
-        if (!item || item.locked) return;
+        var deleteBtn = event.target.closest(".v1-profile-delete-btn");
+        if (deleteBtn) {
+          var deleteIdx = Number(deleteBtn.getAttribute("data-profile-index"));
+          var items = loadProfiles();
+          var item = items[deleteIdx];
+          if (!item) return;
 
-        items.splice(idx, 1);
-        saveProfiles(items);
+          items.splice(deleteIdx, 1);
+          saveProfiles(items);
+          renderProfiles();
+          if (typeof setStatusLine === "function") setStatusLine(t("statusProfileDeleted"));
+          return;
+        }
+
+        var row = event.target.closest(".v1-profile-item");
+        if (!row) return;
+        var idx = Number(row.getAttribute("data-profile-index"));
+        var loadItems = loadProfiles();
+        var loadItem = loadItems[idx];
+        if (!loadItem) return;
+
+        applyConfigFieldsSnapshot(loadItem.settings);
+        setActiveProfileId(loadItem.id);
         renderProfiles();
-        if (typeof setStatusLine === "function") setStatusLine(t("statusProfileDeleted"));
+        if (typeof setStatusLine === "function") {
+          setStatusLine(t("statusProfileLoaded") + " " + loadItem.name);
+        }
       });
 
       renderProfiles();
@@ -562,6 +764,7 @@
       var profileNameInput = document.getElementById("v1ProfileNameInput");
       var profileColorInput = document.getElementById("v1ProfileColorInput");
       var profileAddBtn = document.getElementById("v1ProfileAddBtn");
+      var profileSelectLabel = document.getElementById("v1ProfileSelectLabel");
 
       if (detectTitle) detectTitle.textContent = t("scannerDetectIp");
       if (extLabel) extLabel.textContent = t("scannerExternalIp");
@@ -634,6 +837,7 @@
       if (profileNameInput) profileNameInput.setAttribute("placeholder", t("scannerProfileNamePlaceholder"));
       if (profileColorInput) profileColorInput.setAttribute("aria-label", t("scannerProfileColorAria"));
       if (profileAddBtn) profileAddBtn.setAttribute("aria-label", t("scannerProfileAddAria"));
+      if (profileSelectLabel) profileSelectLabel.textContent = t("scannerProfileSelectLabel");
       renderProfiles();
 
       // RS "Config" tab, opened alongside the LS/CS tabs when IP Scanner is
@@ -697,6 +901,8 @@
 
       renderPortPresetOptions();
 
+      renderProfiles();
+
       renderRangeHistory();
     }
 
@@ -705,6 +911,7 @@
       initRangeHistoryUi();
       initProfilesUi();
       initScanModeToggle();
+      initConfigFormAutosave();
       initConfigPerformanceInputs();
       var portPreset = document.getElementById("v1PortPreset");
       if (portPreset && !portPresetListenerBound) {
@@ -719,6 +926,35 @@
           renderPortPresetOptions();
         });
         presetsListenerBound = true;
+      }
+      var profileTrigger = document.getElementById("v1ProfileSelectTrigger");
+      var profileMenu = document.getElementById("v1ProfileSelectMenu");
+      if (profileTrigger && profileMenu && !profileSelectListenerBound) {
+        profileTrigger.addEventListener("click", function (event) {
+          event.stopPropagation();
+          var isOpen = !profileMenu.hidden;
+          if (isOpen) {
+            closeProfileDropdownMenu();
+          } else {
+            profileMenu.hidden = false;
+            profileTrigger.setAttribute("aria-expanded", "true");
+            positionProfileDropdownMenu();
+          }
+        });
+
+        profileMenu.addEventListener("click", function (event) {
+          var row = event.target.closest("[data-profile-select-id]");
+          if (!row) return;
+          selectProfile(row.getAttribute("data-profile-select-id"));
+        });
+
+        document.addEventListener("click", function (event) {
+          if (profileMenu.hidden) return;
+          if (event.target.closest("[data-profile-dropdown]")) return;
+          closeProfileDropdownMenu();
+        });
+
+        profileSelectListenerBound = true;
       }
       applyStaticTranslations();
     }
