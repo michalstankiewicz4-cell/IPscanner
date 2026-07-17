@@ -104,6 +104,19 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
 
 ## Planned
 
+- **Real self-update (VS Code-style: background download, restart to
+  apply)** — today's "Update check on launch" (see "Done" above) only shows
+  a dialog with a manual download link. The official `tauri-plugin-updater`
+  can do the rest: check a manifest (`latest.json`, publishable alongside
+  GitHub Releases), download, verify, and install, leaving only a restart
+  prompt. Its signing is **Ed25519, self-generated, free** — not to be
+  confused with paid Windows Authenticode code-signing (which the app
+  doesn't have today and isn't required for this). Main prerequisite: the
+  updater cooperates most cleanly with an **installer-based** build; today's
+  releases ship a portable zip (bare `.exe` + `scripts/` folder, see backlog
+  item 23), so adopting this would mean either switching releases to the
+  already-unused NSIS installer template in `src-tauri/nsis/`, or building a
+  custom self-replace-on-restart flow to stay portable.
 - Spanish and Russian language dictionaries (Latin/Cyrillic, no RTL
   complexity) — just adding a `languages/<code>.json` manifest to the repo,
   reusing the GitHub-backed language catalog mechanism (see "Done" above).
