@@ -224,7 +224,10 @@ body:not(.v1-unfinished-tools-on) .v1-lib-block-row[data-block-category="functio
 }
 
 .v1-shellcraft-inspector {
-  padding: 4px;
+  /* .v1-right-content lost its top padding (see comment in assistant.css)
+     so RS content can start flush at the top like LS - bump this pane's
+     own top padding to compensate, keeping its prior spacing. */
+  padding: 10px 4px 4px;
 }
 
 .v1-shellcraft-inspector-field {

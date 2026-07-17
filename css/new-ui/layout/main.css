@@ -227,10 +227,13 @@ html[dir="rtl"] .v1-side-head {
   display: none;
 }
 
+/* border-top instead of inset box-shadow - see .v1-tab.active's comment
+   for why (subpixel vertical seam bleed at the active tab's edges). */
 .v1-sidebar-tool-tab-wrap.is-left-active {
   color: var(--txt);
   background: var(--bg-elev);
-  box-shadow: inset 0 2px 0 var(--brand);
+  border-top: 2px solid var(--brand);
+  padding-top: 5px;
 }
 
 .v1-sidebar-tool-tab-wrap:hover:not(.is-left-active) {
@@ -626,10 +629,19 @@ html[dir="rtl"] .v1-rightbar.collapsed .v1-side-head {
   display: none !important;
 }
 
+/* A real border-top instead of an inset box-shadow: on a flex-sized tab
+   whose right edge lands on a fractional pixel, Chromium's box-shadow
+   rasterizer left a faint 1px vertical seam bleeding down both the left
+   and right edges of the active tab (worse/more visible on one side than
+   the other) instead of staying a clean horizontal strip. border-top
+   paints only the top edge, no side bleed. padding-top drops 7px -> 5px
+   to keep content vertically aligned with inactive tabs (border is inside
+   the border-box, same as box-shadow was). */
 .v1-tab.active {
   color: var(--txt);
   background: var(--bg-elev);
-  box-shadow: inset 0 2px 0 var(--brand);
+  border-top: 2px solid var(--brand);
+  padding-top: 5px;
 }
 
 .v1-tab:hover:not(.active) {
@@ -840,8 +852,11 @@ html[dir="rtl"] .v1-rightbar.collapsed .v1-side-head {
   background: var(--v1-tabs-strip-bg);
 }
 
+/* Fully re-declared (and overridden where it differs, e.g. padding) by
+   components/assistant.css's later-loaded .v1-right-content rule - kept
+   in sync here so this duplicate doesn't silently go stale again. */
 .v1-right-content {
-  padding: 10px;
+  padding: 0 10px 10px;
   min-height: 0;
   overflow: hidden;
 }

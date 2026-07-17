@@ -1,3 +1,11 @@
+/* No top padding, unlike left/right/bottom - the LS sidebar's equivalent
+   wrapper ([data-sidebar-tool-panel] in main.css) has no padding at all,
+   so its content (and, critically, the JS custom-scrollbar-runtime's faux
+   scrollbar rail, which clamps its bounds against every overflow:hidden
+   ancestor's real rect - a CSS margin trick on the inner content doesn't
+   fool it) starts flush at the top. Panes that want breathing room at the
+   top provide it themselves instead (.v1-ai-panel, .v1-shellcraft-inspector,
+   .tool-detail below). */
 .v1-right-content {
   display: grid;
   grid-template-rows: minmax(0, 1fr);
@@ -5,7 +13,7 @@
   min-height: 0;
   box-sizing: border-box;
   overflow: hidden;
-  padding: 10px;
+  padding: 0 10px 10px;
   background: var(--bg-elev);
 }
 
@@ -39,10 +47,13 @@
   display: none;
 }
 
+/* border-top instead of inset box-shadow - see main.css's .v1-tab.active
+   comment for why (subpixel vertical seam bleed at the active tab's edges). */
 .v1-right-tool-tab-wrap.is-right-active {
   color: var(--txt);
   background: var(--bg-elev);
-  box-shadow: inset 0 2px 0 var(--brand);
+  border-top: 2px solid var(--brand);
+  padding-top: 5px;
 }
 
 .v1-right-tool-tab-wrap:hover:not(.is-right-active) {
@@ -141,6 +152,11 @@ html[dir="rtl"] .v1-rightbar.right-tabs-empty .v1-side-head {
   min-height: 0;
   height: 100%;
   overflow: hidden;
+  /* .v1-right-content lost its top padding (see comment there) so RS
+     content can start flush at the top like LS - this pane had no
+     padding of its own and relied entirely on the wrapper's, so restore
+     it here to avoid the Mode row landing flush against the tab strip. */
+  padding-top: 10px;
 }
 
 .v1-ai-badge {
