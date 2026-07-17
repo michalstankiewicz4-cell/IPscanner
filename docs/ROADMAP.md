@@ -93,6 +93,26 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   to notify at most once per released version (not once per day) via
   `localStorage`. Gated behind a new "Check for updates on startup" toggle in
   Options → General (default on).
+- **Full no-admin IP scanning across TCP/UDP/ICMP**: Config's Protocol
+  section (RS "Config" tab) now has 3 independently combinable, real
+  protocol checks instead of one exclusive mode. UDP (`probe_port_udp`,
+  `main.rs`) probes through a *connected* socket - on Windows, an incoming
+  ICMP "port unreachable" surfaces as a `ConnectionReset` error on `recv`,
+  so closed ports are detected without a raw socket; a silent timeout is
+  UDP's inherent open-or-filtered ambiguity, shown with its own "open?"
+  badge instead of being lumped in with confirmed-open ports. ICMP
+  (`probe_host_icmp`/`icmp_ping_blocking`) uses the Windows IP Helper API's
+  `IcmpSendEcho` - the same mechanism `ping.exe` itself uses, also no admin
+  needed (raw ICMP sockets would require it). All checked protocols run
+  concurrently per host (`probe_host_multi`, `tokio::join!`) and combine
+  into one report - e.g. TCP + ICMP together return both open ports and a
+  real ping from a single scan. ICMP used to be its own exclusive
+  "Ports vs ICMP" mode (picking it skipped port scanning entirely); now
+  it's additive like UDP, and TCP itself gained an enable/disable checkbox
+  so "ICMP only, no ports" - the old exclusive mode's actual behavior -
+  stays reachable. TCP SYN remains unimplemented (genuinely needs raw
+  sockets/admin, no workaround exists) and moved from grayed-out-but-visible
+  to fully hidden behind "Show unfinished tools" (backlog item 17).
 
 ## In progress
 
@@ -204,13 +224,16 @@ A pass over every menu/tool, numbered for easy reference in discussion:
     (`newui:busy-state`/`newui:scan-progress` events from PowerShell commands
     and IP scans). The static `"main • tauri-desktop • UI mock only"` label
     was dead text with no JS reference and has been removed.
-17. **Real IP Scanner functionality** — most of the new RS "Config" tab
-    (Protocol's TCP Connect/TCP SYN/UDP, Detect's Service Probing/Host
-    Enrichment checkboxes, the Ports/ICMP scan-mode toggle, Performance's
-    Retries/Max concurrent ports per host, Security's Randomize ports/hosts
-    and Scan delay) is still UI-only scaffolding, not wired to real scan
-    behavior. Performance's Host timeout/Max concurrent hosts and the
-    Profiles section are the only genuinely functional pieces built so far.
+17. **Real IP Scanner functionality** — Protocol's TCP Connect/UDP/ICMP are
+    now real and independently combinable (see "Done" above). TCP SYN
+    remains UI-only scaffolding - no raw-socket backend exists, hidden
+    behind "Show unfinished tools" rather than merely grayed out. Detect's
+    Service Probing/Host Enrichment checkboxes, Performance's Retries/Max
+    concurrent ports per host, and Security's Randomize ports/hosts and
+    Scan delay weren't touched by that work - still need their own audit to
+    confirm whether they're wired to real scan behavior. Performance's Host
+    timeout/Max concurrent hosts and the Profiles section were already
+    confirmed functional.
 18. Rename "Www addons" catalog heading (Import Tool) to lowercase
     "www addons".
 19. Add a loading indicator where addons appear in the Import Tool catalog

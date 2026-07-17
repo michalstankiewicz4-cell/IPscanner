@@ -78,8 +78,7 @@ CONTRIBUTING.md §3a).
 1. **IP Scanner** (LRSB, TBM-Tools -> LS)
    - wynik -> CS, jako "IP Results"
    - LS "IP Range": przelacznik Range/CIDR (jeden zakres, dwa tryby wpisywania)
-     i przelacznik Ports/ICMP (tryb skanu)
-   - RS "Config" (otwiera sie razem z LS/CS przy aktywnym IP Scannerze): Protocol część pol to jeszcze UI-only scaffolding (patrz ROADMAP item 17); 
+   - RS "Config" (otwiera sie razem z LS/CS przy aktywnym IP Scannerze): Protocol - TCP Connect/UDP/ICMP sa realne i dowolnie laczalne w jednym skanie, bez uprawnien administratora (UDP przez polaczony socket + wykrywanie ECONNRESET, ICMP przez Windows IP Helper API); TCP SYN dalej UI-only scaffolding, ukryty pod "Show unfinished tools" (brak backendu na surowych socketach). Pozostale sekcje Config (Detect/Performance/Security) nieaudytowane przy tej zmianie, patrz ROADMAP item 17
    - ST a. Port Presets (LS, TBM-Options -> CS, jako "Presets")
 2. **Country IP Library[HDN]** (TBM-Options)
    - edytor -> LS, jako "IP Library (edytor)"

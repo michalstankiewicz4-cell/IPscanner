@@ -6,6 +6,55 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-07-17
+
+- Implemented real ICMP ping scanning via the Windows IP Helper API
+  (`IcmpCreateFile`/`IcmpSendEcho`, `probe_host_icmp`/`icmp_ping_blocking`
+  in `main.rs`) instead of a raw-socket crate - this is the same mechanism
+  `ping.exe` itself uses and does **not** require Administrator privileges,
+  unlike raw ICMP sockets (which Windows has restricted to admin since
+  Vista). Verified via native build + WebView2 CDP that the app pings
+  successfully without elevation.
+- Implemented real UDP port scanning (`probe_port_udp`, `main.rs`) using a
+  *connected* UDP socket - an incoming ICMP "port unreachable" for a
+  connected socket surfaces as a `ConnectionReset` error on `recv`, so
+  closed ports are detected without a raw socket either. A silent timeout
+  (no reply, no reset) is UDP's inherent open-or-filtered ambiguity -
+  reported with its own "open?" badge (new `PortLatency.status` field,
+  `open` vs `open_filtered`) instead of being shown as a confirmed-open
+  port. Threaded `status` through both session-persistence paths (native
+  rusqlite and the sql.js/WASM www path) with matching `ALTER TABLE`
+  migrations.
+- Moved ICMP from its own exclusive "Ports vs ICMP" scan-mode toggle
+  (picking ICMP used to hide the ports picker and skip port scanning
+  entirely) into RS Config's Protocol section as an independent checkbox
+  alongside the new UDP one - a single scan can now report open ports and
+  a real ICMP ping together (`probe_host_multi`, runs TCP/UDP and ICMP
+  concurrently via `tokio::join!`, preferring the real ICMP round-trip for
+  the reported ping when available). TCP itself gained an enable/disable
+  checkbox (previously always-on), so "ICMP only, no ports" - the old
+  exclusive mode's actual behavior - stays reachable from the new location.
+  Starting a scan with all three protocols unchecked now shows a clear
+  "select at least one protocol" message instead of silently doing nothing.
+- Simplified the Protocol section further: removed the now-redundant "TCP
+  Connect"/"TCP SYN" radio (SYN was always grayed out, so the radio never
+  offered a real choice) in favor of a single "TCP Connect" checkbox. TCP
+  SYN moved from grayed-out-but-visible to fully hidden behind "Show
+  unfinished tools" (it has zero backend support, unlike the still-visible
+  grayed-out OS Detection).
+- Made every LS/RS tab fully section-movable via `tool-catalog.js`'s `ui`
+  flags: the 10 remaining CS-only tools (versions/presets/general/about/
+  license/topology/globe/import-tool/language-manager/shellcraft) now fall
+  back to CS's own `buildDetailHtml`/`wireToolRuntime` when placed in LS/RS
+  instead of needing a dedicated render function each; `scan-runner`/
+  `config`/`assistant` (previously pinned - their wiring was never built to
+  be regenerated, and `assistant`'s chat history lives only as DOM nodes)
+  are now reparented (moved, not rebuilt) between sections instead, so
+  their live state survives a section change. Split "lorem-ipsum" into 3
+  independent tools (`lorem-ipsum`/`lorem-ipsum-left`/`lorem-ipsum-right`)
+  instead of one id shared across LS/CS/RS via `ui` flags, after finding it
+  had silently drifted into showing different placeholder text per section.
+
 ## 2026-07-16
 
 - Added a Range/CIDR toggle to the IP Scanner's "IP Range" section (LS): a

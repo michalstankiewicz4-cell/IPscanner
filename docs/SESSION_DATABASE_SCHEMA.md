@@ -55,9 +55,16 @@ Relacja 1-do-wielu wzgledem scan_results (jeden host moze miec wiele portow).
                przy usunieciu wiersza z scan_results, powiazane porty
                usuwaja sie automatycznie (ON DELETE CASCADE)
   port       - numer portu (np. 80, 443, 22)
-  protocol   - protokol tego portu, dzis zawsze "TCP" (aplikacja nie robi
-               realnego skanowania UDP - to pole istnieje pod przyszla
-               rozbudowe, nie jest wyliczane z numeru portu)
+  protocol   - protokol tego portu: "TCP" albo "UDP" (aplikacja realnie
+               skanuje oba, bez uprawnien administratora - UDP przez
+               polaczony socket, wykrywanie ECONNRESET jako sygnal
+               "port zamkniety")
+  status     - "open" (potwierdzony otwarty - dla TCP zawsze, dla UDP tylko
+               gdy przyszla realna odpowiedz) albo "open_filtered" (tylko
+               UDP - brak jakiejkolwiek odpowiedzi w limicie czasu, co dla
+               UDP moze znaczyc zarowno "otwarty" jak i "cicho filtrowany
+               przez firewall" - nie da sie tego rozroznic, to wlasciwosc
+               samego protokolu UDP, nie ograniczenie tej aplikacji)
   service    - rozpoznana nazwa uslugi dla tego portu (np. "HTTP" dla 80),
                z tabeli w js/new-ui/core/utils/net-utils.js; puste jesli port
                nie jest rozpoznany. Zapisywane w chwili skanu, nie przeliczane
@@ -69,14 +76,18 @@ Relacja 1-do-wielu wzgledem scan_results (jeden host moze miec wiele portow).
                gdy nieznany
 
 Uwaga (migracja): pliki sesji zapisane przed dodaniem protocol/service/ping
-maja tylko 3 kolumny (id, result_id, port). Zapis takiego pliku dopisuje
-brakujace kolumny automatycznie (ALTER TABLE, patrz open_session_sqlite_conn
-w main.rs, migracja per-kolumna: protocol -> DEFAULT 'TCP', service ->
-DEFAULT '', ping -> DEFAULT '-'); odczyt starego pliku bez zapisywania go od
-razu dziala tez poprawnie - ma osobny fallback co najmniej 3-tier (pelny
-SELECT z protocol/service/ping, potem coraz wezsze warianty dla starszych
-plikow), brakujace wartosci pokazuja sie jako protocol="TCP", service="",
-ping="-".
+maja tylko 3 kolumny (id, result_id, port); pliki zapisane przed dodaniem
+status (UDP open|filtered) maja protocol/service/ping ale nie status. Zapis
+takiego pliku dopisuje brakujace kolumny automatycznie (ALTER TABLE, patrz
+open_session_sqlite_conn w main.rs, migracja per-kolumna: protocol ->
+DEFAULT 'TCP', status -> DEFAULT 'open', service -> DEFAULT '', ping ->
+DEFAULT '-'); odczyt starego pliku bez zapisywania go od razu dziala tez
+poprawnie - ma osobny fallback co najmniej 4-tier (pelny SELECT z
+protocol/status/service/ping, potem coraz wezsze warianty dla starszych
+plikow), brakujace wartosci pokazuja sie jako protocol="TCP", status="open",
+service="", ping="-". To samo dotyczy rownoleglego schematu w JS
+(session-sqlite-runtime.js, uzywany przez sql.js na www) - identyczna
+4-tier logika fallbacku, patrz komentarz na gorze tego pliku.
 
 
 TABELA: ip_library_entries
