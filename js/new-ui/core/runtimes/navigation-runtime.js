@@ -891,6 +891,24 @@
       tabRegistry.setActiveTab("left", tool);
     }
 
+    // Section-aware open+activate for tools whose home section is now a
+    // tool-catalog.js `ui` flag rather than a hardcoded assumption (scan-
+    // runner/config, see activateGenericContent()'s "move" branch above) -
+    // use this instead of hardcoding ensureSidebarTabOpen+setLeftActiveTab
+    // (or the right-panel equivalents) so a flipped tool keeps opening
+    // where it's actually configured to live, not where it used to.
+    function activateToolInItsConfiguredSection(tool) {
+      var catalogEntry = (window.NetReconNewUICore.toolCatalog || {})[tool];
+      var ui = catalogEntry && catalogEntry.ui;
+      if (ui && ui.showInRightPanel) {
+        ensureRightTabOpen(tool);
+        setRightTabActive(tool);
+      } else if (ui && ui.showInLeftPanel) {
+        ensureSidebarTabOpen(tool);
+        setLeftActiveTab(tool);
+      }
+    }
+
     function syncLeftTabActivationInvariant() {
       tabRegistry.syncActivationInvariant("left");
     }
@@ -901,6 +919,101 @@
 
     function firstOpenSidebarTab(excludedTool) {
       return tabRegistry.firstOpenTab("left", excludedTool);
+    }
+
+    // Tracks, per section, which "move" tool's node (if any) is currently
+    // shown there - needed because neither section's native pane-toggle can
+    // reliably hide a reparented node (see activateGenericContent below),
+    // so activateGenericContent has to explicitly hide the previous one
+    // itself when switching to a different tool.
+    var activeMovableNode = { left: null, right: null };
+
+    // LS/RS "generic content slot": for tools with an entry in
+    // tool-content-runtime.js (currently lorem-ipsum, shellcraft-library,
+    // shellcraft-inspector, results-ip's LS nav-list, ip-library) render+
+    // wire that entry into the section's ONE shared slot element; for
+    // "move" entries (scan-runner/config/assistant - live DOM-only state
+    // that regeneration would destroy) reparent their one persistent node
+    // into this section's natural container instead (see tool-content-
+    // runtime.js's makeMovableEntry). Visibility is NOT delegated to tab-
+    // registry.js's native pane-toggle for these 3 - each section's native
+    // toggle looks for its OWN identifying attribute/class
+    // (data-sidebar-tool-panel vs .v1-right-pane[data-v1-right-pane]),
+    // which the node only ever carries one of (whichever was its original
+    // home), so a cross-section toggle call always no-ops. This function
+    // manages visibility itself via inline style.display (wins by
+    // specificity over both sections' CSS) instead. For every other tool
+    // (versions/presets/general/about/license/topology/globe/import-tool/
+    // language-manager/shellcraft - CS-only today, no tool-content-
+    // runtime.js entry) fall back to CS's own already-proven
+    // buildDetailHtml()/wireToolRuntime() (panel-content-runtime.js/
+    // panels-runtime.js) - those already accept an arbitrary root (reused
+    // for detached/floating tool windows), so this gets every CS tool
+    // section-movable for free without a dedicated LS/RS render function
+    // per tool. Returns nothing; called from both onActivate hooks below
+    // with that section's id ("left"/"right") and slot element id.
+    function activateGenericContent(tool, section, slotElId) {
+      var slot = document.getElementById(slotElId);
+      if (!slot) return;
+
+      var contentRuntime = window.NetReconNewUICore && window.NetReconNewUICore.toolContentRuntime;
+      var entry = contentRuntime && tool ? contentRuntime[tool] : null;
+      var moveNode = entry && entry.move ? entry.getNode() : null;
+
+      var previousMovableNode = activeMovableNode[section];
+      if (previousMovableNode && previousMovableNode !== moveNode) {
+        previousMovableNode.style.display = "none";
+        activeMovableNode[section] = null;
+      }
+
+      if (moveNode) {
+        var homeContainer = document.querySelector(section === "left" ? ".v1-sidebar" : ".v1-right-content");
+        if (homeContainer && moveNode.parentElement !== homeContainer) {
+          homeContainer.appendChild(moveNode);
+        }
+        moveNode.hidden = false;
+        moveNode.style.display = entry.displayValue || "block";
+        activeMovableNode[section] = moveNode;
+        slot.style.display = "none";
+        slot.innerHTML = "";
+        return;
+      }
+
+      var paneSelectorTemplate = section === "left" ? '[data-sidebar-tool-panel="{id}"]' : '.v1-right-pane[data-v1-right-pane="{id}"]';
+      var hasDedicatedPane = !!(tool && document.querySelector(paneSelectorTemplate.replace("{id}", tool)));
+      if (hasDedicatedPane) {
+        slot.style.display = "none";
+        slot.innerHTML = "";
+        return;
+      }
+
+      if (entry) {
+        slot.innerHTML = entry.render ? entry.render(tr) : "";
+        slot.style.display = "block";
+        if (entry.wire) entry.wire(slot);
+        return;
+      }
+
+      if (tool && window.NetReconNewUI && window.NetReconNewUI.buildDetailHtml) {
+        slot.innerHTML = window.NetReconNewUI.buildDetailHtml(tool);
+        slot.style.display = "block";
+        if (window.NetReconNewUI.wireToolRuntime) window.NetReconNewUI.wireToolRuntime(tool, slot);
+        return;
+      }
+
+      slot.style.display = "none";
+      slot.innerHTML = "";
+    }
+
+    // Language switch: whichever migrated tool is currently active in LS/RS
+    // (if any) needs its generic-content-slot HTML rebuilt with the new
+    // tr() - unlike tab labels (retranslateSectionTabs(), text-only,
+    // updated in place) this content was baked in at render time, so a
+    // full re-render is simplest; harmless no-op for pinned tools (nothing
+    // in the slot to refresh) or when nothing's active.
+    function refreshActiveGenericContent() {
+      activateGenericContent(tabRegistry.getActiveTab("left"), "left", "v1SidebarGenericContent");
+      activateGenericContent(tabRegistry.getActiveTab("right"), "right", "v1RightGenericContent");
     }
 
     // Registers LS/RS with the shared tab-registry engine (tab-registry.js)
@@ -933,6 +1046,8 @@
               btn.classList.toggle("is-left-active", !!nextTool && btnTool === nextTool);
               btn.classList.toggle("active", !!nextTool && btnTool === nextTool);
             });
+
+            activateGenericContent(nextTool, "left", "v1SidebarGenericContent");
 
             var activity = activityForSidebarTool(nextTool);
             document.querySelectorAll(".v1-activity [data-tool]").forEach(function (btn) {
@@ -970,6 +1085,7 @@
               var btnTool = btn.getAttribute("data-v1-right-tab") || "";
               btn.classList.toggle("active", !!nextTool && btnTool === nextTool);
             });
+            activateGenericContent(nextTool, "right", "v1RightGenericContent");
           },
           onOpen: syncRightEmptyState,
           onClose: syncRightEmptyState,
@@ -1213,17 +1329,23 @@
 
     // shell dispatch mechanism with an embedded ip-scanner-specific special
     // case ("results-ip") below - not cleanly separable without restructuring.
+    // Delegated (not per-element) so this keeps working for the LS
+    // results-ip panel's 3-item nav list after it's regenerated by
+    // tool-content-runtime.js's generic-content-slot mechanism - a
+    // per-element bind here would only ever reach whichever copy existed
+    // at the time init() ran, same class of bug RS's tab clicks had before
+    // that got fixed (see bindRightTabsAndAssistant()).
     function bindResultTabs() {
-      document.querySelectorAll("[data-result-tab]").forEach(function (item) {
-        item.addEventListener("click", function () {
-          var tool = item.getAttribute("data-result-tab");
-          if (tool === "results-ip") { // ip-scanner tool
-            activateSidebarTool("results-ip");
-          }
-          if (tool && switchTool) switchTool(tool);
-          document.querySelectorAll("[data-result-tab]").forEach(function (el) {
-            el.classList.toggle("active", el === item);
-          });
+      document.addEventListener("click", function (e) {
+        var item = e.target && e.target.closest ? e.target.closest("[data-result-tab]") : null;
+        if (!item) return;
+        var tool = item.getAttribute("data-result-tab");
+        if (tool === "results-ip") { // ip-scanner tool
+          activateSidebarTool("results-ip");
+        }
+        if (tool && switchTool) switchTool(tool);
+        document.querySelectorAll("[data-result-tab]").forEach(function (el) {
+          el.classList.toggle("active", el === item);
         });
       });
     }
@@ -1247,9 +1369,8 @@
 
           // ip-scanner tool: Scanner activity should mirror Tools -> IP Scanner behavior.
           if (tool === "scan-runner") {
-            ensureSidebarTabOpen("scan-runner");
-            setLeftActiveTab("scan-runner");
-            ensureRightTabOpen("config");
+            activateToolInItsConfiguredSection("scan-runner");
+            activateToolInItsConfiguredSection("config");
             if (switchTool) switchTool("results-ip");
             return;
           }
@@ -1337,9 +1458,8 @@
           if (!fromToolsMenu && !fromCenterTabs) {
             activateSidebarTool("results-ip");
           } else if (fromToolsMenu) {
-            ensureSidebarTabOpen("scan-runner");
-            setLeftActiveTab("scan-runner");
-            ensureRightTabOpen("config");
+            activateToolInItsConfiguredSection("scan-runner");
+            activateToolInItsConfiguredSection("config");
           }
         } else if (tool === "scan-runner" || tool === "ip-library") {
           activateSidebarTool(tool);
@@ -1671,6 +1791,7 @@
       setRightTabActive: setRightTabActive,
       syncLeftTabActivationInvariant: syncLeftTabActivationInvariant,
       syncRightTabActivationInvariant: syncRightTabActivationInvariant,
+      refreshActiveGenericContent: refreshActiveGenericContent,
     };
   }
 

@@ -156,7 +156,12 @@ html:not([dir="rtl"]) body.v1-activity-last .v1-activity button.active::before {
   grid-template-rows: 34px 1fr;
 }
 
-.v1-sidebar > [data-sidebar-tool-panel] {
+/* Bare attribute selector (not scoped to .v1-sidebar >) - scan-runner's
+   panel can be reparented into RS's .v1-right-content (see navigation-
+   runtime.js's activateGenericContent() "move" branch), so its layout must
+   keep applying regardless of current DOM parent. This attribute is unique
+   to scan-runner's panel, so widening the selector is safe. */
+[data-sidebar-tool-panel] {
   min-height: 0;
   overflow: hidden;
   height: 100%;
@@ -164,11 +169,11 @@ html:not([dir="rtl"]) body.v1-activity-last .v1-activity button.active::before {
   flex-direction: column;
 }
 
-.v1-sidebar > [data-sidebar-tool-panel][hidden] {
+[data-sidebar-tool-panel][hidden] {
   display: none !important;
 }
 
-.v1-sidebar > [data-sidebar-tool-panel] .v1-tool-list {
+[data-sidebar-tool-panel] .v1-tool-list {
   flex: 1 1 auto;
   min-height: 0;
   background: var(--bg-elev);

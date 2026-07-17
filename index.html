@@ -262,69 +262,10 @@
             </li>
           </ul>
           </div>
-          <div data-sidebar-tool-panel="ip-library" hidden>
-            <ul class="v1-tool-list">
-              <li>
-                <div class="v1-section-header">
-                  <strong id="v1IpLibraryPanelTitle">Country IP Library • Actions</strong>
-                  <span class="v1-collapse-arrow">▼</span>
-                </div>
-                <div class="v1-section-body">
-                  <div class="v1-scanner-actions v1-iplib-actions">
-                    <button type="button" data-iplib-action="update" id="v1IpLibraryUpdateBtn">Update (PowerShell)</button>
-                    <button type="button" data-iplib-action="load" id="v1IpLibraryLoadBtn">Load cached</button>
-                    <button type="button" data-iplib-action="clear" id="v1IpLibraryClearBtn">Clear base</button>
-                  </div>
-                </div>
-              </li>
-              <li>
-                <div class="v1-section-header">
-                  <strong>Country IP Library • Range Selection</strong>
-                  <span class="v1-collapse-arrow">▼</span>
-                </div>
-                <div class="v1-section-body">
-                  <div class="v1-import-manager-note" id="v1IpLibraryPanelNote">Update the country range library using a local PowerShell script and keep a cached copy.</div>
-                  <div class="v1-iplib-grid">
-                    <div class="v1-iplib-field">
-                      <label id="v1IpLibraryCountriesLabel" for="v1IpLibraryCountryCodes">Country codes</label>
-                      <textarea id="v1IpLibraryCountryCodes" class="v1-iplib-countries" autocomplete="off" rows="3" placeholder="pl,cn,ru,us,de,fr,gb,jp,kr,br,in,au,nl,ua,cz,se,no,fi,tr,ir,sa,za,ar,mx,ca,it,es"></textarea>
-                    </div>
-                    <div class="v1-iplib-field">
-                      <label id="v1IpLibraryTopRangesLabel" for="v1IpLibraryTopRanges">Top ranges per country</label>
-                      <input id="v1IpLibraryTopRanges" class="v1-iplib-topranges" type="number" min="10" max="500" step="10" value="120" />
-                    </div>
-                  </div>
-                </div>
-              </li>
-            </ul>
-          </div>
-          <div data-sidebar-tool-panel="shellcraft-library" hidden>
-            <div id="v1ShellCraftLibrary" class="v1-shellcraft-library"></div>
-          </div>
-          <div data-sidebar-tool-panel="results-ip" hidden>
-            <ul class="v1-tool-list">
-              <li id="v1ResultNavIp" data-result-tab="results-ip" class="v1-result-nav-item">🖥 IP Results</li>
-              <li id="v1ResultNavIpLibrary" data-result-tab="ip-library" class="v1-result-nav-item">🗂 IP Library</li>
-              <li id="v1ResultNavPresets" data-result-tab="presets" class="v1-result-nav-item">⭐ Presets</li>
-            </ul>
-          </div>
-          <div data-sidebar-tool-panel="lorem-ipsum" class="tool-detail" hidden>
-            <h4 id="v1LoremIpsumLsHeading">Lorem Ipsum</h4>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-            <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
-            <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
-            <p>Eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo nemo enim ipsam voluptatem.</p>
-            <p>Quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
-            <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi.</p>
-            <p>Tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem, ut enim ad minima veniam, quis nostrum exercitationem.</p>
-            <p>Ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur, quis autem vel eum iure reprehenderit.</p>
-            <p>Qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur.</p>
-            <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti.</p>
-            <p>Quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt.</p>
-            <p>Mollitia animi, id est laborum et dolorum fuga et harum quidem rerum facilis est et expedita distinctio nam libero tempore.</p>
-          </div>
+          <!-- Shared content slot for tools rendered via tool-content-runtime.js
+               (navigation-runtime.js's registerTabSections() "left" onActivate
+               hook) instead of a dedicated static panel above. -->
+          <div id="v1SidebarGenericContent" class="tool-detail" hidden></div>
       </aside>
 
       <div class="v1-resizer-v" data-resize="left" title="Resize left panel"></div>
@@ -432,28 +373,6 @@
 
                 <p class="status-line" id="v1StatusLine" hidden></p>
               </article>
-            </section>
-            <section class="v1-right-pane" data-v1-right-pane="shellcraft-inspector">
-              <div id="v1ShellCraftInspector" class="v1-shellcraft-inspector"></div>
-            </section>
-            <section class="v1-right-pane" data-v1-right-pane="lorem-ipsum">
-              <div class="tool-detail">
-                <h4 id="v1LoremIpsumRsHeading">Lorem Ipsum</h4>
-                <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
-                <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt.</p>
-                <p>Ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam.</p>
-                <p>Nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur.</p>
-                <p>Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur, at vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis.</p>
-                <p>Praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.</p>
-                <p>Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga et harum quidem rerum facilis est.</p>
-                <p>Et expedita distinctio nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime.</p>
-                <p>Placeat facere possimus, omnis voluptas assumenda est omnis dolor repellendus temporibus autem quibusdam et aut officiis.</p>
-                <p>Debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae itaque earum rerum.</p>
-                <p>Hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores.</p>
-                <p>Repellat class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos curabitur suscipit.</p>
-                <p>Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae praesent libero sed cursus ante dapibus.</p>
-                <p>Eleifend tellus, integer feugiat scelerisque varius morbi enim nunc faucibus a pellentesque sit amet porttitor eget dolor.</p>
-              </div>
             </section>
             <section class="v1-right-pane" data-v1-right-pane="config">
               <ul class="v1-tool-list">
@@ -587,6 +506,14 @@
                 </li>
               </ul>
             </section>
+            <!-- Shared content slot for tools rendered via tool-content-runtime.js
+                 (navigation-runtime.js's registerTabSections() "right" onActivate
+                 hook) instead of a dedicated static pane above. Deliberately NOT
+                 .v1-right-pane (that class's own unconditional "display: none"
+                 would beat a [hidden] toggle - the same specificity gotcha
+                 documented elsewhere in this codebase) - visibility is set
+                 directly via style.display in the onActivate hook instead. -->
+            <section class="tool-detail" id="v1RightGenericContent" style="display: none; height: 100%; overflow: auto;"></section>
         </div>
       </aside>
     </main>
@@ -626,6 +553,7 @@
   <script src="js/new-ui/core/theme.js?v=20260604"></script>
   <script src="js/new-ui/core/tool-catalog.js?v=20260915"></script>
   <script src="js/new-ui/core/tab-registry.js?v=20260104"></script>
+  <script src="js/new-ui/core/tool-content-runtime.js?v=20260102"></script>
   <script src="js/new-ui/core/presets-runtime.js?v=20260817"></script>
   <script src="js/new-ui/core/general-settings-runtime.js?v=20260909"></script>
   <script src="js/new-ui/core/macros-runtime.js?v=20260810"></script>
@@ -643,7 +571,7 @@
   <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js?v=20260904"></script>
   <script src="js/new-ui/core/runtimes/clippy-runtime.js?v=20260604"></script>
   <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js?v=20260911"></script>
-  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260934"></script>
+  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260937"></script>
   <script src="js/new-ui/core/runtimes/session-sqlite-runtime.js?v=20260804"></script>
   <script src="js/new-ui/core/runtimes/update-check-runtime.js?v=20260906"></script>
   <script src="js/new-ui/core/panel-content-config.js?v=20260713"></script>
@@ -653,12 +581,12 @@
   <script src="js/new-ui/core/runtimes/language-catalog-runtime.js?v=20260924"></script>
   <script src="js/new-ui/core/runtimes/ip-library-runtime.js?v=20260924"></script>
   <script src="js/new-ui/core/runtimes/addon-catalog-runtime.js?v=20260924"></script>
-  <script src="js/new-ui/core/panels-runtime.js?v=20260932"></script>
+  <script src="js/new-ui/core/panels-runtime.js?v=20260934"></script>
   <script src="js/new-ui/core/menu-runtime.js?v=20260934"></script>
   <script src="js/new-ui/core/session-runtime.js?v=20260911"></script>
   <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260930"></script>
   <script src="js/new-ui/core/powershell-console-runtime.js?v=20260604"></script>
-    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260936"></script>
+    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260938"></script>
 </body>
 </html>
 

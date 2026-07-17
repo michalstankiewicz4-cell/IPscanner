@@ -1969,6 +1969,16 @@
       }
     }
 
+    // Exposed for LS/RS's generic-content-slot mechanism
+    // (tool-content-runtime.js's "ip-library" entry) - reuses the exact
+    // same wiring CS's own ip-library tab already calls, which is why it
+    // already accepts an arbitrary rootEl instead of assuming `document`.
+    function wireIpLibraryPanel(rootEl) {
+      if (ipLibraryRuntime && ipLibraryRuntime.wireIpLibraryButtons) {
+        ipLibraryRuntime.wireIpLibraryButtons(rootEl);
+      }
+    }
+
     return {
       setTooltips: setTooltips,
       refreshActiveUI: refreshActiveUI,
@@ -1982,7 +1992,9 @@
       initWorkbenchTabs: initWorkbenchTabs,
       buildDetailHtml: buildDetailHtml,
       wireToolRuntime: wireToolRuntime,
+      stripIds: stripIds,
       refreshShellCraftPanels: refreshShellCraftPanels,
+      wireIpLibraryPanel: wireIpLibraryPanel,
       refreshDetachedTool: refreshDetachedTool,
     };
   }
