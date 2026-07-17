@@ -909,6 +909,21 @@
       }
     }
 
+    // Same idea, but open-only - doesn't steal the section's active tab.
+    // Used for "config", which should just be available alongside scan-
+    // runner (its old behavior was ensureRightTabOpen() only, never
+    // setRightTabActive()) rather than yanking focus away from whatever
+    // else the user had active in that section.
+    function ensureToolOpenInItsConfiguredSection(tool) {
+      var catalogEntry = (window.NetReconNewUICore.toolCatalog || {})[tool];
+      var ui = catalogEntry && catalogEntry.ui;
+      if (ui && ui.showInRightPanel) {
+        ensureRightTabOpen(tool);
+      } else if (ui && ui.showInLeftPanel) {
+        ensureSidebarTabOpen(tool);
+      }
+    }
+
     function syncLeftTabActivationInvariant() {
       tabRegistry.syncActivationInvariant("left");
     }
@@ -929,8 +944,9 @@
     var activeMovableNode = { left: null, right: null };
 
     // LS/RS "generic content slot": for tools with an entry in
-    // tool-content-runtime.js (currently lorem-ipsum, shellcraft-library,
-    // shellcraft-inspector, results-ip's LS nav-list, ip-library) render+
+    // tool-content-runtime.js (currently lorem-ipsum-left/-right,
+    // shellcraft-library, shellcraft-inspector, results-ip's LS nav-list,
+    // ip-library) render+
     // wire that entry into the section's ONE shared slot element; for
     // "move" entries (scan-runner/config/assistant - live DOM-only state
     // that regeneration would destroy) reparent their one persistent node
@@ -974,14 +990,6 @@
         moveNode.hidden = false;
         moveNode.style.display = entry.displayValue || "block";
         activeMovableNode[section] = moveNode;
-        slot.style.display = "none";
-        slot.innerHTML = "";
-        return;
-      }
-
-      var paneSelectorTemplate = section === "left" ? '[data-sidebar-tool-panel="{id}"]' : '.v1-right-pane[data-v1-right-pane="{id}"]';
-      var hasDedicatedPane = !!(tool && document.querySelector(paneSelectorTemplate.replace("{id}", tool)));
-      if (hasDedicatedPane) {
         slot.style.display = "none";
         slot.innerHTML = "";
         return;
@@ -1370,7 +1378,7 @@
           // ip-scanner tool: Scanner activity should mirror Tools -> IP Scanner behavior.
           if (tool === "scan-runner") {
             activateToolInItsConfiguredSection("scan-runner");
-            activateToolInItsConfiguredSection("config");
+            ensureToolOpenInItsConfiguredSection("config");
             if (switchTool) switchTool("results-ip");
             return;
           }
@@ -1459,7 +1467,7 @@
             activateSidebarTool("results-ip");
           } else if (fromToolsMenu) {
             activateToolInItsConfiguredSection("scan-runner");
-            activateToolInItsConfiguredSection("config");
+            ensureToolOpenInItsConfiguredSection("config");
           }
         } else if (tool === "scan-runner" || tool === "ip-library") {
           activateSidebarTool(tool);
@@ -1471,13 +1479,14 @@
             setRightTabActive("shellcraft-inspector");
           }
         } else if (tool === "lorem-ipsum") {
-          // Placeholder tool: one click opens all three surfaces (CS via
-          // switchTool() below, plus LS and RS here) instead of each being
-          // independently always-visible.
-          ensureSidebarTabOpen("lorem-ipsum");
-          setLeftActiveTab("lorem-ipsum");
-          ensureRightTabOpen("lorem-ipsum");
-          setRightTabActive("lorem-ipsum");
+          // Placeholder tool: one click opens all three independent
+          // surfaces (CS's own "lorem-ipsum" via switchTool() below, plus
+          // its own separate lorem-ipsum-left/-right tool ids here - 3
+          // distinct tools, not one id shared across sections).
+          ensureSidebarTabOpen("lorem-ipsum-left");
+          setLeftActiveTab("lorem-ipsum-left");
+          ensureRightTabOpen("lorem-ipsum-right");
+          setRightTabActive("lorem-ipsum-right");
         }
         switchTool(tool);
       });

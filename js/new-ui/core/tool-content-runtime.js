@@ -7,10 +7,12 @@
   // its own file since it's LS/RS-specific and CS's own mechanism is left
   // completely untouched.
   //
-  // Only tools safe to tear down and rebuild on demand live here (static
-  // content, or already-idempotent wiring proven by CS reusing the same
-  // function) - scan-runner/config/assistant stay on their own dedicated,
-  // always-present panels, not migrated, see the plan for why.
+  // Two kinds of entries: {render, wire} tools are safe to tear down and
+  // rebuild on demand (static content, or already-idempotent wiring proven
+  // by CS reusing the same function); {move, getNode, displayValue} tools
+  // (scan-runner/config/assistant, near the bottom of this file) have live
+  // DOM-only state that regeneration would destroy, so their one persistent
+  // node is reparented instead - see makeMovableEntry below.
   //
   // Each entry: { render: function(tr) -> htmlString, wire: function(rootEl) | null }.
   // render() must bake in tr()'d text directly (not rely on ids for a
@@ -57,14 +59,17 @@
     "Eleifend tellus, integer feugiat scelerisque varius morbi enim nunc faucibus a pellentesque sit amet porttitor eget dolor.",
   ];
 
-  toolContentRuntime["lorem-ipsum"] = {
-    render: function (tr) {
-      var heading = tr ? tr("toolTitle_lorem_ipsum") : "Lorem Ipsum";
-      var body = LOREM_PARAGRAPHS.map(function (p) { return "<p>" + p + "</p>"; }).join("");
-      return '<div class="tool-detail"><h4>' + heading + "</h4>" + body + "</div>";
-    },
-    wire: null,
-  };
+  // lorem-ipsum-left/-right: independent tools from CS's own "lorem-ipsum"
+  // (panel-content-runtime.js's renderLoremIpsumTool, different paragraphs -
+  // that's fine now, they're 3 separate placeholder tools, not the same
+  // tool id shown in 3 places, see tool-catalog.js's comment).
+  function renderLoremIpsum(tr) {
+    var heading = tr ? tr("toolTitle_lorem_ipsum") : "Lorem Ipsum";
+    var body = LOREM_PARAGRAPHS.map(function (p) { return "<p>" + p + "</p>"; }).join("");
+    return '<div class="tool-detail"><h4>' + heading + "</h4>" + body + "</div>";
+  }
+  toolContentRuntime["lorem-ipsum-left"] = { render: renderLoremIpsum, wire: null };
+  toolContentRuntime["lorem-ipsum-right"] = { render: renderLoremIpsum, wire: null };
 
   // This is specifically LS's tiny 3-item launcher list ("open the real
   // results-ip/ip-library/presets tool"), not the actual results table -

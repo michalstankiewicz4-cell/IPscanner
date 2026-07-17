@@ -13,8 +13,8 @@
     // titleKey is "Result Data List" but its tab label is "IP Results") -
     // that's expected, not a bug, see i18n.js's tabLabel_* comment.
     // ui.order positions a tab within its own section's strip (lower =
-    // earlier); ui.leftOrder/rightOrder override it for a specific section
-    // when a tool appears in more than one (see lorem-ipsum below).
+    // earlier); ui.leftOrder/rightOrder override it for LS/RS specifically
+    // (CS only ever uses ui.order).
     general: {
       titleKey: "toolTitle_general",
       textKey: "toolText_general",
@@ -63,13 +63,30 @@
       labelKey: "tabLicenseTitle",
       ui: { showAsTab: true, order: 80 }
     },
+    // 3 independent placeholder tools, not one id shared across sections -
+    // each opens/closes on its own, and each is free to have its own
+    // content. "lorem-ipsum" (CS) keeps the titleKey/textKey/points used by
+    // panel-content-runtime.js's own renderer; lorem-ipsum-left/-right have
+    // no CS presence, so no titleKey/textKey/points needed (same pattern as
+    // shellcraft-library/shellcraft-inspector below) - their content comes
+    // from tool-content-runtime.js instead.
     "lorem-ipsum": {
       titleKey: "toolTitle_lorem_ipsum",
       textKey: "toolText_lorem_ipsum",
       points: [],
       icon: "📄",
       labelKey: "toolTitle_lorem_ipsum",
-      ui: { showInLeftPanel: true, leftOrder: 50, showAsTab: true, order: 100, showInRightPanel: true, rightOrder: 30 }
+      ui: { showAsTab: true, order: 100 }
+    },
+    "lorem-ipsum-left": {
+      icon: "📄",
+      labelKey: "toolTitle_lorem_ipsum",
+      ui: { showInLeftPanel: true, leftOrder: 50 }
+    },
+    "lorem-ipsum-right": {
+      icon: "📄",
+      labelKey: "toolTitle_lorem_ipsum",
+      ui: { showInRightPanel: true, rightOrder: 30 }
     },
     // ShellCraft stays in the base shell (confirmed by the user, not a
     // judgment call like the ones above) - see SHELL_PROGRESS.md.
