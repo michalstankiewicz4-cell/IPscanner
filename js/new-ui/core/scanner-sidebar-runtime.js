@@ -508,9 +508,11 @@
 
     // Ports vs ICMP is a deliberate, user-chosen scan type - not a silent
     // pre-filter before port scanning (which would risk skipping hosts that
-    // block ping but still have open ports). ICMP itself isn't implemented
-    // yet (needs raw sockets / admin rights in the Rust backend); Start
-    // just reports that honestly instead of pretending to scan.
+    // block ping but still have open ports). ICMP pings via the Windows IP
+    // Helper API (main.rs's probe_host_icmp/icmp_ping_blocking) - no admin
+    // rights needed, unlike raw ICMP sockets. See
+    // navigation-runtime.js's startScanWithCurrentSettings() for the mode
+    // read + scan_range invocation.
     function initScanModeToggle() {
       var radios = Array.from(document.querySelectorAll('input[name="v1ScanMode"]'));
       if (!radios.length) return;

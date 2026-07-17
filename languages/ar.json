@@ -326,7 +326,6 @@
     "statusScanStart": "بدأ الفحص:",
     "statusScanStop": "انتهى الفحص",
     "statusScanClear": "تم مسح نتائج الفحص",
-    "statusIcmpNotImplemented": "فحص ICMP غير مطبق بعد",
     "statusTcpSynNotImplemented": "فحص TCP SYN غير مطبق بعد",
     "statusUdpNotImplementedNote": "فحص UDP غير مطبق بعد، منافذ TCP فقط",
     "statusExternalIp": "IP الخارجي:",

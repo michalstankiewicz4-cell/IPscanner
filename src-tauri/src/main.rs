@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::net::{IpAddr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -21,6 +21,13 @@ use tokio::time::timeout;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
+
+// ICMP echo via the IP Helper API (iphlpapi.dll) - unlike raw ICMP sockets,
+// this does NOT require Administrator privileges (it's the same mechanism
+// ping.exe itself uses), so it's used instead of a raw-socket crate.
+use windows::Win32::NetworkManagement::IpHelper::{
+    IcmpCloseHandle, IcmpCreateFile, IcmpSendEcho, ICMP_ECHO_REPLY,
+};
 
 // ─── Shared scan-stop flag ───────────────────────────────────────────────────
 struct ScanState {
@@ -259,6 +266,70 @@ async fn probe_host(
     (open_ports, best_ms)
 }
 
+/// Sends one ICMP echo request via IcmpSendEcho and returns the round-trip
+/// time in ms on success. Synchronous/blocking Win32 call - must only be
+/// invoked from inside spawn_blocking, never directly on an async task.
+fn icmp_ping_blocking(ip: &str, timeout_ms: u32) -> Option<u64> {
+    let addr = Ipv4Addr::from_str(ip).ok()?;
+    // IcmpSendEcho's destinationaddress is a raw copy of IN_ADDR's bytes,
+    // not the "logical" big-endian numeric value ip_to_u32()/ std's
+    // u32::from(Ipv4Addr) produce - from_ne_bytes keeps the octets as-is.
+    let dest = u32::from_ne_bytes(addr.octets());
+
+    unsafe {
+        let handle = IcmpCreateFile().ok()?;
+        let send_data = [0u8; 32];
+        let reply_size = std::mem::size_of::<ICMP_ECHO_REPLY>() + send_data.len() + 8;
+        let mut reply_buffer = vec![0u8; reply_size];
+
+        let start = Instant::now();
+        let replies = IcmpSendEcho(
+            handle,
+            dest,
+            send_data.as_ptr() as *const core::ffi::c_void,
+            send_data.len() as u16,
+            None,
+            reply_buffer.as_mut_ptr() as *mut core::ffi::c_void,
+            reply_buffer.len() as u32,
+            timeout_ms,
+        );
+        let elapsed_ms = start.elapsed().as_millis() as u64;
+
+        let _ = IcmpCloseHandle(handle);
+
+        if replies == 0 {
+            return None;
+        }
+
+        let reply = &*(reply_buffer.as_ptr() as *const ICMP_ECHO_REPLY);
+        if reply.Status != 0 {
+            // Non-zero Status = an IP_STATUS error (e.g. destination
+            // unreachable, TTL expired) - not a successful echo.
+            return None;
+        }
+        Some(if reply.RoundTripTime > 0 { reply.RoundTripTime as u64 } else { elapsed_ms })
+    }
+}
+
+/// ICMP counterpart to probe_host() - same signature shape (a port list and
+/// a best round-trip time) so scan_range's caller doesn't need to branch on
+/// return shape, only on which function to call. Always returns an empty
+/// port list; scan_range treats a Some(ping) as "host found" in this mode.
+async fn probe_host_icmp(ip: String, timeout_ms: u64, retries: u32) -> (Vec<PortLatency>, Option<u64>) {
+    let attempts = retries.saturating_add(1);
+    let timeout_u32 = u32::try_from(timeout_ms).unwrap_or(u32::MAX);
+    for _ in 0..attempts {
+        let ip_c = ip.clone();
+        let result = tokio::task::spawn_blocking(move || icmp_ping_blocking(&ip_c, timeout_u32))
+            .await
+            .unwrap_or(None);
+        if result.is_some() {
+            return (Vec::new(), result);
+        }
+    }
+    (Vec::new(), None)
+}
+
 /// Scan an IP range. Emits "host-found" events for each responsive host.
 #[tauri::command]
 async fn scan_range(
@@ -273,7 +344,9 @@ async fn scan_range(
     max_concurrent_ports: usize,
     randomize_ports: bool,
     randomize_hosts: bool,
+    mode: String,
 ) -> Result<u32, String> {
+    let icmp_mode = mode == "icmp";
     let start = ip_to_u32(&from_ip).map_err(|e| e.to_string())?;
     let end   = ip_to_u32(&to_ip).map_err(|e| e.to_string())?;
     if start > end {
@@ -314,16 +387,23 @@ async fn scan_range(
             if stop_c.stop.load(Ordering::Relaxed) {
                 return false;
             }
-            let (open_ports, ping_ms) = probe_host(
-                ip.clone(),
-                ports_c,
-                timeout_ms,
-                retries,
-                scan_delay_ms,
-                max_concurrent_ports,
-                randomize_ports,
-            ).await;
-            if !open_ports.is_empty() {
+            let (open_ports, ping_ms) = if icmp_mode {
+                probe_host_icmp(ip.clone(), timeout_ms, retries).await
+            } else {
+                probe_host(
+                    ip.clone(),
+                    ports_c,
+                    timeout_ms,
+                    retries,
+                    scan_delay_ms,
+                    max_concurrent_ports,
+                    randomize_ports,
+                ).await
+            };
+            // ICMP mode has no ports to check - a host "found" there means
+            // it answered the ping at all.
+            let found = if icmp_mode { ping_ms.is_some() } else { !open_ports.is_empty() };
+            if found {
                 let _ = app_c.emit("host-found", HostFound { ip, open_ports, ping_ms });
                 true
             } else {

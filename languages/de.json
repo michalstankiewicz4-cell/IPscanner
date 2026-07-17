@@ -325,7 +325,6 @@
     "statusScanStart": "Scan gestartet:",
     "statusScanStop": "Scan abgeschlossen",
     "statusScanClear": "Scan-Ergebnisse geleert",
-    "statusIcmpNotImplemented": "ICMP-Scan ist noch nicht implementiert",
     "statusTcpSynNotImplemented": "TCP-SYN-Scan ist noch nicht implementiert",
     "statusUdpNotImplementedNote": "UDP-Scan noch nicht implementiert, nur TCP-Ports",
     "statusExternalIp": "Externe IP:",

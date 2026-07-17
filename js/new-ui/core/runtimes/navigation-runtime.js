@@ -685,17 +685,16 @@
       }
 
       // Ports vs ICMP is a deliberate scan-type choice (see
-      // scanner-sidebar-runtime.js's initScanModeToggle()), not a pre-filter
-      // before port scanning. ICMP itself needs raw sockets/admin rights in
-      // the Rust backend and isn't implemented yet - report that honestly
-      // instead of silently running a port scan the user didn't ask for.
-      var icmpModeActive = document.querySelector('[data-scan-mode-panel="icmp"]:not([hidden])');
-      if (icmpModeActive) {
-        if (setStatusLine) setStatusLine(tr("statusIcmpNotImplemented"));
-        return;
-      }
+      // scanner-sidebar-runtime.js's initScanModeToggle()) - read directly
+      // from the checked radio rather than the panel visibility used above
+      // for display purposes, same underlying state either way.
+      var checkedScanModeRadio = document.querySelector('input[name="v1ScanMode"]:checked');
+      var scanMode = checkedScanModeRadio ? checkedScanModeRadio.value : "ports";
+      var icmpMode = scanMode === "icmp";
 
-      // TCP SYN needs raw sockets/admin rights, same story as ICMP above -
+      // TCP SYN needs raw sockets/admin rights (ICMP avoided that by using
+      // the Windows IP Helper API instead, see scan_range/probe_host_icmp
+      // in main.rs, but SYN scanning has no such no-admin equivalent) -
       // not implemented yet, so block rather than silently running a normal
       // TCP Connect scan under the SYN label. UDP (an independent checkbox,
       // not a mode switch) only gets an informational status-line note
@@ -722,7 +721,7 @@
       var defaults = readScanDefaults();
       var estimatedTotal = estimateRangeTotal(range.from, range.to);
 
-      if (!ports.length) {
+      if (!icmpMode && !ports.length) {
         if (setStatusLine) setStatusLine(tr("statusExtractorNoInput"));
         return;
       }
@@ -778,7 +777,7 @@
         var status = tr("statusScanStart") + " " + range.from + " - " + range.to;
         status += " | timeout=" + defaults.timeoutMs + "ms";
         status += " | c=" + defaults.concurrency;
-        if (selectedPresetLabel) {
+        if (!icmpMode && selectedPresetLabel) {
           status += " | " + tr("scannerPortPresets") + ": " + selectedPresetLabel + " (" + ports.length + ")";
         }
         if (configSnapshot.udpChecked) {
@@ -802,6 +801,7 @@
           maxConcurrentPorts: configSnapshot.maxConcurrentPorts,
           randomizePorts: configSnapshot.randomizePorts,
           randomizeHosts: configSnapshot.randomizeHosts,
+          mode: scanMode,
         });
       } catch (err) {
         promise = Promise.reject(err);
