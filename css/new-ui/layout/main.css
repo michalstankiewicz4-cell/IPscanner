@@ -422,7 +422,7 @@ html[dir="rtl"] .v1-rightbar.collapsed .v1-side-head {
 .v1-editor {
   min-width: 0;
   display: grid;
-  grid-template-rows: 38px minmax(120px, 1fr) 6px 200px;
+  grid-template-rows: 34px minmax(120px, 1fr) 6px 200px;
   background: var(--bg-elev);
   min-height: 0;
   overflow: hidden;

@@ -243,7 +243,7 @@
           editor.style.gridTemplateRows = "";
         } else {
           editor.classList.remove("console-collapsed");
-          editor.style.gridTemplateRows = "38px minmax(120px, 1fr) 6px " + size.console + "px";
+          editor.style.gridTemplateRows = "34px minmax(120px, 1fr) 6px " + size.console + "px";
         }
 
         syncToggleLabels();
