@@ -286,44 +286,33 @@
         if (onOpenLanguageManager) onOpenLanguageManager("languages");
         return;
       }
-      if (behavior.indexOf("switch-tool:") === 0) {
-        var tool = behavior.slice("switch-tool:".length);
-        // ip-scanner tool keys: only these 2 ids also open/activate the
-        // matching left-sidebar tool tab below. Rest of this function/file is
-        // shell (generic menu action dispatch) - this hardcoded check is the
-        // one seam that would need a generic contribution instead of an id
-        // check, once a contribution-point API exists.
-        if (tool === "scan-runner" || tool === "ip-library") {
+      // Generic "open this tab, in this section" convention - replaces the
+      // old separate switch-tool:/open-right-tool: strings (the latter used
+      // to hand-roll its own class toggling here, duplicating what
+      // tab-registry.js's engine already does for "right"; now it just
+      // dispatches the same intent events navigation-runtime.js's own
+      // click handlers already use, so there's one code path either way).
+      // "left" isn't handled here directly - nothing in today's menu
+      // definitions opens a left-only tab without also opening its
+      // center/right counterpart, see the scan-runner/ip-library case below.
+      if (behavior.indexOf("open-tab:") === 0) {
+        var parts = behavior.slice("open-tab:".length).split(":");
+        var openSection = parts[0];
+        var tool = parts[1] || "";
+        if (tool && openSection === "center") {
+          // ip-scanner tool keys: only these 2 ids also open/activate the
+          // matching left-sidebar tool tab. Rest of this function/file is
+          // shell (generic menu action dispatch) - this hardcoded check is
+          // the one seam that would need a generic contribution instead of
+          // an id check, once a contribution-point API exists.
+          if (tool === "scan-runner" || tool === "ip-library") {
+            requestSidebarToolTabOpen(tool);
+          }
+          if (onSwitchTool) onSwitchTool(tool);
+        } else if (tool && openSection === "right") {
+          document.dispatchEvent(new CustomEvent("newui:right-tab-intent-open", { detail: { tool: tool } }));
+        } else if (tool && openSection === "left") {
           requestSidebarToolTabOpen(tool);
-        }
-        if (tool && onSwitchTool) onSwitchTool(tool);
-        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
-        return;
-      }
-
-      if (behavior.indexOf("open-right-tool:") === 0) {
-        var tool = behavior.slice("open-right-tool:".length);
-        if (tool) {
-          var wrap = document.querySelector('.v1-right-tool-tab-wrap[data-right-tab="' + tool + '"]');
-          if (wrap) {
-            wrap.classList.remove("right-tab-closed");
-            wrap.removeAttribute("hidden");
-          }
-          document.querySelectorAll(".v1-right-tool-tab-wrap").forEach(function (item) {
-            var wrapTool = item.getAttribute("data-right-tab") || "";
-            item.classList.toggle("is-right-active", wrapTool === tool);
-          });
-          document.querySelectorAll(".v1-right-tab").forEach(function (btn) {
-            var btnTool = btn.getAttribute("data-v1-right-tab") || "";
-            btn.classList.toggle("active", btnTool === tool);
-          });
-          document.querySelectorAll(".v1-right-pane").forEach(function (pane) {
-            pane.classList.toggle("active", pane.getAttribute("data-v1-right-pane") === tool);
-          });
-          var rightbar = document.querySelector(".v1-rightbar");
-          if (rightbar) {
-            rightbar.classList.remove("right-tabs-empty");
-          }
         }
         if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
         return;

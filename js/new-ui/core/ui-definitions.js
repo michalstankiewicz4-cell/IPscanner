@@ -76,19 +76,19 @@
       label: "General",
       purposeKey: "tipActionGeneral",
       purpose: "Wybor, ktore ustawienia powloki maja byc pamietane przy nastepnym uruchomieniu.",
-      behavior: "switch-tool:general",
+      behavior: "open-tab:center:general",
     },
     customization: {
       label: "Import Tool",
       purposeKey: "tipActionCustomization",
       purpose: "Import rozszerzen i zarzadzanie toolami.",
-      behavior: "switch-tool:import-tool",
+      behavior: "open-tab:center:import-tool",
     },
     versions: {
       label: "Versions",
       purposeKey: "tipActionVersions",
       purpose: "Informacje o wersjach aplikacji.",
-      behavior: "switch-tool:versions",
+      behavior: "open-tab:center:versions",
     },
     download: {
       label: "Download",
@@ -100,13 +100,13 @@
       label: "About",
       purposeKey: "tipActionAbout",
       purpose: "Informacje o projekcie.",
-      behavior: "switch-tool:about",
+      behavior: "open-tab:center:about",
     },
     license: {
       label: "License",
       purposeKey: "tipActionLicense",
       purpose: "Informacje o licencji projektu.",
-      behavior: "switch-tool:license",
+      behavior: "open-tab:center:license",
     },
     assistant: {
       label: "Assistant",
@@ -118,7 +118,7 @@
       label: "AI Assistant",
       purposeKey: "tipActionAssistant",
       purpose: "Otwiera panel asystenta AI po prawej stronie.",
-      behavior: "open-right-tool:assistant",
+      behavior: "open-tab:right:assistant",
     },
     "window-min": {
       label: "Window minimize",
@@ -171,13 +171,13 @@
       label: "Country IP Library",
       purposeKey: "tipActionCountries",
       purpose: "Biblioteka zakresow IP wedlug krajow.",
-      behavior: "switch-tool:ip-library",
+      behavior: "open-tab:center:ip-library",
     },
     presets: {
       label: "Port Presets",
       purposeKey: "tipActionPresets",
       purpose: "Zarzadzanie presetami portow.",
-      behavior: "switch-tool:presets",
+      behavior: "open-tab:center:presets",
     },
   };
 
