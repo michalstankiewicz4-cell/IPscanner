@@ -975,6 +975,37 @@
           onClose: syncRightEmptyState,
         }
       );
+
+      // "center" is registered for row RENDERING only (renderTabRowHtml/
+      // renderSectionTabs/retranslateSectionTabs) - deliberately no hooks,
+      // since CS keeps its own open/close/activate logic (switchTool/
+      // closeToolTab in panels-runtime.js, unchanged) rather than routing
+      // through openTab/closeTab/setActiveTab like left/right do. CS's
+      // content-swap, detached/popout windows, and scroll-into-view are
+      // tightly coupled to switchTool() in a way LS/RS's activation never
+      // was - out of scope for this pass, see the plan.
+      var escapeHtml = (window.NetReconNewUICore.utils && window.NetReconNewUICore.utils.dom && window.NetReconNewUICore.utils.dom.escapeHtml) || String;
+      tabRegistry.registerSection("center", {
+        wrapSelector: '.v1-tab[data-tool="{id}"]',
+        wrapListSelector: ".v1-tab[data-tool]",
+        idAttr: "data-tool",
+        closedClass: "tab-closed",
+        activeClass: "active",
+        buildRow: function (id, icon, label, closeAria) {
+          var iconSpan = '<span class="v1-tab-icon" aria-hidden="true">' + escapeHtml(icon) + "</span>";
+          return (
+            '<button class="v1-tab tab-closed" data-tool="' + id + '" type="button" hidden>' +
+            iconSpan +
+            '<span class="v1-tab-title">' + escapeHtml(label) + "</span>" +
+            '<span class="v1-tab-close" data-tab-close="true" role="button" aria-label="' + escapeHtml(closeAria) + '" tabindex="-1">×</span>' +
+            "</button>"
+          );
+        },
+        retranslateRow: function (wrap, icon, label) {
+          var titleEl = wrap.querySelector(".v1-tab-title");
+          if (titleEl) titleEl.textContent = label;
+        },
+      });
     }
 
     // --- ip-scanner tool keys ---
@@ -1586,13 +1617,16 @@
 
     function init() {
       registerTabSections();
-      // LS's 5 and RS's 4 built-in tab rows are generated from
-      // tool-catalog.js here - CS still uses its static index.html markup
-      // (not migrated this pass). LS's click handling (bindToolClicks/
+      // LS's 5, RS's 4, and CS's 13 built-in tab rows are all generated
+      // from tool-catalog.js here. LS/CS's click handling (bindToolClicks/
       // bindSidebarTabClosers) was already delegated, so no equivalent fix
       // was needed there like RS's bindRightTabsAndAssistant() required.
+      // CS's open/close/activate logic (switchTool/closeToolTab) is NOT
+      // routed through this registry - only its row markup is generated
+      // here, see registerTabSections()'s "center" comment.
       tabRegistry.renderSectionTabs("left", ".v1-sidebar-tool-tabs", tr);
       tabRegistry.renderSectionTabs("right", ".v1-right-tabs", tr);
+      tabRegistry.renderSectionTabs("center", "#v1TabsTrack", tr);
       setLeftActiveTab("");
       syncLeftTabActivationInvariant();
       syncRightTabActivationInvariant();

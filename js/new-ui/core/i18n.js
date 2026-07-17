@@ -97,18 +97,23 @@
       toolTitle_results_ip: "Result Data List",
       // Tab-strip labels (LS/CS/RS), read by tab-registry.js. Most tools
       // already had a working, correctly-translated tab-label key under a
-      // different name (tabGeneralTitle, ipScanner, toolTitle_topology,
-      // etc.) - those are reused directly in tool-catalog.js rather than
-      // duplicated here. Only tools with no working key get one here:
-      // versions/shellcraft had no id-based translation at all (their tab
-      // text was permanently English); language-manager's existing
-      // langManagerTitle key ("Language Manager") didn't match its actual
-      // static tab text ("Language") - a pre-existing mismatch, not
-      // introduced by this; config/shellcraft-library/shellcraft-inspector
-      // are new RS/LS-only entries with nothing to reuse.
+      // different name (tabGeneralTitle, ipScanner, etc.) - those are
+      // reused directly in tool-catalog.js rather than duplicated here.
+      // Only tools with no working key, or whose only candidate key was for
+      // different (longer/content-title) text than the actual tab label,
+      // get one here: versions/shellcraft had no id-based translation at
+      // all; language-manager/topology/globe's only existing keys
+      // (langManagerTitle/toolTitle_topology/toolTitle_globe) are the
+      // longer in-content <h4> title ("Language Manager"/"Topology Map"/
+      // "World Globe"), not the shorter tab text - pre-existing mismatches
+      // in applyStaticTranslations(), not introduced by this; config/
+      // shellcraft-library/shellcraft-inspector are new RS/LS-only entries
+      // with nothing to reuse.
       tabLabel_language_manager: "Language",
       tabLabel_versions: "Versions",
       tabLabel_shellcraft: "ShellCraft",
+      tabLabel_topology: "Topology",
+      tabLabel_globe: "Globe",
       tabLabel_config: "Config",
       tabLabel_shellcraft_library: "Library",
       tabLabel_shellcraft_inspector: "Inspector",
@@ -612,6 +617,8 @@
       tabLabel_language_manager: "Język",
       tabLabel_versions: "Wersje",
       tabLabel_shellcraft: "ShellCraft",
+      tabLabel_topology: "Topologia",
+      tabLabel_globe: "Globus",
       tabLabel_config: "Konfiguracja",
       tabLabel_shellcraft_library: "Biblioteka",
       tabLabel_shellcraft_inspector: "Inspektor",

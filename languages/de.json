@@ -58,6 +58,8 @@
     "tabLabel_language_manager": "Sprache",
     "tabLabel_versions": "Versionen",
     "tabLabel_shellcraft": "ShellCraft",
+    "tabLabel_topology": "Topologie",
+    "tabLabel_globe": "Weltkugel",
     "tabLabel_config": "Konfiguration",
     "tabLabel_shellcraft_library": "Bibliothek",
     "tabLabel_shellcraft_inspector": "Inspektor",

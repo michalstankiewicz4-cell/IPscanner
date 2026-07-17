@@ -187,8 +187,15 @@
       var entry = (window.NetReconNewUICore.toolCatalog || {})[id] || {};
       var labelKey = (section === "left" && entry.leftLabelKey) ? entry.leftLabelKey : entry.labelKey;
       var label = tr ? tr(labelKey) : (labelKey || id);
-      var iconPrefix = entry.icon ? entry.icon + " " : "";
       var closeAria = tr ? tr("tabCloseAria") : "Close tab";
+      // CS's row shape genuinely differs (icon as its own <span>, no
+      // separate wrap - the button itself is both wrap and content host) -
+      // rather than force one template to fit every shape, a section can
+      // provide its own via adapter.buildRow(id, icon, label, closeAria).
+      if (typeof a.buildRow === "function") {
+        return a.buildRow(id, entry.icon || "", label, closeAria);
+      }
+      var iconPrefix = entry.icon ? entry.icon + " " : "";
       return (
         '<div class="' + a.wrapClass + " " + a.closedClass + '" ' + a.idAttr + '="' + id + '" hidden>' +
         '<button class="' + a.buttonClass + '" ' + a.buttonIdAttr + '="' + id + '" type="button">' +
@@ -222,7 +229,15 @@
         if (typeof ob !== "number") ob = (toolCatalog[b].ui || {}).order || 999;
         return oa - ob;
       });
+      // Preserve any addon-contributed rows already in the container
+      // (tagged data-dynamic-extension by syncExtensionToolUi()) instead of
+      // wiping them - boot order between that function and this one isn't
+      // guaranteed, so this has to be safe whichever runs first.
+      var preserved = Array.from(container.children).filter(function (el) {
+        return el.hasAttribute("data-dynamic-extension");
+      });
       container.innerHTML = ids.map(function (id) { return renderTabRowHtml(section, id, tr); }).join("");
+      preserved.forEach(function (el) { container.appendChild(el); });
     }
 
     // For a language switch, NOT boot: renderSectionTabs() rebuilds every
@@ -238,10 +253,17 @@
         var id = idOf(section, wrap);
         var entry = toolCatalog[id];
         if (!entry) return;
-        var btn = wrap.querySelector("." + a.buttonClass);
-        if (!btn) return;
         var labelKey = (section === "left" && entry.leftLabelKey) ? entry.leftLabelKey : entry.labelKey;
         var label = tr ? tr(labelKey) : (labelKey || id);
+        // CS has no separate wrap - the row IS the button, and its label
+        // lives in a child <span> alongside an icon span and close span,
+        // not as the button's own textContent (see adapter.retranslateRow).
+        if (typeof a.retranslateRow === "function") {
+          a.retranslateRow(wrap, entry.icon || "", label);
+          return;
+        }
+        var btn = wrap.querySelector("." + a.buttonClass);
+        if (!btn) return;
         var iconPrefix = entry.icon ? entry.icon + " " : "";
         btn.textContent = iconPrefix + label;
       });

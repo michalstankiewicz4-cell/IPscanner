@@ -110,7 +110,7 @@
       textKey: "toolText_topology",
       points: ["Canvas graph", "Live filters", "Node hover telemetry"],
       icon: "🕸",
-      labelKey: "toolTitle_topology",
+      labelKey: "tabLabel_topology",
       ui: { showAsTab: true, order: 120 }
     },
     globe: {
@@ -118,7 +118,7 @@
       textKey: "toolText_globe",
       points: ["D3 globe", "Country markers", "Geo enrichment"],
       icon: "🌍",
-      labelKey: "toolTitle_globe",
+      labelKey: "tabLabel_globe",
       ui: { showAsTab: true, order: 130 }
     },
     "ip-library": {

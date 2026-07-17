@@ -333,73 +333,12 @@
       <section class="v1-editor">
         <div class="v1-tabs-shell">
           <button class="v1-tabs-nav" id="v1TabsScrollLeft" type="button" title="Scroll tabs left" aria-label="Scroll tabs left">◀</button>
-          <div class="v1-tabs" id="v1TabsTrack">
-          <button class="v1-tab tab-closed" data-tool="versions" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">📘</span>
-            <span class="v1-tab-title">Versions</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="ip-library" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">🗂</span>
-            <span class="v1-tab-title" id="v1TabTitleIpLibrary">IP Library</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="presets" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">⭐</span>
-            <span class="v1-tab-title" id="v1TabTitlePresets">Presets</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="general" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">⚙️</span>
-            <span class="v1-tab-title" id="v1TabTitleGeneral">General</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="import-tool" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">📦</span>
-            <span class="v1-tab-title" id="v1TabTitleImportTool">Import Tool</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="language-manager" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">🌐</span>
-            <span class="v1-tab-title" id="v1TabTitleLanguageManager">Language</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="about" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">ℹ️</span>
-            <span class="v1-tab-title" id="v1TabTitleAbout">About</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="license" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">📄</span>
-            <span class="v1-tab-title" id="v1TabTitleLicense">License</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="results-ip" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">🖥</span>
-            <span class="v1-tab-title" id="v1TabTitleResultsIp">IP Results</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="lorem-ipsum" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">📄</span>
-            <span class="v1-tab-title" id="v1TabTitleLoremIpsum">Lorem Ipsum</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="shellcraft" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">🛠</span>
-            <span class="v1-tab-title" id="v1TabTitleShellCraft">ShellCraft</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="topology" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">🕸</span>
-            <span class="v1-tab-title" id="v1TabTitleTopology">Topology</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          <button class="v1-tab tab-closed" data-tool="globe" type="button" hidden>
-            <span class="v1-tab-icon" aria-hidden="true">🌍</span>
-            <span class="v1-tab-title" id="v1TabTitleGlobe">Globe</span>
-            <span class="v1-tab-close" data-tab-close="true" role="button" aria-label="Close tab" tabindex="-1">×</span>
-          </button>
-          </div>
+          <!-- Rows generated at boot by tab-registry.js's renderSectionTabs("center", ...)
+               from tool-catalog.js's registry (ui.showAsTab entries) - not
+               hand-written here, see navigation-runtime.js's init(). Addon-
+               contributed tabs are appended here too (syncExtensionToolUi(),
+               bootstrap-runtime.js), preserved across re-renders. -->
+          <div class="v1-tabs" id="v1TabsTrack"></div>
           <button class="v1-tabs-nav" id="v1TabsScrollRight" type="button" title="Scroll tabs right" aria-label="Scroll tabs right">▶</button>
         </div>
 
@@ -686,7 +625,7 @@
   <script src="js/new-ui/core/i18n.js?v=20260933"></script>
   <script src="js/new-ui/core/theme.js?v=20260604"></script>
   <script src="js/new-ui/core/tool-catalog.js?v=20260915"></script>
-  <script src="js/new-ui/core/tab-registry.js?v=20260103"></script>
+  <script src="js/new-ui/core/tab-registry.js?v=20260104"></script>
   <script src="js/new-ui/core/presets-runtime.js?v=20260817"></script>
   <script src="js/new-ui/core/general-settings-runtime.js?v=20260909"></script>
   <script src="js/new-ui/core/macros-runtime.js?v=20260810"></script>
@@ -704,7 +643,7 @@
   <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js?v=20260904"></script>
   <script src="js/new-ui/core/runtimes/clippy-runtime.js?v=20260604"></script>
   <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js?v=20260911"></script>
-  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260933"></script>
+  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260934"></script>
   <script src="js/new-ui/core/runtimes/session-sqlite-runtime.js?v=20260804"></script>
   <script src="js/new-ui/core/runtimes/update-check-runtime.js?v=20260906"></script>
   <script src="js/new-ui/core/panel-content-config.js?v=20260713"></script>
@@ -719,7 +658,7 @@
   <script src="js/new-ui/core/session-runtime.js?v=20260911"></script>
   <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260930"></script>
   <script src="js/new-ui/core/powershell-console-runtime.js?v=20260604"></script>
-    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260935"></script>
+    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260936"></script>
 </body>
 </html>
 
