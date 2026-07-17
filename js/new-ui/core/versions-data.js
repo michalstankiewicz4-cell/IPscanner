@@ -10,6 +10,15 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.3.0",
+      notes: [
+        "IP Scanner now scans UDP and ICMP for real, alongside TCP - and none of the three need Administrator privileges. Check any combination in the Config tab's Protocol section and scan for all of them in a single pass.",
+        "ICMP is no longer an exclusive \"ping only\" mode - it runs alongside a normal port scan now, so a single scan can report open ports and a real ping together.",
+        "UDP results distinguish confirmed-open ports from ports that simply didn't respond (marked \"open?\") - UDP itself can't tell those apart, so the app is honest about the difference instead of guessing.",
+        "TCP Connect can now be turned off entirely (Config tab), so an ICMP-only or UDP-only scan is possible. TCP SYN is still not implemented and is now fully hidden - not just grayed out - until \"Show unfinished tools\" is enabled."
+      ]
+    },
+    {
       version: "v2.2.0",
       notes: [
         "IP Scanner (Config tab) is now real: Reverse DNS/Country Flag/ISP/AS/Device Identification enrichment, Retries, Scan delay, Max concurrent ports per host, and Randomize ports/hosts all actually apply to the scan instead of being inert placeholders.",
