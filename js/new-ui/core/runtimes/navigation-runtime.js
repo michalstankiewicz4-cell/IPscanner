@@ -788,6 +788,15 @@
         }
         if (configSnapshot.udpChecked) {
           status += " | " + tr("statusUdpAmbiguityNote");
+          // UDP alone can never confirm a host is alive - "found" requires
+          // a confirmed signal (see scan_range's found check in main.rs),
+          // and most networks/devices silently drop unsolicited UDP
+          // instead of rejecting it, so a UDP-only scan often reports
+          // nothing at all even against a genuinely occupied range. TCP or
+          // ICMP alongside it gives real host-presence confirmation.
+          if (!configSnapshot.tcpEnabled && !configSnapshot.icmpChecked) {
+            status += " | " + tr("statusUdpAloneNote");
+          }
         }
         setStatusLine(status);
       }

@@ -326,6 +326,7 @@
     "statusTcpSynNotImplemented": "TCP-SYN-Scan ist noch nicht implementiert",
     "statusNoProtocolSelected": "Waehle mindestens ein Protokoll (TCP, UDP oder ICMP) zum Scannen",
     "statusUdpAmbiguityNote": "UDP: keine Antwort kann offen oder gefiltert bedeuten, entsprechend markiert",
+    "statusUdpAloneNote": "UDP allein kann nicht bestaetigen, dass ein Host lebt - aktiviere auch TCP oder ICMP fuer zuverlaessige Erkennung",
     "portStatusOpenFiltered": "offen?",
     "portStatusOpenFilteredTitle": "Keine Antwort - Port koennte offen oder stillschweigend gefiltert sein, nicht unterscheidbar",
     "statusExternalIp": "Externe IP:",

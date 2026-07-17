@@ -517,9 +517,17 @@ async fn scan_range(
                 udp_checked,
                 icmp_checked,
             ).await;
-            // A host counts as found if it has any open port OR answered
-            // the ICMP ping - either protocol alone is enough.
-            let found = !open_ports.is_empty() || icmp_replied;
+            // A host counts as found only on a CONFIRMED signal - a
+            // definitely-open port (TCP, or UDP with a real reply) or a
+            // real ICMP echo reply. open_filtered UDP entries alone must
+            // NOT count: on a real network, most routers/firewalls simply
+            // drop unsolicited UDP instead of sending back an ICMP
+            // unreachable, so a UDP scan's timeout case is common, not
+            // rare - counting it as "found" on its own would report almost
+            // every address in a swept range as a live host. Once a host
+            // IS confirmed via another signal, its open_filtered entries
+            // still ride along in open_ports as legitimate bonus info.
+            let found = open_ports.iter().any(|p| p.status == "open") || icmp_replied;
             if found {
                 let _ = app_c.emit("host-found", HostFound { ip, open_ports, ping_ms });
                 true
