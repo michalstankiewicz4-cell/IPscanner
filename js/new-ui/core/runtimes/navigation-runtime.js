@@ -920,6 +920,11 @@
           paneSelector: '[data-sidebar-tool-panel="{id}"]',
           paneVisibility: "hidden-attr",
           fallbackOrder: sidebarFallbackOrder,
+          wrapClass: "v1-sidebar-tool-tab-wrap",
+          buttonClass: "v1-sidebar-tool-tab",
+          buttonIdAttr: "data-tool",
+          closeClass: "v1-sidebar-tool-tab-close",
+          closeFlagAttr: "data-sidebar-tab-close",
         },
         {
           onActivate: function (nextTool) {
@@ -1581,11 +1586,12 @@
 
     function init() {
       registerTabSections();
-      // RS's 4 built-in tab rows are generated from tool-catalog.js here -
-      // LS/CS still use their static index.html markup (not migrated this
-      // pass). Safe now that bindRightTabsAndAssistant() uses delegated
-      // click handling (see there) rather than per-element listeners bound
-      // once at startup, which would have missed these regenerated rows.
+      // LS's 5 and RS's 4 built-in tab rows are generated from
+      // tool-catalog.js here - CS still uses its static index.html markup
+      // (not migrated this pass). LS's click handling (bindToolClicks/
+      // bindSidebarTabClosers) was already delegated, so no equivalent fix
+      // was needed there like RS's bindRightTabsAndAssistant() required.
+      tabRegistry.renderSectionTabs("left", ".v1-sidebar-tool-tabs", tr);
       tabRegistry.renderSectionTabs("right", ".v1-right-tabs", tr);
       setLeftActiveTab("");
       syncLeftTabActivationInvariant();

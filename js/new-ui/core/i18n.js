@@ -95,26 +95,20 @@
       toolTitle_license: "License",
       toolTitle_lorem_ipsum: "Lorem Ipsum",
       toolTitle_results_ip: "Result Data List",
-      // Tab-strip labels (LS/CS/RS) - separate from toolTitle_* above, which
-      // is the in-content <h4> title and is sometimes different text (e.g.
-      // toolTitle_results_ip is "Result Data List", but the tab itself reads
-      // "IP Results" in CS / "Results" in LS - see tab-registry.js).
-      tabLabel_general: "General",
-      tabLabel_import_tool: "Import Tool",
+      // Tab-strip labels (LS/CS/RS), read by tab-registry.js. Most tools
+      // already had a working, correctly-translated tab-label key under a
+      // different name (tabGeneralTitle, ipScanner, toolTitle_topology,
+      // etc.) - those are reused directly in tool-catalog.js rather than
+      // duplicated here. Only tools with no working key get one here:
+      // versions/shellcraft had no id-based translation at all (their tab
+      // text was permanently English); language-manager's existing
+      // langManagerTitle key ("Language Manager") didn't match its actual
+      // static tab text ("Language") - a pre-existing mismatch, not
+      // introduced by this; config/shellcraft-library/shellcraft-inspector
+      // are new RS/LS-only entries with nothing to reuse.
       tabLabel_language_manager: "Language",
       tabLabel_versions: "Versions",
-      tabLabel_about: "About",
-      tabLabel_license: "License",
-      tabLabel_lorem_ipsum: "Lorem Ipsum",
       tabLabel_shellcraft: "ShellCraft",
-      tabLabel_scan_runner: "IP Scanner",
-      tabLabel_topology: "Topology",
-      tabLabel_globe: "Globe",
-      tabLabel_ip_library: "IP Library",
-      tabLabel_presets: "Presets",
-      tabLabel_results_ip: "IP Results",
-      tabLabel_results_ip_left: "Results",
-      tabLabel_assistant: "AI Assistant",
       tabLabel_config: "Config",
       tabLabel_shellcraft_library: "Library",
       tabLabel_shellcraft_inspector: "Inspector",
@@ -615,22 +609,9 @@
       toolTitle_license: "Licencja",
       toolTitle_lorem_ipsum: "Lorem Ipsum",
       toolTitle_results_ip: "Lista danych wynikowych",
-      tabLabel_general: "Ogólne",
-      tabLabel_import_tool: "Import narzędzia",
       tabLabel_language_manager: "Język",
       tabLabel_versions: "Wersje",
-      tabLabel_about: "O programie",
-      tabLabel_license: "Licencja",
-      tabLabel_lorem_ipsum: "Lorem Ipsum",
       tabLabel_shellcraft: "ShellCraft",
-      tabLabel_scan_runner: "Skaner IP",
-      tabLabel_topology: "Topologia",
-      tabLabel_globe: "Globus",
-      tabLabel_ip_library: "Biblioteka IP",
-      tabLabel_presets: "Presety",
-      tabLabel_results_ip: "Wyniki IP",
-      tabLabel_results_ip_left: "Wyniki",
-      tabLabel_assistant: "Asystent AI",
       tabLabel_config: "Konfiguracja",
       tabLabel_shellcraft_library: "Biblioteka",
       tabLabel_shellcraft_inspector: "Inspektor",

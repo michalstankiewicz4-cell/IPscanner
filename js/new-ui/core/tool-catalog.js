@@ -20,7 +20,7 @@
       textKey: "toolText_general",
       points: ["Auto load last session", "Per-setting remember toggles", "Applies on next launch"],
       icon: "⚙️",
-      labelKey: "tabLabel_general",
+      labelKey: "tabGeneralTitle",
       ui: { showAsTab: true, order: 40 }
     },
     "import-tool": {
@@ -28,7 +28,7 @@
       textKey: "toolText_import_tool",
       points: ["Paste manifest JSON", "List installed tools", "Uninstall by id"],
       icon: "📦",
-      labelKey: "tabLabel_import_tool",
+      labelKey: "importToolTitle",
       ui: { showAsTab: true, order: 50 }
     },
     "language-manager": {
@@ -52,7 +52,7 @@
       textKey: "toolText_about",
       points: ["Project summary", "Author details", "Support links"],
       icon: "ℹ️",
-      labelKey: "tabLabel_about",
+      labelKey: "tabAboutTitle",
       ui: { showAsTab: true, order: 70 }
     },
     license: {
@@ -60,7 +60,7 @@
       textKey: "toolText_license",
       points: ["MIT license", "Permission notice", "Copyright notice"],
       icon: "📄",
-      labelKey: "tabLabel_license",
+      labelKey: "tabLicenseTitle",
       ui: { showAsTab: true, order: 80 }
     },
     "lorem-ipsum": {
@@ -68,7 +68,7 @@
       textKey: "toolText_lorem_ipsum",
       points: [],
       icon: "📄",
-      labelKey: "tabLabel_lorem_ipsum",
+      labelKey: "toolTitle_lorem_ipsum",
       ui: { showInLeftPanel: true, leftOrder: 50, showAsTab: true, order: 100, showInRightPanel: true, rightOrder: 30 }
     },
     // ShellCraft stays in the base shell (confirmed by the user, not a
@@ -102,7 +102,7 @@
       textKey: "toolText_scan_runner",
       points: ["IP range + presets", "Concurrency control", "Export/import results"],
       icon: null,
-      labelKey: "tabLabel_scan_runner",
+      labelKey: "ipScanner",
       ui: { showInLeftPanel: true, leftOrder: 10 }
     },
     topology: {
@@ -110,7 +110,7 @@
       textKey: "toolText_topology",
       points: ["Canvas graph", "Live filters", "Node hover telemetry"],
       icon: "🕸",
-      labelKey: "tabLabel_topology",
+      labelKey: "toolTitle_topology",
       ui: { showAsTab: true, order: 120 }
     },
     globe: {
@@ -118,7 +118,7 @@
       textKey: "toolText_globe",
       points: ["D3 globe", "Country markers", "Geo enrichment"],
       icon: "🌍",
-      labelKey: "tabLabel_globe",
+      labelKey: "toolTitle_globe",
       ui: { showAsTab: true, order: 130 }
     },
     "ip-library": {
@@ -126,7 +126,7 @@
       textKey: "toolText_ip_library",
       points: ["Country IP ranges", "PowerShell auto update", "Local cache preview"],
       icon: "🗂",
-      labelKey: "tabLabel_ip_library",
+      labelKey: "ipLibraryTabTitle",
       ui: { showInLeftPanel: true, leftOrder: 20, showAsTab: true, order: 20 }
     },
     presets: {
@@ -134,7 +134,7 @@
       textKey: "toolText_presets",
       points: ["Built-in scan groups", "Editable custom ports", "Default preset choice"],
       icon: "⭐",
-      labelKey: "tabLabel_presets",
+      labelKey: "tabPresetsTitle",
       ui: { showAsTab: true, order: 30 }
     },
     "results-ip": {
@@ -142,17 +142,18 @@
       textKey: "toolText_results_ip",
       points: ["IP + hostname", "Open ports", "Enrichment data"],
       icon: "🖥",
-      // Tab label differs by section: CS reads "IP Results", LS reads just
-      // "Results" (tabLabel_results_ip_left) - see i18n.js's comment.
-      labelKey: "tabLabel_results_ip",
-      leftLabelKey: "tabLabel_results_ip_left",
+      // Tab label differs by section: CS already had its own key
+      // ("IP Results"), LS its own too ("Results") - reused directly
+      // rather than duplicated.
+      labelKey: "tabResultsIp",
+      leftLabelKey: "resultsSidebarTitle",
       ui: { showInLeftPanel: true, leftOrder: 40, showAsTab: true, order: 90 }
     },
 
     // --- RS-only built-ins (no CS tab, no generic content renderer) ---
     assistant: {
       icon: "🤖",
-      labelKey: "tabLabel_assistant",
+      labelKey: "menuToolsAiAssistant",
       ui: { showInRightPanel: true, rightOrder: 10 }
     },
     config: {
