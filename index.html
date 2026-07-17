@@ -479,24 +479,10 @@
       <!-- Right section -->
       <aside class="v1-rightbar">
         <div class="v1-side-head">
-          <div class="v1-right-tabs">
-            <div class="v1-right-tool-tab-wrap right-tab-closed" data-right-tab="assistant" hidden>
-              <button class="v1-right-tab" data-v1-right-tab="assistant" type="button">🤖 AI Assistant</button>
-              <span class="v1-right-tool-tab-close" data-right-tab-close="true" data-tool="assistant" role="button" tabindex="-1" aria-label="Close tab">×</span>
-            </div>
-            <div class="v1-right-tool-tab-wrap right-tab-closed" data-right-tab="shellcraft-inspector" hidden>
-              <button class="v1-right-tab" id="v1RightTabShellCraftInspector" data-v1-right-tab="shellcraft-inspector" type="button">Inspector</button>
-              <span class="v1-right-tool-tab-close" data-right-tab-close="true" data-tool="shellcraft-inspector" role="button" tabindex="-1" aria-label="Close tab">×</span>
-            </div>
-            <div class="v1-right-tool-tab-wrap right-tab-closed" data-right-tab="lorem-ipsum" hidden>
-              <button class="v1-right-tab" id="v1RightTabLoremIpsum" data-v1-right-tab="lorem-ipsum" type="button">Lorem Ipsum</button>
-              <span class="v1-right-tool-tab-close" data-right-tab-close="true" data-tool="lorem-ipsum" role="button" tabindex="-1" aria-label="Close tab">×</span>
-            </div>
-            <div class="v1-right-tool-tab-wrap right-tab-closed" data-right-tab="config" hidden>
-              <button class="v1-right-tab" id="v1RightTabConfig" data-v1-right-tab="config" type="button">Config</button>
-              <span class="v1-right-tool-tab-close" data-right-tab-close="true" data-tool="config" role="button" tabindex="-1" aria-label="Close tab">×</span>
-            </div>
-          </div>
+          <!-- Rows generated at boot by tab-registry.js's renderSectionTabs("right", ...)
+               from tool-catalog.js's registry (ui.showInRightPanel entries) - not
+               hand-written here, see navigation-runtime.js's init(). -->
+          <div class="v1-right-tabs"></div>
           <button class="v1-panel-toggle" data-panel-toggle="right" title="Hide right section" aria-label="Hide right section">▶</button>
         </div>
         <div class="v1-right-content">
@@ -715,9 +701,10 @@
 
   <script src="js/new-ui/core/app-version.js?v=2.2.0"></script>
   <script src="js/new-ui/core/store.js"></script>
-  <script src="js/new-ui/core/i18n.js?v=20260931"></script>
+  <script src="js/new-ui/core/i18n.js?v=20260932"></script>
   <script src="js/new-ui/core/theme.js?v=20260604"></script>
-  <script src="js/new-ui/core/tool-catalog.js?v=20260913"></script>
+  <script src="js/new-ui/core/tool-catalog.js?v=20260914"></script>
+  <script src="js/new-ui/core/tab-registry.js?v=20260102"></script>
   <script src="js/new-ui/core/presets-runtime.js?v=20260817"></script>
   <script src="js/new-ui/core/general-settings-runtime.js?v=20260909"></script>
   <script src="js/new-ui/core/macros-runtime.js?v=20260810"></script>
@@ -735,7 +722,7 @@
   <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js?v=20260904"></script>
   <script src="js/new-ui/core/runtimes/clippy-runtime.js?v=20260604"></script>
   <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js?v=20260911"></script>
-  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260930"></script>
+  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260932"></script>
   <script src="js/new-ui/core/runtimes/session-sqlite-runtime.js?v=20260804"></script>
   <script src="js/new-ui/core/runtimes/update-check-runtime.js?v=20260906"></script>
   <script src="js/new-ui/core/panel-content-config.js?v=20260713"></script>
@@ -748,9 +735,9 @@
   <script src="js/new-ui/core/panels-runtime.js?v=20260932"></script>
   <script src="js/new-ui/core/menu-runtime.js?v=20260933"></script>
   <script src="js/new-ui/core/session-runtime.js?v=20260911"></script>
-  <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260929"></script>
+  <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260930"></script>
   <script src="js/new-ui/core/powershell-console-runtime.js?v=20260604"></script>
-    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260933"></script>
+    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260934"></script>
 </body>
 </html>
 

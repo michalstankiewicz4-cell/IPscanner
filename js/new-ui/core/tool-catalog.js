@@ -5,79 +5,160 @@
     // FUTURE_PLUGIN_SHELL.md; Help menu items (versions/about/license) also
     // stay in the base shell per SHELL_PROGRESS.md. Judgment call, not settled
     // fact — flag if a future split disagrees.
+    //
+    // icon/labelKey/ui are read by tab-registry.js (LS/CS/RS tab-strip
+    // chrome) - titleKey/textKey/points are unrelated, read by
+    // panel-content-runtime.js's buildDetailHtml()/infoFor() for a tool's
+    // in-content <h4>/body text. The two can differ (e.g. results-ip's
+    // titleKey is "Result Data List" but its tab label is "IP Results") -
+    // that's expected, not a bug, see i18n.js's tabLabel_* comment.
+    // ui.order positions a tab within its own section's strip (lower =
+    // earlier); ui.leftOrder/rightOrder override it for a specific section
+    // when a tool appears in more than one (see lorem-ipsum below).
     general: {
       titleKey: "toolTitle_general",
       textKey: "toolText_general",
-      points: ["Auto load last session", "Per-setting remember toggles", "Applies on next launch"]
+      points: ["Auto load last session", "Per-setting remember toggles", "Applies on next launch"],
+      icon: "⚙️",
+      labelKey: "tabLabel_general",
+      ui: { showAsTab: true, order: 40 }
     },
     "import-tool": {
       titleKey: "toolTitle_import_tool",
       textKey: "toolText_import_tool",
-      points: ["Paste manifest JSON", "List installed tools", "Uninstall by id"]
+      points: ["Paste manifest JSON", "List installed tools", "Uninstall by id"],
+      icon: "📦",
+      labelKey: "tabLabel_import_tool",
+      ui: { showAsTab: true, order: 50 }
     },
     "language-manager": {
       titleKey: "toolTitle_language_manager",
       textKey: "toolText_language_manager",
-      points: ["Add custom dictionaries", "Activate language", "List available languages"]
+      points: ["Add custom dictionaries", "Activate language", "List available languages"],
+      icon: "🌐",
+      labelKey: "tabLabel_language_manager",
+      ui: { showAsTab: true, order: 60 }
     },
     versions: {
       titleKey: "toolTitle_versions",
       textKey: "toolText_versions",
-      points: ["Release history", "Major updates", "Quality fixes"]
+      points: ["Release history", "Major updates", "Quality fixes"],
+      icon: "📘",
+      labelKey: "tabLabel_versions",
+      ui: { showAsTab: true, order: 10 }
     },
     about: {
       titleKey: "toolTitle_about",
       textKey: "toolText_about",
-      points: ["Project summary", "Author details", "Support links"]
+      points: ["Project summary", "Author details", "Support links"],
+      icon: "ℹ️",
+      labelKey: "tabLabel_about",
+      ui: { showAsTab: true, order: 70 }
     },
     license: {
       titleKey: "toolTitle_license",
       textKey: "toolText_license",
-      points: ["MIT license", "Permission notice", "Copyright notice"]
+      points: ["MIT license", "Permission notice", "Copyright notice"],
+      icon: "📄",
+      labelKey: "tabLabel_license",
+      ui: { showAsTab: true, order: 80 }
     },
     "lorem-ipsum": {
       titleKey: "toolTitle_lorem_ipsum",
       textKey: "toolText_lorem_ipsum",
-      points: []
+      points: [],
+      icon: "📄",
+      labelKey: "tabLabel_lorem_ipsum",
+      ui: { showInLeftPanel: true, leftOrder: 50, showAsTab: true, order: 100, showInRightPanel: true, rightOrder: 30 }
     },
     // ShellCraft stays in the base shell (confirmed by the user, not a
     // judgment call like the ones above) - see SHELL_PROGRESS.md.
     shellcraft: {
       titleKey: "toolTitle_shellcraft",
       textKey: "toolText_shellcraft",
-      points: ["Shell script library", "Command inspector", "Empty starter workspace"]
+      points: ["Shell script library", "Command inspector", "Empty starter workspace"],
+      icon: "🛠",
+      labelKey: "tabLabel_shellcraft",
+      ui: { showAsTab: true, order: 110 }
+    },
+    // ShellCraft's Library (LS) and Inspector (RS) are distinct tabs from
+    // the canvas above (different content, different ids) - not the same
+    // tool shown in 3 places, so they get their own registry entries rather
+    // than extra ui flags on "shellcraft" itself.
+    "shellcraft-library": {
+      icon: null,
+      labelKey: "tabLabel_shellcraft_library",
+      ui: { showInLeftPanel: true, leftOrder: 30 }
+    },
+    "shellcraft-inspector": {
+      icon: null,
+      labelKey: "tabLabel_shellcraft_inspector",
+      ui: { showInRightPanel: true, rightOrder: 20 }
     },
 
     // --- ip-scanner tool keys ---
     "scan-runner": {
       titleKey: "toolTitle_scan_runner",
       textKey: "toolText_scan_runner",
-      points: ["IP range + presets", "Concurrency control", "Export/import results"]
+      points: ["IP range + presets", "Concurrency control", "Export/import results"],
+      icon: null,
+      labelKey: "tabLabel_scan_runner",
+      ui: { showInLeftPanel: true, leftOrder: 10 }
     },
     topology: {
       titleKey: "toolTitle_topology",
       textKey: "toolText_topology",
-      points: ["Canvas graph", "Live filters", "Node hover telemetry"]
+      points: ["Canvas graph", "Live filters", "Node hover telemetry"],
+      icon: "🕸",
+      labelKey: "tabLabel_topology",
+      ui: { showAsTab: true, order: 120 }
     },
     globe: {
       titleKey: "toolTitle_globe",
       textKey: "toolText_globe",
-      points: ["D3 globe", "Country markers", "Geo enrichment"]
+      points: ["D3 globe", "Country markers", "Geo enrichment"],
+      icon: "🌍",
+      labelKey: "tabLabel_globe",
+      ui: { showAsTab: true, order: 130 }
     },
     "ip-library": {
       titleKey: "toolTitle_ip_library",
       textKey: "toolText_ip_library",
-      points: ["Country IP ranges", "PowerShell auto update", "Local cache preview"]
+      points: ["Country IP ranges", "PowerShell auto update", "Local cache preview"],
+      icon: "🗂",
+      labelKey: "tabLabel_ip_library",
+      ui: { showInLeftPanel: true, leftOrder: 20, showAsTab: true, order: 20 }
     },
     presets: {
       titleKey: "toolTitle_presets",
       textKey: "toolText_presets",
-      points: ["Built-in scan groups", "Editable custom ports", "Default preset choice"]
+      points: ["Built-in scan groups", "Editable custom ports", "Default preset choice"],
+      icon: "⭐",
+      labelKey: "tabLabel_presets",
+      ui: { showAsTab: true, order: 30 }
     },
     "results-ip": {
       titleKey: "toolTitle_results_ip",
       textKey: "toolText_results_ip",
-      points: ["IP + hostname", "Open ports", "Enrichment data"]
+      points: ["IP + hostname", "Open ports", "Enrichment data"],
+      icon: "🖥",
+      // Tab label differs by section: CS reads "IP Results", LS reads just
+      // "Results" (tabLabel_results_ip_left) - see i18n.js's comment.
+      labelKey: "tabLabel_results_ip",
+      leftLabelKey: "tabLabel_results_ip_left",
+      ui: { showInLeftPanel: true, leftOrder: 40, showAsTab: true, order: 90 }
+    },
+
+    // --- RS-only built-ins (no CS tab, no generic content renderer) ---
+    assistant: {
+      icon: "🤖",
+      labelKey: "tabLabel_assistant",
+      ui: { showInRightPanel: true, rightOrder: 10 }
+    },
+    config: {
+      icon: null,
+      labelKey: "tabLabel_config",
+      ui: { showInRightPanel: true, rightOrder: 40 }
     }
   };
 

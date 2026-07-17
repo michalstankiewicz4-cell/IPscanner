@@ -10,6 +10,7 @@
     var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils
       ? window.NetReconNewUICore.utils.net
       : null;
+    var tabRegistry = window.NetReconNewUICore && window.NetReconNewUICore.tabRegistry;
     var shellcraftInspectorClosedByUser = false;
 
     function lookupPortService(port) {
@@ -830,12 +831,8 @@
     }
 
     function setSidebarTabOpen(tool, isOpen) {
-      var wrap = document.querySelector('.v1-sidebar-tool-tab-wrap[data-sidebar-tab="' + tool + '"]');
-      if (!wrap) return;
-      wrap.classList.toggle("sidebar-tab-closed", !isOpen);
-      if (isOpen) wrap.removeAttribute("hidden");
-      else wrap.setAttribute("hidden", "hidden");
-      syncLeftTabActivationInvariant();
+      if (isOpen) tabRegistry.openTab("left", tool);
+      else tabRegistry.closeTab("left", tool);
     }
 
     function ensureSidebarTabOpen(tool) {
@@ -843,19 +840,16 @@
       setSidebarTabOpen(tool, true);
     }
 
-    function setRightTabOpen(tool, isOpen) {
-      var wrap = document.querySelector('.v1-right-tool-tab-wrap[data-right-tab="' + tool + '"]');
-      if (!wrap) return false;
-      wrap.classList.toggle("right-tab-closed", !isOpen);
-      if (isOpen) wrap.removeAttribute("hidden");
-      else wrap.setAttribute("hidden", "hidden");
-      if (!isOpen) {
-        if (wrap.classList.contains("is-right-active")) {
-          wrap.classList.remove("is-right-active");
-          setRightTabActive(firstOpenRightTab(tool));
-        }
+    function syncRightEmptyState() {
+      var rightbar = document.querySelector(".v1-rightbar");
+      if (rightbar) {
+        rightbar.classList.toggle("right-tabs-empty", tabRegistry.getOpenTabs("right").length === 0);
       }
-      syncRightTabActivationInvariant();
+    }
+
+    function setRightTabOpen(tool, isOpen) {
+      if (isOpen) tabRegistry.openTab("right", tool);
+      else tabRegistry.closeTab("right", tool);
       return true;
     }
 
@@ -865,58 +859,16 @@
     }
 
     function syncRightTabActivationInvariant() {
-      var openTools = Array.from(document.querySelectorAll(".v1-right-tool-tab-wrap"))
-        .filter(function (wrap) {
-          return !wrap.classList.contains("right-tab-closed") && !wrap.hasAttribute("hidden");
-        })
-        .map(function (wrap) {
-          return wrap.getAttribute("data-right-tab") || "";
-        })
-        .filter(Boolean);
-
-      var rightbar = document.querySelector(".v1-rightbar");
-      if (rightbar) {
-        rightbar.classList.toggle("right-tabs-empty", openTools.length === 0);
-      }
-
-      if (!openTools.length) {
-        setRightTabActive("");
-        return;
-      }
-
-      var hasActive = Array.from(document.querySelectorAll(".v1-right-tool-tab-wrap.is-right-active")).some(function (wrap) {
-        var tool = wrap.getAttribute("data-right-tab") || "";
-        return openTools.indexOf(tool) >= 0;
-      });
-      if (!hasActive) {
-        setRightTabActive(openTools[0]);
-      }
+      syncRightEmptyState();
+      tabRegistry.syncActivationInvariant("right");
     }
 
     function setRightTabActive(tool) {
-      var nextTool = String(tool || "");
-      document.querySelectorAll(".v1-right-tool-tab-wrap").forEach(function (wrap) {
-        var wrapTool = wrap.getAttribute("data-right-tab") || "";
-        wrap.classList.toggle("is-right-active", !!nextTool && wrapTool === nextTool);
-      });
-      document.querySelectorAll(".v1-right-tab").forEach(function (btn) {
-        var btnTool = btn.getAttribute("data-v1-right-tab") || "";
-        btn.classList.toggle("active", !!nextTool && btnTool === nextTool);
-      });
-      document.querySelectorAll(".v1-right-pane").forEach(function (pane) {
-        pane.classList.toggle("active", pane.getAttribute("data-v1-right-pane") === nextTool);
-      });
+      tabRegistry.setActiveTab("right", tool);
     }
 
     function firstOpenRightTab(excludedTool) {
-      var wraps = Array.from(document.querySelectorAll(".v1-right-tool-tab-wrap"));
-      var next = wraps.find(function (wrap) {
-        if (wrap.classList.contains("right-tab-closed")) return false;
-        if (wrap.hasAttribute("hidden")) return false;
-        var tabTool = wrap.getAttribute("data-right-tab") || "";
-        return tabTool && tabTool !== excludedTool;
-      });
-      return next ? (next.getAttribute("data-right-tab") || "") : "";
+      return tabRegistry.firstOpenTab("right", excludedTool);
     }
 
     function activateSidebarTool(tool) {
@@ -935,93 +887,89 @@
       return "";
     }
 
-    function syncScannerSidebarToolPanels(activeTool) {
-      var selected = String(activeTool || "");
-      document.querySelectorAll("[data-sidebar-tool-panel]").forEach(function (panel) {
-        var panelTool = panel.getAttribute("data-sidebar-tool-panel") || "";
-        panel.hidden = panelTool !== selected;
-      });
-    }
-
     function setLeftActiveTab(tool) {
-      var nextTool = String(tool || "");
-      document.querySelectorAll(".v1-sidebar-tool-tab-wrap").forEach(function (wrap) {
-        var wrapTool = wrap.getAttribute("data-sidebar-tab") || "";
-        wrap.classList.toggle("is-left-active", !!nextTool && wrapTool === nextTool);
-      });
-      document.querySelectorAll(".v1-sidebar-tool-tab").forEach(function (btn) {
-        var btnTool = btn.getAttribute("data-tool") || "";
-        btn.classList.toggle("is-left-active", !!nextTool && btnTool === nextTool);
-        btn.classList.toggle("active", !!nextTool && btnTool === nextTool);
-      });
-      syncScannerSidebarToolPanels(nextTool);
-
-      var activity = activityForSidebarTool(nextTool);
-      document.querySelectorAll(".v1-activity [data-tool]").forEach(function (btn) {
-        btn.classList.remove("active");
-      });
-      document.querySelectorAll(".v1-activity [data-activity]").forEach(function (btn) {
-        if (activity && btn.getAttribute("data-activity") === activity) {
-          btn.classList.add("active");
-        }
-      });
+      tabRegistry.setActiveTab("left", tool);
     }
 
     function syncLeftTabActivationInvariant() {
-      var openTools = Array.from(document.querySelectorAll(".v1-sidebar-tool-tab-wrap"))
-        .filter(function (wrap) {
-          return !wrap.classList.contains("sidebar-tab-closed") && !wrap.hasAttribute("hidden");
-        })
-        .map(function (wrap) {
-          return wrap.getAttribute("data-sidebar-tab") || "";
-        })
-        .filter(Boolean);
-
-      if (!openTools.length) {
-        setLeftActiveTab("");
-        return;
-      }
-
-      if (openTools.length === 1) {
-        setLeftActiveTab(openTools[0]);
-        return;
-      }
-
-      var hasActive = Array.from(document.querySelectorAll(".v1-sidebar-tool-tab-wrap.is-left-active"))
-        .some(function (wrap) {
-          var tool = wrap.getAttribute("data-sidebar-tab") || "";
-          return openTools.indexOf(tool) >= 0;
-        });
-      if (!hasActive) {
-        setLeftActiveTab(openTools[0]);
-      }
+      tabRegistry.syncActivationInvariant("left");
     }
 
     function isSidebarTabOpen(tool) {
-      if (!tool) return false;
-      var wrap = document.querySelector('.v1-sidebar-tool-tab-wrap[data-sidebar-tab="' + tool + '"]');
-      if (!wrap) return false;
-      if (wrap.classList.contains("sidebar-tab-closed")) return false;
-      if (wrap.hasAttribute("hidden")) return false;
-      return true;
+      return tabRegistry.isTabOpen("left", tool);
     }
 
     function firstOpenSidebarTab(excludedTool) {
-      var preferred = Array.isArray(sidebarFallbackOrder) ? sidebarFallbackOrder : [];
-      for (var i = 0; i < preferred.length; i += 1) {
-        var tool = preferred[i];
-        if (!tool || tool === excludedTool) continue;
-        if (isSidebarTabOpen(tool)) return tool;
-      }
+      return tabRegistry.firstOpenTab("left", excludedTool);
+    }
 
-      var wraps = Array.from(document.querySelectorAll(".v1-sidebar-tool-tab-wrap"));
-      var next = wraps.find(function (wrap) {
-        if (wrap.classList.contains("sidebar-tab-closed")) return false;
-        if (wrap.hasAttribute("hidden")) return false;
-        var tabTool = wrap.getAttribute("data-sidebar-tab") || "";
-        return tabTool && tabTool !== excludedTool;
-      });
-      return next ? (next.getAttribute("data-sidebar-tab") || "") : "";
+    // Registers LS/RS with the shared tab-registry engine (tab-registry.js)
+    // - each adapter describes that section's existing DOM/CSS conventions
+    // (unchanged), each hook holds the section-specific extra behavior the
+    // generic engine doesn't know about (activity-bar mirroring for LS, the
+    // "right-tabs-empty" empty-state class for RS). Called once from init().
+    function registerTabSections() {
+      tabRegistry.registerSection(
+        "left",
+        {
+          wrapSelector: '.v1-sidebar-tool-tab-wrap[data-sidebar-tab="{id}"]',
+          wrapListSelector: ".v1-sidebar-tool-tab-wrap",
+          idAttr: "data-sidebar-tab",
+          closedClass: "sidebar-tab-closed",
+          activeClass: "is-left-active",
+          paneSelector: '[data-sidebar-tool-panel="{id}"]',
+          paneVisibility: "hidden-attr",
+          fallbackOrder: sidebarFallbackOrder,
+        },
+        {
+          onActivate: function (nextTool) {
+            document.querySelectorAll(".v1-sidebar-tool-tab").forEach(function (btn) {
+              var btnTool = btn.getAttribute("data-tool") || "";
+              btn.classList.toggle("is-left-active", !!nextTool && btnTool === nextTool);
+              btn.classList.toggle("active", !!nextTool && btnTool === nextTool);
+            });
+
+            var activity = activityForSidebarTool(nextTool);
+            document.querySelectorAll(".v1-activity [data-tool]").forEach(function (btn) {
+              btn.classList.remove("active");
+            });
+            document.querySelectorAll(".v1-activity [data-activity]").forEach(function (btn) {
+              if (activity && btn.getAttribute("data-activity") === activity) {
+                btn.classList.add("active");
+              }
+            });
+          },
+        }
+      );
+
+      tabRegistry.registerSection(
+        "right",
+        {
+          wrapSelector: '.v1-right-tool-tab-wrap[data-right-tab="{id}"]',
+          wrapListSelector: ".v1-right-tool-tab-wrap",
+          idAttr: "data-right-tab",
+          closedClass: "right-tab-closed",
+          activeClass: "is-right-active",
+          paneSelector: '.v1-right-pane[data-v1-right-pane="{id}"]',
+          paneVisibility: "active-class",
+          paneActiveClass: "active",
+          wrapClass: "v1-right-tool-tab-wrap",
+          buttonClass: "v1-right-tab",
+          buttonIdAttr: "data-v1-right-tab",
+          closeClass: "v1-right-tool-tab-close",
+          closeFlagAttr: "data-right-tab-close",
+        },
+        {
+          onActivate: function (nextTool) {
+            document.querySelectorAll(".v1-right-tab").forEach(function (btn) {
+              var btnTool = btn.getAttribute("data-v1-right-tab") || "";
+              btn.classList.toggle("active", !!nextTool && btnTool === nextTool);
+            });
+          },
+          onOpen: syncRightEmptyState,
+          onClose: syncRightEmptyState,
+        }
+      );
     }
 
     // --- ip-scanner tool keys ---
@@ -1553,23 +1501,26 @@
     }
 
     function bindRightTabsAndAssistant() {
-      document.querySelectorAll(".v1-right-tab").forEach(function (tab) {
-        tab.addEventListener("click", function () {
-          var next = tab.getAttribute("data-v1-right-tab");
-          if (!next) return;
+      // Delegated (not per-element, matching bindSidebarTabClosers/
+      // bindToolClicks' pattern elsewhere in this file) so tab rows added
+      // after this runs - by an addon, or later by a registry-driven
+      // re-render - work without needing their own explicit listener.
+      document.addEventListener("click", function (e) {
+        var closeBtn = e.target && e.target.closest ? e.target.closest("[data-right-tab-close]") : null;
+        if (closeBtn) {
+          e.stopPropagation();
+          var closeTool = closeBtn.getAttribute("data-tool");
+          if (!closeTool) return;
+          if (closeTool === "shellcraft-inspector") shellcraftInspectorClosedByUser = true;
+          setRightTabOpen(closeTool, false);
+          return;
+        }
 
-          setRightTabActive(next);
-        });
-      });
-
-      document.querySelectorAll("[data-right-tab-close]").forEach(function (close) {
-        close.addEventListener("click", function (evt) {
-          evt.stopPropagation();
-          var tab = close.getAttribute("data-tool");
-          if (!tab) return;
-          if (tab === "shellcraft-inspector") shellcraftInspectorClosedByUser = true;
-          setRightTabOpen(tab, false);
-        });
+        var tab = e.target && e.target.closest ? e.target.closest(".v1-right-tab") : null;
+        if (!tab) return;
+        var next = tab.getAttribute("data-v1-right-tab");
+        if (!next) return;
+        setRightTabActive(next);
       });
 
       document.addEventListener("newui:shellcraft-block-selected", function () {
@@ -1629,6 +1580,13 @@
     }
 
     function init() {
+      registerTabSections();
+      // RS's 4 built-in tab rows are generated from tool-catalog.js here -
+      // LS/CS still use their static index.html markup (not migrated this
+      // pass). Safe now that bindRightTabsAndAssistant() uses delegated
+      // click handling (see there) rather than per-element listeners bound
+      // once at startup, which would have missed these regenerated rows.
+      tabRegistry.renderSectionTabs("right", ".v1-right-tabs", tr);
       setLeftActiveTab("");
       syncLeftTabActivationInvariant();
       syncRightTabActivationInvariant();
@@ -1646,31 +1604,19 @@
     }
 
     function getOpenLeftTools() {
-      return Array.from(document.querySelectorAll(".v1-sidebar-tool-tab-wrap[data-sidebar-tab]"))
-        .filter(function (wrap) {
-          return !wrap.classList.contains("sidebar-tab-closed") && !wrap.hasAttribute("hidden");
-        })
-        .map(function (wrap) { return wrap.getAttribute("data-sidebar-tab"); })
-        .filter(Boolean);
+      return tabRegistry.getOpenTabs("left");
     }
 
     function getActiveLeftTool() {
-      var wrap = document.querySelector(".v1-sidebar-tool-tab-wrap.is-left-active[data-sidebar-tab]");
-      return wrap ? wrap.getAttribute("data-sidebar-tab") : null;
+      return tabRegistry.getActiveTab("left") || null;
     }
 
     function getOpenRightTools() {
-      return Array.from(document.querySelectorAll(".v1-right-tool-tab-wrap[data-right-tab]"))
-        .filter(function (wrap) {
-          return !wrap.classList.contains("right-tab-closed") && !wrap.hasAttribute("hidden");
-        })
-        .map(function (wrap) { return wrap.getAttribute("data-right-tab"); })
-        .filter(Boolean);
+      return tabRegistry.getOpenTabs("right");
     }
 
     function getActiveRightTool() {
-      var wrap = document.querySelector(".v1-right-tool-tab-wrap.is-right-active[data-right-tab]");
-      return wrap ? wrap.getAttribute("data-right-tab") : null;
+      return tabRegistry.getActiveTab("right") || null;
     }
 
     return {
