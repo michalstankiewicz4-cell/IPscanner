@@ -287,6 +287,16 @@ html[dir="rtl"] .v1-ai-mode-badge {
   margin-top: 6px;
 }
 
+/* This class's own display:flex above beats the browser's default
+   [hidden]{display:none} UA rule (author style always wins over UA style,
+   regardless of hidden being a boolean attribute) - same specificity
+   gotcha documented elsewhere in this codebase. Needed for
+   #v1ConfigProtocolTcpSynRow's hidden-until-"Show unfinished tools"
+   toggle to actually hide it. */
+.v1-config-checkbox-row[hidden] {
+  display: none !important;
+}
+
 .v1-config-checkbox-row:first-child {
   margin-top: 0;
 }

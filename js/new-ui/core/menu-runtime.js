@@ -392,17 +392,20 @@
           ".v1-menu-dd-item[data-menu-action=\"assistant-right\"]",
           ".v1-menu-dd-item[data-menu-action=\"countries\"]",
           "[data-general-ui-switch]",
+          // TCP SYN has zero backend support (no SYN scanning code exists
+          // at all in main.rs), unlike OS Detection below which is merely
+          // grayed out - stays fully hidden, not just disabled.
+          "#v1ConfigProtocolTcpSynRow",
         ];
-        // Not-yet-implemented scan techniques (TCP SYN/UDP/OS Detection all
-        // need raw sockets; ICMP mode needs the same) - grayed out
-        // (disabled, not hidden) so they're visible-but-unselectable until
-        // "Show unfinished tools" is on, instead of only failing after
-        // Start is pressed.
+        // Not-yet-implemented scan techniques (OS Detection needs raw
+        // sockets/admin rights) - grayed out (disabled, not hidden) so
+        // it's visible-but-unselectable until "Show unfinished tools" is
+        // on, instead of only failing after Start is pressed. ICMP and UDP
+        // used to be here too but are both genuinely implemented now (see
+        // main.rs's probe_host_icmp/probe_port_udp) - leaving them listed
+        // would re-disable them every time this toggle is switched off.
         var unfinishedDisabledSelectors = [
-          "#v1ConfigProtocolTcpSyn",
-          "#v1ConfigProtocolUdp",
           "#v1ConfigOsDetection",
-          "#v1ScanModeIcmp",
         ];
         var unfinishedBtn = document.querySelector('[data-menu-action="show-unfinished-tools"]');
         var nextShowState = !(unfinishedBtn && unfinishedBtn.classList.contains("is-active"));

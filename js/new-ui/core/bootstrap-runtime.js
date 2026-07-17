@@ -1208,11 +1208,16 @@
 
       try {
         if (localStorage.getItem("netrecon_show_unfinished_tools") === "1") {
-          ["#v1ActivityLoremIpsum", "#v1ActivityTopology", "#v1ActivityGlobe", ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]", ".v1-menu-dd-item[data-tool=\"topology\"]", ".v1-menu-dd-item[data-tool=\"globe\"]", ".v1-menu-dd-item[data-menu-action=\"assistant-right\"]", ".v1-menu-dd-item[data-menu-action=\"countries\"]", "[data-general-ui-switch]"].forEach(function (selector) {
+          ["#v1ActivityLoremIpsum", "#v1ActivityTopology", "#v1ActivityGlobe", ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]", ".v1-menu-dd-item[data-tool=\"topology\"]", ".v1-menu-dd-item[data-tool=\"globe\"]", ".v1-menu-dd-item[data-menu-action=\"assistant-right\"]", ".v1-menu-dd-item[data-menu-action=\"countries\"]", "[data-general-ui-switch]", "#v1ConfigProtocolTcpSynRow"].forEach(function (selector) {
             var el = document.querySelector(selector);
             if (el) el.removeAttribute("hidden");
           });
-          ["#v1ConfigProtocolTcpSyn", "#v1ConfigProtocolUdp", "#v1ConfigOsDetection", "#v1ScanModeIcmp"].forEach(function (selector) {
+          // ICMP/UDP used to be in this list too but are both genuinely
+          // implemented now (see menu-runtime.js's matching comment) - they
+          // aren't gated behind this dev toggle anymore. TCP SYN moved to
+          // the hidden-toggling list above (it has zero backend support,
+          // unlike OS Detection which is merely grayed out).
+          ["#v1ConfigOsDetection"].forEach(function (selector) {
             var el = document.querySelector(selector);
             if (el) el.removeAttribute("disabled");
           });

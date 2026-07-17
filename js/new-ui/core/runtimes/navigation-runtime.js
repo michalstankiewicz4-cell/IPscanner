@@ -322,8 +322,10 @@
         isp: false,
         as: false,
         deviceIdentification: false,
+        tcpEnabled: true,
         tcpSynMode: false,
         udpChecked: false,
+        icmpChecked: false,
       };
       try {
         var raw = window.localStorage ? window.localStorage.getItem(CONFIG_FORM_STATE_KEY) : "";
@@ -347,8 +349,10 @@
         snapshot.isp = !!parsed.v1ConfigIsp;
         snapshot.as = !!parsed.v1ConfigAs;
         snapshot.deviceIdentification = !!parsed.v1ConfigDeviceIdentification;
+        snapshot.tcpEnabled = parsed.v1ConfigProtocolTcpEnabled !== false;
         snapshot.tcpSynMode = !!parsed.v1ConfigProtocolTcpSyn;
         snapshot.udpChecked = !!parsed.v1ConfigProtocolUdp;
+        snapshot.icmpChecked = !!parsed.v1ConfigProtocolIcmp;
 
         return snapshot;
       } catch (_) {
@@ -553,9 +557,12 @@
             if (!Number.isFinite(value) || value < 1 || value > 65535) return null;
             var rounded = Math.round(value);
             var ms = entry && typeof entry === "object" ? Number(entry.ms) : NaN;
+            var protocol = entry && typeof entry === "object" && entry.protocol ? String(entry.protocol) : "TCP";
+            var status = entry && typeof entry === "object" && entry.status ? String(entry.status) : "open";
             return {
               port: rounded,
-              protocol: "TCP",
+              protocol: protocol,
+              status: status,
               service: lookupPortService(rounded),
               ping: Number.isFinite(ms) && ms >= 0 ? (String(Math.round(ms)) + " ms") : "-",
             };
@@ -684,24 +691,23 @@
         return;
       }
 
-      // Ports vs ICMP is a deliberate scan-type choice (see
-      // scanner-sidebar-runtime.js's initScanModeToggle()) - read directly
-      // from the checked radio rather than the panel visibility used above
-      // for display purposes, same underlying state either way.
-      var checkedScanModeRadio = document.querySelector('input[name="v1ScanMode"]:checked');
-      var scanMode = checkedScanModeRadio ? checkedScanModeRadio.value : "ports";
-      var icmpMode = scanMode === "icmp";
-
+      // TCP/UDP/ICMP are independent, additive protocol checkboxes in
+      // Config's Protocol section now (icmpChecked used to be its own
+      // exclusive "Ports vs ICMP" mode in scan-runner - moved here so a
+      // single scan can report open ports AND a real ICMP ping together).
       // TCP SYN needs raw sockets/admin rights (ICMP avoided that by using
       // the Windows IP Helper API instead, see scan_range/probe_host_icmp
       // in main.rs, but SYN scanning has no such no-admin equivalent) -
       // not implemented yet, so block rather than silently running a normal
-      // TCP Connect scan under the SYN label. UDP (an independent checkbox,
-      // not a mode switch) only gets an informational status-line note
-      // further down since a normal TCP scan should still proceed.
+      // TCP Connect scan under the SYN label.
       var configSnapshot = readConfigFormSnapshot();
       if (configSnapshot.tcpSynMode) {
         if (setStatusLine) setStatusLine(tr("statusTcpSynNotImplemented"));
+        return;
+      }
+
+      if (!configSnapshot.tcpEnabled && !configSnapshot.udpChecked && !configSnapshot.icmpChecked) {
+        if (setStatusLine) setStatusLine(tr("statusNoProtocolSelected"));
         return;
       }
 
@@ -721,7 +727,7 @@
       var defaults = readScanDefaults();
       var estimatedTotal = estimateRangeTotal(range.from, range.to);
 
-      if (!icmpMode && !ports.length) {
+      if ((configSnapshot.tcpEnabled || configSnapshot.udpChecked) && !ports.length) {
         if (setStatusLine) setStatusLine(tr("statusExtractorNoInput"));
         return;
       }
@@ -777,11 +783,11 @@
         var status = tr("statusScanStart") + " " + range.from + " - " + range.to;
         status += " | timeout=" + defaults.timeoutMs + "ms";
         status += " | c=" + defaults.concurrency;
-        if (!icmpMode && selectedPresetLabel) {
+        if ((configSnapshot.tcpEnabled || configSnapshot.udpChecked) && selectedPresetLabel) {
           status += " | " + tr("scannerPortPresets") + ": " + selectedPresetLabel + " (" + ports.length + ")";
         }
         if (configSnapshot.udpChecked) {
-          status += " | " + tr("statusUdpNotImplementedNote");
+          status += " | " + tr("statusUdpAmbiguityNote");
         }
         setStatusLine(status);
       }
@@ -801,7 +807,9 @@
           maxConcurrentPorts: configSnapshot.maxConcurrentPorts,
           randomizePorts: configSnapshot.randomizePorts,
           randomizeHosts: configSnapshot.randomizeHosts,
-          mode: scanMode,
+          tcpChecked: configSnapshot.tcpEnabled,
+          udpChecked: configSnapshot.udpChecked,
+          icmpChecked: configSnapshot.icmpChecked,
         });
       } catch (err) {
         promise = Promise.reject(err);

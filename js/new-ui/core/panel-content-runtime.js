@@ -718,6 +718,12 @@
             banner: String(port.banner || "").trim(),
             sslCertInfo: String(port.sslCertInfo || port.sslCert || port.certInfo || "").trim(),
             protocol: String(port.protocol || "TCP").trim().toUpperCase(),
+            // "open" (confirmed) or "open_filtered" (UDP only - no response
+            // at all, which for UDP can mean open OR silently filtered;
+            // there's no way to tell those apart, see probe_port_udp in
+            // main.rs). TCP/ICMP results are always "open" - a completed
+            // handshake or echo reply leaves no ambiguity.
+            status: String(port.status || "open").trim().toLowerCase(),
             service: String(port.service || "").trim(),
             ping: String(port.ping || "-").trim() || "-"
           };
@@ -731,6 +737,7 @@
           banner: "",
           sslCertInfo: "",
           protocol: "TCP",
+          status: "open",
           service: sharedNet && typeof sharedNet.lookupPortService === "function"
             ? sharedNet.lookupPortService(legacyLabel)
             : "",
@@ -767,13 +774,19 @@
           var portBanner = portEntry.banner || "-";
           var portSslCert = portEntry.sslCertInfo || "-";
           var portProtocolBadge = "<span class=\"v1-ip-port-badge v1-ip-port-badge--protocol is-" + escapeHtml(portEntry.protocol.toLowerCase()) + "\">" + escapeHtml(portEntry.protocol) + "</span>";
+          // Only ever "open_filtered" for UDP (see resolvePortEntry) - a
+          // confirmed-open port (TCP, or UDP with a real reply) gets no
+          // extra badge at all.
+          var portStatusBadge = portEntry.status === "open_filtered"
+            ? "<span class=\"v1-ip-port-badge v1-ip-port-badge--status is-open-filtered\" title=\"" + escapeHtml(trOr("portStatusOpenFilteredTitle", "No response - port may be open or silently filtered, can't tell which")) + "\">" + escapeHtml(trOr("portStatusOpenFiltered", "open?")) + "</span>"
+            : "";
           var portServiceBadge = portEntry.service ? "<span class=\"v1-ip-port-badge v1-ip-port-badge--service\">" + escapeHtml(portEntry.service) + "</span>" : "";
           return [
             "<tr class=\"v1-ip-port-row\" data-ports-row=\"" + idx + "\" data-port-index=\"" + portIdx + "\" data-port-key=\"" + escapeHtml(portKey) + "\" data-status=\"" + escapeHtml(statusKey) + "\" hidden>",
             "<td class=\"v1-ip-col-check\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-port-action=\"check\" data-port-key=\"" + escapeHtml(portKey) + "\" aria-pressed=\"false\" aria-label=\"Mark port\">✓</button></td>",
             "<td class=\"v1-ip-col-star\"><button type=\"button\" class=\"v1-ip-port-action-btn\" data-port-action=\"favorite\" data-port-key=\"" + escapeHtml(portKey) + "\" aria-pressed=\"false\" aria-label=\"Add port to favorites\">★</button></td>",
             "<td class=\"v1-ip-col-status\" aria-hidden=\"true\"></td>",
-            "<td class=\"v1-ip-col-ip\"><span class=\"v1-ip-port-line\"><span class=\"v1-ip-port-line-start\"><span class=\"v1-ip-port-chip-emoji\" aria-hidden=\"true\" title=\"" + escapeHtml(selectedPresetLabel) + "\">" + escapeHtml(selectedPresetEmoji) + "</span><span class=\"v1-ip-port-value\">" + escapeHtml(portLabel) + "</span></span>" + portProtocolBadge + "</span></td>",
+            "<td class=\"v1-ip-col-ip\"><span class=\"v1-ip-port-line\"><span class=\"v1-ip-port-line-start\"><span class=\"v1-ip-port-chip-emoji\" aria-hidden=\"true\" title=\"" + escapeHtml(selectedPresetLabel) + "\">" + escapeHtml(selectedPresetEmoji) + "</span><span class=\"v1-ip-port-value\">" + escapeHtml(portLabel) + "</span></span>" + portProtocolBadge + portStatusBadge + "</span></td>",
             "<td class=\"v1-ip-col-expand\" aria-hidden=\"true\"></td>",
             "<td class=\"v1-ip-col-ping\">" + escapeHtml(portEntry.ping) + "</td>",
             "<td class=\"v1-ip-col-host\" data-col=\"hostname\">" + portServiceBadge + "</td>",

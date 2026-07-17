@@ -39,6 +39,11 @@ struct ScanState {
 struct PortLatency {
     port: u16,
     ms: Option<u64>,
+    protocol: String,
+    // "open" (confirmed) or "open_filtered" (UDP-only: no response at all,
+    // which for UDP can mean either open or silently firewalled - there's
+    // no way to tell those apart, same limitation every UDP scanner has).
+    status: String,
 }
 
 #[derive(Serialize, Clone)]
@@ -209,6 +214,30 @@ fn shuffle_vec<T>(v: &mut Vec<T>) {
     }
 }
 
+/// Probes one UDP port via a *connected* socket - on Windows, an incoming
+/// ICMP "port unreachable" surfaces as a ConnectionReset error on recv, so
+/// this needs no raw socket / admin rights, unlike a classic UDP scanner.
+/// Returns (round_trip_ms, confirmed): confirmed=true only when real reply
+/// data came back (definitely open); confirmed=false means no response at
+/// all within the timeout - UDP's inherent "open|filtered" ambiguity, not
+/// something this can resolve further. None means a ConnectionReset came
+/// back - the port is definitely closed, not reported at all (same as TCP).
+async fn probe_port_udp(ip: &str, port: u16, timeout_ms: u64) -> Option<(u64, bool)> {
+    let addr = format!("{}:{}", ip, port);
+    let socket = tokio::net::UdpSocket::bind("0.0.0.0:0").await.ok()?;
+    socket.connect(&addr).await.ok()?;
+    let _ = socket.send(&[]).await;
+
+    let t0 = Instant::now();
+    let mut buf = [0u8; 512];
+    match timeout(Duration::from_millis(timeout_ms), socket.recv(&mut buf)).await {
+        Ok(Ok(_n)) => Some((t0.elapsed().as_millis() as u64, true)),
+        Ok(Err(e)) if e.kind() == std::io::ErrorKind::ConnectionReset => None,
+        Ok(Err(_)) => Some((t0.elapsed().as_millis() as u64, false)),
+        Err(_) => Some((t0.elapsed().as_millis() as u64, false)),
+    }
+}
+
 /// Probe a single IP across all given ports; returns open ports + best latency.
 async fn probe_host(
     ip: String,
@@ -218,48 +247,85 @@ async fn probe_host(
     scan_delay_ms: u64,
     max_concurrent_ports: usize,
     randomize_ports: bool,
+    tcp_checked: bool,
+    udp_checked: bool,
 ) -> (Vec<PortLatency>, Option<u64>) {
     if randomize_ports {
         shuffle_vec(&mut ports);
     }
     let port_sem = Arc::new(tokio::sync::Semaphore::new(max_concurrent_ports.max(1)));
-    let mut set: tokio::task::JoinSet<(u16, bool, Option<u64>)> = tokio::task::JoinSet::new();
+    let mut set: tokio::task::JoinSet<Option<PortLatency>> = tokio::task::JoinSet::new();
     for port in ports {
-        let ip_c = ip.clone();
-        let permit = port_sem.clone().acquire_owned().await.unwrap();
-        set.spawn(async move {
-            let _permit = permit;
-            let addr_str = format!("{}:{}", ip_c, port);
-            let addr: SocketAddr = match addr_str.parse() {
-                Ok(a) => a,
-                Err(_) => return (port, false, None::<u64>),
-            };
-            if scan_delay_ms > 0 {
-                tokio::time::sleep(Duration::from_millis(scan_delay_ms)).await;
-            }
-            let t0 = Instant::now();
-            let attempts = retries.saturating_add(1);
-            for attempt in 0..attempts {
-                match timeout(Duration::from_millis(timeout_ms), TcpStream::connect(addr)).await {
-                    Ok(Ok(_)) => return (port, true, Some(t0.elapsed().as_millis() as u64)),
-                    _ => {
-                        if attempt + 1 == attempts {
-                            return (port, false, None);
+        if tcp_checked {
+            let ip_c = ip.clone();
+            let permit = port_sem.clone().acquire_owned().await.unwrap();
+            set.spawn(async move {
+                let _permit = permit;
+                let addr_str = format!("{}:{}", ip_c, port);
+                let addr: SocketAddr = match addr_str.parse() {
+                    Ok(a) => a,
+                    Err(_) => return None,
+                };
+                if scan_delay_ms > 0 {
+                    tokio::time::sleep(Duration::from_millis(scan_delay_ms)).await;
+                }
+                let t0 = Instant::now();
+                let attempts = retries.saturating_add(1);
+                for attempt in 0..attempts {
+                    match timeout(Duration::from_millis(timeout_ms), TcpStream::connect(addr)).await {
+                        Ok(Ok(_)) => {
+                            return Some(PortLatency {
+                                port,
+                                ms: Some(t0.elapsed().as_millis() as u64),
+                                protocol: "TCP".into(),
+                                status: "open".into(),
+                            })
+                        }
+                        _ => {
+                            if attempt + 1 == attempts {
+                                return None;
+                            }
                         }
                     }
                 }
-            }
-            (port, false, None)
-        });
+                None
+            });
+        }
+
+        if udp_checked {
+            let ip_u = ip.clone();
+            let permit_u = port_sem.clone().acquire_owned().await.unwrap();
+            set.spawn(async move {
+                let _permit = permit_u;
+                if scan_delay_ms > 0 {
+                    tokio::time::sleep(Duration::from_millis(scan_delay_ms)).await;
+                }
+                match probe_port_udp(&ip_u, port, timeout_ms).await {
+                    Some((ms, true)) => Some(PortLatency {
+                        port,
+                        ms: Some(ms),
+                        protocol: "UDP".into(),
+                        status: "open".into(),
+                    }),
+                    Some((ms, false)) => Some(PortLatency {
+                        port,
+                        ms: Some(ms),
+                        protocol: "UDP".into(),
+                        status: "open_filtered".into(),
+                    }),
+                    None => None,
+                }
+            });
+        }
     }
     let mut open_ports: Vec<PortLatency> = Vec::new();
     let mut best_ms: Option<u64> = None;
     while let Some(res) = set.join_next().await {
-        if let Ok((port, true, ms)) = res {
-            open_ports.push(PortLatency { port, ms });
-            if let Some(m) = ms {
+        if let Ok(Some(entry)) = res {
+            if let Some(m) = entry.ms {
                 best_ms = Some(best_ms.map_or(m, |prev: u64| prev.min(m)));
             }
+            open_ports.push(entry);
         }
     }
     open_ports.sort_unstable_by_key(|p| p.port);
@@ -312,9 +378,9 @@ fn icmp_ping_blocking(ip: &str, timeout_ms: u32) -> Option<u64> {
 }
 
 /// ICMP counterpart to probe_host() - same signature shape (a port list and
-/// a best round-trip time) so scan_range's caller doesn't need to branch on
-/// return shape, only on which function to call. Always returns an empty
-/// port list; scan_range treats a Some(ping) as "host found" in this mode.
+/// a best round-trip time) so probe_host_multi (below) doesn't need to
+/// branch on return shape, only on which function to call. Always returns
+/// an empty port list.
 async fn probe_host_icmp(ip: String, timeout_ms: u64, retries: u32) -> (Vec<PortLatency>, Option<u64>) {
     let attempts = retries.saturating_add(1);
     let timeout_u32 = u32::try_from(timeout_ms).unwrap_or(u32::MAX);
@@ -328,6 +394,57 @@ async fn probe_host_icmp(ip: String, timeout_ms: u64, retries: u32) -> (Vec<Port
         }
     }
     (Vec::new(), None)
+}
+
+/// Combines TCP/UDP port probing (probe_host) with an ICMP ping
+/// (probe_host_icmp), run concurrently - protocols are independently
+/// switchable now (see Config's Protocol section), not an exclusive
+/// either/or mode. Returns (open_ports, ping_ms, icmp_replied):
+/// ping_ms prefers the real ICMP round-trip when icmp_checked succeeded,
+/// falling back to probe_host's TCP-connect-latency proxy otherwise;
+/// icmp_replied is surfaced separately so the caller can treat "ICMP
+/// answered but no ports open" as a found host too.
+async fn probe_host_multi(
+    ip: String,
+    ports: Vec<u16>,
+    timeout_ms: u64,
+    retries: u32,
+    scan_delay_ms: u64,
+    max_concurrent_ports: usize,
+    randomize_ports: bool,
+    tcp_checked: bool,
+    udp_checked: bool,
+    icmp_checked: bool,
+) -> (Vec<PortLatency>, Option<u64>, bool) {
+    let icmp_fut = async {
+        if icmp_checked {
+            probe_host_icmp(ip.clone(), timeout_ms, retries).await.1
+        } else {
+            None
+        }
+    };
+    let ports_fut = async {
+        if tcp_checked || udp_checked {
+            probe_host(
+                ip.clone(),
+                ports,
+                timeout_ms,
+                retries,
+                scan_delay_ms,
+                max_concurrent_ports,
+                randomize_ports,
+                tcp_checked,
+                udp_checked,
+            )
+            .await
+        } else {
+            (Vec::new(), None)
+        }
+    };
+    let (icmp_ms, (open_ports, port_ms)) = tokio::join!(icmp_fut, ports_fut);
+    let icmp_replied = icmp_ms.is_some();
+    let ping_ms = icmp_ms.or(port_ms);
+    (open_ports, ping_ms, icmp_replied)
 }
 
 /// Scan an IP range. Emits "host-found" events for each responsive host.
@@ -344,9 +461,10 @@ async fn scan_range(
     max_concurrent_ports: usize,
     randomize_ports: bool,
     randomize_hosts: bool,
-    mode: String,
+    tcp_checked: bool,
+    udp_checked: bool,
+    icmp_checked: bool,
 ) -> Result<u32, String> {
-    let icmp_mode = mode == "icmp";
     let start = ip_to_u32(&from_ip).map_err(|e| e.to_string())?;
     let end   = ip_to_u32(&to_ip).map_err(|e| e.to_string())?;
     if start > end {
@@ -387,22 +505,21 @@ async fn scan_range(
             if stop_c.stop.load(Ordering::Relaxed) {
                 return false;
             }
-            let (open_ports, ping_ms) = if icmp_mode {
-                probe_host_icmp(ip.clone(), timeout_ms, retries).await
-            } else {
-                probe_host(
-                    ip.clone(),
-                    ports_c,
-                    timeout_ms,
-                    retries,
-                    scan_delay_ms,
-                    max_concurrent_ports,
-                    randomize_ports,
-                ).await
-            };
-            // ICMP mode has no ports to check - a host "found" there means
-            // it answered the ping at all.
-            let found = if icmp_mode { ping_ms.is_some() } else { !open_ports.is_empty() };
+            let (open_ports, ping_ms, icmp_replied) = probe_host_multi(
+                ip.clone(),
+                ports_c,
+                timeout_ms,
+                retries,
+                scan_delay_ms,
+                max_concurrent_ports,
+                randomize_ports,
+                tcp_checked,
+                udp_checked,
+                icmp_checked,
+            ).await;
+            // A host counts as found if it has any open port OR answered
+            // the ICMP ping - either protocol alone is enough.
+            let found = !open_ports.is_empty() || icmp_replied;
             if found {
                 let _ = app_c.emit("host-found", HostFound { ip, open_ports, ping_ms });
                 true
@@ -689,8 +806,14 @@ fn open_language_file_dialog() -> Result<LanguageFilePick, String> {
 struct ScanPortEntry {
     port: i64,
     protocol: String,
+    #[serde(default = "default_open_status")]
+    status: String,
     service: String,
     ping: String,
+}
+
+fn default_open_status() -> String {
+    "open".into()
 }
 
 #[derive(Serialize, Deserialize)]
@@ -799,6 +922,7 @@ const SESSION_SCHEMA_SQL: &str = "
       result_id INTEGER NOT NULL REFERENCES scan_results(id) ON DELETE CASCADE,
       port INTEGER NOT NULL,
       protocol TEXT NOT NULL DEFAULT 'TCP',
+      status TEXT NOT NULL DEFAULT 'open',
       service TEXT NOT NULL DEFAULT '',
       ping TEXT NOT NULL DEFAULT '-'
     );
@@ -870,10 +994,11 @@ fn open_session_sqlite_conn(path: &Path) -> Result<Connection, String> {
                 .map_err(|e| format!("Failed to read scan_result_ports column name: {e}"))?;
             names
         };
-        let migrations: [(&str, &str); 3] = [
+        let migrations: [(&str, &str); 4] = [
             ("protocol", "ALTER TABLE scan_result_ports ADD COLUMN protocol TEXT NOT NULL DEFAULT 'TCP'"),
             ("service", "ALTER TABLE scan_result_ports ADD COLUMN service TEXT NOT NULL DEFAULT ''"),
             ("ping", "ALTER TABLE scan_result_ports ADD COLUMN ping TEXT NOT NULL DEFAULT '-'"),
+            ("status", "ALTER TABLE scan_result_ports ADD COLUMN status TEXT NOT NULL DEFAULT 'open'"),
         ];
         for (column, ddl) in migrations {
             if !existing.iter().any(|c| c == column) {
@@ -898,7 +1023,7 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             .prepare_cached("INSERT INTO scan_results (ip, ping, hostname, flag, isp, as_info, device_identification, status, status_class) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)")
             .map_err(|e| format!("Failed to prepare scan_results insert: {e}"))?;
         let mut insert_port = tx
-            .prepare_cached("INSERT INTO scan_result_ports (result_id, port, protocol, service, ping) VALUES (?1, ?2, ?3, ?4, ?5)")
+            .prepare_cached("INSERT INTO scan_result_ports (result_id, port, protocol, status, service, ping) VALUES (?1, ?2, ?3, ?4, ?5, ?6)")
             .map_err(|e| format!("Failed to prepare scan_result_ports insert: {e}"))?;
 
         for row in &data.scan_results {
@@ -908,7 +1033,7 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             let result_id = tx.last_insert_rowid();
             for port in &row.ports {
                 insert_port
-                    .execute(params![result_id, port.port, port.protocol, port.service, port.ping])
+                    .execute(params![result_id, port.port, port.protocol, port.status, port.service, port.ping])
                     .map_err(|e| format!("Failed to insert scan_result_ports row: {e}"))?;
             }
         }
@@ -1021,44 +1146,55 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
     }
 
     {
-        // Older session files may be missing protocol/service/ping (added
-        // incrementally over time) - reading must not mutate the file (only
-        // a save/write runs the ALTER TABLE migration), so fall back to
-        // defaults for whichever columns aren't there yet, newest-shape
-        // first.
-        type PortRow = (i64, i64, String, String, String);
-        let full: Result<Vec<PortRow>, rusqlite::Error> = (|| {
-            let mut stmt = conn.prepare("SELECT result_id, port, protocol, service, ping FROM scan_result_ports ORDER BY id")?;
-            let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)))?
+        // Older session files may be missing protocol/status/service/ping
+        // (added incrementally over time) - reading must not mutate the
+        // file (only a save/write runs the ALTER TABLE migration), so fall
+        // back to defaults for whichever columns aren't there yet,
+        // newest-shape first.
+        type PortRow = (i64, i64, String, String, String, String);
+        let newest: Result<Vec<PortRow>, rusqlite::Error> = (|| {
+            let mut stmt = conn.prepare("SELECT result_id, port, protocol, status, service, ping FROM scan_result_ports ORDER BY id")?;
+            let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?)))?
                 .collect();
             rows
         })();
-        let port_rows: Vec<PortRow> = match full {
+        let port_rows: Vec<PortRow> = match newest {
             Ok(rows) => rows,
             Err(_) => {
-                let mid: Result<Vec<PortRow>, rusqlite::Error> = (|| {
-                    let mut stmt = conn.prepare("SELECT result_id, port, protocol, service FROM scan_result_ports ORDER BY id")?;
-                    let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, "-".to_string())))?
+                let full: Result<Vec<PortRow>, rusqlite::Error> = (|| {
+                    let mut stmt = conn.prepare("SELECT result_id, port, protocol, service, ping FROM scan_result_ports ORDER BY id")?;
+                    let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, "open".to_string(), row.get(3)?, row.get(4)?)))?
                         .collect();
                     rows
                 })();
-                match mid {
+                match full {
                     Ok(rows) => rows,
                     Err(_) => {
-                        let mut stmt = conn.prepare("SELECT result_id, port FROM scan_result_ports ORDER BY id")
-                            .map_err(|e| format!("Failed to prepare scan_result_ports read (legacy): {e}"))?;
-                        let rows = stmt.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?, "TCP".to_string(), String::new(), "-".to_string())))
-                            .map_err(|e| format!("Failed to query scan_result_ports (legacy): {e}"))?
-                            .collect::<Result<Vec<_>, _>>()
-                            .map_err(|e| format!("Failed to read scan_result_ports row (legacy): {e}"))?;
-                        rows
+                        let mid: Result<Vec<PortRow>, rusqlite::Error> = (|| {
+                            let mut stmt = conn.prepare("SELECT result_id, port, protocol, service FROM scan_result_ports ORDER BY id")?;
+                            let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, "open".to_string(), row.get(3)?, "-".to_string())))?
+                                .collect();
+                            rows
+                        })();
+                        match mid {
+                            Ok(rows) => rows,
+                            Err(_) => {
+                                let mut stmt = conn.prepare("SELECT result_id, port FROM scan_result_ports ORDER BY id")
+                                    .map_err(|e| format!("Failed to prepare scan_result_ports read (legacy): {e}"))?;
+                                let rows = stmt.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?, "TCP".to_string(), "open".to_string(), String::new(), "-".to_string())))
+                                    .map_err(|e| format!("Failed to query scan_result_ports (legacy): {e}"))?
+                                    .collect::<Result<Vec<_>, _>>()
+                                    .map_err(|e| format!("Failed to read scan_result_ports row (legacy): {e}"))?;
+                                rows
+                            }
+                        }
                     }
                 }
             }
         };
-        for (result_id, port, protocol, service, ping) in port_rows {
+        for (result_id, port, protocol, status, service, ping) in port_rows {
             if let Some(&idx) = scan_result_index.get(&result_id) {
-                scan_results[idx].ports.push(ScanPortEntry { port, protocol, service, ping });
+                scan_results[idx].ports.push(ScanPortEntry { port, protocol, status, service, ping });
             }
         }
     }

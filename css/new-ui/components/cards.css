@@ -1286,6 +1286,15 @@
   background: #253524;
 }
 
+/* UDP-only "no response at all" case - not a confirmed-open port, so a
+   visually distinct (dashed/muted) treatment from the confident protocol
+   badges above, matching the open|filtered ambiguity it represents. */
+.v1-ip-port-badge--status.is-open-filtered {
+  color: #d8c98a;
+  background: transparent;
+  border: 1px dashed #8a7a45;
+}
+
 .v1-ip-port-empty {
   color: var(--txt-dim);
   font-style: italic;
