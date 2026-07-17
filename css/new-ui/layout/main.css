@@ -440,17 +440,14 @@ html[dir="rtl"] .v1-rightbar.collapsed .v1-side-head {
   background: var(--v1-empty-state-bg);
 }
 
-.v1-editor.console-collapsed {
-  grid-template-rows: 38px 1fr 0 34px;
-}
-
-.v1-editor.console-collapsed .v1-resizer-h {
-  display: none;
-}
-
-.v1-editor.console-collapsed .v1-console-body {
-  display: none;
-}
+/* .v1-editor.console-collapsed itself (grid-template-rows, .v1-resizer-h,
+   .v1-console-body display:none) is defined in components/console.css,
+   which loads after this file and fully supersedes an identical trio of
+   rules that used to live here too - two copies with different
+   grid-template-rows values is exactly how the tab row silently reverted
+   to the old stale height (38px) whenever the console was collapsed,
+   even after this file's copy was "fixed". Removed rather than kept in
+   sync, to not re-create that trap. */
 
 .v1-resizer-h {
   background: var(--bg-elev);

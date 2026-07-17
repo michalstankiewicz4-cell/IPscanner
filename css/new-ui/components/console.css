@@ -222,7 +222,7 @@ html[dir="rtl"] .v1-console-tabs .v1-panel-toggle {
 }
 
 .v1-editor.console-collapsed {
-  grid-template-rows: 38px minmax(120px, 1fr) 0 28px;
+  grid-template-rows: 34px minmax(120px, 1fr) 0 28px;
 }
 
 .v1-editor.no-center-tabs.console-collapsed {
