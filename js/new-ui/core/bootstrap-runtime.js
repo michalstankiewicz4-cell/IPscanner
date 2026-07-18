@@ -144,6 +144,7 @@
       }
 
       let scannerSidebarRuntime = null;
+      let emailReconRuntime = null;
       let powerShellConsoleRuntime = null;
       let layoutRuntime = null;
       let customScrollbarRuntime = null;
@@ -194,11 +195,13 @@
         const activityTopologyBtn = document.getElementById("v1ActivityTopology");
         const activityGlobeBtn = document.getElementById("v1ActivityGlobe");
         const activityNetworkMonitorBtn = document.getElementById("v1ActivityNetworkMonitor");
+        const activityEmailReconBtn = document.getElementById("v1ActivityEmailRecon");
         const toolsMenuIpScanner = document.getElementById("v1ToolsMenuIpScanner");
         const toolsMenuLoremIpsum = document.getElementById("v1ToolsMenuLoremIpsum");
         const toolsMenuTopology = document.getElementById("v1ToolsMenuTopology");
         const toolsMenuGlobe = document.getElementById("v1ToolsMenuGlobe");
         const toolsMenuNetworkMonitor = document.getElementById("v1ToolsMenuNetworkMonitor");
+        const toolsMenuEmailRecon = document.getElementById("v1ToolsMenuEmailRecon");
         tabsTrack = document.getElementById("v1TabsTrack");
         tabsScrollLeftBtn = document.getElementById("v1TabsScrollLeft");
         tabsScrollRightBtn = document.getElementById("v1TabsScrollRight");
@@ -284,6 +287,10 @@
           activityNetworkMonitorBtn.setAttribute("title", tr("toolTitle_network_monitor"));
           activityNetworkMonitorBtn.setAttribute("aria-label", tr("toolTitle_network_monitor"));
         }
+        if (activityEmailReconBtn) {
+          activityEmailReconBtn.setAttribute("title", tr("toolTitle_email_recon"));
+          activityEmailReconBtn.setAttribute("aria-label", tr("toolTitle_email_recon"));
+        }
         if (tabsScrollLeftBtn) {
           tabsScrollLeftBtn.setAttribute("title", tr("tabScrollLeft"));
           tabsScrollLeftBtn.setAttribute("aria-label", tr("tabScrollLeft"));
@@ -297,6 +304,7 @@
         if (toolsMenuTopology) toolsMenuTopology.textContent = tr("toolTitle_topology");
         if (toolsMenuGlobe) toolsMenuGlobe.textContent = tr("toolTitle_globe");
         if (toolsMenuNetworkMonitor) toolsMenuNetworkMonitor.textContent = tr("toolTitle_network_monitor");
+        if (toolsMenuEmailRecon) toolsMenuEmailRecon.textContent = tr("toolTitle_email_recon");
         document.querySelectorAll("[data-sidebar-tab-close]").forEach((el) => {
           el.setAttribute("aria-label", tr("tabCloseAria"));
           el.setAttribute("title", tr("tabCloseAria"));
@@ -368,6 +376,9 @@
         if (clippyClose) clippyClose.setAttribute("aria-label", tr("clippyCloseAria"));
         if (scannerSidebarRuntime && scannerSidebarRuntime.applyStaticTranslations) {
           scannerSidebarRuntime.applyStaticTranslations();
+        }
+        if (emailReconRuntime && emailReconRuntime.applyStaticTranslations) {
+          emailReconRuntime.applyStaticTranslations();
         }
         if (powerShellConsoleRuntime && powerShellConsoleRuntime.applyStaticTranslations) {
           powerShellConsoleRuntime.applyStaticTranslations();
@@ -1199,6 +1210,15 @@
           })
         : null;
 
+      emailReconRuntime = runtimeFactory.createEmailReconRuntime
+        ? runtimeFactory.createEmailReconRuntime({ tr, setStatusLine })
+        : null;
+      // Flat global, same as core.platform/core.generalSettings - lets
+      // panel-interactions-runtime.js's wireEmailReconTool reach
+      // addEmailHistory()/isValidEmail() without threading it through the
+      // panels-runtime.js -> panel-interactions-runtime.js deps chain.
+      if (emailReconRuntime) core.emailReconRuntime = emailReconRuntime;
+
       const powerShellConsoleRuntimeFactory = runtimeFactory.createPowerShellConsoleRuntime
         ? runtimeFactory.createPowerShellConsoleRuntime({
             tr,
@@ -1247,6 +1267,9 @@
       initCenterTabsScrollButtons();
       if (scannerSidebarRuntime && scannerSidebarRuntime.init) {
         scannerSidebarRuntime.init();
+      }
+      if (emailReconRuntime && emailReconRuntime.init) {
+        emailReconRuntime.init();
       }
       if (powerShellConsoleRuntimeFactory && powerShellConsoleRuntimeFactory.init) {
         powerShellConsoleRuntime = powerShellConsoleRuntimeFactory.init();

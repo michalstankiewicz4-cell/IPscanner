@@ -1488,6 +1488,17 @@
           }
         } else if (tool === "scan-runner" || tool === "ip-library") {
           activateSidebarTool(tool);
+        } else if (tool === "email-recon") {
+          // 3 independent surfaces on one click (LS/CS/RS), same idea as
+          // "lorem-ipsum" below - but open-only for RS (no
+          // setRightTabActive), matching "config"'s precedent above: the
+          // Sources/API-Keys/Profiles pane should be reachable without
+          // stealing focus from whatever's already active in RS (e.g. AI
+          // Assistant). Without this, closing "email-recon-config" once
+          // left no way to ever reopen it - there was no button/menu
+          // wired to it at all.
+          activateSidebarTool("email-recon");
+          ensureToolOpenInItsConfiguredSection("email-recon-config");
         } else if (tool === "shellcraft") {
           ensureSidebarTabOpen("shellcraft-library");
           setLeftActiveTab("shellcraft-library");

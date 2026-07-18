@@ -58,10 +58,17 @@
     return WELL_KNOWN_PORTS[key] || "";
   }
 
+  // Pragmatic, not RFC-5322-complete - same "good enough for a form
+  // input, not a mail-server parser" philosophy as isValidIpv4 above.
+  function isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+  }
+
   window.NetReconNewUICore = window.NetReconNewUICore || {};
   window.NetReconNewUICore.utils = window.NetReconNewUICore.utils || {};
   window.NetReconNewUICore.utils.net = {
     isValidIpv4: isValidIpv4,
+    isValidEmail: isValidEmail,
     lookupPortService: lookupPortService,
     cidrToRange: cidrToRange,
   };

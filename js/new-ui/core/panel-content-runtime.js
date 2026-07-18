@@ -1134,6 +1134,86 @@
       }).join("");
     }
 
+    // Email Recon (CS results table) - source/status keys are what the
+    // email_recon_lookup Rust command returns; map each to its i18n label.
+    var emailReconSourceLabelKey = {
+      emailrep: "emailReconSrcEmailrep",
+      gravatar: "emailReconSrcGravatar",
+      github: "emailReconSrcGithub",
+      hibp_breaches: "emailReconSrcHibpBreaches",
+      hibp_pastes: "emailReconSrcHibpPastes"
+    };
+    var emailReconStatusLabelKey = {
+      found: "emailReconStatusFound",
+      not_found: "emailReconStatusNotFound",
+      error: "emailReconStatusError",
+      skipped_no_key: "emailReconStatusSkippedNoKey",
+      skipped_disabled: "emailReconStatusSkippedDisabled"
+    };
+    // Reuses the .v1-ip-status-dot family (see cards.css) rather than
+    // inventing a parallel badge component - same convention as Network
+    // Monitor's TCP-state dots.
+    var emailReconStatusClass = {
+      found: "is-found",
+      not_found: "is-not-found",
+      error: "is-error",
+      skipped_no_key: "is-skipped",
+      skipped_disabled: "is-skipped"
+    };
+
+    function renderEmailReconTool() {
+      return [
+        "<div class=\"v1-emailrecon-shell\">",
+        "<div class=\"v1-card v1-emailrecon-summary\" data-emailrecon-role=\"summary\">",
+        "<span class=\"v1-emailrecon-summary-exists\" data-emailrecon-role=\"exists-badge\"></span>",
+        "<span class=\"v1-emailrecon-summary-count\" data-emailrecon-role=\"hit-count\"></span>",
+        "</div>",
+        "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\" data-native-hscroll=\"true\">",
+        "<table class=\"v1-results-table v1-emailrecon-table\">",
+        "<thead><tr>",
+        "<th>" + escapeHtml(tr("emailReconColSource")) + "</th>",
+        "<th>" + escapeHtml(tr("emailReconColStatus")) + "</th>",
+        "<th>" + escapeHtml(tr("emailReconColSummary")) + "</th>",
+        "<th>" + escapeHtml(tr("emailReconColDetail")) + "</th>",
+        "</tr></thead>",
+        "<tbody id=\"v1EmailReconRows\" data-emailrecon-role=\"results-rows\"><tr><td colspan=\"4\" class=\"v1-iplib-empty\">" + escapeHtml(tr("emailReconEmptyResults")) + "</td></tr></tbody>",
+        "</table>",
+        "</div>",
+        "</div>"
+      ].join("");
+    }
+
+    function renderEmailReconRows(sources) {
+      if (!sources || !sources.length) {
+        return "<tr><td colspan=\"4\" class=\"v1-iplib-empty\">" + escapeHtml(tr("emailReconEmptyResults")) + "</td></tr>";
+      }
+      return sources.map(function (row) {
+        var sourceLabel = tr(emailReconSourceLabelKey[row.source] || row.source);
+        var statusLabel = tr(emailReconStatusLabelKey[row.status] || row.status);
+        var statusClass = emailReconStatusClass[row.status] || "";
+        return [
+          "<tr>",
+          "<td>" + escapeHtml(sourceLabel) + "</td>",
+          "<td><span class=\"v1-ip-status-dot " + statusClass + "\"></span>" + escapeHtml(statusLabel) + "</td>",
+          "<td>" + escapeHtml(row.summary || "-") + "</td>",
+          "<td>" + escapeHtml(row.detail || "-") + "</td>",
+          "</tr>"
+        ].join("");
+      }).join("");
+    }
+
+    function renderEmailReconSummary(result) {
+      if (!result) return { exists: "", count: "" };
+      var existsKey = result.exists_hint === "yes" ? "emailReconSummaryExistsYes"
+        : result.exists_hint === "no" ? "emailReconSummaryExistsNo"
+        : "emailReconSummaryExistsUnknown";
+      var total = (result.sources || []).length;
+      var countText = tr("emailReconHitCount")
+        .replace("{n}", String(result.hit_count || 0))
+        .replace("{total}", String(total));
+      return { exists: tr(existsKey), count: countText };
+    }
+
     var toolRenderers = {
       // --- shell keys ---
       versions: renderVersionsTool,
@@ -1150,6 +1230,7 @@
       presets: renderPresetsTool,
       "results-ip": renderResultsIp,
       "network-monitor": renderNetworkMonitorTool,
+      "email-recon": renderEmailReconTool,
     };
 
     function buildDetailHtml(tool) {
@@ -1164,6 +1245,8 @@
       renderShellCraftInspector: renderShellCraftInspector,
       renderNetworkMonitorConnectionsRows: renderNetworkMonitorConnectionsRows,
       renderNetworkMonitorArpRows: renderNetworkMonitorArpRows,
+      renderEmailReconRows: renderEmailReconRows,
+      renderEmailReconSummary: renderEmailReconSummary,
     };
   }
 

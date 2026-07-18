@@ -176,6 +176,15 @@
       ui: { showAsTab: true, order: 95 }
     },
 
+    "email-recon": {
+      titleKey: "toolTitle_email_recon",
+      textKey: "toolText_email_recon",
+      points: ["Breach & paste checks", "Gravatar / GitHub lookups", "Reputation signal"],
+      icon: "📧",
+      labelKey: "tabLabel_email_recon",
+      ui: { showInLeftPanel: true, leftOrder: 60, showAsTab: true, order: 96 }
+    },
+
     // --- RS-only built-ins (no CS tab, no generic content renderer) ---
     assistant: {
       icon: "🤖",
@@ -186,6 +195,11 @@
       icon: null,
       labelKey: "tabLabel_config",
       ui: { showInRightPanel: true, rightOrder: 40 }
+    },
+    "email-recon-config": {
+      icon: null,
+      labelKey: "tabLabel_email_recon_config",
+      ui: { showInRightPanel: true, rightOrder: 50 }
     }
   };
 

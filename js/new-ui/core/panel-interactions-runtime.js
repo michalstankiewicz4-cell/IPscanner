@@ -30,6 +30,16 @@
     var netMonLastConnections = null;
     var netMonLastArp = null;
 
+    // ip-scanner tool: Email Recon - same "survive detach/redock" reasoning
+    // as netMonLast* above, plus a generation counter so a Stop click (or a
+    // second Start before the first finishes) can make an in-flight lookup's
+    // eventual response a no-op instead of overwriting newer state - there's
+    // no cheap way to actually cancel the in-flight Rust-side reqwest calls.
+    var emailReconLastResult = null;
+    var emailReconActionsBound = false;
+    var emailReconGeneration = 0;
+    var emailReconRunning = false;
+
     // Shared by the canvas block's Run button and the Inspector's Run button
     // so both report identical, correct status-line feedback - including on
     // failure (runMacro returns false when the target scanner button isn't
@@ -1323,6 +1333,134 @@
       });
     }
 
+    function setEmailReconButtonsState(isBusy) {
+      var startBtn = document.querySelector('[data-emailrecon-action="start"]');
+      var stopBtn = document.querySelector('[data-emailrecon-action="stop"]');
+      if (startBtn) startBtn.disabled = !!isBusy;
+      if (stopBtn) stopBtn.disabled = !isBusy;
+    }
+
+    function wireEmailReconTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
+      if (!root) return;
+      if (!root.querySelector(".v1-emailrecon-shell")) return;
+
+      var renderRows = typeof deps.renderEmailReconRows === "function" ? deps.renderEmailReconRows : null;
+      var renderSummary = typeof deps.renderEmailReconSummary === "function" ? deps.renderEmailReconSummary : null;
+
+      function applySummaryToDom(summary) {
+        var existsEl = document.querySelector('[data-emailrecon-role="exists-badge"]');
+        var countEl = document.querySelector('[data-emailrecon-role="hit-count"]');
+        if (existsEl) existsEl.textContent = summary.exists;
+        if (countEl) countEl.textContent = summary.count;
+      }
+
+      // Re-hydrate from the last completed lookup on every (re)render of
+      // this shell - same reasoning as Network Monitor's
+      // netMonLastConnections above: #v1ToolDetail survives detach/redock,
+      // so a bind-guard would otherwise skip this on redock even though the
+      // summary/rows are brand-new, empty nodes each time.
+      if (renderRows && emailReconLastResult) {
+        var tbody = root.querySelector('[data-emailrecon-role="results-rows"]');
+        if (tbody) tbody.innerHTML = renderRows(emailReconLastResult.sources);
+      }
+      if (renderSummary && emailReconLastResult) {
+        applySummaryToDom(renderSummary(emailReconLastResult));
+      }
+
+      // Start/Stop live in the LS panel, not this CS root (unlike Network
+      // Monitor's own refresh buttons) - the LS panel is a stable element
+      // that's never torn down, so this listener only needs to bind once,
+      // ever, via a plain module-level flag rather than a per-render guard.
+      if (emailReconActionsBound) return;
+      emailReconActionsBound = true;
+
+      function startLookup() {
+        if (emailReconRunning) return;
+        var core = window.NetReconNewUICore || {};
+        var platform = core.platform;
+        var emailReconConfig = core.emailReconConfig;
+        var emailReconApi = core.emailReconRuntime;
+        var sharedNet = core.utils && core.utils.net;
+
+        var input = document.getElementById("v1EmailReconInput");
+        var email = input ? String(input.value || "").trim() : "";
+        var isValid = sharedNet && typeof sharedNet.isValidEmail === "function"
+          ? sharedNet.isValidEmail(email)
+          : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        if (!isValid) {
+          if (setStatusLine) setStatusLine(tr("emailReconInvalidEmail"));
+          return;
+        }
+        if (!platform || !emailReconConfig) return;
+
+        var state = emailReconConfig.getState();
+        if (!state.emailrep && !state.gravatar && !state.github && !state.hibpBreaches && !state.hibpPastes) {
+          if (setStatusLine) setStatusLine(tr("emailReconNoSourcesSelected"));
+          return;
+        }
+
+        var thisGeneration = ++emailReconGeneration;
+        emailReconRunning = true;
+        setEmailReconButtonsState(true);
+        if (setStatusLine) setStatusLine(tr("statusEmailReconStart") + " " + email);
+
+        platform.invoke("email_recon_lookup", {
+          email: email,
+          options: {
+            emailrep: state.emailrep,
+            gravatar: state.gravatar,
+            github: state.github,
+            hibpBreaches: state.hibpBreaches,
+            hibpPastes: state.hibpPastes,
+            hibpApiKey: state.hibpApiKey,
+          },
+        }).then(function (result) {
+          if (thisGeneration !== emailReconGeneration) return; // superseded by Stop or a newer lookup
+          emailReconLastResult = result;
+          var csRoot = document.querySelector(".v1-emailrecon-shell");
+          if (csRoot && renderRows) {
+            var resultsBody = csRoot.querySelector('[data-emailrecon-role="results-rows"]');
+            if (resultsBody) resultsBody.innerHTML = renderRows(result.sources);
+          }
+          if (renderSummary) applySummaryToDom(renderSummary(result));
+          if (emailReconApi && typeof emailReconApi.addEmailHistory === "function") {
+            emailReconApi.addEmailHistory(email);
+          }
+          if (setStatusLine) setStatusLine(tr("statusEmailReconDone") + " " + email);
+        }).catch(function (err) {
+          if (thisGeneration !== emailReconGeneration) return;
+          if (setStatusLine) setStatusLine(tr("statusErrorShort") + ": " + String((err && err.message) || err));
+        }).finally(function () {
+          if (thisGeneration !== emailReconGeneration) return;
+          emailReconRunning = false;
+          setEmailReconButtonsState(false);
+        });
+      }
+
+      function stopLookup() {
+        if (!emailReconRunning) return;
+        // UI-only in v1 - there's no cheap way to cancel the in-flight
+        // reqwest calls through the current invoke plumbing. Bumping the
+        // generation counter just makes the eventual response a no-op
+        // instead of overwriting anything the user has since moved on from.
+        emailReconGeneration++;
+        emailReconRunning = false;
+        setEmailReconButtonsState(false);
+        if (setStatusLine) setStatusLine(tr("statusEmailReconStop"));
+      }
+
+      document.addEventListener("click", function (event) {
+        var btn = event.target && event.target.closest ? event.target.closest("[data-emailrecon-action]") : null;
+        if (!btn) return;
+        var action = btn.getAttribute("data-emailrecon-action");
+        if (action === "start") startLookup();
+        if (action === "stop") stopLookup();
+      });
+    }
+
     return {
       // shell
       wireVersionsTimeline: wireVersionsTimeline,
@@ -1334,6 +1472,7 @@
       wireResultsIpTable: wireResultsIpTable,
       wirePresetsTool: wirePresetsTool,
       wireNetworkMonitorTool: wireNetworkMonitorTool,
+      wireEmailReconTool: wireEmailReconTool,
     };
   }
 

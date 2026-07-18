@@ -287,6 +287,40 @@ html[dir="rtl"] .v1-ai-mode-badge {
   margin-top: 6px;
 }
 
+/* Email Recon Sources group: label+checkbox next to a "?" help icon - the
+   icon has to sit OUTSIDE .v1-config-checkbox-row's own <label>, since a
+   native <label> toggles its checkbox on any click inside it, including a
+   help icon that should only show a tooltip. */
+.v1-config-checkbox-row-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.v1-config-checkbox-row-wrap .v1-config-checkbox-row {
+  margin-top: 0;
+}
+
+.v1-emailrecon-src-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid #3d424d;
+  color: var(--txt-dim);
+  font-size: 10px;
+  cursor: help;
+  flex: 0 0 auto;
+}
+
+.v1-emailrecon-src-help:hover {
+  color: var(--txt);
+  border-color: #565c68;
+}
+
 /* This class's own display:flex above beats the browser's default
    [hidden]{display:none} UA rule (author style always wins over UA style,
    regardless of hidden being a boolean attribute) - same specificity

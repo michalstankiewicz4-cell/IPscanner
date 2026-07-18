@@ -170,6 +170,14 @@
   toolContentRuntime["scan-runner"] = makeMovableEntry('[data-sidebar-tool-panel="scan-runner"]', "flex");
   toolContentRuntime["config"] = makeMovableEntry('.v1-right-pane[data-v1-right-pane="config"]', "block");
   toolContentRuntime["assistant"] = makeMovableEntry('.v1-right-pane[data-v1-right-pane="assistant"]', "block");
+  // Email Recon's LS panel (email input/history) and RS pane (Sources/API
+  // Keys/Profiles) are the same kind of live-DOM-state static content as
+  // scan-runner/config above (not CS-tool content that regenerates via
+  // buildDetailHtml) - without a "move" entry here, activateGenericContent()
+  // falls through to its buildDetailHtml() fallback and renders a SECOND,
+  // duplicate copy of the CS results shell into the LS generic-content slot.
+  toolContentRuntime["email-recon"] = makeMovableEntry('[data-sidebar-tool-panel="email-recon"]', "flex");
+  toolContentRuntime["email-recon-config"] = makeMovableEntry('.v1-right-pane[data-v1-right-pane="email-recon-config"]', "block");
 
   window.NetReconNewUICore = window.NetReconNewUICore || {};
   window.NetReconNewUICore.toolContentRuntime = toolContentRuntime;

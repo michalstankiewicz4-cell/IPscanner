@@ -1209,6 +1209,52 @@
   vertical-align: middle;
 }
 
+/* Email Recon: per-source lookup status dots, same .v1-ip-status-dot
+   family as Network Monitor's TCP states above. */
+.v1-ip-status-dot.is-found {
+  background: #2dcc71;
+  box-shadow: 0 0 0 2px rgba(45, 204, 113, 0.2);
+}
+
+.v1-ip-status-dot.is-not-found {
+  background: #6b7483;
+}
+
+.v1-ip-status-dot.is-error {
+  background: #e05d5d;
+  box-shadow: 0 0 0 2px rgba(224, 93, 93, 0.2);
+}
+
+.v1-ip-status-dot.is-skipped {
+  background: #3d424d;
+}
+
+.v1-emailrecon-table .v1-ip-status-dot {
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.v1-emailrecon-shell {
+  display: grid;
+  gap: 16px;
+}
+
+.v1-emailrecon-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+}
+
+.v1-emailrecon-summary-exists {
+  font-weight: 600;
+}
+
+.v1-emailrecon-summary-count {
+  color: var(--txt-dim);
+  font-size: 12px;
+}
+
 .v1-ip-expand-btn {
   width: 18px;
   height: 18px;

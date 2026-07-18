@@ -721,6 +721,549 @@ async fn hostname_lookup(ip: String) -> Option<String> {
     None
 }
 
+// ─── Email Recon (OSINT lookups: emailrep.io, Gravatar, GitHub, HIBP) ─────────────────
+
+// Hand-rolled RFC 1321 MD5 - only used to build a Gravatar hash. Not for
+// anything security-sensitive; avoided adding an md5 crate for one small,
+// stable, textbook algorithm (per the "own the code, minimize dependencies"
+// direction for this feature).
+fn md5_hex(input: &str) -> String {
+    const S: [u32; 64] = [
+        7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5, 9, 14, 20, 5, 9, 14, 20, 5,
+        9, 14, 20, 5, 9, 14, 20, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 6,
+        10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21,
+    ];
+    const K: [u32; 64] = [
+        0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a, 0xa8304613,
+        0xfd469501, 0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be, 0x6b901122, 0xfd987193,
+        0xa679438e, 0x49b40821, 0xf61e2562, 0xc040b340, 0x265e5a51, 0xe9b6c7aa, 0xd62f105d,
+        0x02441453, 0xd8a1e681, 0xe7d3fbc8, 0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed,
+        0xa9e3e905, 0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a, 0xfffa3942, 0x8771f681, 0x6d9d6122,
+        0xfde5380c, 0xa4beea44, 0x4bdecfa9, 0xf6bb4b60, 0xbebfbc70, 0x289b7ec6, 0xeaa127fa,
+        0xd4ef3085, 0x04881d05, 0xd9d4d039, 0xe6db99e5, 0x1fa27cf8, 0xc4ac5665, 0xf4292244,
+        0x432aff97, 0xab9423a7, 0xfc93a039, 0x655b59c3, 0x8f0ccc92, 0xffeff47d, 0x85845dd1,
+        0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1, 0xf7537e82, 0xbd3af235, 0x2ad7d2bb,
+        0xeb86d391,
+    ];
+
+    let mut a0: u32 = 0x67452301;
+    let mut b0: u32 = 0xefcdab89;
+    let mut c0: u32 = 0x98badcfe;
+    let mut d0: u32 = 0x10325476;
+
+    let mut msg = input.as_bytes().to_vec();
+    let orig_len_bits = (msg.len() as u64).wrapping_mul(8);
+    msg.push(0x80);
+    while msg.len() % 64 != 56 {
+        msg.push(0);
+    }
+    msg.extend_from_slice(&orig_len_bits.to_le_bytes());
+
+    for chunk in msg.chunks(64) {
+        let mut m = [0u32; 16];
+        for (i, word) in m.iter_mut().enumerate() {
+            *word = u32::from_le_bytes([
+                chunk[i * 4],
+                chunk[i * 4 + 1],
+                chunk[i * 4 + 2],
+                chunk[i * 4 + 3],
+            ]);
+        }
+
+        let (mut a, mut b, mut c, mut d) = (a0, b0, c0, d0);
+
+        for i in 0..64 {
+            let (f, g) = if i < 16 {
+                ((b & c) | (!b & d), i)
+            } else if i < 32 {
+                ((d & b) | (!d & c), (5 * i + 1) % 16)
+            } else if i < 48 {
+                (b ^ c ^ d, (3 * i + 5) % 16)
+            } else {
+                (c ^ (b | !d), (7 * i) % 16)
+            };
+
+            let f = f
+                .wrapping_add(a)
+                .wrapping_add(K[i])
+                .wrapping_add(m[g]);
+            a = d;
+            d = c;
+            c = b;
+            b = b.wrapping_add(f.rotate_left(S[i]));
+        }
+
+        a0 = a0.wrapping_add(a);
+        b0 = b0.wrapping_add(b);
+        c0 = c0.wrapping_add(c);
+        d0 = d0.wrapping_add(d);
+    }
+
+    let mut result = String::with_capacity(32);
+    for v in [a0, b0, c0, d0] {
+        for byte in v.to_le_bytes() {
+            result.push_str(&format!("{:02x}", byte));
+        }
+    }
+    result
+}
+
+#[cfg(test)]
+mod md5_tests {
+    use super::md5_hex;
+
+    #[test]
+    fn known_vectors() {
+        assert_eq!(md5_hex(""), "d41d8cd98f00b204e9800998ecf8427e");
+        assert_eq!(md5_hex("abc"), "900150983cd24fb0d6963f7d28e17f72");
+        assert_eq!(
+            md5_hex("The quick brown fox jumps over the lazy dog"),
+            "9e107d9d372bb6826bd81d3542a419d6"
+        );
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+enum EmailSourceStatus {
+    Found,
+    NotFound,
+    Error,
+    SkippedNoKey,
+    SkippedDisabled,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct EmailSourceResult {
+    source: String,
+    status: EmailSourceStatus,
+    summary: String,
+    detail: Option<String>,
+}
+
+impl EmailSourceResult {
+    fn skipped_disabled(source: &str) -> Self {
+        EmailSourceResult {
+            source: source.into(),
+            status: EmailSourceStatus::SkippedDisabled,
+            summary: String::new(),
+            detail: None,
+        }
+    }
+    fn skipped_no_key(source: &str) -> Self {
+        EmailSourceResult {
+            source: source.into(),
+            status: EmailSourceStatus::SkippedNoKey,
+            summary: String::new(),
+            detail: None,
+        }
+    }
+    fn not_found(source: &str) -> Self {
+        EmailSourceResult {
+            source: source.into(),
+            status: EmailSourceStatus::NotFound,
+            summary: String::new(),
+            detail: None,
+        }
+    }
+    fn error(source: &str, message: impl Into<String>) -> Self {
+        EmailSourceResult {
+            source: source.into(),
+            status: EmailSourceStatus::Error,
+            summary: message.into(),
+            detail: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct EmailReconResult {
+    email: String,
+    exists_hint: String,
+    hit_count: u32,
+    sources: Vec<EmailSourceResult>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EmailReconOptions {
+    emailrep: bool,
+    gravatar: bool,
+    github: bool,
+    hibp_breaches: bool,
+    hibp_pastes: bool,
+    hibp_api_key: String,
+}
+
+async fn probe_emailrep(client: &reqwest::Client, email: &str) -> EmailSourceResult {
+    #[derive(Deserialize)]
+    struct EmailRepDetails {
+        profiles: Option<Vec<String>>,
+        #[serde(default)]
+        deliverable: bool,
+        last_seen: Option<String>,
+    }
+    #[derive(Deserialize)]
+    struct EmailRepResponse {
+        reputation: Option<String>,
+        details: Option<EmailRepDetails>,
+    }
+
+    let url = format!("https://emailrep.io/{}", email);
+    let resp = match client
+        .get(&url)
+        .header("User-Agent", "OSINTNETAuditor")
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => return EmailSourceResult::error("emailrep", e.to_string()),
+    };
+
+    if resp.status() == reqwest::StatusCode::NOT_FOUND {
+        return EmailSourceResult::not_found("emailrep");
+    }
+    if !resp.status().is_success() {
+        return EmailSourceResult::error("emailrep", format!("HTTP {}", resp.status()));
+    }
+
+    let body = match resp.json::<EmailRepResponse>().await {
+        Ok(b) => b,
+        Err(e) => return EmailSourceResult::error("emailrep", format!("bad response: {}", e)),
+    };
+
+    let profiles = body
+        .details
+        .as_ref()
+        .and_then(|d| d.profiles.clone())
+        .unwrap_or_default();
+    let deliverable = body.details.as_ref().map(|d| d.deliverable).unwrap_or(false);
+    let last_seen = body
+        .details
+        .as_ref()
+        .and_then(|d| d.last_seen.clone())
+        .unwrap_or_default();
+
+    if !profiles.is_empty() || deliverable || (!last_seen.is_empty() && last_seen != "never") {
+        let summary = if profiles.is_empty() {
+            "deliverable, no public profiles listed".to_string()
+        } else {
+            format!("seen on: {}", profiles.join(", "))
+        };
+        EmailSourceResult {
+            source: "emailrep".into(),
+            status: EmailSourceStatus::Found,
+            summary,
+            detail: body.reputation.map(|r| format!("reputation: {}", r)),
+        }
+    } else {
+        EmailSourceResult::not_found("emailrep")
+    }
+}
+
+async fn probe_gravatar(client: &reqwest::Client, email: &str) -> EmailSourceResult {
+    #[derive(Deserialize)]
+    struct GravatarEntry {
+        #[serde(rename = "displayName")]
+        display_name: Option<String>,
+        #[serde(rename = "profileUrl")]
+        profile_url: Option<String>,
+    }
+    #[derive(Deserialize)]
+    struct GravatarResponse {
+        entry: Vec<GravatarEntry>,
+    }
+
+    let hash = md5_hex(&email.trim().to_lowercase());
+    let url = format!("https://www.gravatar.com/{}.json", hash);
+    let resp = match client
+        .get(&url)
+        .header("User-Agent", "OSINTNETAuditor")
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => return EmailSourceResult::error("gravatar", e.to_string()),
+    };
+
+    if resp.status() == reqwest::StatusCode::NOT_FOUND {
+        return EmailSourceResult::not_found("gravatar");
+    }
+    if !resp.status().is_success() {
+        return EmailSourceResult::error("gravatar", format!("HTTP {}", resp.status()));
+    }
+
+    match resp.json::<GravatarResponse>().await {
+        Ok(body) if !body.entry.is_empty() => {
+            let e = &body.entry[0];
+            EmailSourceResult {
+                source: "gravatar".into(),
+                status: EmailSourceStatus::Found,
+                summary: e
+                    .display_name
+                    .clone()
+                    .unwrap_or_else(|| "Gravatar profile found".into()),
+                detail: e.profile_url.clone(),
+            }
+        }
+        Ok(_) => EmailSourceResult::not_found("gravatar"),
+        Err(e) => EmailSourceResult::error("gravatar", format!("bad response: {}", e)),
+    }
+}
+
+async fn probe_github(client: &reqwest::Client, email: &str) -> EmailSourceResult {
+    #[derive(Deserialize)]
+    struct GithubUserItem {
+        login: String,
+        html_url: String,
+    }
+    #[derive(Deserialize)]
+    struct GithubSearchResponse {
+        total_count: u32,
+        items: Vec<GithubUserItem>,
+    }
+
+    let url = format!("https://api.github.com/search/users?q={}+in:email", email);
+    let resp = match client
+        .get(&url)
+        .header("User-Agent", "OSINTNETAuditor")
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => return EmailSourceResult::error("github", e.to_string()),
+    };
+
+    if resp.status() == reqwest::StatusCode::FORBIDDEN {
+        return EmailSourceResult::error("github", "rate limited");
+    }
+    if !resp.status().is_success() {
+        return EmailSourceResult::error("github", format!("HTTP {}", resp.status()));
+    }
+
+    match resp.json::<GithubSearchResponse>().await {
+        Ok(body) if body.total_count > 0 && !body.items.is_empty() => {
+            let user = &body.items[0];
+            EmailSourceResult {
+                source: "github".into(),
+                status: EmailSourceStatus::Found,
+                summary: user.login.clone(),
+                detail: Some(user.html_url.clone()),
+            }
+        }
+        Ok(_) => EmailSourceResult::not_found("github"),
+        Err(e) => EmailSourceResult::error("github", format!("bad response: {}", e)),
+    }
+}
+
+async fn probe_hibp_breaches(
+    client: &reqwest::Client,
+    email: &str,
+    api_key: &str,
+) -> EmailSourceResult {
+    #[derive(Deserialize)]
+    #[serde(rename_all = "PascalCase")]
+    struct Breach {
+        name: String,
+        breach_date: Option<String>,
+    }
+
+    let url = format!("https://haveibeenpwned.com/api/v3/breachedaccount/{}", email);
+    let resp = match client
+        .get(&url)
+        .header("hibp-api-key", api_key)
+        .header("User-Agent", "OSINTNETAuditor")
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => return EmailSourceResult::error("hibp_breaches", e.to_string()),
+    };
+
+    match resp.status() {
+        reqwest::StatusCode::NOT_FOUND => EmailSourceResult::not_found("hibp_breaches"),
+        reqwest::StatusCode::UNAUTHORIZED => {
+            EmailSourceResult::error("hibp_breaches", "invalid API key")
+        }
+        reqwest::StatusCode::TOO_MANY_REQUESTS => {
+            EmailSourceResult::error("hibp_breaches", "rate limited")
+        }
+        status if status.is_success() => match resp.json::<Vec<Breach>>().await {
+            Ok(breaches) if !breaches.is_empty() => {
+                let names: Vec<String> = breaches
+                    .iter()
+                    .map(|b| match &b.breach_date {
+                        Some(d) => format!("{} ({})", b.name, d),
+                        None => b.name.clone(),
+                    })
+                    .collect();
+                EmailSourceResult {
+                    source: "hibp_breaches".into(),
+                    status: EmailSourceStatus::Found,
+                    summary: format!("{} breach(es)", breaches.len()),
+                    detail: Some(names.join(", ")),
+                }
+            }
+            Ok(_) => EmailSourceResult::not_found("hibp_breaches"),
+            Err(e) => EmailSourceResult::error("hibp_breaches", format!("bad response: {}", e)),
+        },
+        status => EmailSourceResult::error("hibp_breaches", format!("HTTP {}", status)),
+    }
+}
+
+async fn probe_hibp_pastes(
+    client: &reqwest::Client,
+    email: &str,
+    api_key: &str,
+) -> EmailSourceResult {
+    #[derive(Deserialize)]
+    #[serde(rename_all = "PascalCase")]
+    struct Paste {
+        source: String,
+        id: Option<String>,
+    }
+
+    let url = format!("https://haveibeenpwned.com/api/v3/pasteaccount/{}", email);
+    let resp = match client
+        .get(&url)
+        .header("hibp-api-key", api_key)
+        .header("User-Agent", "OSINTNETAuditor")
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => return EmailSourceResult::error("hibp_pastes", e.to_string()),
+    };
+
+    match resp.status() {
+        reqwest::StatusCode::NOT_FOUND => EmailSourceResult::not_found("hibp_pastes"),
+        reqwest::StatusCode::UNAUTHORIZED => {
+            EmailSourceResult::error("hibp_pastes", "invalid API key")
+        }
+        reqwest::StatusCode::TOO_MANY_REQUESTS => {
+            EmailSourceResult::error("hibp_pastes", "rate limited")
+        }
+        status if status.is_success() => match resp.json::<Vec<Paste>>().await {
+            Ok(pastes) if !pastes.is_empty() => {
+                let refs: Vec<String> = pastes
+                    .iter()
+                    .map(|p| match &p.id {
+                        Some(id) => format!("{}: {}", p.source, id),
+                        None => p.source.clone(),
+                    })
+                    .collect();
+                EmailSourceResult {
+                    source: "hibp_pastes".into(),
+                    status: EmailSourceStatus::Found,
+                    summary: format!("{} paste(s)", pastes.len()),
+                    detail: Some(refs.join(", ")),
+                }
+            }
+            Ok(_) => EmailSourceResult::not_found("hibp_pastes"),
+            Err(e) => EmailSourceResult::error("hibp_pastes", format!("bad response: {}", e)),
+        },
+        status => EmailSourceResult::error("hibp_pastes", format!("HTTP {}", status)),
+    }
+}
+
+#[tauri::command]
+async fn email_recon_lookup(
+    email: String,
+    options: EmailReconOptions,
+) -> Result<EmailReconResult, String> {
+    let email = email.trim().to_string();
+    if email.is_empty() || !email.contains('@') {
+        return Err("Invalid email address".into());
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(8))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let emailrep_fut = async {
+        if options.emailrep {
+            probe_emailrep(&client, &email).await
+        } else {
+            EmailSourceResult::skipped_disabled("emailrep")
+        }
+    };
+
+    let gravatar_fut = async {
+        if options.gravatar {
+            probe_gravatar(&client, &email).await
+        } else {
+            EmailSourceResult::skipped_disabled("gravatar")
+        }
+    };
+
+    let github_fut = async {
+        if options.github {
+            probe_github(&client, &email).await
+        } else {
+            EmailSourceResult::skipped_disabled("github")
+        }
+    };
+
+    let hibp_key = options.hibp_api_key.trim().to_string();
+    let hibp_fut = async {
+        let has_key = !hibp_key.is_empty();
+
+        let breaches = if !options.hibp_breaches {
+            EmailSourceResult::skipped_disabled("hibp_breaches")
+        } else if !has_key {
+            EmailSourceResult::skipped_no_key("hibp_breaches")
+        } else {
+            probe_hibp_breaches(&client, &email, &hibp_key).await
+        };
+
+        // HIBP's per-key rate limit is tight enough that firing both HIBP
+        // calls fully concurrently risks a spurious 429 on the second one -
+        // only stagger when the first one actually made a real request.
+        if has_key && options.hibp_breaches {
+            tokio::time::sleep(Duration::from_millis(1500)).await;
+        }
+
+        let pastes = if !options.hibp_pastes {
+            EmailSourceResult::skipped_disabled("hibp_pastes")
+        } else if !has_key {
+            EmailSourceResult::skipped_no_key("hibp_pastes")
+        } else {
+            probe_hibp_pastes(&client, &email, &hibp_key).await
+        };
+
+        (breaches, pastes)
+    };
+
+    let (emailrep, gravatar, github, (hibp_breaches, hibp_pastes)) =
+        tokio::join!(emailrep_fut, gravatar_fut, github_fut, hibp_fut);
+
+    let sources = vec![emailrep, gravatar, github, hibp_breaches, hibp_pastes];
+    let hit_count = sources
+        .iter()
+        .filter(|s| s.status == EmailSourceStatus::Found)
+        .count() as u32;
+    let has_definitive_negative = sources
+        .iter()
+        .any(|s| s.status == EmailSourceStatus::NotFound);
+    let exists_hint = if hit_count > 0 {
+        "yes"
+    } else if has_definitive_negative {
+        "no"
+    } else {
+        "unknown"
+    }
+    .to_string();
+
+    Ok(EmailReconResult {
+        email,
+        exists_hint,
+        hit_count,
+        sources,
+    })
+}
+
 #[tauri::command]
 fn open_browser(url: String) {
     // Open URL in system default browser (Windows)
@@ -1750,6 +2293,7 @@ fn main() {
             stop_scan,
             geo_lookup,
             hostname_lookup,
+            email_recon_lookup,
             open_browser,
             window_minimize,
             window_toggle_maximize,

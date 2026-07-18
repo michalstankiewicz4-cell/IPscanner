@@ -1435,6 +1435,8 @@
         renderShellCraftInspector: panelContentRuntime && panelContentRuntime.renderShellCraftInspector,
         renderNetworkMonitorConnectionsRows: panelContentRuntime && panelContentRuntime.renderNetworkMonitorConnectionsRows,
         renderNetworkMonitorArpRows: panelContentRuntime && panelContentRuntime.renderNetworkMonitorArpRows,
+        renderEmailReconRows: panelContentRuntime && panelContentRuntime.renderEmailReconRows,
+        renderEmailReconSummary: panelContentRuntime && panelContentRuntime.renderEmailReconSummary,
       });
     }
 
@@ -1751,6 +1753,13 @@
       if (tool === "network-monitor") { // ip-scanner tool
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireNetworkMonitorTool) {
           panelInteractionsRuntime.wireNetworkMonitorTool(scope);
+        }
+        return;
+      }
+
+      if (tool === "email-recon") { // ip-scanner tool
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireEmailReconTool) {
+          panelInteractionsRuntime.wireEmailReconTool(scope);
         }
         return;
       }
