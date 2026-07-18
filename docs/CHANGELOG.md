@@ -6,6 +6,15 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-07-18
+
+- Added Hebrew (`languages/he.json`) as the second RTL language, published
+  through the same GitHub-backed language catalog as German/Arabic/Polish -
+  no code changes needed since `applyDirForLang()`/`addLanguage()` are
+  fully generic (no hardcoded per-language logic anywhere), same pattern
+  documented for Arabic below. Full 522-key dictionary, 1:1 with the
+  English base.
+
 ## 2026-07-17
 
 - Implemented real ICMP ping scanning via the Windows IP Helper API
