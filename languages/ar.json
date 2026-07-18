@@ -508,6 +508,24 @@
     "psConsoleReady": "وحدة تحكم PowerShell المدمجة جاهزة.",
     "psConsoleRunning": "جارٍ تشغيل أمر PowerShell...",
     "psConsoleDesktopOnly": "تنفيذ PowerShell متاح فقط في وضع سطح المكتب (Tauri).",
-    "psConsoleExecFailed": "فشل تنفيذ PowerShell:"
+    "psConsoleExecFailed": "فشل تنفيذ PowerShell:",
+    "toolTitle_network_monitor": "مراقب الشبكة",
+    "tabLabel_network_monitor": "مراقب الشبكة",
+    "toolText_network_monitor": "اتصالات TCP/UDP المحلية مع أسماء العمليات المالكة، بالإضافة إلى جدول ARP لشبكة LAN مع البحث عن الشركة المصنّعة.",
+    "netMonConnectionsTitle": "الاتصالات",
+    "netMonLanDevicesTitle": "أجهزة الشبكة المحلية",
+    "netMonRefreshBtn": "تحديث",
+    "netMonColProtocol": "البروتوكول",
+    "netMonColLocalAddr": "العنوان المحلي",
+    "netMonColRemoteAddr": "العنوان البعيد",
+    "netMonColState": "الحالة",
+    "netMonColPid": "معرّف العملية",
+    "netMonColProcess": "العملية",
+    "netMonColIp": "عنوان IP",
+    "netMonColMac": "عنوان MAC",
+    "netMonColVendor": "الشركة المصنعة",
+    "netMonColInterface": "الواجهة",
+    "netMonEmptyConnections": "لم يتم العثور على اتصالات.",
+    "netMonEmptyArp": "لم يتم العثور على إدخالات ARP."
   }
 }

@@ -1433,6 +1433,8 @@
         renderShellCraftLibrary: panelContentRuntime && panelContentRuntime.renderShellCraftLibrary,
         renderCanvasBlockHtml: panelContentRuntime && panelContentRuntime.renderCanvasBlockHtml,
         renderShellCraftInspector: panelContentRuntime && panelContentRuntime.renderShellCraftInspector,
+        renderNetworkMonitorConnectionsRows: panelContentRuntime && panelContentRuntime.renderNetworkMonitorConnectionsRows,
+        renderNetworkMonitorArpRows: panelContentRuntime && panelContentRuntime.renderNetworkMonitorArpRows,
       });
     }
 
@@ -1743,6 +1745,13 @@
 
       if (tool === "ip-library") { // ip-scanner tool
         if (ipLibraryRuntime) ipLibraryRuntime.wireIpLibraryButtons(scope);
+        return;
+      }
+
+      if (tool === "network-monitor") { // ip-scanner tool
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireNetworkMonitorTool) {
+          panelInteractionsRuntime.wireNetworkMonitorTool(scope);
+        }
         return;
       }
 

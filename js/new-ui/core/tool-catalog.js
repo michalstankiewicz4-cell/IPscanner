@@ -167,6 +167,15 @@
       ui: { showInLeftPanel: true, leftOrder: 40, showAsTab: true, order: 90 }
     },
 
+    "network-monitor": {
+      titleKey: "toolTitle_network_monitor",
+      textKey: "toolText_network_monitor",
+      points: ["Local TCP/UDP connections", "Owning process names", "LAN ARP table with vendor lookup"],
+      icon: "🖧",
+      labelKey: "tabLabel_network_monitor",
+      ui: { showAsTab: true, order: 95 }
+    },
+
     // --- RS-only built-ins (no CS tab, no generic content renderer) ---
     assistant: {
       icon: "🤖",

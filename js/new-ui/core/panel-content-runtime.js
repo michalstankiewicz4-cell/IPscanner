@@ -1027,6 +1027,113 @@
       ].join("");
     }
 
+    // TCP connection-state -> status-dot modifier class, matching the
+    // existing .v1-ip-status-dot.is-up precedent instead of new badge markup.
+    var netMonStateClass = {
+      ESTABLISHED: "is-established",
+      LISTEN: "is-listening",
+      TIME_WAIT: "is-time-wait",
+      CLOSE_WAIT: "is-close-wait",
+      SYN_SENT: "is-pending",
+      SYN_RCVD: "is-pending",
+      FIN_WAIT1: "is-closing",
+      FIN_WAIT2: "is-closing",
+      CLOSING: "is-closing",
+      LAST_ACK: "is-closing",
+      CLOSED: "is-closed",
+      DELETE_TCB: "is-closed"
+    };
+
+    function vendorForMac(mac) {
+      var table = (window.NetReconNewUICore && window.NetReconNewUICore.ouiVendorData) || [];
+      var prefix = String(mac || "").slice(0, 8).toUpperCase();
+      for (var i = 0; i < table.length; i++) {
+        if (table[i].prefix === prefix) return table[i].vendor;
+      }
+      return "-";
+    }
+
+    function renderNetworkMonitorTool() {
+      return [
+        "<div class=\"v1-netmon-shell\">",
+        "<div class=\"v1-netmon-section\">",
+        "<div class=\"v1-netmon-section-head\">",
+        "<h4 style=\"margin:0;\">" + escapeHtml(tr("netMonConnectionsTitle")) + "</h4>",
+        "<button type=\"button\" data-netmon-action=\"refresh-connections\">" + escapeHtml(tr("netMonRefreshBtn")) + "</button>",
+        "</div>",
+        "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\" data-native-hscroll=\"true\">",
+        "<table class=\"v1-results-table v1-netmon-table\">",
+        "<thead><tr>",
+        "<th>" + escapeHtml(tr("netMonColProtocol")) + "</th>",
+        "<th>" + escapeHtml(tr("netMonColLocalAddr")) + "</th>",
+        "<th>" + escapeHtml(tr("netMonColRemoteAddr")) + "</th>",
+        "<th>" + escapeHtml(tr("netMonColState")) + "</th>",
+        "<th>" + escapeHtml(tr("netMonColPid")) + "</th>",
+        "<th>" + escapeHtml(tr("netMonColProcess")) + "</th>",
+        "</tr></thead>",
+        "<tbody id=\"v1NetMonConnectionsRows\" data-netmon-role=\"connections-rows\"><tr><td colspan=\"6\" class=\"v1-iplib-empty\">" + escapeHtml(tr("netMonEmptyConnections")) + "</td></tr></tbody>",
+        "</table>",
+        "</div>",
+        "</div>",
+        "<div class=\"v1-netmon-section\">",
+        "<div class=\"v1-netmon-section-head\">",
+        "<h4 style=\"margin:0;\">" + escapeHtml(tr("netMonLanDevicesTitle")) + "</h4>",
+        "<button type=\"button\" data-netmon-action=\"refresh-arp\">" + escapeHtml(tr("netMonRefreshBtn")) + "</button>",
+        "</div>",
+        "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\" data-native-hscroll=\"true\">",
+        "<table class=\"v1-results-table v1-netmon-table\">",
+        "<thead><tr>",
+        "<th>" + escapeHtml(tr("netMonColIp")) + "</th>",
+        "<th>" + escapeHtml(tr("netMonColMac")) + "</th>",
+        "<th>" + escapeHtml(tr("netMonColVendor")) + "</th>",
+        "<th>" + escapeHtml(tr("netMonColInterface")) + "</th>",
+        "</tr></thead>",
+        "<tbody id=\"v1NetMonArpRows\" data-netmon-role=\"arp-rows\"><tr><td colspan=\"4\" class=\"v1-iplib-empty\">" + escapeHtml(tr("netMonEmptyArp")) + "</td></tr></tbody>",
+        "</table>",
+        "</div>",
+        "</div>",
+        "</div>"
+      ].join("");
+    }
+
+    function renderNetworkMonitorConnectionsRows(rows) {
+      if (!rows || !rows.length) {
+        return "<tr><td colspan=\"6\" class=\"v1-iplib-empty\">" + escapeHtml(tr("netMonEmptyConnections")) + "</td></tr>";
+      }
+      return rows.map(function (row) {
+        var protocolBadge = "<span class=\"v1-ip-port-badge v1-ip-port-badge--protocol is-" + escapeHtml(String(row.protocol || "").toLowerCase()) + "\">" + escapeHtml(row.protocol) + "</span>";
+        var stateHtml = row.state
+          ? "<span class=\"v1-ip-status-dot " + (netMonStateClass[row.state] || "") + "\"></span>" + escapeHtml(row.state)
+          : "-";
+        return [
+          "<tr>",
+          "<td>" + protocolBadge + "</td>",
+          "<td>" + escapeHtml(row.local_addr) + ":" + escapeHtml(String(row.local_port)) + "</td>",
+          "<td>" + (row.remote_addr ? escapeHtml(row.remote_addr) + ":" + escapeHtml(String(row.remote_port)) : "-") + "</td>",
+          "<td>" + stateHtml + "</td>",
+          "<td>" + escapeHtml(String(row.pid)) + "</td>",
+          "<td>" + escapeHtml(row.process_name || "-") + "</td>",
+          "</tr>"
+        ].join("");
+      }).join("");
+    }
+
+    function renderNetworkMonitorArpRows(rows) {
+      if (!rows || !rows.length) {
+        return "<tr><td colspan=\"4\" class=\"v1-iplib-empty\">" + escapeHtml(tr("netMonEmptyArp")) + "</td></tr>";
+      }
+      return rows.map(function (row) {
+        return [
+          "<tr>",
+          "<td>" + escapeHtml(row.ip) + "</td>",
+          "<td>" + escapeHtml(row.mac) + "</td>",
+          "<td>" + escapeHtml(vendorForMac(row.mac)) + "</td>",
+          "<td>" + escapeHtml(row.interface) + "</td>",
+          "</tr>"
+        ].join("");
+      }).join("");
+    }
+
     var toolRenderers = {
       // --- shell keys ---
       versions: renderVersionsTool,
@@ -1042,6 +1149,7 @@
       "ip-library": renderIpLibraryTool,
       presets: renderPresetsTool,
       "results-ip": renderResultsIp,
+      "network-monitor": renderNetworkMonitorTool,
     };
 
     function buildDetailHtml(tool) {
@@ -1054,6 +1162,8 @@
       renderShellCraftLibrary: renderShellCraftLibrary,
       renderCanvasBlockHtml: renderCanvasBlockHtml,
       renderShellCraftInspector: renderShellCraftInspector,
+      renderNetworkMonitorConnectionsRows: renderNetworkMonitorConnectionsRows,
+      renderNetworkMonitorArpRows: renderNetworkMonitorArpRows,
     };
   }
 

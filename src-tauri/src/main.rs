@@ -29,6 +29,26 @@ use windows::Win32::NetworkManagement::IpHelper::{
     IcmpCloseHandle, IcmpCreateFile, IcmpSendEcho, ICMP_ECHO_REPLY,
 };
 
+// Network Monitor: local TCP/UDP connections + ARP table, all standard
+// unprivileged IP Helper API calls (the same mechanism netstat/arp -a use
+// internally) - no admin needed, same philosophy as the ICMP work above.
+use windows::Win32::NetworkManagement::IpHelper::{
+    FreeMibTable, GetExtendedTcpTable, GetExtendedUdpTable, GetIpNetTable2,
+    MIB_IPNET_TABLE2, MIB_TCPTABLE_OWNER_PID,
+    MIB_TCP_STATE_CLOSE_WAIT, MIB_TCP_STATE_CLOSED, MIB_TCP_STATE_CLOSING,
+    MIB_TCP_STATE_DELETE_TCB, MIB_TCP_STATE_ESTAB, MIB_TCP_STATE_FIN_WAIT1,
+    MIB_TCP_STATE_FIN_WAIT2, MIB_TCP_STATE_LAST_ACK, MIB_TCP_STATE_LISTEN,
+    MIB_TCP_STATE_SYN_RCVD, MIB_TCP_STATE_SYN_SENT, MIB_TCP_STATE_TIME_WAIT,
+    MIB_UDPTABLE_OWNER_PID, TCP_TABLE_OWNER_PID_ALL,
+    UDP_TABLE_OWNER_PID,
+};
+use windows::Win32::Networking::WinSock::AF_INET;
+use windows::Win32::System::Threading::{
+    OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
+    PROCESS_QUERY_LIMITED_INFORMATION,
+};
+use windows::Win32::Foundation::{CloseHandle, ERROR_INSUFFICIENT_BUFFER};
+
 // ─── Shared scan-stop flag ───────────────────────────────────────────────────
 struct ScanState {
     stop: AtomicBool,
@@ -1479,6 +1499,213 @@ fn u32_to_ip(n: u32) -> String {
     format!("{}.{}.{}.{}", a, b, c, d)
 }
 
+// ─── Network Monitor (local connections + ARP table, no admin) ────────────────────────
+
+#[derive(Debug, Clone, Serialize)]
+struct ConnectionRow {
+    protocol: String,
+    local_addr: String,
+    local_port: u16,
+    remote_addr: String,
+    remote_port: u16,
+    state: String,
+    pid: u32,
+    process_name: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ArpEntryRow {
+    ip: String,
+    mac: String,
+    interface: String,
+}
+
+// GetIpNetTable2's fixed-size Vec<u8> backing buffer would only guarantee
+// 1-byte alignment, but MIB_TCPTABLE_OWNER_PID/MIB_UDPTABLE_OWNER_PID need
+// 4-byte alignment - back the buffer with u64 words instead so the cast to
+// a typed pointer below is never unaligned.
+fn alloc_word_buffer(min_bytes: usize) -> Vec<u64> {
+    vec![0u64; min_bytes / 8 + 2]
+}
+
+fn tcp_state_name(state: u32) -> &'static str {
+    let state = state as i32;
+    if state == MIB_TCP_STATE_CLOSED.0 { "CLOSED" }
+    else if state == MIB_TCP_STATE_LISTEN.0 { "LISTEN" }
+    else if state == MIB_TCP_STATE_SYN_SENT.0 { "SYN_SENT" }
+    else if state == MIB_TCP_STATE_SYN_RCVD.0 { "SYN_RCVD" }
+    else if state == MIB_TCP_STATE_ESTAB.0 { "ESTABLISHED" }
+    else if state == MIB_TCP_STATE_FIN_WAIT1.0 { "FIN_WAIT1" }
+    else if state == MIB_TCP_STATE_FIN_WAIT2.0 { "FIN_WAIT2" }
+    else if state == MIB_TCP_STATE_CLOSE_WAIT.0 { "CLOSE_WAIT" }
+    else if state == MIB_TCP_STATE_CLOSING.0 { "CLOSING" }
+    else if state == MIB_TCP_STATE_LAST_ACK.0 { "LAST_ACK" }
+    else if state == MIB_TCP_STATE_TIME_WAIT.0 { "TIME_WAIT" }
+    else if state == MIB_TCP_STATE_DELETE_TCB.0 { "DELETE_TCB" }
+    else { "UNKNOWN" }
+}
+
+// dwLocalAddr/dwLocalPort are DWORDs whose raw bytes hold the address/port
+// in network byte order - to_ne_bytes()/from_be() recover the correct
+// values because Windows only ever runs little-endian.
+fn ipv4_from_dword(addr: u32) -> Ipv4Addr {
+    Ipv4Addr::from(addr.to_ne_bytes())
+}
+
+fn port_from_dword(port: u32) -> u16 {
+    u16::from_be(port as u16)
+}
+
+fn process_name_for_pid(pid: u32) -> Option<String> {
+    unsafe {
+        let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
+        let mut buf = [0u16; 260];
+        let mut size = buf.len() as u32;
+        let result = QueryFullProcessImageNameW(
+            handle,
+            PROCESS_NAME_WIN32,
+            windows::core::PWSTR(buf.as_mut_ptr()),
+            &mut size,
+        );
+        let _ = CloseHandle(handle);
+        result.ok()?;
+        let full_path = String::from_utf16_lossy(&buf[..size as usize]);
+        Path::new(&full_path)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+    }
+}
+
+#[tauri::command]
+fn list_connections() -> Result<Vec<ConnectionRow>, String> {
+    let mut rows: Vec<ConnectionRow> = Vec::new();
+    let mut pid_names: HashMap<u32, String> = HashMap::new();
+    let mut resolve_name = |pid: u32| -> String {
+        if pid == 0 {
+            return "System Idle Process".to_string();
+        }
+        if let Some(name) = pid_names.get(&pid) {
+            return name.clone();
+        }
+        let name = process_name_for_pid(pid).unwrap_or_else(|| "-".to_string());
+        pid_names.insert(pid, name.clone());
+        name
+    };
+
+    unsafe {
+        let mut size: u32 = 0;
+        let _ = GetExtendedTcpTable(None, &mut size, false, AF_INET.0 as u32, TCP_TABLE_OWNER_PID_ALL, 0);
+        let mut buf = alloc_word_buffer(size as usize);
+        loop {
+            size = (buf.len() * 8) as u32;
+            let ret = GetExtendedTcpTable(
+                Some(buf.as_mut_ptr() as *mut std::ffi::c_void),
+                &mut size,
+                false,
+                AF_INET.0 as u32,
+                TCP_TABLE_OWNER_PID_ALL,
+                0,
+            );
+            if ret == 0 {
+                break;
+            } else if ret == ERROR_INSUFFICIENT_BUFFER.0 {
+                buf = alloc_word_buffer(size as usize);
+            } else {
+                return Err(format!("GetExtendedTcpTable failed with code {}", ret));
+            }
+        }
+        let table = &*(buf.as_ptr() as *const MIB_TCPTABLE_OWNER_PID);
+        let entries = std::slice::from_raw_parts(table.table.as_ptr(), table.dwNumEntries as usize);
+        for row in entries {
+            let pid = row.dwOwningPid;
+            rows.push(ConnectionRow {
+                protocol: "TCP".to_string(),
+                local_addr: ipv4_from_dword(row.dwLocalAddr).to_string(),
+                local_port: port_from_dword(row.dwLocalPort),
+                remote_addr: ipv4_from_dword(row.dwRemoteAddr).to_string(),
+                remote_port: port_from_dword(row.dwRemotePort),
+                state: tcp_state_name(row.dwState).to_string(),
+                pid,
+                process_name: resolve_name(pid),
+            });
+        }
+
+        let mut size: u32 = 0;
+        let _ = GetExtendedUdpTable(None, &mut size, false, AF_INET.0 as u32, UDP_TABLE_OWNER_PID, 0);
+        let mut buf = alloc_word_buffer(size as usize);
+        loop {
+            size = (buf.len() * 8) as u32;
+            let ret = GetExtendedUdpTable(
+                Some(buf.as_mut_ptr() as *mut std::ffi::c_void),
+                &mut size,
+                false,
+                AF_INET.0 as u32,
+                UDP_TABLE_OWNER_PID,
+                0,
+            );
+            if ret == 0 {
+                break;
+            } else if ret == ERROR_INSUFFICIENT_BUFFER.0 {
+                buf = alloc_word_buffer(size as usize);
+            } else {
+                return Err(format!("GetExtendedUdpTable failed with code {}", ret));
+            }
+        }
+        let table = &*(buf.as_ptr() as *const MIB_UDPTABLE_OWNER_PID);
+        let entries = std::slice::from_raw_parts(table.table.as_ptr(), table.dwNumEntries as usize);
+        for row in entries {
+            let pid = row.dwOwningPid;
+            rows.push(ConnectionRow {
+                protocol: "UDP".to_string(),
+                local_addr: ipv4_from_dword(row.dwLocalAddr).to_string(),
+                local_port: port_from_dword(row.dwLocalPort),
+                remote_addr: String::new(),
+                remote_port: 0,
+                state: String::new(),
+                pid,
+                process_name: resolve_name(pid),
+            });
+        }
+    }
+
+    Ok(rows)
+}
+
+#[tauri::command]
+fn list_arp_entries() -> Result<Vec<ArpEntryRow>, String> {
+    let mut table_ptr: *mut MIB_IPNET_TABLE2 = std::ptr::null_mut();
+    unsafe {
+        let err = GetIpNetTable2(AF_INET, &mut table_ptr);
+        if err.0 != 0 {
+            return Err(format!("GetIpNetTable2 failed with code {}", err.0));
+        }
+        let table = &*table_ptr;
+        let entries = std::slice::from_raw_parts(table.Table.as_ptr(), table.NumEntries as usize);
+        let mut rows = Vec::with_capacity(entries.len());
+        for row in entries {
+            // Skip incomplete/unresolved neighbor entries (no MAC learned yet)
+            // and anything that isn't a plain IPv4 neighbor.
+            if row.PhysicalAddressLength == 0 || row.Address.si_family != AF_INET {
+                continue;
+            }
+            let ip = ipv4_from_dword(row.Address.Ipv4.sin_addr.S_un.S_addr);
+            let mac_len = (row.PhysicalAddressLength as usize).min(row.PhysicalAddress.len());
+            let mac = row.PhysicalAddress[..mac_len]
+                .iter()
+                .map(|b| format!("{:02X}", b))
+                .collect::<Vec<_>>()
+                .join(":");
+            rows.push(ArpEntryRow {
+                ip: ip.to_string(),
+                mac,
+                interface: row.InterfaceIndex.to_string(),
+            });
+        }
+        FreeMibTable(table_ptr as *const _);
+        Ok(rows)
+    }
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────────────
 
 fn main() {
@@ -1538,6 +1765,8 @@ fn main() {
             write_session_file,
             read_session_file,
             run_powershell,
+            list_connections,
+            list_arp_entries,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

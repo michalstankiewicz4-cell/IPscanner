@@ -22,6 +22,14 @@
     var shellcraftInspectorSelectedBlockId = "";
     var shellcraftInspectorSuppressNextRender = false;
 
+    // ip-scanner tool: Network Monitor's last-fetched Refresh results, kept
+    // outside wireNetworkMonitorTool() so they survive its DOM being torn
+    // down and rebuilt (detaching/re-docking the tab, or a language-refresh
+    // re-render) - without this, undocking would silently discard whatever
+    // Refresh had already found and drop the tab back to an empty state.
+    var netMonLastConnections = null;
+    var netMonLastArp = null;
+
     // Shared by the canvas block's Run button and the Inspector's Run button
     // so both report identical, correct status-line feedback - including on
     // failure (runMacro returns false when the target scanner button isn't
@@ -1247,6 +1255,74 @@
       });
     }
 
+    // ip-scanner tool: Network Monitor (local connections + ARP table).
+    // Manual refresh only in v1, per the approved plan - no auto-polling,
+    // so opening the tab never triggers surprise background work.
+    function wireNetworkMonitorTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
+      if (!root) return;
+      if (!root.querySelector(".v1-netmon-shell")) return;
+
+      var renderConnectionsRows = typeof deps.renderNetworkMonitorConnectionsRows === "function" ? deps.renderNetworkMonitorConnectionsRows : null;
+      var renderArpRows = typeof deps.renderNetworkMonitorArpRows === "function" ? deps.renderNetworkMonitorArpRows : null;
+
+      // Re-hydrate from the last successful Refresh instead of leaving the
+      // empty-state placeholder - runs on every (re)render of this shell,
+      // deliberately NOT gated by the bind-guard below: #v1ToolDetail is a
+      // stable element that survives detaching into a floating window and
+      // re-docking, so its dataset flag would otherwise skip this on redock
+      // even though the tbody itself is a brand-new, empty node each time.
+      if (renderConnectionsRows && netMonLastConnections) {
+        var connTbody = root.querySelector('[data-netmon-role="connections-rows"]');
+        if (connTbody) connTbody.innerHTML = renderConnectionsRows(netMonLastConnections);
+      }
+      if (renderArpRows && netMonLastArp) {
+        var arpTbody = root.querySelector('[data-netmon-role="arp-rows"]');
+        if (arpTbody) arpTbody.innerHTML = renderArpRows(netMonLastArp);
+      }
+
+      if (root.dataset.netmonBound === "1") return;
+      root.dataset.netmonBound = "1";
+
+      var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+
+      function refreshConnections() {
+        // data-netmon-role, not #id: the detached/floating card variant of
+        // this content strips all id="..." attributes (stripIds() in
+        // panels-runtime.js, to avoid duplicate ids vs. the docked copy),
+        // so an #id lookup would silently find nothing there.
+        var tbody = root.querySelector('[data-netmon-role="connections-rows"]');
+        if (!tbody || !platform || !renderConnectionsRows) return;
+        platform.invoke("list_connections", {}).then(function (rows) {
+          netMonLastConnections = rows;
+          tbody.innerHTML = renderConnectionsRows(rows);
+        }).catch(function (err) {
+          tbody.innerHTML = "<tr><td colspan=\"6\" class=\"v1-iplib-empty\">" + escapeHtml(String((err && err.message) || err)) + "</td></tr>";
+        });
+      }
+
+      function refreshArp() {
+        var tbody = root.querySelector('[data-netmon-role="arp-rows"]');
+        if (!tbody || !platform || !renderArpRows) return;
+        platform.invoke("list_arp_entries", {}).then(function (rows) {
+          netMonLastArp = rows;
+          tbody.innerHTML = renderArpRows(rows);
+        }).catch(function (err) {
+          tbody.innerHTML = "<tr><td colspan=\"4\" class=\"v1-iplib-empty\">" + escapeHtml(String((err && err.message) || err)) + "</td></tr>";
+        });
+      }
+
+      root.addEventListener("click", function (event) {
+        var btn = event.target && event.target.closest ? event.target.closest("[data-netmon-action]") : null;
+        if (!btn) return;
+        var action = btn.getAttribute("data-netmon-action");
+        if (action === "refresh-connections") refreshConnections();
+        if (action === "refresh-arp") refreshArp();
+      });
+    }
+
     return {
       // shell
       wireVersionsTimeline: wireVersionsTimeline,
@@ -1257,6 +1333,7 @@
       // ip-scanner tool
       wireResultsIpTable: wireResultsIpTable,
       wirePresetsTool: wirePresetsTool,
+      wireNetworkMonitorTool: wireNetworkMonitorTool,
     };
   }
 

@@ -193,10 +193,12 @@
         const activityLoremIpsumBtn = document.getElementById("v1ActivityLoremIpsum");
         const activityTopologyBtn = document.getElementById("v1ActivityTopology");
         const activityGlobeBtn = document.getElementById("v1ActivityGlobe");
+        const activityNetworkMonitorBtn = document.getElementById("v1ActivityNetworkMonitor");
         const toolsMenuIpScanner = document.getElementById("v1ToolsMenuIpScanner");
         const toolsMenuLoremIpsum = document.getElementById("v1ToolsMenuLoremIpsum");
         const toolsMenuTopology = document.getElementById("v1ToolsMenuTopology");
         const toolsMenuGlobe = document.getElementById("v1ToolsMenuGlobe");
+        const toolsMenuNetworkMonitor = document.getElementById("v1ToolsMenuNetworkMonitor");
         tabsTrack = document.getElementById("v1TabsTrack");
         tabsScrollLeftBtn = document.getElementById("v1TabsScrollLeft");
         tabsScrollRightBtn = document.getElementById("v1TabsScrollRight");
@@ -278,6 +280,10 @@
           activityGlobeBtn.setAttribute("title", tr("toolTitle_globe"));
           activityGlobeBtn.setAttribute("aria-label", tr("toolTitle_globe"));
         }
+        if (activityNetworkMonitorBtn) {
+          activityNetworkMonitorBtn.setAttribute("title", tr("toolTitle_network_monitor"));
+          activityNetworkMonitorBtn.setAttribute("aria-label", tr("toolTitle_network_monitor"));
+        }
         if (tabsScrollLeftBtn) {
           tabsScrollLeftBtn.setAttribute("title", tr("tabScrollLeft"));
           tabsScrollLeftBtn.setAttribute("aria-label", tr("tabScrollLeft"));
@@ -290,6 +296,7 @@
         if (toolsMenuLoremIpsum) toolsMenuLoremIpsum.textContent = tr("toolTitle_lorem_ipsum");
         if (toolsMenuTopology) toolsMenuTopology.textContent = tr("toolTitle_topology");
         if (toolsMenuGlobe) toolsMenuGlobe.textContent = tr("toolTitle_globe");
+        if (toolsMenuNetworkMonitor) toolsMenuNetworkMonitor.textContent = tr("toolTitle_network_monitor");
         document.querySelectorAll("[data-sidebar-tab-close]").forEach((el) => {
           el.setAttribute("aria-label", tr("tabCloseAria"));
           el.setAttribute("title", tr("tabCloseAria"));

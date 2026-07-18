@@ -507,6 +507,24 @@
     "psConsoleReady": "Integrierte PowerShell-Konsole bereit.",
     "psConsoleRunning": "PowerShell-Befehl wird ausgeführt...",
     "psConsoleDesktopOnly": "Die PowerShell-Ausführung ist nur im Desktop-Modus (Tauri) verfügbar.",
-    "psConsoleExecFailed": "PowerShell-Ausführung fehlgeschlagen:"
+    "psConsoleExecFailed": "PowerShell-Ausführung fehlgeschlagen:",
+    "toolTitle_network_monitor": "Netzwerkmonitor",
+    "tabLabel_network_monitor": "Netzwerkmonitor",
+    "toolText_network_monitor": "Lokale TCP/UDP-Verbindungen mit Namen der zugehörigen Prozesse sowie die ARP-Tabelle des LAN mit Herstellererkennung.",
+    "netMonConnectionsTitle": "Verbindungen",
+    "netMonLanDevicesTitle": "LAN-Geräte",
+    "netMonRefreshBtn": "Aktualisieren",
+    "netMonColProtocol": "Protokoll",
+    "netMonColLocalAddr": "Lokale Adresse",
+    "netMonColRemoteAddr": "Remote-Adresse",
+    "netMonColState": "Status",
+    "netMonColPid": "PID",
+    "netMonColProcess": "Prozess",
+    "netMonColIp": "IP-Adresse",
+    "netMonColMac": "MAC-Adresse",
+    "netMonColVendor": "Hersteller",
+    "netMonColInterface": "Schnittstelle",
+    "netMonEmptyConnections": "Keine Verbindungen gefunden.",
+    "netMonEmptyArp": "Keine ARP-Einträge gefunden."
   }
 }

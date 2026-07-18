@@ -507,6 +507,24 @@
     "psConsoleReady": "Zintegrowana konsola PowerShell gotowa.",
     "psConsoleRunning": "Uruchamianie komendy PowerShell...",
     "psConsoleDesktopOnly": "Wykonywanie PowerShell jest dostepne tylko w trybie desktop (Tauri).",
-    "psConsoleExecFailed": "Blad wykonania PowerShell:"
+    "psConsoleExecFailed": "Blad wykonania PowerShell:",
+    "toolTitle_network_monitor": "Monitor Sieci",
+    "tabLabel_network_monitor": "Monitor Sieci",
+    "toolText_network_monitor": "Lokalne połączenia TCP/UDP z nazwami procesów właściciela oraz tabela ARP sieci LAN z rozpoznawaniem producenta.",
+    "netMonConnectionsTitle": "Połączenia",
+    "netMonLanDevicesTitle": "Urządzenia LAN",
+    "netMonRefreshBtn": "Odśwież",
+    "netMonColProtocol": "Protokół",
+    "netMonColLocalAddr": "Adres lokalny",
+    "netMonColRemoteAddr": "Adres zdalny",
+    "netMonColState": "Stan",
+    "netMonColPid": "PID",
+    "netMonColProcess": "Proces",
+    "netMonColIp": "Adres IP",
+    "netMonColMac": "Adres MAC",
+    "netMonColVendor": "Producent",
+    "netMonColInterface": "Interfejs",
+    "netMonEmptyConnections": "Nie znaleziono połączeń.",
+    "netMonEmptyArp": "Nie znaleziono wpisów ARP."
   }
 }

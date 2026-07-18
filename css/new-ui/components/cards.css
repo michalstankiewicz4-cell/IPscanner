@@ -518,6 +518,34 @@
   flex-wrap: wrap;
 }
 
+/* ip-scanner tool: Network Monitor - two stacked table sections
+   (Connections, LAN Devices), each with its own manual refresh button. */
+.v1-netmon-shell {
+  display: grid;
+  gap: 20px;
+}
+
+.v1-netmon-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.v1-netmon-section-head button {
+  border: 1px solid #3d424d;
+  background: #22242a;
+  color: var(--txt);
+  font-size: 12px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.v1-netmon-section-head button:hover {
+  background: #2a2d34;
+}
+
 /* shell: General settings screen (TBM Options -> General) - group headings
    inside the shared .v1-import-manager grid, extra breathing room above each
    new group beyond the grid's base 12px gap. First heading (Session) keeps
@@ -1146,6 +1174,39 @@
 .v1-ip-status-dot.is-up {
   background: #2dcc71;
   box-shadow: 0 0 0 2px rgba(45, 204, 113, 0.2);
+}
+
+/* Network Monitor: TCP connection-state dots, reusing the .is-up green for
+   ESTABLISHED and adding a small palette for the rest of MIB_TCP_STATE. */
+.v1-ip-status-dot.is-established {
+  background: #2dcc71;
+  box-shadow: 0 0 0 2px rgba(45, 204, 113, 0.2);
+}
+
+.v1-ip-status-dot.is-listening {
+  background: #4a9eff;
+  box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.2);
+}
+
+.v1-ip-status-dot.is-pending {
+  background: #e5c93e;
+  box-shadow: 0 0 0 2px rgba(229, 201, 62, 0.2);
+}
+
+.v1-ip-status-dot.is-time-wait,
+.v1-ip-status-dot.is-close-wait,
+.v1-ip-status-dot.is-closing {
+  background: #d8973c;
+  box-shadow: 0 0 0 2px rgba(216, 151, 60, 0.2);
+}
+
+.v1-ip-status-dot.is-closed {
+  background: #6b7483;
+}
+
+.v1-netmon-table .v1-ip-status-dot {
+  margin-right: 6px;
+  vertical-align: middle;
 }
 
 .v1-ip-expand-btn {
