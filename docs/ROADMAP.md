@@ -254,6 +254,43 @@ A pass over every menu/tool, numbered for easy reference in discussion:
     same inline-in-JS fix, just bigger/more complex than the detect
     scripts (149 lines, takes `-TopRanges`/`-CountryCodes` params that need
     to survive the switch from a script file to an inline command string).
+24. **`js/new-ui/` file/folder organization audit (2026-07-18)** — the
+    "shell vs. tool split" from "Done" above happened at the
+    comment-annotation level (`// shell:` / `// ip-scanner tool:` / `//
+    MIXED:` tags), not the file level; several files still physically mix
+    concerns their own comments already flag as "not cleanly separable
+    without restructuring" (3× in `navigation-runtime.js`, 1× in
+    `panels-runtime.js`). Findings, low to high effort:
+    - No `js/new-ui/tools/` split exists to mirror
+      `css/new-ui/tools/{ip-scanner,shellcraft}/` — all JS (shell chrome +
+      both tools) sits flat in `js/new-ui/core/` (24 files) and
+      `js/new-ui/core/runtimes/` (13 files); the `core/` vs `core/runtimes/`
+      split itself looks arbitrary (e.g. `panels-runtime.js`, 2014 lines,
+      sits in `core/` while the similarly-sized generic dispatcher
+      `navigation-runtime.js`, 1827 lines, sits in `core/runtimes/`).
+    - Five confusingly-similar file names — `panel-content-config.js`
+      (static data only), `panel-content-runtime.js` (`render*` HTML
+      builders), `panel-interactions-runtime.js` (`wire*` event binding),
+      `panel-renderers-runtime.js` (a handful of small generic helpers),
+      `panels-runtime.js` (the tab dock/detach engine) — differ by one word
+      and singular/plural; worth renaming to something self-evident (e.g.
+      `tool-panel-html.js` / `tool-panel-wiring.js` /
+      `tool-panel-render-helpers.js` / `workbench-tabs-runtime.js`).
+    - `panels-runtime.js`'s own header calls it a "generic detached-card/
+      workbench-tab engine," but `wireDetachedResultsIp` (~475 lines, 23%
+      of the file, 22 nested sub-functions) is ip-scanner-Results-table-
+      specific filter/column-menu wiring, not shell chrome — a clean
+      extraction candidate on its own, independent of any wider folder move.
+    - Minor: the same `var root = rootEl && typeof rootEl.querySelector
+      === "function" ? rootEl : document...` fallback is duplicated
+      near-verbatim across 6 wiring functions in
+      `panel-interactions-runtime.js` — worth a shared helper.
+    - Recommended order, each independently shippable: (1) rename the
+      `panel*` files only — mechanical, low risk; (2) extract
+      `wireDetachedResultsIp` out of `panels-runtime.js` into its own file;
+      (3) full `js/new-ui/tools/<tool>/` folder split — the big one, do in
+      stages with a working build + smoke test after each file move, not
+      all at once.
 
 ## Removed (dead code cleanup, 2026-07-11)
 
