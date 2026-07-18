@@ -10,6 +10,14 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.4.0",
+      notes: [
+        "Added Network Monitor: view local TCP/UDP connections and the LAN ARP table live, no Administrator privileges needed.",
+        "Added Email Recon: type an email address and check it against 7 public OSINT sources at once - emailrep.io, Gravatar, GitHub, HaveIBeenPwned (breaches + pastes), XposedOrNot, and LeakCheck. Same left/center/right layout as IP Scanner: pick sources and enter an optional HIBP key on the right, run the lookup on the left, read results in the middle. Includes lookup history and saveable source profiles.",
+        "Added Hebrew as a second right-to-left language, alongside Arabic."
+      ]
+    },
+    {
       version: "v2.3.0",
       notes: [
         "IP Scanner now scans UDP and ICMP for real, alongside TCP - and none of the three need Administrator privileges. Check any combination in the Config tab's Protocol section and scan for all of them in a single pass.",
