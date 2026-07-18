@@ -155,6 +155,30 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   of custom addon-rendered markup beyond the static card (an input field for
   the target host, a live results list) — both currently open design questions
   in `FUTURE_PLUGIN_SHELL.md`'s "Co realnie trzeba zaprojektowac" section.
+- **Screenshot+OCR data-extraction engine** (working name "Data Thief" -
+  reconsider before shipping, same "don't overclaim/sound sketchy" reasoning
+  that turned "Sniffer" into "Network Monitor") — not a standalone tool but
+  a *reusable engine* other tools call into: screenshot a target page → OCR
+  it → identify data of interest (email/phone/etc.) either **auto**
+  (regex for `@`/digit-sequences, plus a proximity heuristic - find a label
+  like "mail:" in the OCR'd text and inspect nearby text blocks
+  above/below/beside it) or **manual** (user selects a region on the
+  screenshot and tags it). Motivating case: a page with no API exposes a
+  phone number that isn't cleanly extractable any other way - a future
+  phone-lookup tool could shell out to this engine instead of re-solving
+  OCR itself. Two open technical risks to resolve before planning further,
+  in priority order:
+  1. **Can WebView2/Tauri screenshot an arbitrary target page at all** -
+     today's app has zero page-rendering/screenshot capability of any
+     kind. Needs research (a hidden secondary webview + a screenshot API?)
+     before anything else is worth planning - this is the real go/no-go.
+  2. **OCR engine choice** - leaning toward Windows' built-in
+     `Windows.Media.Ocr` (reachable via the `windows` crate, already a
+     dependency) over bundling Tesseract, matching the "own the code,
+     minimize dependencies" direction from the Email Recon work - zero new
+     binaries, no install step, at the cost of Windows-only (acceptable,
+     the app is already WinAPI-dependent throughout).
+  Not started - first step is researching risk #1.
 - **Selective IP-blur inside Terminal/Console output** — today the IP blur
   toggle blurs those panes whole-pane (see item 15 in the backlog below)
   because their output is free-form text concatenated as one string into a

@@ -578,6 +578,11 @@
     "emailReconSrcGravatarHelp": "Globalny serwis avatarów - zwraca publiczny profil (zdjęcie, nazwa, linki), jeśli ktoś go kiedyś założył dla tego maila.",
     "emailReconSrcGithubHelp": "Oficjalne wyszukiwanie GitHuba - znajduje konta z tym mailem ustawionym jako publiczny w profilu (domyślnie ukryty).",
     "emailReconSrcHibpBreachesHelp": "Have I Been Pwned - lista znanych wycieków danych (np. LinkedIn 2016), w których wystąpił ten adres.",
-    "emailReconSrcHibpPastesHelp": "Have I Been Pwned - sprawdza publiczne wklejki (np. Pastebin) pod kątem wycieków wspominających ten adres."
+    "emailReconSrcHibpPastesHelp": "Have I Been Pwned - sprawdza publiczne wklejki (np. Pastebin) pod kątem wycieków wspominających ten adres.",
+    "emailReconSrcXposedornot": "XposedOrNot",
+    "emailReconSrcXposedornotHelp": "Darmowy serwis sprawdzania wycieków, bez klucza API - lista znanych wycieków, w których wystąpił ten adres.",
+    "emailReconSrcLeakcheck": "LeakCheck",
+    "emailReconSrcLeakcheckHelp": "Darmowe publiczne API sprawdzania wycieków, bez klucza - sprawdza ten adres w bazie LeakCheck.",
+    "emailReconAttributionPrefix": "Wspierane przez"
   }
 }

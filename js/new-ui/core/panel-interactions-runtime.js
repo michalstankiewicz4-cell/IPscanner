@@ -1397,7 +1397,7 @@
         if (!platform || !emailReconConfig) return;
 
         var state = emailReconConfig.getState();
-        if (!state.emailrep && !state.gravatar && !state.github && !state.hibpBreaches && !state.hibpPastes) {
+        if (!state.emailrep && !state.gravatar && !state.github && !state.hibpBreaches && !state.hibpPastes && !state.xposedornot && !state.leakcheck) {
           if (setStatusLine) setStatusLine(tr("emailReconNoSourcesSelected"));
           return;
         }
@@ -1415,6 +1415,8 @@
             github: state.github,
             hibpBreaches: state.hibpBreaches,
             hibpPastes: state.hibpPastes,
+            xposedornot: state.xposedornot,
+            leakcheck: state.leakcheck,
             hibpApiKey: state.hibpApiKey,
           },
         }).then(function (result) {

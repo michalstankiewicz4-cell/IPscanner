@@ -579,6 +579,11 @@
     "emailReconSrcGravatarHelp": "خدمة أفاتار عالمية - تُعيد ملفًا شخصيًا عامًا (صورة، اسم عرض، ملفات مرتبطة) إذا تم إنشاء واحد لهذا البريد الإلكتروني في أي وقت.",
     "emailReconSrcGithubHelp": "بحث GitHub الرسمي - يجد الحسابات التي تحتوي على هذا البريد الإلكتروني كعنوان عام في ملفها الشخصي (مخفي افتراضيًا).",
     "emailReconSrcHibpBreachesHelp": "Have I Been Pwned - يسرد التسريبات المعروفة (مثل LinkedIn 2016) التي تضمنت عنوان البريد الإلكتروني هذا.",
-    "emailReconSrcHibpPastesHelp": "Have I Been Pwned - يفحص مواقع اللصق العامة (مثل Pastebin) بحثًا عن بيانات مسربة تذكر هذا البريد الإلكتروني."
+    "emailReconSrcHibpPastesHelp": "Have I Been Pwned - يفحص مواقع اللصق العامة (مثل Pastebin) بحثًا عن بيانات مسربة تذكر هذا البريد الإلكتروني.",
+    "emailReconSrcXposedornot": "XposedOrNot",
+    "emailReconSrcXposedornotHelp": "خدمة مجانية للتحقق من التسريبات، لا تتطلب مفتاح API - تسرد التسريبات المعروفة التي تضمنت عنوان البريد الإلكتروني هذا.",
+    "emailReconSrcLeakcheck": "LeakCheck",
+    "emailReconSrcLeakcheckHelp": "واجهة برمجة تطبيقات عامة مجانية للتحقق من التسريبات، لا تتطلب مفتاحًا - تفحص هذا البريد الإلكتروني مقابل فهرس البيانات المسربة الخاص بـ LeakCheck.",
+    "emailReconAttributionPrefix": "مدعوم بواسطة"
   }
 }

@@ -579,6 +579,11 @@
     "emailReconSrcGravatarHelp": "שירות אווטאר גלובלי - מחזיר פרופיל ציבורי (תמונה, שם תצוגה, פרופילים מקושרים) אם נוצר אחד אי פעם עבור כתובת זו.",
     "emailReconSrcGithubHelp": "חיפוש GitHub הרשמי - מוצא חשבונות שהגדירו כתובת דוא\"ל זו כציבורית בפרופיל שלהם (מוסתר כברירת מחדל).",
     "emailReconSrcHibpBreachesHelp": "Have I Been Pwned - מפרט דליפות מידע ידועות (למשל LinkedIn 2016) שכללו כתובת דוא\"ל זו.",
-    "emailReconSrcHibpPastesHelp": "Have I Been Pwned - בודק אתרי הדבקה ציבוריים (כמו Pastebin) עבור מידע שדלף המזכיר כתובת זו."
+    "emailReconSrcHibpPastesHelp": "Have I Been Pwned - בודק אתרי הדבקה ציבוריים (כמו Pastebin) עבור מידע שדלף המזכיר כתובת זו.",
+    "emailReconSrcXposedornot": "XposedOrNot",
+    "emailReconSrcXposedornotHelp": "שירות בדיקת דליפות חינמי, ללא צורך במפתח API - מפרט דליפות מידע ידועות שכללו כתובת דוא\"ל זו.",
+    "emailReconSrcLeakcheck": "LeakCheck",
+    "emailReconSrcLeakcheckHelp": "API ציבורי חינמי לבדיקת דליפות, ללא צורך במפתח - בודק כתובת זו מול מדד הנתונים שדלפו של LeakCheck.",
+    "emailReconAttributionPrefix": "מופעל על ידי"
   }
 }

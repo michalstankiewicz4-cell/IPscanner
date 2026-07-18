@@ -14,6 +14,10 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["devtools"] }
 tokio = { version = "1", features = ["net", "time", "rt-multi-thread", "macros"] }
 serde = { version = "1", features = ["derive"] }
+# Already compiled in transitively (tauri, reqwest's "json" feature) - only
+# added directly so LeakCheck's unconfirmed per-record schema can be parsed
+# defensively via serde_json::Value instead of guessing field names.
+serde_json = "1"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 dns-lookup = "3"
 rfd = "0.14"

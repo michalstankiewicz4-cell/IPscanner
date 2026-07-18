@@ -1255,6 +1255,16 @@
   font-size: 12px;
 }
 
+.v1-emailrecon-attribution {
+  color: var(--txt-dim);
+  font-size: 11px;
+  text-align: right;
+}
+
+.v1-emailrecon-attribution a {
+  color: var(--txt-dim);
+}
+
 .v1-ip-expand-btn {
   width: 18px;
   height: 18px;

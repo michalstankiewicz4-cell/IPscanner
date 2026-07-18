@@ -892,6 +892,8 @@ struct EmailReconOptions {
     github: bool,
     hibp_breaches: bool,
     hibp_pastes: bool,
+    xposedornot: bool,
+    leakcheck: bool,
     hibp_api_key: String,
 }
 
@@ -1167,6 +1169,119 @@ async fn probe_hibp_pastes(
     }
 }
 
+async fn probe_xposedornot(client: &reqwest::Client, email: &str) -> EmailSourceResult {
+    // Shapes differ between the "found" and "not found" cases (confirmed
+    // from the official docs): {"breaches":[[...]],"status":"success"} vs
+    // {"Error":"Not found","email":null} - one struct with both fields
+    // optional parses either without guessing a shared shape.
+    #[derive(Deserialize)]
+    struct XposedOrNotResponse {
+        breaches: Option<Vec<Vec<String>>>,
+        #[serde(rename = "Error")]
+        error: Option<String>,
+    }
+
+    let url = format!("https://api.xposedornot.com/v1/check-email/{}", email);
+    let resp = match client
+        .get(&url)
+        .header("User-Agent", "OSINTNETAuditor")
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => return EmailSourceResult::error("xposedornot", e.to_string()),
+    };
+
+    if resp.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+        return EmailSourceResult::error("xposedornot", "rate limited");
+    }
+    if resp.status() == reqwest::StatusCode::NOT_FOUND {
+        return EmailSourceResult::not_found("xposedornot");
+    }
+    if !resp.status().is_success() {
+        return EmailSourceResult::error("xposedornot", format!("HTTP {}", resp.status()));
+    }
+
+    match resp.json::<XposedOrNotResponse>().await {
+        Ok(body) => {
+            if body.error.is_some() {
+                return EmailSourceResult::not_found("xposedornot");
+            }
+            let names: Vec<String> = body.breaches.unwrap_or_default().into_iter().flatten().collect();
+            if names.is_empty() {
+                EmailSourceResult::not_found("xposedornot")
+            } else {
+                EmailSourceResult {
+                    source: "xposedornot".into(),
+                    status: EmailSourceStatus::Found,
+                    summary: format!("{} breach(es)", names.len()),
+                    detail: Some(names.join(", ")),
+                }
+            }
+        }
+        Err(e) => EmailSourceResult::error("xposedornot", format!("bad response: {}", e)),
+    }
+}
+
+async fn probe_leakcheck(client: &reqwest::Client, email: &str) -> EmailSourceResult {
+    // LeakCheck's public API's per-record field names aren't confirmed from
+    // the docs (only the top-level success/result/error envelope is) -
+    // `result` stays a raw serde_json::Value array rather than guessing a
+    // per-record struct that might silently drop fields if wrong.
+    #[derive(Deserialize)]
+    struct LeakCheckResponse {
+        success: bool,
+        #[serde(default)]
+        result: Vec<serde_json::Value>,
+        error: Option<String>,
+    }
+
+    let url = format!("https://leakcheck.io/api/public?check={}", email);
+    let resp = match client
+        .get(&url)
+        .header("User-Agent", "OSINTNETAuditor")
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => return EmailSourceResult::error("leakcheck", e.to_string()),
+    };
+
+    if resp.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+        return EmailSourceResult::error("leakcheck", "rate limited");
+    }
+    if !resp.status().is_success() {
+        return EmailSourceResult::error("leakcheck", format!("HTTP {}", resp.status()));
+    }
+
+    match resp.json::<LeakCheckResponse>().await {
+        Ok(body) => {
+            if !body.success {
+                // Confirmed live: an empty result comes back as
+                // success:false with error:"Not found" rather than
+                // success:true with an empty result array - a genuine
+                // "nothing found" needs to read as NotFound, not Error.
+                let message = body.error.unwrap_or_else(|| "unknown error".into());
+                if message.trim().eq_ignore_ascii_case("not found") {
+                    return EmailSourceResult::not_found("leakcheck");
+                }
+                return EmailSourceResult::error("leakcheck", message);
+            }
+            if body.result.is_empty() {
+                EmailSourceResult::not_found("leakcheck")
+            } else {
+                EmailSourceResult {
+                    source: "leakcheck".into(),
+                    status: EmailSourceStatus::Found,
+                    summary: format!("{} record(s)", body.result.len()),
+                    detail: None,
+                }
+            }
+        }
+        Err(e) => EmailSourceResult::error("leakcheck", format!("bad response: {}", e)),
+    }
+}
+
 #[tauri::command]
 async fn email_recon_lookup(
     email: String,
@@ -1236,10 +1351,40 @@ async fn email_recon_lookup(
         (breaches, pastes)
     };
 
-    let (emailrep, gravatar, github, (hibp_breaches, hibp_pastes)) =
-        tokio::join!(emailrep_fut, gravatar_fut, github_fut, hibp_fut);
+    let xposedornot_fut = async {
+        if options.xposedornot {
+            probe_xposedornot(&client, &email).await
+        } else {
+            EmailSourceResult::skipped_disabled("xposedornot")
+        }
+    };
 
-    let sources = vec![emailrep, gravatar, github, hibp_breaches, hibp_pastes];
+    let leakcheck_fut = async {
+        if options.leakcheck {
+            probe_leakcheck(&client, &email).await
+        } else {
+            EmailSourceResult::skipped_disabled("leakcheck")
+        }
+    };
+
+    let (emailrep, gravatar, github, (hibp_breaches, hibp_pastes), xposedornot, leakcheck) = tokio::join!(
+        emailrep_fut,
+        gravatar_fut,
+        github_fut,
+        hibp_fut,
+        xposedornot_fut,
+        leakcheck_fut
+    );
+
+    let sources = vec![
+        emailrep,
+        gravatar,
+        github,
+        hibp_breaches,
+        hibp_pastes,
+        xposedornot,
+        leakcheck,
+    ];
     let hit_count = sources
         .iter()
         .filter(|s| s.status == EmailSourceStatus::Found)

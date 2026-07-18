@@ -32,6 +32,8 @@
       github: true,
       hibpBreaches: true,
       hibpPastes: true,
+      xposedornot: true,
+      leakcheck: true,
       hibpApiKey: "",
     };
   }
@@ -53,6 +55,8 @@
       github: safeBool(input.github, fallback.github),
       hibpBreaches: safeBool(input.hibpBreaches, fallback.hibpBreaches),
       hibpPastes: safeBool(input.hibpPastes, fallback.hibpPastes),
+      xposedornot: safeBool(input.xposedornot, fallback.xposedornot),
+      leakcheck: safeBool(input.leakcheck, fallback.leakcheck),
       hibpApiKey: safeString(input.hibpApiKey, fallback.hibpApiKey),
     };
   }
@@ -220,6 +224,8 @@
       v1EmailReconSrcGithub: "github",
       v1EmailReconSrcHibpBreaches: "hibpBreaches",
       v1EmailReconSrcHibpPastes: "hibpPastes",
+      v1EmailReconSrcXposedornot: "xposedornot",
+      v1EmailReconSrcLeakcheck: "leakcheck",
     };
 
     function applyConfigStateToDom(state) {
@@ -306,6 +312,8 @@
         github: state.github,
         hibpBreaches: state.hibpBreaches,
         hibpPastes: state.hibpPastes,
+        xposedornot: state.xposedornot,
+        leakcheck: state.leakcheck,
       };
     }
 
@@ -428,11 +436,15 @@
       var srcGithubLabel = document.getElementById("v1EmailReconSrcGithubLabel");
       var srcHibpBreachesLabel = document.getElementById("v1EmailReconSrcHibpBreachesLabel");
       var srcHibpPastesLabel = document.getElementById("v1EmailReconSrcHibpPastesLabel");
+      var srcXposedornotLabel = document.getElementById("v1EmailReconSrcXposedornotLabel");
+      var srcLeakcheckLabel = document.getElementById("v1EmailReconSrcLeakcheckLabel");
       var srcEmailrepHelp = document.getElementById("v1EmailReconSrcEmailrepHelp");
       var srcGravatarHelp = document.getElementById("v1EmailReconSrcGravatarHelp");
       var srcGithubHelp = document.getElementById("v1EmailReconSrcGithubHelp");
       var srcHibpBreachesHelp = document.getElementById("v1EmailReconSrcHibpBreachesHelp");
       var srcHibpPastesHelp = document.getElementById("v1EmailReconSrcHibpPastesHelp");
+      var srcXposedornotHelp = document.getElementById("v1EmailReconSrcXposedornotHelp");
+      var srcLeakcheckHelp = document.getElementById("v1EmailReconSrcLeakcheckHelp");
 
       if (inputTitle) inputTitle.textContent = t("emailReconInputLabel");
       if (emailInput) emailInput.setAttribute("placeholder", t("emailReconInputPlaceholder"));
@@ -449,11 +461,15 @@
       if (srcGithubLabel) srcGithubLabel.textContent = t("emailReconSrcGithub");
       if (srcHibpBreachesLabel) srcHibpBreachesLabel.textContent = t("emailReconSrcHibpBreaches");
       if (srcHibpPastesLabel) srcHibpPastesLabel.textContent = t("emailReconSrcHibpPastes");
+      if (srcXposedornotLabel) srcXposedornotLabel.textContent = t("emailReconSrcXposedornot");
+      if (srcLeakcheckLabel) srcLeakcheckLabel.textContent = t("emailReconSrcLeakcheck");
       if (srcEmailrepHelp) srcEmailrepHelp.setAttribute("title", t("emailReconSrcEmailrepHelp"));
       if (srcGravatarHelp) srcGravatarHelp.setAttribute("title", t("emailReconSrcGravatarHelp"));
       if (srcGithubHelp) srcGithubHelp.setAttribute("title", t("emailReconSrcGithubHelp"));
       if (srcHibpBreachesHelp) srcHibpBreachesHelp.setAttribute("title", t("emailReconSrcHibpBreachesHelp"));
       if (srcHibpPastesHelp) srcHibpPastesHelp.setAttribute("title", t("emailReconSrcHibpPastesHelp"));
+      if (srcXposedornotHelp) srcXposedornotHelp.setAttribute("title", t("emailReconSrcXposedornotHelp"));
+      if (srcLeakcheckHelp) srcLeakcheckHelp.setAttribute("title", t("emailReconSrcLeakcheckHelp"));
 
       renderEmailHistory();
       renderEmailProfiles();

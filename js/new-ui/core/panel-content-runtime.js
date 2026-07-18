@@ -1141,7 +1141,9 @@
       gravatar: "emailReconSrcGravatar",
       github: "emailReconSrcGithub",
       hibp_breaches: "emailReconSrcHibpBreaches",
-      hibp_pastes: "emailReconSrcHibpPastes"
+      hibp_pastes: "emailReconSrcHibpPastes",
+      xposedornot: "emailReconSrcXposedornot",
+      leakcheck: "emailReconSrcLeakcheck"
     };
     var emailReconStatusLabelKey = {
       found: "emailReconStatusFound",
@@ -1179,6 +1181,10 @@
         "<tbody id=\"v1EmailReconRows\" data-emailrecon-role=\"results-rows\"><tr><td colspan=\"4\" class=\"v1-iplib-empty\">" + escapeHtml(tr("emailReconEmptyResults")) + "</td></tr></tbody>",
         "</table>",
         "</div>",
+        // LeakCheck's free public API's only usage condition (per their
+        // docs): a visible "Powered by LeakCheck" link wherever results
+        // appear - this satisfies that, not just a courtesy credit.
+        "<div class=\"v1-emailrecon-attribution\">" + escapeHtml(tr("emailReconAttributionPrefix")) + " <a href=\"https://leakcheck.io\" target=\"_blank\" rel=\"noopener\">LeakCheck</a></div>",
         "</div>"
       ].join("");
     }

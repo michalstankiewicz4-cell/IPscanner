@@ -578,6 +578,11 @@
     "emailReconSrcGravatarHelp": "Globaler Avatar-Dienst - liefert ein öffentliches Profil (Foto, Anzeigename, verknüpfte Profile), falls jemals eines für diese E-Mail erstellt wurde.",
     "emailReconSrcGithubHelp": "Offizielle GitHub-Suche - findet Konten, die diese E-Mail-Adresse öffentlich im Profil hinterlegt haben (standardmäßig verborgen).",
     "emailReconSrcHibpBreachesHelp": "Have I Been Pwned - listet bekannte Datenlecks (z. B. LinkedIn 2016) auf, die diese E-Mail-Adresse enthielten.",
-    "emailReconSrcHibpPastesHelp": "Have I Been Pwned - durchsucht öffentliche Paste-Seiten (wie Pastebin) nach geleakten Daten mit dieser E-Mail-Adresse."
+    "emailReconSrcHibpPastesHelp": "Have I Been Pwned - durchsucht öffentliche Paste-Seiten (wie Pastebin) nach geleakten Daten mit dieser E-Mail-Adresse.",
+    "emailReconSrcXposedornot": "XposedOrNot",
+    "emailReconSrcXposedornotHelp": "Kostenloser Datenleck-Dienst, kein API-Schlüssel nötig - listet bekannte Datenlecks auf, die diese E-Mail-Adresse enthielten.",
+    "emailReconSrcLeakcheck": "LeakCheck",
+    "emailReconSrcLeakcheckHelp": "Kostenlose öffentliche API zur Datenleck-Prüfung, kein Schlüssel nötig - prüft diese E-Mail gegen den LeakCheck-Datenindex.",
+    "emailReconAttributionPrefix": "Bereitgestellt von"
   }
 }
