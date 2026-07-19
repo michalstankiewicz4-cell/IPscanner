@@ -173,7 +173,7 @@
       points: ["Local TCP/UDP connections", "Owning process names", "LAN ARP table with vendor lookup"],
       icon: "🖧",
       labelKey: "tabLabel_network_monitor",
-      ui: { showAsTab: true, order: 95 }
+      ui: { showInLeftPanel: true, leftOrder: 45, showAsTab: true, order: 95 }
     },
 
     "email-recon": {

@@ -1053,40 +1053,85 @@
       return "-";
     }
 
+    function netMonSortTh(colKey, labelKey) {
+      return "<th data-netmon-sort-col=\"" + colKey + "\">" + escapeHtml(tr(labelKey)) +
+        "<span class=\"v1-netmon-sort-arrow\" data-netmon-sort-arrow=\"" + colKey + "\"></span></th>";
+    }
+
+    function netMonViewSelect(kind, optionPairs) {
+      var options = optionPairs.map(function (pair) {
+        return "<option value=\"" + pair[0] + "\">" + escapeHtml(tr(pair[1])) + "</option>";
+      }).join("");
+      return "<select class=\"v1-netmon-view-select\" data-netmon-view-select=\"" + kind + "\">" + options + "</select>";
+    }
+
     function renderNetworkMonitorTool() {
+      // Order-agnostic: always emitted [connections, lan] here - actual
+      // display order is a pure DOM swap applied right after wiring
+      // (panel-interactions-runtime.js's applyNetMonOrder(), driven by
+      // the same tool-content-runtime.js netMonState the LS panel reads),
+      // keeping this renderer itself simple and stateless. Sort/view/
+      // visibility state and history events live entirely in panel-
+      // interactions-runtime.js module state - this function always emits
+      // the same "neutral" markup, then wireNetworkMonitorTool() re-applies
+      // all of it right after (and again on every refresh/redock).
       return [
         "<div class=\"v1-netmon-shell\">",
-        "<div class=\"v1-netmon-section\">",
+        "<div class=\"v1-netmon-toolbar\">",
+        "<label class=\"v1-netmon-toolbar-check\"><input type=\"checkbox\" data-netmon-visibility=\"connections\" checked /> " + escapeHtml(tr("netMonConnectionsTitle")) + "</label>",
+        "<label class=\"v1-netmon-toolbar-check\"><input type=\"checkbox\" data-netmon-visibility=\"lan\" checked /> " + escapeHtml(tr("netMonLanDevicesTitle")) + "</label>",
+        "<label class=\"v1-netmon-toolbar-check\"><input type=\"checkbox\" data-netmon-keep-marks /> " + escapeHtml(tr("netMonKeepChangesLabel")) + "</label>",
+        "<div class=\"v1-netmon-toolbar-radios\" role=\"radiogroup\">",
+        "<label><input type=\"radio\" name=\"netmon-display-mode\" value=\"actual\" data-netmon-display-mode /> " + escapeHtml(tr("netMonModeActual")) + "</label>",
+        "<label><input type=\"radio\" name=\"netmon-display-mode\" value=\"all\" data-netmon-display-mode checked /> " + escapeHtml(tr("netMonModeAll")) + "</label>",
+        "<label><input type=\"radio\" name=\"netmon-display-mode\" value=\"changes\" data-netmon-display-mode /> " + escapeHtml(tr("netMonModeChanges")) + "</label>",
+        "</div>",
+        "</div>",
+        "<div class=\"v1-netmon-section\" data-netmon-section=\"connections\" data-netmon-view=\"flat\">",
         "<div class=\"v1-netmon-section-head\">",
         "<h4 style=\"margin:0;\">" + escapeHtml(tr("netMonConnectionsTitle")) + "</h4>",
-        "<button type=\"button\" data-netmon-action=\"refresh-connections\">" + escapeHtml(tr("netMonRefreshBtn")) + "</button>",
+        netMonViewSelect("connections", [
+          ["flat", "netMonViewFlat"],
+          ["process", "netMonViewGroupProcess"],
+          ["pid", "netMonViewGroupPid"],
+          ["protocol", "netMonViewGroupProtocol"],
+          ["local", "netMonViewGroupLocal"],
+          ["remote", "netMonViewGroupRemote"],
+          ["state", "netMonViewGroupState"]
+        ]),
         "</div>",
         "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\" data-native-hscroll=\"true\">",
         "<table class=\"v1-results-table v1-netmon-table\">",
         "<thead><tr>",
-        "<th>" + escapeHtml(tr("netMonColProtocol")) + "</th>",
-        "<th>" + escapeHtml(tr("netMonColLocalAddr")) + "</th>",
-        "<th>" + escapeHtml(tr("netMonColRemoteAddr")) + "</th>",
-        "<th>" + escapeHtml(tr("netMonColState")) + "</th>",
-        "<th>" + escapeHtml(tr("netMonColPid")) + "</th>",
-        "<th>" + escapeHtml(tr("netMonColProcess")) + "</th>",
+        netMonSortTh("protocol", "netMonColProtocol"),
+        netMonSortTh("local", "netMonColLocalAddr"),
+        netMonSortTh("remote", "netMonColRemoteAddr"),
+        netMonSortTh("state", "netMonColState"),
+        netMonSortTh("pid", "netMonColPid"),
+        netMonSortTh("process", "netMonColProcess"),
         "</tr></thead>",
         "<tbody id=\"v1NetMonConnectionsRows\" data-netmon-role=\"connections-rows\"><tr><td colspan=\"6\" class=\"v1-iplib-empty\">" + escapeHtml(tr("netMonEmptyConnections")) + "</td></tr></tbody>",
         "</table>",
         "</div>",
         "</div>",
-        "<div class=\"v1-netmon-section\">",
+        "<div class=\"v1-netmon-section\" data-netmon-section=\"lan\" data-netmon-view=\"flat\">",
         "<div class=\"v1-netmon-section-head\">",
         "<h4 style=\"margin:0;\">" + escapeHtml(tr("netMonLanDevicesTitle")) + "</h4>",
-        "<button type=\"button\" data-netmon-action=\"refresh-arp\">" + escapeHtml(tr("netMonRefreshBtn")) + "</button>",
+        netMonViewSelect("lan", [
+          ["flat", "netMonViewFlat"],
+          ["vendor", "netMonViewGroupVendor"],
+          ["interface", "netMonViewGroupInterface"],
+          ["ip", "netMonViewGroupIp"],
+          ["mac", "netMonViewGroupMac"]
+        ]),
         "</div>",
         "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\" data-native-hscroll=\"true\">",
         "<table class=\"v1-results-table v1-netmon-table\">",
         "<thead><tr>",
-        "<th>" + escapeHtml(tr("netMonColIp")) + "</th>",
-        "<th>" + escapeHtml(tr("netMonColMac")) + "</th>",
-        "<th>" + escapeHtml(tr("netMonColVendor")) + "</th>",
-        "<th>" + escapeHtml(tr("netMonColInterface")) + "</th>",
+        netMonSortTh("ip", "netMonColIp"),
+        netMonSortTh("mac", "netMonColMac"),
+        netMonSortTh("vendor", "netMonColVendor"),
+        netMonSortTh("interface", "netMonColInterface"),
         "</tr></thead>",
         "<tbody id=\"v1NetMonArpRows\" data-netmon-role=\"arp-rows\"><tr><td colspan=\"4\" class=\"v1-iplib-empty\">" + escapeHtml(tr("netMonEmptyArp")) + "</td></tr></tbody>",
         "</table>",
@@ -1096,42 +1141,114 @@
       ].join("");
     }
 
+    // Recently appeared/disappeared rows aren't a separate log anymore -
+    // they're mixed straight into the live table (flat or grouped alike),
+    // marked with a leading +/- badge and a row class, for as long as
+    // panel-interactions-runtime.js's grace window keeps them tagged
+    // (row.__netmonGone/__netmonNew, set there right before rendering).
+    function netMonRowMark(row) {
+      if (row.__netmonGone) return "<span class=\"v1-netmon-row-mark is-gone\" title=\"" + escapeHtml(tr("netMonHistoryDisappeared")) + "\">−</span> ";
+      if (row.__netmonNew) return "<span class=\"v1-netmon-row-mark is-new\" title=\"" + escapeHtml(tr("netMonHistoryAppeared")) + "\">+</span> ";
+      return "";
+    }
+
+    function netMonRowClass(row, extraClass) {
+      var cls = row.__netmonGone ? "v1-netmon-row-gone" : (row.__netmonNew ? "v1-netmon-row-new" : "");
+      if (extraClass) cls = cls ? cls + " " + extraClass : extraClass;
+      return cls ? " class=\"" + cls + "\"" : "";
+    }
+
+    function netMonConnectionRowHtml(row) {
+      var protocolBadge = "<span class=\"v1-ip-port-badge v1-ip-port-badge--protocol is-" + escapeHtml(String(row.protocol || "").toLowerCase()) + "\">" + escapeHtml(row.protocol) + "</span>";
+      var stateHtml = row.state
+        ? "<span class=\"v1-ip-status-dot " + (netMonStateClass[row.state] || "") + "\"></span>" + escapeHtml(row.state)
+        : "-";
+      return [
+        "<td>" + netMonRowMark(row) + protocolBadge + "</td>",
+        "<td>" + escapeHtml(row.local_addr) + ":" + escapeHtml(String(row.local_port)) + "</td>",
+        "<td>" + (row.remote_addr ? escapeHtml(row.remote_addr) + ":" + escapeHtml(String(row.remote_port)) : "-") + "</td>",
+        "<td>" + stateHtml + "</td>",
+        "<td>" + escapeHtml(String(row.pid)) + "</td>",
+        "<td>" + escapeHtml(row.process_name || "-") + "</td>"
+      ].join("");
+    }
+
+    function netMonArpRowHtml(row) {
+      return [
+        "<td>" + netMonRowMark(row) + escapeHtml(row.ip) + "</td>",
+        "<td>" + escapeHtml(row.mac) + "</td>",
+        "<td>" + escapeHtml(vendorForMac(row.mac)) + "</td>",
+        "<td>" + escapeHtml(row.interface) + "</td>"
+      ].join("");
+    }
+
+    // Shared grouping engine for both tables: buckets rows by a display
+    // label (the group key itself, e.g. a process name or a MAC vendor),
+    // sorted alphabetically, each group collapsed to a single summary row
+    // (name + count) unless its key is present in expandedKeys - in which
+    // case its individual rows render underneath (optionally sorted by
+    // sortCompareFn first - column sorting works the same whether flat or
+    // grouped, it just sorts within each group instead of the whole table),
+    // using the exact same per-row cell markup the flat view uses (rowHtmlFn).
+    function netMonGroupedRowsHtml(rows, groupKeyFn, rowHtmlFn, colCount, expandedKeys, emptyKey, sortCompareFn) {
+      if (!rows || !rows.length) {
+        return "<tr><td colspan=\"" + colCount + "\" class=\"v1-iplib-empty\">" + escapeHtml(tr(emptyKey)) + "</td></tr>";
+      }
+      var groups = {};
+      var order = [];
+      rows.forEach(function (row) {
+        var label = groupKeyFn(row) || "-";
+        if (!groups[label]) { groups[label] = []; order.push(label); }
+        groups[label].push(row);
+      });
+      order.sort(function (a, b) { return String(a).localeCompare(String(b)); });
+      return order.map(function (label) {
+        var groupRows = groups[label];
+        var isExpanded = !!(expandedKeys && expandedKeys[label]);
+        var arrow = isExpanded ? "▼" : "▶";
+        var headerRow = "<tr class=\"v1-netmon-group-row\" data-netmon-group-key=\"" + escapeHtml(label) + "\">" +
+          "<td colspan=\"" + colCount + "\"><span class=\"v1-collapse-arrow\">" + arrow + "</span> " +
+          "<strong>" + escapeHtml(label) + "</strong> (" + groupRows.length + ")</td></tr>";
+        var childRows = isExpanded
+          ? (sortCompareFn ? groupRows.slice().sort(sortCompareFn) : groupRows)
+            .map(function (r) { return "<tr" + netMonRowClass(r, "v1-netmon-group-child") + ">" + rowHtmlFn(r) + "</tr>"; }).join("")
+          : "";
+        return headerRow + childRows;
+      }).join("");
+    }
+
     function renderNetworkMonitorConnectionsRows(rows) {
       if (!rows || !rows.length) {
         return "<tr><td colspan=\"6\" class=\"v1-iplib-empty\">" + escapeHtml(tr("netMonEmptyConnections")) + "</td></tr>";
       }
-      return rows.map(function (row) {
-        var protocolBadge = "<span class=\"v1-ip-port-badge v1-ip-port-badge--protocol is-" + escapeHtml(String(row.protocol || "").toLowerCase()) + "\">" + escapeHtml(row.protocol) + "</span>";
-        var stateHtml = row.state
-          ? "<span class=\"v1-ip-status-dot " + (netMonStateClass[row.state] || "") + "\"></span>" + escapeHtml(row.state)
-          : "-";
-        return [
-          "<tr>",
-          "<td>" + protocolBadge + "</td>",
-          "<td>" + escapeHtml(row.local_addr) + ":" + escapeHtml(String(row.local_port)) + "</td>",
-          "<td>" + (row.remote_addr ? escapeHtml(row.remote_addr) + ":" + escapeHtml(String(row.remote_port)) : "-") + "</td>",
-          "<td>" + stateHtml + "</td>",
-          "<td>" + escapeHtml(String(row.pid)) + "</td>",
-          "<td>" + escapeHtml(row.process_name || "-") + "</td>",
-          "</tr>"
-        ].join("");
-      }).join("");
+      return rows.map(function (row) { return "<tr" + netMonRowClass(row) + ">" + netMonConnectionRowHtml(row) + "</tr>"; }).join("");
+    }
+
+    function renderNetworkMonitorConnectionsGrouped(rows, groupBy, expandedKeys, sortCompareFn) {
+      var keyFn;
+      if (groupBy === "pid") keyFn = function (r) { return String(r.pid); };
+      else if (groupBy === "protocol") keyFn = function (r) { return r.protocol || "-"; };
+      else if (groupBy === "local") keyFn = function (r) { return r.local_addr || "-"; };
+      else if (groupBy === "remote") keyFn = function (r) { return r.remote_addr || "-"; };
+      else if (groupBy === "state") keyFn = function (r) { return r.state || "-"; };
+      else keyFn = function (r) { return r.process_name || "-"; };
+      return netMonGroupedRowsHtml(rows, keyFn, netMonConnectionRowHtml, 6, expandedKeys, "netMonEmptyConnections", sortCompareFn);
     }
 
     function renderNetworkMonitorArpRows(rows) {
       if (!rows || !rows.length) {
         return "<tr><td colspan=\"4\" class=\"v1-iplib-empty\">" + escapeHtml(tr("netMonEmptyArp")) + "</td></tr>";
       }
-      return rows.map(function (row) {
-        return [
-          "<tr>",
-          "<td>" + escapeHtml(row.ip) + "</td>",
-          "<td>" + escapeHtml(row.mac) + "</td>",
-          "<td>" + escapeHtml(vendorForMac(row.mac)) + "</td>",
-          "<td>" + escapeHtml(row.interface) + "</td>",
-          "</tr>"
-        ].join("");
-      }).join("");
+      return rows.map(function (row) { return "<tr" + netMonRowClass(row) + ">" + netMonArpRowHtml(row) + "</tr>"; }).join("");
+    }
+
+    function renderNetworkMonitorArpGrouped(rows, groupBy, expandedKeys, sortCompareFn) {
+      var keyFn;
+      if (groupBy === "vendor") keyFn = function (r) { return vendorForMac(r.mac); };
+      else if (groupBy === "interface") keyFn = function (r) { return r.interface || "-"; };
+      else if (groupBy === "ip") keyFn = function (r) { return r.ip || "-"; };
+      else keyFn = function (r) { return r.mac || "-"; };
+      return netMonGroupedRowsHtml(rows, keyFn, netMonArpRowHtml, 4, expandedKeys, "netMonEmptyArp", sortCompareFn);
     }
 
     // Email Recon (CS results table) - source/status keys are what the
@@ -1251,6 +1368,9 @@
       renderShellCraftInspector: renderShellCraftInspector,
       renderNetworkMonitorConnectionsRows: renderNetworkMonitorConnectionsRows,
       renderNetworkMonitorArpRows: renderNetworkMonitorArpRows,
+      renderNetworkMonitorConnectionsGrouped: renderNetworkMonitorConnectionsGrouped,
+      renderNetworkMonitorArpGrouped: renderNetworkMonitorArpGrouped,
+      netMonVendorForMac: vendorForMac,
       renderEmailReconRows: renderEmailReconRows,
       renderEmailReconSummary: renderEmailReconSummary,
     };

@@ -30,6 +30,117 @@
     var netMonLastConnections = null;
     var netMonLastArp = null;
 
+    // ip-scanner tool: Network Monitor's live-poll state - kept module-level
+    // (not inside a wire function) so the setInterval timers keep running
+    // across LS/CS being torn down and rebuilt (tool switches, redocking,
+    // language refresh), exactly like netMonLast* above. Only a Stop click
+    // clears a timer; navigating away from the tool does not.
+    var netMonConnRunning = false;
+    var netMonLanRunning = false;
+    var netMonConnTimerId = null;
+    var netMonLanTimerId = null;
+    var netMonActionsBound = false;
+
+    // ip-scanner tool: Network Monitor's per-column sort state (persisted -
+    // same reasoning as the order/settings in tool-content-runtime.js's
+    // netMonState, just kept here since only CS's tables need it).
+    var NETMON_SORT_KEY = "netrecon_netmon_sort_v1";
+    var NETMON_VIEW_KEY = "netrecon_netmon_view_v1";
+    var NETMON_VISIBILITY_KEY = "netrecon_netmon_visibility_v1";
+    var NETMON_KEEP_MARKS_KEY = "netrecon_netmon_keepmarks_v1";
+    var NETMON_DISPLAY_MODE_KEY = "netrecon_netmon_displaymode_v1";
+    // Which group labels are currently expanded in a grouped view - session
+    // -only, and reset whenever the view itself changes (a "process"
+    // grouping's expanded keys are meaningless once switched to "pid").
+    var netMonConnExpandedGroups = {};
+    var netMonLanExpandedGroups = {};
+
+    // Appeared/disappeared rows aren't a separate log - they're mixed
+    // straight into the live table instead (a disappeared row stays
+    // visible, greyed and marked, for a grace window instead of just
+    // vanishing; a newly-appeared one gets a brief highlight). Keyed by the
+    // same identity key the diff itself uses, holding the row's last-known
+    // data (needed to render it) plus when the mark was set, so an expired
+    // entry can be pruned by wall-clock age at render time. Session-only,
+    // like everything else Network Monitor doesn't explicitly persist.
+    var NETMON_GONE_GRACE_MS = 30000;
+    var NETMON_NEW_HIGHLIGHT_MS = 10000;
+    var netMonConnGone = {};
+    var netMonLanGone = {};
+    var netMonConnNew = {};
+    var netMonLanNew = {};
+
+    function loadNetMonSort() {
+      try {
+        var raw = localStorage.getItem(NETMON_SORT_KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          return {
+            connections: parsed && parsed.connections ? parsed.connections : { col: null, dir: "asc" },
+            lan: parsed && parsed.lan ? parsed.lan : { col: null, dir: "asc" },
+          };
+        }
+      } catch (e) { /* fall through to default */ }
+      return { connections: { col: null, dir: "asc" }, lan: { col: null, dir: "asc" } };
+    }
+    function saveNetMonSort(sort) {
+      try { localStorage.setItem(NETMON_SORT_KEY, JSON.stringify(sort)); } catch (e) { /* ignore */ }
+    }
+
+    function loadNetMonView() {
+      try {
+        var raw = localStorage.getItem(NETMON_VIEW_KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          return { connections: parsed.connections || "flat", lan: parsed.lan || "flat" };
+        }
+      } catch (e) { /* fall through to default */ }
+      return { connections: "flat", lan: "flat" };
+    }
+    function saveNetMonView(view) {
+      try { localStorage.setItem(NETMON_VIEW_KEY, JSON.stringify(view)); } catch (e) { /* ignore */ }
+    }
+
+    function loadNetMonVisibility() {
+      try {
+        var raw = localStorage.getItem(NETMON_VISIBILITY_KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          return { connections: parsed.connections !== false, lan: parsed.lan !== false };
+        }
+      } catch (e) { /* fall through to default */ }
+      return { connections: true, lan: true };
+    }
+    function saveNetMonVisibility(vis) {
+      try { localStorage.setItem(NETMON_VISIBILITY_KEY, JSON.stringify(vis)); } catch (e) { /* ignore */ }
+    }
+
+    // "Keep changes visible" (checkbox) - a single, shared-across-both-
+    // tables toggle: when on, pruneNetMonMarks() below never expires a
+    // gone/new mark, so they stay in the table until the user turns it back
+    // off (at which point stale ones are pruned immediately, not just on
+    // the next fetch). "Display mode" (radio) picks what buildNetMonEffective
+    // Rows() below actually includes: the plain current snapshot, the
+    // current snapshot plus marks (today's default), or only the marked
+    // (changed) rows.
+    function loadNetMonKeepMarks() {
+      try { return localStorage.getItem(NETMON_KEEP_MARKS_KEY) === "1"; } catch (e) { return false; }
+    }
+    function saveNetMonKeepMarks(keep) {
+      try { localStorage.setItem(NETMON_KEEP_MARKS_KEY, keep ? "1" : "0"); } catch (e) { /* ignore */ }
+    }
+
+    function loadNetMonDisplayMode() {
+      try {
+        var raw = localStorage.getItem(NETMON_DISPLAY_MODE_KEY);
+        if (raw === "actual" || raw === "all" || raw === "changes") return raw;
+      } catch (e) { /* fall through to default */ }
+      return "all";
+    }
+    function saveNetMonDisplayMode(mode) {
+      try { localStorage.setItem(NETMON_DISPLAY_MODE_KEY, mode); } catch (e) { /* ignore */ }
+    }
+
     // ip-scanner tool: Email Recon - same "survive detach/redock" reasoning
     // as netMonLast* above, plus a generation counter so a Stop click (or a
     // second Start before the first finishes) can make an in-flight lookup's
@@ -1266,8 +1377,484 @@
     }
 
     // ip-scanner tool: Network Monitor (local connections + ARP table).
-    // Manual refresh only in v1, per the approved plan - no auto-polling,
-    // so opening the tab never triggers surprise background work.
+    // Options (live Start/Stop with interval, one-shot Scan, section
+    // reorder) live in the LS panel (tool-content-runtime.js's
+    // "network-monitor" entry -> wireNetworkMonitorLeftPanel below); CS is
+    // a pure, button-free results display. Both wire functions below are
+    // thin: the real logic (refresh, timers, order) is shared module-level
+    // so it works the same regardless of which section triggered it.
+    var renderNetMonConnectionsRows = typeof deps.renderNetworkMonitorConnectionsRows === "function" ? deps.renderNetworkMonitorConnectionsRows : null;
+    var renderNetMonArpRows = typeof deps.renderNetworkMonitorArpRows === "function" ? deps.renderNetworkMonitorArpRows : null;
+    var renderNetMonConnectionsGrouped = typeof deps.renderNetworkMonitorConnectionsGrouped === "function" ? deps.renderNetworkMonitorConnectionsGrouped : null;
+    var renderNetMonArpGrouped = typeof deps.renderNetworkMonitorArpGrouped === "function" ? deps.renderNetworkMonitorArpGrouped : null;
+
+    function getNetMonState() {
+      return (window.NetReconNewUICore && window.NetReconNewUICore.netMonState) || null;
+    }
+    function getNetMonOrder() {
+      var s = getNetMonState();
+      return s ? s.loadOrder() : ["connections", "lan"];
+    }
+
+    // Reorders a container's two direct children (whichever DOM currently
+    // exists - LS panel, CS shell, both, or neither) to match stored order.
+    // Idempotent, safe to call on every (re)render as well as right after a
+    // Move click, so LS and CS - normally visible side by side - update in
+    // lockstep without either one needing a full re-render.
+    function reorderNetMonPair(container, connSelector, lanSelector, order) {
+      if (!container) return;
+      var connEl = container.querySelector(connSelector);
+      var lanEl = container.querySelector(lanSelector);
+      if (!connEl || !lanEl) return;
+      if (order[0] === "lan") container.insertBefore(lanEl, connEl);
+      else container.insertBefore(connEl, lanEl);
+    }
+
+    function applyNetMonOrder() {
+      var order = getNetMonOrder();
+      reorderNetMonPair(document.querySelector("[data-netmon-ls-list]"), '[data-netmon-ls-section="connections"]', '[data-netmon-ls-section="lan"]', order);
+      reorderNetMonPair(document.querySelector(".v1-netmon-shell"), '[data-netmon-section="connections"]', '[data-netmon-section="lan"]', order);
+    }
+
+    function syncNetMonMoveButtons() {
+      var order = getNetMonOrder();
+      ["connections", "lan"].forEach(function (kind) {
+        var idx = order.indexOf(kind);
+        var upBtn = document.querySelector('[data-netmon-action="move-up-' + kind + '"]');
+        var downBtn = document.querySelector('[data-netmon-action="move-down-' + kind + '"]');
+        if (upBtn) upBtn.disabled = idx <= 0;
+        if (downBtn) downBtn.disabled = idx >= order.length - 1;
+      });
+    }
+
+    function swapNetMonOrder() {
+      var order = getNetMonOrder();
+      var s = getNetMonState();
+      if (s) s.saveOrder([order[1], order[0]]);
+      applyNetMonOrder();
+      syncNetMonMoveButtons();
+    }
+
+    // Numeric-octet IP compare - a plain string compare would sort
+    // "10.0.0.10" before "10.0.0.2" (lexicographic '1' < '2'), which reads
+    // as wrong to anyone actually looking at a connections/ARP table.
+    function compareNetMonIp(a, b) {
+      var pa = String(a || "0.0.0.0").split(".");
+      var pb = String(b || "0.0.0.0").split(".");
+      for (var i = 0; i < 4; i++) {
+        var da = Number(pa[i]) || 0;
+        var db = Number(pb[i]) || 0;
+        if (da !== db) return da - db;
+      }
+      return 0;
+    }
+
+    function netMonCompareConnections(a, b, col) {
+      switch (col) {
+        case "protocol": return String(a.protocol || "").localeCompare(String(b.protocol || ""));
+        case "local": {
+          var ipL = compareNetMonIp(a.local_addr, b.local_addr);
+          return ipL !== 0 ? ipL : (Number(a.local_port || 0) - Number(b.local_port || 0));
+        }
+        case "remote": {
+          var ipR = compareNetMonIp(a.remote_addr, b.remote_addr);
+          return ipR !== 0 ? ipR : (Number(a.remote_port || 0) - Number(b.remote_port || 0));
+        }
+        case "state": return String(a.state || "").localeCompare(String(b.state || ""));
+        case "pid": return Number(a.pid || 0) - Number(b.pid || 0);
+        case "process": return String(a.process_name || "").localeCompare(String(b.process_name || ""));
+        default: return 0;
+      }
+    }
+
+    function netMonCompareArp(a, b, col) {
+      var vendorFn = typeof deps.netMonVendorForMac === "function" ? deps.netMonVendorForMac : null;
+      switch (col) {
+        case "ip": return compareNetMonIp(a.ip, b.ip);
+        case "mac": return String(a.mac || "").localeCompare(String(b.mac || ""));
+        case "vendor": return String(vendorFn ? vendorFn(a.mac) : "").localeCompare(String(vendorFn ? vendorFn(b.mac) : ""));
+        case "interface": return String(a.interface || "").localeCompare(String(b.interface || ""));
+        default: return 0;
+      }
+    }
+
+    function sortNetMonRows(rows, kind) {
+      var s = loadNetMonSort()[kind];
+      if (!rows || !s || !s.col) return rows;
+      var compareFn = kind === "connections" ? netMonCompareConnections : netMonCompareArp;
+      var sorted = rows.slice().sort(function (a, b) { return compareFn(a, b, s.col); });
+      if (s.dir === "desc") sorted.reverse();
+      return sorted;
+    }
+
+    // Same sort state as sortNetMonRows above, but as a reusable comparator
+    // - the grouped renderer needs a plain (a, b) function to sort each
+    // group's rows individually, rather than a whole-array sort+reverse.
+    function buildNetMonCompareFn(kind) {
+      var s = loadNetMonSort()[kind];
+      if (!s || !s.col) return null;
+      var compareFn = kind === "connections" ? netMonCompareConnections : netMonCompareArp;
+      var col = s.col;
+      var dir = s.dir;
+      return function (a, b) {
+        var cmp = compareFn(a, b, col);
+        return dir === "desc" ? -cmp : cmp;
+      };
+    }
+
+    function syncNetMonSortArrows() {
+      var sortState = loadNetMonSort();
+      ["connections", "lan"].forEach(function (kind) {
+        var s = sortState[kind];
+        var section = document.querySelector('[data-netmon-section="' + kind + '"]');
+        if (!section) return;
+        section.querySelectorAll("[data-netmon-sort-arrow]").forEach(function (span) {
+          var col = span.getAttribute("data-netmon-sort-arrow");
+          span.textContent = s.col === col ? (s.dir === "desc" ? " ▼" : " ▲") : "";
+        });
+      });
+    }
+
+    // Single source of truth for "what should this table's tbody show right
+    // now": dispatches to the flat (sorted) renderer or the grouped one
+    // depending on the current view, always from the latest cached rows -
+    // called after every fetch, sort click, group toggle, and view/
+    // visibility change, so no matter which one triggered the update the
+    // table always reflects the freshest data under the current view.
+    function renderNetMonTable(kind) {
+      var isConn = kind === "connections";
+      if (!(isConn ? netMonLastConnections : netMonLastArp)) return;
+      var tbody = document.querySelector('[data-netmon-role="' + (isConn ? "connections-rows" : "arp-rows") + '"]');
+      if (!tbody) return;
+      pruneNetMonMarks(kind);
+      var rows = buildNetMonEffectiveRows(kind);
+      if (loadNetMonDisplayMode() === "changes" && !rows.length) {
+        tbody.innerHTML = "<tr><td colspan=\"" + (isConn ? 6 : 4) + "\" class=\"v1-iplib-empty\">" + escapeHtml(tr("netMonChangesEmpty")) + "</td></tr>";
+        return;
+      }
+      var view = loadNetMonView()[kind];
+      if (!view || view === "flat") {
+        var flatFn = isConn ? renderNetMonConnectionsRows : renderNetMonArpRows;
+        if (flatFn) tbody.innerHTML = flatFn(sortNetMonRows(rows, kind));
+      } else {
+        var groupedFn = isConn ? renderNetMonConnectionsGrouped : renderNetMonArpGrouped;
+        var expanded = isConn ? netMonConnExpandedGroups : netMonLanExpandedGroups;
+        if (groupedFn) tbody.innerHTML = groupedFn(rows, view, expanded, buildNetMonCompareFn(kind));
+      }
+    }
+
+    function setNetMonSortColumn(kind, col) {
+      var sortState = loadNetMonSort();
+      var s = sortState[kind];
+      if (s.col === col) s.dir = s.dir === "asc" ? "desc" : "asc";
+      else { s.col = col; s.dir = "asc"; }
+      saveNetMonSort(sortState);
+      syncNetMonSortArrows();
+      renderNetMonTable(kind);
+    }
+
+    function toggleNetMonGroup(kind, key) {
+      var expanded = kind === "connections" ? netMonConnExpandedGroups : netMonLanExpandedGroups;
+      if (expanded[key]) delete expanded[key];
+      else expanded[key] = true;
+      renderNetMonTable(kind);
+    }
+
+    function syncNetMonViewUi() {
+      var view = loadNetMonView();
+      ["connections", "lan"].forEach(function (kind) {
+        var select = document.querySelector('[data-netmon-view-select="' + kind + '"]');
+        if (select) select.value = view[kind];
+        var section = document.querySelector('[data-netmon-section="' + kind + '"]');
+        if (section) section.setAttribute("data-netmon-view", view[kind]);
+      });
+    }
+
+    function applyNetMonVisibility() {
+      var vis = loadNetMonVisibility();
+      ["connections", "lan"].forEach(function (kind) {
+        var section = document.querySelector('[data-netmon-section="' + kind + '"]');
+        if (section) section.hidden = !vis[kind];
+        var checkbox = document.querySelector('[data-netmon-visibility="' + kind + '"]');
+        if (checkbox) checkbox.checked = vis[kind];
+      });
+    }
+
+    function applyNetMonToolbarState() {
+      var keepCheck = document.querySelector("[data-netmon-keep-marks]");
+      if (keepCheck) keepCheck.checked = loadNetMonKeepMarks();
+      var mode = loadNetMonDisplayMode();
+      document.querySelectorAll("[data-netmon-display-mode]").forEach(function (radio) {
+        radio.checked = radio.value === mode;
+      });
+    }
+
+    // Identifies rows that appeared/disappeared between this cycle and the
+    // previous one, by a stable identity key - not raw per-cycle snapshots,
+    // so a live poll every few seconds doesn't treat unchanged rows as new
+    // each time.
+    function netMonConnectionKey(row) {
+      return (row.protocol || "") + "|" + (row.local_addr || "") + ":" + (row.local_port || "") + "|" + (row.remote_addr || "") + ":" + (row.remote_port || "") + "|" + (row.pid || "");
+    }
+    function netMonArpKey(row) {
+      return (row.ip || "") + "|" + (row.mac || "");
+    }
+
+    function diffNetMonRows(oldRows, newRows, keyFn) {
+      var oldMap = {};
+      (oldRows || []).forEach(function (r) { oldMap[keyFn(r)] = r; });
+      var newMap = {};
+      (newRows || []).forEach(function (r) { newMap[keyFn(r)] = r; });
+      var appeared = [];
+      var disappeared = [];
+      Object.keys(newMap).forEach(function (k) { if (!(k in oldMap)) appeared.push(newMap[k]); });
+      Object.keys(oldMap).forEach(function (k) { if (!(k in newMap)) disappeared.push(oldMap[k]); });
+      return { appeared: appeared, disappeared: disappeared };
+    }
+
+    // Records a diff into the gone/new marks, dropping the opposite mark
+    // for the same key (a row that reappears within its own grace window
+    // shouldn't show both badges at once).
+    function markNetMonDiff(kind, diff, keyFn) {
+      var isConn = kind === "connections";
+      var goneMap = isConn ? netMonConnGone : netMonLanGone;
+      var newMap = isConn ? netMonConnNew : netMonLanNew;
+      var now = Date.now();
+      diff.disappeared.forEach(function (row) { goneMap[keyFn(row)] = { row: row, ts: now }; });
+      diff.appeared.forEach(function (row) {
+        var key = keyFn(row);
+        newMap[key] = now;
+        delete goneMap[key];
+      });
+    }
+
+    function pruneNetMonMarks(kind) {
+      if (loadNetMonKeepMarks()) return;
+      var now = Date.now();
+      var isConn = kind === "connections";
+      var goneMap = isConn ? netMonConnGone : netMonLanGone;
+      var newMap = isConn ? netMonConnNew : netMonLanNew;
+      Object.keys(goneMap).forEach(function (k) { if (now - goneMap[k].ts > NETMON_GONE_GRACE_MS) delete goneMap[k]; });
+      Object.keys(newMap).forEach(function (k) { if (now - newMap[k] > NETMON_NEW_HIGHLIGHT_MS) delete newMap[k]; });
+    }
+
+    // Builds the row set actually handed to the renderer, per the current
+    // display mode:
+    //  - "actual": the plain current snapshot, no marks at all.
+    //  - "all" (default): live rows (tagged __netmonNew where still within
+    //    their highlight window) plus still-within-grace gone rows appended
+    //    back in, tagged __netmonGone.
+    //  - "changes": only the marked rows - unchanged live rows are left out
+    //    entirely, so this becomes a pure diff-since-last-scan view.
+    // panel-content-runtime.js's row renderers key off __netmonNew/
+    // __netmonGone to add the +/- badge and row class.
+    function buildNetMonEffectiveRows(kind) {
+      var isConn = kind === "connections";
+      var rows = (isConn ? netMonLastConnections : netMonLastArp) || [];
+      var mode = loadNetMonDisplayMode();
+      if (mode === "actual") return rows;
+
+      var goneMap = isConn ? netMonConnGone : netMonLanGone;
+      var newMap = isConn ? netMonConnNew : netMonLanNew;
+      var keyFn = isConn ? netMonConnectionKey : netMonArpKey;
+      var goneRows = Object.keys(goneMap).map(function (key) {
+        return Object.assign({}, goneMap[key].row, { __netmonGone: true });
+      });
+
+      if (mode === "changes") {
+        var newRows = rows.filter(function (row) { return newMap[keyFn(row)]; })
+          .map(function (row) { return Object.assign({}, row, { __netmonNew: true }); });
+        return newRows.concat(goneRows);
+      }
+
+      var effective = rows.map(function (row) {
+        return newMap[keyFn(row)] ? Object.assign({}, row, { __netmonNew: true }) : row;
+      });
+      return effective.concat(goneRows);
+    }
+
+    function refreshNetMonConnections() {
+      var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+      if (!platform || !renderNetMonConnectionsRows) return Promise.resolve();
+      // data-netmon-role, not #id: the detached/floating card variant of
+      // CS's content strips all id="..." attributes (stripIds() in
+      // panels-runtime.js), so an #id lookup would silently find nothing
+      // there - and a live timer must keep updating the cache (for later
+      // rehydration) even while CS isn't the active/mounted tab at all.
+      // Returns the invoke promise so a manual Scan click can grey its own
+      // button out for the in-flight duration (Start/Stop track their own
+      // running state separately via setNetMonButtonsRunning).
+      return platform.invoke("list_connections", {}).then(function (rows) {
+        if (netMonLastConnections) {
+          markNetMonDiff("connections", diffNetMonRows(netMonLastConnections, rows, netMonConnectionKey), netMonConnectionKey);
+        }
+        netMonLastConnections = rows;
+        renderNetMonTable("connections");
+      }).catch(function (err) {
+        var tbody = document.querySelector('[data-netmon-role="connections-rows"]');
+        if (tbody) tbody.innerHTML = "<tr><td colspan=\"6\" class=\"v1-iplib-empty\">" + escapeHtml(String((err && err.message) || err)) + "</td></tr>";
+      });
+    }
+
+    function refreshNetMonArp() {
+      var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+      if (!platform || !renderNetMonArpRows) return Promise.resolve();
+      return platform.invoke("list_arp_entries", {}).then(function (rows) {
+        if (netMonLastArp) {
+          markNetMonDiff("lan", diffNetMonRows(netMonLastArp, rows, netMonArpKey), netMonArpKey);
+        }
+        netMonLastArp = rows;
+        renderNetMonTable("lan");
+      }).catch(function (err) {
+        var tbody = document.querySelector('[data-netmon-role="arp-rows"]');
+        if (tbody) tbody.innerHTML = "<tr><td colspan=\"4\" class=\"v1-iplib-empty\">" + escapeHtml(String((err && err.message) || err)) + "</td></tr>";
+      });
+    }
+
+    function getNetMonIntervalInput(kind) {
+      return document.querySelector('[data-netmon-interval-input="' + kind + '"]');
+    }
+
+    function setNetMonButtonsRunning(kind, running) {
+      var startBtn = document.querySelector('[data-netmon-action="start-' + kind + '"]');
+      var stopBtn = document.querySelector('[data-netmon-action="stop-' + kind + '"]');
+      var input = getNetMonIntervalInput(kind);
+      if (startBtn) startBtn.disabled = running;
+      if (stopBtn) stopBtn.disabled = !running;
+      if (input) input.disabled = running;
+    }
+
+    function startNetMonLive(kind) {
+      var isConn = kind === "connections";
+      if (isConn ? netMonConnRunning : netMonLanRunning) return;
+
+      var input = getNetMonIntervalInput(kind);
+      var seconds = input ? parseInt(input.value, 10) : NaN;
+      if (!seconds || seconds < 1) seconds = isConn ? 3 : 5;
+      if (input) input.value = String(seconds);
+
+      var s = getNetMonState();
+      if (s) {
+        var settings = s.loadSettings();
+        if (isConn) settings.connectionsIntervalSec = seconds;
+        else settings.lanIntervalSec = seconds;
+        s.saveSettings(settings);
+      }
+
+      var refreshFn = isConn ? refreshNetMonConnections : refreshNetMonArp;
+      refreshFn();
+      var timerId = window.setInterval(refreshFn, seconds * 1000);
+      if (isConn) { netMonConnRunning = true; netMonConnTimerId = timerId; }
+      else { netMonLanRunning = true; netMonLanTimerId = timerId; }
+      setNetMonButtonsRunning(kind, true);
+    }
+
+    function stopNetMonLive(kind) {
+      var isConn = kind === "connections";
+      if (isConn) {
+        if (netMonConnTimerId) window.clearInterval(netMonConnTimerId);
+        netMonConnTimerId = null;
+        netMonConnRunning = false;
+      } else {
+        if (netMonLanTimerId) window.clearInterval(netMonLanTimerId);
+        netMonLanTimerId = null;
+        netMonLanRunning = false;
+      }
+      setNetMonButtonsRunning(kind, false);
+    }
+
+    function bindNetMonActionsOnce() {
+      if (netMonActionsBound) return;
+      netMonActionsBound = true;
+      document.addEventListener("click", function (event) {
+        var groupRow = event.target && event.target.closest ? event.target.closest(".v1-netmon-group-row") : null;
+        if (groupRow) {
+          var groupSection = groupRow.closest("[data-netmon-section]");
+          var groupKind = groupSection ? groupSection.getAttribute("data-netmon-section") : null;
+          var groupKey = groupRow.getAttribute("data-netmon-group-key");
+          if (groupKind && groupKey !== null) toggleNetMonGroup(groupKind, groupKey);
+          return;
+        }
+
+        var sortTh = event.target && event.target.closest ? event.target.closest("[data-netmon-sort-col]") : null;
+        if (sortTh) {
+          var section = sortTh.closest("[data-netmon-section]");
+          var kind = section ? section.getAttribute("data-netmon-section") : null;
+          // Works in both flat and grouped views - grouped just sorts each
+          // group's rows individually (netMonGroupedRowsHtml), rather than
+          // reordering the whole table.
+          if (kind) setNetMonSortColumn(kind, sortTh.getAttribute("data-netmon-sort-col"));
+          return;
+        }
+
+        var btn = event.target && event.target.closest ? event.target.closest("[data-netmon-action]") : null;
+        if (!btn) return;
+        var action = btn.getAttribute("data-netmon-action");
+        if (action === "start-connections") startNetMonLive("connections");
+        else if (action === "stop-connections") stopNetMonLive("connections");
+        else if (action === "scan-connections") {
+          // Greyed out for the in-flight duration, same visible "a scan is
+          // running" signal Start/Stop already give - Scan has no running
+          // state of its own to track, just this one request.
+          btn.disabled = true;
+          refreshNetMonConnections().finally(function () { btn.disabled = false; });
+        }
+        else if (action === "start-lan") startNetMonLive("lan");
+        else if (action === "stop-lan") stopNetMonLive("lan");
+        else if (action === "scan-lan") {
+          btn.disabled = true;
+          refreshNetMonArp().finally(function () { btn.disabled = false; });
+        }
+        else if (action === "move-up-connections" || action === "move-down-connections" || action === "move-up-lan" || action === "move-down-lan") swapNetMonOrder();
+      });
+
+      document.addEventListener("change", function (event) {
+        var viewSelect = event.target && event.target.closest ? event.target.closest("[data-netmon-view-select]") : null;
+        if (viewSelect) {
+          var viewKind = viewSelect.getAttribute("data-netmon-view-select");
+          var view = loadNetMonView();
+          view[viewKind] = viewSelect.value;
+          saveNetMonView(view);
+          if (viewKind === "connections") netMonConnExpandedGroups = {};
+          else netMonLanExpandedGroups = {};
+          syncNetMonViewUi();
+          renderNetMonTable(viewKind);
+          return;
+        }
+
+        var visCheck = event.target && event.target.closest ? event.target.closest("[data-netmon-visibility]") : null;
+        if (visCheck) {
+          var visKind = visCheck.getAttribute("data-netmon-visibility");
+          var vis = loadNetMonVisibility();
+          vis[visKind] = visCheck.checked;
+          saveNetMonVisibility(vis);
+          applyNetMonVisibility();
+          return;
+        }
+
+        var keepCheck = event.target && event.target.closest ? event.target.closest("[data-netmon-keep-marks]") : null;
+        if (keepCheck) {
+          saveNetMonKeepMarks(keepCheck.checked);
+          // Turning it back off should prune stale marks immediately, not
+          // just whenever the next fetch happens to land.
+          renderNetMonTable("connections");
+          renderNetMonTable("lan");
+          return;
+        }
+
+        var modeRadio = event.target && event.target.closest ? event.target.closest("[data-netmon-display-mode]") : null;
+        if (modeRadio && modeRadio.checked) {
+          saveNetMonDisplayMode(modeRadio.value);
+          renderNetMonTable("connections");
+          renderNetMonTable("lan");
+        }
+      });
+    }
+
+    // CS wiring: rehydrates the results tables from cache, applies the
+    // stored section order, and syncs button-disabled state on the LS
+    // panel too (in case CS activated first) - runs on every (re)render,
+    // same "survives detach/redock" reasoning as netMonLast* above.
     function wireNetworkMonitorTool(rootEl) {
       var root = rootEl && typeof rootEl.querySelector === "function"
         ? rootEl
@@ -1275,62 +1862,31 @@
       if (!root) return;
       if (!root.querySelector(".v1-netmon-shell")) return;
 
-      var renderConnectionsRows = typeof deps.renderNetworkMonitorConnectionsRows === "function" ? deps.renderNetworkMonitorConnectionsRows : null;
-      var renderArpRows = typeof deps.renderNetworkMonitorArpRows === "function" ? deps.renderNetworkMonitorArpRows : null;
+      syncNetMonViewUi();
+      applyNetMonToolbarState();
+      renderNetMonTable("connections");
+      renderNetMonTable("lan");
+      syncNetMonSortArrows();
+      applyNetMonVisibility();
 
-      // Re-hydrate from the last successful Refresh instead of leaving the
-      // empty-state placeholder - runs on every (re)render of this shell,
-      // deliberately NOT gated by the bind-guard below: #v1ToolDetail is a
-      // stable element that survives detaching into a floating window and
-      // re-docking, so its dataset flag would otherwise skip this on redock
-      // even though the tbody itself is a brand-new, empty node each time.
-      if (renderConnectionsRows && netMonLastConnections) {
-        var connTbody = root.querySelector('[data-netmon-role="connections-rows"]');
-        if (connTbody) connTbody.innerHTML = renderConnectionsRows(netMonLastConnections);
-      }
-      if (renderArpRows && netMonLastArp) {
-        var arpTbody = root.querySelector('[data-netmon-role="arp-rows"]');
-        if (arpTbody) arpTbody.innerHTML = renderArpRows(netMonLastArp);
-      }
+      applyNetMonOrder();
+      setNetMonButtonsRunning("connections", netMonConnRunning);
+      setNetMonButtonsRunning("lan", netMonLanRunning);
+      syncNetMonMoveButtons();
+      bindNetMonActionsOnce();
+    }
 
-      if (root.dataset.netmonBound === "1") return;
-      root.dataset.netmonBound = "1";
-
-      var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
-
-      function refreshConnections() {
-        // data-netmon-role, not #id: the detached/floating card variant of
-        // this content strips all id="..." attributes (stripIds() in
-        // panels-runtime.js, to avoid duplicate ids vs. the docked copy),
-        // so an #id lookup would silently find nothing there.
-        var tbody = root.querySelector('[data-netmon-role="connections-rows"]');
-        if (!tbody || !platform || !renderConnectionsRows) return;
-        platform.invoke("list_connections", {}).then(function (rows) {
-          netMonLastConnections = rows;
-          tbody.innerHTML = renderConnectionsRows(rows);
-        }).catch(function (err) {
-          tbody.innerHTML = "<tr><td colspan=\"6\" class=\"v1-iplib-empty\">" + escapeHtml(String((err && err.message) || err)) + "</td></tr>";
-        });
-      }
-
-      function refreshArp() {
-        var tbody = root.querySelector('[data-netmon-role="arp-rows"]');
-        if (!tbody || !platform || !renderArpRows) return;
-        platform.invoke("list_arp_entries", {}).then(function (rows) {
-          netMonLastArp = rows;
-          tbody.innerHTML = renderArpRows(rows);
-        }).catch(function (err) {
-          tbody.innerHTML = "<tr><td colspan=\"4\" class=\"v1-iplib-empty\">" + escapeHtml(String((err && err.message) || err)) + "</td></tr>";
-        });
-      }
-
-      root.addEventListener("click", function (event) {
-        var btn = event.target && event.target.closest ? event.target.closest("[data-netmon-action]") : null;
-        if (!btn) return;
-        var action = btn.getAttribute("data-netmon-action");
-        if (action === "refresh-connections") refreshConnections();
-        if (action === "refresh-arp") refreshArp();
-      });
+    // LS wiring (tool-content-runtime.js's "network-monitor" entry): the
+    // panel's HTML is regenerated fresh on every activation (order/interval
+    // values are baked in at render time from netMonState), so this just
+    // needs to reconcile live/running state into the fresh buttons and
+    // (re)bind the shared document-level action listener.
+    function wireNetworkMonitorLeftPanel(rootEl) {
+      applyNetMonOrder();
+      setNetMonButtonsRunning("connections", netMonConnRunning);
+      setNetMonButtonsRunning("lan", netMonLanRunning);
+      syncNetMonMoveButtons();
+      bindNetMonActionsOnce();
     }
 
     function setEmailReconButtonsState(isBusy) {
@@ -1474,6 +2030,7 @@
       wireResultsIpTable: wireResultsIpTable,
       wirePresetsTool: wirePresetsTool,
       wireNetworkMonitorTool: wireNetworkMonitorTool,
+      wireNetworkMonitorLeftPanel: wireNetworkMonitorLeftPanel,
       wireEmailReconTool: wireEmailReconTool,
     };
   }

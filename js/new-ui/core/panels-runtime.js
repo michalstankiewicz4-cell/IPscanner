@@ -1435,6 +1435,9 @@
         renderShellCraftInspector: panelContentRuntime && panelContentRuntime.renderShellCraftInspector,
         renderNetworkMonitorConnectionsRows: panelContentRuntime && panelContentRuntime.renderNetworkMonitorConnectionsRows,
         renderNetworkMonitorArpRows: panelContentRuntime && panelContentRuntime.renderNetworkMonitorArpRows,
+        renderNetworkMonitorConnectionsGrouped: panelContentRuntime && panelContentRuntime.renderNetworkMonitorConnectionsGrouped,
+        renderNetworkMonitorArpGrouped: panelContentRuntime && panelContentRuntime.renderNetworkMonitorArpGrouped,
+        netMonVendorForMac: panelContentRuntime && panelContentRuntime.netMonVendorForMac,
         renderEmailReconRows: panelContentRuntime && panelContentRuntime.renderEmailReconRows,
         renderEmailReconSummary: panelContentRuntime && panelContentRuntime.renderEmailReconSummary,
       });
@@ -1997,6 +2000,15 @@
       }
     }
 
+    // Exposed for LS's generic-content-slot mechanism (tool-content-
+    // runtime.js's "network-monitor" entry) - same idea as
+    // wireIpLibraryPanel above.
+    function wireNetworkMonitorLeftPanel(rootEl) {
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireNetworkMonitorLeftPanel) {
+        panelInteractionsRuntime.wireNetworkMonitorLeftPanel(rootEl);
+      }
+    }
+
     return {
       setTooltips: setTooltips,
       refreshActiveUI: refreshActiveUI,
@@ -2013,6 +2025,7 @@
       stripIds: stripIds,
       refreshShellCraftPanels: refreshShellCraftPanels,
       wireIpLibraryPanel: wireIpLibraryPanel,
+      wireNetworkMonitorLeftPanel: wireNetworkMonitorLeftPanel,
       refreshDetachedTool: refreshDetachedTool,
     };
   }

@@ -136,6 +136,138 @@
     },
   };
 
+  // Network Monitor's live-poll interval (per section) and the two
+  // sections' display order are small pieces of state needed both here
+  // (to seed the LS panel's initial HTML on render) and in panel-
+  // interactions-runtime.js (to actually run the timers and reorder CS's
+  // DOM) - this file loads first, so it owns the read/write helpers and
+  // exposes them flatly rather than each file keeping its own copy.
+  var NETMON_ORDER_KEY = "netrecon_netmon_order_v1";
+  var NETMON_SETTINGS_KEY = "netrecon_netmon_settings_v1";
+  var NETMON_DEFAULT_ORDER = ["connections", "lan"];
+  var NETMON_DEFAULT_SETTINGS = { connectionsIntervalSec: 3, lanIntervalSec: 5 };
+
+  function loadNetMonOrder() {
+    try {
+      var raw = localStorage.getItem(NETMON_ORDER_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length === 2 && parsed.indexOf("connections") !== -1 && parsed.indexOf("lan") !== -1) {
+          return parsed;
+        }
+      }
+    } catch (e) { /* fall through to default */ }
+    return NETMON_DEFAULT_ORDER.slice();
+  }
+
+  function saveNetMonOrder(order) {
+    try { localStorage.setItem(NETMON_ORDER_KEY, JSON.stringify(order)); } catch (e) { /* ignore */ }
+  }
+
+  function loadNetMonSettings() {
+    try {
+      var raw = localStorage.getItem(NETMON_SETTINGS_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        return {
+          connectionsIntervalSec: Number(parsed.connectionsIntervalSec) > 0 ? Number(parsed.connectionsIntervalSec) : NETMON_DEFAULT_SETTINGS.connectionsIntervalSec,
+          lanIntervalSec: Number(parsed.lanIntervalSec) > 0 ? Number(parsed.lanIntervalSec) : NETMON_DEFAULT_SETTINGS.lanIntervalSec,
+        };
+      }
+    } catch (e) { /* fall through to default */ }
+    return { connectionsIntervalSec: NETMON_DEFAULT_SETTINGS.connectionsIntervalSec, lanIntervalSec: NETMON_DEFAULT_SETTINGS.lanIntervalSec };
+  }
+
+  function saveNetMonSettings(settings) {
+    try { localStorage.setItem(NETMON_SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* ignore */ }
+  }
+
+  window.NetReconNewUICore = window.NetReconNewUICore || {};
+  window.NetReconNewUICore.netMonState = {
+    loadOrder: loadNetMonOrder,
+    saveOrder: saveNetMonOrder,
+    loadSettings: loadNetMonSettings,
+    saveSettings: saveNetMonSettings,
+  };
+
+  // Network Monitor's LS panel: options only (live-poll Start/Stop with a
+  // configurable interval, one-shot Scan, and Move Up/Down to reorder the
+  // two sections - mirrored into CS's own section order by panel-
+  // interactions-runtime.js). CS itself (panel-content-runtime.js's
+  // renderNetworkMonitorTool) is untouched except for losing its own
+  // inline Refresh buttons, now redundant with this panel.
+  toolContentRuntime["network-monitor"] = {
+    render: function (tr) {
+      var t = tr || function (k) { return k; };
+      var order = loadNetMonOrder();
+      var settings = loadNetMonSettings();
+
+      function sectionHtml(kind) {
+        var titleKey = kind === "connections" ? "netMonConnectionsTitle" : "netMonLanDevicesTitle";
+        var intervalVal = kind === "connections" ? settings.connectionsIntervalSec : settings.lanIntervalSec;
+        return (
+          "<li data-netmon-ls-section=\"" + kind + "\">" +
+          "<div class=\"v1-section-header\"><strong>" + t(titleKey) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>" +
+          "<div class=\"v1-section-body\">" +
+          "<div class=\"v1-config-field-row\">" +
+          "<label>" + t("netMonIntervalLabel") + "</label>" +
+          "<input type=\"number\" min=\"1\" max=\"3600\" step=\"1\" value=\"" + intervalVal + "\" data-netmon-interval-input=\"" + kind + "\" />" +
+          "</div>" +
+          "<div class=\"v1-scanner-actions v1-scanner-actions--spaced\">" +
+          "<button type=\"button\" data-netmon-action=\"start-" + kind + "\">▶ " + t("netMonLiveStartBtn") + "</button>" +
+          "<button type=\"button\" data-netmon-action=\"stop-" + kind + "\">■ " + t("netMonLiveStopBtn") + "</button>" +
+          "<button type=\"button\" data-netmon-action=\"scan-" + kind + "\">⟳ " + t("netMonScanBtn") + "</button>" +
+          "</div>" +
+          "<div class=\"v1-scanner-actions v1-scanner-actions--spaced\">" +
+          "<button type=\"button\" data-netmon-action=\"move-up-" + kind + "\">↑ " + t("netMonMoveUpBtn") + "</button>" +
+          "<button type=\"button\" data-netmon-action=\"move-down-" + kind + "\">↓ " + t("netMonMoveDownBtn") + "</button>" +
+          "</div>" +
+          "</div>" +
+          "</li>"
+        );
+      }
+
+      // UI only, per explicit instruction - not wired to anything yet
+      // (no click/change handlers exist for these data-netmon-send-*
+      // attributes anywhere). disabled on every control, same "visible but
+      // inert" treatment as OS Detection's checkbox in the Config tab,
+      // rather than hidden behind "Show unfinished tools" - the point right
+      // now is to review the layout, not to hide it.
+      var sendSectionHtml =
+        "<li>" +
+        "<div class=\"v1-section-header\"><strong>" + t("netMonSendTitle") + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>" +
+        "<div class=\"v1-section-body\">" +
+        "<div class=\"v1-scanner-actions v1-scanner-actions--spaced\">" +
+        "<button type=\"button\" data-netmon-action=\"send-to-scanner\" disabled>➜ " + t("netMonSendBtn") + "</button>" +
+        "</div>" +
+        "<label class=\"v1-config-checkbox-row\">" +
+        "<input type=\"checkbox\" data-netmon-send-auto disabled />" +
+        "<span>" + t("netMonSendAutoLabel") + "</span>" +
+        "</label>" +
+        "<label class=\"v1-config-checkbox-row\">" +
+        "<input type=\"checkbox\" data-netmon-send-source=\"connections-local\" checked disabled />" +
+        "<span>" + t("netMonSendSrcConnLocal") + "</span>" +
+        "</label>" +
+        "<label class=\"v1-config-checkbox-row\">" +
+        "<input type=\"checkbox\" data-netmon-send-source=\"connections-remote\" checked disabled />" +
+        "<span>" + t("netMonSendSrcConnRemote") + "</span>" +
+        "</label>" +
+        "<label class=\"v1-config-checkbox-row\">" +
+        "<input type=\"checkbox\" data-netmon-send-source=\"lan-ip\" checked disabled />" +
+        "<span>" + t("netMonSendSrcLanIp") + "</span>" +
+        "</label>" +
+        "</div>" +
+        "</li>";
+
+      return "<ul class=\"v1-tool-list\" data-netmon-ls-list>" + order.map(sectionHtml).join("") + sendSectionHtml + "</ul>";
+    },
+    wire: function (rootEl) {
+      if (window.NetReconNewUI && window.NetReconNewUI.wireNetworkMonitorLeftPanel) {
+        window.NetReconNewUI.wireNetworkMonitorLeftPanel(rootEl);
+      }
+    },
+  };
+
   // "move" entries: unlike the render/wire entries above (fresh HTML on
   // every activation - fine for stateless content), these 3 tools have
   // live state that only exists in their DOM (typed-but-unsaved form

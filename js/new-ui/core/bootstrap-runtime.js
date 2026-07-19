@@ -439,6 +439,11 @@
           panelsRuntime.wireIpLibraryPanel(rootEl);
         }
       };
+      window.NetReconNewUI.wireNetworkMonitorLeftPanel = function (rootEl) {
+        if (panelsRuntime && panelsRuntime.wireNetworkMonitorLeftPanel) {
+          panelsRuntime.wireNetworkMonitorLeftPanel(rootEl);
+        }
+      };
       // Exposed for navigation-runtime.js's activateGenericContent() LS/RS
       // fallback - reuses CS's own buildDetailHtml()/wireToolRuntime()
       // (panel-content-runtime.js/panels-runtime.js) as-is, already proven

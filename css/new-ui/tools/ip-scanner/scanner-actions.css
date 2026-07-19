@@ -24,6 +24,21 @@
   color: #ffffff;
 }
 
+/* No rule existed for this state at all, so a disabled Start/Stop/Scan
+   button (Network Monitor's live-poll toggle, Email Recon's Start/Stop)
+   looked identical to an enabled one on this dark background - the
+   disabled attribute worked, it just wasn't visible. */
+.v1-scanner-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.v1-scanner-actions button:disabled:hover {
+  border-color: #3f3f46;
+  background: #2a2d31;
+  color: var(--txt);
+}
+
 .v1-scanner-actions--detect {
   margin-top: 8px;
   flex-direction: column;

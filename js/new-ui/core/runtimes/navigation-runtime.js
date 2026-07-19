@@ -1486,7 +1486,7 @@
             activateToolInItsConfiguredSection("scan-runner");
             ensureToolOpenInItsConfiguredSection("config");
           }
-        } else if (tool === "scan-runner" || tool === "ip-library") {
+        } else if (tool === "scan-runner" || tool === "ip-library" || tool === "network-monitor") {
           activateSidebarTool(tool);
         } else if (tool === "email-recon") {
           // 3 independent surfaces on one click (LS/CS/RS), same idea as

@@ -179,6 +179,31 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
      binaries, no install step, at the cost of Windows-only (acceptable,
      the app is already WinAPI-dependent throughout).
   Not started - first step is researching risk #1.
+- **Network Monitor: scrubbable timeline of past scans** — today's live
+  monitor only keeps the *latest* snapshot (`netMonLastConnections`/
+  `netMonLastArp`) plus a short-lived "recently appeared/disappeared" grace
+  buffer; nothing further back is retained. The idea: store every scan as a
+  timestamped snapshot (`{ts, rows}`, capped at ~50-100 entries to bound
+  memory) and add a scrubber/slider UI with one tick per scan - dragging or
+  clicking a point re-renders Connections/LAN from that historical snapshot
+  instead of the live one, so past states become browsable, not just the
+  present. Builds on infrastructure already in place (the diff/keying/
+  render-dispatch machinery from the grouping and gone/new-marks work), so
+  it's more UI-and-storage work than a new architecture. Two things to
+  settle before starting:
+  1. **"Changes only" display mode doesn't have an obvious meaning while
+     scrubbed to a past point** (correctly flagged by the user) - it's
+     defined today as "diff between the live cache and the previous live
+     cycle." Simplest resolution: disable/hide that radio option whenever
+     the timeline isn't pinned to the newest (live) point, only re-enabling
+     it there. A per-point reinterpretation (diff between the selected scan
+     and the one immediately before it) is a possible richer alternative,
+     not required for a first pass.
+  2. Whether live polling should keep advancing the timeline while the user
+     is scrubbed to a past point (yes, most likely - the scan keeps
+     happening in the background; only the *displayed* table stays pinned
+     until the user scrubs back to "live").
+  Not started - purely a feasibility/design conversation so far.
 - **Selective IP-blur inside Terminal/Console output** — today the IP blur
   toggle blurs those panes whole-pane (see item 15 in the backlog below)
   because their output is free-form text concatenated as one string into a

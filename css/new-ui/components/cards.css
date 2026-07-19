@@ -519,10 +519,43 @@
 }
 
 /* ip-scanner tool: Network Monitor - two stacked table sections
-   (Connections, LAN Devices), each with its own manual refresh button. */
+   (Connections, LAN Devices). Buttons live entirely in the LS panel now
+   (tool-content-runtime.js's "network-monitor" entry) - CS is pure
+   results: a visibility toolbar, sortable/groupable headers, and a
+   collapsible per-section history log (also a table). */
 .v1-netmon-shell {
   display: grid;
   gap: 20px;
+}
+
+.v1-netmon-toolbar {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.v1-netmon-toolbar-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--txt);
+  cursor: pointer;
+}
+
+.v1-netmon-toolbar-radios {
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.v1-netmon-toolbar-radios label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--txt);
+  cursor: pointer;
 }
 
 .v1-netmon-section-head {
@@ -533,17 +566,69 @@
   margin-bottom: 8px;
 }
 
-.v1-netmon-section-head button {
+.v1-netmon-view-select {
   border: 1px solid #3d424d;
   background: #22242a;
   color: var(--txt);
   font-size: 12px;
-  padding: 5px 10px;
-  cursor: pointer;
+  padding: 4px 6px;
 }
 
-.v1-netmon-section-head button:hover {
+.v1-netmon-table th[data-netmon-sort-col] {
+  cursor: pointer;
+  user-select: none;
+}
+
+.v1-netmon-table th[data-netmon-sort-col]:hover {
+  color: var(--accent, #d8973c);
+}
+
+.v1-netmon-sort-arrow {
+  display: inline-block;
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+.v1-netmon-group-row {
+  cursor: pointer;
+  background: #22242a;
+}
+
+.v1-netmon-group-row:hover {
   background: #2a2d34;
+}
+
+.v1-netmon-group-child td:first-child {
+  padding-left: 22px;
+}
+
+/* Appeared/disappeared rows are mixed straight into the live table (flat
+   or grouped alike) instead of a separate log - a disappeared row stays
+   visible, greyed and struck through, for panel-interactions-runtime.js's
+   grace window; a newly-appeared one gets a brief highlighted background.
+   Both carry a leading +/- badge (netMonRowMark()) as a second, badge-only
+   signal that doesn't depend on noticing the row styling itself. */
+.v1-netmon-row-mark {
+  font-weight: 700;
+  display: inline-block;
+  width: 10px;
+}
+
+.v1-netmon-row-mark.is-new {
+  color: #2dcc71;
+}
+
+.v1-netmon-row-mark.is-gone {
+  color: #e05d5d;
+}
+
+.v1-netmon-row-gone {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.v1-netmon-row-new {
+  background: rgba(45, 204, 113, 0.12);
 }
 
 /* shell: General settings screen (TBM Options -> General) - group headings
