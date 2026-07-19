@@ -677,6 +677,78 @@
   cursor: pointer;
 }
 
+/* shell: AI Assistant provider block (Options -> General, below History) -
+   one of these per provider (Anthropic/Google). Grid rather than flex so
+   every label's colon lines up in a fixed-width column regardless of how
+   long the value next to it is. */
+.v1-ai-provider-block {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  row-gap: 8px;
+  column-gap: 10px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+/* Divider only between the two blocks, not above the first one - :first-
+   of-type would check "first <div> among ALL sibling divs" (this sits
+   inside .v1-import-manager, which already has earlier divs like the
+   intro-note header), not "first element with this class", so it never
+   matched and both blocks got a leading border. The adjacent-sibling
+   combinator targets exactly the second block instead. */
+.v1-ai-provider-block + .v1-ai-provider-block {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #2a2a2e;
+}
+
+.v1-ai-provider-field-label {
+  color: var(--txt-dim);
+  font-size: 12px;
+  text-align: right;
+}
+
+.v1-ai-provider-field-value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.v1-ai-provider-field-value select,
+.v1-ai-provider-field-value input[type="text"] {
+  border: 1px solid #3d424d;
+  background: #22242a;
+  color: var(--txt);
+  font-size: 12px;
+  padding: 4px 6px;
+  min-width: 220px;
+}
+
+.v1-ai-provider-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--txt-dim);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.v1-ai-provider-radio input[type="radio"] {
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
+.v1-ai-provider-link {
+  color: var(--brand);
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.v1-ai-provider-link:hover {
+  text-decoration: underline;
+}
+
 /* ip-scanner tool: Presets */
 .v1-presets-shell {
   display: grid;

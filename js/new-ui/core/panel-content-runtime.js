@@ -411,6 +411,80 @@
         return "<h4 class=\"v1-general-settings-group\">" + escapeHtml(trOr(key, fallback)) + "</h4>";
       }
 
+      // AI Assistant: one self-contained, colon-aligned block per provider
+      // (Anthropic/Google) - each with its own model dropdown, API key
+      // field, and RAM-vs-localStorage choice, so both can be configured
+      // ahead of time; the "Provider" radio (shared name across both
+      // blocks) just picks which one is currently active. UI/settings
+      // only for now - nothing here calls a real Claude/Google endpoint yet.
+      var AI_PROVIDER_META = {
+        claude: {
+          displayName: "Anthropic",
+          keyLink: "https://platform.claude.com/settings/workspaces/default/keys",
+          models: [["opus", "aiModelOpus", "Opus"], ["sonnet", "aiModelSonnet", "Sonnet"], ["haiku", "aiModelHaiku", "Haiku"]],
+        },
+        google: {
+          displayName: "Google",
+          keyLink: "https://aistudio.google.com/api-keys",
+          models: [["pro", "aiModelPro", "Pro"], ["flash", "aiModelFlash", "Flash"]],
+        },
+      };
+
+      function aiProviderBlock(providerId) {
+        var aiConfigApi = window.NetReconNewUICore && window.NetReconNewUICore.aiAssistantConfig;
+        var state = aiConfigApi ? aiConfigApi.getState() : { provider: "claude", claude: { model: "sonnet", keyStorage: "localstorage" }, google: { model: "flash", keyStorage: "localstorage" } };
+        var apiKey = aiConfigApi ? aiConfigApi.getApiKey(providerId) : "";
+        var providerState = state[providerId];
+        var meta = AI_PROVIDER_META[providerId];
+        var isActive = state.provider === providerId;
+
+        var modelOptions = meta.models.map(function (m) {
+          var value = m[0], labelKey = m[1], labelFallback = m[2];
+          return "<option value=\"" + value + "\"" + (providerState.model === value ? " selected" : "") + ">" + escapeHtml(trOr(labelKey, labelFallback)) + "</option>";
+        }).join("");
+
+        return [
+          "<div class=\"v1-ai-provider-block\">",
+
+          "<span class=\"v1-ai-provider-field-label\">" + escapeHtml(trOr("aiFieldProvider", "Provider:")) + "</span>",
+          "<span class=\"v1-ai-provider-field-value\">",
+          "<label class=\"v1-ai-provider-radio\">",
+          "<input type=\"radio\" name=\"v1AiProvider\" value=\"" + providerId + "\"" + (isActive ? " checked" : "") + " />",
+          "<span>" + escapeHtml(meta.displayName) + "</span>",
+          "</label>",
+          " <a href=\"" + escapeHtml(meta.keyLink) + "\" target=\"_blank\" rel=\"noopener\" class=\"v1-ai-provider-link\">" + escapeHtml(trOr("aiGetKeyLinkText", "get API key")) + "</a>",
+          "</span>",
+
+          "<span class=\"v1-ai-provider-field-label\">" + escapeHtml(trOr("aiFieldModel", "Model:")) + "</span>",
+          "<span class=\"v1-ai-provider-field-value\">",
+          "<select data-ai-model-select=\"" + providerId + "\">" + modelOptions + "</select>",
+          "</span>",
+
+          "<span class=\"v1-ai-provider-field-label\">" + escapeHtml(trOr("aiApiKeyLabel", "API key:")) + "</span>",
+          "<span class=\"v1-ai-provider-field-value\">",
+          "<input type=\"text\" data-ai-api-key=\"" + providerId + "\" autocomplete=\"off\" value=\"" + escapeHtml(apiKey) + "\" placeholder=\"" + escapeHtml(trOr("aiApiKeyPlaceholder", "API key")) + "\" />",
+          "</span>",
+
+          "<span class=\"v1-ai-provider-field-label\">" + escapeHtml(trOr("aiFieldStorage", "Storage:")) + "</span>",
+          "<span class=\"v1-ai-provider-field-value\">",
+          "<label class=\"v1-ai-provider-radio\">",
+          "<input type=\"radio\" name=\"v1AiKeyStorage-" + providerId + "\" value=\"localstorage\"" + (providerState.keyStorage === "localstorage" ? " checked" : "") + " />",
+          "<span>" + escapeHtml(trOr("aiStorageLocal", "local")) + "</span>",
+          "</label>",
+          "<label class=\"v1-ai-provider-radio\">",
+          "<input type=\"radio\" name=\"v1AiKeyStorage-" + providerId + "\" value=\"ram\"" + (providerState.keyStorage === "ram" ? " checked" : "") + " />",
+          "<span>RAM</span>",
+          "</label>",
+          "</span>",
+
+          "</div>"
+        ].join("");
+      }
+
+      function aiAssistantRow() {
+        return aiProviderBlock("claude") + aiProviderBlock("google");
+      }
+
       // Small, deliberately non-persisted test: a live "switch UI" toggle,
       // gated behind "Show unfinished tools" like every other unfinished
       // feature. Never written to localStorage on purpose - picking "Test"
@@ -476,6 +550,9 @@
 
         groupHeading("generalGroupHistory", "History"),
         checkboxRow("rememberRangeHistory", "🕓", "generalRememberRangeHistory", "Remember IP range history"),
+
+        groupHeading("generalGroupAiAssistant", "AI Assistant"),
+        aiAssistantRow(),
 
         "</div>"
       ].join("");

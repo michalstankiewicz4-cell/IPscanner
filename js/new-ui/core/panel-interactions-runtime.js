@@ -1374,6 +1374,48 @@
           window.location.href = "test-ui.html";
         }
       });
+
+      // AI Assistant settings - UI/persistence only, no real Claude/Google
+      // call wired up yet. Each provider block (Anthropic/Google) is fully
+      // independent - its own model, key, and storage mode - so switching
+      // the shared "Provider" radio only changes which one is active, it
+      // doesn't touch the other block's already-configured settings.
+      var aiConfigApi = core.aiAssistantConfig;
+      if (aiConfigApi) {
+        root.addEventListener("change", function (event) {
+          var target = event.target;
+          if (!target) return;
+
+          var providerRadio = target.closest ? target.closest('input[name="v1AiProvider"]') : null;
+          if (providerRadio && providerRadio.checked) {
+            var next = aiConfigApi.getState();
+            next.provider = providerRadio.value === "google" ? "google" : "claude";
+            aiConfigApi.replaceState(next);
+            return;
+          }
+
+          var modelSelect = target.closest ? target.closest("[data-ai-model-select]") : null;
+          if (modelSelect) {
+            var selectProvider = modelSelect.getAttribute("data-ai-model-select");
+            var nextModel = aiConfigApi.getState();
+            nextModel[selectProvider === "google" ? "google" : "claude"].model = modelSelect.value;
+            aiConfigApi.replaceState(nextModel);
+            return;
+          }
+
+          var storageRadio = target.closest ? target.closest('input[name^="v1AiKeyStorage-"]') : null;
+          if (storageRadio && storageRadio.checked) {
+            var storageProvider = storageRadio.name.replace("v1AiKeyStorage-", "");
+            aiConfigApi.setKeyStorageMode(storageProvider, storageRadio.value === "ram" ? "ram" : "localstorage");
+            return;
+          }
+
+          var keyInput = target.closest ? target.closest("[data-ai-api-key]") : null;
+          if (keyInput) {
+            aiConfigApi.setApiKey(keyInput.getAttribute("data-ai-api-key"), keyInput.value);
+          }
+        });
+      }
     }
 
     // ip-scanner tool: Network Monitor (local connections + ARP table).
