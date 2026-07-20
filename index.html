@@ -371,14 +371,14 @@
         <div class="v1-right-content">
             <section class="v1-right-pane" data-v1-right-pane="assistant">
               <article class="v1-ai-panel">
-                <div class="v1-ai-mode" role="radiogroup" aria-label="Assistant mode">
+                <div class="v1-ai-mode" aria-label="Assistant mode">
                   <span class="v1-ai-mode-label">Mode</span>
-                  <label class="v1-ai-mode-option" title="UI mode: the assistant focuses on interface guidance and built-in macros - no console access.">
-                    <input type="radio" name="v1AiMode" value="ui" checked />
+                  <label class="v1-ai-mode-option" title="Not wired up yet - reserved for controlled access to app actions (tool use), still being designed.">
+                    <input type="checkbox" id="v1AiModeUiCheckbox" disabled />
                     <span>UI</span>
                   </label>
-                  <label class="v1-ai-mode-option" title="PS mode: the assistant focuses on PowerShell/console commands - full permissions.">
-                    <input type="radio" name="v1AiMode" value="ps" />
+                  <label class="v1-ai-mode-option" title="Not wired up yet - reserved for controlled access to app actions (tool use), still being designed.">
+                    <input type="checkbox" id="v1AiModePsCheckbox" disabled />
                     <span>PS</span>
                   </label>
                   <span class="v1-ai-badge v1-ai-mode-badge" id="v1AiModeBadge">Anthropic Sonnet</span>
@@ -694,7 +694,7 @@
   <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js?v=20260904" defer></script>
   <script src="js/new-ui/core/runtimes/clippy-runtime.js?v=20260604" defer></script>
   <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js?v=20260911" defer></script>
-  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260963" defer></script>
+  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260966" defer></script>
   <script src="js/new-ui/core/runtimes/session-sqlite-runtime.js?v=20260805" defer></script>
   <script src="js/new-ui/core/runtimes/update-check-runtime.js?v=20260906" defer></script>
   <script src="js/new-ui/core/panel-content-config.js?v=20260713" defer></script>

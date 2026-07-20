@@ -191,6 +191,17 @@ html[dir="rtl"] .v1-rightbar.right-tabs-empty .v1-side-head {
   font-size: 12px;
 }
 
+/* #v1AiModeUiCheckbox/#v1AiModePsCheckbox - disabled for now, reserved
+   for tool-use access still being designed (see their title attribute). */
+.v1-ai-mode-option:has(input:disabled) {
+  color: var(--txt-dim);
+  cursor: not-allowed;
+}
+
+.v1-ai-mode-option input:disabled {
+  cursor: not-allowed;
+}
+
 .v1-ai-mode-badge {
   margin-left: auto;
 }

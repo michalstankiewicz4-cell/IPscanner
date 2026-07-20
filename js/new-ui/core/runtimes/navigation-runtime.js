@@ -1728,9 +1728,14 @@
       var promptInput = document.getElementById("v1AiPromptInput");
       if (!chat || !promptInput) return;
 
+      // #v1AiModeUiCheckbox/#v1AiModePsCheckbox are disabled for now (see
+      // their title attribute) - two independent permission checkboxes
+      // reserved for controlled tool-use access later, not real switches
+      // yet, so this always reads back "ui" today. PS wins if both are
+      // ever checked at once (the more permissive choice).
       function currentMode() {
-        var selected = document.querySelector('input[name="v1AiMode"]:checked');
-        return selected ? selected.value : "ui";
+        var psCheckbox = document.getElementById("v1AiModePsCheckbox");
+        return psCheckbox && psCheckbox.checked ? "ps" : "ui";
       }
 
       // Single-conversation persistence (no multi-chat/thread support yet -
@@ -1787,9 +1792,12 @@
         }
       })();
 
-      document.querySelectorAll('input[name="v1AiMode"]').forEach(function (radio) {
-        radio.addEventListener("change", function () {
-          if (!radio.checked) return;
+      // Won't fire while both checkboxes stay disabled - kept wired so
+      // this just works once they're re-enabled later, no other change
+      // needed.
+      var modeCheckboxes = [document.getElementById("v1AiModeUiCheckbox"), document.getElementById("v1AiModePsCheckbox")].filter(Boolean);
+      modeCheckboxes.forEach(function (checkbox) {
+        checkbox.addEventListener("change", function () {
           var mode = currentMode() === "ps" ? "PS" : "UI";
           appendMessage("assistant", "Mode switched to " + mode + ".", true);
         });
