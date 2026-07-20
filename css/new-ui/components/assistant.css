@@ -211,6 +211,13 @@ html[dir="rtl"] .v1-ai-mode-badge {
   margin-right: auto;
 }
 
+.v1-ai-chat-wrap {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .v1-ai-chat {
   border: 0;
   background: #1a1a1c;
@@ -222,6 +229,35 @@ html[dir="rtl"] .v1-ai-mode-badge {
   display: grid;
   gap: 8px;
   align-content: start;
+}
+
+/* Floating in the fixed center of the chat pane (not the scrolled
+   content - it's a sibling of .v1-ai-chat, not a child, specifically so
+   scrolling the message list doesn't drag it along) rather than a toolbar
+   row, to avoid carving out layout space for a button that's only
+   occasionally needed. Dimmed until hovered so it doesn't compete for
+   attention with real messages sitting behind it. */
+.v1-ai-clear-history-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border: 1px solid #3d424d;
+  border-radius: 6px;
+  background: #22242a;
+  color: var(--txt);
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.35;
+}
+
+.v1-ai-clear-history-btn:hover {
+  opacity: 1;
+  background: #c94b4b;
+  border-color: #c94b4b;
+  color: #ffffff;
 }
 
 .v1-ai-msg {
@@ -244,6 +280,7 @@ html[dir="rtl"] .v1-ai-mode-badge {
 }
 
 .v1-ai-input {
+  position: relative;
   border: 0;
   background: transparent;
   display: grid;
@@ -279,6 +316,31 @@ html[dir="rtl"] .v1-ai-mode-badge {
 
 .v1-ai-input button:hover {
   background: color-mix(in oklab, var(--brand) 34%, var(--bg-soft));
+  color: #ffffff;
+}
+
+/* Overlaid on the prompt textarea's own bottom-right corner rather than
+   given its own layout row - only shown while a reply (which may be up to
+   MAX_ROUNDS sequential API calls, see ai-tools-engine-runtime.js) is
+   in flight, via the same [hidden] toggle sendPrompt() already flips. */
+.v1-ai-stop-btn {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: #c94b4b;
+  color: #ffffff;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.v1-ai-stop-btn:hover {
+  background: #e15d5d;
   color: #ffffff;
 }
 

@@ -373,23 +373,27 @@
               <article class="v1-ai-panel">
                 <div class="v1-ai-mode" aria-label="Assistant mode">
                   <span class="v1-ai-mode-label">Mode</span>
-                  <label class="v1-ai-mode-option" title="Not wired up yet - reserved for controlled access to app actions (tool use), still being designed.">
-                    <input type="checkbox" id="v1AiModeUiCheckbox" disabled />
+                  <label class="v1-ai-mode-option" id="v1AiModeUiLabel" title="Quick on/off switch for the assistant's UI-mode access (tool-calling, navigation, macros). Unchecking it stops the assistant from responding at all until re-checked.">
+                    <input type="checkbox" id="v1AiModeUiCheckbox" checked />
                     <span>UI</span>
                   </label>
-                  <label class="v1-ai-mode-option" title="Not wired up yet - reserved for controlled access to app actions (tool use), still being designed.">
+                  <label class="v1-ai-mode-option" title="Not wired up yet - reserved for controlled console/PowerShell access, still being designed.">
                     <input type="checkbox" id="v1AiModePsCheckbox" disabled />
                     <span>PS</span>
                   </label>
                   <span class="v1-ai-badge v1-ai-mode-badge" id="v1AiModeBadge">Anthropic Sonnet</span>
                 </div>
 
-                <div class="v1-ai-chat" id="v1AiChatHistory" aria-live="polite">
-                  <div class="v1-ai-msg assistant" data-ai-meta="true">Assistant ready. Choose mode: UI for interface guidance, PS for console-first commands.</div>
+                <div class="v1-ai-chat-wrap">
+                  <div class="v1-ai-chat" id="v1AiChatHistory" aria-live="polite">
+                    <div class="v1-ai-msg assistant" data-ai-meta="true">Assistant ready. Choose mode: UI for interface guidance, PS for console-first commands.</div>
+                  </div>
+                  <button type="button" id="v1AiClearHistoryBtn" class="v1-ai-clear-history-btn" title="Clear chat history" aria-label="Clear chat history" hidden>🗑</button>
                 </div>
 
                 <div class="v1-ai-input">
                   <textarea id="v1AiPromptInput" class="v1-ai-prompt" rows="3" placeholder="Type prompt for assistant..."></textarea>
+                  <button type="button" id="v1AiStopBtn" class="v1-ai-stop-btn" title="Stop" aria-label="Stop" hidden>■</button>
                 </div>
 
                 <p class="status-line" id="v1StatusLine" hidden></p>
@@ -671,14 +675,19 @@
 
   <script src="js/new-ui/core/app-version.js?v=2.4.0" defer></script>
   <script src="js/new-ui/core/store.js" defer></script>
-  <script src="js/new-ui/core/i18n.js?v=20260967" defer></script>
+  <script src="js/new-ui/core/i18n.js?v=20260972" defer></script>
   <script src="js/new-ui/core/theme.js?v=20260604" defer></script>
   <script src="js/new-ui/core/tool-catalog.js?v=20260967" defer></script>
   <script src="js/new-ui/core/tab-registry.js?v=20260104" defer></script>
   <script src="js/new-ui/core/tool-content-runtime.js?v=20260957" defer></script>
   <script src="js/new-ui/core/presets-runtime.js?v=20260817" defer></script>
-  <script src="js/new-ui/core/general-settings-runtime.js?v=20260962" defer></script>
-  <script src="js/new-ui/core/ai-permissions-runtime.js?v=20260967" defer></script>
+  <script src="js/new-ui/core/general-settings-runtime.js?v=20260971" defer></script>
+  <script src="js/new-ui/core/ai-permissions-runtime.js?v=20260968" defer></script>
+  <script src="js/new-ui/core/ai-tools/ai-tools-catalog.js?v=20260969" defer></script>
+  <script src="js/new-ui/core/ai-tools/ai-tools-handlers.js?v=20260969" defer></script>
+  <script src="js/new-ui/core/ai-tools/ai-tools-provider-claude.js?v=20260968" defer></script>
+  <script src="js/new-ui/core/ai-tools/ai-tools-provider-gemini.js?v=20260968" defer></script>
+  <script src="js/new-ui/core/ai-tools/ai-tools-engine-runtime.js?v=20260971" defer></script>
   <script src="js/new-ui/core/macros-runtime.js?v=20260810" defer></script>
   <script src="js/new-ui/core/shellcraft-canvas-runtime.js?v=20260812" defer></script>
   <script src="js/new-ui/core/versions-data.js?v=20260951" defer></script>
@@ -695,23 +704,23 @@
   <script src="js/new-ui/core/runtimes/custom-scrollbar-runtime.js?v=20260904" defer></script>
   <script src="js/new-ui/core/runtimes/clippy-runtime.js?v=20260604" defer></script>
   <script src="js/new-ui/core/runtimes/ip-inputs-runtime.js?v=20260911" defer></script>
-  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260966" defer></script>
+  <script src="js/new-ui/core/runtimes/navigation-runtime.js?v=20260972" defer></script>
   <script src="js/new-ui/core/runtimes/session-sqlite-runtime.js?v=20260805" defer></script>
   <script src="js/new-ui/core/runtimes/update-check-runtime.js?v=20260906" defer></script>
   <script src="js/new-ui/core/panel-content-config.js?v=20260713" defer></script>
-  <script src="js/new-ui/core/panel-content-runtime.js?v=20260967" defer></script>
-  <script src="js/new-ui/core/panel-interactions-runtime.js?v=20260967" defer></script>
+  <script src="js/new-ui/core/panel-content-runtime.js?v=20260970" defer></script>
+  <script src="js/new-ui/core/panel-interactions-runtime.js?v=20260970" defer></script>
   <script src="js/new-ui/core/panel-renderers-runtime.js?v=20260717" defer></script>
   <script src="js/new-ui/core/runtimes/language-catalog-runtime.js?v=20260924" defer></script>
   <script src="js/new-ui/core/runtimes/ip-library-runtime.js?v=20260924" defer></script>
   <script src="js/new-ui/core/runtimes/addon-catalog-runtime.js?v=20260924" defer></script>
-  <script src="js/new-ui/core/panels-runtime.js?v=20260967" defer></script>
+  <script src="js/new-ui/core/panels-runtime.js?v=20260968" defer></script>
   <script src="js/new-ui/core/menu-runtime.js?v=20260963" defer></script>
   <script src="js/new-ui/core/session-runtime.js?v=20260912" defer></script>
   <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260933" defer></script>
-  <script src="js/new-ui/core/email-recon-runtime.js?v=20260950" defer></script>
+  <script src="js/new-ui/core/email-recon-runtime.js?v=20260968" defer></script>
   <script src="js/new-ui/core/powershell-console-runtime.js?v=20260604" defer></script>
-    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260967" defer></script>
+    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260972" defer></script>
 </body>
 </html>
 

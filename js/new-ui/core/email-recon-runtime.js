@@ -485,6 +485,7 @@
       init: init,
       applyStaticTranslations: applyStaticTranslations,
       addEmailHistory: addEmailHistory,
+      getHistory: loadEmailHistory,
       isValidEmail: isValidEmail,
     };
   }

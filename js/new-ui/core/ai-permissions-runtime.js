@@ -7,6 +7,7 @@
   // real enforcement later is just "read this store" - no UI changes.
   var STORAGE_KEY = "netrecon_ai_permissions_v1";
   var AUDIT_LOG_KEY = "netrecon_ai_audit_log_v1";
+  var ACTION_COUNT_KEY = "netrecon_ai_action_count_v1";
 
   // Each node: id (dotted path), labelKey/fallback, optional kind
   // ("read" | "action" - only value-bearing nodes get one; pure grouping
@@ -207,6 +208,22 @@
     return compute(node);
   }
 
+  // Execution-time gate for one concrete leaf id (e.g. "navigation.switch"
+  // or "email-recon.lookup.hibp") - unlike computeDisplayLevel (which
+  // aggregates a whole subtree for the UI, and can report "mixed"), the
+  // engine always asks about one specific node it's about to run, so this
+  // only ever returns a real, storable level. Unknown ids are treated as
+  // "off" - failing closed is the only safe default for an id the tree
+  // doesn't recognize.
+  function resolveLevel(id) {
+    var node = findNode(TREE, id);
+    if (!node) return "off";
+    if (node.locked) return node.locked;
+    var state = getState();
+    var v = state.levels[id];
+    return VALID_LEVELS.indexOf(v) !== -1 ? v : "off";
+  }
+
   function loadAuditLog() {
     try {
       var raw = localStorage.getItem(AUDIT_LOG_KEY);
@@ -221,15 +238,63 @@
     try { localStorage.setItem(AUDIT_LOG_KEY, "[]"); } catch (_) { /* ignore */ }
   }
 
+  // Called by the tool-calling engine once per resolved tool call (allowed,
+  // declined, or blocked) - the log stays capped at 100 entries so it can't
+  // grow the localStorage payload unbounded over a long-lived conversation.
+  function appendAuditLog(entry) {
+    try {
+      var log = loadAuditLog();
+      log.push({
+        time: new Date().toISOString(),
+        toolId: String((entry && entry.toolId) || ""),
+        args: (entry && entry.args) || {},
+        outcome: String((entry && entry.outcome) || ""),
+        detail: (entry && entry.detail) || null,
+      });
+      localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(log.slice(-100)));
+    } catch (_) { /* ignore */ }
+  }
+
+  // "Max actions per conversation" guardrail counter. This app has a single
+  // eternal chat thread (no new-conversation button yet), so "a
+  // conversation" is defined as "since the visible history was last empty" -
+  // the engine calls resetActionCount() itself right before the first turn
+  // of a fresh thread, and incrementActionCount() once per executed tool
+  // call after that.
+  function getActionCount() {
+    try {
+      var n = Number(localStorage.getItem(ACTION_COUNT_KEY));
+      return n > 0 ? n : 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  function incrementActionCount() {
+    var next = getActionCount() + 1;
+    try { localStorage.setItem(ACTION_COUNT_KEY, String(next)); } catch (_) { /* ignore */ }
+    return next;
+  }
+
+  function resetActionCount() {
+    try { localStorage.setItem(ACTION_COUNT_KEY, "0"); } catch (_) { /* ignore */ }
+  }
+
   window.NetReconNewUICore = window.NetReconNewUICore || {};
   window.NetReconNewUICore.aiPermissions = {
     TREE: TREE,
+    findNode: function (id) { return findNode(TREE, id); },
     getState: getState,
     replaceState: replaceState,
     applyProfile: applyProfile,
     setNodeLevel: setNodeLevel,
     computeDisplayLevel: computeDisplayLevel,
+    resolveLevel: resolveLevel,
     loadAuditLog: loadAuditLog,
     clearAuditLog: clearAuditLog,
+    appendAuditLog: appendAuditLog,
+    getActionCount: getActionCount,
+    incrementActionCount: incrementActionCount,
+    resetActionCount: resetActionCount,
   };
 })();

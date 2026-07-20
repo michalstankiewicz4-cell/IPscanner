@@ -758,6 +758,39 @@
   text-decoration: underline;
 }
 
+/* shell: AI Assistant's editable per-mode system prompts (below the two
+   provider blocks) - same dark input styling as the provider block's
+   fields above, just stacked (label/textarea/button) instead of a
+   label+value grid row, since a multi-line prompt needs full width. */
+.v1-ai-prompt-block {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #2a2a2e;
+}
+
+.v1-ai-prompt-block label {
+  display: block;
+  color: var(--txt-dim);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.v1-ai-prompt-block textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #3d424d;
+  background: #22242a;
+  color: var(--txt);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  padding: 6px 8px;
+  resize: vertical;
+}
+
+.v1-ai-prompt-reset {
+  margin-top: 6px;
+}
+
 /* ip-scanner tool: Presets */
 .v1-presets-shell {
   display: grid;

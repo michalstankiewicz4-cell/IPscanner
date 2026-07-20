@@ -100,11 +100,28 @@
   var AI_CONFIG_KEY = "netrecon_ai_assistant_config_v1";
   var AI_KEY_STORAGE_PREFIX = "netrecon_ai_assistant_key_";
 
+  // The two system prompts sendPrompt() (navigation-runtime.js) sends per
+  // mode - kept here, not there, since this file already owns every other
+  // piece of AI Assistant config, and a user-editable prompt needs the
+  // same persisted-state/"restore default" treatment as everything else in
+  // this store. PS stays a defined default even though its mode toggle is
+  // still disabled today (see index.html's v1AiModePsCheckbox) - the text
+  // exists and is ready for whenever that toggle is wired up for real.
+  var DEFAULT_SYSTEM_PROMPT_UI = "You are an assistant embedded in a desktop network/OSINT tool. Focus on explaining UI actions, panel workflows, and built-in macros the user can trigger in the app. Do not suggest running arbitrary shell commands.";
+  var DEFAULT_SYSTEM_PROMPT_PS = "You are an assistant embedded in a desktop network/OSINT tool, running with full console permissions. Focus on PowerShell commands and console/terminal workflows the user can run.";
+
   function makeDefaultAiConfigState() {
     return {
       provider: "claude", // "claude" | "google" - which one is currently active
       claude: { model: "sonnet", keyStorage: "localstorage" },
       google: { model: "flash", keyStorage: "localstorage" },
+      systemPromptUi: DEFAULT_SYSTEM_PROMPT_UI,
+      systemPromptPs: DEFAULT_SYSTEM_PROMPT_PS,
+      // Quick on/off for the whole assistant's UI-mode capability (the only
+      // mode that's actually functional today - PS mode's own checkbox
+      // stays disabled/unwired). Defaults on so nothing changes for anyone
+      // who doesn't touch it.
+      uiModeEnabled: true,
     };
   }
 
@@ -123,6 +140,9 @@
       provider: input.provider === "google" ? "google" : "claude",
       claude: cloneAiProviderState(input.claude, fallback.claude),
       google: cloneAiProviderState(input.google, fallback.google),
+      systemPromptUi: typeof input.systemPromptUi === "string" ? input.systemPromptUi : fallback.systemPromptUi,
+      systemPromptPs: typeof input.systemPromptPs === "string" ? input.systemPromptPs : fallback.systemPromptPs,
+      uiModeEnabled: typeof input.uiModeEnabled === "boolean" ? input.uiModeEnabled : fallback.uiModeEnabled,
     };
   }
 
@@ -248,6 +268,14 @@
   // means the API key never passes through any server this app's authors
   // control - it goes straight from the user's own browser/webview to
   // Anthropic/Google, visible only in that browser's own Network tab.
+  // Output-token ceiling for a single API response - was Claude-only until
+  // this was audited for runaway-cost risk; Gemini had no cap at all,
+  // meaning a Gemini-configured user's response length (and therefore
+  // cost) was unbounded. Both providers get the same value today; see
+  // docs/ROADMAP.md's "AI Assistant: configurable cost/round limits" entry
+  // for making this user-adjustable later instead of hardcoded.
+  var MAX_OUTPUT_TOKENS = 1024;
+
   function sendAiChatMessageClaude(model, apiKey, messages, system) {
     return fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -259,7 +287,7 @@
       },
       body: JSON.stringify({
         model: model,
-        max_tokens: 1024,
+        max_tokens: MAX_OUTPUT_TOKENS,
         system: system || undefined,
         messages: messages.map(function (m) {
           return { role: m.role === "assistant" ? "assistant" : "user", content: m.content };
@@ -286,6 +314,7 @@
       contents: messages.map(function (m) {
         return { role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] };
       }),
+      generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS },
     };
     if (system) body.systemInstruction = { parts: [{ text: system }] };
 
@@ -319,6 +348,75 @@
       : sendAiChatMessageClaude(model, apiKey, messages, system);
   }
 
+  // Tool-calling variants: same endpoints/headers/model-id mapping as above,
+  // but (a) accept an optional `tools` array in the provider's own wire
+  // format (built by ai-tools-provider-claude.js/ai-tools-provider-
+  // gemini.js, not this file - this file only knows how to talk HTTP to
+  // each provider, not how to describe NetRecon's own tool catalog) and
+  // (b) return the raw parsed response body instead of extracted text, so
+  // the caller (ai-tools-engine-runtime.js) can inspect it for tool_use/
+  // functionCall blocks. The plain sendAiChatMessage above is untouched and
+  // still used as-is by the parts of the app that don't go through the
+  // engine.
+  function sendAiChatMessageClaudeRaw(model, apiKey, messages, system, tools, signal) {
+    var body = {
+      model: model,
+      max_tokens: MAX_OUTPUT_TOKENS,
+      system: system || undefined,
+      messages: messages,
+    };
+    if (tools && tools.length) body.tools = tools;
+
+    return fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify(body),
+      signal: signal,
+    }).then(function (resp) {
+      return resp.text().then(function (text) {
+        if (!resp.ok) throw new Error("Anthropic API error (" + resp.status + "): " + text);
+        var data = JSON.parse(text);
+        if (data.error) throw new Error("Anthropic API error: " + JSON.stringify(data.error));
+        return data;
+      });
+    });
+  }
+
+  function sendAiChatMessageGoogleRaw(model, apiKey, messages, system, tools, signal) {
+    var url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(apiKey);
+    var body = { contents: messages, generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS } };
+    if (system) body.systemInstruction = { parts: [{ text: system }] };
+    if (tools && tools.length) body.tools = tools;
+
+    return fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: signal,
+    }).then(function (resp) {
+      return resp.text().then(function (text) {
+        if (!resp.ok) throw new Error("Google API error (" + resp.status + "): " + text);
+        var data = JSON.parse(text);
+        if (data.error) throw new Error("Google API error: " + JSON.stringify(data.error));
+        return data;
+      });
+    });
+  }
+
+  function sendChatMessageRaw(provider, modelKey, apiKey, messages, system, tools, signal) {
+    var p = normalizeProvider(provider);
+    var model = getAiApiModelId(p, modelKey);
+    if (!apiKey) return Promise.reject(new Error("missing_api_key"));
+    return p === "google"
+      ? sendAiChatMessageGoogleRaw(model, apiKey, messages, system, tools, signal)
+      : sendAiChatMessageClaudeRaw(model, apiKey, messages, system, tools, signal);
+  }
+
   window.NetReconNewUICore.aiAssistantConfig = {
     getState: getAiConfigState,
     getDefaultState: makeDefaultAiConfigState,
@@ -328,6 +426,8 @@
     setKeyStorageMode: setAiKeyStorageMode,
     getApiModelId: getAiApiModelId,
     sendChatMessage: sendAiChatMessage,
+    sendChatMessageRaw: sendChatMessageRaw,
+    normalizeProvider: normalizeProvider,
   };
 
   // RS "AI Assistant" panel's mode badge (index.html's static

@@ -1934,8 +1934,19 @@
         updateTabPopoutUi();
         return;
       }
+      // Any other id with no matching center tab at all - either unknown,
+      // or a real catalog entry that just isn't a center-tab tool (e.g. an
+      // RS-only settings pane like "email-recon-config") - is a no-op that
+      // leaves the current tab exactly as it was. Without this guard, an
+      // id that only exists because getToolInfoMap()/hasTool() lump every
+      // ui.showInLeftPanel/showInRightPanel/showAsTab entry into one flat
+      // namespace would still blank the whole CS pane below (activeTool
+      // set to an id nothing can render for) - surfaced by the AI tool-
+      // calling engine, which can be handed any id a human would never
+      // type into a hardcoded button's onclick.
       var tab = document.querySelector('.v1-tab[data-tool="' + tool + '"]');
-      if (tab && tab.classList.contains("tab-closed")) {
+      if (!tab) return;
+      if (tab.classList.contains("tab-closed")) {
         tab.classList.remove("tab-closed");
       }
       if (tab && !isDetachedHiddenTab(tab)) {
@@ -2035,6 +2046,11 @@
       wireIpLibraryPanel: wireIpLibraryPanel,
       wireNetworkMonitorLeftPanel: wireNetworkMonitorLeftPanel,
       refreshDetachedTool: refreshDetachedTool,
+      applyEmailReconResult: function (email, result) {
+        if (panelInteractionsRuntime && panelInteractionsRuntime.applyEmailReconResult) {
+          panelInteractionsRuntime.applyEmailReconResult(email, result);
+        }
+      },
     };
   }
 

@@ -1726,7 +1726,11 @@
 
       var chat = document.getElementById("v1AiChatHistory");
       var promptInput = document.getElementById("v1AiPromptInput");
+      var stopBtn = document.getElementById("v1AiStopBtn");
+      var clearHistoryBtn = document.getElementById("v1AiClearHistoryBtn");
       if (!chat || !promptInput) return;
+
+      var WELCOME_MESSAGE = "Assistant ready. Choose mode: UI for interface guidance, PS for console-first commands.";
 
       // #v1AiModeUiCheckbox/#v1AiModePsCheckbox are disabled for now (see
       // their title attribute) - two independent permission checkboxes
@@ -1760,6 +1764,13 @@
         }
       }
 
+      // Shown once there's more than just the welcome meta message - a
+      // freshly-launched/just-cleared conversation has nothing worth
+      // clearing yet.
+      function updateClearHistoryBtnVisibility() {
+        if (clearHistoryBtn) clearHistoryBtn.hidden = chat.children.length <= 1;
+      }
+
       // isMeta marks UI chrome ("Assistant ready...", "Mode switched to
       // X.") as distinct from real conversational turns - sendPrompt()
       // below excludes data-ai-meta elements when it rebuilds the message
@@ -1773,6 +1784,7 @@
         chat.appendChild(msg);
         chat.scrollTop = chat.scrollHeight;
         saveAiChatHistory();
+        updateClearHistoryBtnVisibility();
         return msg;
       }
 
@@ -1791,11 +1803,33 @@
           // the DOM (index.html) is left untouched as the fallback.
         }
       })();
+      updateClearHistoryBtnVisibility();
 
-      // Won't fire while both checkboxes stay disabled - kept wired so
-      // this just works once they're re-enabled later, no other change
-      // needed.
-      var modeCheckboxes = [document.getElementById("v1AiModeUiCheckbox"), document.getElementById("v1AiModePsCheckbox")].filter(Boolean);
+      // Clears the persisted history AND the guardrail action counter (via
+      // ai-permissions-runtime.js's own "reset if history was empty"
+      // check on the next send - see isFreshConversation below) - back to
+      // exactly the same single welcome-meta-message state a first launch
+      // starts from. Confirmed first, matching every other destructive
+      // action in the app (openConfirmDialog, not window.confirm()).
+      if (clearHistoryBtn) {
+        clearHistoryBtn.addEventListener("click", function () {
+          var ui = window.NetReconNewUI || {};
+          if (!ui.openConfirmDialog) return;
+          ui.openConfirmDialog(tr("aiClearHistoryConfirmTitle"), tr("aiClearHistoryConfirmMessage"), tr("aiClearHistoryConfirmOk"), tr("exitPromptCancel"))
+            .then(function (confirmed) {
+              if (!confirmed) return;
+              chat.innerHTML = "";
+              appendMessage("assistant", WELCOME_MESSAGE, true);
+            });
+        });
+      }
+
+      // Only the PS checkbox left here - it stays disabled/unwired (see its
+      // title attribute), but the listener is kept so it "just works" once
+      // it's enabled later, no other change needed then. The UI checkbox
+      // gets its own dedicated handler below instead of this generic one,
+      // since it's a real on/off switch now, not part of a mode-switch pair.
+      var modeCheckboxes = [document.getElementById("v1AiModePsCheckbox")].filter(Boolean);
       modeCheckboxes.forEach(function (checkbox) {
         checkbox.addEventListener("change", function () {
           var mode = currentMode() === "ps" ? "PS" : "UI";
@@ -1803,12 +1837,30 @@
         });
       });
 
+      // The UI checkbox is a real, persisted quick on/off switch for the
+      // assistant's only functional mode today (see uiModeEnabled in
+      // general-settings-runtime.js) - sync its checked state from
+      // whatever was saved last session, and persist every change.
+      (function wireUiModeCheckbox() {
+        var uiCheckbox = document.getElementById("v1AiModeUiCheckbox");
+        var aiConfigApi = (window.NetReconNewUICore || {}).aiAssistantConfig;
+        if (!uiCheckbox || !aiConfigApi) return;
+        uiCheckbox.checked = aiConfigApi.getState().uiModeEnabled;
+        uiCheckbox.addEventListener("change", function () {
+          var next = aiConfigApi.getState();
+          next.uiModeEnabled = uiCheckbox.checked;
+          aiConfigApi.replaceState(next);
+          appendMessage("assistant", uiCheckbox.checked ? tr("aiUiModeEnabledNote") : tr("aiUiModeDisabledNote"), true);
+        });
+      })();
+
       // Generation counter (same pattern as Email Recon/Network Monitor):
       // a Send while a previous reply is still in flight would otherwise
       // let a slow, superseded response overwrite what the user is
       // actually looking at once it finally lands.
       var aiChatGeneration = 0;
       var aiChatBusy = false;
+      var currentAbort = null;
 
       function sendPrompt() {
         if (aiChatBusy) return;
@@ -1827,6 +1879,15 @@
         }
 
         var state = aiConfigApi.getState();
+
+        // Quick kill switch (v1AiModeUiCheckbox) - the only functional mode
+        // today is "ui" (PS's own checkbox stays disabled/unwired), so this
+        // is effectively a whole-assistant on/off toggle for now.
+        if (mode === "ui" && !state.uiModeEnabled) {
+          appendMessage("assistant", tr("aiUiModeDisabledBlockedNote"), true);
+          return;
+        }
+
         var providerState = state[state.provider];
         var apiKey = aiConfigApi.getApiKey(state.provider);
         if (!apiKey) {
@@ -1840,19 +1901,56 @@
           return { role: el.classList.contains("user") ? "user" : "assistant", content: el.textContent };
         });
 
+        // User-editable per mode (Options -> General -> AI Assistant) -
+        // falls back to the built-in default text if somehow empty (should
+        // only happen from a corrupted/hand-edited localStorage value,
+        // since the stored state is always seeded with the real defaults).
+        var defaultPrompts = aiConfigApi.getDefaultState();
         var systemPrompt = mode === "ps"
-          ? "You are an assistant embedded in a desktop network/OSINT tool, running with full console permissions. Focus on PowerShell commands and console/terminal workflows the user can run."
-          : "You are an assistant embedded in a desktop network/OSINT tool. Focus on explaining UI actions, panel workflows, and built-in macros the user can trigger in the app. Do not suggest running arbitrary shell commands.";
+          ? (state.systemPromptPs || defaultPrompts.systemPromptPs)
+          : (state.systemPromptUi || defaultPrompts.systemPromptUi);
 
         var thisGeneration = ++aiChatGeneration;
         aiChatBusy = true;
         var pendingMsg = appendMessage("assistant", "…", true);
+        var isFreshConversation = history.length <= 1;
 
-        // Called directly (fetch, not platform.invoke) - works identically
-        // in the native app and on ipscanner.pl, since both are just a
-        // webview/browser making the same HTTP call straight to Anthropic/
-        // Google. See sendAiChatMessage() in general-settings-runtime.js.
-        aiConfigApi.sendChatMessage(state.provider, providerState.model, apiKey, history, systemPrompt).then(function (reply) {
+        // Runs through ai-tools/ai-tools-engine-runtime.js rather than
+        // calling aiConfigApi.sendChatMessage() directly - the engine still
+        // ends up making the exact same direct fetch() call underneath
+        // (works identically in the native app and on ipscanner.pl, see
+        // sendAiChatMessageRaw() in general-settings-runtime.js), it just
+        // also offers the model NetRecon's tool catalog and executes any
+        // tool call(s) it requests, gated by the AI Permissions store.
+        // Each resolved tool call surfaces as its own isMeta bubble via
+        // onMeta - only the final text reply below becomes the real
+        // (non-meta) assistant turn.
+        var engine = (window.NetReconNewUICore || {}).aiToolsEngine;
+        // Both branches normalize to { promise, abort } - the fallback (no
+        // engine loaded) has nothing real to cancel, since it's a single
+        // plain fetch with no tool-calling round loop; Stop just won't do
+        // anything useful there, which is fine since that path is a
+        // last-resort fallback, not the real one the app ships with.
+        var turn = engine
+          ? engine.runConversationTurn({
+              provider: state.provider,
+              modelKey: providerState.model,
+              apiKey: apiKey,
+              systemPrompt: systemPrompt,
+              textHistory: history,
+              isFreshConversation: isFreshConversation,
+              tr: tr,
+              onMeta: function (text) {
+                if (thisGeneration !== aiChatGeneration) return;
+                appendMessage("assistant", text, true);
+              },
+            })
+          : { promise: aiConfigApi.sendChatMessage(state.provider, providerState.model, apiKey, history, systemPrompt), abort: function () {} };
+
+        currentAbort = turn.abort;
+        if (stopBtn) stopBtn.hidden = false;
+
+        turn.promise.then(function (reply) {
           if (thisGeneration !== aiChatGeneration) return;
           pendingMsg.removeAttribute("data-ai-meta");
           pendingMsg.textContent = reply || "";
@@ -1864,7 +1962,15 @@
         }).finally(function () {
           if (thisGeneration !== aiChatGeneration) return;
           aiChatBusy = false;
+          currentAbort = null;
+          if (stopBtn) stopBtn.hidden = true;
           chat.scrollTop = chat.scrollHeight;
+        });
+      }
+
+      if (stopBtn) {
+        stopBtn.addEventListener("click", function () {
+          if (currentAbort) currentAbort();
         });
       }
 
@@ -1930,6 +2036,8 @@
       ensureRightTabOpen: ensureRightTabOpen,
       setRightTabOpen: setRightTabOpen,
       setRightTabActive: setRightTabActive,
+      setLeftActiveTab: setLeftActiveTab,
+      activateToolInItsConfiguredSection: activateToolInItsConfiguredSection,
       syncLeftTabActivationInvariant: syncLeftTabActivationInvariant,
       syncRightTabActivationInvariant: syncRightTabActivationInvariant,
       refreshActiveGenericContent: refreshActiveGenericContent,

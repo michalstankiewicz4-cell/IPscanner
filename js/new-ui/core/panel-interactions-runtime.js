@@ -151,6 +151,36 @@
     var emailReconGeneration = 0;
     var emailReconRunning = false;
 
+    function applyEmailReconSummaryToDom(summary) {
+      var existsEl = document.querySelector('[data-emailrecon-role="exists-badge"]');
+      var countEl = document.querySelector('[data-emailrecon-role="hit-count"]');
+      if (existsEl) existsEl.textContent = summary.exists;
+      if (countEl) countEl.textContent = summary.count;
+    }
+
+    // Applies a completed lookup result to the CS table/summary + history,
+    // shared by the manual Start button (startLookup() below) and the AI
+    // tool-calling engine's run_email_recon_lookup handler
+    // (ai-tools/ai-tools-handlers.js, via the window.NetReconNewUI bridge) -
+    // without this, an AI-triggered lookup would get a real result but the
+    // user watching the CS tab would never see it, since the Tauri
+    // invoke() call by itself has no DOM side effects.
+    function applyEmailReconResult(email, result) {
+      emailReconLastResult = result;
+      var renderRows = typeof deps.renderEmailReconRows === "function" ? deps.renderEmailReconRows : null;
+      var renderSummary = typeof deps.renderEmailReconSummary === "function" ? deps.renderEmailReconSummary : null;
+      var csRoot = document.querySelector(".v1-emailrecon-shell");
+      if (csRoot && renderRows) {
+        var resultsBody = csRoot.querySelector('[data-emailrecon-role="results-rows"]');
+        if (resultsBody) resultsBody.innerHTML = renderRows(result.sources);
+      }
+      if (renderSummary) applyEmailReconSummaryToDom(renderSummary(result));
+      var emailReconApi = (window.NetReconNewUICore || {}).emailReconRuntime;
+      if (email && emailReconApi && typeof emailReconApi.addEmailHistory === "function") {
+        emailReconApi.addEmailHistory(email);
+      }
+    }
+
     // Shared by the canvas block's Run button and the Inspector's Run button
     // so both report identical, correct status-line feedback - including on
     // failure (runMacro returns false when the target scanner button isn't
@@ -1413,7 +1443,32 @@
           var keyInput = target.closest ? target.closest("[data-ai-api-key]") : null;
           if (keyInput) {
             aiConfigApi.setApiKey(keyInput.getAttribute("data-ai-api-key"), keyInput.value);
+            return;
           }
+
+          var promptArea = target.closest ? target.closest("[data-ai-system-prompt]") : null;
+          if (promptArea) {
+            var promptMode = promptArea.getAttribute("data-ai-system-prompt");
+            var nextPrompt = aiConfigApi.getState();
+            nextPrompt[promptMode === "ps" ? "systemPromptPs" : "systemPromptUi"] = promptArea.value;
+            aiConfigApi.replaceState(nextPrompt);
+          }
+        });
+
+        // Restore-default buttons for the two system prompts - resets just
+        // that one field/textarea, leaving everything else (provider, keys,
+        // the other mode's prompt) untouched.
+        root.addEventListener("click", function (event) {
+          var resetBtn = event.target && event.target.closest ? event.target.closest("[data-ai-prompt-reset]") : null;
+          if (!resetBtn) return;
+          var resetMode = resetBtn.getAttribute("data-ai-prompt-reset");
+          var field = resetMode === "ps" ? "systemPromptPs" : "systemPromptUi";
+          var defaults = aiConfigApi.getDefaultState();
+          var nextReset = aiConfigApi.getState();
+          nextReset[field] = defaults[field];
+          aiConfigApi.replaceState(nextReset);
+          var textarea = root.querySelector('[data-ai-system-prompt="' + resetMode + '"]');
+          if (textarea) textarea.value = defaults[field];
         });
       }
 
@@ -1956,24 +2011,20 @@
       var renderRows = typeof deps.renderEmailReconRows === "function" ? deps.renderEmailReconRows : null;
       var renderSummary = typeof deps.renderEmailReconSummary === "function" ? deps.renderEmailReconSummary : null;
 
-      function applySummaryToDom(summary) {
-        var existsEl = document.querySelector('[data-emailrecon-role="exists-badge"]');
-        var countEl = document.querySelector('[data-emailrecon-role="hit-count"]');
-        if (existsEl) existsEl.textContent = summary.exists;
-        if (countEl) countEl.textContent = summary.count;
-      }
-
       // Re-hydrate from the last completed lookup on every (re)render of
       // this shell - same reasoning as Network Monitor's
       // netMonLastConnections above: #v1ToolDetail survives detach/redock,
       // so a bind-guard would otherwise skip this on redock even though the
-      // summary/rows are brand-new, empty nodes each time.
+      // summary/rows are brand-new, empty nodes each time. Also covers a
+      // lookup the AI tool-calling engine triggered while this tab wasn't
+      // even open - applyEmailReconResult() above already updated
+      // emailReconLastResult, this just paints it once the tab renders.
       if (renderRows && emailReconLastResult) {
         var tbody = root.querySelector('[data-emailrecon-role="results-rows"]');
         if (tbody) tbody.innerHTML = renderRows(emailReconLastResult.sources);
       }
       if (renderSummary && emailReconLastResult) {
-        applySummaryToDom(renderSummary(emailReconLastResult));
+        applyEmailReconSummaryToDom(renderSummary(emailReconLastResult));
       }
 
       // Start/Stop live in the LS panel, not this CS root (unlike Network
@@ -1988,7 +2039,6 @@
         var core = window.NetReconNewUICore || {};
         var platform = core.platform;
         var emailReconConfig = core.emailReconConfig;
-        var emailReconApi = core.emailReconRuntime;
         var sharedNet = core.utils && core.utils.net;
 
         var input = document.getElementById("v1EmailReconInput");
@@ -2027,16 +2077,7 @@
           },
         }).then(function (result) {
           if (thisGeneration !== emailReconGeneration) return; // superseded by Stop or a newer lookup
-          emailReconLastResult = result;
-          var csRoot = document.querySelector(".v1-emailrecon-shell");
-          if (csRoot && renderRows) {
-            var resultsBody = csRoot.querySelector('[data-emailrecon-role="results-rows"]');
-            if (resultsBody) resultsBody.innerHTML = renderRows(result.sources);
-          }
-          if (renderSummary) applySummaryToDom(renderSummary(result));
-          if (emailReconApi && typeof emailReconApi.addEmailHistory === "function") {
-            emailReconApi.addEmailHistory(email);
-          }
+          applyEmailReconResult(email, result);
           if (setStatusLine) setStatusLine(tr("statusEmailReconDone") + " " + email);
         }).catch(function (err) {
           if (thisGeneration !== emailReconGeneration) return;
@@ -2169,6 +2210,7 @@
       wireNetworkMonitorTool: wireNetworkMonitorTool,
       wireNetworkMonitorLeftPanel: wireNetworkMonitorLeftPanel,
       wireEmailReconTool: wireEmailReconTool,
+      applyEmailReconResult: applyEmailReconResult,
       wireAiPermissionsTool: wireAiPermissionsTool,
     };
   }

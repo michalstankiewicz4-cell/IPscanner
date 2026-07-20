@@ -196,6 +196,9 @@
         const activityGlobeBtn = document.getElementById("v1ActivityGlobe");
         const activityNetworkMonitorBtn = document.getElementById("v1ActivityNetworkMonitor");
         const activityEmailReconBtn = document.getElementById("v1ActivityEmailRecon");
+        const aiModeUiLabel = document.getElementById("v1AiModeUiLabel");
+        const aiStopBtn = document.getElementById("v1AiStopBtn");
+        const aiClearHistoryBtn = document.getElementById("v1AiClearHistoryBtn");
         const toolsMenuIpScanner = document.getElementById("v1ToolsMenuIpScanner");
         const toolsMenuLoremIpsum = document.getElementById("v1ToolsMenuLoremIpsum");
         const toolsMenuTopology = document.getElementById("v1ToolsMenuTopology");
@@ -290,6 +293,15 @@
         if (activityEmailReconBtn) {
           activityEmailReconBtn.setAttribute("title", tr("toolTitle_email_recon"));
           activityEmailReconBtn.setAttribute("aria-label", tr("toolTitle_email_recon"));
+        }
+        if (aiModeUiLabel) aiModeUiLabel.setAttribute("title", tr("aiModeUiCheckboxTitle"));
+        if (aiStopBtn) {
+          aiStopBtn.setAttribute("title", tr("aiStopBtnTitle"));
+          aiStopBtn.setAttribute("aria-label", tr("aiStopBtnTitle"));
+        }
+        if (aiClearHistoryBtn) {
+          aiClearHistoryBtn.setAttribute("title", tr("aiClearHistoryBtnTitle"));
+          aiClearHistoryBtn.setAttribute("aria-label", tr("aiClearHistoryBtnTitle"));
         }
         if (tabsScrollLeftBtn) {
           tabsScrollLeftBtn.setAttribute("title", tr("tabScrollLeft"));
@@ -473,6 +485,71 @@
           panelsRuntime.switchTool(tool);
         }
       };
+      // Same flat-bridge reasoning as switchTool above, for the AI tool-
+      // calling engine's "close_tool_tab" handler (ai-tools/ai-tools-
+      // handlers.js) - panelsRuntime already exposes the underlying
+      // function as closeCenterTool.
+      window.NetReconNewUI.closeToolTab = function (tool) {
+        if (panelsRuntime && panelsRuntime.closeCenterTool) {
+          panelsRuntime.closeCenterTool(tool);
+        }
+      };
+      // LS/RS equivalents of switchTool/closeToolTab above, for tool ids
+      // whose ui flags mark them showInLeftPanel/showInRightPanel rather
+      // than showAsTab (center) - switchTool() only ever handles center
+      // tabs, so without these the AI tool-calling engine had no way to
+      // open/close anything living in the left sidebar or right settings
+      // panel (e.g. "language-manager" only has showAsTab, but
+      // "ip-library"/"scan-runner" are LS, "email-recon-config" is RS-only).
+      window.NetReconNewUI.openToolInSection = function (tool) {
+        if (navigationRuntime && navigationRuntime.activateToolInItsConfiguredSection) {
+          navigationRuntime.activateToolInItsConfiguredSection(tool);
+        }
+      };
+      window.NetReconNewUI.closeToolInSection = function (tool, section) {
+        if (!navigationRuntime) return;
+        if (section === "left" && navigationRuntime.setSidebarTabOpen) {
+          navigationRuntime.setSidebarTabOpen(tool, false);
+        } else if (section === "right" && navigationRuntime.setRightTabOpen) {
+          navigationRuntime.setRightTabOpen(tool, false);
+        }
+      };
+      window.NetReconNewUI.getOpenLeftTools = function () {
+        return navigationRuntime && navigationRuntime.getOpenLeftTools ? navigationRuntime.getOpenLeftTools() : [];
+      };
+      window.NetReconNewUI.getOpenRightTools = function () {
+        return navigationRuntime && navigationRuntime.getOpenRightTools ? navigationRuntime.getOpenRightTools() : [];
+      };
+      window.NetReconNewUI.hasTool = function (tool) {
+        return !!(panelsRuntime && panelsRuntime.hasTool && panelsRuntime.hasTool(tool));
+      };
+      // hasTool() above answers "does this id exist anywhere in the tool
+      // catalog" (LS/RS/CS all lumped together) - these two answer the
+      // narrower, more reliable question ai-tools-handlers.js actually
+      // needs: "did switch/close actually take effect on a real center
+      // tab". Checking this after calling switchTool/closeToolTab is what
+      // lets the AI be told the honest truth when it's handed an id that
+      // isn't a center tab at all (e.g. an RS-only settings pane).
+      window.NetReconNewUI.getActiveTool = function () {
+        return panelsRuntime && panelsRuntime.getActiveTool ? panelsRuntime.getActiveTool() : null;
+      };
+      window.NetReconNewUI.getOpenCenterTools = function () {
+        return panelsRuntime && panelsRuntime.getOpenCenterTools ? panelsRuntime.getOpenCenterTools() : [];
+      };
+      // Lets a successful AI-triggered email-recon lookup (ai-tools-
+      // handlers.js) paint its result into the CS tab the same way the
+      // manual Start button does - see applyEmailReconResult() in
+      // panel-interactions-runtime.js.
+      window.NetReconNewUI.applyEmailReconResult = function (email, result) {
+        if (panelsRuntime && panelsRuntime.applyEmailReconResult) {
+          panelsRuntime.applyEmailReconResult(email, result);
+        }
+      };
+      // Same reasoning again - ai-tools-handlers.js is a flat singleton
+      // module (like macros-runtime.js/email-recon-runtime.js's config
+      // half), not a deps-threaded factory, so it has no other way to
+      // reach the current tr().
+      window.NetReconNewUI.tr = tr;
 
       // =========================
       // 1) Tool metadata + routing

@@ -481,8 +481,24 @@
         ].join("");
       }
 
+      function aiSystemPromptRow(mode, labelKey, labelFallback) {
+        var aiConfigApi = window.NetReconNewUICore && window.NetReconNewUICore.aiAssistantConfig;
+        var state = aiConfigApi ? aiConfigApi.getState() : {};
+        var field = mode === "ps" ? "systemPromptPs" : "systemPromptUi";
+        var value = typeof state[field] === "string" ? state[field] : "";
+        return [
+          "<div class=\"v1-ai-prompt-block\">",
+          "<label for=\"v1AiSystemPrompt-" + mode + "\">" + escapeHtml(trOr(labelKey, labelFallback)) + "</label>",
+          "<textarea id=\"v1AiSystemPrompt-" + mode + "\" data-ai-system-prompt=\"" + mode + "\" rows=\"3\">" + escapeHtml(value) + "</textarea>",
+          "<button type=\"button\" class=\"v1-ai-prompt-reset\" data-ai-prompt-reset=\"" + mode + "\">" + escapeHtml(trOr("aiSystemPromptRestoreBtn", "Restore default")) + "</button>",
+          "</div>"
+        ].join("");
+      }
+
       function aiAssistantRow() {
-        return aiProviderBlock("claude") + aiProviderBlock("google");
+        return aiProviderBlock("claude") + aiProviderBlock("google")
+          + aiSystemPromptRow("ui", "aiSystemPromptUiLabel", "System prompt (UI mode)")
+          + aiSystemPromptRow("ps", "aiSystemPromptPsLabel", "System prompt (PS mode)");
       }
 
       // Small, deliberately non-persisted test: a live "switch UI" toggle,
