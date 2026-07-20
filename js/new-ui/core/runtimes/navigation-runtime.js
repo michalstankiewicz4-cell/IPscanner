@@ -1733,23 +1733,77 @@
         return selected ? selected.value : "ui";
       }
 
-      function appendMessage(kind, text) {
+      // Single-conversation persistence (no multi-chat/thread support yet -
+      // one flat history, same shape as what's already on screen). Saved
+      // on every append/edit, reloaded once below to replace the static
+      // "Assistant ready..." welcome message from index.html whenever a
+      // real prior conversation exists.
+      var AI_CHAT_HISTORY_KEY = "netrecon_ai_chat_history_v1";
+
+      function saveAiChatHistory() {
+        try {
+          var items = Array.prototype.slice.call(chat.querySelectorAll(".v1-ai-msg")).map(function (el) {
+            return {
+              kind: el.classList.contains("user") ? "user" : "assistant",
+              text: el.textContent,
+              meta: el.hasAttribute("data-ai-meta"),
+            };
+          });
+          localStorage.setItem(AI_CHAT_HISTORY_KEY, JSON.stringify(items));
+        } catch (_) {
+          // ignore persistence failures
+        }
+      }
+
+      // isMeta marks UI chrome ("Assistant ready...", "Mode switched to
+      // X.") as distinct from real conversational turns - sendPrompt()
+      // below excludes data-ai-meta elements when it rebuilds the message
+      // history to send to the API, so this chrome never leaks into the
+      // actual conversation context.
+      function appendMessage(kind, text, isMeta) {
         var msg = document.createElement("div");
         msg.className = "v1-ai-msg " + kind;
+        if (isMeta) msg.setAttribute("data-ai-meta", "true");
         msg.textContent = String(text || "");
         chat.appendChild(msg);
         chat.scrollTop = chat.scrollHeight;
+        saveAiChatHistory();
+        return msg;
       }
+
+      (function loadAiChatHistory() {
+        try {
+          var raw = localStorage.getItem(AI_CHAT_HISTORY_KEY);
+          if (!raw) return;
+          var items = JSON.parse(raw);
+          if (!Array.isArray(items) || !items.length) return;
+          chat.innerHTML = "";
+          items.forEach(function (item) {
+            appendMessage(item.kind === "user" ? "user" : "assistant", item.text, !!item.meta);
+          });
+        } catch (_) {
+          // ignore corrupt storage - the static welcome message already in
+          // the DOM (index.html) is left untouched as the fallback.
+        }
+      })();
 
       document.querySelectorAll('input[name="v1AiMode"]').forEach(function (radio) {
         radio.addEventListener("change", function () {
           if (!radio.checked) return;
           var mode = currentMode() === "ps" ? "PS" : "UI";
-          appendMessage("assistant", "Mode switched to " + mode + ".");
+          appendMessage("assistant", "Mode switched to " + mode + ".", true);
         });
       });
 
+      // Generation counter (same pattern as Email Recon/Network Monitor):
+      // a Send while a previous reply is still in flight would otherwise
+      // let a slow, superseded response overwrite what the user is
+      // actually looking at once it finally lands.
+      var aiChatGeneration = 0;
+      var aiChatBusy = false;
+
       function sendPrompt() {
+        if (aiChatBusy) return;
         var prompt = (promptInput.value || "").trim();
         if (!prompt) return;
 
@@ -1757,11 +1811,53 @@
         appendMessage("user", prompt);
         promptInput.value = "";
 
-        if (mode === "ps") {
-          appendMessage("assistant", "PS mode active: I will focus on PowerShell/console commands and terminal workflow.");
-        } else {
-          appendMessage("assistant", "UI mode active: I will focus on UI flows, panel actions, and visual workflow steps.");
+        var core = window.NetReconNewUICore || {};
+        var aiConfigApi = core.aiAssistantConfig;
+        if (!aiConfigApi) {
+          appendMessage("assistant", "AI Assistant isn't available right now.", true);
+          return;
         }
+
+        var state = aiConfigApi.getState();
+        var providerState = state[state.provider];
+        var apiKey = aiConfigApi.getApiKey(state.provider);
+        if (!apiKey) {
+          appendMessage("assistant", "No API key configured - add one in Options → General → AI Assistant.", true);
+          return;
+        }
+
+        // Real turns only (data-ai-meta excluded) - includes the user
+        // message just appended above.
+        var history = Array.prototype.slice.call(chat.querySelectorAll(".v1-ai-msg:not([data-ai-meta])")).map(function (el) {
+          return { role: el.classList.contains("user") ? "user" : "assistant", content: el.textContent };
+        });
+
+        var systemPrompt = mode === "ps"
+          ? "You are an assistant embedded in a desktop network/OSINT tool, running with full console permissions. Focus on PowerShell commands and console/terminal workflows the user can run."
+          : "You are an assistant embedded in a desktop network/OSINT tool. Focus on explaining UI actions, panel workflows, and built-in macros the user can trigger in the app. Do not suggest running arbitrary shell commands.";
+
+        var thisGeneration = ++aiChatGeneration;
+        aiChatBusy = true;
+        var pendingMsg = appendMessage("assistant", "…", true);
+
+        // Called directly (fetch, not platform.invoke) - works identically
+        // in the native app and on ipscanner.pl, since both are just a
+        // webview/browser making the same HTTP call straight to Anthropic/
+        // Google. See sendAiChatMessage() in general-settings-runtime.js.
+        aiConfigApi.sendChatMessage(state.provider, providerState.model, apiKey, history, systemPrompt).then(function (reply) {
+          if (thisGeneration !== aiChatGeneration) return;
+          pendingMsg.removeAttribute("data-ai-meta");
+          pendingMsg.textContent = reply || "";
+          saveAiChatHistory();
+        }).catch(function (err) {
+          if (thisGeneration !== aiChatGeneration) return;
+          pendingMsg.textContent = "Error: " + String((err && err.message) || err);
+          saveAiChatHistory();
+        }).finally(function () {
+          if (thisGeneration !== aiChatGeneration) return;
+          aiChatBusy = false;
+          chat.scrollTop = chat.scrollHeight;
+        });
       }
 
       promptInput.addEventListener("keydown", function (event) {

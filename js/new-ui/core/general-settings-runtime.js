@@ -224,6 +224,101 @@
     replaceAiConfigState(next);
   }
 
+  // Maps the settings UI's short model ids (opus/sonnet/haiku, pro/flash) to
+  // the real model strings each provider's API expects - kept here, next to
+  // the rest of the AI Assistant state, so sendAiChatMessage() callers never
+  // have to know the real API model names.
+  var AI_API_MODEL_IDS = {
+    claude: { opus: "claude-opus-4-8", sonnet: "claude-sonnet-5", haiku: "claude-haiku-4-5-20251001" },
+    google: { pro: "gemini-2.5-pro", flash: "gemini-2.5-flash" },
+  };
+
+  function getAiApiModelId(provider, modelKey) {
+    var p = normalizeProvider(provider);
+    var table = AI_API_MODEL_IDS[p] || {};
+    return table[modelKey] || modelKey;
+  }
+
+  // Direct browser/webview fetch() calls, not routed through the Rust
+  // backend - both work this way (Gemini's API supports CORS for this by
+  // design; Anthropic's requires the explicit opt-in header below, which
+  // exists specifically for this use case). This is the one deliberate
+  // exception to "external calls go through Rust": it's what makes the
+  // chat work identically in the native app AND on ipscanner.pl, and it
+  // means the API key never passes through any server this app's authors
+  // control - it goes straight from the user's own browser/webview to
+  // Anthropic/Google, visible only in that browser's own Network tab.
+  function sendAiChatMessageClaude(model, apiKey, messages, system) {
+    return fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model: model,
+        max_tokens: 1024,
+        system: system || undefined,
+        messages: messages.map(function (m) {
+          return { role: m.role === "assistant" ? "assistant" : "user", content: m.content };
+        }),
+      }),
+    }).then(function (resp) {
+      return resp.text().then(function (text) {
+        if (!resp.ok) throw new Error("Anthropic API error (" + resp.status + "): " + text);
+        var data = JSON.parse(text);
+        if (data.error) throw new Error("Anthropic API error: " + JSON.stringify(data.error));
+        var reply = (data.content || [])
+          .filter(function (b) { return b.type === "text"; })
+          .map(function (b) { return b.text || ""; })
+          .join("");
+        if (!reply) throw new Error("Empty response from Anthropic");
+        return reply;
+      });
+    });
+  }
+
+  function sendAiChatMessageGoogle(model, apiKey, messages, system) {
+    var url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(apiKey);
+    var body = {
+      contents: messages.map(function (m) {
+        return { role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] };
+      }),
+    };
+    if (system) body.systemInstruction = { parts: [{ text: system }] };
+
+    return fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }).then(function (resp) {
+      return resp.text().then(function (text) {
+        if (!resp.ok) throw new Error("Google API error (" + resp.status + "): " + text);
+        var data = JSON.parse(text);
+        if (data.error) throw new Error("Google API error: " + JSON.stringify(data.error));
+        var reply = (data.candidates || [])
+          .map(function (c) {
+            var parts = (c.content && c.content.parts) || [];
+            return parts.map(function (p) { return p.text || ""; }).join("");
+          })
+          .join("");
+        if (!reply) throw new Error("Empty response from Google");
+        return reply;
+      });
+    });
+  }
+
+  function sendAiChatMessage(provider, modelKey, apiKey, messages, system) {
+    var p = normalizeProvider(provider);
+    var model = getAiApiModelId(p, modelKey);
+    if (!apiKey) return Promise.reject(new Error("missing_api_key"));
+    return p === "google"
+      ? sendAiChatMessageGoogle(model, apiKey, messages, system)
+      : sendAiChatMessageClaude(model, apiKey, messages, system);
+  }
+
   window.NetReconNewUICore.aiAssistantConfig = {
     getState: getAiConfigState,
     getDefaultState: makeDefaultAiConfigState,
@@ -231,5 +326,35 @@
     getApiKey: getAiApiKey,
     setApiKey: setAiApiKey,
     setKeyStorageMode: setAiKeyStorageMode,
+    getApiModelId: getAiApiModelId,
+    sendChatMessage: sendAiChatMessage,
   };
+
+  // RS "AI Assistant" panel's mode badge (index.html's static
+  // #v1AiModeBadge, next to the UI/PS radio toggle) used to be a
+  // hardcoded placeholder string - now it's derived from the real
+  // provider+model choice above ("Anthropic" + "Sonnet" -> "Anthropic
+  // Sonnet"), kept in sync on every config change. The badge is a single
+  // static element (never torn down/re-rendered), so this only needs to
+  // bind once.
+  var AI_DISPLAY_NAMES = {
+    claude: { name: "Anthropic", models: { opus: "Opus", sonnet: "Sonnet", haiku: "Haiku" } },
+    google: { name: "Google", models: { pro: "Pro", flash: "Flash" } },
+  };
+
+  function computeAiModeBadgeText() {
+    var state = getAiConfigState();
+    var meta = AI_DISPLAY_NAMES[state.provider] || AI_DISPLAY_NAMES.claude;
+    var providerState = state[state.provider] || {};
+    var modelLabel = meta.models[providerState.model] || providerState.model || "";
+    return meta.name + " " + modelLabel;
+  }
+
+  function updateAiModeBadge() {
+    var badge = document.getElementById("v1AiModeBadge");
+    if (badge) badge.textContent = computeAiModeBadgeText();
+  }
+
+  updateAiModeBadge();
+  document.addEventListener("newui:ai-assistant-config-changed", updateAiModeBadge);
 })();
