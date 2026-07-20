@@ -185,6 +185,18 @@
       ui: { showInLeftPanel: true, leftOrder: 60, showAsTab: true, order: 96 }
     },
 
+    // CS-only, opened via the "Manage..." button in General settings' AI
+    // Assistant section (switchTool("ai-permissions")) - not reachable from
+    // the activity bar or Tools menu, same idea as "presets".
+    "ai-permissions": {
+      titleKey: "toolTitle_ai_permissions",
+      textKey: "toolText_ai_permissions",
+      points: ["Profile presets", "Per-tool access tree", "Guardrails & audit log"],
+      icon: "🔐",
+      labelKey: "tabLabel_ai_permissions",
+      ui: { showAsTab: true, order: 97 }
+    },
+
     // --- RS-only built-ins (no CS tab, no generic content renderer) ---
     assistant: {
       icon: "🤖",

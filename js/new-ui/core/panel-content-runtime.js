@@ -553,6 +553,9 @@
 
         groupHeading("generalGroupAiAssistant", "AI Assistant"),
         aiAssistantRow(),
+        "<div class=\"v1-scanner-actions v1-scanner-actions--spaced\">",
+        "<button type=\"button\" data-general-action=\"ai-permissions\">🔐 " + escapeHtml(trOr("aiManagePermissionsBtn", "Manage AI Tools & Permissions...")) + "</button>",
+        "</div>",
 
         "</div>"
       ].join("");
@@ -1414,6 +1417,99 @@
       return { exists: tr(existsKey), count: countText };
     }
 
+    // AI Tools & Permissions (CS tab, opened from General settings). UI/
+    // settings only - see ai-permissions-runtime.js's file-top comment.
+    function aiPermTreeRow(node, depth, settingsLocked, groupUnavailable) {
+      var api = window.NetReconNewUICore && window.NetReconNewUICore.aiPermissions;
+      if (!api) return "";
+      var unavailable = !!groupUnavailable || !!node.unavailable;
+      var value = api.computeDisplayLevel(node);
+      var isLocked = !!node.locked;
+      var options = ["off", "auto", "ask"].map(function (opt) {
+        return "<option value=\"" + opt + "\"" + (value === opt ? " selected" : "") + ">" + escapeHtml(trOr("aiPermLevel_" + opt, opt)) + "</option>";
+      }).join("");
+      if (value === "mixed") {
+        options += "<option value=\"mixed\" selected disabled>" + escapeHtml(trOr("aiPermLevelMixed", "Mixed")) + "</option>";
+      }
+      var rowHtml = [
+        "<div class=\"v1-ai-perm-row" + (unavailable ? " v1-ai-perm-row--unavailable" : "") + "\" style=\"padding-left:" + (depth * 18) + "px;\"" + (unavailable ? " title=\"" + escapeHtml(trOr("aiPermUnavailableNote", "Jeszcze niepodpiete pod realne wywolania AI")) + "\"" : "") + ">",
+        "<span class=\"v1-ai-perm-label\">" + escapeHtml(trOr(node.labelKey, node.fallback)) + "</span>",
+        "<select class=\"v1-ai-perm-select\" data-ai-perm-select=\"" + escapeHtml(node.id) + "\"" + (isLocked || settingsLocked || unavailable ? " disabled" : "") + ">" + options + "</select>",
+        isLocked ? "<span class=\"v1-ai-perm-lock\" title=\"" + escapeHtml(trOr("aiPermLockedNote", "Locked - always requires confirmation")) + "\">🔒</span>" : "",
+        "</div>"
+      ].join("");
+      var childrenHtml = (node.children || []).map(function (child) { return aiPermTreeRow(child, depth + 1, settingsLocked, unavailable); }).join("");
+      return rowHtml + childrenHtml;
+    }
+
+    function renderAiPermissionsTool() {
+      var api = window.NetReconNewUICore && window.NetReconNewUICore.aiPermissions;
+      if (!api) return "";
+      var state = api.getState();
+      var log = api.loadAuditLog();
+
+      var locked = state.lockSettings;
+
+      function profileRadio(value, labelKey, labelFallback) {
+        return [
+          "<label class=\"v1-general-settings-ui-switch-option\">",
+          "<input type=\"radio\" name=\"v1AiPermProfile\" value=\"" + value + "\"" + (state.profile === value ? " checked" : "") + (value === "custom" || locked ? " disabled" : "") + " />",
+          "<span>" + escapeHtml(trOr(labelKey, labelFallback)) + "</span>",
+          "</label>"
+        ].join("");
+      }
+
+      return [
+        "<div class=\"v1-import-manager\">",
+        "<div class=\"v1-import-manager-head\">",
+        "<h4 style=\"margin:0 0 4px;\">" + escapeHtml(trOr("aiPermTitle", "AI Tools & Permissions")) + "</h4>",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("aiPermIntroNote", "UI only for now - these settings don't affect the assistant's behavior yet.")) + "</div>",
+        "</div>",
+
+        "<h4 class=\"v1-general-settings-group\" style=\"margin-top:0;\">" + escapeHtml(trOr("aiPermGroupProfile", "Profile")) + "</h4>",
+        "<div class=\"v1-general-settings-ui-switch v1-general-settings-ui-switch--stacked\">",
+        profileRadio("readonly", "aiPermProfileReadonly", "Read-only"),
+        profileRadio("assisted", "aiPermProfileAssisted", "Assisted"),
+        profileRadio("autonomous", "aiPermProfileAutonomous", "Autonomous"),
+        profileRadio("custom", "aiPermProfileCustom", "Custom"),
+        "</div>",
+
+        "<h4 class=\"v1-general-settings-group\">" + escapeHtml(trOr("aiPermGroupAccess", "Tool Access")) + "</h4>",
+        "<div class=\"v1-config-field-row\">",
+        "<label for=\"v1AiPermPriority\">" + escapeHtml(trOr("aiPermPriorityLabel", "Priorytet przy konflikcie (drzewko vs. makro)")) + "</label>",
+        "<select id=\"v1AiPermPriority\" class=\"v1-ai-perm-select\" disabled>",
+        "<option>" + escapeHtml(trOr("aiPermPriorityRestrictive", "Wygrywa bardziej restrykcyjne (zalecane)")) + "</option>",
+        "<option>" + escapeHtml(trOr("aiPermPriorityTool", "Priorytet: narzędzie")) + "</option>",
+        "<option>" + escapeHtml(trOr("aiPermPriorityMacro", "Priorytet: makro")) + "</option>",
+        "</select>",
+        "</div>",
+        "<div class=\"v1-ai-perm-tree\">" + (window.NetReconNewUICore.aiPermissions.TREE || []).map(function (node) { return aiPermTreeRow(node, 0, locked); }).join("") + "</div>",
+
+        "<h4 class=\"v1-general-settings-group\">" + escapeHtml(trOr("aiPermGroupGuardrails", "Guardrails")) + "</h4>",
+        "<div class=\"v1-config-field-row\">",
+        "<label for=\"v1AiPermMaxActions\">" + escapeHtml(trOr("aiPermMaxActionsLabel", "Max actions per conversation")) + "</label>",
+        "<input id=\"v1AiPermMaxActions\" type=\"number\" min=\"1\" max=\"100\" value=\"" + state.maxActionsPerConversation + "\"" + (locked ? " disabled" : "") + " />",
+        "</div>",
+        "<label class=\"v1-config-checkbox-row\">",
+        "<input type=\"checkbox\" id=\"v1AiPermLockSettings\"" + (state.lockSettings ? " checked" : "") + " />",
+        "<span>🔒 " + escapeHtml(trOr("aiPermLockSettingsLabel", "Block further changes")) + "</span>",
+        "</label>",
+
+        "<h4 class=\"v1-general-settings-group\">" + escapeHtml(trOr("aiPermGroupAuditLog", "Audit Log")) + "</h4>",
+        "<div class=\"v1-scanner-actions v1-scanner-actions--spaced\">",
+        "<button type=\"button\" data-ai-perm-action=\"clear-log\"" + (locked ? " disabled" : "") + ">" + escapeHtml(trOr("aiPermClearLogBtn", "Clear log")) + "</button>",
+        "<button type=\"button\" data-ai-perm-action=\"export-log\">" + escapeHtml(trOr("aiPermExportLogBtn", "Export log")) + "</button>",
+        "</div>",
+        "<div class=\"v1-ai-perm-log\" id=\"v1AiPermLog\">",
+        log.length
+          ? log.map(function (entry) { return "<div class=\"v1-ai-perm-log-item\">" + escapeHtml(JSON.stringify(entry)) + "</div>"; }).join("")
+          : "<div class=\"v1-iplib-empty\">" + escapeHtml(trOr("aiPermLogEmpty", "No actions logged yet.")) + "</div>",
+        "</div>",
+
+        "</div>"
+      ].join("");
+    }
+
     var toolRenderers = {
       // --- shell keys ---
       versions: renderVersionsTool,
@@ -1431,6 +1527,7 @@
       "results-ip": renderResultsIp,
       "network-monitor": renderNetworkMonitorTool,
       "email-recon": renderEmailReconTool,
+      "ai-permissions": renderAiPermissionsTool,
     };
 
     function buildDetailHtml(tool) {
@@ -1450,6 +1547,7 @@
       netMonVendorForMac: vendorForMac,
       renderEmailReconRows: renderEmailReconRows,
       renderEmailReconSummary: renderEmailReconSummary,
+      renderAiPermissionsTool: renderAiPermissionsTool,
     };
   }
 

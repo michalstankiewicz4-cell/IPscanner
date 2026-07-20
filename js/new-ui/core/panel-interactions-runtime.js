@@ -1416,6 +1416,14 @@
           }
         });
       }
+
+      root.addEventListener("click", function (event) {
+        var btn = event.target && event.target.closest ? event.target.closest('[data-general-action="ai-permissions"]') : null;
+        if (!btn) return;
+        if (window.NetReconNewUI && window.NetReconNewUI.switchTool) {
+          window.NetReconNewUI.switchTool("ai-permissions");
+        }
+      });
     }
 
     // ip-scanner tool: Network Monitor (local connections + ARP table).
@@ -2061,6 +2069,93 @@
       });
     }
 
+    // AI Tools & Permissions (CS tab, opened from General settings). Any
+    // change (profile pick, a tree select, the guardrail number, the lock
+    // checkbox) just updates ai-permissions-runtime.js's store and
+    // regenerates this tab's whole content from it - simplest way to keep
+    // every select's "Mixed" state and disabled/locked styling correct
+    // without hand-patching each element. The delegated listeners stay on
+    // `root` itself (never replaced), so they survive that regeneration.
+    function exportAiPermAuditLog(entries) {
+      try {
+        var blob = new Blob([JSON.stringify(entries, null, 2)], { type: "application/json" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "ai-audit-log.json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (_) {
+        // ignore - purely a convenience export, nothing depends on it succeeding
+      }
+    }
+
+    function wireAiPermissionsTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
+      if (!root) return;
+      if (!root.querySelector(".v1-ai-perm-tree")) return;
+
+      var api = window.NetReconNewUICore && window.NetReconNewUICore.aiPermissions;
+      var renderFn = typeof deps.renderAiPermissionsTool === "function" ? deps.renderAiPermissionsTool : null;
+      if (!api || !renderFn) return;
+
+      function rerender() {
+        root.innerHTML = renderFn();
+      }
+
+      if (root.dataset.aiPermBound === "1") return;
+      root.dataset.aiPermBound = "1";
+
+      root.addEventListener("change", function (event) {
+        var target = event.target;
+        if (!target) return;
+
+        var profileRadio = target.closest ? target.closest('input[name="v1AiPermProfile"]') : null;
+        if (profileRadio && profileRadio.checked) {
+          api.applyProfile(profileRadio.value);
+          rerender();
+          return;
+        }
+
+        var select = target.closest ? target.closest("[data-ai-perm-select]") : null;
+        if (select) {
+          api.setNodeLevel(select.getAttribute("data-ai-perm-select"), select.value);
+          rerender();
+          return;
+        }
+
+        if (target.id === "v1AiPermMaxActions") {
+          var nextMax = api.getState();
+          nextMax.maxActionsPerConversation = Number(target.value) || nextMax.maxActionsPerConversation;
+          api.replaceState(nextMax);
+          return;
+        }
+
+        if (target.id === "v1AiPermLockSettings") {
+          var nextLock = api.getState();
+          nextLock.lockSettings = !!target.checked;
+          api.replaceState(nextLock);
+          rerender();
+        }
+      });
+
+      root.addEventListener("click", function (event) {
+        var btn = event.target && event.target.closest ? event.target.closest("[data-ai-perm-action]") : null;
+        if (!btn) return;
+        var action = btn.getAttribute("data-ai-perm-action");
+        if (action === "clear-log") {
+          api.clearAuditLog();
+          rerender();
+        } else if (action === "export-log") {
+          exportAiPermAuditLog(api.loadAuditLog());
+        }
+      });
+    }
+
     return {
       // shell
       wireVersionsTimeline: wireVersionsTimeline,
@@ -2074,6 +2169,7 @@
       wireNetworkMonitorTool: wireNetworkMonitorTool,
       wireNetworkMonitorLeftPanel: wireNetworkMonitorLeftPanel,
       wireEmailReconTool: wireEmailReconTool,
+      wireAiPermissionsTool: wireAiPermissionsTool,
     };
   }
 

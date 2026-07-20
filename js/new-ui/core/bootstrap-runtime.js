@@ -463,6 +463,16 @@
           panelsRuntime.wireToolRuntime(tool, rootEl);
         }
       };
+      // Exposed for panel-interactions-runtime.js's "Manage AI Tools &
+      // Permissions..." button (General settings) - opens a CS tab from a
+      // button click the same way the Port Presets button already does,
+      // just via this flat bridge instead of a deps-threaded reference
+      // (switchTool isn't otherwise passed into that file's deps object).
+      window.NetReconNewUI.switchTool = function (tool) {
+        if (panelsRuntime && panelsRuntime.switchTool) {
+          panelsRuntime.switchTool(tool);
+        }
+      };
 
       // =========================
       // 1) Tool metadata + routing

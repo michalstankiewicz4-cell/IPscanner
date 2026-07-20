@@ -606,3 +606,81 @@ html[dir="rtl"] .v1-ai-mode-badge {
   border-color: #c94b4b;
   color: #ffd2d2;
 }
+
+/* shell: AI Tools & Permissions tab (Options -> General's "Manage..."
+   button) - a simple indented tree, one row per node, using the same
+   select styling as the AI Assistant provider blocks above. */
+.v1-ai-perm-tree {
+  margin-top: 6px;
+  border: 1px solid #2a2a2e;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.v1-ai-perm-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #2a2a2e;
+}
+
+.v1-ai-perm-row:last-child {
+  border-bottom: none;
+}
+
+.v1-ai-perm-label {
+  flex: 1;
+  color: var(--txt);
+  font-size: 12px;
+}
+
+.v1-ai-perm-select {
+  border: 1px solid #3d424d;
+  background: #22242a;
+  color: var(--txt);
+  font-size: 12px;
+  padding: 3px 6px;
+  min-width: 90px;
+}
+
+.v1-ai-perm-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.v1-ai-perm-lock {
+  cursor: help;
+}
+
+/* Groups not yet wired to a real AI tool adapter (Network Monitor, IP
+   Scanner) - shown so the tree stays a complete map of the app, but
+   dimmed and non-interactive until that integration lands. */
+.v1-ai-perm-row--unavailable {
+  opacity: 0.45;
+}
+
+.v1-ai-perm-row--unavailable .v1-ai-perm-label {
+  cursor: help;
+}
+
+.v1-ai-perm-log {
+  margin-top: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #2a2a2e;
+  border-radius: 6px;
+  background: #1b1d22;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.v1-ai-perm-log-item {
+  padding: 4px 8px;
+  border-bottom: 1px solid #2a2a2e;
+  color: var(--txt-dim);
+}
+
+.v1-ai-perm-log-item:last-child {
+  border-bottom: none;
+}

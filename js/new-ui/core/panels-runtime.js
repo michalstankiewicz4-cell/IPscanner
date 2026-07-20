@@ -1440,6 +1440,7 @@
         netMonVendorForMac: panelContentRuntime && panelContentRuntime.netMonVendorForMac,
         renderEmailReconRows: panelContentRuntime && panelContentRuntime.renderEmailReconRows,
         renderEmailReconSummary: panelContentRuntime && panelContentRuntime.renderEmailReconSummary,
+        renderAiPermissionsTool: panelContentRuntime && panelContentRuntime.renderAiPermissionsTool,
       });
     }
 
@@ -1763,6 +1764,13 @@
       if (tool === "email-recon") { // ip-scanner tool
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireEmailReconTool) {
           panelInteractionsRuntime.wireEmailReconTool(scope);
+        }
+        return;
+      }
+
+      if (tool === "ai-permissions") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireAiPermissionsTool) {
+          panelInteractionsRuntime.wireAiPermissionsTool(scope);
         }
         return;
       }

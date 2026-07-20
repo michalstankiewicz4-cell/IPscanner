@@ -677,6 +677,15 @@
   cursor: pointer;
 }
 
+/* shell: AI Permissions' Profile picker - same radio-row markup as above,
+   just stacked one-per-line instead of inline (easier to scan 4 options
+   with full descriptive labels than a horizontal wrap). */
+.v1-general-settings-ui-switch--stacked {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
 /* shell: AI Assistant provider block (Options -> General, below History) -
    one of these per provider (Anthropic/Google). Grid rather than flex so
    every label's colon lines up in a fixed-width column regardless of how
