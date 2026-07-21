@@ -310,6 +310,12 @@
   // duplicate copy of the CS results shell into the LS generic-content slot.
   toolContentRuntime["email-recon"] = makeMovableEntry('[data-sidebar-tool-panel="email-recon"]', "flex");
   toolContentRuntime["email-recon-config"] = makeMovableEntry('.v1-right-pane[data-v1-right-pane="email-recon-config"]', "block");
+  // Same live-DOM-state static pane as config/assistant/email-recon-config
+  // above - without this, activating it falls through to the
+  // buildDetailHtml() fallback, which has no real entry for it and prints
+  // the raw tool id ("ai-properties") as literal text into the generic
+  // content slot, stacked underneath the real pane.
+  toolContentRuntime["ai-properties"] = makeMovableEntry('.v1-right-pane[data-v1-right-pane="ai-properties"]', "block");
 
   window.NetReconNewUICore = window.NetReconNewUICore || {};
   window.NetReconNewUICore.toolContentRuntime = toolContentRuntime;
