@@ -134,6 +134,7 @@
           <span class="v1-head-title" id="v1SidebarTitle" hidden>IP Scanner</span>
           <button class="v1-panel-toggle" data-panel-toggle="left" title="Hide left section" aria-label="Hide left section">◀</button>
         </div>
+        <div class="v1-left-content">
         <div data-sidebar-tool-panel="scan-runner">
           <ul class="v1-tool-list">
             <li>
@@ -286,7 +287,8 @@
                [hidden] toggle - the same specificity gotcha as RS's sibling
                slot below) - visibility is set directly via style.display in
                the onActivate hook instead. -->
-          <div id="v1SidebarGenericContent" class="tool-detail" style="display: none;"></div>
+          <div id="v1SidebarGenericContent" style="display: none;"></div>
+        </div>
       </aside>
 
       <div class="v1-resizer-v" data-resize="left" title="Resize left panel"></div>
@@ -639,7 +641,7 @@
                  would beat a [hidden] toggle - the same specificity gotcha
                  documented elsewhere in this codebase) - visibility is set
                  directly via style.display in the onActivate hook instead. -->
-            <section class="tool-detail" id="v1RightGenericContent" style="display: none; height: 100%; overflow: auto;"></section>
+            <section id="v1RightGenericContent" style="display: none; height: 100%; overflow: auto;"></section>
         </div>
       </aside>
     </main>

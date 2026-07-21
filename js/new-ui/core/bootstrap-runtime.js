@@ -753,7 +753,7 @@
         const scannerToolList = document.querySelector('.v1-sidebar [data-sidebar-tool-panel="scan-runner"] .v1-tool-list');
         const tabsBar = document.querySelector('.v1-tabs');
         const sidebarToolTabs = document.getElementById('v1SidebarToolTabs');
-        const sidebarEl = document.querySelector('.v1-sidebar');
+        const sidebarEl = document.querySelector('.v1-left-content');
         const rightTabsEl = document.querySelector('.v1-right-tabs');
         const rightContentEl = document.querySelector('.v1-right-content');
 

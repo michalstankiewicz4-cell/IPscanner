@@ -1000,7 +1000,7 @@
       }
 
       if (moveNode) {
-        var homeContainer = document.querySelector(section === "left" ? ".v1-sidebar" : ".v1-right-content");
+        var homeContainer = document.querySelector(section === "left" ? ".v1-left-content" : ".v1-right-content");
         if (homeContainer && moveNode.parentElement !== homeContainer) {
           homeContainer.appendChild(moveNode);
         }

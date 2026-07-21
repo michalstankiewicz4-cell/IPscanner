@@ -17,6 +17,20 @@
   background: var(--bg-elev);
 }
 
+/* RS "generic content slot" (ShellCraft Inspector, Lorem Ipsum right, ...) -
+   index.html no longer gives this element class="tool-detail" (that's a
+   CS-card style: 10px padding + ".tool-detail ul"'s 6px margin-top, meant
+   for prose-style About/License/Versions panels). Mirrors LS's
+   #v1SidebarGenericContent rule in layout/main.css - same properties,
+   different file because this one lives under the RS wrapper this file
+   owns. */
+#v1RightGenericContent {
+  background: var(--bg-elev);
+  color: var(--txt-dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .v1-right-tabs {
   min-width: 0;
   display: inline-flex;

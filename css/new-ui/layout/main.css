@@ -156,6 +156,41 @@ html:not([dir="rtl"]) body.v1-activity-last .v1-activity button.active::before {
   grid-template-rows: 34px 1fr;
 }
 
+/* LS's content wrapper - structural mirror of RS's .v1-right-content
+   (components/assistant.css): same grid shape, same role (single "home
+   container" for both the static panels below and reparented/generic-slot
+   content in navigation-runtime.js/bootstrap-runtime.js). Deliberately no
+   padding/background of its own, unlike .v1-right-content - LS's children
+   already provide their own (.v1-tool-list's 8px, #v1SidebarGenericContent's
+   own background), so adding any here would double up, not just mirror. */
+.v1-left-content {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* LS "generic content slot" (Network Monitor, ip-library, ShellCraft
+   Library, ...) - index.html no longer gives this element class="tool-
+   detail" (that's a CS-card style: 10px padding + ".tool-detail ul"'s 6px
+   margin-top, meant for prose-style About/License/Versions panels, not a
+   compact sidebar list). Supplying only what this slot actually needs -
+   background/base typography, nothing card-shaped - avoids that whole
+   class of bug leaking in again. [data-sidebar-tool-panel] (scan-runner's
+   dedicated, non-generic-slot panel) is the reference: it carries zero
+   wrapper padding of its own, .v1-tool-list's own 8px is the only
+   spacing. */
+#v1SidebarGenericContent {
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg-elev);
+  color: var(--txt-dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 /* Bare attribute selector (not scoped to .v1-sidebar >) - scan-runner's
    panel can be reparented into RS's .v1-right-content (see navigation-
    runtime.js's activateGenericContent() "move" branch), so its layout must
@@ -390,7 +425,7 @@ html[dir="rtl"] .v1-collapse-arrow {
   background: var(--v1-tabs-strip-bg);
 }
 
-.v1-sidebar.collapsed .v1-tool-list,
+.v1-sidebar.collapsed .v1-left-content,
 .v1-rightbar.collapsed .v1-right-content {
   display: none;
 }
@@ -852,14 +887,5 @@ html[dir="rtl"] .v1-rightbar.collapsed .v1-side-head {
 
 .v1-rightbar .v1-side-head {
   background: var(--v1-tabs-strip-bg);
-}
-
-/* Fully re-declared (and overridden where it differs, e.g. padding) by
-   components/assistant.css's later-loaded .v1-right-content rule - kept
-   in sync here so this duplicate doesn't silently go stale again. */
-.v1-right-content {
-  padding: 0 10px 10px;
-  min-height: 0;
-  overflow: hidden;
 }
 
