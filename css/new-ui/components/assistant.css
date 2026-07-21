@@ -159,6 +159,31 @@ html[dir="rtl"] .v1-rightbar.right-tabs-empty .v1-side-head {
   overflow: hidden;
 }
 
+/* AI Properties is the one RS pane with content AFTER its .v1-tool-list
+   (the token-counter checkbox row, moved outside the collapsible section
+   so it stays visible even when that section is collapsed) - .v1-tool-list
+   normally assumes it's the pane's only content and takes height:100%
+   (global rule, shared by every other LS/RS tool list, not safe to change),
+   which would push this sibling row below the pane's visible bottom edge
+   and clip it under overflow:hidden. Scoped to just this pane: turn it into
+   a flex column so the list shrinks to share space instead of claiming it
+   all, and higher specificity than .v1-right-pane.active above so this
+   wins regardless of declaration order. */
+.v1-right-pane[data-v1-right-pane="ai-properties"].active {
+  display: flex;
+  flex-direction: column;
+}
+
+.v1-right-pane[data-v1-right-pane="ai-properties"] .v1-tool-list {
+  height: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.v1-right-pane[data-v1-right-pane="ai-properties"] .v1-ai-prop-token-counter-row {
+  flex: 0 0 auto;
+}
+
 .v1-ai-panel {
   display: flex;
   flex-direction: column;
@@ -281,13 +306,45 @@ html[dir="rtl"] .v1-ai-mode-badge {
   color: #ffffff;
 }
 
+/* Sibling of .v1-ai-chat (like the clear-history button above), not a
+   child - stays fixed in the pane's bottom-left corner regardless of
+   scroll position. Toggled via the same "Estimated tokens counter"
+   checkbox as the per-message and prompt-draft counters. */
+.v1-ai-chat-total-tokens {
+  position: absolute;
+  left: 8px;
+  bottom: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--txt-dim);
+  font-size: 10px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
 .v1-ai-msg {
+  position: relative;
   border: 0;
-  padding: 7px 8px;
+  padding: 7px 8px 16px;
   font-size: 12px;
   line-height: 1.45;
   color: #d7d9de;
   background: #202024;
+}
+
+/* Estimated token count for this one message - bottom-right corner,
+   small/italic/white so it reads as a quiet watermark, not real content
+   competing with the message text. */
+.v1-ai-msg-tokens {
+  position: absolute;
+  right: 8px;
+  bottom: 3px;
+  font-size: 9px;
+  font-style: italic;
+  color: #ffffff;
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .v1-ai-msg.user {
@@ -377,6 +434,24 @@ html[dir="rtl"] .v1-ai-mode-badge {
   cursor: default;
 }
 
+/* Overlaid on the prompt textarea's own bottom-left corner (Stop takes the
+   bottom-right) - a rough character-count estimate (~4 chars/token), not a
+   real per-provider tokenizer (see updateTokenCounter() in
+   navigation-runtime.js). Toggled via RS "AI Properties" -> "Estimated
+   tokens counter" checkbox. */
+.v1-ai-token-counter {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--txt-dim);
+  font-size: 10px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
 /* RS "Config" tab (opened alongside the IP Scanner's LS/CS tabs). Most
    fields are still static scaffolding, not wired to real scan behavior -
    the exception is Performance's Host timeout / Max concurrent hosts,
@@ -439,6 +514,16 @@ html[dir="rtl"] .v1-ai-mode-badge {
 
 .v1-config-checkbox-row:first-child {
   margin-top: 0;
+}
+
+/* Sits outside AI Properties' collapsible section (a sibling of .v1-tool-list,
+   not inside its .v1-section-body) so it stays visible even when that
+   section is collapsed - a top border marks it as its own, separate
+   control rather than part of the list above. */
+.v1-ai-prop-token-counter-row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
 }
 
 .v1-config-checkbox-row input[type="checkbox"],

@@ -388,13 +388,15 @@
 
                 <div class="v1-ai-chat-wrap">
                   <div class="v1-ai-chat" id="v1AiChatHistory" aria-live="polite">
-                    <div class="v1-ai-msg assistant" data-ai-meta="true">Assistant ready. Choose mode: UI for interface guidance, PS for console-first commands.</div>
+                    <div class="v1-ai-msg assistant" data-ai-meta="true"><span class="v1-ai-msg-text">Assistant ready. Choose mode: UI for interface guidance, PS for console-first commands.</span></div>
                   </div>
+                  <span class="v1-ai-chat-total-tokens" id="v1AiChatTotalTokens"></span>
                   <button type="button" id="v1AiClearHistoryBtn" class="v1-ai-clear-history-btn" title="Clear chat history" aria-label="Clear chat history" hidden>🗑</button>
                 </div>
 
                 <div class="v1-ai-input">
                   <textarea id="v1AiPromptInput" class="v1-ai-prompt" rows="3" placeholder="Type prompt for assistant..."></textarea>
+                  <span class="v1-ai-token-counter" id="v1AiTokenCounter"></span>
                   <button type="button" id="v1AiStopBtn" class="v1-ai-stop-btn" title="Stop" aria-label="Stop" disabled>■</button>
                 </div>
 
@@ -424,6 +426,10 @@
                   </div>
                 </li>
               </ul>
+              <label class="v1-config-checkbox-row v1-ai-prop-token-counter-row">
+                <input type="checkbox" id="v1AiPropTokenCounter" checked />
+                <span id="v1AiPropTokenCounterLabel">Estimated tokens counter</span>
+              </label>
             </section>
             <section class="v1-right-pane" data-v1-right-pane="config">
               <ul class="v1-tool-list">

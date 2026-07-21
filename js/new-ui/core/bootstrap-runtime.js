@@ -204,6 +204,7 @@
         const aiPropertiesActiveNote = document.getElementById("v1AiPropertiesActiveNote");
         const aiPropMaxTokensLabel = document.getElementById("v1AiPropMaxTokensLabel");
         const aiPropMaxRoundsLabel = document.getElementById("v1AiPropMaxRoundsLabel");
+        const aiPropTokenCounterLabel = document.getElementById("v1AiPropTokenCounterLabel");
         const toolsMenuIpScanner = document.getElementById("v1ToolsMenuIpScanner");
         const toolsMenuLoremIpsum = document.getElementById("v1ToolsMenuLoremIpsum");
         const toolsMenuTopology = document.getElementById("v1ToolsMenuTopology");
@@ -316,6 +317,7 @@
         if (aiPropertiesActiveNote) aiPropertiesActiveNote.textContent = tr("aiPropertiesActiveNote");
         if (aiPropMaxTokensLabel) aiPropMaxTokensLabel.textContent = tr("aiPropMaxTokensLabel");
         if (aiPropMaxRoundsLabel) aiPropMaxRoundsLabel.textContent = tr("aiPropMaxRoundsLabel");
+        if (aiPropTokenCounterLabel) aiPropTokenCounterLabel.textContent = tr("aiPropTokenCounterLabel");
         if (tabsScrollLeftBtn) {
           tabsScrollLeftBtn.setAttribute("title", tr("tabScrollLeft"));
           tabsScrollLeftBtn.setAttribute("aria-label", tr("tabScrollLeft"));

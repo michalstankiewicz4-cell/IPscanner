@@ -1728,9 +1728,88 @@
       var promptInput = document.getElementById("v1AiPromptInput");
       var stopBtn = document.getElementById("v1AiStopBtn");
       var clearHistoryBtn = document.getElementById("v1AiClearHistoryBtn");
+      var tokenCounterEl = document.getElementById("v1AiTokenCounter");
+      var chatTotalTokensEl = document.getElementById("v1AiChatTotalTokens");
       if (!chat || !promptInput) return;
 
       var WELCOME_MESSAGE = "Assistant ready. Choose mode: UI for interface guidance, PS for console-first commands.";
+
+      // Shared by appendMessage() below (per-message overlay) and the
+      // prompt-draft/conversation-total counters further down - hoisted
+      // here rather than nested in one IIFE so all three can use them. A
+      // rough ~4-chars-per-token heuristic, not a real per-provider
+      // tokenizer (Claude/Gemini each use their own, and bundling either
+      // is a real dependency this app avoids elsewhere) - good enough to
+      // gauge roughly how big something is, not an exact count.
+      var aiConfigApi = (window.NetReconNewUICore || {}).aiAssistantConfig;
+
+      function tokenCounterFeatureEnabled() {
+        return !aiConfigApi || aiConfigApi.getState().tokenCounterEnabled;
+      }
+
+      function estimateTokens(text) {
+        return Math.ceil((text || "").length / 4);
+      }
+
+      // The real message text lives in its own child span (.v1-ai-msg-text)
+      // rather than directly as .v1-ai-msg's textContent, because the
+      // per-message token overlay below is ALSO a child of .v1-ai-msg -
+      // reading/writing the container's own textContent would otherwise
+      // mix the overlay's "~N tokens" text into the saved history and the
+      // real conversation content sent to the API.
+      function messageTextEl(msgEl) {
+        return msgEl.querySelector(".v1-ai-msg-text");
+      }
+
+      function getMessageText(msgEl) {
+        var t = messageTextEl(msgEl);
+        return t ? t.textContent : "";
+      }
+
+      function setMessageText(msgEl, text) {
+        var t = messageTextEl(msgEl);
+        if (t) t.textContent = String(text || "");
+      }
+
+      // Adds/removes/refreshes this one message's token-count overlay -
+      // called on append, whenever the pending "..." placeholder's text is
+      // replaced with the real reply, and on every config change (so
+      // toggling the checkbox off/on updates messages already on screen,
+      // not just new ones). Meta chrome ("Assistant ready...", "Mode
+      // switched to X.") never gets one - it's not part of the real
+      // conversation token cost.
+      function updateMessageTokenOverlay(msgEl) {
+        var existing = msgEl.querySelector(".v1-ai-msg-tokens");
+        if (existing) existing.remove();
+        if (!tokenCounterFeatureEnabled() || msgEl.hasAttribute("data-ai-meta")) return;
+        var overlay = document.createElement("span");
+        overlay.className = "v1-ai-msg-tokens";
+        overlay.textContent = "~" + estimateTokens(getMessageText(msgEl)) + " " + tr("aiTokenCounterUnit");
+        msgEl.appendChild(overlay);
+      }
+
+      function refreshAllMessageTokenOverlays() {
+        Array.prototype.forEach.call(chat.querySelectorAll(".v1-ai-msg"), updateMessageTokenOverlay);
+      }
+
+      // Sum of every real (non-meta) message's estimate - same population
+      // sendPrompt() below sends to the API, so this is a genuine running
+      // total for the whole visible conversation, not just what's typed
+      // right now. Sits in the chat pane's own bottom-left corner (a
+      // sibling of #v1AiChatHistory, like the clear-history button), not
+      // combined into the prompt-draft counter overlaid on the textarea.
+      function updateChatTotalTokens() {
+        if (!chatTotalTokensEl) return;
+        var enabled = tokenCounterFeatureEnabled();
+        chatTotalTokensEl.hidden = !enabled;
+        if (!enabled) return;
+        var total = Array.prototype.reduce.call(
+          chat.querySelectorAll(".v1-ai-msg:not([data-ai-meta])"),
+          function (sum, el) { return sum + estimateTokens(getMessageText(el)); },
+          0
+        );
+        chatTotalTokensEl.textContent = "~" + total + " " + tr("aiTokenCounterUnit") + " " + tr("aiTokenCounterTotalLabel");
+      }
 
       // #v1AiModeUiCheckbox/#v1AiModePsCheckbox are disabled for now (see
       // their title attribute) - two independent permission checkboxes
@@ -1754,7 +1833,7 @@
           var items = Array.prototype.slice.call(chat.querySelectorAll(".v1-ai-msg")).map(function (el) {
             return {
               kind: el.classList.contains("user") ? "user" : "assistant",
-              text: el.textContent,
+              text: getMessageText(el),
               meta: el.hasAttribute("data-ai-meta"),
             };
           });
@@ -1780,11 +1859,16 @@
         var msg = document.createElement("div");
         msg.className = "v1-ai-msg " + kind;
         if (isMeta) msg.setAttribute("data-ai-meta", "true");
-        msg.textContent = String(text || "");
+        var textEl = document.createElement("span");
+        textEl.className = "v1-ai-msg-text";
+        textEl.textContent = String(text || "");
+        msg.appendChild(textEl);
+        updateMessageTokenOverlay(msg);
         chat.appendChild(msg);
         chat.scrollTop = chat.scrollHeight;
         saveAiChatHistory();
         updateClearHistoryBtnVisibility();
+        updateChatTotalTokens();
         return msg;
       }
 
@@ -1804,8 +1888,11 @@
         }
       })();
       updateClearHistoryBtnVisibility();
-
-      // Clears the persisted history AND the guardrail action counter (via
+      // Covers the static welcome message case (index.html's own markup,
+      // never touched by appendMessage()/loadAiChatHistory() above when
+      // there's no saved history yet) - without this the total counter
+      // shows nothing at all until the first real message is appended.
+      updateChatTotalTokens();
       // ai-permissions-runtime.js's own "reset if history was empty"
       // check on the next send - see isFreshConversation below) - back to
       // exactly the same single welcome-meta-message state a first launch
@@ -1849,6 +1936,35 @@
         });
       })();
 
+      // Live estimated-token counter overlaid on the prompt textarea -
+      // just the current draft, not the running conversation total (see
+      // updateChatTotalTokens() above for that one, shown in the chat
+      // pane's own corner instead). Toggled via RS "AI Properties" ->
+      // "Estimated tokens counter".
+      (function wireDraftTokenCounter() {
+        if (!tokenCounterEl) return;
+
+        function update() {
+          var enabled = tokenCounterFeatureEnabled();
+          tokenCounterEl.hidden = !enabled;
+          if (!enabled) return;
+          tokenCounterEl.textContent = "~" + estimateTokens(promptInput.value) + " " + tr("aiTokenCounterUnit");
+        }
+
+        update();
+        promptInput.addEventListener("input", update);
+        document.addEventListener("newui:ai-assistant-config-changed", update);
+      })();
+
+      // Same config-change event also needs to refresh every already-
+      // rendered message's overlay (add/remove per the new checkbox state)
+      // and the running conversation total - the draft counter above only
+      // covers itself.
+      document.addEventListener("newui:ai-assistant-config-changed", function () {
+        refreshAllMessageTokenOverlays();
+        updateChatTotalTokens();
+      });
+
       // The UI checkbox is a real, persisted quick safety switch (see
       // uiModeEnabled in general-settings-runtime.js) - unchecking it
       // withholds tool access, NOT the ability to chat at all (see
@@ -1883,6 +1999,7 @@
         var mode = currentMode();
         appendMessage("user", prompt);
         promptInput.value = "";
+        promptInput.dispatchEvent(new Event("input"));
 
         var core = window.NetReconNewUICore || {};
         var aiConfigApi = core.aiAssistantConfig;
@@ -1912,7 +2029,7 @@
         // Real turns only (data-ai-meta excluded) - includes the user
         // message just appended above.
         var history = Array.prototype.slice.call(chat.querySelectorAll(".v1-ai-msg:not([data-ai-meta])")).map(function (el) {
-          return { role: el.classList.contains("user") ? "user" : "assistant", content: el.textContent };
+          return { role: el.classList.contains("user") ? "user" : "assistant", content: getMessageText(el) };
         });
 
         // User-editable per mode (Options -> General -> AI Assistant) -
@@ -1973,11 +2090,13 @@
         turn.promise.then(function (reply) {
           if (thisGeneration !== aiChatGeneration) return;
           pendingMsg.removeAttribute("data-ai-meta");
-          pendingMsg.textContent = reply || "";
+          setMessageText(pendingMsg, reply || "");
+          updateMessageTokenOverlay(pendingMsg);
           saveAiChatHistory();
+          updateChatTotalTokens();
         }).catch(function (err) {
           if (thisGeneration !== aiChatGeneration) return;
-          pendingMsg.textContent = "Error: " + String((err && err.message) || err);
+          setMessageText(pendingMsg, "Error: " + String((err && err.message) || err));
           saveAiChatHistory();
         }).finally(function () {
           if (thisGeneration !== aiChatGeneration) return;

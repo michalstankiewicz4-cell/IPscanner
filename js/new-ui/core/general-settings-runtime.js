@@ -130,6 +130,12 @@
       // stays disabled/unwired). Defaults on so nothing changes for anyone
       // who doesn't touch it.
       uiModeEnabled: true,
+      // RS "AI Properties" tab - shows/hides the live estimated-token
+      // counter overlaid on the prompt textarea (navigation-runtime.js).
+      // Not per-provider (unlike maxOutputTokens/maxRounds above): it's a
+      // display preference, not a cost ceiling, so there's no reason for
+      // it to differ by provider.
+      tokenCounterEnabled: true,
     };
   }
 
@@ -153,6 +159,7 @@
       systemPromptUi: typeof input.systemPromptUi === "string" ? input.systemPromptUi : fallback.systemPromptUi,
       systemPromptPs: typeof input.systemPromptPs === "string" ? input.systemPromptPs : fallback.systemPromptPs,
       uiModeEnabled: typeof input.uiModeEnabled === "boolean" ? input.uiModeEnabled : fallback.uiModeEnabled,
+      tokenCounterEnabled: typeof input.tokenCounterEnabled === "boolean" ? input.tokenCounterEnabled : fallback.tokenCounterEnabled,
     };
   }
 
@@ -487,11 +494,18 @@
 
     var roundsInput = document.getElementById("v1AiPropMaxRounds");
     if (roundsInput && document.activeElement !== roundsInput) roundsInput.value = providerState.maxRounds;
+
+    // Not per-provider (unlike the two above) - a plain top-level flag, so
+    // no active-element guard needed (a checkbox has no "in-progress edit"
+    // state to clobber the way a number input being typed into does).
+    var counterCheckbox = document.getElementById("v1AiPropTokenCounter");
+    if (counterCheckbox) counterCheckbox.checked = state.tokenCounterEnabled;
   }
 
   function wireAiPropertiesFields() {
     var tokensInput = document.getElementById("v1AiPropMaxTokens");
     var roundsInput = document.getElementById("v1AiPropMaxRounds");
+    var counterCheckbox = document.getElementById("v1AiPropTokenCounter");
 
     function commit(field, input) {
       var next = getAiConfigState();
@@ -501,6 +515,13 @@
 
     if (tokensInput) tokensInput.addEventListener("change", function () { commit("maxOutputTokens", tokensInput); });
     if (roundsInput) roundsInput.addEventListener("change", function () { commit("maxRounds", roundsInput); });
+    if (counterCheckbox) {
+      counterCheckbox.addEventListener("change", function () {
+        var next = getAiConfigState();
+        next.tokenCounterEnabled = counterCheckbox.checked;
+        replaceAiConfigState(next);
+      });
+    }
   }
 
   updateAiModeBadge();
