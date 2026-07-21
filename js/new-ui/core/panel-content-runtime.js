@@ -1458,6 +1458,12 @@
       return rowHtml + childrenHtml;
     }
 
+    function renderAiPermLogHtml(log) {
+      return log.length
+        ? log.map(function (entry) { return "<div class=\"v1-ai-perm-log-item\">" + escapeHtml(JSON.stringify(entry)) + "</div>"; }).join("")
+        : "<div class=\"v1-iplib-empty\">" + escapeHtml(trOr("aiPermLogEmpty", "No actions logged yet.")) + "</div>";
+    }
+
     function renderAiPermissionsTool() {
       var api = window.NetReconNewUICore && window.NetReconNewUICore.aiPermissions;
       if (!api) return "";
@@ -1517,9 +1523,7 @@
         "<button type=\"button\" data-ai-perm-action=\"export-log\">" + escapeHtml(trOr("aiPermExportLogBtn", "Export log")) + "</button>",
         "</div>",
         "<div class=\"v1-ai-perm-log\" id=\"v1AiPermLog\">",
-        log.length
-          ? log.map(function (entry) { return "<div class=\"v1-ai-perm-log-item\">" + escapeHtml(JSON.stringify(entry)) + "</div>"; }).join("")
-          : "<div class=\"v1-iplib-empty\">" + escapeHtml(trOr("aiPermLogEmpty", "No actions logged yet.")) + "</div>",
+        renderAiPermLogHtml(log),
         "</div>",
 
         "</div>"
@@ -1564,6 +1568,7 @@
       renderEmailReconRows: renderEmailReconRows,
       renderEmailReconSummary: renderEmailReconSummary,
       renderAiPermissionsTool: renderAiPermissionsTool,
+      renderAiPermLogHtml: renderAiPermLogHtml,
     };
   }
 

@@ -197,8 +197,13 @@
         const activityNetworkMonitorBtn = document.getElementById("v1ActivityNetworkMonitor");
         const activityEmailReconBtn = document.getElementById("v1ActivityEmailRecon");
         const aiModeUiLabel = document.getElementById("v1AiModeUiLabel");
+        const aiModeBadge = document.getElementById("v1AiModeBadge");
         const aiStopBtn = document.getElementById("v1AiStopBtn");
         const aiClearHistoryBtn = document.getElementById("v1AiClearHistoryBtn");
+        const aiPropertiesTitle = document.getElementById("v1AiPropertiesTitle");
+        const aiPropertiesActiveNote = document.getElementById("v1AiPropertiesActiveNote");
+        const aiPropMaxTokensLabel = document.getElementById("v1AiPropMaxTokensLabel");
+        const aiPropMaxRoundsLabel = document.getElementById("v1AiPropMaxRoundsLabel");
         const toolsMenuIpScanner = document.getElementById("v1ToolsMenuIpScanner");
         const toolsMenuLoremIpsum = document.getElementById("v1ToolsMenuLoremIpsum");
         const toolsMenuTopology = document.getElementById("v1ToolsMenuTopology");
@@ -295,6 +300,10 @@
           activityEmailReconBtn.setAttribute("aria-label", tr("toolTitle_email_recon"));
         }
         if (aiModeUiLabel) aiModeUiLabel.setAttribute("title", tr("aiModeUiCheckboxTitle"));
+        if (aiModeBadge) {
+          aiModeBadge.setAttribute("title", tr("aiModeBadgeTitle"));
+          aiModeBadge.setAttribute("aria-label", tr("aiModeBadgeTitle"));
+        }
         if (aiStopBtn) {
           aiStopBtn.setAttribute("title", tr("aiStopBtnTitle"));
           aiStopBtn.setAttribute("aria-label", tr("aiStopBtnTitle"));
@@ -303,6 +312,10 @@
           aiClearHistoryBtn.setAttribute("title", tr("aiClearHistoryBtnTitle"));
           aiClearHistoryBtn.setAttribute("aria-label", tr("aiClearHistoryBtnTitle"));
         }
+        if (aiPropertiesTitle) aiPropertiesTitle.textContent = tr("aiPropertiesTitle");
+        if (aiPropertiesActiveNote) aiPropertiesActiveNote.textContent = tr("aiPropertiesActiveNote");
+        if (aiPropMaxTokensLabel) aiPropMaxTokensLabel.textContent = tr("aiPropMaxTokensLabel");
+        if (aiPropMaxRoundsLabel) aiPropMaxRoundsLabel.textContent = tr("aiPropMaxRoundsLabel");
         if (tabsScrollLeftBtn) {
           tabsScrollLeftBtn.setAttribute("title", tr("tabScrollLeft"));
           tabsScrollLeftBtn.setAttribute("aria-label", tr("tabScrollLeft"));

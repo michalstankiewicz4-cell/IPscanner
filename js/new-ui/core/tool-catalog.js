@@ -212,6 +212,11 @@
       icon: null,
       labelKey: "tabLabel_email_recon_config",
       ui: { showInRightPanel: true, rightOrder: 50 }
+    },
+    "ai-properties": {
+      icon: null,
+      labelKey: "tabLabel_ai_properties",
+      ui: { showInRightPanel: true, rightOrder: 15 }
     }
   };
 

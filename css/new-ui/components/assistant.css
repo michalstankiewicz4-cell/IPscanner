@@ -218,6 +218,13 @@ html[dir="rtl"] .v1-rightbar.right-tabs-empty .v1-side-head {
 
 .v1-ai-mode-badge {
   margin-left: auto;
+  cursor: pointer;
+}
+
+.v1-ai-mode-badge:hover,
+.v1-ai-mode-badge:focus-visible {
+  background: #3a3a40;
+  color: var(--txt);
 }
 
 html[dir="rtl"] .v1-ai-mode-badge {
@@ -356,6 +363,15 @@ html[dir="rtl"] .v1-ai-mode-badge {
 .v1-ai-stop-btn:hover {
   background: #e15d5d;
   color: #ffffff;
+}
+
+/* Always visible now (not shown/hidden per in-flight request) - disabled
+   instead while there's nothing to stop, so it stays a stable landmark
+   instead of popping in/out of the layout on every send. */
+.v1-ai-stop-btn:disabled {
+  background: #4a4a4e;
+  color: var(--txt-dim);
+  cursor: default;
 }
 
 /* RS "Config" tab (opened alongside the IP Scanner's LS/CS tabs). Most

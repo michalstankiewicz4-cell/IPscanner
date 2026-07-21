@@ -113,6 +113,14 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   stays reachable. TCP SYN remains unimplemented (genuinely needs raw
   sockets/admin, no workaround exists) and moved from grayed-out-but-visible
   to fully hidden behind "Show unfinished tools" (backlog item 17).
+- AI Assistant: configurable cost/round limits. Both ceilings the
+  tool-calling engine enforces (`MAX_OUTPUT_TOKENS`, the per-response token
+  cap; `MAX_ROUNDS`, the tool-call round-trip cap) are now per-provider,
+  user-editable state (`general-settings-runtime.js`'s AI config,
+  `claude`/`google` each carry their own `maxOutputTokens`/`maxRounds`,
+  default 1024/6) instead of hardcoded constants — edited via RS's new "AI
+  Properties" tab, which shows whichever provider is currently active and
+  switches live when the provider is changed elsewhere.
 
 ## In progress
 
@@ -204,20 +212,6 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
      happening in the background; only the *displayed* table stays pinned
      until the user scrubs back to "live").
   Not started - purely a feasibility/design conversation so far.
-- **AI Assistant: configurable cost/round limits** — today's tool-calling
-  engine (`ai-tools/ai-tools-engine-runtime.js`) has two hardcoded ceilings:
-  `MAX_OUTPUT_TOKENS = 1024` (`general-settings-runtime.js`, both providers -
-  Gemini had no cap at all until this was audited and fixed, Claude's 1024
-  was the only one that existed) and `MAX_ROUNDS = 6` (the tool-call
-  round-trip loop - one user message can trigger up to 6 sequential paid
-  API calls, each carrying a larger accumulated context than the last).
-  Neither is user-adjustable today. Worth exposing both in AI Permissions'
-  Guardrails section once there's real demand - e.g. a "Max response
-  length" field alongside the existing "Max actions per conversation", and
-  a "Max tool-call rounds" field. A real Stop button (`v1AiStopBtn`,
-  overlaid on the prompt textarea) now lets the user cut an in-flight
-  exchange early via `AbortController` - this doesn't reduce the per-call
-  cost ceiling, just lets you bail out of a run that's already going long.
 - **Selective IP-blur inside Terminal/Console output** — today the IP blur
   toggle blurs those panes whole-pane (see item 15 in the backlog below)
   because their output is free-form text concatenated as one string into a

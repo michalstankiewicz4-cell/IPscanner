@@ -110,11 +110,19 @@
   var DEFAULT_SYSTEM_PROMPT_UI = "You are an assistant embedded in a desktop network/OSINT tool. Focus on explaining UI actions, panel workflows, and built-in macros the user can trigger in the app. Do not suggest running arbitrary shell commands.";
   var DEFAULT_SYSTEM_PROMPT_PS = "You are an assistant embedded in a desktop network/OSINT tool, running with full console permissions. Focus on PowerShell commands and console/terminal workflows the user can run.";
 
+  // Per-provider, not global - RS's "AI Properties" tab shows whichever
+  // provider is currently active, and switching providers there switches
+  // to that provider's own remembered numbers instead of a single shared
+  // pair. See docs/ROADMAP.md's "AI Assistant: configurable cost/round
+  // limits" entry - this is that entry, implemented.
+  var DEFAULT_MAX_OUTPUT_TOKENS = 1024;
+  var DEFAULT_MAX_ROUNDS = 6;
+
   function makeDefaultAiConfigState() {
     return {
       provider: "claude", // "claude" | "google" - which one is currently active
-      claude: { model: "sonnet", keyStorage: "localstorage" },
-      google: { model: "flash", keyStorage: "localstorage" },
+      claude: { model: "sonnet", keyStorage: "localstorage", maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS, maxRounds: DEFAULT_MAX_ROUNDS },
+      google: { model: "flash", keyStorage: "localstorage", maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS, maxRounds: DEFAULT_MAX_ROUNDS },
       systemPromptUi: DEFAULT_SYSTEM_PROMPT_UI,
       systemPromptPs: DEFAULT_SYSTEM_PROMPT_PS,
       // Quick on/off for the whole assistant's UI-mode capability (the only
@@ -130,6 +138,8 @@
     return {
       model: typeof src.model === "string" && src.model ? src.model : fallback.model,
       keyStorage: src.keyStorage === "ram" ? "ram" : "localstorage",
+      maxOutputTokens: typeof src.maxOutputTokens === "number" && src.maxOutputTokens > 0 ? src.maxOutputTokens : fallback.maxOutputTokens,
+      maxRounds: typeof src.maxRounds === "number" && src.maxRounds > 0 ? src.maxRounds : fallback.maxRounds,
     };
   }
 
@@ -271,12 +281,10 @@
   // Output-token ceiling for a single API response - was Claude-only until
   // this was audited for runaway-cost risk; Gemini had no cap at all,
   // meaning a Gemini-configured user's response length (and therefore
-  // cost) was unbounded. Both providers get the same value today; see
-  // docs/ROADMAP.md's "AI Assistant: configurable cost/round limits" entry
-  // for making this user-adjustable later instead of hardcoded.
-  var MAX_OUTPUT_TOKENS = 1024;
+  // cost) was unbounded. Per-provider value now, editable via RS's "AI
+  // Properties" tab (see maxOutputTokens in makeDefaultAiConfigState above).
 
-  function sendAiChatMessageClaude(model, apiKey, messages, system) {
+  function sendAiChatMessageClaude(model, apiKey, messages, system, maxTokens) {
     return fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -287,7 +295,7 @@
       },
       body: JSON.stringify({
         model: model,
-        max_tokens: MAX_OUTPUT_TOKENS,
+        max_tokens: maxTokens,
         system: system || undefined,
         messages: messages.map(function (m) {
           return { role: m.role === "assistant" ? "assistant" : "user", content: m.content };
@@ -308,13 +316,13 @@
     });
   }
 
-  function sendAiChatMessageGoogle(model, apiKey, messages, system) {
+  function sendAiChatMessageGoogle(model, apiKey, messages, system, maxTokens) {
     var url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(apiKey);
     var body = {
       contents: messages.map(function (m) {
         return { role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] };
       }),
-      generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS },
+      generationConfig: { maxOutputTokens: maxTokens },
     };
     if (system) body.systemInstruction = { parts: [{ text: system }] };
 
@@ -343,9 +351,10 @@
     var p = normalizeProvider(provider);
     var model = getAiApiModelId(p, modelKey);
     if (!apiKey) return Promise.reject(new Error("missing_api_key"));
+    var maxTokens = (currentAiConfigState[p] || {}).maxOutputTokens || DEFAULT_MAX_OUTPUT_TOKENS;
     return p === "google"
-      ? sendAiChatMessageGoogle(model, apiKey, messages, system)
-      : sendAiChatMessageClaude(model, apiKey, messages, system);
+      ? sendAiChatMessageGoogle(model, apiKey, messages, system, maxTokens)
+      : sendAiChatMessageClaude(model, apiKey, messages, system, maxTokens);
   }
 
   // Tool-calling variants: same endpoints/headers/model-id mapping as above,
@@ -358,10 +367,10 @@
   // functionCall blocks. The plain sendAiChatMessage above is untouched and
   // still used as-is by the parts of the app that don't go through the
   // engine.
-  function sendAiChatMessageClaudeRaw(model, apiKey, messages, system, tools, signal) {
+  function sendAiChatMessageClaudeRaw(model, apiKey, messages, system, tools, signal, maxTokens) {
     var body = {
       model: model,
-      max_tokens: MAX_OUTPUT_TOKENS,
+      max_tokens: maxTokens,
       system: system || undefined,
       messages: messages,
     };
@@ -387,9 +396,9 @@
     });
   }
 
-  function sendAiChatMessageGoogleRaw(model, apiKey, messages, system, tools, signal) {
+  function sendAiChatMessageGoogleRaw(model, apiKey, messages, system, tools, signal, maxTokens) {
     var url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(apiKey);
-    var body = { contents: messages, generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS } };
+    var body = { contents: messages, generationConfig: { maxOutputTokens: maxTokens } };
     if (system) body.systemInstruction = { parts: [{ text: system }] };
     if (tools && tools.length) body.tools = tools;
 
@@ -412,9 +421,10 @@
     var p = normalizeProvider(provider);
     var model = getAiApiModelId(p, modelKey);
     if (!apiKey) return Promise.reject(new Error("missing_api_key"));
+    var maxTokens = (currentAiConfigState[p] || {}).maxOutputTokens || DEFAULT_MAX_OUTPUT_TOKENS;
     return p === "google"
-      ? sendAiChatMessageGoogleRaw(model, apiKey, messages, system, tools, signal)
-      : sendAiChatMessageClaudeRaw(model, apiKey, messages, system, tools, signal);
+      ? sendAiChatMessageGoogleRaw(model, apiKey, messages, system, tools, signal, maxTokens)
+      : sendAiChatMessageClaudeRaw(model, apiKey, messages, system, tools, signal, maxTokens);
   }
 
   window.NetReconNewUICore.aiAssistantConfig = {
@@ -455,6 +465,47 @@
     if (badge) badge.textContent = computeAiModeBadgeText();
   }
 
+  // RS "AI Properties" tab (index.html's static v1-right-pane) shows the
+  // two per-provider numbers above for whichever provider is CURRENTLY
+  // active - same "single static element, bind once" reasoning as the mode
+  // badge above, and the same event covers both (provider switch changes
+  // both what the badge says and which provider's numbers this shows).
+  // Guarded against clobbering an in-progress edit: RS stays visible
+  // alongside whatever's open in CS/LS, so a config change from elsewhere
+  // (e.g. switching provider in General Settings) can fire while the user
+  // has one of these two inputs focused.
+  function updateAiPropertiesFields() {
+    var state = getAiConfigState();
+    var providerState = state[state.provider] || {};
+    var meta = AI_DISPLAY_NAMES[state.provider] || AI_DISPLAY_NAMES.claude;
+
+    var activeLabel = document.getElementById("v1AiPropertiesActiveLabel");
+    if (activeLabel) activeLabel.textContent = meta.name;
+
+    var tokensInput = document.getElementById("v1AiPropMaxTokens");
+    if (tokensInput && document.activeElement !== tokensInput) tokensInput.value = providerState.maxOutputTokens;
+
+    var roundsInput = document.getElementById("v1AiPropMaxRounds");
+    if (roundsInput && document.activeElement !== roundsInput) roundsInput.value = providerState.maxRounds;
+  }
+
+  function wireAiPropertiesFields() {
+    var tokensInput = document.getElementById("v1AiPropMaxTokens");
+    var roundsInput = document.getElementById("v1AiPropMaxRounds");
+
+    function commit(field, input) {
+      var next = getAiConfigState();
+      next[next.provider][field] = Number(input.value) || next[next.provider][field];
+      replaceAiConfigState(next);
+    }
+
+    if (tokensInput) tokensInput.addEventListener("change", function () { commit("maxOutputTokens", tokensInput); });
+    if (roundsInput) roundsInput.addEventListener("change", function () { commit("maxRounds", roundsInput); });
+  }
+
   updateAiModeBadge();
+  updateAiPropertiesFields();
+  wireAiPropertiesFields();
   document.addEventListener("newui:ai-assistant-config-changed", updateAiModeBadge);
+  document.addEventListener("newui:ai-assistant-config-changed", updateAiPropertiesFields);
 })();

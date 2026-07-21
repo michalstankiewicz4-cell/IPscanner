@@ -16,7 +16,11 @@
   // notices, so the user can see what happened without the raw protocol
   // turns corrupting the plain-text history model.
 
-  var MAX_ROUNDS = 6;
+  // Fallback only - the real cap is per-provider now, read from
+  // aiAssistantConfig's state in runConversationTurn (RS's "AI Properties"
+  // tab, general-settings-runtime.js's maxRounds). Used only if that state
+  // is somehow missing/malformed.
+  var DEFAULT_MAX_ROUNDS = 6;
 
   function core() { return window.NetReconNewUICore || {}; }
 
@@ -133,8 +137,14 @@
 
     var providerKey = aiConfig.normalizeProvider(opts.provider);
     var adapter = adapterFor(providerKey);
-    var catalogTools = (core().aiToolsCatalog && core().aiToolsCatalog.getTools()) || [];
+    // toolsAllowed: false (navigation-runtime.js's UI safety switch) sends
+    // an empty tool catalog rather than skipping the engine entirely - the
+    // model then has nothing it can call and round 1 always resolves to a
+    // plain text reply, but Stop keeps its real AbortController instead of
+    // falling back to the no-cancel plain-fetch path.
+    var catalogTools = opts.toolsAllowed === false ? [] : ((core().aiToolsCatalog && core().aiToolsCatalog.getTools()) || []);
     var wireTools = adapter.buildTools(catalogTools);
+    var maxRounds = ((aiConfig.getState()[providerKey] || {}).maxRounds) || DEFAULT_MAX_ROUNDS;
 
     var messages = (opts.textHistory || []).map(function (h) { return adapter.textMessage(h.role, h.content); });
 
@@ -142,7 +152,7 @@
 
     function round(n) {
       if (controller && controller.signal.aborted) return Promise.resolve(tr("aiToolStoppedNote"));
-      if (n > MAX_ROUNDS) return Promise.resolve(tr("aiToolMaxRoundsReached"));
+      if (n > maxRounds) return Promise.resolve(tr("aiToolMaxRoundsReached"));
 
       return aiConfig.sendChatMessageRaw(opts.provider, opts.modelKey, opts.apiKey, messages, opts.systemPrompt, wireTools, controller && controller.signal)
         .then(function (response) {

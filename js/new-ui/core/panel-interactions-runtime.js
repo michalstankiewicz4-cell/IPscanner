@@ -6,6 +6,27 @@
     var renderShellCraftLibrary = typeof deps.renderShellCraftLibrary === "function" ? deps.renderShellCraftLibrary : null;
     var renderCanvasBlockHtml = typeof deps.renderCanvasBlockHtml === "function" ? deps.renderCanvasBlockHtml : null;
     var renderShellCraftInspector = typeof deps.renderShellCraftInspector === "function" ? deps.renderShellCraftInspector : null;
+
+    // Registered once here (this factory only runs once, at bootstrap) rather
+    // than inside wireAiPermissionsTool - that function reruns on every
+    // activation of the AI Permissions tab, and a document-level listener
+    // added there would never get removed, leaking one more closure (each
+    // holding a detached #v1ToolDetail subtree) per activation. A fresh
+    // getElementById lookup at fire time is also simplest: it's naturally a
+    // no-op whenever the tab isn't the one currently open, no bind-guard
+    // needed. Chatting with the assistant appends audit-log entries via the
+    // tool-calling engine independently of whichever tab is visible - without
+    // this, the log only ever caught up on the AI Permissions tab's next
+    // full rerender (e.g. switching profile), not live while a conversation
+    // was running with the tab open.
+    document.addEventListener("newui:ai-audit-log-changed", function () {
+      var logEl = document.getElementById("v1AiPermLog");
+      if (!logEl) return;
+      var api = window.NetReconNewUICore && window.NetReconNewUICore.aiPermissions;
+      var renderLogFn = typeof deps.renderAiPermLogHtml === "function" ? deps.renderAiPermLogHtml : null;
+      if (!api || !renderLogFn) return;
+      logEl.innerHTML = renderLogFn(api.loadAuditLog());
+    });
     // #v1ShellCraftCanvas is torn down and recreated every time the ShellCraft
     // tab is (re)activated (wireToolRuntime -> wireShellCraftCanvas runs on
     // every switchTool), so a dataset flag on that element can never prevent

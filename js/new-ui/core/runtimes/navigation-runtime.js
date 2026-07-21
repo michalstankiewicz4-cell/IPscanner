@@ -1837,9 +1837,22 @@
         });
       });
 
-      // The UI checkbox is a real, persisted quick on/off switch for the
-      // assistant's only functional mode today (see uiModeEnabled in
-      // general-settings-runtime.js) - sync its checked state from
+      // Model badge doubles as a shortcut into RS's "AI Properties" tab
+      // (token/round limits for whichever provider it's currently showing)
+      // - same open mechanism menu-runtime.js/bootstrap-runtime.js already
+      // use to jump into an RS tab from elsewhere in the UI.
+      (function wireModeBadgeClick() {
+        var badge = document.getElementById("v1AiModeBadge");
+        if (!badge) return;
+        badge.addEventListener("click", function () {
+          document.dispatchEvent(new CustomEvent("newui:right-tab-intent-open", { detail: { tool: "ai-properties" } }));
+        });
+      })();
+
+      // The UI checkbox is a real, persisted quick safety switch (see
+      // uiModeEnabled in general-settings-runtime.js) - unchecking it
+      // withholds tool access, NOT the ability to chat at all (see
+      // toolsAllowed in sendPrompt() below). Sync its checked state from
       // whatever was saved last session, and persist every change.
       (function wireUiModeCheckbox() {
         var uiCheckbox = document.getElementById("v1AiModeUiCheckbox");
@@ -1880,13 +1893,14 @@
 
         var state = aiConfigApi.getState();
 
-        // Quick kill switch (v1AiModeUiCheckbox) - the only functional mode
-        // today is "ui" (PS's own checkbox stays disabled/unwired), so this
-        // is effectively a whole-assistant on/off toggle for now.
-        if (mode === "ui" && !state.uiModeEnabled) {
-          appendMessage("assistant", tr("aiUiModeDisabledBlockedNote"), true);
-          return;
-        }
+        // Quick safety switch (v1AiModeUiCheckbox) - unchecking it does NOT
+        // stop the assistant from replying, it only takes away its ability
+        // to act (navigate tabs, run macros, change settings): the engine's
+        // tool catalog is withheld for this turn, so the model has nothing
+        // to call and can only produce a plain text reply. The only
+        // functional mode today is "ui" (PS's own checkbox stays disabled/
+        // unwired), so this only ever applies in that mode.
+        var toolsAllowed = !(mode === "ui" && !state.uiModeEnabled);
 
         var providerState = state[state.provider];
         var apiKey = aiConfigApi.getApiKey(state.provider);
@@ -1930,7 +1944,12 @@
         // engine loaded) has nothing real to cancel, since it's a single
         // plain fetch with no tool-calling round loop; Stop just won't do
         // anything useful there, which is fine since that path is a
-        // last-resort fallback, not the real one the app ships with.
+        // last-resort fallback, not the real one the app ships with. When
+        // the engine IS loaded but toolsAllowed is false (the UI safety
+        // switch), it still goes through the engine - not the no-cancel
+        // fallback above - just with an empty tool catalog, so Stop stays
+        // genuinely functional (real AbortController either way) and the
+        // model still gets exactly one real reply, just nothing to call.
         var turn = engine
           ? engine.runConversationTurn({
               provider: state.provider,
@@ -1939,6 +1958,7 @@
               systemPrompt: systemPrompt,
               textHistory: history,
               isFreshConversation: isFreshConversation,
+              toolsAllowed: toolsAllowed,
               tr: tr,
               onMeta: function (text) {
                 if (thisGeneration !== aiChatGeneration) return;
@@ -1948,7 +1968,7 @@
           : { promise: aiConfigApi.sendChatMessage(state.provider, providerState.model, apiKey, history, systemPrompt), abort: function () {} };
 
         currentAbort = turn.abort;
-        if (stopBtn) stopBtn.hidden = false;
+        if (stopBtn) stopBtn.disabled = false;
 
         turn.promise.then(function (reply) {
           if (thisGeneration !== aiChatGeneration) return;
@@ -1963,7 +1983,7 @@
           if (thisGeneration !== aiChatGeneration) return;
           aiChatBusy = false;
           currentAbort = null;
-          if (stopBtn) stopBtn.hidden = true;
+          if (stopBtn) stopBtn.disabled = true;
           chat.scrollTop = chat.scrollHeight;
         });
       }

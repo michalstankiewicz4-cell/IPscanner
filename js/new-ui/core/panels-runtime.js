@@ -1441,6 +1441,7 @@
         renderEmailReconRows: panelContentRuntime && panelContentRuntime.renderEmailReconRows,
         renderEmailReconSummary: panelContentRuntime && panelContentRuntime.renderEmailReconSummary,
         renderAiPermissionsTool: panelContentRuntime && panelContentRuntime.renderAiPermissionsTool,
+        renderAiPermLogHtml: panelContentRuntime && panelContentRuntime.renderAiPermLogHtml,
       });
     }
 

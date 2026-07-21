@@ -383,7 +383,7 @@
                     <input type="checkbox" id="v1AiModePsCheckbox" disabled />
                     <span>PS</span>
                   </label>
-                  <span class="v1-ai-badge v1-ai-mode-badge" id="v1AiModeBadge">Anthropic Sonnet</span>
+                  <button type="button" class="v1-ai-badge v1-ai-mode-badge" id="v1AiModeBadge">Anthropic Sonnet</button>
                 </div>
 
                 <div class="v1-ai-chat-wrap">
@@ -395,11 +395,35 @@
 
                 <div class="v1-ai-input">
                   <textarea id="v1AiPromptInput" class="v1-ai-prompt" rows="3" placeholder="Type prompt for assistant..."></textarea>
-                  <button type="button" id="v1AiStopBtn" class="v1-ai-stop-btn" title="Stop" aria-label="Stop" hidden>■</button>
+                  <button type="button" id="v1AiStopBtn" class="v1-ai-stop-btn" title="Stop" aria-label="Stop" disabled>■</button>
                 </div>
 
                 <p class="status-line" id="v1StatusLine" hidden></p>
               </article>
+            </section>
+            <section class="v1-right-pane" data-v1-right-pane="ai-properties" hidden>
+              <ul class="v1-tool-list">
+                <li>
+                  <div class="v1-section-header">
+                    <strong id="v1AiPropertiesTitle">AI Properties</strong>
+                    <span class="v1-collapse-arrow">▼</span>
+                  </div>
+                  <div class="v1-section-body">
+                    <div class="v1-config-field-row">
+                      <label id="v1AiPropertiesActiveNote">Active provider</label>
+                      <span id="v1AiPropertiesActiveLabel"></span>
+                    </div>
+                    <div class="v1-config-field-row">
+                      <label for="v1AiPropMaxTokens" id="v1AiPropMaxTokensLabel">Max output tokens</label>
+                      <input id="v1AiPropMaxTokens" type="number" min="64" max="8192" step="1" />
+                    </div>
+                    <div class="v1-config-field-row">
+                      <label for="v1AiPropMaxRounds" id="v1AiPropMaxRoundsLabel">Max rounds per conversation</label>
+                      <input id="v1AiPropMaxRounds" type="number" min="1" max="20" step="1" />
+                    </div>
+                  </div>
+                </li>
+              </ul>
             </section>
             <section class="v1-right-pane" data-v1-right-pane="config">
               <ul class="v1-tool-list">

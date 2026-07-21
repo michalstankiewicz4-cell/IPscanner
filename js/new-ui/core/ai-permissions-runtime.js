@@ -234,13 +234,21 @@
     }
   }
 
+  function emitAuditLogChanged() {
+    try { document.dispatchEvent(new CustomEvent("newui:ai-audit-log-changed")); } catch (_) { /* ignore */ }
+  }
+
   function clearAuditLog() {
     try { localStorage.setItem(AUDIT_LOG_KEY, "[]"); } catch (_) { /* ignore */ }
+    emitAuditLogChanged();
   }
 
   // Called by the tool-calling engine once per resolved tool call (allowed,
   // declined, or blocked) - the log stays capped at 100 entries so it can't
   // grow the localStorage payload unbounded over a long-lived conversation.
+  // Fires newui:ai-audit-log-changed so the AI Permissions tab (if open at
+  // the time - the engine runs independently of which tab is visible) can
+  // refresh its log view live instead of only on next render.
   function appendAuditLog(entry) {
     try {
       var log = loadAuditLog();
@@ -253,6 +261,7 @@
       });
       localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(log.slice(-100)));
     } catch (_) { /* ignore */ }
+    emitAuditLogChanged();
   }
 
   // "Max actions per conversation" guardrail counter. This app has a single
