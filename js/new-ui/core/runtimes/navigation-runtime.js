@@ -1771,20 +1771,47 @@
         if (t) t.textContent = String(text || "");
       }
 
+      // The REAL send cost as of a given user message - system prompt +
+      // every real message up to and including this one, in DOM order.
+      // Purely a function of position, not something that needs capturing
+      // at the exact moment it was sent: message k's real cost never
+      // changes once k+1, k+2... are appended after it, since only what
+      // came BEFORE k was ever resent as history for k's own send. Works
+      // identically for a message just sent this session and one restored
+      // from saved history.
+      function computeRealCostUpToMessage(msgEl) {
+        var state = aiConfigApi ? aiConfigApi.getState() : null;
+        var systemPrompt = state ? (currentMode() === "ps" ? state.systemPromptPs : state.systemPromptUi) : "";
+        var sum = estimateTokens(systemPrompt);
+        var msgs = chat.querySelectorAll(".v1-ai-msg:not([data-ai-meta])");
+        for (var i = 0; i < msgs.length; i++) {
+          sum += estimateTokens(getMessageText(msgs[i]));
+          if (msgs[i] === msgEl) break;
+        }
+        return sum;
+      }
+
       // Adds/removes/refreshes this one message's token-count overlay -
       // called on append, whenever the pending "..." placeholder's text is
       // replaced with the real reply, and on every config change (so
       // toggling the checkbox off/on updates messages already on screen,
       // not just new ones). Meta chrome ("Assistant ready...", "Mode
       // switched to X.") never gets one - it's not part of the real
-      // conversation token cost.
+      // conversation token cost. User messages show the REAL cost that
+      // send incurred (system prompt + everything resent up to it) rather
+      // than just their own small size, since that's the number that
+      // actually matters for cost - the assistant's own replies show just
+      // their own size instead (a plain output-token count, not a resend).
       function updateMessageTokenOverlay(msgEl) {
         var existing = msgEl.querySelector(".v1-ai-msg-tokens");
         if (existing) existing.remove();
         if (!tokenCounterFeatureEnabled() || msgEl.hasAttribute("data-ai-meta")) return;
+        var count = msgEl.classList.contains("user")
+          ? computeRealCostUpToMessage(msgEl)
+          : estimateTokens(getMessageText(msgEl));
         var overlay = document.createElement("span");
         overlay.className = "v1-ai-msg-tokens";
-        overlay.textContent = "~" + estimateTokens(getMessageText(msgEl)) + " " + tr("aiTokenCounterUnit");
+        overlay.textContent = "~" + count + " " + tr("aiTokenCounterUnit");
         msgEl.appendChild(overlay);
       }
 
@@ -1792,23 +1819,61 @@
         Array.prototype.forEach.call(chat.querySelectorAll(".v1-ai-msg"), updateMessageTokenOverlay);
       }
 
-      // Sum of every real (non-meta) message's estimate - same population
-      // sendPrompt() below sends to the API, so this is a genuine running
-      // total for the whole visible conversation, not just what's typed
-      // right now. Sits in the chat pane's own bottom-left corner (a
-      // sibling of #v1AiChatHistory, like the clear-history button), not
-      // combined into the prompt-draft counter overlaid on the textarea.
+      // Sum of every real (non-meta) message currently on screen - the
+      // CONTENT size of the conversation, not what's actually been billed
+      // (see addCumulativeInputTokens() below for that, and why the two
+      // diverge). Used as one ingredient of the "real cost if sent now"
+      // draft counter, not displayed on its own anywhere.
+      function computeConversationContentTotal() {
+        return Array.prototype.reduce.call(
+          chat.querySelectorAll(".v1-ai-msg:not([data-ai-meta])"),
+          function (sum, el) { return sum + estimateTokens(getMessageText(el)); },
+          0
+        );
+      }
+
+      // Every real API call resends the WHOLE conversation so far (stateless
+      // API, no server-side memory - see sendPrompt() below) - so the tokens
+      // actually billed across a conversation's lifetime is NOT the same as
+      // its current content size: message 1 gets billed again on turn 2, 3,
+      // 4... every subsequent turn. This tracks that real, only-ever-growing
+      // number - incremented once per real call (addCumulativeInputTokens(),
+      // called from sendPrompt()), not recomputed from the DOM. Persisted
+      // so it survives a reload, reset when the conversation is cleared
+      // (clearHistoryBtn below) since it's tied to that conversation's cost,
+      // not a lifetime total.
+      var AI_CUMULATIVE_INPUT_TOKENS_KEY = "netrecon_ai_cumulative_input_tokens_v1";
+
+      function loadCumulativeInputTokens() {
+        try {
+          var n = Number(localStorage.getItem(AI_CUMULATIVE_INPUT_TOKENS_KEY));
+          return n > 0 ? n : 0;
+        } catch (_) {
+          return 0;
+        }
+      }
+
+      function addCumulativeInputTokens(n) {
+        try {
+          localStorage.setItem(AI_CUMULATIVE_INPUT_TOKENS_KEY, String(loadCumulativeInputTokens() + n));
+        } catch (_) {
+          // ignore persistence failures
+        }
+      }
+
+      function resetCumulativeInputTokens() {
+        try { localStorage.removeItem(AI_CUMULATIVE_INPUT_TOKENS_KEY); } catch (_) { /* ignore */ }
+      }
+
+      // Chat pane's own bottom-left corner (a sibling of #v1AiChatHistory,
+      // like the clear-history button) - the real, cumulative input-token
+      // cost of this conversation so far, not its current content size.
       function updateChatTotalTokens() {
         if (!chatTotalTokensEl) return;
         var enabled = tokenCounterFeatureEnabled();
         chatTotalTokensEl.hidden = !enabled;
         if (!enabled) return;
-        var total = Array.prototype.reduce.call(
-          chat.querySelectorAll(".v1-ai-msg:not([data-ai-meta])"),
-          function (sum, el) { return sum + estimateTokens(getMessageText(el)); },
-          0
-        );
-        chatTotalTokensEl.textContent = "~" + total + " " + tr("aiTokenCounterUnit") + " " + tr("aiTokenCounterTotalLabel");
+        chatTotalTokensEl.textContent = "~" + loadCumulativeInputTokens() + " " + tr("aiTokenCounterUnit") + " " + tr("aiTokenCounterTotalLabel");
       }
 
       // #v1AiModeUiCheckbox/#v1AiModePsCheckbox are disabled for now (see
@@ -1907,6 +1972,11 @@
               if (!confirmed) return;
               chat.innerHTML = "";
               appendMessage("assistant", WELCOME_MESSAGE, true);
+              // The cumulative counter is this conversation's real cost -
+              // wiping the conversation should wipe it too, not leave a
+              // stale big number with no messages left to explain it.
+              resetCumulativeInputTokens();
+              updateChatTotalTokens();
             });
         });
       }
@@ -1936,19 +2006,29 @@
         });
       })();
 
-      // Live estimated-token counter overlaid on the prompt textarea -
-      // just the current draft, not the running conversation total (see
-      // updateChatTotalTokens() above for that one, shown in the chat
-      // pane's own corner instead). Toggled via RS "AI Properties" ->
-      // "Estimated tokens counter".
-      (function wireDraftTokenCounter() {
+      // Live estimated-token counter overlaid on the prompt textarea - the
+      // REAL cost of sending right now, shown as an explicit sum rather
+      // than one collapsed number: "~343+9 tokens" means 343 (system
+      // prompt + everything that would get resent as history, same as
+      // computeConversationContentTotal()) + 9 (this draft) = what this
+      // send would actually cost. Not the cumulative running total (see
+      // updateChatTotalTokens() above, shown in the chat pane's own corner
+      // instead) - this is just what THIS one send would cost. Toggled via
+      // RS "AI Properties" -> "Estimated tokens counter". A future pass may
+      // make the "combined vs. broken-out" display configurable - not
+      // needed yet.
+      (function wireSendCostCounter() {
         if (!tokenCounterEl) return;
 
         function update() {
           var enabled = tokenCounterFeatureEnabled();
           tokenCounterEl.hidden = !enabled;
           if (!enabled) return;
-          tokenCounterEl.textContent = "~" + estimateTokens(promptInput.value) + " " + tr("aiTokenCounterUnit");
+          var state = aiConfigApi ? aiConfigApi.getState() : null;
+          var systemPrompt = state ? (currentMode() === "ps" ? state.systemPromptPs : state.systemPromptUi) : "";
+          var existingCost = estimateTokens(systemPrompt) + computeConversationContentTotal();
+          var draftCost = estimateTokens(promptInput.value);
+          tokenCounterEl.textContent = "~" + existingCost + "+" + draftCost + " " + tr("aiTokenCounterUnit");
         }
 
         update();
@@ -2040,6 +2120,18 @@
         var systemPrompt = mode === "ps"
           ? (state.systemPromptPs || defaultPrompts.systemPromptPs)
           : (state.systemPromptUi || defaultPrompts.systemPromptUi);
+
+        // This is the moment the real cost is incurred - system prompt +
+        // the whole history array above is exactly what's about to go out
+        // over the network. Counted here (once per real send), not
+        // recomputed from the DOM later, is what makes updateChatTotalTokens()
+        // a genuine cumulative total instead of just current content size.
+        // Doesn't account for extra internal tool-calling rounds the engine
+        // may run below (each resends an even-larger array) - those aren't
+        // visible up here, same simplification MAX_ROUNDS elsewhere already
+        // accepts.
+        addCumulativeInputTokens(estimateTokens(systemPrompt) + history.reduce(function (sum, h) { return sum + estimateTokens(h.content); }, 0));
+        updateChatTotalTokens();
 
         var thisGeneration = ++aiChatGeneration;
         aiChatBusy = true;

@@ -212,6 +212,37 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
      happening in the background; only the *displayed* table stays pinned
      until the user scrubs back to "live").
   Not started - purely a feasibility/design conversation so far.
+- **AI Assistant: configurable token-counter display** — the "Estimated
+  tokens counter" (RS "AI Properties" tab, `navigation-runtime.js`) is
+  wired one way today: the prompt-textarea overlay always shows the
+  broken-out `~{existing}+{draft} tokens` form rather than one collapsed
+  number, and the per-message/chat-total overlays always show real
+  cumulative cost rather than raw content size. Worth exposing the
+  display style (combined vs. broken-out, real-cost vs. content-size) as
+  actual settings once there's real demand for the other variants -
+  today's choice was a direct user request, not a considered default.
+- **AI Assistant: loading indicator while waiting for a reply** — today's
+  pending state is a static `"…"` placeholder bubble (`appendMessage("assistant",
+  "…", true)` in `sendPrompt()`, `navigation-runtime.js`), replaced in
+  place once the real reply (or an error) lands. No animation/spinner - for
+  a multi-round tool-calling exchange (up to `maxRounds` sequential API
+  calls) that can sit static for a long time with no visual sign anything
+  is happening beyond the isMeta tool-call bubbles that appear per
+  resolved call. A simple CSS animation (pulsing dots, spinner) on that
+  placeholder bubble would close the gap.
+- **AI Assistant: conversation-context compaction** — today the full
+  conversation is resent as history on every single turn (see
+  `sendPrompt()`'s `history` array, `navigation-runtime.js`), so real
+  input-token cost grows without bound as a conversation gets longer (see
+  the real-cost counters above, added specifically to make this visible).
+  Some kind of compaction/summarization mechanism - condensing older
+  turns into a shorter summary once the conversation passes a size
+  threshold, keeping only recent turns verbatim - would cap that growth.
+  Exact shape not settled yet (raised as "kompensator/kreator/(agent)?" -
+  a dedicated summarization pass, a rolling window, or something else) -
+  needs its own design discussion before implementation, including how it
+  interacts with per-provider `maxOutputTokens`/`maxRounds` and whether
+  the summarization step itself should be a real (billed) API call.
 - **Selective IP-blur inside Terminal/Console output** — today the IP blur
   toggle blurs those panes whole-pane (see item 15 in the backlog below)
   because their output is free-form text concatenated as one string into a
