@@ -87,7 +87,7 @@ CONTRIBUTING.md §3a).
 4. **World Globe[HDN]** (LRSB, TBM-Tools -> CS)
 
 
-- **IP Scanner Heuristic JS[HDN]** — moze na www: UI, presety, biblioteka IP, sesje (zrobione, patrz sql.js session save/load). Tylko desktop: samo skanowanie portow (przegladarka nie ma surowych socketow TCP — twardy limit, nie do obejscia).
+- **IP Scanner Heuristic JS[HDN]** — zaimplementowane (2026-07-23): dodatek instalowalny przez Import Tool (LS: target+technika+porty, CS: opis+tabela wynikow), 5 technik dzialajacych w 100% na www (Fetch/Image/Link/WebSocket/IFrame - client-side, uczciwie oznaczone jako heurystyka, nie prawdziwy skan portow — nie ma surowego TCP/SYN, ograniczenia z blokowanych portow przegladarki i CORS opisane w tekscie narzedzia). Osobna, ogolna mozliwosc "run_powershell_with_args" (bezpieczne -File zamiast -Command) zostala w silniku dodatkow dla przyszlych narzedzi, ktore rzeczywiscie potrzebuja realnego TCP connect z desktopa — w tym konkretnym dodatku nie jest juz uzywana (usunieta z UI razem z prosba o uprawnienie "powershell").
 - **Shell Craft** — zaimplementowane (2026-07-10/11): edytor blokow (canvas CS + Library LS + Inspector RS, dziala www i desktop, stan w localStorage) oraz 3 makra (External IP / Local IP / Subnets) uruchamiane  — patrz ROADMAP, backlog pkt 11.
 - **AI Assistant[HDN]** — moze na www: caly czat, jesli to zwykle zapytania HTTP do API. Tylko desktop: gdyby mial wywolywac PowerShell/pliki lokalne.
 - **Topology map[HDN]** — moze na www: rysowanie grafu z juz zebranych danych. Tylko desktop: zbieranie danych (traceroute — do zaimplementowania od zera; wczesniejszy martwy `run_traceroute` w `main.rs` zostal usuniety w ramach sprzatania backendu, patrz `docs/CHANGELOG.md`).

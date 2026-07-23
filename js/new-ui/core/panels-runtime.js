@@ -1386,12 +1386,11 @@
 
     // The 5 client-side probe techniques below (fetch/img/link/websocket/
     // iframe) are pure browser JS - no Tauri/native backend involved, so
-    // they work identically on desktop and real www. Deliberately NOT a
-    // replacement for the "powershell" type's real TCP-connect scan (which
-    // stays desktop-only, and remains the only ACCURATE option - see
-    // tools/ipscanner-heuristic.json's "technique" select field) - these
-    // are honestly weaker heuristics the user explicitly opts into, not a
-    // silent fallback. None of them can do what a real scanner does:
+    // they work identically on desktop and real www. A command's "type"
+    // still gates it against a real TCP-connect scan too (the "powershell"
+    // type, see below) for addons that want one - these 5 are honestly
+    // weaker heuristics an addon opts into, not a silent fallback for that.
+    // None of them can do what a real scanner does:
     //   - No raw TCP/SYN - only a protocol-level connection attempt
     //     (HTTP/WS), so this is "does something answer in this style", not
     //     a real port scan.
