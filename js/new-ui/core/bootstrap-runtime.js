@@ -689,6 +689,19 @@
         if (toolUi.showAsTab !== false) {
           switchTool(toolKey);
         }
+
+        // ui.openWithTools (optional) lets one entry point - a single Tools-
+        // menu click, activity-bar icon, etc. - open several related tools
+        // together (e.g. a left-panel input tool paired with its own
+        // center-tab results tool), instead of the results tab only ever
+        // appearing after the first action runs. Each listed key goes
+        // through this SAME function, so it's opened into whichever
+        // surface(s) ITS OWN ui flags declare, exactly as if it had been
+        // opened directly.
+        const alsoOpen = Array.isArray(toolUi.openWithTools) ? toolUi.openWithTools : [];
+        alsoOpen.forEach((otherKey) => {
+          if (otherKey && otherKey !== toolKey) openExtensionTool(otherKey);
+        });
       }
 
       // shell: renders an extension-contributed icon into a container - an

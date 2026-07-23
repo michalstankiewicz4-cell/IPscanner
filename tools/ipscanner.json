@@ -54,7 +54,7 @@
         "actions": [
           { "label": "Scan common ports", "commandId": "dynamic:technique", "resultKey": "ipScannerHeuristicResult", "openTool": "ip-scanner-heuristic-cs" }
         ],
-        "ui": { "showInLeftPanel": true, "showInToolsMenu": true, "showAsTab": false }
+        "ui": { "showInLeftPanel": true, "showInToolsMenu": true, "showAsTab": false, "openWithTools": ["ip-scanner-heuristic-cs"] }
       },
       "ip-scanner-heuristic-cs": {
         "title": "Heuristic results",
