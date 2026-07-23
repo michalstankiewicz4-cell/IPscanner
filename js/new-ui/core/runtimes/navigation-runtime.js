@@ -989,6 +989,27 @@
       var slot = document.getElementById(slotElId);
       if (!slot) return;
 
+      // An extension-contributed showInLeftPanel/showInRightPanel tool
+      // (bootstrap-runtime.js's syncExtensionToolUi) already has its OWN
+      // dedicated pane element, whose visibility this section's native
+      // paneSelector/paneVisibility toggle (tab-registry.js) already
+      // manages independently of this generic slot. Without this check,
+      // every such tool got rendered TWICE on activation - once into its
+      // real dedicated pane (correct), once more into this shared slot via
+      // the buildDetailHtml fallback below (a second, independent copy of
+      // the same fields/buttons, visibly duplicated in the sidebar) -
+      // because this function used to run unconditionally for every left/
+      // right activation with no awareness that some tools already own a
+      // real pane elsewhere in the DOM.
+      var dedicatedPaneSelector = section === "left"
+        ? '[data-sidebar-tool-panel="' + tool + '"]'
+        : '[data-v1-right-pane="' + tool + '"]';
+      if (tool && document.querySelector(dedicatedPaneSelector)) {
+        slot.style.display = "none";
+        slot.innerHTML = "";
+        return;
+      }
+
       var contentRuntime = window.NetReconNewUICore && window.NetReconNewUICore.toolContentRuntime;
       var entry = contentRuntime && tool ? contentRuntime[tool] : null;
       var moveNode = entry && entry.move ? entry.getNode() : null;

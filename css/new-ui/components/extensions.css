@@ -2,6 +2,48 @@
    Icon, per-button, and output styling live in cards.css; this file only
    owns the action-row container. */
 
+/* Addon-declared input fields (contributions.tools[key].fields), sitting
+   above the action buttons - same dark/bordered visual language as
+   .v1-ext-actions below, no generic "field row" class exists elsewhere in
+   the app to reuse (checked: .v1-ps-input/.v1-profile-name-input/.v1-octet
+   are all narrowly purpose-built, not a fit). Results tables reuse the
+   existing .v1-results-table/.v1-results-table-scroll base (cards.css) as-is
+   - no override needed for a plain few-column table. */
+.v1-ext-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.v1-ext-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v1-ext-field-label {
+  font-size: 11px;
+  color: var(--txt-dim);
+}
+
+.v1-ext-field-row input,
+.v1-ext-field-row select {
+  border: 1px solid var(--line);
+  background: #262a2f;
+  color: var(--txt);
+  font: 400 12px/1 var(--font-ui);
+  height: 30px;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.v1-ext-field-row input:focus,
+.v1-ext-field-row select:focus {
+  outline: none;
+  border-color: #4d535c;
+}
+
 .v1-ext-actions {
   display: flex;
   flex-wrap: wrap;

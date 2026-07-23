@@ -23,6 +23,51 @@
     var catalogEntriesCache = null;
     var catalogFetchPromise = null;
 
+    // shell: "Load from file..." has two backends - the native file dialog
+    // (open_extension_manifest_dialog, desktop-only) and this plain
+    // <input type="file"> + FileReader fallback, which needs no Tauri IPC at
+    // all and works identically on www. One hidden input lives at module
+    // scope (not recreated per Import Tool mount, which would otherwise leak
+    // an orphaned <input> into <body> every time #v1ToolDetail re-renders) -
+    // its change handler always reads the CURRENT mount's outputEl/
+    // installManifestObject via the two mutable refs below, updated at the
+    // top of every wireImportToolButtons() call, so it never acts on a
+    // stale closure from a torn-down previous mount.
+    var webFileInput = null;
+    var activeOutputEl = null;
+    var activeInstallManifestObject = null;
+
+    function triggerWebFileImport() {
+      if (!webFileInput) {
+        webFileInput = document.createElement("input");
+        webFileInput.type = "file";
+        webFileInput.accept = ".json,application/json";
+        webFileInput.style.display = "none";
+        webFileInput.addEventListener("change", function () {
+          var file = webFileInput.files && webFileInput.files[0];
+          webFileInput.value = "";
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function () {
+            var manifest = null;
+            try {
+              manifest = JSON.parse(String(reader.result || ""));
+            } catch (_) {
+              if (activeOutputEl) activeOutputEl.textContent = tr("extInvalidJson");
+              return;
+            }
+            if (activeInstallManifestObject) activeInstallManifestObject(manifest);
+          };
+          reader.onerror = function () {
+            if (activeOutputEl) activeOutputEl.textContent = tr("extInvalidJson");
+          };
+          reader.readAsText(file);
+        });
+        document.body.appendChild(webFileInput);
+      }
+      webFileInput.click();
+    }
+
     // shell: fetches the addon catalog from the repo's own tools/ GitHub
     // folder - groups files by basename so "<name>.json" pairs with a
     // same-name image file ("<name>.png" etc.) as that addon's icon. Uses a
@@ -81,6 +126,7 @@
       var outputEl = root.querySelector('[data-import-role="output"]') || root.querySelector("#v1ImportOutput");
       var catalogEl = root.querySelector('[data-import-role="catalog"]') || root.querySelector("#v1ImportCatalog");
       var catalogEntries = catalogEntriesCache || [];
+      activeOutputEl = outputEl;
 
       function listInstalled() {
         var items = extensionHost && extensionHost.listExtensions ? extensionHost.listExtensions() : [];
@@ -224,6 +270,7 @@
           return finishInstall();
         });
       }
+      activeInstallManifestObject = installManifestObject;
 
       function renderCatalog() {
         if (!catalogEl) return;
@@ -325,6 +372,16 @@
           var actionName = button.getAttribute("data-import-action");
 
           if (actionName === "load-file") {
+            // Prefer the native file dialog on desktop (matches the exact
+            // path shown/reviewed) - only reach for the web <input
+            // type="file"> fallback when Tauri invoke genuinely isn't there,
+            // not on every platform.invoke rejection (a real desktop error
+            // should still surface as extInvalidJson, not silently swap to
+            // the web picker).
+            if (!platform.isDesktop()) {
+              triggerWebFileImport();
+              return;
+            }
             Promise.resolve(platform.invoke("open_extension_manifest_dialog", {}))
               .then(function (text) {
                 var manifest = null;
@@ -340,8 +397,12 @@
                 var message = (err && err.message) || err || "";
                 var cancelled = message === "cancelled";
                 var unavailable = message === "tauri invoke unavailable";
+                if (unavailable) {
+                  triggerWebFileImport();
+                  return;
+                }
                 if (cancelled || !outputEl) return;
-                outputEl.textContent = unavailable ? tr("extDesktopOnlyFeature") : tr("extInvalidJson");
+                outputEl.textContent = tr("extInvalidJson");
               });
             return;
           }

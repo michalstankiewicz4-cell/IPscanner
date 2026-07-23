@@ -1476,6 +1476,116 @@ async fn run_powershell(app: AppHandle, command: String) -> Result<PowerShellExe
     })
 }
 
+// Addon commands (js/new-ui/core/panels-runtime.js's registerExtensionCommands)
+// are the only caller of this - a manifest declares which named params its
+// script expects via "params", and the UI collects those values from
+// user-typed input fields at click time (js/new-ui/core/panel-content-
+// runtime.js's .v1-ext-field-row inputs). Those values reach real PowerShell
+// parameter binding via "-File <temp.ps1> -key value ..." rather than string
+// interpolation, so a hostile value (containing ";", backticks, etc.) is
+// bound as a literal argument, never re-parsed as PowerShell source code -
+// unlike "-Command \"& { script }\" -key value", which (per
+// about_PowerShell_exe) re-flattens every token after -Command into ONE
+// string and re-parses the whole thing as source, discarding the OS-level
+// argv boundaries Rust's Command::args() otherwise preserves. Does NOT
+// reuse run_powershell above - that function's plain "-Command <string>"
+// model has no place for separate argument values at all, and its 4 existing
+// callers (console/macro/ip-library/addon "no params" commands) keep using
+// it completely untouched.
+const RESERVED_POWERSHELL_SWITCHES: [&str; 13] = [
+    "command", "encodedcommand", "file", "executionpolicy", "noprofile",
+    "noninteractive", "mta", "sta", "version", "windowstyle",
+    "configurationname", "inputformat", "outputformat",
+];
+
+#[tauri::command]
+async fn run_powershell_with_args(
+    app: AppHandle,
+    script: String,
+    args: HashMap<String, String>,
+) -> Result<PowerShellExecResult, String> {
+    let script = script.trim().to_string();
+    if script.is_empty() {
+        return Err("Script is empty".into());
+    }
+
+    for key in args.keys() {
+        let is_valid_name = !key.is_empty()
+            && key.chars().next().map_or(false, |c| c.is_ascii_alphabetic() || c == '_')
+            && key.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
+        if !is_valid_name {
+            return Err(format!("Invalid argument name: {}", key));
+        }
+        if RESERVED_POWERSHELL_SWITCHES.contains(&key.to_ascii_lowercase().as_str()) {
+            return Err(format!("Argument name is reserved: {}", key));
+        }
+    }
+
+    let script_base_dir = if script.contains("scripts\\") || script.contains("scripts/") {
+        resolve_scripts_base_dir(&app)
+    } else {
+        None
+    };
+
+    let temp_path = std::env::temp_dir().join(format!(
+        "ipscanner_addon_{}_{}.ps1",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0)
+    ));
+    fs::write(&temp_path, &script).map_err(|e| format!("Failed to write temp script: {}", e))?;
+
+    let temp_path_for_spawn = temp_path.clone();
+    let run_result = tokio::task::spawn_blocking(move || {
+        #[cfg(target_os = "windows")]
+        {
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            let mut command = Command::new("powershell");
+            command
+                .creation_flags(CREATE_NO_WINDOW)
+                .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"])
+                .arg(&temp_path_for_spawn);
+            for (key, value) in &args {
+                command.arg(format!("-{}", key)).arg(value);
+            }
+            if let Some(base_dir) = script_base_dir.as_ref() {
+                command.current_dir(base_dir);
+            }
+            command.output()
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            let mut command = Command::new("pwsh");
+            command
+                .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"])
+                .arg(&temp_path_for_spawn);
+            for (key, value) in &args {
+                command.arg(format!("-{}", key)).arg(value);
+            }
+            if let Some(base_dir) = script_base_dir.as_ref() {
+                command.current_dir(base_dir);
+            }
+            command.output()
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())
+    .and_then(|res| res.map_err(|e| e.to_string()));
+
+    let _ = fs::remove_file(&temp_path);
+
+    let output = run_result?;
+
+    Ok(PowerShellExecResult {
+        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+        exit_code: output.status.code().unwrap_or(-1),
+    })
+}
+
 #[tauri::command]
 fn open_extension_manifest_dialog() -> Result<String, String> {
     let picked = rfd::FileDialog::new()
@@ -2454,6 +2564,7 @@ fn main() {
             write_session_file,
             read_session_file,
             run_powershell,
+            run_powershell_with_args,
             list_connections,
             list_arp_entries,
         ])

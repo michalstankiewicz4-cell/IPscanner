@@ -1373,24 +1373,282 @@
         points: Array.isArray(baseInfo.points) ? baseInfo.points : [],
         actions: Array.isArray(baseInfo.actions) ? baseInfo.actions : [],
         resultText: resultText,
+        // Addon-declared input fields (rendered as .v1-ext-field-row by
+        // renderDefaultTool) and an optional structured results table -
+        // must be passed through here explicitly, same as every other key
+        // above, or renderDefaultTool never sees them regardless of what it
+        // does with them (this function is a narrow whitelist copy of the
+        // raw manifest tool entry, not a pass-through).
+        fields: Array.isArray(baseInfo.fields) ? baseInfo.fields : [],
+        resultsTable: (baseInfo.resultsTable && typeof baseInfo.resultsTable === "object") ? baseInfo.resultsTable : null,
       };
     }
 
+    // The 5 client-side probe techniques below (fetch/img/link/websocket/
+    // iframe) are pure browser JS - no Tauri/native backend involved, so
+    // they work identically on desktop and real www. Deliberately NOT a
+    // replacement for the "powershell" type's real TCP-connect scan (which
+    // stays desktop-only, and remains the only ACCURATE option - see
+    // tools/ipscanner-heuristic.json's "technique" select field) - these
+    // are honestly weaker heuristics the user explicitly opts into, not a
+    // silent fallback. None of them can do what a real scanner does:
+    //   - No raw TCP/SYN - only a protocol-level connection attempt
+    //     (HTTP/WS), so this is "does something answer in this style", not
+    //     a real port scan.
+    //   - Browsers hard-block a fixed list of ports (mail/news/IRC ports
+    //     etc., e.g. 21/22/23/25) at the network-stack level, for ANY of
+    //     these techniques, regardless of whether something real is
+    //     listening there - the "ports" list in each command's manifest
+    //     entry (tools/ipscanner.json) is chosen to exclude those.
+    //   - CORS/same-origin means you can detect IF/how fast something
+    //     answered, never read the actual response content.
+    //   - Mixed content: an HTTPS page can't attempt plain http:///ws://
+    //     targets at all - probeScheme() below matches the CURRENT page's
+    //     scheme to avoid guaranteed blocking, but that then means a
+    //     plain-HTTP-only service gets probed over https/wss and likely
+    //     reports closed even if it's open. A local file:// page (or plain
+    //     HTTP) has none of this restriction - the most reliable choice for
+    //     these 5 techniques.
+    var SECURE_PORTS = [443, 8443];
+
+    function probeScheme(port, secureScheme, plainScheme) {
+      var pageIsSecure = typeof window !== "undefined" && window.location && window.location.protocol === "https:";
+      var portWantsSecure = SECURE_PORTS.indexOf(port) !== -1;
+      return (pageIsSecure || portWantsSecure) ? secureScheme : plainScheme;
+    }
+
+    // fetch: a no-cors request only resolves if SOMETHING answered on that
+    // host:port within the timeout - can't read the response (no-cors
+    // hides it), so this only tells you "open" vs "no answer", and only
+    // works at all for ports that speak enough HTTP to send a response
+    // (a bare TCP listener that never replies looks identical to closed).
+    function fetchPortProbe(host, port, timeoutMs) {
+      return new Promise(function (resolve) {
+        var settled = false;
+        var controller = (typeof AbortController === "function") ? new AbortController() : null;
+        var timer = setTimeout(function () {
+          if (settled) return;
+          settled = true;
+          if (controller) controller.abort();
+          resolve(false);
+        }, timeoutMs);
+        var url = probeScheme(port, "https://", "http://") + host + ":" + port + "/?_probe=" + Date.now();
+        fetch(url, { mode: "no-cors", cache: "no-store", signal: controller ? controller.signal : undefined })
+          .then(function () {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            resolve(true);
+          })
+          .catch(function () {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            resolve(false);
+          });
+      });
+    }
+
+    // img: loading an <img> isn't subject to CORS at all (unlike fetch), so
+    // it can at least attempt any port, not just HTTP-ish ones - but it's a
+    // cruder signal: both onload (valid image) AND onerror (got SOME
+    // response back, just not a decodable image - still proves something
+    // is listening and talking) count as "open"; only a full timeout with
+    // neither event firing counts as "closed". A closed/filtered port and a
+    // port that's open but silent are indistinguishable here - an honest
+    // limitation of the technique, not a bug.
+    function imgPortProbe(host, port, timeoutMs) {
+      return new Promise(function (resolve) {
+        var settled = false;
+        var img = new Image();
+        var timer = setTimeout(function () {
+          if (settled) return;
+          settled = true;
+          img.src = "";
+          resolve(false);
+        }, timeoutMs);
+        function finish(open) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve(open);
+        }
+        img.onload = function () { finish(true); };
+        img.onerror = function () { finish(true); };
+        img.src = probeScheme(port, "https://", "http://") + host + ":" + port + "/?_probe=" + Date.now() + "-" + Math.random();
+      });
+    }
+
+    // link/CSS: same onload/onerror-both-mean-open idea as img, using a
+    // stylesheet <link> instead - practically identical accuracy profile,
+    // offered as an alternative in case a target/network treats image and
+    // stylesheet requests differently (e.g. some proxies/filters).
+    function linkPortProbe(host, port, timeoutMs) {
+      return new Promise(function (resolve) {
+        var settled = false;
+        var link = document.createElement("link");
+        link.rel = "stylesheet";
+        function cleanup() {
+          if (link.parentNode) link.parentNode.removeChild(link);
+        }
+        var timer = setTimeout(function () {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          resolve(false);
+        }, timeoutMs);
+        function finish(open) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          cleanup();
+          resolve(open);
+        }
+        link.onload = function () { finish(true); };
+        link.onerror = function () { finish(true); };
+        link.href = probeScheme(port, "https://", "http://") + host + ":" + port + "/?_probe=" + Date.now() + "-" + Math.random();
+        document.head.appendChild(link);
+      });
+    }
+
+    // WebSocket: needs the target to actually complete an HTTP Upgrade
+    // handshake, not just accept a TCP connection - a real, deliberately
+    // conservative signal. Unlike img/link/iframe, onerror/onclose here is
+    // NOT treated as "open": a genuinely closed port and an open port that
+    // doesn't speak WebSocket both surface as the same generic error event
+    // (browsers don't expose the difference to JS), so only a real onopen
+    // counts - this technique likely UNDER-reports open (non-WS) ports
+    // rather than over-reporting, the safer bias for a security tool.
+    function websocketPortProbe(host, port, timeoutMs) {
+      return new Promise(function (resolve) {
+        var settled = false;
+        var ws = null;
+        var timer = setTimeout(function () {
+          if (settled) return;
+          settled = true;
+          try { if (ws) ws.close(); } catch (_) { /* ignore */ }
+          resolve(false);
+        }, timeoutMs);
+        function finish(open) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          try { if (ws) ws.close(); } catch (_) { /* ignore */ }
+          resolve(open);
+        }
+        try {
+          ws = new WebSocket(probeScheme(port, "wss://", "ws://") + host + ":" + port + "/");
+          ws.onopen = function () { finish(true); };
+          ws.onerror = function () { finish(false); };
+          ws.onclose = function () { finish(false); };
+        } catch (_) {
+          finish(false);
+        }
+      });
+    }
+
+    // iframe: sandbox="" (the most restrictive setting - no scripts, forms,
+    // same-origin, popups) so a hostile/compromised target can't run
+    // anything even though it's briefly loaded - this technique only ever
+    // reads the load/error EVENT, never the frame's content. Same
+    // onload/onerror-both-mean-open profile as img/link.
+    function iframePortProbe(host, port, timeoutMs) {
+      return new Promise(function (resolve) {
+        var settled = false;
+        var iframe = document.createElement("iframe");
+        iframe.setAttribute("sandbox", "");
+        iframe.style.display = "none";
+        function cleanup() {
+          if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+        }
+        var timer = setTimeout(function () {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          resolve(false);
+        }, timeoutMs);
+        function finish(open) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          cleanup();
+          resolve(open);
+        }
+        iframe.onload = function () { finish(true); };
+        iframe.onerror = function () { finish(true); };
+        iframe.src = probeScheme(port, "https://", "http://") + host + ":" + port + "/?_probe=" + Date.now() + "-" + Math.random();
+        document.body.appendChild(iframe);
+      });
+    }
+
+    var CLIENT_PROBE_FNS = {
+      fetch: fetchPortProbe,
+      img: imgPortProbe,
+      link: linkPortProbe,
+      websocket: websocketPortProbe,
+      iframe: iframePortProbe,
+    };
+
     // shell: registers command-bus entries declared by an installed
     // extension's contributions.commands, gated on the extension's granted
-    // permissions. Only "powershell" commands are supported today (see
-    // FUTURE_PLUGIN_SHELL.md for the larger, still-undone contribution model).
+    // permissions. "powershell" is the only command type needing the
+    // permission gate below (it's the only one touching the native
+    // backend) - the 5 CLIENT_PROBE_FNS types are plain client-side JS and
+    // need no permission grant, same as the rest of the static card (see
+    // FUTURE_PLUGIN_SHELL.md for the larger, still-undone contribution
+    // model this is a small, additive slice of).
     function registerExtensionCommands(manifest) {
       if (!commandBus || !manifest || !manifest.contributions) return;
       var granted = Array.isArray(manifest.permissions) ? manifest.permissions : [];
       var commands = manifest.contributions.commands || {};
       Object.keys(commands).forEach(function (commandId) {
         var def = commands[commandId];
-        if (!def || def.type !== "powershell") return;
+        if (!def) return;
+
+        if (Object.prototype.hasOwnProperty.call(CLIENT_PROBE_FNS, def.type)) {
+          var probePorts = Array.isArray(def.ports) ? def.ports : [];
+          var probeTimeoutMs = Number(def.timeoutMs) > 0 ? Number(def.timeoutMs) : 1500;
+          var probeFn = CLIENT_PROBE_FNS[def.type];
+          commandBus.register(commandId, function (args) {
+            var target = args && args.target ? String(args.target) : "";
+            if (!target) return Promise.resolve("[]");
+            return Promise.all(probePorts.map(function (port) {
+              return probeFn(target, port, probeTimeoutMs).then(function (open) {
+                return { ip: target, port: port, open: open };
+              });
+            })).then(function (rows) { return JSON.stringify(rows); });
+          }, manifest.id);
+          return;
+        }
+
+        if (def.type !== "powershell") return;
         if (granted.indexOf("powershell") === -1) return;
         var script = typeof def.script === "string" ? def.script.trim() : "";
         if (!script) return;
-        commandBus.register(commandId, function () {
+        // "params" (optional) declares which named values (matching a
+        // .v1-ext-field-row's data-ext-field) this script expects - only
+        // those exact keys are ever forwarded, never the whole args object a
+        // caller happens to pass. Backed by run_powershell_with_args
+        // (src-tauri/src/main.rs), which binds them as real PowerShell
+        // parameters (-File, not -Command), not string interpolation - see
+        // that function's own comment for why "-Command" couldn't do this
+        // safely. Commands with no "params" keep using plain run_powershell
+        // exactly as before, unchanged.
+        var paramNames = Array.isArray(def.params) ? def.params : [];
+        commandBus.register(commandId, function (args) {
+          if (paramNames.length) {
+            var filteredArgs = {};
+            paramNames.forEach(function (name) {
+              if (args && Object.prototype.hasOwnProperty.call(args, name)) {
+                filteredArgs[name] = String(args[name]);
+              }
+            });
+            return platform.invoke("run_powershell_with_args", { script: script, args: filteredArgs }).then(function (res) {
+              var stdout = res && res.stdout ? String(res.stdout).trim() : "";
+              var stderr = res && res.stderr ? String(res.stderr).trim() : "";
+              return stdout || stderr || "(no output)";
+            });
+          }
           return platform.invoke("run_powershell", { command: script }).then(function (res) {
             var stdout = res && res.stdout ? String(res.stdout).trim() : "";
             var stderr = res && res.stderr ? String(res.stderr).trim() : "";
@@ -1798,12 +2056,26 @@
       // declared action button to invoke the matching command-bus command.
       var toolInfo = (getToolInfoMap ? getToolInfoMap() : {})[tool];
       if (toolInfo && Array.isArray(toolInfo.actions) && toolInfo.actions.length) {
-        wireExtensionToolActions(scope, toolInfo.actions);
+        wireExtensionToolActions(scope, toolInfo);
       }
     }
 
-    function wireExtensionToolActions(scope, actions) {
+    // Reads the live value of one addon-declared input field
+    // (.v1-ext-field-row's <input data-ext-field="name">) - escaped the same
+    // way data-ext-action-command lookups already are (window.CSS.escape
+    // when available), since a careless/hostile field name could otherwise
+    // break the selector rather than just fail to match.
+    function extFieldSelector(name) {
+      var escaped = window.CSS && typeof window.CSS.escape === "function" ? window.CSS.escape(name) : String(name).replace(/["\\]/g, "\\$&");
+      return '[data-ext-field="' + escaped + '"]';
+    }
+
+    function wireExtensionToolActions(scope, toolInfo) {
       var root = scope || document;
+      var actions = Array.isArray(toolInfo.actions) ? toolInfo.actions : [];
+      var fields = Array.isArray(toolInfo.fields) ? toolInfo.fields : [];
+      var resultsTable = toolInfo.resultsTable || null;
+
       actions.forEach(function (action) {
         var commandId = action && action.commandId;
         if (!commandId) return;
@@ -1811,29 +2083,109 @@
         var btn = root.querySelector('[data-ext-action-command="' + selectorId + '"]');
         if (!btn || btn.dataset.extActionBound === "1") return;
         btn.dataset.extActionBound = "1";
+
+        // "dynamic:<fieldName>" lets one button's actual target command
+        // depend on a select field's current value (e.g. a "technique"
+        // picker choosing native/fetch/img) instead of being fixed at
+        // manifest-write time - commandId above still identifies the
+        // BUTTON (data-ext-action-command), this only affects what gets
+        // invoked when it's clicked.
+        function resolveCommandId() {
+          if (typeof commandId !== "string" || commandId.indexOf("dynamic:") !== 0) return commandId;
+          var fieldName = commandId.slice("dynamic:".length);
+          var fieldEl = root.querySelector(extFieldSelector(fieldName));
+          return fieldEl ? fieldEl.value : "";
+        }
+
         btn.addEventListener("click", function () {
           var output = root.querySelector("[data-ext-action-output]");
-          if (!commandBus || !commandBus.has(commandId)) {
+          var tableWrap = root.querySelector("[data-ext-results-table]");
+          var realCommandId = resolveCommandId();
+          if (!commandBus || !realCommandId || !commandBus.has(realCommandId)) {
             if (output) output.textContent = "Command not available (missing permission or extension not installed).";
             return;
           }
+
+          var args = {};
+          fields.forEach(function (field) {
+            var name = field && field.name;
+            if (!name) return;
+            var input = root.querySelector(extFieldSelector(name));
+            args[name] = input ? input.value : "";
+          });
+
           btn.disabled = true;
-          if (output) output.textContent = "Running...";
-          Promise.resolve(commandBus.invoke(commandId))
-            .then(function (result) {
-              var text = String(result == null ? "" : result);
-              if (output) output.textContent = text;
-              if (action.resultKey && store) {
-                store.setState({
-                  extResults: Object.assign({}, store.getState().extResults, {
-                    [action.resultKey]: text,
-                  }),
-                });
+          if (tableWrap) tableWrap.hidden = true;
+          if (output) {
+            output.hidden = false;
+            output.textContent = "Running...";
+          }
+
+          // When this action hands its result to a DIFFERENT tool
+          // (action.openTool - the LS-fields/CS-results split pattern, e.g.
+          // a left-panel target+technique picker whose button opens a
+          // center-tab results view), nothing renders locally here: this
+          // root has no resultsTable of its own in that case, and showing
+          // raw JSON in the fields panel right before switchTool() navigates
+          // away from it would just be noise. The destination tool re-
+          // renders fresh from the same stored resultKey value (see
+          // infoFor/renderDefaultTool in panel-content-runtime.js), so
+          // nothing is lost - only suppressed where it would look wrong.
+          var showLocally = !action.openTool;
+
+          function finish(text) {
+            var renderedAsTable = false;
+            if (showLocally && resultsTable && tableWrap) {
+              var rows = null;
+              try {
+                var parsed = JSON.parse(text);
+                if (Array.isArray(parsed)) rows = parsed;
+              } catch (_) {
+                rows = null;
               }
-              if (action.openTool && switchTool) switchTool(action.openTool);
+              if (rows) {
+                var columns = Array.isArray(resultsTable.columns) ? resultsTable.columns : [];
+                var tbody = tableWrap.querySelector("tbody");
+                if (tbody) {
+                  tbody.innerHTML = rows.map(function (row) {
+                    var cells = columns.map(function (col) {
+                      var value = row && Object.prototype.hasOwnProperty.call(row, col.key) ? row[col.key] : "";
+                      return "<td>" + escapeHtml(String(value == null ? "" : value)) + "</td>";
+                    }).join("");
+                    return "<tr>" + cells + "</tr>";
+                  }).join("");
+                  tableWrap.hidden = false;
+                  if (output) output.hidden = true;
+                  renderedAsTable = true;
+                }
+              }
+            }
+            if (!renderedAsTable) {
+              if (showLocally && output) {
+                output.hidden = false;
+                output.textContent = text;
+              } else if (output) {
+                output.hidden = true;
+                output.textContent = "";
+              }
+            }
+
+            if (action.resultKey && store) {
+              store.setState({
+                extResults: Object.assign({}, store.getState().extResults, {
+                  [action.resultKey]: text,
+                }),
+              });
+            }
+            if (action.openTool && switchTool) switchTool(action.openTool);
+          }
+
+          Promise.resolve(commandBus.invoke(realCommandId, args))
+            .then(function (result) {
+              finish(String(result == null ? "" : result));
             })
             .catch(function (err) {
-              if (output) output.textContent = "Error: " + (err && err.message ? err.message : String(err));
+              finish("Error: " + (err && err.message ? err.message : String(err)));
             })
             .then(function () { btn.disabled = false; });
         });

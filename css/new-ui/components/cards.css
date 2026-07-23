@@ -1064,6 +1064,18 @@
   overflow: auto;
 }
 
+/* This class's own display:block always beats the [hidden] attribute's UA
+   display:none (author style beats UA style at equal specificity) - without
+   this override, toggling .hidden = true from JS (panels-runtime.js's
+   wireExtensionToolActions, when a resultsTable is showing instead) has no
+   visible effect. Same recurring gotcha as elsewhere in this codebase -
+   confirmed by testing the actual addon end-to-end, not just checking the
+   DOM property. */
+.v1-ext-action-output[hidden],
+.v1-ext-results-table-scroll[hidden] {
+  display: none;
+}
+
 .v1-import-item span {
   color: #9db5ff;
   font-size: 11px;

@@ -83,11 +83,97 @@
     // Generic fallback (also used for extension-contributed tools that only
     // supply title/text/points), plus Help/Options entries that stay in the
     // base shell per FUTURE_PLUGIN_SHELL.md.
+    // Addon-declared input fields (contributions.tools[key].fields, e.g. a
+    // scan target, or a "technique" picker) - a small, constrained schema
+    // (type/name/label/placeholder, or type/name/label/options for a
+    // select), not arbitrary markup, matching the security posture of the
+    // rest of this static card (see panels-runtime.js's
+    // wireExtensionToolActions for how these get read at click time, and
+    // for the "dynamic:<fieldName>" commandId convention a select-type
+    // technique picker is meant to be used with).
+    function renderExtFieldsHtml(fields) {
+      if (!Array.isArray(fields) || !fields.length) return "";
+      var rows = fields.map(function (field) {
+        var name = String((field && field.name) || "");
+        if (!name) return "";
+        var label = escapeHtml(String((field && field.label) || name));
+        var controlHtml;
+        if ((field && field.type) === "select") {
+          var options = Array.isArray(field.options) ? field.options : [];
+          var optionsHtml = options.map(function (opt) {
+            var value = escapeHtml(String((opt && opt.value) || ""));
+            var optLabel = escapeHtml(String((opt && opt.label) || (opt && opt.value) || ""));
+            return "<option value=\"" + value + "\">" + optLabel + "</option>";
+          }).join("");
+          controlHtml = "<select data-ext-field=\"" + escapeHtml(name) + "\">" + optionsHtml + "</select>";
+        } else {
+          var type = (field && field.type) === "number" ? "number" : "text";
+          var placeholder = escapeHtml(String((field && field.placeholder) || ""));
+          controlHtml = "<input type=\"" + type + "\" data-ext-field=\"" + escapeHtml(name) + "\" placeholder=\"" + placeholder + "\" />";
+        }
+        return [
+          "<label class=\"v1-ext-field-row\">",
+          "<span class=\"v1-ext-field-label\">" + label + "</span>",
+          controlHtml,
+          "</label>"
+        ].join("");
+      }).join("");
+      return "<div class=\"v1-ext-fields\">" + rows + "</div>";
+    }
+
+    // Hidden unless "rows" (already-JSON.parsed by the caller, from either a
+    // live action result or a stored resultKey value re-rendered fresh - see
+    // renderDefaultTool and wireExtensionToolActions in panels-runtime.js,
+    // which both parse the same way) is a real array - the existing <pre>
+    // output stays in the markup unconditionally as the fallback for non-
+    // JSON/error results, so both can exist side by side and only one is
+    // ever shown. Pre-populating from "rows" at render time (not just after
+    // a live click) matters for the LS/CS split pattern: an action can
+    // declare "openTool" to hand its result to a DIFFERENT tool's tab (e.g.
+    // a left-panel fields+button tool opening a center-tab results tool) -
+    // that other tool only ever gets a fresh renderDefaultTool() call, never
+    // a live DOM patch, so it must be able to show the right rows the first
+    // time it's rendered, not just after some later click.
+    function renderExtResultsTableHtml(resultsTable, rows) {
+      if (!resultsTable || !Array.isArray(resultsTable.columns) || !resultsTable.columns.length) return "";
+      var headCells = resultsTable.columns.map(function (col) {
+        return "<th>" + escapeHtml(String((col && col.label) || (col && col.key) || "")) + "</th>";
+      }).join("");
+      var bodyHtml = Array.isArray(rows) ? rows.map(function (row) {
+        var cells = resultsTable.columns.map(function (col) {
+          var value = row && Object.prototype.hasOwnProperty.call(row, col.key) ? row[col.key] : "";
+          return "<td>" + escapeHtml(String(value == null ? "" : value)) + "</td>";
+        }).join("");
+        return "<tr>" + cells + "</tr>";
+      }).join("") : "";
+      var hiddenAttr = Array.isArray(rows) ? "" : " hidden";
+      return [
+        "<div class=\"v1-results-table-scroll v1-ext-results-table-scroll\" data-ext-results-table" + hiddenAttr + ">",
+        "<table class=\"v1-results-table v1-ext-results-table\">",
+        "<thead><tr>" + headCells + "</tr></thead>",
+        "<tbody>" + bodyHtml + "</tbody>",
+        "</table>",
+        "</div>"
+      ].join("");
+    }
+
     function renderDefaultTool(tool) {
       var info = infoFor(tool);
       var points = (info.points || []).map(function (p) { return "<li>" + escapeHtml(p) + "</li>"; }).join("");
       var hasActions = Array.isArray(info.actions) && info.actions.length;
       var hasResult = info.resultText != null;
+      var fieldsHtml = renderExtFieldsHtml(info.fields);
+
+      var parsedTableRows = null;
+      if (info.resultsTable && typeof info.resultText === "string" && info.resultText) {
+        try {
+          var parsed = JSON.parse(info.resultText);
+          if (Array.isArray(parsed)) parsedTableRows = parsed;
+        } catch (_) {
+          parsedTableRows = null;
+        }
+      }
+
       var actionsHtml = "";
       if (hasActions || hasResult) {
         var buttonsHtml = "";
@@ -100,9 +186,10 @@
           }).join(" ");
           buttonsHtml = "<div class=\"v1-ext-actions\">" + buttons + "</div>";
         }
-        actionsHtml = buttonsHtml + "<pre class=\"v1-ext-action-output\" data-ext-action-output>" + escapeHtml(info.resultText || "") + "</pre>";
+        var preHiddenAttr = parsedTableRows ? " hidden" : "";
+        actionsHtml = buttonsHtml + "<pre class=\"v1-ext-action-output\" data-ext-action-output" + preHiddenAttr + ">" + escapeHtml(info.resultText || "") + "</pre>" + renderExtResultsTableHtml(info.resultsTable, parsedTableRows);
       }
-      return "<h4>" + escapeHtml(info.title) + "</h4><div>" + escapeHtml(info.text) + "</div><ul>" + points + "</ul>" + actionsHtml;
+      return "<h4>" + escapeHtml(info.title) + "</h4><div>" + escapeHtml(info.text) + "</div><ul>" + points + "</ul>" + fieldsHtml + actionsHtml;
     }
 
     function renderVersionsTool() {
