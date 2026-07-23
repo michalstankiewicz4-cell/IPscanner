@@ -10,6 +10,16 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.5.0",
+      notes: [
+        "Added a real AI Assistant: pick Anthropic Claude or Google Gemini, enter your own API key, and chat. It can navigate the app on your behalf - open tabs, run macros, look up emails - gated by a new AI Permissions tab where you control exactly what it's allowed to do, with a full audit log of every action.",
+        "Added a quick safety switch (the UI checkbox in AI Assistant): turning it off doesn't stop the assistant from replying, it just takes away its ability to act, so it can only chat.",
+        "Added RS \"AI Properties\" tab (click the model name in AI Assistant to open it): per-provider max response length and max tool-call rounds, plus an optional estimated-token counter - a live \"cost if sent now\" readout while typing, a running real cost for the whole conversation, and a small estimate on each sent message.",
+        "Reworked Network Monitor: Start/Stop and a configurable live-poll interval moved into its own left panel, sortable columns (including within groups), grouped views (by process/PID/protocol/state for connections, by vendor/interface for LAN devices), and appeared/disappeared rows shown live in the table instead of a separate log.",
+        "Fixed a structural inconsistency between the left and right side panels that could cause extra spacing in some tabs."
+      ]
+    },
+    {
       version: "v2.4.0",
       notes: [
         "Added Network Monitor: view local TCP/UDP connections and the LAN ARP table live, no Administrator privileges needed.",
