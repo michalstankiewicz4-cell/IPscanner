@@ -556,7 +556,8 @@ html[dir="rtl"] .v1-ai-mode-badge {
   margin-top: 0;
 }
 
-.v1-config-field-row label {
+.v1-config-field-row label,
+.v1-config-field-row-note {
   color: var(--txt-dim);
   font-size: 12px;
 }
