@@ -105,7 +105,14 @@
             var optLabel = escapeHtml(String((opt && opt.label) || (opt && opt.value) || ""));
             return "<option value=\"" + value + "\">" + optLabel + "</option>";
           }).join("");
-          controlHtml = "<select data-ext-field=\"" + escapeHtml(name) + "\">" + optionsHtml + "</select>";
+          // name + autocomplete="off": Chrome's DevTools Issues panel flags
+          // any form field with neither an id nor a name attribute, and
+          // separately suggests an explicit autocomplete value - "off" is
+          // also the semantically correct choice here regardless of the
+          // lint, since these are addon-specific values (a target IP, a
+          // port list) that a browser's address/profile autofill should
+          // never try to fill in.
+          controlHtml = "<select data-ext-field=\"" + escapeHtml(name) + "\" name=\"" + escapeHtml(name) + "\" autocomplete=\"off\">" + optionsHtml + "</select>";
         } else {
           var type = (field && field.type) === "number" ? "number" : "text";
           var placeholder = escapeHtml(String((field && field.placeholder) || ""));
@@ -114,7 +121,7 @@
           // which is just a hint that disappears the moment the user types
           // and is never part of the field's actual value.
           var defaultValue = escapeHtml(String((field && field.default) || ""));
-          controlHtml = "<input type=\"" + type + "\" data-ext-field=\"" + escapeHtml(name) + "\" placeholder=\"" + placeholder + "\" value=\"" + defaultValue + "\" />";
+          controlHtml = "<input type=\"" + type + "\" data-ext-field=\"" + escapeHtml(name) + "\" name=\"" + escapeHtml(name) + "\" autocomplete=\"off\" placeholder=\"" + placeholder + "\" value=\"" + defaultValue + "\" />";
         }
         return [
           "<label class=\"v1-ext-field-row\">",
