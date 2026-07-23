@@ -1,16 +1,10 @@
 {
   "id": "ip-scanner-heuristic-js",
   "name": "IP Scanner Heuristic JS",
-  "description": "No-admin port scan for a single target IP. Six techniques to choose from: Native (desktop only, real TCP connect, all ports, most accurate) and 5 browser-only techniques (Fetch, Image, Link/CSS, WebSocket, IFrame) that work on www too, each an honest heuristic, not a real scan - see the tool text and docs/PROGRESS.md.",
-  "version": "0.3.0",
-  "permissions": ["powershell"],
+  "description": "No-admin port scan for a single target IP, entirely client-side (works on www too). Five selectable techniques (Fetch, Image, Link/CSS, WebSocket, IFrame), each an honest heuristic, not a real scan - see the tool text and docs/PROGRESS.md.",
+  "version": "0.4.0",
   "contributions": {
     "commands": {
-      "heuristicScanPortsNative": {
-        "type": "powershell",
-        "params": ["target"],
-        "script": "param(\n  [string]$target\n)\n\ntry {\n  $ports = @(21,22,23,25,80,443,3389,445,3306,5432,8080)\n  $results = @()\n  foreach ($port in $ports) {\n    $open = $false\n    try {\n      $client = New-Object System.Net.Sockets.TcpClient\n      $connectTask = $client.ConnectAsync($target, $port)\n      if ($connectTask.Wait(300)) {\n        $open = $client.Connected\n      }\n      $client.Close()\n    } catch {\n      $open = $false\n    }\n    $results += [PSCustomObject]@{ ip = $target; port = $port; open = $open }\n  }\n  $results | ConvertTo-Json -Compress\n} catch {\n  Write-Output \"[]\"\n}\n"
-      },
       "heuristicScanPortsFetch": {
         "type": "fetch",
         "ports": [80, 443, 445, 3306, 3389, 5432, 8080, 8443],
@@ -40,7 +34,7 @@
     "tools": {
       "ip-scanner-heuristic-ls": {
         "title": "IP Scanner Heuristic JS",
-        "text": "Type a target IP, pick a technique, and run a scan. Results open in the tab on the right.",
+        "text": "Type a target IP, pick a technique, adjust the port list if needed, and run a scan. Results open in the tab on the right.",
         "fields": [
           { "type": "text", "name": "target", "label": "Target IP", "placeholder": "192.168.1.1" },
           {
@@ -48,14 +42,14 @@
             "name": "technique",
             "label": "Technique",
             "options": [
-              { "value": "heuristicScanPortsNative", "label": "Native (desktop only, real scan, all ports)" },
               { "value": "heuristicScanPortsFetch", "label": "Fetch (browser, www)" },
               { "value": "heuristicScanPortsImg", "label": "Image (browser, www)" },
               { "value": "heuristicScanPortsLink", "label": "Link/CSS (browser, www)" },
               { "value": "heuristicScanPortsWebsocket", "label": "WebSocket (browser, www)" },
               { "value": "heuristicScanPortsIframe", "label": "IFrame (browser, www)" }
             ]
-          }
+          },
+          { "type": "text", "name": "ports", "label": "Ports", "placeholder": "80,443,...", "default": "80,443,445,3306,3389,5432,8080,8443" }
         ],
         "actions": [
           { "label": "Scan common ports", "commandId": "dynamic:technique", "resultKey": "ipScannerHeuristicResult", "openTool": "ip-scanner-heuristic-cs" }
@@ -63,8 +57,8 @@
         "ui": { "showInLeftPanel": true, "showInToolsMenu": true, "showAsTab": false }
       },
       "ip-scanner-heuristic-cs": {
-        "title": "IP Scanner Heuristic JS - Results",
-        "text": "Native (desktop only) uses a real TCP connect and checks all 11 ports - the only technique that is a real port scan. Fetch/Image/Link/WebSocket/IFrame run entirely in the browser (work on www too, no Administrator privileges needed), but none of them can do what Native does: there's no raw TCP/SYN, only a protocol-level connection attempt, so a result means 'did something answer in this style', not 'this port is open'. Browsers also hard-block a fixed list of ports (e.g. 21, 22, 23, 25, 110, 445, 6667) for any of these techniques regardless of what's really listening, so this tool only offers ports that are actually checkable in a browser. CORS/same-origin means you can tell if/how fast something answered, never read the response content. And if this page itself is served over HTTPS, plain http://\\/ws:// attempts may be mixed-content-blocked no matter the real port state - this tool matches the probe scheme to the current page's scheme to avoid that, but a file:// (or plain HTTP) page is the most reliable way to run these 5 techniques.",
+        "title": "Heuristic results",
+        "text": "This runs entirely in the browser (works on www too, no Administrator privileges needed), but it can't do what a real scanner does: there's no raw TCP/SYN, only a protocol-level connection attempt, so a result means 'did something answer in this style', not 'this port is open'. Browsers also hard-block a fixed list of ports (e.g. 21, 22, 23, 25, 110, 445, 6667) for any of these techniques regardless of what's really listening, so the ports field only lists ports that are actually checkable in a browser. CORS/same-origin means you can tell if/how fast something answered, never read the response content. And if this page itself is served over HTTPS, plain http://\\/ws:// attempts may be mixed-content-blocked no matter the real port state - this tool matches the probe scheme to the current page's scheme to avoid that, but a file:// (or plain HTTP) page is the most reliable way to run these techniques.",
         "resultKey": "ipScannerHeuristicResult",
         "resultsTable": {
           "columns": [
@@ -73,7 +67,7 @@
             { "key": "open", "label": "Open" }
           ]
         },
-        "ui": { "showInToolsMenu": false, "showAsTab": true }
+        "ui": { "showInToolsMenu": false, "showAsTab": true, "showInScannerList": false }
       }
     }
   }

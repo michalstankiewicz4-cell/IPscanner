@@ -1589,6 +1589,22 @@
       iframe: iframePortProbe,
     };
 
+    // Reads a user-editable "ports" field value (comma/whitespace-separated,
+    // e.g. "80, 443, 8080") instead of a fixed list baked into the manifest
+    // at install time - falls back to the manifest's own def.ports whenever
+    // the field is missing/empty or ends up with nothing valid in it (blank
+    // field, or a target typed over the ports box by mistake), so a command
+    // never silently scans zero ports.
+    function parsePortsArg(raw, fallbackPorts) {
+      var text = typeof raw === "string" ? raw : "";
+      var parsed = text.split(/[,\s]+/).map(function (piece) {
+        return parseInt(piece, 10);
+      }).filter(function (n) {
+        return Number.isInteger(n) && n >= 1 && n <= 65535;
+      });
+      return parsed.length ? parsed : fallbackPorts;
+    }
+
     // shell: registers command-bus entries declared by an installed
     // extension's contributions.commands, gated on the extension's granted
     // permissions. "powershell" is the only command type needing the
@@ -1606,12 +1622,13 @@
         if (!def) return;
 
         if (Object.prototype.hasOwnProperty.call(CLIENT_PROBE_FNS, def.type)) {
-          var probePorts = Array.isArray(def.ports) ? def.ports : [];
+          var defaultPorts = Array.isArray(def.ports) ? def.ports : [];
           var probeTimeoutMs = Number(def.timeoutMs) > 0 ? Number(def.timeoutMs) : 1500;
           var probeFn = CLIENT_PROBE_FNS[def.type];
           commandBus.register(commandId, function (args) {
             var target = args && args.target ? String(args.target) : "";
             if (!target) return Promise.resolve("[]");
+            var probePorts = parsePortsArg(args && args.ports, defaultPorts);
             return Promise.all(probePorts.map(function (port) {
               return probeFn(target, port, probeTimeoutMs).then(function (open) {
                 return { ip: target, port: port, open: open };

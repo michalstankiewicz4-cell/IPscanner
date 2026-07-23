@@ -804,7 +804,13 @@
             tabsBar.appendChild(tab);
           }
 
-          if (scannerToolList && entry.ui.showInLeftPanel !== true && entry.ui.showInRightPanel !== true && entry.ui.showAsTab !== false) {
+          // Any center-tab extension tool lands here by default (a generic
+          // "IP Scanner sub-tool" shortcut list) unless it opts out via
+          // ui.showInScannerList: false - needed for a tool that's really a
+          // RESULTS view for a separate left-panel input tool (e.g. this
+          // addon's own CS results tab), where a second shortcut duplicating
+          // the Tools-menu entry would just be redundant clutter.
+          if (scannerToolList && entry.ui.showInLeftPanel !== true && entry.ui.showInRightPanel !== true && entry.ui.showAsTab !== false && entry.ui.showInScannerList !== false) {
             const li = document.createElement("li");
             li.className = "v1-extension-tool-item";
             li.setAttribute("data-tool", entry.key);

@@ -109,7 +109,12 @@
         } else {
           var type = (field && field.type) === "number" ? "number" : "text";
           var placeholder = escapeHtml(String((field && field.placeholder) || ""));
-          controlHtml = "<input type=\"" + type + "\" data-ext-field=\"" + escapeHtml(name) + "\" placeholder=\"" + placeholder + "\" />";
+          // "default" prefills a REAL, editable value (e.g. a ready-to-run
+          // ports list the user can tweak) - distinct from "placeholder",
+          // which is just a hint that disappears the moment the user types
+          // and is never part of the field's actual value.
+          var defaultValue = escapeHtml(String((field && field.default) || ""));
+          controlHtml = "<input type=\"" + type + "\" data-ext-field=\"" + escapeHtml(name) + "\" placeholder=\"" + placeholder + "\" value=\"" + defaultValue + "\" />";
         }
         return [
           "<label class=\"v1-ext-field-row\">",
@@ -186,10 +191,23 @@
           }).join(" ");
           buttonsHtml = "<div class=\"v1-ext-actions\">" + buttons + "</div>";
         }
-        var preHiddenAttr = parsedTableRows ? " hidden" : "";
+        // Hidden whenever there's genuinely nothing to show yet (no result
+        // text at all - e.g. a tool whose action always hands its result to
+        // a DIFFERENT tool via openTool, so this <pre> is never populated
+        // locally) as well as when a table successfully parsed - otherwise
+        // an empty bordered box shows up with nothing in it before the
+        // first scan ever runs.
+        var preHiddenAttr = (parsedTableRows || !info.resultText) ? " hidden" : "";
         actionsHtml = buttonsHtml + "<pre class=\"v1-ext-action-output\" data-ext-action-output" + preHiddenAttr + ">" + escapeHtml(info.resultText || "") + "</pre>" + renderExtResultsTableHtml(info.resultsTable, parsedTableRows);
       }
-      return "<h4>" + escapeHtml(info.title) + "</h4><div>" + escapeHtml(info.text) + "</div><ul>" + points + "</ul>" + fieldsHtml + actionsHtml;
+      // No <h4>info.title</h4> here on purpose - #v1ToolTitle (panels-
+      // runtime.js's refreshActiveUI, an <h3> that sits above this whole
+      // card for EVERY active tab) already shows the exact same title once;
+      // repeating it here as an <h4> right below it looked like a genuine
+      // rendering bug (two near-identical headings stacked with nothing
+      // between them) even though it was two intentional-but-redundant
+      // pieces of markup, not a duplicate-render defect.
+      return "<div>" + escapeHtml(info.text) + "</div><ul>" + points + "</ul>" + fieldsHtml + actionsHtml;
     }
 
     function renderVersionsTool() {

@@ -1016,6 +1016,13 @@
   vertical-align: middle;
 }
 
+.v1-menu-dd-item .v1-ext-icon-img {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  margin-right: 2px;
+}
+
 .v1-catalog-icon-cell {
   width: 32px;
   height: 24px;
