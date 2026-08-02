@@ -1843,15 +1843,35 @@
 
       mount.addEventListener("input", function (event) {
         var target = event.target;
-        if (!target || !target.matches || !target.matches("[data-agentprofile-field]")) return;
-        if (!agentProfileSelectedId) return;
+        if (!target || !target.matches) return;
 
-        var field = target.getAttribute("data-agentprofile-field");
-        var patch = {};
-        patch[field] = target.value;
+        if (target.matches("[data-agentprofile-field]")) {
+          if (!agentProfileSelectedId) return;
+          var field = target.getAttribute("data-agentprofile-field");
+          var patch = {};
+          patch[field] = target.value;
+          agentProfileSuppressNextRender = true;
+          api.updateProfile(agentProfileSelectedId, patch);
+          return;
+        }
 
-        agentProfileSuppressNextRender = true;
-        api.updateProfile(agentProfileSelectedId, patch);
+        if (target.matches("[data-agentprofile-service-field=\"name\"]")) {
+          var serviceRow = target.closest("[data-agentprofile-service-id]");
+          if (!serviceRow) return;
+          agentProfileSuppressNextRender = true;
+          api.updateService(serviceRow.getAttribute("data-agentprofile-service-id"), { name: target.value });
+          return;
+        }
+
+        if (target.matches("[data-agentprofile-field-part]")) {
+          var fieldRow = target.closest("[data-agentprofile-field-id]");
+          if (!fieldRow) return;
+          var part = target.getAttribute("data-agentprofile-field-part");
+          var fieldPatch = {};
+          fieldPatch[part] = target.value;
+          agentProfileSuppressNextRender = true;
+          api.updateField(fieldRow.getAttribute("data-agentprofile-field-id"), fieldPatch);
+        }
       });
 
       // Fields are wrapped in a <form> purely to satisfy Chromium's "password
@@ -1918,6 +1938,70 @@
         var removeAttBtn = target && target.closest ? target.closest("[data-agentprofile-remove-attachment]") : null;
         if (removeAttBtn) {
           api.removeAttachment(removeAttBtn.getAttribute("data-agentprofile-remove-attachment"));
+          return;
+        }
+
+        // Generalized copy/toggle for service fields: unlike the 6 static
+        // fields above (keyed by a globally-unique field NAME), service
+        // field labels are arbitrary user text and can collide across
+        // services ("PIN" in two different services) - these key off the
+        // field's own unique id instead, scoped via its field-row wrapper.
+        var copyFieldBtn = target && target.closest ? target.closest("[data-agentprofile-copy-field]") : null;
+        if (copyFieldBtn) {
+          var copyFieldId = copyFieldBtn.getAttribute("data-agentprofile-copy-field");
+          var copyFieldInput = mount.querySelector("[data-agentprofile-field-id=\"" + copyFieldId + "\"] [data-agentprofile-field-part=\"value\"]");
+          if (copyFieldInput && navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(copyFieldInput.value).then(function () {
+              if (setStatusLine) setStatusLine(tr("agentProfileCopiedStatus"));
+            }).catch(function () {
+              // ignore clipboard permission/failure
+            });
+          }
+          return;
+        }
+
+        var toggleFieldBtn = target && target.closest ? target.closest("[data-agentprofile-toggle-field-password]") : null;
+        if (toggleFieldBtn) {
+          var toggleFieldId = toggleFieldBtn.getAttribute("data-agentprofile-toggle-field-password");
+          var toggleFieldInput = mount.querySelector("[data-agentprofile-field-id=\"" + toggleFieldId + "\"] [data-agentprofile-field-part=\"value\"]");
+          if (toggleFieldInput) {
+            var fieldShowing = toggleFieldInput.type === "text";
+            toggleFieldInput.type = fieldShowing ? "password" : "text";
+            toggleFieldBtn.setAttribute("aria-pressed", fieldShowing ? "false" : "true");
+          }
+          return;
+        }
+
+        var addServiceBtn = target && target.closest ? target.closest("[data-agentprofile-add-service]") : null;
+        if (addServiceBtn) {
+          if (!agentProfileSelectedId) return;
+          // First service for this profile gets Login+Hasło pre-populated
+          // (addService only actually seeds these if it's truly the
+          // profile's first) - every later one starts with zero fields.
+          api.addService(agentProfileSelectedId, {}, [
+            { label: tr("agentProfileLoginLabel"), type: "text", value: "" },
+            { label: tr("agentProfilePasswordLabel"), type: "password", value: "" },
+          ]);
+          return;
+        }
+
+        var removeServiceBtn = target && target.closest ? target.closest("[data-agentprofile-remove-service]") : null;
+        if (removeServiceBtn) {
+          api.removeService(removeServiceBtn.getAttribute("data-agentprofile-remove-service"));
+          return;
+        }
+
+        var addFieldBtn = target && target.closest ? target.closest("[data-agentprofile-add-field]") : null;
+        if (addFieldBtn) {
+          var newFieldType = addFieldBtn.getAttribute("data-agentprofile-add-field");
+          var serviceIdForField = addFieldBtn.getAttribute("data-agentprofile-add-field-service");
+          api.addField(serviceIdForField, { label: "", type: newFieldType, value: "" });
+          return;
+        }
+
+        var removeFieldBtn = target && target.closest ? target.closest("[data-agentprofile-remove-field]") : null;
+        if (removeFieldBtn) {
+          api.removeField(removeFieldBtn.getAttribute("data-agentprofile-remove-field"));
           return;
         }
       });

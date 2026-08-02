@@ -33,6 +33,11 @@
   // metadata list here.
   var AGENT_PROFILES_KEY = "netrecon_agent_profiles_v1";
   var AGENT_PROFILE_ATTACHMENTS_KEY = "netrecon_agent_profile_attachments_v1";
+  // Services/fields are plain strings (no IndexedDB involved, unlike
+  // attachments) - must exactly match SERVICES_KEY/FIELDS_KEY in
+  // agent-profiles-runtime.js, same hand-duplication risk as the pair above.
+  var AGENT_PROFILE_SERVICES_KEY = "netrecon_agent_profile_services_v1";
+  var AGENT_PROFILE_SERVICE_FIELDS_KEY = "netrecon_agent_profile_service_fields_v1";
 
   function bytesToBase64(bytes) {
     var chunkSize = 0x8000;
@@ -278,6 +283,8 @@
       agentProfilesData = agentProfilesData || {};
       var profiles = Array.isArray(agentProfilesData.profiles) ? agentProfilesData.profiles : [];
       var attachments = Array.isArray(agentProfilesData.attachments) ? agentProfilesData.attachments : [];
+      var services = Array.isArray(agentProfilesData.services) ? agentProfilesData.services : [];
+      var fields = Array.isArray(agentProfilesData.fields) ? agentProfilesData.fields : [];
 
       var s = storage();
       if (s) {
@@ -285,6 +292,10 @@
         s.setItem(AGENT_PROFILE_ATTACHMENTS_KEY, JSON.stringify(attachments.map(function (a) {
           return { id: a.id, profileId: a.profileId, filename: a.filename, mimeType: a.mimeType, role: a.role };
         })));
+        // Plain strings, no binary bytes - unlike attachments, this is a
+        // synchronous write alongside the two above, no IndexedDB step.
+        s.setItem(AGENT_PROFILE_SERVICES_KEY, JSON.stringify(services));
+        s.setItem(AGENT_PROFILE_SERVICE_FIELDS_KEY, JSON.stringify(fields));
       }
 
       var db = window.NetReconNewUICore && window.NetReconNewUICore.agentProfileAttachmentsDb;
@@ -629,6 +640,8 @@
         // agent profiles
         s.removeItem(AGENT_PROFILES_KEY);
         s.removeItem(AGENT_PROFILE_ATTACHMENTS_KEY);
+        s.removeItem(AGENT_PROFILE_SERVICES_KEY);
+        s.removeItem(AGENT_PROFILE_SERVICE_FIELDS_KEY);
         // shell
         s.removeItem(PENDING_LAYOUT_KEY);
         s.removeItem(CURRENT_PATH_KEY);

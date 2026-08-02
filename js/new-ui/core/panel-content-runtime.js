@@ -905,6 +905,66 @@
       ].join("");
     }
 
+    // Right column of the CS card: per-profile "Serwisy społecznościowe" -
+    // a repeatable list of services (freeform name, e.g. "Facebook"), each
+    // holding a repeatable list of user-named, user-typed fields (label
+    // picked freely, type picked at add-time). Service-field value inputs
+    // use a DIFFERENT attribute (data-agentprofile-field-part) than the
+    // static 6 fields' data-agentprofile-field, since field labels are
+    // arbitrary user text and can collide across services ("PIN" in two
+    // different services) - copy/password-toggle buttons key off the
+    // field's own unique id instead of a name, see
+    // wireAgentProfileDetail's generalized lookup.
+    function renderAgentProfileServicesColumn(profileId, state) {
+      var services = state.services.filter(function (s) { return s.profileId === profileId; });
+      var fieldCopyLabel = escapeHtml(tr("agentProfileCopyBtn"));
+      var passwordToggleLabel = escapeHtml(tr("agentProfileShowPasswordBtn"));
+      var removeFieldLabel = escapeHtml(tr("agentProfileRemoveFieldBtn"));
+      var removeServiceLabel = escapeHtml(tr("agentProfileRemoveServiceBtn"));
+
+      var servicesHtml = services.map(function (service) {
+        var fields = state.fields.filter(function (f) { return f.serviceId === service.id; });
+        var fieldsHtml = fields.map(function (field) {
+          var isPassword = field.type === "password";
+          var rowClass = isPassword ? "v1-agentprofile-password-row" : "v1-agentprofile-input-row";
+          var toggleHtml = isPassword
+            ? "<button type=\"button\" class=\"v1-agentprofile-password-toggle\" data-agentprofile-toggle-field-password=\"" + escapeHtml(field.id) + "\" aria-pressed=\"false\" aria-label=\"" + passwordToggleLabel + "\" title=\"" + passwordToggleLabel + "\">👁</button>"
+            : "";
+          return [
+            "<div class=\"v1-agentprofile-service-field-row\" data-agentprofile-field-id=\"" + escapeHtml(field.id) + "\">",
+            "<input type=\"text\" class=\"v1-agentprofile-field-label\" data-agentprofile-field-part=\"label\" autocomplete=\"off\" placeholder=\"" + escapeHtml(tr("agentProfileFieldLabelPlaceholder")) + "\" value=\"" + escapeHtml(field.label) + "\" />",
+            "<div class=\"" + rowClass + "\">",
+            "<input type=\"" + (isPassword ? "password" : "text") + "\" data-agentprofile-field-part=\"value\" autocomplete=\"off\" value=\"" + escapeHtml(field.value) + "\" />",
+            toggleHtml,
+            "<button type=\"button\" class=\"v1-agentprofile-copy-btn\" data-agentprofile-copy-field=\"" + escapeHtml(field.id) + "\" aria-label=\"" + fieldCopyLabel + "\" title=\"" + fieldCopyLabel + "\">📋</button>",
+            "<button type=\"button\" class=\"v1-agentprofile-attachment-remove\" data-agentprofile-remove-field=\"" + escapeHtml(field.id) + "\" aria-label=\"" + removeFieldLabel + "\" title=\"" + removeFieldLabel + "\">&times;</button>",
+            "</div>",
+            "</div>"
+          ].join("");
+        }).join("");
+
+        return [
+          "<div class=\"v1-agentprofile-service\" data-agentprofile-service-id=\"" + escapeHtml(service.id) + "\">",
+          "<div class=\"v1-agentprofile-service-header\">",
+          "<input type=\"text\" class=\"v1-agentprofile-service-name\" data-agentprofile-service-field=\"name\" autocomplete=\"off\" placeholder=\"" + escapeHtml(tr("agentProfileServiceNamePlaceholder")) + "\" value=\"" + escapeHtml(service.name) + "\" />",
+          "<button type=\"button\" class=\"v1-agentprofile-attachment-remove\" data-agentprofile-remove-service=\"" + escapeHtml(service.id) + "\" aria-label=\"" + removeServiceLabel + "\" title=\"" + removeServiceLabel + "\">&times;</button>",
+          "</div>",
+          "<div class=\"v1-agentprofile-service-fields\">" + fieldsHtml + "</div>",
+          "<div class=\"v1-agentprofile-service-field-actions\">",
+          "<button type=\"button\" class=\"v1-agentprofile-add-field-btn\" data-agentprofile-add-field=\"text\" data-agentprofile-add-field-service=\"" + escapeHtml(service.id) + "\">" + escapeHtml(tr("agentProfileAddTextFieldBtn")) + "</button>",
+          "<button type=\"button\" class=\"v1-agentprofile-add-field-btn\" data-agentprofile-add-field=\"password\" data-agentprofile-add-field-service=\"" + escapeHtml(service.id) + "\">" + escapeHtml(tr("agentProfileAddPasswordFieldBtn")) + "</button>",
+          "</div>",
+          "</div>"
+        ].join("");
+      }).join("");
+
+      return [
+        "<div class=\"v1-agentprofile-section-label\">" + escapeHtml(tr("agentProfileServicesLabel")) + "</div>",
+        "<div class=\"v1-agentprofile-service-list\">" + servicesHtml + "</div>",
+        "<button type=\"button\" class=\"v1-agentprofile-add-btn\" data-agentprofile-add-service>" + escapeHtml(tr("agentProfileAddServiceBtn")) + "</button>"
+      ].join("");
+    }
+
     // CS: the detail/edit card for the currently-selected profile. Split
     // into an outer shell (renderAgentProfileDetailTool, the zero-arg
     // function toolRenderers/buildDetailHtml calls on tab activation - an
@@ -942,11 +1002,14 @@
         // Wrapped in a <form> (never actually submitted - see
         // wireAgentProfileDetail's delegated submit-preventDefault) purely
         // to stop Chromium logging "[DOM] Password field is not contained
-        // in a form" for the password input below; autocomplete="off"
-        // throughout since these are this app's own saved values, not
-        // something the browser's address/password manager should offer to
-        // fill or save.
+        // in a form" for the password inputs below - the main one AND
+        // every per-service one in the right column, all one form now, not
+        // two; autocomplete="off" throughout since these are this app's
+        // own saved values, not something the browser's address/password
+        // manager should offer to fill or save.
         "<form data-agentprofile-form autocomplete=\"off\">",
+        "<div class=\"v1-agentprofile-columns\">",
+        "<div class=\"v1-agentprofile-column-left\">",
         "<div class=\"v1-agentprofile-field\">",
         "<label for=\"v1AgentProfileName\">" + escapeHtml(tr("agentProfileNameLabel")) + "</label>",
         "<div class=\"v1-agentprofile-input-row\">",
@@ -988,6 +1051,11 @@
         "<div class=\"v1-agentprofile-input-row\">",
         "<textarea id=\"v1AgentProfileNote\" name=\"agentProfileNote\" autocomplete=\"off\" rows=\"3\" data-agentprofile-field=\"note\">" + escapeHtml(profile.note) + "</textarea>",
         copyBtn("note"),
+        "</div>",
+        "</div>",
+        "</div>",
+        "<div class=\"v1-agentprofile-column-right\">",
+        renderAgentProfileServicesColumn(profileId, state),
         "</div>",
         "</div>",
         "</form>",

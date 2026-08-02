@@ -1798,11 +1798,36 @@ struct AgentProfileAttachmentRow {
     data_base64: String,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AgentProfileServiceRow {
+    id: String,
+    profile_id: String,
+    name: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AgentProfileServiceFieldRow {
+    id: String,
+    service_id: String,
+    label: String,
+    // `type` is a Rust keyword, can't be a plain field identifier - same
+    // fix this file already uses for `as` (ScanResultRow.as_info,
+    // #[serde(rename = "as")]), keeps the JSON/JS shape's `type` key
+    // unchanged.
+    #[serde(rename = "type")]
+    field_type: String,
+    value: String,
+}
+
 #[derive(Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 struct AgentProfilesData {
     profiles: Vec<AgentProfileRow>,
     attachments: Vec<AgentProfileAttachmentRow>,
+    services: Vec<AgentProfileServiceRow>,
+    fields: Vec<AgentProfileServiceFieldRow>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -1899,6 +1924,18 @@ const SESSION_SCHEMA_SQL: &str = "
       mime_type TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'file',
       data BLOB NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS agent_profile_services (
+      id TEXT PRIMARY KEY,
+      profile_id TEXT NOT NULL REFERENCES agent_profiles(id) ON DELETE CASCADE,
+      name TEXT NOT NULL DEFAULT ''
+    );
+    CREATE TABLE IF NOT EXISTS agent_profile_service_fields (
+      id TEXT PRIMARY KEY,
+      service_id TEXT NOT NULL REFERENCES agent_profile_services(id) ON DELETE CASCADE,
+      label TEXT NOT NULL DEFAULT '',
+      type TEXT NOT NULL DEFAULT 'text',
+      value TEXT NOT NULL DEFAULT ''
     );
     CREATE TABLE IF NOT EXISTS session_layout_tabs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2021,8 +2058,13 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
         params![data.scan_defaults.timeout_ms, data.scan_defaults.concurrency],
     ).map_err(|e| format!("Failed to write scan_defaults: {e}"))?;
 
-    // Children (attachments) before parent (profiles), same FK-safety
-    // ordering as scan_result_ports/scan_results above.
+    // Children before parents, same FK-safety ordering as
+    // scan_result_ports/scan_results above - fields depend on services
+    // depend on profiles, so delete deepest-first.
+    tx.execute("DELETE FROM agent_profile_service_fields", [])
+        .map_err(|e| format!("Failed to clear agent_profile_service_fields: {e}"))?;
+    tx.execute("DELETE FROM agent_profile_services", [])
+        .map_err(|e| format!("Failed to clear agent_profile_services: {e}"))?;
     tx.execute("DELETE FROM agent_profile_attachments", [])
         .map_err(|e| format!("Failed to clear agent_profile_attachments: {e}"))?;
     tx.execute("DELETE FROM agent_profiles", [])
@@ -2048,6 +2090,26 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             insert_attachment
                 .execute(params![attachment.id, attachment.profile_id, attachment.filename, attachment.mime_type, attachment.role, bytes])
                 .map_err(|e| format!("Failed to insert agent_profile_attachments row: {e}"))?;
+        }
+    }
+    {
+        let mut insert_service = tx
+            .prepare_cached("INSERT INTO agent_profile_services (id, profile_id, name) VALUES (?1,?2,?3)")
+            .map_err(|e| format!("Failed to prepare agent_profile_services insert: {e}"))?;
+        for service in &data.agent_profiles.services {
+            insert_service
+                .execute(params![service.id, service.profile_id, service.name])
+                .map_err(|e| format!("Failed to insert agent_profile_services row: {e}"))?;
+        }
+    }
+    {
+        let mut insert_field = tx
+            .prepare_cached("INSERT INTO agent_profile_service_fields (id, service_id, label, type, value) VALUES (?1,?2,?3,?4,?5)")
+            .map_err(|e| format!("Failed to prepare agent_profile_service_fields insert: {e}"))?;
+        for field in &data.agent_profiles.fields {
+            insert_field
+                .execute(params![field.id, field.service_id, field.label, field.field_type, field.value])
+                .map_err(|e| format!("Failed to insert agent_profile_service_fields row: {e}"))?;
         }
     }
 
@@ -2305,6 +2367,48 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         items
     };
 
+    let agent_profile_services = {
+        let mut stmt = conn
+            .prepare("SELECT id, profile_id, name FROM agent_profile_services ORDER BY rowid")
+            .map_err(|e| format!("Failed to prepare agent_profile_services read: {e}"))?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok(AgentProfileServiceRow {
+                    id: row.get(0)?,
+                    profile_id: row.get(1)?,
+                    name: row.get(2)?,
+                })
+            })
+            .map_err(|e| format!("Failed to query agent_profile_services: {e}"))?;
+        let mut items = Vec::new();
+        for row in rows {
+            items.push(row.map_err(|e| format!("Failed to read agent_profile_services row: {e}"))?);
+        }
+        items
+    };
+
+    let agent_profile_service_fields = {
+        let mut stmt = conn
+            .prepare("SELECT id, service_id, label, type, value FROM agent_profile_service_fields ORDER BY rowid")
+            .map_err(|e| format!("Failed to prepare agent_profile_service_fields read: {e}"))?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok(AgentProfileServiceFieldRow {
+                    id: row.get(0)?,
+                    service_id: row.get(1)?,
+                    label: row.get(2)?,
+                    field_type: row.get(3)?,
+                    value: row.get(4)?,
+                })
+            })
+            .map_err(|e| format!("Failed to query agent_profile_service_fields: {e}"))?;
+        let mut items = Vec::new();
+        for row in rows {
+            items.push(row.map_err(|e| format!("Failed to read agent_profile_service_fields row: {e}"))?);
+        }
+        items
+    };
+
     let layout = {
         let mut stmt = conn
             .prepare("SELECT section, tool, is_active FROM session_layout_tabs ORDER BY id")
@@ -2342,7 +2446,12 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         ip_library: IpLibraryData { entries: ip_library_entries, updated_at: ip_library_updated_at },
         presets: PresetsData { default_preset_id, presets: presets_items },
         scan_defaults,
-        agent_profiles: AgentProfilesData { profiles: agent_profiles, attachments: agent_profile_attachments },
+        agent_profiles: AgentProfilesData {
+            profiles: agent_profiles,
+            attachments: agent_profile_attachments,
+            services: agent_profile_services,
+            fields: agent_profile_service_fields,
+        },
         layout,
     })
 }

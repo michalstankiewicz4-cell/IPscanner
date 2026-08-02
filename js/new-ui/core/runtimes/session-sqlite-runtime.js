@@ -52,6 +52,17 @@
     "  filename TEXT NOT NULL, mime_type TEXT NOT NULL,",
     "  role TEXT NOT NULL DEFAULT 'file', data BLOB NOT NULL",
     ");",
+    "CREATE TABLE IF NOT EXISTS agent_profile_services (",
+    "  id TEXT PRIMARY KEY,",
+    "  profile_id TEXT NOT NULL REFERENCES agent_profiles(id) ON DELETE CASCADE,",
+    "  name TEXT NOT NULL DEFAULT ''",
+    ");",
+    "CREATE TABLE IF NOT EXISTS agent_profile_service_fields (",
+    "  id TEXT PRIMARY KEY,",
+    "  service_id TEXT NOT NULL REFERENCES agent_profile_services(id) ON DELETE CASCADE,",
+    "  label TEXT NOT NULL DEFAULT '', type TEXT NOT NULL DEFAULT 'text',",
+    "  value TEXT NOT NULL DEFAULT ''",
+    ");",
     "CREATE TABLE IF NOT EXISTS session_layout_tabs (",
     "  id INTEGER PRIMARY KEY AUTOINCREMENT, section TEXT NOT NULL, tool TEXT NOT NULL,",
     "  is_active INTEGER NOT NULL DEFAULT 0",
@@ -181,6 +192,8 @@
         var agentProfilesObj = data.agentProfiles || {};
         var agentProfiles = Array.isArray(agentProfilesObj.profiles) ? agentProfilesObj.profiles : [];
         var agentAttachments = Array.isArray(agentProfilesObj.attachments) ? agentProfilesObj.attachments : [];
+        var agentServices = Array.isArray(agentProfilesObj.services) ? agentProfilesObj.services : [];
+        var agentFields = Array.isArray(agentProfilesObj.fields) ? agentProfilesObj.fields : [];
         var insertAgentProfile = db.prepare(
           "INSERT INTO agent_profiles (id, name, nickname, email, login, password, note) VALUES (?,?,?,?,?,?,?)"
         );
@@ -213,6 +226,34 @@
           ]);
         });
         insertAgentAttachment.free();
+
+        var insertAgentService = db.prepare(
+          "INSERT INTO agent_profile_services (id, profile_id, name) VALUES (?,?,?)"
+        );
+        agentServices.forEach(function (s) {
+          s = s || {};
+          insertAgentService.run([
+            String(s.id || ""),
+            String(s.profileId || ""),
+            String(s.name || ""),
+          ]);
+        });
+        insertAgentService.free();
+
+        var insertAgentField = db.prepare(
+          "INSERT INTO agent_profile_service_fields (id, service_id, label, type, value) VALUES (?,?,?,?,?)"
+        );
+        agentFields.forEach(function (f) {
+          f = f || {};
+          insertAgentField.run([
+            String(f.id || ""),
+            String(f.serviceId || ""),
+            String(f.label || ""),
+            String(f.type || "text"),
+            String(f.value || ""),
+          ]);
+        });
+        insertAgentField.free();
 
         var scanDefaults = data.scanDefaults || {};
         db.run("INSERT INTO scan_defaults (id, timeout_ms, concurrency) VALUES (1, ?, ?)", [
@@ -388,6 +429,32 @@
           });
         }
 
+        var agentServicesList = [];
+        var agentServicesRows = db.exec("SELECT id, profile_id, name FROM agent_profile_services ORDER BY rowid");
+        if (agentServicesRows.length) {
+          agentServicesRows[0].values.forEach(function (row) {
+            agentServicesList.push({
+              id: String(row[0] || ""),
+              profileId: String(row[1] || ""),
+              name: String(row[2] || ""),
+            });
+          });
+        }
+
+        var agentFieldsList = [];
+        var agentFieldsRows = db.exec("SELECT id, service_id, label, type, value FROM agent_profile_service_fields ORDER BY rowid");
+        if (agentFieldsRows.length) {
+          agentFieldsRows[0].values.forEach(function (row) {
+            agentFieldsList.push({
+              id: String(row[0] || ""),
+              serviceId: String(row[1] || ""),
+              label: String(row[2] || ""),
+              type: String(row[3] || "text"),
+              value: String(row[4] || ""),
+            });
+          });
+        }
+
         var scanDefaults = { timeoutMs: 0, concurrency: 0 };
         var defaultsRows = db.exec("SELECT timeout_ms, concurrency FROM scan_defaults WHERE id = 1");
         if (defaultsRows.length && defaultsRows[0].values.length) {
@@ -412,7 +479,7 @@
           scanProgress: scanProgress,
           ipLibrary: { entries: entries, updatedAt: updatedAt },
           presets: { defaultPresetId: defaultPresetId, presets: presets },
-          agentProfiles: { profiles: agentProfilesList, attachments: agentAttachmentsList },
+          agentProfiles: { profiles: agentProfilesList, attachments: agentAttachmentsList, services: agentServicesList, fields: agentFieldsList },
           scanDefaults: scanDefaults,
           layout: layout,
         };

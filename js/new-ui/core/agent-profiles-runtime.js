@@ -12,6 +12,15 @@
   var PROFILES_KEY = "netrecon_agent_profiles_v1";
   var ATTACHMENTS_KEY = "netrecon_agent_profile_attachments_v1";
   var VALID_ROLES = ["photo", "file"];
+  // Social-media services: a per-profile repeatable list ("Facebook",
+  // "Instagram", ...), each holding a repeatable list of user-named,
+  // user-typed fields (label picked freely by the user, type picked at
+  // add-time). Same small-text-in-localStorage treatment as profiles - no
+  // IndexedDB involved here, unlike attachments, since field values are
+  // plain strings, not binary.
+  var SERVICES_KEY = "netrecon_agent_profile_services_v1";
+  var FIELDS_KEY = "netrecon_agent_profile_service_fields_v1";
+  var VALID_FIELD_TYPES = ["text", "password"];
 
   function safeString(value) {
     return String(value == null ? "" : value).trim();
@@ -22,7 +31,7 @@
   }
 
   function makeDefaultState() {
-    return { profiles: [], attachments: [] };
+    return { profiles: [], attachments: [], services: [], fields: [] };
   }
 
   // Security note: password is stored as plain text here (and in the SQLite
@@ -56,6 +65,30 @@
     };
   }
 
+  function sanitizeService(item) {
+    if (!item || typeof item !== "object") return null;
+    var profileId = safeString(item.profileId);
+    if (!profileId) return null;
+    return {
+      id: safeString(item.id) || makeId("agentservice"),
+      profileId: profileId,
+      name: safeString(item.name),
+    };
+  }
+
+  function sanitizeField(item) {
+    if (!item || typeof item !== "object") return null;
+    var serviceId = safeString(item.serviceId);
+    if (!serviceId) return null;
+    return {
+      id: safeString(item.id) || makeId("agentfield"),
+      serviceId: serviceId,
+      label: safeString(item.label),
+      type: VALID_FIELD_TYPES.indexOf(item.type) >= 0 ? item.type : "text",
+      value: safeString(item.value),
+    };
+  }
+
   function cloneState(state) {
     var profiles = (state && Array.isArray(state.profiles) ? state.profiles : [])
       .map(sanitizeProfile)
@@ -63,6 +96,12 @@
     var attachments = (state && Array.isArray(state.attachments) ? state.attachments : [])
       .map(sanitizeAttachment)
       .filter(function (a) { return !!a; });
+    var services = (state && Array.isArray(state.services) ? state.services : [])
+      .map(sanitizeService)
+      .filter(function (s) { return !!s; });
+    var fields = (state && Array.isArray(state.fields) ? state.fields : [])
+      .map(sanitizeField)
+      .filter(function (f) { return !!f; });
 
     var seenProfileIds = Object.create(null);
     profiles.forEach(function (p) {
@@ -74,15 +113,33 @@
       if (seenAttachmentIds[a.id]) a.id = makeId("agentattachment");
       seenAttachmentIds[a.id] = true;
     });
+    var seenServiceIds = Object.create(null);
+    services.forEach(function (s) {
+      if (seenServiceIds[s.id]) s.id = makeId("agentservice");
+      seenServiceIds[s.id] = true;
+    });
+    var seenFieldIds = Object.create(null);
+    fields.forEach(function (f) {
+      if (seenFieldIds[f.id]) f.id = makeId("agentfield");
+      seenFieldIds[f.id] = true;
+    });
 
-    // Orphan cleanup: an attachment whose profile no longer exists (e.g. a
-    // hand-edited localStorage, or a state race) is dropped on every read
-    // rather than left to accumulate as unreachable metadata.
+    // Orphan cleanup: an attachment/service whose profile no longer exists
+    // (e.g. a hand-edited localStorage, or a state race) is dropped on
+    // every read rather than left to accumulate as unreachable metadata.
+    // A field whose service no longer exists cascades the same way, one
+    // level deeper - computed AFTER services are cleaned up, so a field
+    // belonging to an already-orphaned service is dropped too.
     var profileIds = Object.create(null);
     profiles.forEach(function (p) { profileIds[p.id] = true; });
     attachments = attachments.filter(function (a) { return !!profileIds[a.profileId]; });
+    services = services.filter(function (s) { return !!profileIds[s.profileId]; });
 
-    return { profiles: profiles, attachments: attachments };
+    var serviceIds = Object.create(null);
+    services.forEach(function (s) { serviceIds[s.id] = true; });
+    fields = fields.filter(function (f) { return !!serviceIds[f.serviceId]; });
+
+    return { profiles: profiles, attachments: attachments, services: services, fields: fields };
   }
 
   function sanitizeState(raw) {
@@ -93,9 +150,13 @@
     try {
       var profilesRaw = window.localStorage ? window.localStorage.getItem(PROFILES_KEY) : "";
       var attachmentsRaw = window.localStorage ? window.localStorage.getItem(ATTACHMENTS_KEY) : "";
+      var servicesRaw = window.localStorage ? window.localStorage.getItem(SERVICES_KEY) : "";
+      var fieldsRaw = window.localStorage ? window.localStorage.getItem(FIELDS_KEY) : "";
       return sanitizeState({
         profiles: profilesRaw ? JSON.parse(profilesRaw) : [],
         attachments: attachmentsRaw ? JSON.parse(attachmentsRaw) : [],
+        services: servicesRaw ? JSON.parse(servicesRaw) : [],
+        fields: fieldsRaw ? JSON.parse(fieldsRaw) : [],
       });
     } catch (_) {
       return sanitizeState(makeDefaultState());
@@ -107,6 +168,8 @@
       if (!window.localStorage) return;
       window.localStorage.setItem(PROFILES_KEY, JSON.stringify(state.profiles));
       window.localStorage.setItem(ATTACHMENTS_KEY, JSON.stringify(state.attachments));
+      window.localStorage.setItem(SERVICES_KEY, JSON.stringify(state.services));
+      window.localStorage.setItem(FIELDS_KEY, JSON.stringify(state.fields));
     } catch (_) {
       // ignore persistence failures
     }
@@ -163,17 +226,94 @@
   function removeProfile(id) {
     var next = cloneState(currentState);
     var toRemove = next.attachments.filter(function (a) { return a.profileId === id; });
+    var servicesToRemove = next.services.filter(function (s) { return s.profileId === id; }).map(function (s) { return s.id; });
     next.profiles = next.profiles.filter(function (p) { return p.id !== id; });
     next.attachments = next.attachments.filter(function (a) { return a.profileId !== id; });
+    next.services = next.services.filter(function (s) { return s.profileId !== id; });
+    next.fields = next.fields.filter(function (f) { return servicesToRemove.indexOf(f.serviceId) === -1; });
     replaceState(next);
     // IndexedDB has no foreign keys - cascade the blob deletes explicitly,
-    // mirroring the SQL session-file schema's ON DELETE CASCADE.
+    // mirroring the SQL session-file schema's ON DELETE CASCADE. Services/
+    // fields have no IndexedDB counterpart (plain strings only), so their
+    // cascade above is fully synchronous, unlike this one.
     var db = getAttachmentsDb();
     if (db) {
       toRemove.forEach(function (a) {
         db.deleteAttachment(a.id).catch(function () { /* best-effort */ });
       });
     }
+  }
+
+  function findService(state, id) {
+    return state.services.find(function (s) { return s.id === id; }) || null;
+  }
+
+  // `defaultFields` (optional array of {label,type,value}) is applied
+  // atomically in the SAME replaceState call, only when this is the
+  // profile's first service - one write/one changed-event instead of
+  // three. Callers (wireAgentProfileDetail) resolve default labels via
+  // tr("agentProfileLoginLabel")/tr("agentProfilePasswordLabel") - this
+  // module stays tr()-agnostic, matching its existing design.
+  function addService(profileId, overrides, defaultFields) {
+    var next = cloneState(currentState);
+    var isFirst = !next.services.some(function (s) { return s.profileId === profileId; });
+    var service = sanitizeService(Object.assign({}, overrides, { profileId: profileId }));
+    if (!service) return "";
+    next.services.push(service);
+    if (isFirst && Array.isArray(defaultFields)) {
+      defaultFields.forEach(function (f) {
+        var field = sanitizeField(Object.assign({}, f, { serviceId: service.id }));
+        if (field) next.fields.push(field);
+      });
+    }
+    replaceState(next);
+    return service.id;
+  }
+
+  function updateService(id, patch) {
+    var next = cloneState(currentState);
+    var service = findService(next, id);
+    if (!service) return;
+    var merged = sanitizeService(Object.assign({}, service, patch, { id: service.id }));
+    if (!merged) return;
+    next.services = next.services.map(function (s) { return s.id === id ? merged : s; });
+    replaceState(next);
+  }
+
+  function removeService(id) {
+    var next = cloneState(currentState);
+    next.services = next.services.filter(function (s) { return s.id !== id; });
+    next.fields = next.fields.filter(function (f) { return f.serviceId !== id; });
+    replaceState(next);
+  }
+
+  function findFieldItem(state, id) {
+    return state.fields.find(function (f) { return f.id === id; }) || null;
+  }
+
+  function addField(serviceId, overrides) {
+    var next = cloneState(currentState);
+    var field = sanitizeField(Object.assign({}, overrides, { serviceId: serviceId }));
+    if (!field) return "";
+    next.fields.push(field);
+    replaceState(next);
+    return field.id;
+  }
+
+  function updateField(id, patch) {
+    var next = cloneState(currentState);
+    var field = findFieldItem(next, id);
+    if (!field) return;
+    var merged = sanitizeField(Object.assign({}, field, patch, { id: field.id }));
+    if (!merged) return;
+    next.fields = next.fields.map(function (f) { return f.id === id ? merged : f; });
+    replaceState(next);
+  }
+
+  function removeField(id) {
+    var next = cloneState(currentState);
+    next.fields = next.fields.filter(function (f) { return f.id !== id; });
+    replaceState(next);
   }
 
   function addAttachmentMeta(meta) {
@@ -236,5 +376,11 @@
     removeAttachmentMeta: removeAttachmentMeta,
     addAttachmentFromBlob: addAttachmentFromBlob,
     removeAttachment: removeAttachment,
+    addService: addService,
+    updateService: updateService,
+    removeService: removeService,
+    addField: addField,
+    updateField: updateField,
+    removeField: removeField,
   };
 })();

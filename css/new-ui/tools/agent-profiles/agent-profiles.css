@@ -77,7 +77,14 @@
    plain CS form instead since Agent Profiles has no RS tab of its own. */
 .v1-agentprofile-detail {
   padding: 10px 4px 4px;
-  max-width: 480px;
+  max-width: 900px;
+}
+
+.v1-agentprofile-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
 }
 
 .v1-agentprofile-field {
@@ -115,6 +122,17 @@
 .v1-agentprofile-password-row input {
   flex: 1 1 auto;
   min-width: 0;
+  /* Same themed look as .v1-agentprofile-field input above - scoped here
+     too (not just there) since service-field value inputs live inside
+     .v1-agentprofile-service-field-row, not .v1-agentprofile-field, and
+     would otherwise fall back to the browser's unstyled native input. */
+  border: 1px solid #31333a;
+  background: #1f2024;
+  color: var(--txt);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px 8px;
+  box-sizing: border-box;
 }
 
 .v1-agentprofile-password-toggle,
@@ -225,6 +243,83 @@
   line-height: 1;
   padding: 0 2px;
   cursor: pointer;
+}
+
+/* Right column: "Serwisy społecznościowe" - a repeatable list of services,
+   each holding a repeatable list of user-named, user-typed fields. */
+
+.v1-agentprofile-service {
+  border: 1px solid #2a2a2e;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.v1-agentprofile-service-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.v1-agentprofile-service-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid #31333a;
+  background: #1f2024;
+  color: var(--txt);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 8px;
+  box-sizing: border-box;
+}
+
+.v1-agentprofile-service-field-row {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #232327;
+}
+
+.v1-agentprofile-service-field-row:last-child {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.v1-agentprofile-field-label {
+  border: 1px solid #31333a;
+  background: #1f2024;
+  color: var(--txt-dim);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 4px 6px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.v1-agentprofile-service-field-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.v1-agentprofile-add-field-btn {
+  flex: 1 1 auto;
+  border: 1px solid #3f3f46;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--txt);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.v1-agentprofile-add-field-btn:hover {
+  border-color: var(--brand);
 }
 
 .v1-agentprofile-attachment-remove:hover {
