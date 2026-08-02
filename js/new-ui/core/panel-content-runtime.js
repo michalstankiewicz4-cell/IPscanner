@@ -16,6 +16,7 @@
     var macrosApi = core.macros || null;
     var shellcraftCanvasApi = core.shellcraftCanvas || null;
     var pulpitCanvasApi = core.pulpitCanvas || null;
+    var agentProfilesApi = core.agentProfiles || null;
     var generalSettingsApi = core.generalSettings || null;
 
     function trOr(key, fallback) {
@@ -872,6 +873,148 @@
         "</div>",
         "</div>"
       ].join("");
+    }
+
+    // LS: plain list of profile names (click to select) + "+ Add profile"
+    // button. Selection here drives CS's detail card - the inverse of
+    // Pulpit's CS-canvas -> RS-inspector relationship, same underlying
+    // mechanism (see wireAgentProfileLibrary/wireAgentProfileDetail in
+    // panel-interactions-runtime.js).
+    function renderAgentProfileLibrary() {
+      var state = agentProfilesApi ? agentProfilesApi.getState() : { profiles: [] };
+      var rowsHtml = state.profiles.map(function (profile) {
+        var label = profile.name || tr("agentProfileDefaultName");
+        return [
+          "<div class=\"v1-agentprofile-list-row\" data-agentprofile-id=\"" + escapeHtml(profile.id) + "\">",
+          "<span class=\"v1-agentprofile-list-name\">" + escapeHtml(label) + "</span>",
+          "<button type=\"button\" class=\"v1-agentprofile-list-remove\" data-agentprofile-remove=\"" + escapeHtml(profile.id) + "\" aria-label=\"" + escapeHtml(tr("agentProfileDeleteBtn")) + "\" title=\"" + escapeHtml(tr("agentProfileDeleteBtn")) + "\">&times;</button>",
+          "</div>"
+        ].join("");
+      }).join("");
+
+      return [
+        "<ul class=\"v1-tool-list\">",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("tabLabel_agent_profiles")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">",
+        "<button type=\"button\" class=\"v1-agentprofile-add-btn\" data-agentprofile-add>" + escapeHtml(tr("agentProfileAddBtn")) + "</button>",
+        "<div class=\"v1-agentprofile-list\">" + rowsHtml + "</div>",
+        "</div>",
+        "</li>",
+        "</ul>"
+      ].join("");
+    }
+
+    // CS: the detail/edit card for the currently-selected profile. Split
+    // into an outer shell (renderAgentProfileDetailTool, the zero-arg
+    // function toolRenderers/buildDetailHtml calls on tab activation - an
+    // empty mount, no selection known yet) and an inner fields renderer
+    // (renderAgentProfileDetailFields(profileId), mirroring
+    // renderPulpitInspector's role) that wireAgentProfileDetail calls
+    // whenever the LS selection changes.
+    function renderAgentProfileDetailFields(profileId) {
+      var state = agentProfilesApi ? agentProfilesApi.getState() : { profiles: [], attachments: [] };
+      var profile = state.profiles.find(function (p) { return p.id === profileId; });
+
+      if (!profile) {
+        return "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("agentProfileEmptyNote")) + "</div>";
+      }
+
+      var attachments = state.attachments.filter(function (a) { return a.profileId === profileId; });
+      var photo = attachments.filter(function (a) { return a.role === "photo"; })[0] || null;
+      var files = attachments.filter(function (a) { return a.role !== "photo"; });
+
+      var filesHtml = files.map(function (a) {
+        return [
+          "<div class=\"v1-agentprofile-attachment-row\" data-agentprofile-attachment-id=\"" + escapeHtml(a.id) + "\">",
+          "<span class=\"v1-agentprofile-attachment-name\">" + escapeHtml(a.filename) + "</span>",
+          "<button type=\"button\" class=\"v1-agentprofile-attachment-remove\" data-agentprofile-remove-attachment=\"" + escapeHtml(a.id) + "\" aria-label=\"" + escapeHtml(tr("agentProfileRemoveAttachmentBtn")) + "\" title=\"" + escapeHtml(tr("agentProfileRemoveAttachmentBtn")) + "\">&times;</button>",
+          "</div>"
+        ].join("");
+      }).join("");
+
+      var copyLabel = escapeHtml(tr("agentProfileCopyBtn"));
+      function copyBtn(field) {
+        return "<button type=\"button\" class=\"v1-agentprofile-copy-btn\" data-agentprofile-copy=\"" + field + "\" aria-label=\"" + copyLabel + "\" title=\"" + copyLabel + "\">📋</button>";
+      }
+
+      return [
+        // Wrapped in a <form> (never actually submitted - see
+        // wireAgentProfileDetail's delegated submit-preventDefault) purely
+        // to stop Chromium logging "[DOM] Password field is not contained
+        // in a form" for the password input below; autocomplete="off"
+        // throughout since these are this app's own saved values, not
+        // something the browser's address/password manager should offer to
+        // fill or save.
+        "<form data-agentprofile-form autocomplete=\"off\">",
+        "<div class=\"v1-agentprofile-field\">",
+        "<label for=\"v1AgentProfileName\">" + escapeHtml(tr("agentProfileNameLabel")) + "</label>",
+        "<div class=\"v1-agentprofile-input-row\">",
+        "<input id=\"v1AgentProfileName\" type=\"text\" name=\"agentProfileName\" autocomplete=\"off\" data-agentprofile-field=\"name\" value=\"" + escapeHtml(profile.name) + "\" />",
+        copyBtn("name"),
+        "</div>",
+        "</div>",
+        "<div class=\"v1-agentprofile-field\">",
+        "<label for=\"v1AgentProfileNickname\">" + escapeHtml(tr("agentProfileNicknameLabel")) + "</label>",
+        "<div class=\"v1-agentprofile-input-row\">",
+        "<input id=\"v1AgentProfileNickname\" type=\"text\" name=\"agentProfileNickname\" autocomplete=\"off\" data-agentprofile-field=\"nickname\" value=\"" + escapeHtml(profile.nickname) + "\" />",
+        copyBtn("nickname"),
+        "</div>",
+        "</div>",
+        "<div class=\"v1-agentprofile-field\">",
+        "<label for=\"v1AgentProfileEmail\">" + escapeHtml(tr("agentProfileEmailLabel")) + "</label>",
+        "<div class=\"v1-agentprofile-input-row\">",
+        "<input id=\"v1AgentProfileEmail\" type=\"text\" name=\"agentProfileEmail\" autocomplete=\"off\" data-agentprofile-field=\"email\" value=\"" + escapeHtml(profile.email) + "\" />",
+        copyBtn("email"),
+        "</div>",
+        "</div>",
+        "<div class=\"v1-agentprofile-field\">",
+        "<label for=\"v1AgentProfileLogin\">" + escapeHtml(tr("agentProfileLoginLabel")) + "</label>",
+        "<div class=\"v1-agentprofile-input-row\">",
+        "<input id=\"v1AgentProfileLogin\" type=\"text\" name=\"agentProfileLogin\" autocomplete=\"off\" data-agentprofile-field=\"login\" value=\"" + escapeHtml(profile.login) + "\" />",
+        copyBtn("login"),
+        "</div>",
+        "</div>",
+        "<div class=\"v1-agentprofile-field\">",
+        "<label for=\"v1AgentProfilePassword\">" + escapeHtml(tr("agentProfilePasswordLabel")) + "</label>",
+        "<div class=\"v1-agentprofile-password-row\">",
+        "<input id=\"v1AgentProfilePassword\" type=\"password\" name=\"agentProfilePassword\" autocomplete=\"off\" data-agentprofile-field=\"password\" value=\"" + escapeHtml(profile.password) + "\" />",
+        "<button type=\"button\" class=\"v1-agentprofile-password-toggle\" data-agentprofile-toggle-password aria-pressed=\"false\" aria-label=\"" + escapeHtml(tr("agentProfileShowPasswordBtn")) + "\" title=\"" + escapeHtml(tr("agentProfileShowPasswordBtn")) + "\">👁</button>",
+        copyBtn("password"),
+        "</div>",
+        "</div>",
+        "<div class=\"v1-agentprofile-field\">",
+        "<label for=\"v1AgentProfileNote\">" + escapeHtml(tr("agentProfileNoteLabel")) + "</label>",
+        "<div class=\"v1-agentprofile-input-row\">",
+        "<textarea id=\"v1AgentProfileNote\" name=\"agentProfileNote\" autocomplete=\"off\" rows=\"3\" data-agentprofile-field=\"note\">" + escapeHtml(profile.note) + "</textarea>",
+        copyBtn("note"),
+        "</div>",
+        "</div>",
+        "</form>",
+        "<div class=\"v1-agentprofile-photo-section\">",
+        // A plain heading, not a <label> - there's no single form control it
+        // describes (an <img> preview + a button aren't form-associable),
+        // and Chromium's DevTools flags any <label> with no matching
+        // `for`/nested control as "not associated with a form field".
+        "<div class=\"v1-agentprofile-section-label\">" + escapeHtml(tr("agentProfilePhotoLabel")) + "</div>",
+        // src is filled in asynchronously by wireAgentProfileDetail (photo
+        // bytes live in IndexedDB, not something a pure HTML-string
+        // renderer can reach synchronously) - hidden until then.
+        "<img class=\"v1-agentprofile-photo-preview\" data-agentprofile-photo-preview alt=\"\"" + (photo ? " data-agentprofile-photo-id=\"" + escapeHtml(photo.id) + "\"" : "") + (photo ? "" : " hidden") + " />",
+        "<button type=\"button\" class=\"v1-agentprofile-add-photo-btn\" data-agentprofile-add-photo>" + escapeHtml(tr("agentProfileAddPhotoBtn")) + "</button>",
+        "</div>",
+        "<div class=\"v1-agentprofile-attachments-section\">",
+        "<div class=\"v1-agentprofile-section-label\">" + escapeHtml(tr("agentProfileAttachmentsLabel")) + "</div>",
+        "<div class=\"v1-agentprofile-attachments-list\">" + filesHtml + "</div>",
+        "<button type=\"button\" class=\"v1-agentprofile-add-attachment-btn\" data-agentprofile-add-attachment>" + escapeHtml(tr("agentProfileAddAttachmentBtn")) + "</button>",
+        "</div>"
+      ].join("");
+    }
+
+    function renderAgentProfileDetailTool() {
+      return "<div class=\"v1-agentprofile-detail\" id=\"v1AgentProfileDetail\">"
+        + renderAgentProfileDetailFields("")
+        + "</div>";
     }
 
     // --- ip-scanner tool keys ---
@@ -1756,6 +1899,7 @@
       "language-manager": renderLanguageManagerTool,
       shellcraft: renderShellCraftCanvasTool,
       pulpit: renderPulpitCanvasTool,
+      "agent-profiles": renderAgentProfileDetailTool,
 
       // --- ip-scanner tool keys ---
       "ip-library": renderIpLibraryTool,
@@ -1779,6 +1923,8 @@
       renderPulpitLibrary: renderPulpitLibrary,
       renderPulpitNodeHtml: renderPulpitNodeHtml,
       renderPulpitInspector: renderPulpitInspector,
+      renderAgentProfileLibrary: renderAgentProfileLibrary,
+      renderAgentProfileDetailFields: renderAgentProfileDetailFields,
       renderNetworkMonitorConnectionsRows: renderNetworkMonitorConnectionsRows,
       renderNetworkMonitorArpRows: renderNetworkMonitorArpRows,
       renderNetworkMonitorConnectionsGrouped: renderNetworkMonitorConnectionsGrouped,

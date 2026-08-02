@@ -22,6 +22,34 @@
   var PRESETS_KEY = "netrecon_scan_presets_v1";
   var DEFAULTS_KEY = "netrecon_scan_defaults_v1";
 
+  // --- agent profiles keys ---
+  // Metadata mirrors agent-profiles-runtime.js's own two localStorage keys
+  // exactly (kept as separate literal constants here, not imported, since
+  // this file already writes every other tool's session keys directly and
+  // bypasses each tool's own runtime module the same way - see
+  // collectSessionData/applyLoadedSessionData/closeSession). Attachment
+  // BYTES never touch localStorage at all - they live only in IndexedDB via
+  // agent-profile-attachments-db.js, addressed by the same id used in the
+  // metadata list here.
+  var AGENT_PROFILES_KEY = "netrecon_agent_profiles_v1";
+  var AGENT_PROFILE_ATTACHMENTS_KEY = "netrecon_agent_profile_attachments_v1";
+
+  function bytesToBase64(bytes) {
+    var chunkSize = 0x8000;
+    var binary = "";
+    for (var i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+  }
+
+  function base64ToBytes(base64) {
+    var binary = atob(base64 || "");
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+
   function createSessionRuntime(deps) {
     var tr = deps.tr;
     var platform = deps.platform;
@@ -191,6 +219,15 @@
           timeoutMs: Number(defaultsRaw.timeoutMs) || 0,
           concurrency: Number(defaultsRaw.concurrency) || 0,
         },
+        // Metadata only here (id/profileId/filename/mimeType/role) - the
+        // actual attachment bytes get filled in by attachAgentProfileBlobs()
+        // right before encoding, since reading them out of IndexedDB is
+        // async and this function stays synchronous like every other slice
+        // above.
+        agentProfiles: (function () {
+          var api = window.NetReconNewUICore && window.NetReconNewUICore.agentProfiles;
+          return api ? api.getState() : { profiles: [], attachments: [] };
+        })(),
         // shell: layout is generic (center/left/right open+active tools).
         layout: {
           center: collectCenterLayout(),
@@ -198,6 +235,71 @@
           right: collectRightLayout(),
         },
       };
+    }
+
+    // Fills each agentProfiles.attachments[].dataBase64 in from IndexedDB
+    // right before a save - collectSessionData() itself only has metadata,
+    // since IndexedDB access is async and every other slice it builds is
+    // synchronous. Mutates entry objects in place (safe: they came from
+    // agentProfiles.getState(), which returns a fresh clone on every call,
+    // never the live in-memory state) and resolves with the same `data`
+    // object so every save call site can chain straight through.
+    function attachAgentProfileBlobs(data) {
+      var attachments = (data.agentProfiles && Array.isArray(data.agentProfiles.attachments))
+        ? data.agentProfiles.attachments
+        : [];
+      if (!attachments.length) return Promise.resolve(data);
+
+      var db = window.NetReconNewUICore && window.NetReconNewUICore.agentProfileAttachmentsDb;
+      if (!db) return Promise.resolve(data);
+
+      return Promise.all(attachments.map(function (entry) {
+        return db.getAttachment(entry.id).then(function (blob) {
+          if (!blob) { entry.dataBase64 = ""; return; }
+          return blob.arrayBuffer().then(function (buffer) {
+            entry.dataBase64 = bytesToBase64(new Uint8Array(buffer));
+          });
+        }).catch(function () {
+          entry.dataBase64 = "";
+        });
+      })).then(function () { return data; });
+    }
+
+    // Inverse of attachAgentProfileBlobs() on load - writes profile/
+    // attachment-metadata straight to localStorage (same as every other
+    // slice in applyLoadedSessionData, bypassing agent-profiles-runtime.js's
+    // own per-item API since a full page reload follows right after and
+    // that module reloads its state fresh from localStorage on next boot),
+    // then decodes each attachment's bytes back into a Blob and writes it
+    // into IndexedDB. Clears the store first so attachments from whatever
+    // session was open before this load don't linger alongside the newly
+    // loaded ones.
+    function restoreAgentProfileAttachments(agentProfilesData) {
+      agentProfilesData = agentProfilesData || {};
+      var profiles = Array.isArray(agentProfilesData.profiles) ? agentProfilesData.profiles : [];
+      var attachments = Array.isArray(agentProfilesData.attachments) ? agentProfilesData.attachments : [];
+
+      var s = storage();
+      if (s) {
+        s.setItem(AGENT_PROFILES_KEY, JSON.stringify(profiles));
+        s.setItem(AGENT_PROFILE_ATTACHMENTS_KEY, JSON.stringify(attachments.map(function (a) {
+          return { id: a.id, profileId: a.profileId, filename: a.filename, mimeType: a.mimeType, role: a.role };
+        })));
+      }
+
+      var db = window.NetReconNewUICore && window.NetReconNewUICore.agentProfileAttachmentsDb;
+      if (!db) return Promise.resolve();
+
+      return db.clearAll().then(function () {
+        return Promise.all(attachments.map(function (a) {
+          if (!a || !a.dataBase64) return Promise.resolve();
+          return db.putAttachment(a.id, new Blob([base64ToBytes(a.dataBase64)], { type: a.mimeType || "application/octet-stream" }));
+        }));
+      }).catch(function () {
+        // Best-effort: a failed attachment restore shouldn't block the rest
+        // of the session load - the metadata written above still reflects
+        // what was in the file even if some/all blob writes failed.
+      });
     }
 
     // --- layout restore (load) ---
@@ -372,20 +474,21 @@
     // "Save As" should ever interrupt the user with a location dialog.
     function saveSessionToBrowser(usePicker) {
       statusMsg(tr("sessionSqliteEngineLoading"));
-      var data = collectSessionData();
-      return sessionSqlite.encodeSessionData(data).then(function (bytes) {
-        var s = storage();
-        var suggestedName = (s && s.getItem(CURRENT_PATH_KEY)) || DEFAULT_FILENAME;
-        if (!usePicker) {
-          sessionSqlite.downloadBytes(suggestedName, bytes);
-          rememberPathContext(suggestedName);
-          statusMsg(tr("sessionSaveOk") + " (" + suggestedName + ") — " + layoutSummary(data.layout));
-          return true;
-        }
-        return sessionSqlite.saveBytesWithPicker(suggestedName, bytes).then(function (savedName) {
-          rememberPathContext(savedName || suggestedName);
-          statusMsg(tr("sessionSaveOk") + " (" + (savedName || suggestedName) + ") — " + layoutSummary(data.layout));
-          return true;
+      return attachAgentProfileBlobs(collectSessionData()).then(function (data) {
+        return sessionSqlite.encodeSessionData(data).then(function (bytes) {
+          var s = storage();
+          var suggestedName = (s && s.getItem(CURRENT_PATH_KEY)) || DEFAULT_FILENAME;
+          if (!usePicker) {
+            sessionSqlite.downloadBytes(suggestedName, bytes);
+            rememberPathContext(suggestedName);
+            statusMsg(tr("sessionSaveOk") + " (" + suggestedName + ") — " + layoutSummary(data.layout));
+            return true;
+          }
+          return sessionSqlite.saveBytesWithPicker(suggestedName, bytes).then(function (savedName) {
+            rememberPathContext(savedName || suggestedName);
+            statusMsg(tr("sessionSaveOk") + " (" + (savedName || suggestedName) + ") — " + layoutSummary(data.layout));
+            return true;
+          });
         });
       }).catch(function (err) {
         if (isCancelled(err)) return false;
@@ -412,17 +515,18 @@
 
     function saveSessionAs() {
       if (sessionSqlite && isWww()) return saveSessionToBrowser(true);
-      var data = collectSessionData();
-      return resolveDefaultDir().then(function (defaultDir) {
-        return platform.invoke("save_session_dialog", {
-          defaultDir: defaultDir,
-          defaultFilename: DEFAULT_FILENAME,
-          data: data,
+      return attachAgentProfileBlobs(collectSessionData()).then(function (data) {
+        return resolveDefaultDir().then(function (defaultDir) {
+          return platform.invoke("save_session_dialog", {
+            defaultDir: defaultDir,
+            defaultFilename: DEFAULT_FILENAME,
+            data: data,
+          });
+        }).then(function (path) {
+          rememberPathContext(path);
+          statusMsg(tr("sessionSaveOk") + " (" + basename(path) + ") — " + layoutSummary(data.layout));
+          return true;
         });
-      }).then(function (path) {
-        rememberPathContext(path);
-        statusMsg(tr("sessionSaveOk") + " (" + basename(path) + ") — " + layoutSummary(data.layout));
-        return true;
       }).catch(function (err) {
         if (!isCancelled(err)) statusMsg(tr("sessionSaveFailed"));
         return false;
@@ -438,14 +542,15 @@
       var currentPath = s ? s.getItem(CURRENT_PATH_KEY) : null;
       if (!currentPath) return saveSessionAs();
 
-      var data = collectSessionData();
-      return platform.invoke("write_session_file", {
-        path: currentPath,
-        data: data,
-      }).then(function () {
-        pushRecent(currentPath);
-        statusMsg(tr("sessionSaveOk") + " (" + basename(currentPath) + ") — " + layoutSummary(data.layout));
-        return true;
+      return attachAgentProfileBlobs(collectSessionData()).then(function (data) {
+        return platform.invoke("write_session_file", {
+          path: currentPath,
+          data: data,
+        }).then(function () {
+          pushRecent(currentPath);
+          statusMsg(tr("sessionSaveOk") + " (" + basename(currentPath) + ") — " + layoutSummary(data.layout));
+          return true;
+        });
       }).catch(function () {
         statusMsg(tr("sessionSaveRetry"));
         return saveSessionAs();
@@ -468,10 +573,16 @@
         // shell
         s.setItem(PENDING_LAYOUT_KEY, JSON.stringify(data.layout || {}));
       }
-      rememberPathContext(path);
-      statusMsg(tr("sessionLoadOk"));
-      window.location.reload();
-      return true;
+      // Attachment blobs are written to IndexedDB asynchronously - the
+      // reload below must wait for that to finish, otherwise a reload
+      // firing mid-write would leave attachment metadata pointing at blobs
+      // that never actually landed in the store.
+      return restoreAgentProfileAttachments(data.agentProfiles).then(function () {
+        rememberPathContext(path);
+        statusMsg(tr("sessionLoadOk"));
+        window.location.reload();
+        return true;
+      });
     }
 
     function loadSession() {
@@ -515,12 +626,22 @@
         s.removeItem(IP_LIBRARY_UPDATED_KEY);
         s.removeItem(PRESETS_KEY);
         s.removeItem(DEFAULTS_KEY);
+        // agent profiles
+        s.removeItem(AGENT_PROFILES_KEY);
+        s.removeItem(AGENT_PROFILE_ATTACHMENTS_KEY);
         // shell
         s.removeItem(PENDING_LAYOUT_KEY);
         s.removeItem(CURRENT_PATH_KEY);
       }
-      statusMsg(tr("sessionCloseOk"));
-      window.location.reload();
+      // Same reasoning as applyLoadedSessionData: wait for the IndexedDB
+      // clear to finish before reloading, or a pending New Session close
+      // could get cut off mid-transaction and leak orphaned blobs.
+      var db = window.NetReconNewUICore && window.NetReconNewUICore.agentProfileAttachmentsDb;
+      var clearPromise = db ? db.clearAll().catch(function () {}) : Promise.resolve();
+      clearPromise.then(function () {
+        statusMsg(tr("sessionCloseOk"));
+        window.location.reload();
+      });
     }
 
     // --- center welcome view (recent sessions) ---

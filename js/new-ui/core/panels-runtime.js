@@ -1713,6 +1713,8 @@
         renderPulpitLibrary: panelContentRuntime && panelContentRuntime.renderPulpitLibrary,
         renderPulpitNodeHtml: panelContentRuntime && panelContentRuntime.renderPulpitNodeHtml,
         renderPulpitInspector: panelContentRuntime && panelContentRuntime.renderPulpitInspector,
+        renderAgentProfileLibrary: panelContentRuntime && panelContentRuntime.renderAgentProfileLibrary,
+        renderAgentProfileDetailFields: panelContentRuntime && panelContentRuntime.renderAgentProfileDetailFields,
         renderNetworkMonitorConnectionsRows: panelContentRuntime && panelContentRuntime.renderNetworkMonitorConnectionsRows,
         renderNetworkMonitorArpRows: panelContentRuntime && panelContentRuntime.renderNetworkMonitorArpRows,
         renderNetworkMonitorConnectionsGrouped: panelContentRuntime && panelContentRuntime.renderNetworkMonitorConnectionsGrouped,
@@ -2019,6 +2021,13 @@
       if (tool === "pulpit") { // shell
         if (panelInteractionsRuntime && panelInteractionsRuntime.wirePulpitCanvas) {
           panelInteractionsRuntime.wirePulpitCanvas(scope);
+        }
+        return;
+      }
+
+      if (tool === "agent-profiles") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireAgentProfileDetail) {
+          panelInteractionsRuntime.wireAgentProfileDetail(scope);
         }
         return;
       }
@@ -2402,6 +2411,16 @@
       }
     }
 
+    // CS self-listens for changes once wireAgentProfileDetail has run (see
+    // its document-level "newui:agent-profiles-changed" handler), so only
+    // the LS library needs a manual re-wire here - same reasoning
+    // refreshPulpitPanels uses for its own Library half.
+    function refreshAgentProfilePanels() {
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireAgentProfileLibrary) {
+        panelInteractionsRuntime.wireAgentProfileLibrary();
+      }
+    }
+
     // Exposed for LS/RS's generic-content-slot mechanism
     // (tool-content-runtime.js's "ip-library" entry) - reuses the exact
     // same wiring CS's own ip-library tab already calls, which is why it
@@ -2437,6 +2456,7 @@
       stripIds: stripIds,
       refreshShellCraftPanels: refreshShellCraftPanels,
       refreshPulpitPanels: refreshPulpitPanels,
+      refreshAgentProfilePanels: refreshAgentProfilePanels,
       wireIpLibraryPanel: wireIpLibraryPanel,
       wireNetworkMonitorLeftPanel: wireNetworkMonitorLeftPanel,
       refreshDetachedTool: refreshDetachedTool,

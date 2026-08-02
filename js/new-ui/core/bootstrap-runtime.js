@@ -439,6 +439,12 @@
         if (panelsRuntime && panelsRuntime.refreshPulpitPanels) {
           panelsRuntime.refreshPulpitPanels();
         }
+        // Agent Profiles' Library (LS) is the same kind of persistent mount
+        // outside #v1ToolDetail - its own CS half is a generic-content-slot
+        // tool instead, so it's already covered by the block below.
+        if (panelsRuntime && panelsRuntime.refreshAgentProfilePanels) {
+          panelsRuntime.refreshAgentProfilePanels();
+        }
         // LS/RS generic-content-slot tools (tool-content-runtime.js) bake
         // tr() in at render time, so whichever one is currently active (if
         // any) needs a fresh render to pick up the new language too - a
@@ -469,6 +475,11 @@
       window.NetReconNewUI.wirePulpitPanels = function () {
         if (panelsRuntime && panelsRuntime.refreshPulpitPanels) {
           panelsRuntime.refreshPulpitPanels();
+        }
+      };
+      window.NetReconNewUI.wireAgentProfilePanels = function () {
+        if (panelsRuntime && panelsRuntime.refreshAgentProfilePanels) {
+          panelsRuntime.refreshAgentProfilePanels();
         }
       };
       window.NetReconNewUI.wireIpLibraryPanel = function (rootEl) {

@@ -1,0 +1,232 @@
+/* shell: Agent Profiles - Library (LS), detail form card (CS). No RS. */
+
+.v1-agentprofile-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--txt);
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+
+.v1-agentprofile-add-btn:hover {
+  background: #222326;
+  border-color: #3f3f46;
+}
+
+.v1-agentprofile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v1-agentprofile-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.v1-agentprofile-list-row:hover {
+  background: #222326;
+  border-color: #3f3f46;
+}
+
+.v1-agentprofile-list-row.is-selected {
+  border-color: var(--brand);
+  background: color-mix(in oklab, var(--brand) 14%, transparent);
+}
+
+.v1-agentprofile-list-name {
+  min-width: 0;
+  font-size: 12px;
+  color: var(--txt);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v1-agentprofile-list-remove {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--txt-dim);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+.v1-agentprofile-list-remove:hover {
+  color: #ff6b6b;
+}
+
+/* CS detail card - same top-padding compensation as ShellCraft/Pulpit's own
+   RS panels (assistant.css's .v1-right-content comment), applied here to a
+   plain CS form instead since Agent Profiles has no RS tab of its own. */
+.v1-agentprofile-detail {
+  padding: 10px 4px 4px;
+  max-width: 480px;
+}
+
+.v1-agentprofile-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.v1-agentprofile-field label {
+  color: var(--txt-dim);
+  font-size: 12px;
+}
+
+.v1-agentprofile-field textarea,
+.v1-agentprofile-field input {
+  border: 1px solid #31333a;
+  background: #1f2024;
+  color: var(--txt);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.v1-agentprofile-input-row,
+.v1-agentprofile-password-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.v1-agentprofile-input-row input,
+.v1-agentprofile-input-row textarea,
+.v1-agentprofile-password-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.v1-agentprofile-password-toggle,
+.v1-agentprofile-copy-btn {
+  flex: 0 0 auto;
+  border: 1px solid #31333a;
+  border-radius: 5px;
+  background: #1f2024;
+  color: var(--txt);
+  font-size: 13px;
+  line-height: 1;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+/* Top-align the copy button against the note field's multi-line textarea
+   instead of vertically centering it against the whole box height. */
+.v1-agentprofile-input-row:has(textarea) {
+  align-items: flex-start;
+}
+
+.v1-agentprofile-password-toggle[aria-pressed="true"] {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.v1-agentprofile-copy-btn:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.v1-agentprofile-photo-section,
+.v1-agentprofile-attachments-section {
+  margin-bottom: 14px;
+}
+
+.v1-agentprofile-section-label {
+  display: block;
+  color: var(--txt-dim);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.v1-agentprofile-photo-preview {
+  display: block;
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border: 1px solid #31333a;
+  border-radius: 8px;
+  background: #1f2024;
+  margin-bottom: 8px;
+}
+
+.v1-agentprofile-photo-preview[hidden] {
+  display: none;
+}
+
+.v1-agentprofile-add-photo-btn,
+.v1-agentprofile-add-attachment-btn {
+  border: 1px solid #3f3f46;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--txt);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.v1-agentprofile-add-photo-btn:hover,
+.v1-agentprofile-add-attachment-btn:hover {
+  border-color: var(--brand);
+}
+
+.v1-agentprofile-attachments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.v1-agentprofile-attachment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid #2a2a2e;
+  border-radius: 6px;
+}
+
+.v1-agentprofile-attachment-name {
+  min-width: 0;
+  font-size: 12px;
+  color: var(--txt);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v1-agentprofile-attachment-remove {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--txt-dim);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+.v1-agentprofile-attachment-remove:hover {
+  color: #ff6b6b;
+}

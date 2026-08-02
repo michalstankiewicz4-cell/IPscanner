@@ -41,6 +41,17 @@
     "  id INTEGER PRIMARY KEY CHECK (id = 1), state TEXT NOT NULL, processed INTEGER NOT NULL,",
     "  total INTEGER NOT NULL, found INTEGER NOT NULL",
     ");",
+    "CREATE TABLE IF NOT EXISTS agent_profiles (",
+    "  id TEXT PRIMARY KEY, name TEXT NOT NULL, nickname TEXT NOT NULL DEFAULT '',",
+    "  email TEXT NOT NULL DEFAULT '', login TEXT NOT NULL DEFAULT '',",
+    "  password TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT ''",
+    ");",
+    "CREATE TABLE IF NOT EXISTS agent_profile_attachments (",
+    "  id TEXT PRIMARY KEY,",
+    "  profile_id TEXT NOT NULL REFERENCES agent_profiles(id) ON DELETE CASCADE,",
+    "  filename TEXT NOT NULL, mime_type TEXT NOT NULL,",
+    "  role TEXT NOT NULL DEFAULT 'file', data BLOB NOT NULL",
+    ");",
     "CREATE TABLE IF NOT EXISTS session_layout_tabs (",
     "  id INTEGER PRIMARY KEY AUTOINCREMENT, section TEXT NOT NULL, tool TEXT NOT NULL,",
     "  is_active INTEGER NOT NULL DEFAULT 0",
@@ -49,6 +60,29 @@
     "  id INTEGER PRIMARY KEY CHECK (id = 1), saved_at TEXT NOT NULL, version INTEGER NOT NULL",
     ");",
   ].join("\n");
+
+  // Agent profile attachment bytes cross as base64 in the JS shape (same as
+  // the Rust side's IPC boundary - see main.rs's own comment on this) but
+  // need to be real bytes for sql.js's BLOB bind parameters / SELECT
+  // results. This file has no shared-utils import, so these are duplicated
+  // rather than pulled from session-runtime.js's identical pair - consistent
+  // with SESSION_SCHEMA_SQL itself already being a hand-copied duplicate
+  // between here and main.rs.
+  function base64ToBytes(base64) {
+    var binary = atob(base64 || "");
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+
+  function bytesToBase64(bytes) {
+    var chunkSize = 0x8000;
+    var binary = "";
+    for (var i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+  }
 
   var enginePromise = null;
 
@@ -143,6 +177,42 @@
           ]);
         });
         insertPreset.free();
+
+        var agentProfilesObj = data.agentProfiles || {};
+        var agentProfiles = Array.isArray(agentProfilesObj.profiles) ? agentProfilesObj.profiles : [];
+        var agentAttachments = Array.isArray(agentProfilesObj.attachments) ? agentProfilesObj.attachments : [];
+        var insertAgentProfile = db.prepare(
+          "INSERT INTO agent_profiles (id, name, nickname, email, login, password, note) VALUES (?,?,?,?,?,?,?)"
+        );
+        agentProfiles.forEach(function (p) {
+          p = p || {};
+          insertAgentProfile.run([
+            String(p.id || ""),
+            String(p.name || ""),
+            String(p.nickname || ""),
+            String(p.email || ""),
+            String(p.login || ""),
+            String(p.password || ""),
+            String(p.note || ""),
+          ]);
+        });
+        insertAgentProfile.free();
+
+        var insertAgentAttachment = db.prepare(
+          "INSERT INTO agent_profile_attachments (id, profile_id, filename, mime_type, role, data) VALUES (?,?,?,?,?,?)"
+        );
+        agentAttachments.forEach(function (a) {
+          a = a || {};
+          insertAgentAttachment.run([
+            String(a.id || ""),
+            String(a.profileId || ""),
+            String(a.filename || ""),
+            String(a.mimeType || ""),
+            String(a.role || "file"),
+            base64ToBytes(a.dataBase64 || ""),
+          ]);
+        });
+        insertAgentAttachment.free();
 
         var scanDefaults = data.scanDefaults || {};
         db.run("INSERT INTO scan_defaults (id, timeout_ms, concurrency) VALUES (1, ?, ?)", [
@@ -287,6 +357,37 @@
           });
         }
 
+        var agentProfilesList = [];
+        var agentProfilesRows = db.exec("SELECT id, name, nickname, email, login, password, note FROM agent_profiles ORDER BY rowid");
+        if (agentProfilesRows.length) {
+          agentProfilesRows[0].values.forEach(function (row) {
+            agentProfilesList.push({
+              id: String(row[0] || ""),
+              name: String(row[1] || ""),
+              nickname: String(row[2] || ""),
+              email: String(row[3] || ""),
+              login: String(row[4] || ""),
+              password: String(row[5] || ""),
+              note: String(row[6] || ""),
+            });
+          });
+        }
+
+        var agentAttachmentsList = [];
+        var agentAttachmentsRows = db.exec("SELECT id, profile_id, filename, mime_type, role, data FROM agent_profile_attachments ORDER BY rowid");
+        if (agentAttachmentsRows.length) {
+          agentAttachmentsRows[0].values.forEach(function (row) {
+            agentAttachmentsList.push({
+              id: String(row[0] || ""),
+              profileId: String(row[1] || ""),
+              filename: String(row[2] || ""),
+              mimeType: String(row[3] || ""),
+              role: String(row[4] || "file"),
+              dataBase64: bytesToBase64(row[5] instanceof Uint8Array ? row[5] : new Uint8Array(0)),
+            });
+          });
+        }
+
         var scanDefaults = { timeoutMs: 0, concurrency: 0 };
         var defaultsRows = db.exec("SELECT timeout_ms, concurrency FROM scan_defaults WHERE id = 1");
         if (defaultsRows.length && defaultsRows[0].values.length) {
@@ -311,6 +412,7 @@
           scanProgress: scanProgress,
           ipLibrary: { entries: entries, updatedAt: updatedAt },
           presets: { defaultPresetId: defaultPresetId, presets: presets },
+          agentProfiles: { profiles: agentProfilesList, attachments: agentAttachmentsList },
           scanDefaults: scanDefaults,
           layout: layout,
         };

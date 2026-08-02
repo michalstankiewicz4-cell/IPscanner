@@ -9,6 +9,8 @@
     var renderPulpitLibrary = typeof deps.renderPulpitLibrary === "function" ? deps.renderPulpitLibrary : null;
     var renderPulpitNodeHtml = typeof deps.renderPulpitNodeHtml === "function" ? deps.renderPulpitNodeHtml : null;
     var renderPulpitInspector = typeof deps.renderPulpitInspector === "function" ? deps.renderPulpitInspector : null;
+    var renderAgentProfileLibrary = typeof deps.renderAgentProfileLibrary === "function" ? deps.renderAgentProfileLibrary : null;
+    var renderAgentProfileDetailFields = typeof deps.renderAgentProfileDetailFields === "function" ? deps.renderAgentProfileDetailFields : null;
 
     // Registered once here (this factory only runs once, at bootstrap) rather
     // than inside wireAiPermissionsTool - that function reruns on every
@@ -52,6 +54,19 @@
     var pulpitCanvasTeardown = null;
     var pulpitInspectorSelectedNodeId = "";
     var pulpitInspectorSuppressNextRender = false;
+
+    // Agent Profiles: same selection+suppress-render mechanism as Pulpit's
+    // inspector, relocated - LS (the profile name list) is the selection
+    // driver here instead of a CS canvas, CS (the detail card) is the
+    // listener/re-renderer instead of RS. Unlike Pulpit's RS-inspector
+    // (a stable, never-torn-down RS panel), the CS detail mount here DOES
+    // get recreated on every "agent-profiles" tab (re)activation (same as
+    // Pulpit's own CS canvas) - so its document-level listeners need the
+    // same explicit teardown-before-rewire discipline wirePulpitCanvas uses,
+    // not the dataset-bind-guard-only pattern stable panels use.
+    var agentProfileSelectedId = "";
+    var agentProfileSuppressNextRender = false;
+    var agentProfileDetailTeardown = null;
 
     // ip-scanner tool: Network Monitor's last-fetched Refresh results, kept
     // outside wireNetworkMonitorTool() so they survive its DOM being torn
@@ -1634,6 +1649,289 @@
       });
     }
 
+    // Agent Profiles: file/photo picker. Mirrors addon-catalog-runtime.js's
+    // triggerWebFileImport() dual pattern (native dialog on desktop, hidden
+    // <input type="file"> on web) generalized to binary data instead of
+    // JSON text. One hidden input lives at module scope, reused across
+    // calls rather than recreated per pick, same anti-leak reasoning as
+    // that module's own webFileInput.
+    var agentProfileWebFileInput = null;
+
+    function base64ToBlob(base64, mimeType) {
+      var binary = atob(base64 || "");
+      var bytes = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return new Blob([bytes], { type: mimeType || "application/octet-stream" });
+    }
+
+    function pickAgentProfileFile(role) {
+      var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+      var invoke = platform && typeof platform.getInvoke === "function" ? platform.getInvoke() : null;
+
+      if (invoke) {
+        return Promise.resolve(platform.invoke("open_agent_profile_file_dialog", { kind: role })).then(function (pick) {
+          if (!pick) return null;
+          return {
+            filename: pick.filename,
+            mimeType: pick.mimeType,
+            blob: base64ToBlob(pick.dataBase64, pick.mimeType),
+          };
+        }).catch(function () { return null; });
+      }
+
+      return new Promise(function (resolve) {
+        if (!agentProfileWebFileInput) {
+          agentProfileWebFileInput = document.createElement("input");
+          agentProfileWebFileInput.type = "file";
+          agentProfileWebFileInput.style.display = "none";
+          document.body.appendChild(agentProfileWebFileInput);
+        }
+        agentProfileWebFileInput.accept = role === "photo" ? "image/*" : "";
+        agentProfileWebFileInput.value = "";
+        agentProfileWebFileInput.onchange = function () {
+          var file = agentProfileWebFileInput.files && agentProfileWebFileInput.files[0];
+          if (!file) { resolve(null); return; }
+          resolve({ filename: file.name, mimeType: file.type || "application/octet-stream", blob: file });
+        };
+        agentProfileWebFileInput.click();
+      });
+    }
+
+    function wireAgentProfileLibrary() {
+      var mount = document.getElementById("v1AgentProfileLibrary");
+      if (!mount || !renderAgentProfileLibrary) return;
+
+      var api = (window.NetReconNewUICore && window.NetReconNewUICore.agentProfiles) || null;
+      if (!api) return;
+
+      function render() {
+        mount.innerHTML = renderAgentProfileLibrary();
+        if (agentProfileSelectedId) {
+          var selectedRow = mount.querySelector('[data-agentprofile-id="' + agentProfileSelectedId + '"]');
+          if (selectedRow) selectedRow.classList.add("is-selected");
+        }
+      }
+
+      render();
+
+      // Stable element (never torn down/recreated by tab switching, same as
+      // Pulpit's own RS Inspector) - a dataset bind-guard correctly protects
+      // the document-level listener below from piling up on repeat calls.
+      if (mount.dataset.agentprofileBound === "1") return;
+      mount.dataset.agentprofileBound = "1";
+
+      document.addEventListener("newui:agent-profiles-changed", function () {
+        if (!document.body.contains(mount)) return;
+        var state = api.getState();
+        if (agentProfileSelectedId && !state.profiles.some(function (p) { return p.id === agentProfileSelectedId; })) {
+          agentProfileSelectedId = "";
+        }
+        render();
+      });
+
+      mount.addEventListener("click", function (event) {
+        var addBtn = event.target && event.target.closest ? event.target.closest("[data-agentprofile-add]") : null;
+        if (addBtn) {
+          var newId = api.addProfile({});
+          agentProfileSelectedId = newId;
+          render();
+          try {
+            document.dispatchEvent(new CustomEvent("newui:agent-profile-selected", { detail: { profileId: newId } }));
+          } catch (_) {
+            // ignore event dispatch failures
+          }
+          return;
+        }
+
+        var removeBtn = event.target && event.target.closest ? event.target.closest("[data-agentprofile-remove]") : null;
+        if (removeBtn) {
+          var removeId = removeBtn.getAttribute("data-agentprofile-remove");
+          api.removeProfile(removeId);
+          if (agentProfileSelectedId === removeId) {
+            agentProfileSelectedId = "";
+            render();
+            try {
+              document.dispatchEvent(new CustomEvent("newui:agent-profile-selected", { detail: { profileId: "" } }));
+            } catch (_) {
+              // ignore event dispatch failures
+            }
+          }
+          return;
+        }
+
+        var row = event.target && event.target.closest ? event.target.closest("[data-agentprofile-id]") : null;
+        if (!row) return;
+        agentProfileSelectedId = row.getAttribute("data-agentprofile-id");
+        render();
+        try {
+          document.dispatchEvent(new CustomEvent("newui:agent-profile-selected", { detail: { profileId: agentProfileSelectedId } }));
+        } catch (_) {
+          // ignore event dispatch failures
+        }
+      });
+    }
+
+    function wireAgentProfileDetail(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
+      if (!root) return;
+      // Same reasoning as wirePulpitCanvas: detached/floating tool windows
+      // strip ids, so resolve by class.
+      var mount = root.querySelector(".v1-agentprofile-detail");
+      if (!mount || !renderAgentProfileDetailFields) return;
+
+      var api = (window.NetReconNewUICore && window.NetReconNewUICore.agentProfiles) || null;
+      if (!api) return;
+
+      if (agentProfileDetailTeardown) {
+        agentProfileDetailTeardown();
+        agentProfileDetailTeardown = null;
+      }
+
+      var currentPhotoObjectUrl = null;
+
+      function loadPhotoPreview() {
+        var img = mount.querySelector("[data-agentprofile-photo-preview]");
+        if (!img) return;
+        var photoId = img.getAttribute("data-agentprofile-photo-id");
+        if (currentPhotoObjectUrl) {
+          URL.revokeObjectURL(currentPhotoObjectUrl);
+          currentPhotoObjectUrl = null;
+        }
+        if (!photoId) return;
+        var db = window.NetReconNewUICore && window.NetReconNewUICore.agentProfileAttachmentsDb;
+        if (!db) return;
+        db.getAttachment(photoId).then(function (blob) {
+          if (!blob || !document.body.contains(img)) return;
+          // Guard against a stale async response landing after the photo
+          // changed/was removed again while the fetch was in flight.
+          if (img.getAttribute("data-agentprofile-photo-id") !== photoId) return;
+          currentPhotoObjectUrl = URL.createObjectURL(blob);
+          img.src = currentPhotoObjectUrl;
+        }).catch(function () {
+          // ignore preview load failures
+        });
+      }
+
+      function render() {
+        mount.innerHTML = renderAgentProfileDetailFields(agentProfileSelectedId);
+        loadPhotoPreview();
+      }
+
+      render();
+
+      function onSelected(event) {
+        agentProfileSelectedId = (event && event.detail && event.detail.profileId) || "";
+        render();
+      }
+      document.addEventListener("newui:agent-profile-selected", onSelected);
+
+      function onChanged() {
+        if (!document.body.contains(mount)) return;
+        if (agentProfileSuppressNextRender) {
+          agentProfileSuppressNextRender = false;
+          return;
+        }
+        var state = api.getState();
+        if (agentProfileSelectedId && !state.profiles.some(function (p) { return p.id === agentProfileSelectedId; })) {
+          agentProfileSelectedId = "";
+        }
+        render();
+      }
+      document.addEventListener("newui:agent-profiles-changed", onChanged);
+
+      mount.addEventListener("input", function (event) {
+        var target = event.target;
+        if (!target || !target.matches || !target.matches("[data-agentprofile-field]")) return;
+        if (!agentProfileSelectedId) return;
+
+        var field = target.getAttribute("data-agentprofile-field");
+        var patch = {};
+        patch[field] = target.value;
+
+        agentProfileSuppressNextRender = true;
+        api.updateProfile(agentProfileSelectedId, patch);
+      });
+
+      // Fields are wrapped in a <form> purely to satisfy Chromium's "password
+      // field is not contained in a form" console warning (see
+      // renderAgentProfileDetailFields) - it's never meant to actually
+      // submit, so swallow Enter-triggered submits here. Bound once on the
+      // stable `mount`, not re-bound per render(): "submit" bubbles like any
+      // other DOM event, so this keeps catching it regardless of which
+      // fresh <form> render() just injected.
+      mount.addEventListener("submit", function (event) {
+        event.preventDefault();
+      });
+
+      mount.addEventListener("click", function (event) {
+        var target = event.target;
+
+        var copyBtn = target && target.closest ? target.closest("[data-agentprofile-copy]") : null;
+        if (copyBtn) {
+          var copyField = copyBtn.getAttribute("data-agentprofile-copy");
+          var copyInput = mount.querySelector("[data-agentprofile-field=\"" + copyField + "\"]");
+          if (copyInput && navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(copyInput.value).then(function () {
+              if (setStatusLine) setStatusLine(tr("agentProfileCopiedStatus"));
+            }).catch(function () {
+              // ignore clipboard permission/failure
+            });
+          }
+          return;
+        }
+
+        var toggleBtn = target && target.closest ? target.closest("[data-agentprofile-toggle-password]") : null;
+        if (toggleBtn) {
+          var pwInput = mount.querySelector("[data-agentprofile-field=\"password\"]");
+          if (pwInput) {
+            var showing = pwInput.type === "text";
+            pwInput.type = showing ? "password" : "text";
+            toggleBtn.setAttribute("aria-pressed", showing ? "false" : "true");
+          }
+          return;
+        }
+
+        var addPhotoBtn = target && target.closest ? target.closest("[data-agentprofile-add-photo]") : null;
+        if (addPhotoBtn) {
+          if (!agentProfileSelectedId) return;
+          var profileIdForPhoto = agentProfileSelectedId;
+          pickAgentProfileFile("photo").then(function (picked) {
+            if (!picked) return null;
+            return api.addAttachmentFromBlob(profileIdForPhoto, "photo", picked.filename, picked.mimeType, picked.blob);
+          });
+          return;
+        }
+
+        var addFileBtn = target && target.closest ? target.closest("[data-agentprofile-add-attachment]") : null;
+        if (addFileBtn) {
+          if (!agentProfileSelectedId) return;
+          var profileIdForFile = agentProfileSelectedId;
+          pickAgentProfileFile("file").then(function (picked) {
+            if (!picked) return null;
+            return api.addAttachmentFromBlob(profileIdForFile, "file", picked.filename, picked.mimeType, picked.blob);
+          });
+          return;
+        }
+
+        var removeAttBtn = target && target.closest ? target.closest("[data-agentprofile-remove-attachment]") : null;
+        if (removeAttBtn) {
+          api.removeAttachment(removeAttBtn.getAttribute("data-agentprofile-remove-attachment"));
+          return;
+        }
+      });
+
+      agentProfileDetailTeardown = function () {
+        document.removeEventListener("newui:agent-profile-selected", onSelected);
+        document.removeEventListener("newui:agent-profiles-changed", onChanged);
+        if (currentPhotoObjectUrl) {
+          URL.revokeObjectURL(currentPhotoObjectUrl);
+          currentPhotoObjectUrl = null;
+        }
+      };
+    }
+
     // shell: TBM Options -> General settings screen (per-setting "remember
     // across restarts" checkboxes). Applies instantly on toggle, no separate
     // Save button - the actual "remember" enforcement runs at next launch,
@@ -2481,6 +2779,8 @@
       wirePulpitLibrary: wirePulpitLibrary,
       wirePulpitCanvas: wirePulpitCanvas,
       wirePulpitInspector: wirePulpitInspector,
+      wireAgentProfileLibrary: wireAgentProfileLibrary,
+      wireAgentProfileDetail: wireAgentProfileDetail,
       // ip-scanner tool
       wireResultsIpTable: wireResultsIpTable,
       wirePresetsTool: wirePresetsTool,

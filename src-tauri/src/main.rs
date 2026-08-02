@@ -15,6 +15,11 @@ use std::time::{Duration, Instant, SystemTime};
 
 use serde::{Deserialize, Serialize};
 use rusqlite::{Connection, params};
+// Agent Profile attachment BLOBs cross the Tauri IPC boundary as base64
+// (serde_json has no native binary encoding) - decoded/encoded only at the
+// SQLite bind-parameter step, same reasoning as the JS-side codec.
+use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
+use base64::Engine as _;
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
@@ -1627,6 +1632,67 @@ fn open_language_file_dialog() -> Result<LanguageFilePick, String> {
     })
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct BinaryFilePick {
+    filename: String,
+    mime_type: String,
+    data_base64: String,
+}
+
+// No mime_guess crate in this project - the web <input type=file> path gets
+// File.type for free from the browser, but the native dialog here only
+// hands back a path, so infer from the extension for the handful of types
+// Agent Profiles' photo/file pickers actually deal with.
+fn infer_mime_type(path: &Path) -> String {
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+    match ext.as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "bmp" => "image/bmp",
+        "svg" => "image/svg+xml",
+        "pdf" => "application/pdf",
+        "txt" => "text/plain",
+        "json" => "application/json",
+        "zip" => "application/zip",
+        _ => "application/octet-stream",
+    }
+    .to_string()
+}
+
+#[tauri::command]
+fn open_agent_profile_file_dialog(kind: String) -> Result<BinaryFilePick, String> {
+    let mut dialog = rfd::FileDialog::new().set_title("Attach File");
+    if kind == "photo" {
+        dialog = dialog.add_filter("Images", &["png", "jpg", "jpeg", "gif", "webp", "bmp"]);
+    }
+    let picked = dialog.pick_file();
+
+    let path = match picked {
+        Some(path) => path,
+        None => return Err("cancelled".into()),
+    };
+
+    let bytes = fs::read(&path).map_err(|e| format!("Failed to read file: {}", e))?;
+    let filename = path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let mime_type = infer_mime_type(&path);
+
+    Ok(BinaryFilePick {
+        filename,
+        mime_type,
+        data_base64: BASE64_STANDARD.encode(bytes),
+    })
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ScanPortEntry {
@@ -1706,6 +1772,41 @@ struct ScanDefaultsData {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct AgentProfileRow {
+    id: String,
+    name: String,
+    nickname: String,
+    email: String,
+    login: String,
+    password: String,
+    note: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AgentProfileAttachmentRow {
+    id: String,
+    profile_id: String,
+    filename: String,
+    mime_type: String,
+    role: String,
+    // Only populated on save (attachAgentProfileBlobs() in
+    // session-runtime.js fills it in from IndexedDB right before encoding)
+    // and on load (read back from the BLOB column here) - never persisted
+    // outside the session file itself.
+    #[serde(default)]
+    data_base64: String,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct AgentProfilesData {
+    profiles: Vec<AgentProfileRow>,
+    attachments: Vec<AgentProfileAttachmentRow>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct SectionLayout {
     open: Vec<String>,
     active: Option<String>,
@@ -1727,6 +1828,8 @@ struct SessionData {
     ip_library: IpLibraryData,
     presets: PresetsData,
     scan_defaults: ScanDefaultsData,
+    #[serde(default)]
+    agent_profiles: AgentProfilesData,
     layout: LayoutData,
 }
 
@@ -1779,6 +1882,23 @@ const SESSION_SCHEMA_SQL: &str = "
       processed INTEGER NOT NULL,
       total INTEGER NOT NULL,
       found INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS agent_profiles (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      nickname TEXT NOT NULL DEFAULT '',
+      email TEXT NOT NULL DEFAULT '',
+      login TEXT NOT NULL DEFAULT '',
+      password TEXT NOT NULL DEFAULT '',
+      note TEXT NOT NULL DEFAULT ''
+    );
+    CREATE TABLE IF NOT EXISTS agent_profile_attachments (
+      id TEXT PRIMARY KEY,
+      profile_id TEXT NOT NULL REFERENCES agent_profiles(id) ON DELETE CASCADE,
+      filename TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'file',
+      data BLOB NOT NULL
     );
     CREATE TABLE IF NOT EXISTS session_layout_tabs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1900,6 +2020,36 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
         "INSERT INTO scan_defaults (id, timeout_ms, concurrency) VALUES (1, ?1, ?2) ON CONFLICT(id) DO UPDATE SET timeout_ms = excluded.timeout_ms, concurrency = excluded.concurrency",
         params![data.scan_defaults.timeout_ms, data.scan_defaults.concurrency],
     ).map_err(|e| format!("Failed to write scan_defaults: {e}"))?;
+
+    // Children (attachments) before parent (profiles), same FK-safety
+    // ordering as scan_result_ports/scan_results above.
+    tx.execute("DELETE FROM agent_profile_attachments", [])
+        .map_err(|e| format!("Failed to clear agent_profile_attachments: {e}"))?;
+    tx.execute("DELETE FROM agent_profiles", [])
+        .map_err(|e| format!("Failed to clear agent_profiles: {e}"))?;
+    {
+        let mut insert_profile = tx
+            .prepare_cached("INSERT INTO agent_profiles (id, name, nickname, email, login, password, note) VALUES (?1,?2,?3,?4,?5,?6,?7)")
+            .map_err(|e| format!("Failed to prepare agent_profiles insert: {e}"))?;
+        for profile in &data.agent_profiles.profiles {
+            insert_profile
+                .execute(params![profile.id, profile.name, profile.nickname, profile.email, profile.login, profile.password, profile.note])
+                .map_err(|e| format!("Failed to insert agent_profiles row: {e}"))?;
+        }
+    }
+    {
+        let mut insert_attachment = tx
+            .prepare_cached("INSERT INTO agent_profile_attachments (id, profile_id, filename, mime_type, role, data) VALUES (?1,?2,?3,?4,?5,?6)")
+            .map_err(|e| format!("Failed to prepare agent_profile_attachments insert: {e}"))?;
+        for attachment in &data.agent_profiles.attachments {
+            let bytes = BASE64_STANDARD
+                .decode(&attachment.data_base64)
+                .map_err(|e| format!("Failed to decode agent_profile_attachments.{}: {e}", attachment.id))?;
+            insert_attachment
+                .execute(params![attachment.id, attachment.profile_id, attachment.filename, attachment.mime_type, attachment.role, bytes])
+                .map_err(|e| format!("Failed to insert agent_profile_attachments row: {e}"))?;
+        }
+    }
 
     tx.execute(
         "INSERT INTO scan_progress (id, state, processed, total, found) VALUES (1, ?1, ?2, ?3, ?4) ON CONFLICT(id) DO UPDATE SET state = excluded.state, processed = excluded.processed, total = excluded.total, found = excluded.found",
@@ -2107,6 +2257,54 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         }
     };
 
+    let agent_profiles = {
+        let mut stmt = conn
+            .prepare("SELECT id, name, nickname, email, login, password, note FROM agent_profiles ORDER BY rowid")
+            .map_err(|e| format!("Failed to prepare agent_profiles read: {e}"))?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok(AgentProfileRow {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    nickname: row.get(2)?,
+                    email: row.get(3)?,
+                    login: row.get(4)?,
+                    password: row.get(5)?,
+                    note: row.get(6)?,
+                })
+            })
+            .map_err(|e| format!("Failed to query agent_profiles: {e}"))?;
+        let mut items = Vec::new();
+        for row in rows {
+            items.push(row.map_err(|e| format!("Failed to read agent_profiles row: {e}"))?);
+        }
+        items
+    };
+
+    let agent_profile_attachments = {
+        let mut stmt = conn
+            .prepare("SELECT id, profile_id, filename, mime_type, role, data FROM agent_profile_attachments ORDER BY rowid")
+            .map_err(|e| format!("Failed to prepare agent_profile_attachments read: {e}"))?;
+        let rows = stmt
+            .query_map([], |row| {
+                let bytes: Vec<u8> = row.get(5)?;
+                Ok(AgentProfileAttachmentRow {
+                    id: row.get(0)?,
+                    profile_id: row.get(1)?,
+                    filename: row.get(2)?,
+                    mime_type: row.get(3)?,
+                    role: row.get(4)?,
+                    data_base64: BASE64_STANDARD.encode(bytes),
+                })
+            })
+            .map_err(|e| format!("Failed to query agent_profile_attachments: {e}"))?;
+        let mut items = Vec::new();
+        for row in rows {
+            items.push(row.map_err(|e| format!("Failed to read agent_profile_attachments row: {e}"))?);
+        }
+        items
+    };
+
     let layout = {
         let mut stmt = conn
             .prepare("SELECT section, tool, is_active FROM session_layout_tabs ORDER BY id")
@@ -2144,6 +2342,7 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         ip_library: IpLibraryData { entries: ip_library_entries, updated_at: ip_library_updated_at },
         presets: PresetsData { default_preset_id, presets: presets_items },
         scan_defaults,
+        agent_profiles: AgentProfilesData { profiles: agent_profiles, attachments: agent_profile_attachments },
         layout,
     })
 }
@@ -2558,6 +2757,7 @@ fn main() {
             window_close,
             open_extension_manifest_dialog,
             open_language_file_dialog,
+            open_agent_profile_file_dialog,
             session_install_dir,
             save_session_dialog,
             open_session_dialog,

@@ -133,6 +133,24 @@
       labelKey: "tabLabel_pulpit_inspector",
       ui: { showInRightPanel: true, rightOrder: 25 }
     },
+    // Agent Profiles: the user's own account-creation identities (nickname/
+    // email/login/password/note/attachments), reachable from Options (not
+    // Tools) - see index.html's Options dropdown. LS list + CS detail card
+    // only, no RS - reuses Pulpit's selection-event mechanism relocated
+    // (LS drives selection here, instead of CS).
+    "agent-profiles": {
+      titleKey: "toolTitle_agent_profiles",
+      textKey: "toolText_agent_profiles",
+      points: ["One login+password per identity", "Optional photo and file attachments", "Saved with the session file"],
+      icon: "🪪",
+      labelKey: "tabLabel_agent_profiles",
+      ui: { showAsTab: true, order: 116 }
+    },
+    "agent-profiles-library": {
+      icon: null,
+      labelKey: "tabLabel_agent_profiles_library",
+      ui: { showInLeftPanel: true, leftOrder: 36 }
+    },
 
     // --- ip-scanner tool keys ---
     "scan-runner": {

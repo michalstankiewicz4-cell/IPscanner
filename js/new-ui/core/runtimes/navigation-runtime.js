@@ -1497,6 +1497,9 @@
               ensureRightTabOpen("pulpit-inspector");
               setRightTabActive("pulpit-inspector");
             }
+          } else if (tool === "agent-profiles") {
+            ensureSidebarTabOpen("agent-profiles-library");
+            setLeftActiveTab("agent-profiles-library");
           }
           switchTool(tool);
           return;
@@ -1542,6 +1545,9 @@
             ensureRightTabOpen("pulpit-inspector");
             setRightTabActive("pulpit-inspector");
           }
+        } else if (tool === "agent-profiles") {
+          ensureSidebarTabOpen("agent-profiles-library");
+          setLeftActiveTab("agent-profiles-library");
         } else if (tool === "lorem-ipsum") {
           // Placeholder tool: one click opens all three independent
           // surfaces (CS's own "lorem-ipsum" via switchTool() below, plus
