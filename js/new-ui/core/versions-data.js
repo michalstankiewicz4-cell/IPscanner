@@ -10,6 +10,16 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.6.0",
+      notes: [
+        "Added a reusable addon \"custom markup\" system: an installable tool can now declare its own input fields and a structured results table (not just a static card), so addons can collect input and show real data instead of plain text output.",
+        "Added IP Scanner Heuristic JS, a real installable addon built on that system: pick a target and one of 5 client-side techniques (Fetch, Image, Link/CSS, WebSocket, IFrame) to heuristically check common ports - works fully on www, not just desktop, with an editable port list. Opens as two linked tabs: target/technique/ports on the left, results on the right.",
+        "Added Pulpit (Tools -> Virtual Machines): a manually-curated visual inventory of computers. Add icons for remote, local, virtual, or your own devices from the left panel, drag them anywhere on the canvas, and keep a name/host/note on each from the right panel.",
+        "Fixed a rendering bug where an extension-contributed left-panel tool (and any tool sharing the generic card template) could get its content or title rendered twice.",
+        "Fixed several accessibility/autofill warnings raised by the browser on addon-declared input fields and the AI Properties panel."
+      ]
+    },
+    {
       version: "v2.5.0",
       notes: [
         "Added a real AI Assistant: pick Anthropic Claude or Google Gemini, enter your own API key, and chat. It can navigate the app on your behalf - open tabs, run macros, look up emails - gated by a new AI Permissions tab where you control exactly what it's allowed to do, with a full audit log of every action.",
