@@ -6,6 +6,9 @@
     var renderShellCraftLibrary = typeof deps.renderShellCraftLibrary === "function" ? deps.renderShellCraftLibrary : null;
     var renderCanvasBlockHtml = typeof deps.renderCanvasBlockHtml === "function" ? deps.renderCanvasBlockHtml : null;
     var renderShellCraftInspector = typeof deps.renderShellCraftInspector === "function" ? deps.renderShellCraftInspector : null;
+    var renderPulpitLibrary = typeof deps.renderPulpitLibrary === "function" ? deps.renderPulpitLibrary : null;
+    var renderPulpitNodeHtml = typeof deps.renderPulpitNodeHtml === "function" ? deps.renderPulpitNodeHtml : null;
+    var renderPulpitInspector = typeof deps.renderPulpitInspector === "function" ? deps.renderPulpitInspector : null;
 
     // Registered once here (this factory only runs once, at bootstrap) rather
     // than inside wireAiPermissionsTool - that function reruns on every
@@ -42,6 +45,13 @@
     // future language-refresh re-render, the same way the guard does).
     var shellcraftInspectorSelectedBlockId = "";
     var shellcraftInspectorSuppressNextRender = false;
+
+    // Same teardown/selection-state discipline as ShellCraft above, kept
+    // separate (own variables, own canvas element class) since both tools'
+    // canvases can be detached into floating windows independently.
+    var pulpitCanvasTeardown = null;
+    var pulpitInspectorSelectedNodeId = "";
+    var pulpitInspectorSuppressNextRender = false;
 
     // ip-scanner tool: Network Monitor's last-fetched Refresh results, kept
     // outside wireNetworkMonitorTool() so they survive its DOM being torn
@@ -1381,6 +1391,249 @@
       });
     }
 
+    function wirePulpitCanvas(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
+      if (!root) return;
+      // Detached/floating tool windows strip ids (panels-runtime.js's
+      // stripIds()), so resolve by class, not id, same as ShellCraft's canvas.
+      var canvasEl = root.querySelector(".v1-pulpit-canvas");
+      if (!canvasEl || !renderPulpitNodeHtml) return;
+
+      var canvasApi = (window.NetReconNewUICore && window.NetReconNewUICore.pulpitCanvas) || null;
+      if (!canvasApi) return;
+
+      if (pulpitCanvasTeardown) {
+        pulpitCanvasTeardown();
+        pulpitCanvasTeardown = null;
+      }
+
+      var selectedNodeId = "";
+
+      function render() {
+        var state = canvasApi.getState();
+        canvasEl.innerHTML = state.nodes.map(renderPulpitNodeHtml).join("");
+        if (selectedNodeId) {
+          var selectedEl = canvasEl.querySelector('[data-node-id="' + selectedNodeId + '"]');
+          if (selectedEl) selectedEl.classList.add("is-selected");
+        }
+      }
+
+      render();
+
+      function onCanvasChanged() {
+        if (!document.body.contains(canvasEl)) return;
+        render();
+      }
+      document.addEventListener("newui:pulpit-canvas-changed", onCanvasChanged);
+
+      // Same click-drag-to-pan + wheel/keyboard scroll as ShellCraft's fixed
+      // overflow:hidden canvas - without it, icons dragged near the edges
+      // become unreachable once nodes spread past the visible viewport.
+      var canvasShellEl = canvasEl.closest(".v1-pulpit-canvas-shell") || canvasEl.parentElement;
+      var isPanning = false;
+      var panStartX = 0;
+      var panStartY = 0;
+      var panScrollLeft = 0;
+      var panScrollTop = 0;
+
+      function onCanvasMouseDown(event) {
+        if (event.target !== canvasEl || !canvasShellEl) return;
+        isPanning = true;
+        panStartX = event.clientX;
+        panStartY = event.clientY;
+        panScrollLeft = canvasShellEl.scrollLeft;
+        panScrollTop = canvasShellEl.scrollTop;
+        canvasEl.classList.add("is-panning");
+        event.preventDefault();
+      }
+
+      function onDocumentMouseMove(event) {
+        if (!isPanning || !canvasShellEl) return;
+        canvasShellEl.scrollLeft = panScrollLeft - (event.clientX - panStartX);
+        canvasShellEl.scrollTop = panScrollTop - (event.clientY - panStartY);
+      }
+
+      function onDocumentMouseUp() {
+        if (!isPanning) return;
+        isPanning = false;
+        canvasEl.classList.remove("is-panning");
+      }
+
+      canvasEl.addEventListener("mousedown", onCanvasMouseDown);
+      document.addEventListener("mousemove", onDocumentMouseMove);
+      document.addEventListener("mouseup", onDocumentMouseUp);
+
+      canvasEl.tabIndex = 0;
+
+      canvasEl.addEventListener("wheel", function (event) {
+        if (!canvasShellEl) return;
+        canvasShellEl.scrollLeft += event.deltaX;
+        canvasShellEl.scrollTop += event.deltaY;
+        event.preventDefault();
+      }, { passive: false });
+
+      canvasEl.addEventListener("keydown", function (event) {
+        if (!canvasShellEl) return;
+        var step = 40;
+        if (event.key === "ArrowLeft") canvasShellEl.scrollLeft -= step;
+        else if (event.key === "ArrowRight") canvasShellEl.scrollLeft += step;
+        else if (event.key === "ArrowUp") canvasShellEl.scrollTop -= step;
+        else if (event.key === "ArrowDown") canvasShellEl.scrollTop += step;
+        else if (event.key === "PageUp") canvasShellEl.scrollTop -= canvasShellEl.clientHeight;
+        else if (event.key === "PageDown") canvasShellEl.scrollTop += canvasShellEl.clientHeight;
+        else if (event.key === "Home") { canvasShellEl.scrollLeft = 0; canvasShellEl.scrollTop = 0; }
+        else return;
+        event.preventDefault();
+      });
+
+      pulpitCanvasTeardown = function () {
+        document.removeEventListener("newui:pulpit-canvas-changed", onCanvasChanged);
+        document.removeEventListener("mousemove", onDocumentMouseMove);
+        document.removeEventListener("mouseup", onDocumentMouseUp);
+      };
+
+      // Only the "move an existing node" case exists here - adding a new
+      // computer is button-driven (wirePulpitLibrary), not drag-from-library,
+      // so there's no second DataTransfer mime type to branch on.
+      canvasEl.addEventListener("dragover", function (event) {
+        event.preventDefault();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+      });
+
+      canvasEl.addEventListener("drop", function (event) {
+        event.preventDefault();
+        var raw = event.dataTransfer.getData("application/x-pulpit-move");
+        if (!raw) return;
+        var rect = canvasEl.getBoundingClientRect();
+        var x = event.clientX - rect.left;
+        var y = event.clientY - rect.top;
+        try {
+          var movePayload = JSON.parse(raw);
+          canvasApi.updateNodePosition(movePayload.id, x - movePayload.offsetX, y - movePayload.offsetY);
+        } catch (_) {
+          // ignore malformed move payload
+        }
+      });
+
+      canvasEl.addEventListener("dragstart", function (event) {
+        var nodeEl = event.target && event.target.closest ? event.target.closest(".v1-pulpit-node") : null;
+        if (!nodeEl) return;
+        var nodeRect = nodeEl.getBoundingClientRect();
+        var movePayload = {
+          id: nodeEl.getAttribute("data-node-id"),
+          offsetX: event.clientX - nodeRect.left,
+          offsetY: event.clientY - nodeRect.top,
+        };
+        event.dataTransfer.setData("application/x-pulpit-move", JSON.stringify(movePayload));
+        event.dataTransfer.effectAllowed = "move";
+      });
+
+      canvasEl.addEventListener("click", function (event) {
+        var removeBtn = event.target && event.target.closest ? event.target.closest("[data-pulpit-node-remove]") : null;
+        if (removeBtn) {
+          canvasApi.removeNode(removeBtn.getAttribute("data-pulpit-node-remove"));
+          return;
+        }
+
+        var nodeEl = event.target && event.target.closest ? event.target.closest(".v1-pulpit-node") : null;
+        if (!nodeEl) return;
+
+        selectedNodeId = nodeEl.getAttribute("data-node-id");
+        canvasEl.querySelectorAll(".v1-pulpit-node.is-selected").forEach(function (el) {
+          el.classList.remove("is-selected");
+        });
+        nodeEl.classList.add("is-selected");
+
+        try {
+          document.dispatchEvent(new CustomEvent("newui:pulpit-node-selected", { detail: { nodeId: selectedNodeId } }));
+        } catch (_) {
+          // ignore event dispatch failures
+        }
+      });
+    }
+
+    function wirePulpitInspector() {
+      var mount = document.getElementById("v1PulpitInspector");
+      if (!mount || !renderPulpitInspector) return;
+
+      var canvasApi = (window.NetReconNewUICore && window.NetReconNewUICore.pulpitCanvas) || null;
+      if (!canvasApi) return;
+
+      function render() {
+        mount.innerHTML = renderPulpitInspector(pulpitInspectorSelectedNodeId);
+      }
+
+      render();
+
+      if (mount.dataset.pulpitBound === "1") return;
+      mount.dataset.pulpitBound = "1";
+
+      document.addEventListener("newui:pulpit-node-selected", function (event) {
+        pulpitInspectorSelectedNodeId = (event && event.detail && event.detail.nodeId) || "";
+        render();
+      });
+
+      document.addEventListener("newui:pulpit-canvas-changed", function () {
+        if (!document.body.contains(mount)) return;
+        if (pulpitInspectorSuppressNextRender) {
+          pulpitInspectorSuppressNextRender = false;
+          return;
+        }
+        var state = canvasApi.getState();
+        if (pulpitInspectorSelectedNodeId && !state.nodes.some(function (n) { return n.id === pulpitInspectorSelectedNodeId; })) {
+          pulpitInspectorSelectedNodeId = "";
+        }
+        render();
+      });
+
+      mount.addEventListener("input", function (event) {
+        var target = event.target;
+        if (!target || !target.matches || !target.matches("[data-inspector-field]")) return;
+        if (!pulpitInspectorSelectedNodeId) return;
+
+        var field = target.getAttribute("data-inspector-field");
+        var patch = {};
+        patch[field] = target.value;
+
+        pulpitInspectorSuppressNextRender = true;
+        canvasApi.updateNodeProperties(pulpitInspectorSelectedNodeId, patch);
+      });
+    }
+
+    function wirePulpitLibrary() {
+      var mount = document.getElementById("v1PulpitLibrary");
+      if (!mount || !renderPulpitLibrary) return;
+
+      mount.innerHTML = renderPulpitLibrary();
+
+      if (mount.dataset.pulpitBound === "1") return;
+      mount.dataset.pulpitBound = "1";
+
+      mount.addEventListener("click", function (event) {
+        var btn = event.target && event.target.closest ? event.target.closest("[data-pulpit-add-type]") : null;
+        if (!btn) return;
+
+        var canvasApi = (window.NetReconNewUICore && window.NetReconNewUICore.pulpitCanvas) || null;
+        if (!canvasApi) return;
+
+        var type = btn.getAttribute("data-pulpit-add-type");
+        var nodes = canvasApi.getState().nodes;
+        var lastNode = nodes.length ? nodes[nodes.length - 1] : null;
+        var x = 40;
+        var y = 40;
+        if (lastNode) {
+          x = lastNode.x + 48;
+          y = lastNode.y + 48;
+          if (x > 2900 || y > 1900) { x = 40; y = 40; }
+        }
+
+        var nameKey = "pulpitDefaultName" + type.charAt(0).toUpperCase() + type.slice(1);
+        canvasApi.addNode(type, x, y, { name: tr(nameKey) });
+      });
+    }
+
     // shell: TBM Options -> General settings screen (per-setting "remember
     // across restarts" checkboxes). Applies instantly on toggle, no separate
     // Save button - the actual "remember" enforcement runs at next launch,
@@ -2225,6 +2478,9 @@
       wireShellCraftLibrary: wireShellCraftLibrary,
       wireShellCraftCanvas: wireShellCraftCanvas,
       wireShellCraftInspector: wireShellCraftInspector,
+      wirePulpitLibrary: wirePulpitLibrary,
+      wirePulpitCanvas: wirePulpitCanvas,
+      wirePulpitInspector: wirePulpitInspector,
       // ip-scanner tool
       wireResultsIpTable: wireResultsIpTable,
       wirePresetsTool: wirePresetsTool,

@@ -112,6 +112,27 @@
       labelKey: "tabLabel_shellcraft_inspector",
       ui: { showInRightPanel: true, rightOrder: 20 }
     },
+    // Pulpit: a manually-curated visual inventory of computers - same
+    // three-entry Library(LS)/Canvas(CS)/Inspector(RS) shape as ShellCraft
+    // above, reusing its canvas/drag/selection architecture.
+    pulpit: {
+      titleKey: "toolTitle_pulpit",
+      textKey: "toolText_pulpit",
+      points: ["Freely placed computer icons", "Per-computer notes", "Remote / local / virtual / own types"],
+      icon: "🖥",
+      labelKey: "tabLabel_pulpit",
+      ui: { showAsTab: true, order: 115 }
+    },
+    "pulpit-library": {
+      icon: null,
+      labelKey: "tabLabel_pulpit_library",
+      ui: { showInLeftPanel: true, leftOrder: 35 }
+    },
+    "pulpit-inspector": {
+      icon: null,
+      labelKey: "tabLabel_pulpit_inspector",
+      ui: { showInRightPanel: true, rightOrder: 25 }
+    },
 
     // --- ip-scanner tool keys ---
     "scan-runner": {

@@ -12,6 +12,7 @@
       : null;
     var tabRegistry = window.NetReconNewUICore && window.NetReconNewUICore.tabRegistry;
     var shellcraftInspectorClosedByUser = false;
+    var pulpitInspectorClosedByUser = false;
 
     function lookupPortService(port) {
       return sharedNet && typeof sharedNet.lookupPortService === "function"
@@ -1489,6 +1490,13 @@
               ensureRightTabOpen("shellcraft-inspector");
               setRightTabActive("shellcraft-inspector");
             }
+          } else if (tool === "pulpit") {
+            ensureSidebarTabOpen("pulpit-library");
+            setLeftActiveTab("pulpit-library");
+            if (!pulpitInspectorClosedByUser) {
+              ensureRightTabOpen("pulpit-inspector");
+              setRightTabActive("pulpit-inspector");
+            }
           }
           switchTool(tool);
           return;
@@ -1526,6 +1534,13 @@
           if (!shellcraftInspectorClosedByUser) {
             ensureRightTabOpen("shellcraft-inspector");
             setRightTabActive("shellcraft-inspector");
+          }
+        } else if (tool === "pulpit") {
+          ensureSidebarTabOpen("pulpit-library");
+          setLeftActiveTab("pulpit-library");
+          if (!pulpitInspectorClosedByUser) {
+            ensureRightTabOpen("pulpit-inspector");
+            setRightTabActive("pulpit-inspector");
           }
         } else if (tool === "lorem-ipsum") {
           // Placeholder tool: one click opens all three independent
@@ -1726,6 +1741,7 @@
           var closeTool = closeBtn.getAttribute("data-tool");
           if (!closeTool) return;
           if (closeTool === "shellcraft-inspector") shellcraftInspectorClosedByUser = true;
+          if (closeTool === "pulpit-inspector") pulpitInspectorClosedByUser = true;
           setRightTabOpen(closeTool, false);
           return;
         }
@@ -1743,6 +1759,10 @@
         // re-open Inspector rather than leaving it permanently unreachable
         // after one manual close.
         shellcraftInspectorClosedByUser = false;
+      });
+
+      document.addEventListener("newui:pulpit-node-selected", function () {
+        pulpitInspectorClosedByUser = false;
       });
 
       var chat = document.getElementById("v1AiChatHistory");

@@ -1,0 +1,181 @@
+/* shell: Pulpit - Library (LS), canvas (CS), Inspector (RS) */
+
+/* Same .v1-card overflow:auto fix ShellCraft needs (cards.css would
+   otherwise add a second, outer scrollbar around the canvas shell). */
+#v1MainCard.is-pulpit-view {
+  overflow: hidden;
+}
+
+#v1MainCard.is-pulpit-view #v1ToolDetail {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Same fix, mirrored for a detached/floating Pulpit window. */
+.v1-detached-tool-card.is-pulpit-view .v1-detached-tool-body {
+  overflow: hidden;
+}
+
+.v1-detached-tool-card.is-pulpit-view .tool-detail {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.v1-pulpit-library {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.v1-pulpit-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--txt);
+  text-align: left;
+  cursor: pointer;
+}
+
+.v1-pulpit-add-btn:hover {
+  background: #222326;
+  border-color: #3f3f46;
+}
+
+.v1-pulpit-add-icon {
+  font-size: 14px;
+}
+
+.v1-pulpit-add-name {
+  font-size: 12px;
+}
+
+.v1-pulpit-canvas-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg-elev);
+}
+
+.v1-pulpit-canvas {
+  position: relative;
+  width: 3000px;
+  height: 2000px;
+  cursor: grab;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.v1-pulpit-canvas.is-panning {
+  cursor: grabbing;
+}
+
+/* Real-desktop-icon look: big glyph on top, name centered underneath - a
+   deliberate departure from ShellCraft's card-with-header-row blocks, since
+   pulpit nodes represent computers on a desktop, not executable steps. */
+.v1-pulpit-node {
+  position: absolute;
+  width: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: grab;
+  text-align: center;
+}
+
+.v1-pulpit-node:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.v1-pulpit-node:active {
+  cursor: grabbing;
+}
+
+.v1-pulpit-node.is-selected {
+  border-color: var(--brand);
+  background: color-mix(in oklab, var(--brand) 14%, transparent);
+}
+
+.v1-pulpit-node-icon {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.v1-pulpit-node-label {
+  font-size: 11px;
+  color: var(--txt);
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v1-pulpit-node-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  border: 0;
+  background: transparent;
+  color: var(--txt-dim);
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.v1-pulpit-node:hover .v1-pulpit-node-remove,
+.v1-pulpit-node.is-selected .v1-pulpit-node-remove {
+  opacity: 1;
+}
+
+.v1-pulpit-node-remove:hover {
+  color: #ff6b6b;
+}
+
+.v1-pulpit-inspector {
+  /* Same RS top-padding compensation as ShellCraft's inspector - see
+     assistant.css's comment on .v1-right-content losing its top padding. */
+  padding: 10px 4px 4px;
+}
+
+.v1-pulpit-inspector-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.v1-pulpit-inspector-field label {
+  color: var(--txt-dim);
+  font-size: 12px;
+}
+
+.v1-pulpit-inspector-field textarea,
+.v1-pulpit-inspector-field input {
+  border: 1px solid #31333a;
+  background: #1f2024;
+  color: var(--txt);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  width: 100%;
+}

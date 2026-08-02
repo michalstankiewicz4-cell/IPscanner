@@ -15,6 +15,7 @@
     var presetsApi = core.presets || null;
     var macrosApi = core.macros || null;
     var shellcraftCanvasApi = core.shellcraftCanvas || null;
+    var pulpitCanvasApi = core.pulpitCanvas || null;
     var generalSettingsApi = core.generalSettings || null;
 
     function trOr(key, fallback) {
@@ -768,6 +769,105 @@
         "<div class=\"v1-section-body\">" + macrosHtml + "</div>",
         "</li>",
         "</ul>"
+      ].join("");
+    }
+
+    var PULPIT_TYPES = [
+      { type: "remote", icon: "🌐", labelKey: "pulpitAddRemoteBtn", nameKey: "pulpitDefaultNameRemote" },
+      { type: "local", icon: "💻", labelKey: "pulpitAddLocalBtn", nameKey: "pulpitDefaultNameLocal" },
+      { type: "virtual", icon: "🗔", labelKey: "pulpitAddVirtualBtn", nameKey: "pulpitDefaultNameVirtual" },
+      { type: "own", icon: "⚙", labelKey: "pulpitAddOwnBtn", nameKey: "pulpitDefaultNameOwn" },
+    ];
+
+    function pulpitIconFor(type) {
+      var entry = PULPIT_TYPES.filter(function (t) { return t.type === type; })[0];
+      return entry ? entry.icon : "⚙";
+    }
+
+    function pulpitTypeLabel(type) {
+      return escapeHtml(tr("pulpitType" + type.charAt(0).toUpperCase() + type.slice(1) + "Label"));
+    }
+
+    // LS: plain click-to-add buttons (not draggable rows like ShellCraft's
+    // library - adding a computer doesn't need a drag gesture, a button is
+    // simpler and the pulpitCanvas API already takes an explicit x/y).
+    function renderPulpitLibrary() {
+      var buttonsHtml = PULPIT_TYPES.map(function (entry) {
+        return [
+          "<button type=\"button\" class=\"v1-pulpit-add-btn\" data-pulpit-add-type=\"" + entry.type + "\">",
+          "<span class=\"v1-pulpit-add-icon\" aria-hidden=\"true\">" + escapeHtml(entry.icon) + "</span>",
+          "<span class=\"v1-pulpit-add-name\">" + escapeHtml(tr(entry.labelKey)) + "</span>",
+          "</button>"
+        ].join("");
+      }).join("");
+
+      return [
+        "<ul class=\"v1-tool-list\">",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("pulpitLibraryHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">" + buttonsHtml + "</div>",
+        "</li>",
+        "</ul>"
+      ].join("");
+    }
+
+    // CS: one desktop-style icon (glyph on top, name label underneath) per
+    // computer - draggable="true" for repositioning (reuses ShellCraft's
+    // native-HTML5-DnD move mechanism, just not its "drag a new one in from
+    // the library" mechanism, since adding is button-driven here).
+    function renderPulpitNodeHtml(node) {
+      var icon = pulpitIconFor(node.type);
+      var label = node.name || tr("pulpitDefaultName" + node.type.charAt(0).toUpperCase() + node.type.slice(1));
+      return [
+        "<div class=\"v1-pulpit-node\" draggable=\"true\" data-node-id=\"" + escapeHtml(node.id) + "\" data-node-type=\"" + escapeHtml(node.type) + "\" style=\"left:" + node.x + "px;top:" + node.y + "px;\">",
+        "<button type=\"button\" class=\"v1-pulpit-node-remove\" data-pulpit-node-remove=\"" + escapeHtml(node.id) + "\" aria-label=\"" + escapeHtml(tr("pulpitNodeDeleteBtn")) + "\" title=\"" + escapeHtml(tr("pulpitNodeDeleteBtn")) + "\">&times;</button>",
+        "<span class=\"v1-pulpit-node-icon\" aria-hidden=\"true\">" + escapeHtml(icon) + "</span>",
+        "<span class=\"v1-pulpit-node-label\">" + escapeHtml(label) + "</span>",
+        "</div>"
+      ].join("");
+    }
+
+    // RS: name/host/note are editable (data-inspector-field, same delegated-
+    // input-listener convention ShellCraft's inspector already uses); type is
+    // fixed at creation, shown read-only.
+    function renderPulpitInspector(nodeId) {
+      var state = pulpitCanvasApi ? pulpitCanvasApi.getState() : { nodes: [] };
+      var node = state.nodes.find(function (n) { return n.id === nodeId; });
+
+      if (!node) {
+        return "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("pulpitInspectorEmptyNote")) + "</div>";
+      }
+
+      return [
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label>" + escapeHtml(tr("pulpitInspectorTypeLabel")) + "</label>",
+        "<div>" + pulpitTypeLabel(node.type) + "</div>",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1InspectorPulpitName\">" + escapeHtml(tr("pulpitInspectorNameLabel")) + "</label>",
+        "<input id=\"v1InspectorPulpitName\" type=\"text\" data-inspector-field=\"name\" value=\"" + escapeHtml(node.name) + "\" />",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1InspectorPulpitHost\">" + escapeHtml(tr("pulpitInspectorHostLabel")) + "</label>",
+        "<input id=\"v1InspectorPulpitHost\" type=\"text\" data-inspector-field=\"host\" value=\"" + escapeHtml(node.host) + "\" />",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1InspectorPulpitNote\">" + escapeHtml(tr("pulpitInspectorNoteLabel")) + "</label>",
+        "<textarea id=\"v1InspectorPulpitNote\" rows=\"3\" data-inspector-field=\"note\">" + escapeHtml(node.note) + "</textarea>",
+        "</div>"
+      ].join("");
+    }
+
+    function renderPulpitCanvasTool() {
+      var state = pulpitCanvasApi ? pulpitCanvasApi.getState() : { nodes: [] };
+      var nodesHtml = state.nodes.map(renderPulpitNodeHtml).join("");
+
+      return [
+        "<div class=\"v1-pulpit-canvas-shell\">",
+        "<div class=\"v1-pulpit-canvas\" id=\"v1PulpitCanvas\">",
+        nodesHtml,
+        "</div>",
+        "</div>"
       ].join("");
     }
 
@@ -1652,6 +1752,7 @@
       "import-tool": renderImportTool,
       "language-manager": renderLanguageManagerTool,
       shellcraft: renderShellCraftCanvasTool,
+      pulpit: renderPulpitCanvasTool,
 
       // --- ip-scanner tool keys ---
       "ip-library": renderIpLibraryTool,
@@ -1672,6 +1773,9 @@
       renderShellCraftLibrary: renderShellCraftLibrary,
       renderCanvasBlockHtml: renderCanvasBlockHtml,
       renderShellCraftInspector: renderShellCraftInspector,
+      renderPulpitLibrary: renderPulpitLibrary,
+      renderPulpitNodeHtml: renderPulpitNodeHtml,
+      renderPulpitInspector: renderPulpitInspector,
       renderNetworkMonitorConnectionsRows: renderNetworkMonitorConnectionsRows,
       renderNetworkMonitorArpRows: renderNetworkMonitorArpRows,
       renderNetworkMonitorConnectionsGrouped: renderNetworkMonitorConnectionsGrouped,

@@ -1119,6 +1119,8 @@
       cardB.classList.toggle("is-versions-view", toolA === "versions");
       cardA.classList.toggle("is-shellcraft-view", toolB === "shellcraft");
       cardB.classList.toggle("is-shellcraft-view", toolA === "shellcraft");
+      cardA.classList.toggle("is-pulpit-view", toolB === "pulpit");
+      cardB.classList.toggle("is-pulpit-view", toolA === "pulpit");
       detachedCards[toolA] = cardB;
       detachedCards[toolB] = cardA;
     }
@@ -1137,6 +1139,7 @@
       card.setAttribute("data-detached-tool", tool);
       card.classList.toggle("is-versions-view", tool === "versions");
       card.classList.toggle("is-shellcraft-view", tool === "shellcraft");
+      card.classList.toggle("is-pulpit-view", tool === "pulpit");
 
       var header = document.createElement("div");
       header.className = "v1-detached-tool-head";
@@ -1707,6 +1710,9 @@
         renderShellCraftLibrary: panelContentRuntime && panelContentRuntime.renderShellCraftLibrary,
         renderCanvasBlockHtml: panelContentRuntime && panelContentRuntime.renderCanvasBlockHtml,
         renderShellCraftInspector: panelContentRuntime && panelContentRuntime.renderShellCraftInspector,
+        renderPulpitLibrary: panelContentRuntime && panelContentRuntime.renderPulpitLibrary,
+        renderPulpitNodeHtml: panelContentRuntime && panelContentRuntime.renderPulpitNodeHtml,
+        renderPulpitInspector: panelContentRuntime && panelContentRuntime.renderPulpitInspector,
         renderNetworkMonitorConnectionsRows: panelContentRuntime && panelContentRuntime.renderNetworkMonitorConnectionsRows,
         renderNetworkMonitorArpRows: panelContentRuntime && panelContentRuntime.renderNetworkMonitorArpRows,
         renderNetworkMonitorConnectionsGrouped: panelContentRuntime && panelContentRuntime.renderNetworkMonitorConnectionsGrouped,
@@ -2010,6 +2016,13 @@
         return;
       }
 
+      if (tool === "pulpit") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wirePulpitCanvas) {
+          panelInteractionsRuntime.wirePulpitCanvas(scope);
+        }
+        return;
+      }
+
       if (tool === "results-ip") { // ip-scanner tool
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireResultsIpTable) {
           panelInteractionsRuntime.wireResultsIpTable(scope);
@@ -2265,6 +2278,7 @@
         if (v1MainCard) {
           v1MainCard.classList.remove("is-versions-view");
           v1MainCard.classList.remove("is-shellcraft-view");
+          v1MainCard.classList.remove("is-pulpit-view");
         }
         if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + tr("noActiveTab"));
         if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + tr("noActiveTab");
@@ -2279,6 +2293,7 @@
       if (v1MainCard) {
         v1MainCard.classList.toggle("is-versions-view", activeTool === "versions");
         v1MainCard.classList.toggle("is-shellcraft-view", activeTool === "shellcraft");
+        v1MainCard.classList.toggle("is-pulpit-view", activeTool === "pulpit");
       }
       applyDetachedCardState();
       if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + activeTool);
@@ -2378,6 +2393,15 @@
       }
     }
 
+    function refreshPulpitPanels() {
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wirePulpitLibrary) {
+        panelInteractionsRuntime.wirePulpitLibrary();
+      }
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wirePulpitInspector) {
+        panelInteractionsRuntime.wirePulpitInspector();
+      }
+    }
+
     // Exposed for LS/RS's generic-content-slot mechanism
     // (tool-content-runtime.js's "ip-library" entry) - reuses the exact
     // same wiring CS's own ip-library tab already calls, which is why it
@@ -2412,6 +2436,7 @@
       wireToolRuntime: wireToolRuntime,
       stripIds: stripIds,
       refreshShellCraftPanels: refreshShellCraftPanels,
+      refreshPulpitPanels: refreshPulpitPanels,
       wireIpLibraryPanel: wireIpLibraryPanel,
       wireNetworkMonitorLeftPanel: wireNetworkMonitorLeftPanel,
       refreshDetachedTool: refreshDetachedTool,

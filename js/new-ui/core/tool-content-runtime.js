@@ -42,6 +42,28 @@
     },
   };
 
+  toolContentRuntime["pulpit-library"] = {
+    render: function () {
+      return '<div id="v1PulpitLibrary" class="v1-pulpit-library"></div>';
+    },
+    wire: function () {
+      if (window.NetReconNewUI && window.NetReconNewUI.wirePulpitPanels) {
+        window.NetReconNewUI.wirePulpitPanels();
+      }
+    },
+  };
+
+  toolContentRuntime["pulpit-inspector"] = {
+    render: function () {
+      return '<div id="v1PulpitInspector" class="v1-pulpit-inspector"></div>';
+    },
+    wire: function () {
+      if (window.NetReconNewUI && window.NetReconNewUI.wirePulpitPanels) {
+        window.NetReconNewUI.wirePulpitPanels();
+      }
+    },
+  };
+
   var LOREM_PARAGRAPHS = [
     "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.",
     "Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt.",

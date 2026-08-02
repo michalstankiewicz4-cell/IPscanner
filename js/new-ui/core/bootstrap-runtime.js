@@ -434,6 +434,11 @@
         if (panelsRuntime && panelsRuntime.refreshShellCraftPanels) {
           panelsRuntime.refreshShellCraftPanels();
         }
+        // Same reasoning as ShellCraft above - Pulpit's Library/Inspector
+        // persistent mounts need an explicit re-render too.
+        if (panelsRuntime && panelsRuntime.refreshPulpitPanels) {
+          panelsRuntime.refreshPulpitPanels();
+        }
         // LS/RS generic-content-slot tools (tool-content-runtime.js) bake
         // tr() in at render time, so whichever one is currently active (if
         // any) needs a fresh render to pick up the new language too - a
@@ -459,6 +464,11 @@
       window.NetReconNewUI.wireShellCraftPanels = function () {
         if (panelsRuntime && panelsRuntime.refreshShellCraftPanels) {
           panelsRuntime.refreshShellCraftPanels();
+        }
+      };
+      window.NetReconNewUI.wirePulpitPanels = function () {
+        if (panelsRuntime && panelsRuntime.refreshPulpitPanels) {
+          panelsRuntime.refreshPulpitPanels();
         }
       };
       window.NetReconNewUI.wireIpLibraryPanel = function (rootEl) {
