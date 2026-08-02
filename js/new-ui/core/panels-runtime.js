@@ -1121,6 +1121,8 @@
       cardB.classList.toggle("is-shellcraft-view", toolA === "shellcraft");
       cardA.classList.toggle("is-pulpit-view", toolB === "pulpit");
       cardB.classList.toggle("is-pulpit-view", toolA === "pulpit");
+      cardA.classList.toggle("is-globe-view", toolB === "globe");
+      cardB.classList.toggle("is-globe-view", toolA === "globe");
       detachedCards[toolA] = cardB;
       detachedCards[toolB] = cardA;
     }
@@ -1140,6 +1142,7 @@
       card.classList.toggle("is-versions-view", tool === "versions");
       card.classList.toggle("is-shellcraft-view", tool === "shellcraft");
       card.classList.toggle("is-pulpit-view", tool === "pulpit");
+      card.classList.toggle("is-globe-view", tool === "globe");
 
       var header = document.createElement("div");
       header.className = "v1-detached-tool-head";
@@ -1701,12 +1704,18 @@
       });
     }
 
+    var globeRuntime = null;
+    if (window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes && window.NetReconNewUICore.newUiRuntimes.createGlobeRuntime) {
+      globeRuntime = window.NetReconNewUICore.newUiRuntimes.createGlobeRuntime();
+    }
+
     var panelInteractionsRuntime = null;
     if (window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes && window.NetReconNewUICore.newUiRuntimes.createPanelInteractionsRuntime) {
       panelInteractionsRuntime = window.NetReconNewUICore.newUiRuntimes.createPanelInteractionsRuntime({
         versionsData: versionsData,
         tr: tr,
         setStatusLine: setStatusLine,
+        globeRuntime: globeRuntime,
         renderShellCraftLibrary: panelContentRuntime && panelContentRuntime.renderShellCraftLibrary,
         renderCanvasBlockHtml: panelContentRuntime && panelContentRuntime.renderCanvasBlockHtml,
         renderShellCraftInspector: panelContentRuntime && panelContentRuntime.renderShellCraftInspector,
@@ -2025,6 +2034,13 @@
         return;
       }
 
+      if (tool === "globe") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireGlobeTool) {
+          panelInteractionsRuntime.wireGlobeTool(scope);
+        }
+        return;
+      }
+
       if (tool === "agent-profiles") { // shell
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireAgentProfileDetail) {
           panelInteractionsRuntime.wireAgentProfileDetail(scope);
@@ -2288,6 +2304,7 @@
           v1MainCard.classList.remove("is-versions-view");
           v1MainCard.classList.remove("is-shellcraft-view");
           v1MainCard.classList.remove("is-pulpit-view");
+          v1MainCard.classList.remove("is-globe-view");
         }
         if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + tr("noActiveTab"));
         if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + tr("noActiveTab");
@@ -2303,6 +2320,7 @@
         v1MainCard.classList.toggle("is-versions-view", activeTool === "versions");
         v1MainCard.classList.toggle("is-shellcraft-view", activeTool === "shellcraft");
         v1MainCard.classList.toggle("is-pulpit-view", activeTool === "pulpit");
+        v1MainCard.classList.toggle("is-globe-view", activeTool === "globe");
       }
       applyDetachedCardState();
       if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + activeTool);

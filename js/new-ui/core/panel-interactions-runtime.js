@@ -11,6 +11,7 @@
     var renderPulpitInspector = typeof deps.renderPulpitInspector === "function" ? deps.renderPulpitInspector : null;
     var renderAgentProfileLibrary = typeof deps.renderAgentProfileLibrary === "function" ? deps.renderAgentProfileLibrary : null;
     var renderAgentProfileDetailFields = typeof deps.renderAgentProfileDetailFields === "function" ? deps.renderAgentProfileDetailFields : null;
+    var globeRuntime = deps.globeRuntime || null;
 
     // Registered once here (this factory only runs once, at bootstrap) rather
     // than inside wireAiPermissionsTool - that function reruns on every
@@ -54,6 +55,15 @@
     var pulpitCanvasTeardown = null;
     var pulpitInspectorSelectedNodeId = "";
     var pulpitInspectorSuppressNextRender = false;
+
+    // Globe: same CS-mount-gets-torn-down-every-activation discipline as
+    // Pulpit's canvas above. globeBuildToken guards against a stale async
+    // build (engine load + geo_lookup calls) resolving after the user has
+    // already switched away from the tab - each wireGlobeTool() call bumps
+    // it, and any async continuation checks it's still the current one
+    // before touching the DOM or keeping a globe instance alive.
+    var globeTeardown = null;
+    var globeBuildToken = 0;
 
     // Agent Profiles: same selection+suppress-render mechanism as Pulpit's
     // inspector, relocated - LS (the profile name list) is the selection
@@ -1569,6 +1579,128 @@
       });
     }
 
+    // Globe: reads the same "netrecon_scan_results_v1" key
+    // navigation-runtime.js's own readScanResults() uses - duplicated
+    // locally rather than imported, same hand-duplication convention
+    // session-runtime.js already uses for other tools' localStorage keys.
+    function readScanResultsForGlobe() {
+      try {
+        var raw = window.localStorage ? window.localStorage.getItem("netrecon_scan_results_v1") : "";
+        if (!raw) return [];
+        var parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    // Same green-vs-neutral-gray convention cards.css's .v1-ip-status-dot
+    // already uses (is-up -> #2dcc71, everything else -> the same default
+    // gray unset dots use, #6b7483) - not a new palette.
+    function pointColorForStatusClass(statusClass) {
+      var cls = String(statusClass || "").toLowerCase();
+      if (cls.indexOf("is-up") >= 0) return "#2dcc71";
+      return "#6b7483";
+    }
+
+    // De-dupes by ip (scan results can list the same host more than once
+    // across scans) before firing one geo_lookup per unique IP in parallel -
+    // same Promise.allSettled usage as performHostEnrichment's own
+    // geo_lookup call, matches ip-api.com's free-tier rate limit closely
+    // enough not to need queueing for a typical scan.
+    function fetchGlobePoints(rows, platform) {
+      var byIp = {};
+      rows.forEach(function (r) { if (r && r.ip) byIp[r.ip] = r; });
+      var ips = Object.keys(byIp);
+      return Promise.allSettled(ips.map(function (ip) {
+        return Promise.resolve(platform.invoke("geo_lookup", { ip: ip })).catch(function () { return null; });
+      })).then(function (results) {
+        var points = [];
+        results.forEach(function (res, i) {
+          if (res.status !== "fulfilled" || !res.value) return;
+          var geo = res.value;
+          if (typeof geo.lat !== "number" || typeof geo.lon !== "number") return;
+          var row = byIp[ips[i]];
+          points.push({
+            lat: geo.lat,
+            lng: geo.lon,
+            label: escapeHtml(row.ip) + (row.hostname && row.hostname !== "-" ? " (" + escapeHtml(row.hostname) + ")" : ""),
+            color: pointColorForStatusClass(row.statusClass),
+          });
+        });
+        return points;
+      });
+    }
+
+    // CS-only (no LS/RS) - the mount gets torn down/recreated on every tab
+    // (re)activation, same as wirePulpitCanvas above, so it needs the same
+    // explicit teardown-before-rewire discipline rather than a stable-panel
+    // bind-guard. Building a globe is async (lazy engine load + per-IP
+    // geo_lookup calls) so globeBuildToken guards every async continuation
+    // against a stale resolution landing after the user has already
+    // switched away from the tab.
+    function wireGlobeTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
+      if (!root) return;
+      // Resolve by class, not id - detached/floating tool windows strip
+      // ids via panels-runtime.js's stripIds(), same reasoning as
+      // wirePulpitCanvas's canvasEl lookup.
+      var containerEl = root.querySelector(".v1-globe-shell");
+      if (!containerEl || !globeRuntime) return;
+
+      if (globeTeardown) {
+        globeTeardown();
+        globeTeardown = null;
+      }
+      var myToken = ++globeBuildToken;
+
+      var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+      var invoke = platform && typeof platform.getInvoke === "function" ? platform.getInvoke() : null;
+
+      if (!invoke) {
+        // www/parity build - geo_lookup is a Tauri command, unavailable in
+        // the browser. Scanning itself is desktop-only anyway (raw
+        // sockets), so this mirrors how other scan-dependent tools already
+        // behave there - no browser-fetch fallback to ip-api.com directly.
+        containerEl.innerHTML = "<div class=\"v1-globe-empty\">" + escapeHtml(tr("globeEmptyWww")) + "</div>";
+        return;
+      }
+
+      var rows = readScanResultsForGlobe();
+      if (!rows.length) {
+        containerEl.innerHTML = "<div class=\"v1-globe-empty\">" + escapeHtml(tr("globeEmptyNoResults")) + "</div>";
+        return;
+      }
+
+      containerEl.innerHTML = "<div class=\"v1-globe-loading\">" + escapeHtml(tr("globeLoading")) + "</div>";
+
+      fetchGlobePoints(rows, platform).then(function (points) {
+        if (myToken !== globeBuildToken || !document.body.contains(containerEl)) return;
+        if (!points.length) {
+          containerEl.innerHTML = "<div class=\"v1-globe-empty\">" + escapeHtml(tr("globeEmptyNoGeo")) + "</div>";
+          return;
+        }
+        // globe.gl needs an empty container to mount its own <canvas> into.
+        containerEl.innerHTML = "";
+        return globeRuntime.buildGlobe(containerEl, points).then(function (instance) {
+          if (myToken !== globeBuildToken || !document.body.contains(containerEl)) {
+            // Switched away mid-load - pause immediately rather than
+            // leaving a live instance with nothing referencing it.
+            globeRuntime.destroyGlobe(instance);
+            return;
+          }
+          globeTeardown = function () {
+            globeRuntime.destroyGlobe(instance);
+          };
+        });
+      }).catch(function () {
+        if (myToken !== globeBuildToken || !document.body.contains(containerEl)) return;
+        containerEl.innerHTML = "<div class=\"v1-globe-empty\">" + escapeHtml(tr("globeLoadError")) + "</div>";
+      });
+    }
+
     function wirePulpitInspector() {
       var mount = document.getElementById("v1PulpitInspector");
       if (!mount || !renderPulpitInspector) return;
@@ -2863,6 +2995,7 @@
       wirePulpitLibrary: wirePulpitLibrary,
       wirePulpitCanvas: wirePulpitCanvas,
       wirePulpitInspector: wirePulpitInspector,
+      wireGlobeTool: wireGlobeTool,
       wireAgentProfileLibrary: wireAgentProfileLibrary,
       wireAgentProfileDetail: wireAgentProfileDetail,
       // ip-scanner tool

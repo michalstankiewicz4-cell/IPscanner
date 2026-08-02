@@ -977,7 +977,7 @@
     // home), so a cross-section toggle call always no-ops. This function
     // manages visibility itself via inline style.display (wins by
     // specificity over both sections' CSS) instead. For every other tool
-    // (versions/presets/general/about/license/topology/globe/import-tool/
+    // (versions/presets/general/about/license/globe/import-tool/
     // language-manager/shellcraft - CS-only today, no tool-content-
     // runtime.js entry) fall back to CS's own already-proven
     // buildDetailHtml()/wireToolRuntime() (panel-content-runtime.js/
@@ -1400,8 +1400,7 @@
     // shell dispatch mechanism (activity bar clicks) with embedded
     // ip-scanner-specific special cases below - not cleanly separable
     // without restructuring. Only binds to the Results/Scanner buttons
-    // (the only ones carrying data-activity); Topology/Globe are handled
-    // generically by bindToolClicks()'s fromActivityRail branch below.
+    // (the only ones carrying data-activity).
     function bindActivityButtons() {
       document.querySelectorAll(".v1-activity [data-activity]").forEach(function (btn) {
         btn.addEventListener("click", function (e) {

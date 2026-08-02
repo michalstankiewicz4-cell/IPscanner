@@ -161,21 +161,13 @@
       labelKey: "ipScanner",
       ui: { showInLeftPanel: true, leftOrder: 10 }
     },
-    topology: {
-      titleKey: "toolTitle_topology",
-      textKey: "toolText_topology",
-      points: ["Canvas graph", "Live filters", "Node hover telemetry"],
-      icon: "🕸",
-      labelKey: "tabLabel_topology",
-      ui: { showAsTab: true, order: 120 }
-    },
     globe: {
       titleKey: "toolTitle_globe",
       textKey: "toolText_globe",
-      points: ["D3 globe", "Country markers", "Geo enrichment"],
+      points: ["Interactive 3D globe", "Scanned host markers", "On-demand geolocation"],
       icon: "🌍",
       labelKey: "tabLabel_globe",
-      ui: { showAsTab: true, order: 130 }
+      ui: { showAsTab: true, order: 120 }
     },
     "ip-library": {
       titleKey: "toolTitle_ip_library",

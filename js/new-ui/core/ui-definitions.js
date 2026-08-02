@@ -153,7 +153,7 @@
     "show-unfinished-tools": {
       label: "Show unfinished tools",
       purposeKey: "tipActionShowUnfinishedTools",
-      purpose: "Pokazuje/ukrywa niedokonczone narzedzia (Topology, Globe) w menu Tools i LRSB.",
+      purpose: "Pokazuje/ukrywa niedokonczone narzedzia w menu Tools i LRSB.",
       behavior: "toggle-unfinished-tools",
     },
     "window-close": {

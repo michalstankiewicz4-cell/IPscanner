@@ -82,7 +82,6 @@
       terminalTab: "Terminal",
       consoleTab: "Console",
       toolTitle_scan_runner: "Scan Runner",
-      toolTitle_topology: "Topology Map",
       toolTitle_globe: "World Globe",
       toolTitle_ip_library: "IP Library",
       toolTitle_shellcraft: "ShellCraft",
@@ -104,17 +103,15 @@
       // Only tools with no working key, or whose only candidate key was for
       // different (longer/content-title) text than the actual tab label,
       // get one here: versions/shellcraft had no id-based translation at
-      // all; language-manager/topology/globe's only existing keys
-      // (langManagerTitle/toolTitle_topology/toolTitle_globe) are the
-      // longer in-content <h4> title ("Language Manager"/"Topology Map"/
-      // "World Globe"), not the shorter tab text - pre-existing mismatches
-      // in applyStaticTranslations(), not introduced by this; config/
-      // shellcraft-library/shellcraft-inspector are new RS/LS-only entries
-      // with nothing to reuse.
+      // all; language-manager/globe's only existing keys
+      // (langManagerTitle/toolTitle_globe) are the longer in-content <h4>
+      // title ("Language Manager"/"World Globe"), not the shorter tab text -
+      // pre-existing mismatches in applyStaticTranslations(), not introduced
+      // by this; config/shellcraft-library/shellcraft-inspector are new
+      // RS/LS-only entries with nothing to reuse.
       tabLabel_language_manager: "Language",
       tabLabel_versions: "Versions",
       tabLabel_shellcraft: "ShellCraft",
-      tabLabel_topology: "Topology",
       tabLabel_globe: "Globe",
       tabLabel_network_monitor: "Network Monitor",
       tabLabel_email_recon: "Email Recon",
@@ -127,8 +124,12 @@
       toolResultsIpText: "Table of discovered hosts, open ports, and enrichment data.",
       toolText_results_ip: "Table of discovered hosts, open ports, and enrichment data.",
       toolText_scan_runner: "IP range, port presets, concurrent probing, and result persistence.",
-      toolText_topology: "Host relationship view with filters by port and response time.",
-      toolText_globe: "Host geolocation map and communication endpoints.",
+      toolText_globe: "Interactive 3D globe plotting your scanned hosts by geolocation, fetched on demand.",
+      globeLoading: "Loading globe...",
+      globeEmptyWww: "Globe requires the desktop app - geolocation lookups aren't available in the browser build.",
+      globeEmptyNoResults: "Run a scan first - no hosts to plot yet.",
+      globeEmptyNoGeo: "Couldn't resolve locations for any scanned host.",
+      globeLoadError: "Failed to load the globe.",
       toolText_network_monitor: "Local TCP/UDP connections with owning process names, plus the LAN's ARP table with vendor lookup.",
       toolText_email_recon: "Look up an email address across breach, paste, and public-profile OSINT sources.",
       toolText_ip_library: "Country IP range library with PowerShell-based update and local cache.",
@@ -157,11 +158,11 @@
       shellcraftInspectorTimeLabel: "Time (HH:MM)",
       shellcraftInspectorIntervalMinutesLabel: "Repeat every (minutes, 0 = off)",
       shellcraftInspectorRunBtn: "Run",
-      toolTitle_pulpit: "Pulpit",
-      tabLabel_pulpit: "Pulpit",
+      toolTitle_pulpit: "Topology",
+      tabLabel_pulpit: "Topology",
       tabLabel_pulpit_library: "Library",
       tabLabel_pulpit_inspector: "Inspector",
-      toolText_pulpit: "Pulpit is a manually-curated visual inventory of computers: add icons for remote, local, virtual, or your own devices, drag them anywhere, and keep notes on each.",
+      toolText_pulpit: "A manually-curated visual topology of computers: add icons for remote, local, virtual, or your own devices, drag them anywhere, and keep notes on each.",
       pulpitLibraryHeading: "Add computer",
       pulpitAddRemoteBtn: "Remote computer",
       pulpitAddLocalBtn: "Local computer",
@@ -776,7 +777,7 @@
       tipActionAutoArrange: "Automatically arrange detached windows.",
       tipActionWindowClose: "Close application window.",
       tipActionBlurIp: "Blur visible IP addresses/hostnames (safe screen sharing).",
-      tipActionShowUnfinishedTools: "Show/hide unfinished tools (Topology, Globe) in the Tools menu and LRSB.",
+      tipActionShowUnfinishedTools: "Show/hide unfinished tools in the Tools menu and LRSB.",
       devFullResetButtonTitle: "Dev full reset button",
       devFullResetConfirmTitle: "Full Reset",
       devFullResetConfirmMessage: "Reset app memory and clear all saved state? The app will reload.",
@@ -854,7 +855,6 @@
       terminalTab: "Terminal",
       consoleTab: "Konsola",
       toolTitle_scan_runner: "Scan Runner",
-      toolTitle_topology: "Mapa topologii",
       toolTitle_globe: "Glob",
       toolTitle_ip_library: "Biblioteka IP",
       toolTitle_shellcraft: "ShellCraft",
@@ -872,7 +872,6 @@
       tabLabel_language_manager: "Język",
       tabLabel_versions: "Wersje",
       tabLabel_shellcraft: "ShellCraft",
-      tabLabel_topology: "Topologia",
       tabLabel_globe: "Globus",
       tabLabel_network_monitor: "Monitor Sieci",
       tabLabel_email_recon: "Email Recon",
@@ -885,8 +884,12 @@
       toolResultsIpText: "Tabela wykrytych hostów, portów i wzbogaconych danych.",
       toolText_results_ip: "Tabela wykrytych hostow, portow i wzbogaconych danych.",
       toolText_scan_runner: "Zakres IP, presety portów, równoległe sondowanie i zapis wyników.",
-      toolText_topology: "Widok relacji hostów z filtrowaniem po porcie i czasie odpowiedzi.",
-      toolText_globe: "Mapa geolokalizacji hostów i punktów komunikacji.",
+      toolText_globe: "Interaktywny globus 3D pokazujący zeskanowane hosty wg geolokalizacji, pobieranej na żądanie.",
+      globeLoading: "Ladowanie globu...",
+      globeEmptyWww: "Globus wymaga aplikacji desktopowej - wyszukiwanie geolokalizacji nie jest dostepne w wersji przegladarkowej.",
+      globeEmptyNoResults: "Najpierw uruchom skan - nie ma jeszcze hostow do wyswietlenia.",
+      globeEmptyNoGeo: "Nie udalo sie ustalic lokalizacji zadnego zeskanowanego hosta.",
+      globeLoadError: "Nie udalo sie zaladowac globu.",
       toolText_network_monitor: "Lokalne połączenia TCP/UDP z nazwami procesów właściciela oraz tabela ARP sieci LAN z rozpoznawaniem producenta.",
       toolText_email_recon: "Sprawdź adres e-mail w źródłach OSINT: wycieki, pasty i publiczne profile.",
       toolText_ip_library: "Biblioteka zakresow IP krajow z aktualizacja przez PowerShell i cache lokalnym.",
@@ -915,11 +918,11 @@
       shellcraftInspectorTimeLabel: "Godzina (GG:MM)",
       shellcraftInspectorIntervalMinutesLabel: "Powtarzaj co (minuty, 0 = wylaczone)",
       shellcraftInspectorRunBtn: "Uruchom",
-      toolTitle_pulpit: "Pulpit",
-      tabLabel_pulpit: "Pulpit",
+      toolTitle_pulpit: "Topologia",
+      tabLabel_pulpit: "Topologia",
       tabLabel_pulpit_library: "Biblioteka",
       tabLabel_pulpit_inspector: "Inspektor",
-      toolText_pulpit: "Pulpit to recznie prowadzony wizualny spis komputerow: dodawaj ikony zdalnych, lokalnych, wirtualnych lub wlasnych urzadzen, przeciagaj je dowolnie i prowadz notatki do kazdego z nich.",
+      toolText_pulpit: "Recznie prowadzona wizualna topologia komputerow: dodawaj ikony zdalnych, lokalnych, wirtualnych lub wlasnych urzadzen, przeciagaj je dowolnie i prowadz notatki do kazdego z nich.",
       pulpitLibraryHeading: "Dodaj komputer",
       pulpitAddRemoteBtn: "Komputer zdalny",
       pulpitAddLocalBtn: "Komputer lokalny",
@@ -1534,7 +1537,7 @@
       tipActionAutoArrange: "Automatyczne rozmieszczenie odpiętych okien.",
       tipActionWindowClose: "Zamykanie okna aplikacji.",
       tipActionBlurIp: "Rozmywa widoczne adresy IP/hostname na ekranie (bezpieczne udostepnianie ekranu).",
-      tipActionShowUnfinishedTools: "Pokazuje/ukrywa niedokonczone narzedzia (Topology, Globe) w menu Tools i LRSB.",
+      tipActionShowUnfinishedTools: "Pokazuje/ukrywa niedokonczone narzedzia w menu Tools i LRSB.",
       devFullResetButtonTitle: "Przycisk pelnego resetu dev",
       devFullResetConfirmTitle: "Pelny reset",
       devFullResetConfirmMessage: "Zresetowac pamiec aplikacji i wyczyscic wszystkie zapisane dane? Aplikacja zostanie przeladowana.",

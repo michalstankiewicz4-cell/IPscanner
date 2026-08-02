@@ -1,0 +1,57 @@
+/* shell: Globe - CS-only tab (no LS/RS), a lazy-loaded globe.gl WebGL
+   canvas plotting scanned hosts by geolocation. */
+
+/* Same .v1-card overflow:auto fix ShellCraft/Pulpit need (cards.css would
+   otherwise add a second, outer scrollbar around the globe shell) - also
+   required here for a more concrete reason: buildGlobe() reads
+   containerEl.clientWidth/clientHeight at build time, so the container
+   needs real, edge-to-edge rendered dimensions before that call, not
+   padding/scroll eating into them. */
+#v1MainCard.is-globe-view {
+  overflow: hidden;
+}
+
+#v1MainCard.is-globe-view #v1ToolDetail {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Same fix, mirrored for a detached/floating Globe window. */
+.v1-detached-tool-card.is-globe-view .v1-detached-tool-body {
+  overflow: hidden;
+}
+
+.v1-detached-tool-card.is-globe-view .tool-detail {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.v1-globe-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-elev);
+  position: relative;
+}
+
+.v1-globe-loading,
+.v1-globe-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt-dim);
+  font-size: 13px;
+  text-align: center;
+  padding: 24px;
+}

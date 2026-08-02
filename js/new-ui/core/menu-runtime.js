@@ -384,11 +384,7 @@
       if (behavior === "toggle-unfinished-tools") {
         var unfinishedSelectors = [
           "#v1ActivityLoremIpsum",
-          "#v1ActivityTopology",
-          "#v1ActivityGlobe",
           ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]",
-          ".v1-menu-dd-item[data-tool=\"topology\"]",
-          ".v1-menu-dd-item[data-tool=\"globe\"]",
           ".v1-menu-dd-item[data-menu-action=\"countries\"]",
           "[data-general-ui-switch]",
           // TCP SYN has zero backend support (no SYN scanning code exists

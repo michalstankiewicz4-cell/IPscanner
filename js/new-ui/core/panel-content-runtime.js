@@ -348,7 +348,7 @@
 
     // shell: throwaway placeholder tool (static lorem ipsum) - a first,
     // deliberately minimal step toward exploring an alternate UI later;
-    // gated behind "Show unfinished tools" like Topology/Globe.
+    // gated behind Options -> "Show unfinished tools".
     function renderLoremIpsumTool() {
       var paragraphs = [
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
@@ -860,6 +860,16 @@
         "<textarea id=\"v1InspectorPulpitNote\" rows=\"3\" data-inspector-field=\"note\">" + escapeHtml(node.note) + "</textarea>",
         "</div>"
       ].join("");
+    }
+
+    // shell: Globe - CS-only tab (no LS/RS), a lazy-loaded globe.gl WebGL
+    // canvas plotting scanned hosts by geolocation. Just an empty, sized
+    // shell here - wireGlobeTool (panel-interactions-runtime.js) fills it
+    // in async (loading/empty states, then the actual globe) since building
+    // it requires the vendored engine to finish loading and geo_lookup
+    // calls to resolve, neither of which this synchronous renderer can do.
+    function renderGlobeTool() {
+      return "<div class=\"v1-globe-shell\" id=\"v1GlobeContainer\"></div>";
     }
 
     function renderPulpitCanvasTool() {
@@ -1967,6 +1977,7 @@
       "language-manager": renderLanguageManagerTool,
       shellcraft: renderShellCraftCanvasTool,
       pulpit: renderPulpitCanvasTool,
+      globe: renderGlobeTool,
       "agent-profiles": renderAgentProfileDetailTool,
 
       // --- ip-scanner tool keys ---

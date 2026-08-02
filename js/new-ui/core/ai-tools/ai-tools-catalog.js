@@ -100,16 +100,14 @@
   ];
 
   // A handful of ids are ambiguous by name alone (a user asking for "the
-  // IP scanner" almost always means "scan-runner", not "results-ip"; "a
-  // network map" could mean either "topology" or "globe") - kept as a
-  // small static supplement to the dynamic list below, not a replacement
-  // for it, so the model gets both full coverage and disambiguation for
-  // the ids people actually confuse.
+  // IP scanner" almost always means "scan-runner", not "results-ip") - kept
+  // as a small static supplement to the dynamic list below, not a
+  // replacement for it, so the model gets both full coverage and
+  // disambiguation for the ids people actually confuse.
   var ID_HINTS = {
     "scan-runner": "the IP Scanner's scan/config view - what \"the IP scanner\" almost always means",
     "results-ip": "the IP Scanner's results table specifically",
-    topology: "2D network map (node/edge graph)",
-    globe: "3D network map (globe visualization)",
+    globe: "3D globe plotting scanned hosts by geolocation",
   };
 
   function listOpenableToolIds() {
