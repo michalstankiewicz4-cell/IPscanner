@@ -1680,17 +1680,19 @@
       var myToken = ++globeBuildToken;
 
       var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
-      var invoke = platform && typeof platform.getInvoke === "function" ? platform.getInvoke() : null;
 
-      if (!invoke) {
-        // www/parity build - geo_lookup is a Tauri command, unavailable in
-        // the browser. Scanning itself is desktop-only anyway (raw
-        // sockets), so this mirrors how other scan-dependent tools already
-        // behave there - no browser-fetch fallback to ip-api.com directly.
-        containerEl.innerHTML = "<div class=\"v1-globe-empty\">" + escapeHtml(tr("globeEmptyWww")) + "</div>";
-        return;
-      }
-
+      // www/parity build has no geo_lookup (a Tauri command) - but a session
+      // file saved on desktop with the Location column enabled already has
+      // lat/lon persisted on each row, so this doesn't need to bail out
+      // entirely. platform.invoke() rejects safely on www (platform-runtime.js's
+      // own invoke() always returns a Promise, never throws synchronously),
+      // and fetchGlobePoints() below already swallows a failed lookup per-IP
+      // - rows with persisted coordinates still render, only ones missing
+      // both persisted data AND a working live lookup fall through to the
+      // existing "no geo data" empty state further down. A genuinely live
+      // fetch straight to ip-api.com from the browser isn't an option here -
+      // its free tier has no HTTPS, so an HTTPS-served page like this one
+      // would have the request blocked as mixed content regardless.
       var rows = readScanResultsForGlobe();
       if (!rows.length) {
         containerEl.innerHTML = "<div class=\"v1-globe-empty\">" + escapeHtml(tr("globeEmptyNoResults")) + "</div>";
