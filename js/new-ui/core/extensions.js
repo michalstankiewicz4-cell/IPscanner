@@ -94,7 +94,7 @@
       }
     }
 
-    function registerExtension(rawManifest) {
+    function registerExtension(rawManifest, programSource) {
       var checked = validateManifest(rawManifest);
       if (!checked.ok) return checked;
 
@@ -109,7 +109,13 @@
         version: manifest.version,
         description: manifest.description,
         permissions: manifest.permissions,
-        contributions: manifest.contributions
+        contributions: manifest.contributions,
+        // The addon's own program (tools/<id>/main.js), if it shipped one -
+        // not part of the manifest schema itself (validateManifest doesn't
+        // know about it), just an extra installation detail carried
+        // alongside it so it survives persist()/loadFromStorage() and can
+        // be re-run on every boot - see panels-runtime.js's loadAddonProgram().
+        programSource: String(programSource || "")
       });
 
       rebuildContributions();
@@ -122,8 +128,8 @@
       } catch (_) {}
     }
 
-    function installExtension(rawManifest) {
-      var result = registerExtension(rawManifest);
+    function installExtension(rawManifest, programSource) {
+      var result = registerExtension(rawManifest, programSource);
       if (result.ok) persist();
       return result;
     }
@@ -149,7 +155,7 @@
 
       var loaded = [];
       parsed.forEach(function (manifest) {
-        var result = registerExtension(manifest);
+        var result = registerExtension(manifest, manifest && manifest.programSource);
         if (result.ok) loaded.push(result.manifest.id);
       });
       return loaded;
@@ -202,7 +208,8 @@
           version: item.version,
           description: item.description || "",
           permissions: (item.permissions || []).slice(),
-          contributions: item.contributions
+          contributions: item.contributions,
+          programSource: item.programSource || ""
         };
       });
     }

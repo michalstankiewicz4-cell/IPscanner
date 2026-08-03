@@ -464,12 +464,19 @@
 
       return promptMissingExtensions(missing).then(function (toInstall) {
         if (!toInstall || !toInstall.length) return;
+        var ui = window.NetReconNewUI;
         toInstall.forEach(function (entry) {
           try {
-            if (typeof extensionHost.installExtension === "function") extensionHost.installExtension(JSON.parse(entry.manifestJson));
+            var parsed = JSON.parse(entry.manifestJson);
+            if (typeof extensionHost.installExtension === "function") {
+              extensionHost.installExtension(parsed, parsed && parsed.programSource);
+            }
+            // Reinstall alone only re-registers the manifest - the addon's
+            // own program (if it shipped one) needs an explicit run, same
+            // as boot/fresh-install already do via registerExtensionCommands.
+            if (ui && typeof ui.loadAddonProgram === "function") ui.loadAddonProgram(parsed && parsed.programSource);
           } catch (_) {}
         });
-        var ui = window.NetReconNewUI;
         if (ui && typeof ui.syncExtensionToolUi === "function") ui.syncExtensionToolUi();
       });
     }

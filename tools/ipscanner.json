@@ -4,33 +4,6 @@
   "description": "No-admin port scan for a single target IP, entirely client-side (works on www too). Five selectable techniques (Fetch, Image, Link/CSS, WebSocket, IFrame), each an honest heuristic, not a real scan - see the tool text and docs/PROGRESS.md.",
   "version": "2.6.0",
   "contributions": {
-    "commands": {
-      "heuristicScanPortsFetch": {
-        "type": "fetch",
-        "ports": [80, 443, 445, 3306, 3389, 5432, 8080, 8443],
-        "timeoutMs": 1500
-      },
-      "heuristicScanPortsImg": {
-        "type": "img",
-        "ports": [80, 443, 445, 3306, 3389, 5432, 8080, 8443],
-        "timeoutMs": 1500
-      },
-      "heuristicScanPortsLink": {
-        "type": "link",
-        "ports": [80, 443, 445, 3306, 3389, 5432, 8080, 8443],
-        "timeoutMs": 1500
-      },
-      "heuristicScanPortsWebsocket": {
-        "type": "websocket",
-        "ports": [80, 443, 445, 3306, 3389, 5432, 8080, 8443],
-        "timeoutMs": 1500
-      },
-      "heuristicScanPortsIframe": {
-        "type": "iframe",
-        "ports": [80, 443, 445, 3306, 3389, 5432, 8080, 8443],
-        "timeoutMs": 1500
-      }
-    },
     "tools": {
       "ip-scanner-heuristic-ls": {
         "title": "IP Scanner Heuristic JS",

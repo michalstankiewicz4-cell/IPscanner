@@ -23,12 +23,17 @@
     var catalogEntriesCache = null;
     var catalogFetchPromise = null;
 
-    // shell: "Load from file..." has two backends - the native file dialog
-    // (open_extension_manifest_dialog, desktop-only) and this plain
-    // <input type="file"> + FileReader fallback, which needs no Tauri IPC at
-    // all and works identically on www. One hidden input lives at module
-    // scope (not recreated per Import Tool mount, which would otherwise leak
-    // an orphaned <input> into <body> every time #v1ToolDetail re-renders) -
+    // shell: "Load from file..." has two backends - the native folder
+    // dialog (open_extension_manifest_folder_dialog, desktop-only) and this
+    // plain <input type="file" webkitdirectory> fallback, which needs no
+    // Tauri IPC at all and works identically on www. A folder picker (not a
+    // single-file one) so a locally-imported addon can bring its own
+    // program too, exactly mirroring the GitHub catalog's own
+    // tools/<id>.json + tools/<id>/main.js layout (see fetchCatalog above) -
+    // a folder copied straight out of that repo's tools/ folder imports
+    // identically here. One hidden input lives at module scope (not
+    // recreated per Import Tool mount, which would otherwise leak an
+    // orphaned <input> into <body> every time #v1ToolDetail re-renders) -
     // its change handler always reads the CURRENT mount's outputEl/
     // installManifestObject via the two mutable refs below, updated at the
     // top of every wireImportToolButtons() call, so it never acts on a
@@ -37,31 +42,74 @@
     var activeOutputEl = null;
     var activeInstallManifestObject = null;
 
+    // Finds the single .json manifest file directly inside the picked
+    // folder (shallowest relative path, i.e. exactly one segment after the
+    // root folder name) and, if the manifest's basename has a matching
+    // sibling folder, that folder's main.js anywhere in the selection -
+    // mirrors fetchCatalog()'s own basename-matching discipline.
+    function pickManifestAndProgramFromFileList(files) {
+      var manifestFile = null;
+      var manifestDepth = Infinity;
+      for (var i = 0; i < files.length; i++) {
+        var relPath = files[i].webkitRelativePath || files[i].name;
+        if (!/\.json$/i.test(relPath)) continue;
+        var depth = relPath.split("/").length;
+        if (depth < manifestDepth) {
+          manifestFile = files[i];
+          manifestDepth = depth;
+        }
+      }
+      if (!manifestFile) return Promise.resolve(null);
+
+      var manifestName = manifestFile.name.replace(/\.json$/i, "");
+      var programFile = null;
+      for (var j = 0; j < files.length; j++) {
+        var segments = (files[j].webkitRelativePath || files[j].name).split("/");
+        if (segments.length >= 2
+          && segments[segments.length - 1] === "main.js"
+          && segments[segments.length - 2] === manifestName) {
+          programFile = files[j];
+          break;
+        }
+      }
+
+      return manifestFile.text().then(function (manifestText) {
+        return (programFile ? programFile.text() : Promise.resolve("")).then(function (programSource) {
+          return { manifestText: manifestText, programSource: programSource };
+        });
+      });
+    }
+
     function triggerWebFileImport() {
       if (!webFileInput) {
         webFileInput = document.createElement("input");
         webFileInput.type = "file";
-        webFileInput.accept = ".json,application/json";
+        webFileInput.webkitdirectory = true;
         webFileInput.style.display = "none";
         webFileInput.addEventListener("change", function () {
-          var file = webFileInput.files && webFileInput.files[0];
-          webFileInput.value = "";
-          if (!file) return;
-          var reader = new FileReader();
-          reader.onload = function () {
+          var files = webFileInput.files;
+          if (!files || !files.length) return;
+          // Clearing .value resets the SAME live FileList in place (not a
+          // fresh object) - do it only after every file has actually been
+          // read, or the async .text() reads below race against it and
+          // silently see zero files.
+          pickManifestAndProgramFromFileList(files).then(function (picked) {
+            webFileInput.value = "";
+            if (!picked) {
+              if (activeOutputEl) activeOutputEl.textContent = tr("extInvalidJson");
+              return;
+            }
             var manifest = null;
             try {
-              manifest = JSON.parse(String(reader.result || ""));
+              manifest = JSON.parse(picked.manifestText || "");
             } catch (_) {
               if (activeOutputEl) activeOutputEl.textContent = tr("extInvalidJson");
               return;
             }
-            if (activeInstallManifestObject) activeInstallManifestObject(manifest);
-          };
-          reader.onerror = function () {
+            if (activeInstallManifestObject) activeInstallManifestObject(manifest, "", picked.programSource);
+          }).catch(function () {
             if (activeOutputEl) activeOutputEl.textContent = tr("extInvalidJson");
-          };
-          reader.readAsText(file);
+          });
         });
         document.body.appendChild(webFileInput);
       }
@@ -70,9 +118,12 @@
 
     // shell: fetches the addon catalog from the repo's own tools/ GitHub
     // folder - groups files by basename so "<name>.json" pairs with a
-    // same-name image file ("<name>.png" etc.) as that addon's icon. Uses a
+    // same-name image file ("<name>.png" etc.) as that addon's icon, AND
+    // (new) a same-name subfolder as that addon's own program. Uses a
     // null-prototype object for grouping so a file literally named
     // "__proto__.json" can't shadow/pollute Object.prototype.
+    var CATALOG_RAW_BASE_URL = "https://raw.githubusercontent.com/" + CATALOG_OWNER + "/" + CATALOG_REPO + "/" + CATALOG_BRANCH + "/" + CATALOG_FOLDER + "/";
+
     function fetchCatalog() {
       return fetch(CATALOG_API_URL).then(function (res) {
         if (!res.ok) throw new Error("GitHub API " + res.status);
@@ -80,7 +131,13 @@
       }).then(function (files) {
         var groups = Object.create(null);
         (Array.isArray(files) ? files : []).forEach(function (f) {
-          if (!f || f.type !== "file" || typeof f.name !== "string") return;
+          if (!f || typeof f.name !== "string") return;
+          if (f.type === "dir") {
+            groups[f.name] = groups[f.name] || {};
+            groups[f.name].hasProgramDir = true;
+            return;
+          }
+          if (f.type !== "file") return;
           var dot = f.name.lastIndexOf(".");
           if (dot < 0) return;
           var base = f.name.slice(0, dot);
@@ -89,10 +146,24 @@
           if (ext === "json") groups[base].json = f;
           else if (CATALOG_IMAGE_EXTENSIONS.indexOf(ext) !== -1) groups[base].icon = f;
         });
-        var entries = Object.keys(groups).map(function (k) { return groups[k]; }).filter(function (g) { return g.json; });
+        var entries = Object.keys(groups).map(function (k) {
+          var g = groups[k];
+          g.base = k;
+          return g;
+        }).filter(function (g) { return g.json; });
         return Promise.all(entries.map(function (entry) {
           return fetch(entry.json.download_url).then(function (r) { return r.json(); }).then(function (manifest) {
-            return { manifest: manifest, iconUrl: entry.icon ? entry.icon.download_url : "" };
+            if (!entry.hasProgramDir) {
+              return { manifest: manifest, iconUrl: entry.icon ? entry.icon.download_url : "", programSource: "" };
+            }
+            // A 404 here just means the folder exists but has no main.js
+            // (or isn't laid out as expected) - stays a purely declarative
+            // addon, same as one with no program folder at all.
+            return fetch(CATALOG_RAW_BASE_URL + entry.base + "/main.js").then(function (r) {
+              return r.ok ? r.text() : "";
+            }).catch(function () { return ""; }).then(function (programSource) {
+              return { manifest: manifest, iconUrl: entry.icon ? entry.icon.download_url : "", programSource: programSource };
+            });
           }).catch(function () { return null; });
         }));
       }).then(function (results) {
@@ -209,8 +280,12 @@
       // then registers commands and syncs the dynamic UI. iconUrl (only set
       // for catalog installs) becomes each tool's default icon, so the
       // addon's own tools/<name>.png shows up in the activity bar/Tools menu
-      // without the manifest needing to reference it itself.
-      function installManifestObject(manifest, iconUrl) {
+      // without the manifest needing to reference it itself. programSource
+      // (the addon's own tools/<id>/main.js text, if it shipped one) gets
+      // persisted alongside the manifest and run via
+      // window.NetReconNewUI.registerAddonCommands - see extensions.js and
+      // panels-runtime.js's loadAddonProgram/registerExtensionCommands.
+      function installManifestObject(manifest, iconUrl, programSource) {
         if (!manifest || typeof manifest !== "object") {
           if (outputEl) outputEl.textContent = tr("extInvalidJson");
           return Promise.resolve(false);
@@ -228,13 +303,13 @@
         }
 
         function finishInstall() {
-          var result = extensionHost && extensionHost.installExtension ? extensionHost.installExtension(manifest) : { ok: false, error: tr("extInstallFail") };
+          var result = extensionHost && extensionHost.installExtension ? extensionHost.installExtension(manifest, programSource) : { ok: false, error: tr("extInstallFail") };
           if (!result.ok) {
             if (outputEl) outputEl.textContent = tr("extInstallFail") + "\n" + result.error;
             return false;
           }
 
-          registerExtensionCommands(result.manifest);
+          registerExtensionCommands(result.manifest, programSource);
           if (outputEl) outputEl.textContent = tr("extInstallOk") + "\n" + result.manifest.id + "@" + result.manifest.version;
           if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("extInstallOk") + " - " + result.manifest.id);
           if (window.NetReconNewUI && typeof window.NetReconNewUI.syncExtensionToolUi === "function") {
@@ -342,7 +417,7 @@
           if (btn.getAttribute("data-catalog-action") === "uninstall") {
             performUninstall(entry.manifest && entry.manifest.id);
           } else {
-            installManifestObject(entry.manifest, entry.iconUrl);
+            installManifestObject(entry.manifest, entry.iconUrl, entry.programSource);
           }
         });
       }
@@ -378,26 +453,28 @@
           var actionName = button.getAttribute("data-import-action");
 
           if (actionName === "load-file") {
-            // Prefer the native file dialog on desktop (matches the exact
-            // path shown/reviewed) - only reach for the web <input
-            // type="file"> fallback when Tauri invoke genuinely isn't there,
-            // not on every platform.invoke rejection (a real desktop error
-            // should still surface as extInvalidJson, not silently swap to
-            // the web picker).
+            // Prefer the native folder dialog on desktop (matches the exact
+            // path shown/reviewed, and can bring along the addon's own
+            // program - see open_extension_manifest_folder_dialog,
+            // src-tauri/src/main.rs) - only reach for the web <input
+            // type="file" webkitdirectory> fallback when Tauri invoke
+            // genuinely isn't there, not on every platform.invoke rejection
+            // (a real desktop error should still surface as extInvalidJson,
+            // not silently swap to the web picker).
             if (!platform.isDesktop()) {
               triggerWebFileImport();
               return;
             }
-            Promise.resolve(platform.invoke("open_extension_manifest_dialog", {}))
-              .then(function (text) {
+            Promise.resolve(platform.invoke("open_extension_manifest_folder_dialog", {}))
+              .then(function (picked) {
                 var manifest = null;
                 try {
-                  manifest = JSON.parse(String(text || ""));
+                  manifest = JSON.parse(String((picked && picked.manifestText) || ""));
                 } catch (_) {
                   if (outputEl) outputEl.textContent = tr("extInvalidJson");
                   return;
                 }
-                installManifestObject(manifest);
+                installManifestObject(manifest, "", picked && picked.programSource);
               })
               .catch(function (err) {
                 var message = (err && err.message) || err || "";

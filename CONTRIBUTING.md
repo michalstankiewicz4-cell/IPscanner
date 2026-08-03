@@ -190,9 +190,12 @@ Dopuszczone `contributions`:
     `ui.showAsTab` (domyslnie `true` = zakladka na srodku; `false` gdy
     narzedzie ma zyc wylacznie w LS/RS).
 - `contributions.commands` - komendy wywolywalne z `actions` powyzej. Dzis
-  jedyny obslugiwany typ: `{"type": "powershell", "script": "..."}` -
+  jedyny typ obslugiwany BEZPOSREDNIO tutaj (przez sam manifest, bez
+  wlasnego programu): `{"type": "powershell", "script": "..."}` -
   wykonywany przez istniejacy `run_powershell` (Tauri), gated na
-  `permissions` zawierajace `"powershell"`.
+  `permissions` zawierajace `"powershell"`. Dowolna INNA logika (nie
+  powershell) nie jest deklarowana tutaj wcale - patrz "Wlasny program
+  dodatku" nizej.
 - `contributions.optionsMenu` - nowy wpis w menu Options otwierajacy naraz
   liste wlasnych narzedzi rozszerzenia przez ich `ui` flagi:
   `{"<actionKey>": {"label": "...", "openTools": ["tool-a", "tool-b"]}}`.
@@ -201,6 +204,59 @@ Dopuszczone `contributions`:
   `data-menu-action` w `index.html` - to NIE tworzy nowej pozycji menu, do
   tego sluzy `contributions.optionsMenu` powyzej).
 - `contributions.i18n` - dodanie slownikow jezykowych (key -> text).
+
+### Wlasny program dodatku (dowolna logika poza powershell/statyczna karta)
+
+Dodatek moze - opcjonalnie - miec wlasny, prawdziwy program JS zamiast
+ograniczac sie do statycznej karty + `"powershell"`. Konwencja folderowa
+(bez zadnego nowego pola w manifescie - samo istnienie podfolderu/pliku to
+caly kontrakt):
+
+```
+tools/<id>.json     <- manifest (jak dzis)
+tools/<id>.png      <- ikona (opcjonalnie, jak dzis - parowana po nazwie)
+tools/<id>/main.js  <- WLASNY PROGRAM dodatku (nowe, opcjonalne)
+```
+
+Przy instalacji (katalog GitHub LUB folder wskazany lokalnie przez "Load
+from file..." - oba dzialaja identycznie, patrz `fetchCatalog()`/
+`open_extension_manifest_folder_dialog` w kodzie) trescy `main.js` zostaje
+pobrana i zapisana razem z manifestem (localStorage), a nastepnie
+uruchomiona (jako `blob:` URL `<script>`, stad `blob:` w CSP `script-src` w
+`index.html`) - zarówno od razu po instalacji, jak i przy kazdym starcie
+aplikacji dla juz zainstalowanych dodatkow.
+
+`main.js`, po wczytaniu, MUSI wywolac:
+
+```js
+window.NetReconNewUI.registerAddonCommands("<id>", {
+  jakasKomenda: function (args) { return "wynik"; /* lub Promise */ },
+  innaKomenda: function (args) { /* ... */ }
+});
+```
+
+To cienki wrapper na `commandBus.register(commandId, fn, addonId)`
+(`command-bus-runtime.js`) - kazda tak zarejestrowana komenda dziala
+dokladnie tak samo jak komenda z `contributions.commands` (te same
+`actions[].commandId`/`resolveCommandId()`/`commandBus.has()` w
+`panels-runtime.js` obsluguja obie sciezki identycznie - nie trzeba wcale
+deklarowac tych komend w `contributions.commands`, jesli i tak rejestruje
+je wlasny program). Deinstalacja sprzata automatycznie
+(`commandBus.unregisterAllFor(id)`, bez zadnego dodatkowego kodu po
+stronie dodatku).
+
+Przyklad: `tools/ipscanner.json` + `tools/ipscanner/main.js` (5 technik
+heurystycznego skanowania portow w przegladarce - fetch/img/link/
+websocket/iframe) to pierwszy real-world przyklad tego mechanizmu -
+wczesniej ta logika byla na sztywno zaszyta w `panels-runtime.js`, teraz w
+calosci nalezy do samego dodatku.
+
+**Uwaga bezpieczenstwa**: dodatek z wlasnym programem to pelny, zaufany JS
+uruchamiany w kontekscie aplikacji - bez sandboxingu (patrz notatka na
+poczatku `docs/FUTURE_PLUGIN_SHELL.md` o odrzuceniu WASM). To swiadoma,
+juz istniejaca zasada tego systemu dodatkow, nie nowe ryzyko wprowadzone
+przez ten mechanizm - ale warto o tym pamietac instalujac dodatek z
+nieznanego zrodla.
 
 Przykladowy manifest (skrocona wersja `tools/ipscanner.json`, demo z LS + CS + RS + Options-menu):
 

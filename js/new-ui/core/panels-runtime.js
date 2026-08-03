@@ -1390,258 +1390,73 @@
       };
     }
 
-    // The 5 client-side probe techniques below (fetch/img/link/websocket/
-    // iframe) are pure browser JS - no Tauri/native backend involved, so
-    // they work identically on desktop and real www. A command's "type"
-    // still gates it against a real TCP-connect scan too (the "powershell"
-    // type, see below) for addons that want one - these 5 are honestly
-    // weaker heuristics an addon opts into, not a silent fallback for that.
-    // None of them can do what a real scanner does:
-    //   - No raw TCP/SYN - only a protocol-level connection attempt
-    //     (HTTP/WS), so this is "does something answer in this style", not
-    //     a real port scan.
-    //   - Browsers hard-block a fixed list of ports (mail/news/IRC ports
-    //     etc., e.g. 21/22/23/25) at the network-stack level, for ANY of
-    //     these techniques, regardless of whether something real is
-    //     listening there - the "ports" list in each command's manifest
-    //     entry (tools/ipscanner.json) is chosen to exclude those.
-    //   - CORS/same-origin means you can detect IF/how fast something
-    //     answered, never read the actual response content.
-    //   - Mixed content: an HTTPS page can't attempt plain http:///ws://
-    //     targets at all - probeScheme() below matches the CURRENT page's
-    //     scheme to avoid guaranteed blocking, but that then means a
-    //     plain-HTTP-only service gets probed over https/wss and likely
-    //     reports closed even if it's open. A local file:// page (or plain
-    //     HTTP) has none of this restriction - the most reliable choice for
-    //     these 5 techniques.
-    var SECURE_PORTS = [443, 8443];
-
-    function probeScheme(port, secureScheme, plainScheme) {
-      var pageIsSecure = typeof window !== "undefined" && window.location && window.location.protocol === "https:";
-      var portWantsSecure = SECURE_PORTS.indexOf(port) !== -1;
-      return (pageIsSecure || portWantsSecure) ? secureScheme : plainScheme;
+    // shell: loads an installed addon's own program (tools/<id>/main.js,
+    // fetched and persisted alongside its manifest at install time - see
+    // extensions.js's programSource field and addon-catalog-runtime.js's
+    // fetchCatalog()) by injecting it as a blob-URL <script>, since the
+    // text is already local (not re-fetchable by URL) rather than a normal
+    // same-origin file. Requires 'blob:' in index.html's CSP script-src.
+    // The script is expected to call window.NetReconNewUI.registerAddonCommands
+    // (below) once it runs - a no-op if the addon has no program at all
+    // (purely declarative addons, e.g. "powershell"-type-only, are
+    // unaffected and never call this with a non-empty programSource).
+    function loadAddonProgram(programSource) {
+      var text = String(programSource || "").trim();
+      if (!text) return;
+      var blob = new Blob([text], { type: "application/javascript" });
+      var url = URL.createObjectURL(blob);
+      var el = document.createElement("script");
+      el.src = url;
+      el.onload = function () { URL.revokeObjectURL(url); };
+      el.onerror = function () { URL.revokeObjectURL(url); };
+      document.head.appendChild(el);
     }
 
-    // fetch: a no-cors request only resolves if SOMETHING answered on that
-    // host:port within the timeout - can't read the response (no-cors
-    // hides it), so this only tells you "open" vs "no answer", and only
-    // works at all for ports that speak enough HTTP to send a response
-    // (a bare TCP listener that never replies looks identical to closed).
-    function fetchPortProbe(host, port, timeoutMs) {
-      return new Promise(function (resolve) {
-        var settled = false;
-        var controller = (typeof AbortController === "function") ? new AbortController() : null;
-        var timer = setTimeout(function () {
-          if (settled) return;
-          settled = true;
-          if (controller) controller.abort();
-          resolve(false);
-        }, timeoutMs);
-        var url = probeScheme(port, "https://", "http://") + host + ":" + port + "/?_probe=" + Date.now();
-        fetch(url, { mode: "no-cors", cache: "no-store", signal: controller ? controller.signal : undefined })
-          .then(function () {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timer);
-            resolve(true);
-          })
-          .catch(function () {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timer);
-            resolve(false);
-          });
-      });
-    }
+    // Exposed for session-runtime.js's missing-addon reinstall flow, which
+    // has no direct access to this closure (only extensionHost) - runs the
+    // just-reinstalled addon's program the same way boot/fresh-install
+    // already do via registerExtensionCommands below.
+    window.NetReconNewUI = window.NetReconNewUI || {};
+    window.NetReconNewUI.loadAddonProgram = loadAddonProgram;
 
-    // img: loading an <img> isn't subject to CORS at all (unlike fetch), so
-    // it can at least attempt any port, not just HTTP-ish ones - but it's a
-    // cruder signal: both onload (valid image) AND onerror (got SOME
-    // response back, just not a decodable image - still proves something
-    // is listening and talking) count as "open"; only a full timeout with
-    // neither event firing counts as "closed". A closed/filtered port and a
-    // port that's open but silent are indistinguishable here - an honest
-    // limitation of the technique, not a bug.
-    function imgPortProbe(host, port, timeoutMs) {
-      return new Promise(function (resolve) {
-        var settled = false;
-        var img = new Image();
-        var timer = setTimeout(function () {
-          if (settled) return;
-          settled = true;
-          img.src = "";
-          resolve(false);
-        }, timeoutMs);
-        function finish(open) {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          resolve(open);
-        }
-        img.onload = function () { finish(true); };
-        img.onerror = function () { finish(true); };
-        img.src = probeScheme(port, "https://", "http://") + host + ":" + port + "/?_probe=" + Date.now() + "-" + Math.random();
-      });
-    }
-
-    // link/CSS: same onload/onerror-both-mean-open idea as img, using a
-    // stylesheet <link> instead - practically identical accuracy profile,
-    // offered as an alternative in case a target/network treats image and
-    // stylesheet requests differently (e.g. some proxies/filters).
-    function linkPortProbe(host, port, timeoutMs) {
-      return new Promise(function (resolve) {
-        var settled = false;
-        var link = document.createElement("link");
-        link.rel = "stylesheet";
-        function cleanup() {
-          if (link.parentNode) link.parentNode.removeChild(link);
-        }
-        var timer = setTimeout(function () {
-          if (settled) return;
-          settled = true;
-          cleanup();
-          resolve(false);
-        }, timeoutMs);
-        function finish(open) {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          cleanup();
-          resolve(open);
-        }
-        link.onload = function () { finish(true); };
-        link.onerror = function () { finish(true); };
-        link.href = probeScheme(port, "https://", "http://") + host + ":" + port + "/?_probe=" + Date.now() + "-" + Math.random();
-        document.head.appendChild(link);
-      });
-    }
-
-    // WebSocket: needs the target to actually complete an HTTP Upgrade
-    // handshake, not just accept a TCP connection - a real, deliberately
-    // conservative signal. Unlike img/link/iframe, onerror/onclose here is
-    // NOT treated as "open": a genuinely closed port and an open port that
-    // doesn't speak WebSocket both surface as the same generic error event
-    // (browsers don't expose the difference to JS), so only a real onopen
-    // counts - this technique likely UNDER-reports open (non-WS) ports
-    // rather than over-reporting, the safer bias for a security tool.
-    function websocketPortProbe(host, port, timeoutMs) {
-      return new Promise(function (resolve) {
-        var settled = false;
-        var ws = null;
-        var timer = setTimeout(function () {
-          if (settled) return;
-          settled = true;
-          try { if (ws) ws.close(); } catch (_) { /* ignore */ }
-          resolve(false);
-        }, timeoutMs);
-        function finish(open) {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          try { if (ws) ws.close(); } catch (_) { /* ignore */ }
-          resolve(open);
-        }
-        try {
-          ws = new WebSocket(probeScheme(port, "wss://", "ws://") + host + ":" + port + "/");
-          ws.onopen = function () { finish(true); };
-          ws.onerror = function () { finish(false); };
-          ws.onclose = function () { finish(false); };
-        } catch (_) {
-          finish(false);
+    // shell: the registration contract an addon's own program (main.js)
+    // calls into once loaded - a thin wrapper around commandBus.register()
+    // (already generic, already supports exactly this) so an addon's code
+    // never needs direct access to commandBus itself. Uninstall cleanup
+    // needs no new code - performUninstall() below already calls
+    // commandBus.unregisterAllFor(id).
+    window.NetReconNewUI.registerAddonCommands = function (addonId, handlers) {
+      if (!commandBus || !addonId || !handlers) return;
+      Object.keys(handlers).forEach(function (commandId) {
+        if (typeof handlers[commandId] === "function") {
+          commandBus.register(commandId, handlers[commandId], addonId);
         }
       });
-    }
-
-    // iframe: sandbox="" (the most restrictive setting - no scripts, forms,
-    // same-origin, popups) so a hostile/compromised target can't run
-    // anything even though it's briefly loaded - this technique only ever
-    // reads the load/error EVENT, never the frame's content. Same
-    // onload/onerror-both-mean-open profile as img/link.
-    function iframePortProbe(host, port, timeoutMs) {
-      return new Promise(function (resolve) {
-        var settled = false;
-        var iframe = document.createElement("iframe");
-        iframe.setAttribute("sandbox", "");
-        iframe.style.display = "none";
-        function cleanup() {
-          if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-        }
-        var timer = setTimeout(function () {
-          if (settled) return;
-          settled = true;
-          cleanup();
-          resolve(false);
-        }, timeoutMs);
-        function finish(open) {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          cleanup();
-          resolve(open);
-        }
-        iframe.onload = function () { finish(true); };
-        iframe.onerror = function () { finish(true); };
-        iframe.src = probeScheme(port, "https://", "http://") + host + ":" + port + "/?_probe=" + Date.now() + "-" + Math.random();
-        document.body.appendChild(iframe);
-      });
-    }
-
-    var CLIENT_PROBE_FNS = {
-      fetch: fetchPortProbe,
-      img: imgPortProbe,
-      link: linkPortProbe,
-      websocket: websocketPortProbe,
-      iframe: iframePortProbe,
     };
-
-    // Reads a user-editable "ports" field value (comma/whitespace-separated,
-    // e.g. "80, 443, 8080") instead of a fixed list baked into the manifest
-    // at install time - falls back to the manifest's own def.ports whenever
-    // the field is missing/empty or ends up with nothing valid in it (blank
-    // field, or a target typed over the ports box by mistake), so a command
-    // never silently scans zero ports.
-    function parsePortsArg(raw, fallbackPorts) {
-      var text = typeof raw === "string" ? raw : "";
-      var parsed = text.split(/[,\s]+/).map(function (piece) {
-        return parseInt(piece, 10);
-      }).filter(function (n) {
-        return Number.isInteger(n) && n >= 1 && n <= 65535;
-      });
-      return parsed.length ? parsed : fallbackPorts;
-    }
 
     // shell: registers command-bus entries declared by an installed
     // extension's contributions.commands, gated on the extension's granted
-    // permissions. "powershell" is the only command type needing the
-    // permission gate below (it's the only one touching the native
-    // backend) - the 5 CLIENT_PROBE_FNS types are plain client-side JS and
-    // need no permission grant, same as the rest of the static card (see
-    // FUTURE_PLUGIN_SHELL.md for the larger, still-undone contribution
-    // model this is a small, additive slice of).
-    function registerExtensionCommands(manifest) {
+    // permissions. "powershell" is the only command type left here - any
+    // other custom behavior an addon needs comes from its own program
+    // (tools/<id>/main.js, loaded via loadAddonProgram() above and
+    // registered via window.NetReconNewUI.registerAddonCommands), not a
+    // shell-hardcoded type dispatch (see FUTURE_PLUGIN_SHELL.md for the
+    // larger, still-undone contribution model this is a small, additive
+    // slice of).
+    function registerExtensionCommands(manifest, programSourceOverride) {
+      // manifest.programSource is present when this comes from
+      // extensionHost.getInstalledManifests() (the boot-time loop below) -
+      // but installExtension()'s own return value (validateManifest()'s
+      // whitelisted manifest, used by addon-catalog-runtime.js right after
+      // a fresh install) never carries it, so callers on that path pass it
+      // separately instead.
+      loadAddonProgram(programSourceOverride || (manifest && manifest.programSource));
       if (!commandBus || !manifest || !manifest.contributions) return;
       var granted = Array.isArray(manifest.permissions) ? manifest.permissions : [];
       var commands = manifest.contributions.commands || {};
       Object.keys(commands).forEach(function (commandId) {
         var def = commands[commandId];
         if (!def) return;
-
-        if (Object.prototype.hasOwnProperty.call(CLIENT_PROBE_FNS, def.type)) {
-          var defaultPorts = Array.isArray(def.ports) ? def.ports : [];
-          var probeTimeoutMs = Number(def.timeoutMs) > 0 ? Number(def.timeoutMs) : 1500;
-          var probeFn = CLIENT_PROBE_FNS[def.type];
-          commandBus.register(commandId, function (args) {
-            var target = args && args.target ? String(args.target) : "";
-            if (!target) return Promise.resolve("[]");
-            var probePorts = parsePortsArg(args && args.ports, defaultPorts);
-            return Promise.all(probePorts.map(function (port) {
-              return probeFn(target, port, probeTimeoutMs).then(function (open) {
-                return { ip: target, port: port, open: open };
-              });
-            })).then(function (rows) { return JSON.stringify(rows); });
-          }, manifest.id);
-          return;
-        }
 
         if (def.type !== "powershell") return;
         if (granted.indexOf("powershell") === -1) return;

@@ -1608,6 +1608,56 @@ fn open_extension_manifest_dialog() -> Result<String, String> {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct ExtensionFolderPick {
+    manifest_text: String,
+    program_source: String,
+}
+
+// Mirrors the GitHub catalog's own tools/<id>.json + tools/<id>/main.js
+// layout (see addon-catalog-runtime.js's fetchCatalog) so an addon folder
+// copied straight out of that repo folder imports identically here - the
+// single .json file directly inside the picked folder is the manifest;
+// a same-named subfolder's main.js (if present) is the addon's own program.
+#[tauri::command]
+fn open_extension_manifest_folder_dialog() -> Result<ExtensionFolderPick, String> {
+    let picked = rfd::FileDialog::new()
+        .set_title("Import Extension Folder")
+        .pick_folder();
+
+    let dir = match picked {
+        Some(dir) => dir,
+        None => return Err("cancelled".into()),
+    };
+
+    let entries = fs::read_dir(&dir).map_err(|e| format!("Failed to read folder: {}", e))?;
+    let mut manifest_path: Option<std::path::PathBuf> = None;
+    for entry in entries {
+        let entry = entry.map_err(|e| format!("Failed to read folder entry: {}", e))?;
+        let path = entry.path();
+        if path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("json") {
+            manifest_path = Some(path);
+            break;
+        }
+    }
+
+    let manifest_path = manifest_path
+        .ok_or_else(|| "No .json manifest found in the selected folder".to_string())?;
+    let manifest_text = fs::read_to_string(&manifest_path)
+        .map_err(|e| format!("Failed to read manifest: {}", e))?;
+
+    let base = manifest_path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("")
+        .to_string();
+    let program_path = dir.join(&base).join("main.js");
+    let program_source = fs::read_to_string(&program_path).unwrap_or_default();
+
+    Ok(ExtensionFolderPick { manifest_text, program_source })
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct LanguageFilePick {
     path: String,
     text: String,
@@ -3047,6 +3097,7 @@ fn main() {
             window_start_dragging,
             window_close,
             open_extension_manifest_dialog,
+            open_extension_manifest_folder_dialog,
             open_language_file_dialog,
             open_agent_profile_file_dialog,
             session_install_dir,
