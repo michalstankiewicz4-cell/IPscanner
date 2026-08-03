@@ -2,7 +2,7 @@
   "id": "ip-scanner-heuristic-js",
   "name": "IP Scanner Heuristic JS",
   "description": "No-admin port scan for a single target IP, entirely client-side (works on www too). Five selectable techniques (Fetch, Image, Link/CSS, WebSocket, IFrame), each an honest heuristic, not a real scan - see the tool text and docs/PROGRESS.md.",
-  "version": "0.4.0",
+  "version": "2.6.0",
   "contributions": {
     "commands": {
       "heuristicScanPortsFetch": {

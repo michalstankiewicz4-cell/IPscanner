@@ -103,7 +103,7 @@
         var details = i18n && i18n.listLanguageDetails ? i18n.listLanguageDetails() : [];
         installedListEl.innerHTML = details.map(function (item) {
           var checked = item.code === current ? " checked" : "";
-          var versionHtml = item.version ? " <span>" + escapeHtml(tr("langForAppVersionPrefix")) + " " + escapeHtml(item.version) + "</span>" : "";
+          var versionHtml = item.version ? " <span>" + escapeHtml(tr("forAppVersionPrefix")) + " " + escapeHtml(item.version) + "</span>" : "";
           return "<label class=\"v1-lang-item\">"
             + "<input type=\"radio\" name=\"v1LangActive\" data-lang-radio=\"" + escapeHtml(item.code) + "\"" + checked + " />"
             + "<span class=\"v1-lang-flag\" aria-hidden=\"true\">" + escapeHtml(item.flag || "🌐") + "</span>"
@@ -155,7 +155,7 @@
           var nameEl = document.createElement("strong");
           nameEl.textContent = manifest.name || manifest.code;
           var descEl = document.createElement("div");
-          descEl.textContent = manifest.version ? tr("langForAppVersionPrefix") + " " + manifest.version : "";
+          descEl.textContent = manifest.version ? tr("forAppVersionPrefix") + " " + manifest.version : "";
           infoEl.appendChild(nameEl);
           infoEl.appendChild(descEl);
           itemEl.appendChild(infoEl);

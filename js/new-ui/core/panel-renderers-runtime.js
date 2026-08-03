@@ -91,7 +91,7 @@
         var id = item && item.id ? String(item.id) : "";
         var version = item && item.version ? String(item.version) : "";
         var name = item && item.name ? String(item.name) : "";
-        return '<div class="v1-import-item"><strong>' + escapeHtml(id) + '</strong><span>@ ' + escapeHtml(version) + '</span><div>' + escapeHtml(name) + '</div>'
+        return '<div class="v1-import-item"><strong>' + escapeHtml(id) + '</strong><span>' + escapeHtml(tr ? tr("forAppVersionPrefix") : "For app") + ' ' + escapeHtml(version) + '</span><div>' + escapeHtml(name) + '</div>'
           + '<button type="button" class="v1-import-item-uninstall" data-import-uninstall-id="' + escapeHtml(id) + '">' + escapeHtml(uninstallLabel) + '</button></div>';
       }).join("");
     }

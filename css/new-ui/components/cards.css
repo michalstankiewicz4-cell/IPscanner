@@ -1037,6 +1037,11 @@
   color: var(--txt);
 }
 
+.v1-catalog-version {
+  color: #9db5ff;
+  font-size: 11px;
+}
+
 .v1-catalog-install-btn {
   justify-self: end;
 }

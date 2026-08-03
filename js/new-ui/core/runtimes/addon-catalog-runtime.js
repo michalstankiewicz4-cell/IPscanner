@@ -155,7 +155,7 @@
           itemEl.appendChild(strong);
 
           var ver = document.createElement("span");
-          ver.textContent = "@ " + item.version;
+          ver.textContent = tr("forAppVersionPrefix") + " " + item.version;
           itemEl.appendChild(ver);
 
           var name = document.createElement("div");
@@ -307,9 +307,15 @@
           infoEl.className = "v1-catalog-info";
           var nameEl = document.createElement("strong");
           nameEl.textContent = manifest.name || manifest.id || "";
+          infoEl.appendChild(nameEl);
+          if (manifest.version) {
+            var verEl = document.createElement("div");
+            verEl.className = "v1-catalog-version";
+            verEl.textContent = tr("forAppVersionPrefix") + " " + manifest.version;
+            infoEl.appendChild(verEl);
+          }
           var descEl = document.createElement("div");
           descEl.textContent = manifest.description || "";
-          infoEl.appendChild(nameEl);
           infoEl.appendChild(descEl);
           itemEl.appendChild(infoEl);
 

@@ -466,7 +466,7 @@
     // sub-regions rather than re-running the initial render function.
     function renderLangInstalledRow(item, current) {
       var checked = item.code === current ? " checked" : "";
-      var versionHtml = item.version ? " <span>@ " + escapeHtml(item.version) + "</span>" : "";
+      var versionHtml = item.version ? " <span>" + escapeHtml(tr("forAppVersionPrefix")) + " " + escapeHtml(item.version) + "</span>" : "";
       return [
         "<label class=\"v1-lang-item\">",
         "<input type=\"radio\" name=\"v1LangActive\" data-lang-radio=\"" + escapeHtml(item.code) + "\"" + checked + " />",
@@ -704,7 +704,7 @@
 
       var listHtml = tools.length
         ? tools.map(function (item) {
-            return "<div class=\"v1-import-item\"><strong>" + escapeHtml(item.id) + "</strong> <span>@ " + escapeHtml(item.version) + "</span><div>" + escapeHtml(item.name) + "</div>"
+            return "<div class=\"v1-import-item\"><strong>" + escapeHtml(item.id) + "</strong> <span>" + escapeHtml(tr("forAppVersionPrefix")) + " " + escapeHtml(item.version) + "</span><div>" + escapeHtml(item.name) + "</div>"
               + "<button type=\"button\" class=\"v1-import-item-uninstall\" data-import-uninstall-id=\"" + escapeHtml(item.id) + "\">" + escapeHtml(tr("importToolUninstallBtn")) + "</button></div>";
           }).join("")
         : "<div class=\"v1-import-empty\">" + escapeHtml(trOr("importToolEmptyText", importToolConfig.emptyText || "No imported tools yet.")) + "</div>";

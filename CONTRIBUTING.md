@@ -153,8 +153,14 @@ calosci w JS, bez sandboxingu poza jednym, recznie sprawdzanym uprawnieniem
 
 Pola na poziomie manifestu:
 
-- `id`, `name`, `version` - identyfikacja rozszerzenia (`id` musi byc unikalne
-  i nie powinno zawierac `:` - patrz ponizej przy Options-menu).
+- `id`, `name` - identyfikacja rozszerzenia (`id` musi byc unikalne i nie
+  powinno zawierac `:` - patrz ponizej przy Options-menu).
+- `version` - wersja aplikacji (zgodna z `package.json`, np. `"2.6.0"`),
+  dla ktorej dodatek jest napisany - NIE wlasny, niezalezny numer rewizji
+  samego dodatku. Nie musi oznaczac 100% zgodnosci z ta wersja - to
+  najlepsze przyblizenie autora, nie gwarancja. Wyswietlana obok nazwy
+  jako "Dla aplikacji <wersja>" (patrz sekcja 5 - identyczna zasada dla
+  jezykow).
 - `description` - krotki opis pokazywany w katalogu dodatkow (Import Tool).
 - `permissions` - tablica uprawnien; dzis jedyna rozpoznawana wartosc to
   `"powershell"`. Inne wartosci sa po cichu odrzucane przy walidacji manifestu.
@@ -203,7 +209,7 @@ Przykladowy manifest (skrocona wersja `tools/ipscanner.json`, demo z LS + CS + R
   "id": "ip-scanner-detect-address-poc",
   "name": "IP Scanner: Detect Address",
   "description": "Wykrywa adres IP i pokazuje wynik w osobnej zakladce.",
-  "version": "0.1.0",
+  "version": "2.6.0",
   "permissions": ["powershell"],
   "contributions": {
     "commands": {
