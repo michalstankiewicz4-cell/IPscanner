@@ -1178,6 +1178,10 @@
                 isp: String(row.isp || "-").trim() || "-",
                 as: String(row.as || "").trim(),
                 deviceIdentification: String(row.deviceIdentification || "").trim(),
+                city: String(row.city || "").trim(),
+                countryCode: String(row.countryCode || "").trim(),
+                lat: typeof row.lat === "number" ? row.lat : null,
+                lon: typeof row.lon === "number" ? row.lon : null,
                 status: String(row.status || "active").trim() || "active",
                 statusClass: String(row.statusClass || "is-up").trim() || "is-up",
                 ports: ports,
@@ -1210,7 +1214,8 @@
         { key: "flag", icon: "🌎", label: trOr("resultsIpColumnCountryFlag", "Country Flag"), defaultVisible: true },
         { key: "isp", icon: "🏢", label: trOr("resultsIpColumnIsp", "ISP"), defaultVisible: true },
         { key: "as", icon: "🕷", label: trOr("resultsIpColumnAs", "AS"), defaultVisible: true },
-        { key: "device", icon: "📱", label: trOr("resultsIpColumnDeviceIdentification", "Device Identification"), defaultVisible: true }
+        { key: "device", icon: "📱", label: trOr("resultsIpColumnDeviceIdentification", "Device Identification"), defaultVisible: true },
+        { key: "location", icon: "📍", label: trOr("resultsIpColumnLocation", "Location"), defaultVisible: true }
       ];
       var filterGroups = [
         {
@@ -1289,6 +1294,18 @@
         return "unknown";
       }
 
+      // "City, CC" when both resolved, whichever one alone if only one did,
+      // else "-" - same optional-field fallback convention as hostname's
+      // own "-" default elsewhere in this table.
+      function resolveLocationLabel(row) {
+        var city = String((row && row.city) || "").trim();
+        var countryCode = String((row && row.countryCode) || "").trim();
+        if (city && countryCode) return city + ", " + countryCode;
+        if (city) return city;
+        if (countryCode) return countryCode;
+        return "-";
+      }
+
       var totalPorts = rows.reduce(function (sum, row) {
         return sum + ((row.ports && row.ports.length) || 0);
       }, 0);
@@ -1326,6 +1343,7 @@
             "<td class=\"v1-ip-col-isp\" data-col=\"isp\" aria-hidden=\"true\"></td>",
             "<td class=\"v1-ip-col-as\" data-col=\"as\" aria-hidden=\"true\"></td>",
             "<td class=\"v1-ip-col-device\" data-col=\"device\" aria-hidden=\"true\"></td>",
+            "<td class=\"v1-ip-col-location\" data-col=\"location\" aria-hidden=\"true\"></td>",
             "<td class=\"v1-ip-col-http\" data-col=\"http\">" + escapeHtml(portHttpTitle) + "</td>",
             "<td class=\"v1-ip-col-access\" data-col=\"access\"><span class=\"v1-ip-port-link\">" + escapeHtml(portAccess) + "</span></td>",
             "<td class=\"v1-ip-col-banner\" data-col=\"banner\">" + escapeHtml(portBanner) + "</td>",
@@ -1345,6 +1363,7 @@
           "<td class=\"v1-ip-col-isp\" data-col=\"isp\" aria-hidden=\"true\"></td>",
           "<td class=\"v1-ip-col-as\" data-col=\"as\" aria-hidden=\"true\"></td>",
           "<td class=\"v1-ip-col-device\" data-col=\"device\" aria-hidden=\"true\"></td>",
+          "<td class=\"v1-ip-col-location\" data-col=\"location\" aria-hidden=\"true\"></td>",
           "<td class=\"v1-ip-col-http\" data-col=\"http\">-</td>",
           "<td class=\"v1-ip-col-access\" data-col=\"access\">-</td>",
           "<td class=\"v1-ip-col-banner\" data-col=\"banner\">-</td>",
@@ -1354,6 +1373,7 @@
 
         var rowAs = String(row.as || row.autonomousSystem || "").trim() || "-";
         var rowDevice = String(row.deviceIdentification || row.device || "").trim() || "-";
+        var rowLocation = resolveLocationLabel(row);
 
         return [
           "<tr class=\"v1-ip-result-row\" data-row-index=\"" + idx + "\" data-result-key=\"" + escapeHtml(resultKey) + "\" data-status=\"" + escapeHtml(statusKey) + "\">",
@@ -1368,6 +1388,7 @@
           "<td class=\"v1-ip-col-isp\" data-col=\"isp\">" + escapeHtml(row.isp) + "</td>",
           "<td class=\"v1-ip-col-as\" data-col=\"as\">" + escapeHtml(rowAs) + "</td>",
           "<td class=\"v1-ip-col-device\" data-col=\"device\">" + escapeHtml(rowDevice) + "</td>",
+          "<td class=\"v1-ip-col-location\" data-col=\"location\">" + escapeHtml(rowLocation) + "</td>",
           "<td class=\"v1-ip-col-http\" data-col=\"http\">-</td>",
           "<td class=\"v1-ip-col-access\" data-col=\"access\">-</td>",
           "<td class=\"v1-ip-col-banner\" data-col=\"banner\">-</td>",
@@ -1422,7 +1443,7 @@
         "</div>",
         "<div class=\"v1-results-table-scroll v1-results-table-scroll--ip\">",
         "<table class=\"v1-results-table v1-ip-results-table\">",
-        "<thead><tr><th class=\"v1-ip-col-check\">✓</th><th class=\"v1-ip-col-star\">★</th><th class=\"v1-ip-col-status\">●</th><th class=\"v1-ip-col-ip\">" + escapeHtml(trOr("resultsIpHeaderIpAddressPort", headers.ipAddressPort || "IP Adress / Port")) + "</th><th class=\"v1-ip-col-expand\">+</th><th class=\"v1-ip-col-ping\">" + escapeHtml(trOr("resultsIpHeaderPing", headers.ping || "Ping")) + "</th><th class=\"v1-ip-col-host\" data-col=\"hostname\">" + escapeHtml(trOr("resultsIpHeaderHostname", headers.hostname || "Hostname")) + "</th><th class=\"v1-ip-col-flag\" data-col=\"flag\">" + escapeHtml(trOr("resultsIpHeaderFlag", headers.flag || "Flag")) + "</th><th class=\"v1-ip-col-isp\" data-col=\"isp\">" + escapeHtml(trOr("resultsIpHeaderIsp", headers.isp || "ISP")) + "</th><th class=\"v1-ip-col-as\" data-col=\"as\">" + escapeHtml(trOr("resultsIpHeaderAs", headers.as || "AS")) + "</th><th class=\"v1-ip-col-device\" data-col=\"device\">" + escapeHtml(trOr("resultsIpHeaderDeviceIdentification", headers.deviceIdentification || "Device Identification")) + "</th><th class=\"v1-ip-col-http\" data-col=\"http\">" + escapeHtml(trOr("resultsIpHeaderHttpPageTitle", headers.httpPageTitle || "HTTP Page Title")) + "</th><th class=\"v1-ip-col-access\" data-col=\"access\">" + escapeHtml(trOr("resultsIpHeaderAccessSnapshot", headers.accessSnapshot || "Access / Snapshot")) + "</th><th class=\"v1-ip-col-banner\" data-col=\"banner\">" + escapeHtml(trOr("resultsIpHeaderBanner", headers.banner || "Banner Grabbing")) + "</th><th class=\"v1-ip-col-sslCert\" data-col=\"sslCert\">" + escapeHtml(trOr("resultsIpHeaderSslCert", headers.sslCert || "SSL/TLS Certificate Info")) + "</th></tr></thead>",
+        "<thead><tr><th class=\"v1-ip-col-check\">✓</th><th class=\"v1-ip-col-star\">★</th><th class=\"v1-ip-col-status\">●</th><th class=\"v1-ip-col-ip\">" + escapeHtml(trOr("resultsIpHeaderIpAddressPort", headers.ipAddressPort || "IP Adress / Port")) + "</th><th class=\"v1-ip-col-expand\">+</th><th class=\"v1-ip-col-ping\">" + escapeHtml(trOr("resultsIpHeaderPing", headers.ping || "Ping")) + "</th><th class=\"v1-ip-col-host\" data-col=\"hostname\">" + escapeHtml(trOr("resultsIpHeaderHostname", headers.hostname || "Hostname")) + "</th><th class=\"v1-ip-col-flag\" data-col=\"flag\">" + escapeHtml(trOr("resultsIpHeaderFlag", headers.flag || "Flag")) + "</th><th class=\"v1-ip-col-isp\" data-col=\"isp\">" + escapeHtml(trOr("resultsIpHeaderIsp", headers.isp || "ISP")) + "</th><th class=\"v1-ip-col-as\" data-col=\"as\">" + escapeHtml(trOr("resultsIpHeaderAs", headers.as || "AS")) + "</th><th class=\"v1-ip-col-device\" data-col=\"device\">" + escapeHtml(trOr("resultsIpHeaderDeviceIdentification", headers.deviceIdentification || "Device Identification")) + "</th><th class=\"v1-ip-col-location\" data-col=\"location\">" + escapeHtml(trOr("resultsIpHeaderLocation", headers.location || "Location")) + "</th><th class=\"v1-ip-col-http\" data-col=\"http\">" + escapeHtml(trOr("resultsIpHeaderHttpPageTitle", headers.httpPageTitle || "HTTP Page Title")) + "</th><th class=\"v1-ip-col-access\" data-col=\"access\">" + escapeHtml(trOr("resultsIpHeaderAccessSnapshot", headers.accessSnapshot || "Access / Snapshot")) + "</th><th class=\"v1-ip-col-banner\" data-col=\"banner\">" + escapeHtml(trOr("resultsIpHeaderBanner", headers.banner || "Banner Grabbing")) + "</th><th class=\"v1-ip-col-sslCert\" data-col=\"sslCert\">" + escapeHtml(trOr("resultsIpHeaderSslCert", headers.sslCert || "SSL/TLS Certificate Info")) + "</th></tr></thead>",
         "<tbody>" + bodyHtml + "</tbody>",
         "</table>",
         "</div>"

@@ -196,7 +196,7 @@
       "v1ConfigProtocolTcpEnabled", "v1ConfigProtocolTcpSyn", "v1ConfigProtocolUdp", "v1ConfigProtocolIcmp",
       "v1ConfigHostTimeout", "v1ConfigMaxConcurrentHosts", "v1ConfigMaxConcurrentPorts", "v1ConfigRetries",
       "v1ConfigBannerGrabbing", "v1ConfigHttpPageTitle", "v1ConfigAccessSnapshot", "v1ConfigSslCertInfo",
-      "v1ConfigReverseDns", "v1ConfigOsDetection", "v1ConfigCountryFlag", "v1ConfigIsp", "v1ConfigAs",
+      "v1ConfigReverseDns", "v1ConfigOsDetection", "v1ConfigCountryFlag", "v1ConfigLocation", "v1ConfigIsp", "v1ConfigAs",
       "v1ConfigDeviceIdentification", "v1ConfigRandomizePorts", "v1ConfigRandomizeHosts", "v1ConfigScanDelay",
     ];
 
@@ -832,6 +832,7 @@
       var configOsDetectionLabel = document.getElementById("v1ConfigOsDetectionLabel");
       var configSslCertInfoLabel = document.getElementById("v1ConfigSslCertInfoLabel");
       var configCountryFlagLabel = document.getElementById("v1ConfigCountryFlagLabel");
+      var configLocationLabel = document.getElementById("v1ConfigLocationLabel");
       var configIspLabel = document.getElementById("v1ConfigIspLabel");
       var configAsLabel = document.getElementById("v1ConfigAsLabel");
       var configDeviceIdentificationLabel = document.getElementById("v1ConfigDeviceIdentificationLabel");
@@ -860,6 +861,7 @@
       if (configOsDetectionLabel) configOsDetectionLabel.textContent = t("configOsDetection");
       if (configSslCertInfoLabel) configSslCertInfoLabel.textContent = t("configSslCertInfo");
       if (configCountryFlagLabel) configCountryFlagLabel.textContent = t("resultsIpColumnCountryFlag");
+      if (configLocationLabel) configLocationLabel.textContent = t("resultsIpColumnLocation");
       if (configIspLabel) configIspLabel.textContent = t("resultsIpColumnIsp");
       if (configAsLabel) configAsLabel.textContent = t("resultsIpColumnAs");
       if (configDeviceIdentificationLabel) configDeviceIdentificationLabel.textContent = t("resultsIpColumnDeviceIdentification");

@@ -13,7 +13,9 @@
     "  id INTEGER PRIMARY KEY AUTOINCREMENT,",
     "  ip TEXT NOT NULL, ping TEXT NOT NULL, hostname TEXT NOT NULL,",
     "  flag TEXT NOT NULL, isp TEXT NOT NULL, as_info TEXT NOT NULL,",
-    "  device_identification TEXT NOT NULL, status TEXT NOT NULL, status_class TEXT NOT NULL",
+    "  device_identification TEXT NOT NULL, city TEXT NOT NULL DEFAULT '',",
+    "  country_code TEXT NOT NULL DEFAULT '', lat REAL, lon REAL,",
+    "  status TEXT NOT NULL, status_class TEXT NOT NULL",
     ");",
     "CREATE TABLE IF NOT EXISTS scan_result_ports (",
     "  id INTEGER PRIMARY KEY AUTOINCREMENT,",
@@ -132,7 +134,7 @@
 
         var scanResults = Array.isArray(data.scanResults) ? data.scanResults : [];
         var insertResult = db.prepare(
-          "INSERT INTO scan_results (id, ip, ping, hostname, flag, isp, as_info, device_identification, status, status_class) VALUES (?,?,?,?,?,?,?,?,?,?)"
+          "INSERT INTO scan_results (id, ip, ping, hostname, flag, isp, as_info, device_identification, city, country_code, lat, lon, status, status_class) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
         );
         var insertPort = db.prepare("INSERT INTO scan_result_ports (result_id, port, protocol, status, service, ping) VALUES (?, ?, ?, ?, ?, ?)");
         scanResults.forEach(function (row, index) {
@@ -147,6 +149,10 @@
             String(row.isp || ""),
             String(row.as || ""),
             String(row.deviceIdentification || ""),
+            String(row.city || ""),
+            String(row.countryCode || ""),
+            typeof row.lat === "number" ? row.lat : null,
+            typeof row.lon === "number" ? row.lon : null,
             String(row.status || ""),
             String(row.statusClass || ""),
           ]);
@@ -301,24 +307,61 @@
       try {
         var scanResults = [];
         var indexById = {};
-        var scanResultsRows = db.exec(
-          "SELECT id, ip, ping, hostname, flag, isp, as_info, device_identification, status, status_class FROM scan_results ORDER BY id"
-        );
+        // Older session files may be missing city/country_code/lat/lon
+        // (added for the Location feature) - db.exec() throws on unknown
+        // columns rather than returning NULL, so try the newest shape first
+        // and fall back to the pre-feature shape on error, same discipline
+        // as scan_result_ports' own multi-tier fallback below.
+        var scanResultsHasLocation = true;
+        var scanResultsRows;
+        try {
+          scanResultsRows = db.exec(
+            "SELECT id, ip, ping, hostname, flag, isp, as_info, device_identification, city, country_code, lat, lon, status, status_class FROM scan_results ORDER BY id"
+          );
+        } catch (_) {
+          scanResultsHasLocation = false;
+          scanResultsRows = db.exec(
+            "SELECT id, ip, ping, hostname, flag, isp, as_info, device_identification, status, status_class FROM scan_results ORDER BY id"
+          );
+        }
         if (scanResultsRows.length) {
           scanResultsRows[0].values.forEach(function (row, idx) {
             indexById[row[0]] = idx;
-            scanResults.push({
-              ip: String(row[1] || ""),
-              ping: String(row[2] || ""),
-              hostname: String(row[3] || ""),
-              flag: String(row[4] || ""),
-              isp: String(row[5] || ""),
-              as: String(row[6] || ""),
-              deviceIdentification: String(row[7] || ""),
-              status: String(row[8] || ""),
-              statusClass: String(row[9] || ""),
-              ports: [],
-            });
+            if (scanResultsHasLocation) {
+              scanResults.push({
+                ip: String(row[1] || ""),
+                ping: String(row[2] || ""),
+                hostname: String(row[3] || ""),
+                flag: String(row[4] || ""),
+                isp: String(row[5] || ""),
+                as: String(row[6] || ""),
+                deviceIdentification: String(row[7] || ""),
+                city: String(row[8] || ""),
+                countryCode: String(row[9] || ""),
+                lat: typeof row[10] === "number" ? row[10] : null,
+                lon: typeof row[11] === "number" ? row[11] : null,
+                status: String(row[12] || ""),
+                statusClass: String(row[13] || ""),
+                ports: [],
+              });
+            } else {
+              scanResults.push({
+                ip: String(row[1] || ""),
+                ping: String(row[2] || ""),
+                hostname: String(row[3] || ""),
+                flag: String(row[4] || ""),
+                isp: String(row[5] || ""),
+                as: String(row[6] || ""),
+                deviceIdentification: String(row[7] || ""),
+                city: "",
+                countryCode: "",
+                lat: null,
+                lon: null,
+                status: String(row[8] || ""),
+                statusClass: String(row[9] || ""),
+                ports: [],
+              });
+            }
           });
         }
 

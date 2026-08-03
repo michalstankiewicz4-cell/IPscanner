@@ -320,6 +320,7 @@
         randomizeHosts: false,
         reverseDns: false,
         countryFlag: false,
+        location: false,
         isp: false,
         as: false,
         deviceIdentification: false,
@@ -347,6 +348,7 @@
         snapshot.randomizeHosts = !!parsed.v1ConfigRandomizeHosts;
         snapshot.reverseDns = !!parsed.v1ConfigReverseDns;
         snapshot.countryFlag = !!parsed.v1ConfigCountryFlag;
+        snapshot.location = !!parsed.v1ConfigLocation;
         snapshot.isp = !!parsed.v1ConfigIsp;
         snapshot.as = !!parsed.v1ConfigAs;
         snapshot.deviceIdentification = !!parsed.v1ConfigDeviceIdentification;
@@ -477,10 +479,10 @@
       // run unconditionally for every found host regardless of these
       // checkboxes; skip whichever Rust call(s) nothing needs.
       var cfg = currentScanEnrichmentConfig || {
-        reverseDns: false, countryFlag: false, isp: false, as: false, deviceIdentification: false,
+        reverseDns: false, countryFlag: false, location: false, isp: false, as: false, deviceIdentification: false,
       };
       var needsHostname = cfg.reverseDns;
-      var needsGeo = cfg.countryFlag || cfg.isp || cfg.as || cfg.deviceIdentification;
+      var needsGeo = cfg.countryFlag || cfg.location || cfg.isp || cfg.as || cfg.deviceIdentification;
       if (!needsHostname && !needsGeo) return Promise.resolve();
 
       return Promise.allSettled([
@@ -510,6 +512,17 @@
             if (cfg.isp && isp) normalized.isp = isp;
             if (cfg.as && asInfo) normalized.as = asInfo;
             if (cfg.deviceIdentification && deviceHints.length) normalized.deviceIdentification = deviceHints.join(" / ");
+
+            // Location: captured independently of cfg.countryFlag (which
+            // only ever sets the rendered flag emoji) so Location works
+            // even when Country Flag itself is unchecked.
+            if (cfg.location) {
+              var city = String(geo.city || "").trim();
+              if (city) normalized.city = city;
+              if (countryCode) normalized.countryCode = countryCode;
+              if (typeof geo.lat === "number") normalized.lat = geo.lat;
+              if (typeof geo.lon === "number") normalized.lon = geo.lon;
+            }
           }
 
           return normalized;

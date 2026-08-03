@@ -1342,6 +1342,11 @@
   white-space: nowrap;
 }
 
+.v1-ip-results-table .v1-ip-col-location {
+  min-width: 160px;
+  white-space: nowrap;
+}
+
 .v1-ip-results-table .v1-ip-col-http {
   min-width: 200px;
   white-space: nowrap;
@@ -1512,7 +1517,8 @@
 }
 
 .v1-ip-port-row .v1-ip-col-as,
-.v1-ip-port-row .v1-ip-col-device {
+.v1-ip-port-row .v1-ip-col-device,
+.v1-ip-port-row .v1-ip-col-location {
   color: transparent;
 }
 

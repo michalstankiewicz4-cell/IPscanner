@@ -440,6 +440,7 @@
         isp: true,
         as: true,
         device: true,
+        location: true,
         http: true,
         access: true,
         banner: true,
@@ -1608,25 +1609,47 @@
     // same Promise.allSettled usage as performHostEnrichment's own
     // geo_lookup call, matches ip-api.com's free-tier rate limit closely
     // enough not to need queueing for a typical scan.
+    function globePointFromRow(row) {
+      return {
+        lat: row.lat,
+        lng: row.lon,
+        label: escapeHtml(row.ip) + (row.hostname && row.hostname !== "-" ? " (" + escapeHtml(row.hostname) + ")" : ""),
+        color: pointColorForStatusClass(row.statusClass),
+      };
+    }
+
+    // Prefers each row's own persisted lat/lon (written by
+    // performHostEnrichment when the Location checkbox was on during that
+    // scan - navigation-runtime.js) over a live geo_lookup re-fetch - only
+    // hosts genuinely missing that data (Location was off, or the row
+    // predates this feature) still hit the network.
     function fetchGlobePoints(rows, platform) {
       var byIp = {};
       rows.forEach(function (r) { if (r && r.ip) byIp[r.ip] = r; });
       var ips = Object.keys(byIp);
-      return Promise.allSettled(ips.map(function (ip) {
+
+      var points = [];
+      var missingIps = [];
+      ips.forEach(function (ip) {
+        var row = byIp[ip];
+        if (typeof row.lat === "number" && typeof row.lon === "number") {
+          points.push(globePointFromRow(row));
+        } else {
+          missingIps.push(ip);
+        }
+      });
+
+      if (!missingIps.length) return Promise.resolve(points);
+
+      return Promise.allSettled(missingIps.map(function (ip) {
         return Promise.resolve(platform.invoke("geo_lookup", { ip: ip })).catch(function () { return null; });
       })).then(function (results) {
-        var points = [];
         results.forEach(function (res, i) {
           if (res.status !== "fulfilled" || !res.value) return;
           var geo = res.value;
           if (typeof geo.lat !== "number" || typeof geo.lon !== "number") return;
-          var row = byIp[ips[i]];
-          points.push({
-            lat: geo.lat,
-            lng: geo.lon,
-            label: escapeHtml(row.ip) + (row.hostname && row.hostname !== "-" ? " (" + escapeHtml(row.hostname) + ")" : ""),
-            color: pointColorForStatusClass(row.statusClass),
-          });
+          var row = byIp[missingIps[i]];
+          points.push(globePointFromRow({ ip: row.ip, hostname: row.hostname, statusClass: row.statusClass, lat: geo.lat, lon: geo.lon }));
         });
         return points;
       });

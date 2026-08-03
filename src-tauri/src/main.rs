@@ -1719,6 +1719,18 @@ struct ScanResultRow {
     #[serde(rename = "as")]
     as_info: String,
     device_identification: String,
+    // Location: city/country_code/lat/lon, gated by RS Config's dedicated
+    // "Location" checkbox (independent of Country Flag, which only stores
+    // the rendered emoji in `flag` above). #[serde(default)] so session
+    // files saved before this feature still deserialize.
+    #[serde(default)]
+    city: String,
+    #[serde(default)]
+    country_code: String,
+    #[serde(default)]
+    lat: Option<f64>,
+    #[serde(default)]
+    lon: Option<f64>,
     status: String,
     status_class: String,
     ports: Vec<ScanPortEntry>,
@@ -1868,6 +1880,10 @@ const SESSION_SCHEMA_SQL: &str = "
       isp TEXT NOT NULL,
       as_info TEXT NOT NULL,
       device_identification TEXT NOT NULL,
+      city TEXT NOT NULL DEFAULT '',
+      country_code TEXT NOT NULL DEFAULT '',
+      lat REAL,
+      lon REAL,
       status TEXT NOT NULL,
       status_class TEXT NOT NULL
     );
@@ -1990,6 +2006,31 @@ fn open_session_sqlite_conn(path: &Path) -> Result<Connection, String> {
             }
         }
     }
+    // Same migration discipline, for scan_results' own newer columns
+    // (city/country_code/lat/lon - the Location feature).
+    {
+        let existing: Vec<String> = {
+            let mut stmt = conn.prepare("PRAGMA table_info(scan_results)")
+                .map_err(|e| format!("Failed to inspect scan_results schema: {e}"))?;
+            let names = stmt.query_map([], |row| row.get::<_, String>(1))
+                .map_err(|e| format!("Failed to read scan_results columns: {e}"))?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| format!("Failed to read scan_results column name: {e}"))?;
+            names
+        };
+        let migrations: [(&str, &str); 4] = [
+            ("city", "ALTER TABLE scan_results ADD COLUMN city TEXT NOT NULL DEFAULT ''"),
+            ("country_code", "ALTER TABLE scan_results ADD COLUMN country_code TEXT NOT NULL DEFAULT ''"),
+            ("lat", "ALTER TABLE scan_results ADD COLUMN lat REAL"),
+            ("lon", "ALTER TABLE scan_results ADD COLUMN lon REAL"),
+        ];
+        for (column, ddl) in migrations {
+            if !existing.iter().any(|c| c == column) {
+                conn.execute_batch(ddl)
+                    .map_err(|e| format!("Failed to migrate scan_results.{column}: {e}"))?;
+            }
+        }
+    }
     Ok(conn)
 }
 
@@ -2003,7 +2044,7 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
         .map_err(|e| format!("Failed to clear scan_results: {e}"))?;
     {
         let mut insert_result = tx
-            .prepare_cached("INSERT INTO scan_results (ip, ping, hostname, flag, isp, as_info, device_identification, status, status_class) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)")
+            .prepare_cached("INSERT INTO scan_results (ip, ping, hostname, flag, isp, as_info, device_identification, city, country_code, lat, lon, status, status_class) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)")
             .map_err(|e| format!("Failed to prepare scan_results insert: {e}"))?;
         let mut insert_port = tx
             .prepare_cached("INSERT INTO scan_result_ports (result_id, port, protocol, status, service, ping) VALUES (?1, ?2, ?3, ?4, ?5, ?6)")
@@ -2011,7 +2052,7 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
 
         for row in &data.scan_results {
             insert_result
-                .execute(params![row.ip, row.ping, row.hostname, row.flag, row.isp, row.as_info, row.device_identification, row.status, row.status_class])
+                .execute(params![row.ip, row.ping, row.hostname, row.flag, row.isp, row.as_info, row.device_identification, row.city, row.country_code, row.lat, row.lon, row.status, row.status_class])
                 .map_err(|e| format!("Failed to insert scan_results row: {e}"))?;
             let result_id = tx.last_insert_rowid();
             for port in &row.ports {
@@ -2152,11 +2193,15 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
     conn.execute_batch("PRAGMA foreign_keys = ON;")
         .map_err(|e| format!("Failed to enable foreign keys: {e}"))?;
 
-    let mut results_stmt = conn
-        .prepare("SELECT id, ip, ping, hostname, flag, isp, as_info, device_identification, status, status_class FROM scan_results ORDER BY id")
-        .map_err(|e| format!("Failed to prepare scan_results read: {e}"))?;
-    let result_rows = results_stmt
-        .query_map([], |row| {
+    // Older session files may be missing city/country_code/lat/lon (added
+    // for the Location feature) - db.exec()/rusqlite errors on unknown
+    // columns rather than returning NULL, so try the newest shape first and
+    // fall back to the pre-feature shape on error, same discipline as
+    // scan_result_ports' own multi-tier fallback below.
+    type ScanResultsRow = (i64, ScanResultRow);
+    let newest: Result<Vec<ScanResultsRow>, rusqlite::Error> = (|| {
+        let mut stmt = conn.prepare("SELECT id, ip, ping, hostname, flag, isp, as_info, device_identification, city, country_code, lat, lon, status, status_class FROM scan_results ORDER BY id")?;
+        let rows = stmt.query_map([], |row| {
             Ok((
                 row.get::<_, i64>(0)?,
                 ScanResultRow {
@@ -2167,18 +2212,55 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
                     isp: row.get(5)?,
                     as_info: row.get(6)?,
                     device_identification: row.get(7)?,
-                    status: row.get(8)?,
-                    status_class: row.get(9)?,
+                    city: row.get(8)?,
+                    country_code: row.get(9)?,
+                    lat: row.get(10)?,
+                    lon: row.get(11)?,
+                    status: row.get(12)?,
+                    status_class: row.get(13)?,
                     ports: Vec::new(),
                 },
             ))
-        })
-        .map_err(|e| format!("Failed to query scan_results: {e}"))?;
+        })?.collect();
+        rows
+    })();
+
+    let result_rows: Vec<ScanResultsRow> = match newest {
+        Ok(rows) => rows,
+        Err(_) => {
+            let mut stmt = conn.prepare("SELECT id, ip, ping, hostname, flag, isp, as_info, device_identification, status, status_class FROM scan_results ORDER BY id")
+                .map_err(|e| format!("Failed to prepare scan_results read (legacy): {e}"))?;
+            let rows = stmt.query_map([], |row| {
+                Ok((
+                    row.get::<_, i64>(0)?,
+                    ScanResultRow {
+                        ip: row.get(1)?,
+                        ping: row.get(2)?,
+                        hostname: row.get(3)?,
+                        flag: row.get(4)?,
+                        isp: row.get(5)?,
+                        as_info: row.get(6)?,
+                        device_identification: row.get(7)?,
+                        city: String::new(),
+                        country_code: String::new(),
+                        lat: None,
+                        lon: None,
+                        status: row.get(8)?,
+                        status_class: row.get(9)?,
+                        ports: Vec::new(),
+                    },
+                ))
+            })
+            .map_err(|e| format!("Failed to query scan_results (legacy): {e}"))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| format!("Failed to read scan_results row (legacy): {e}"))?;
+            rows
+        }
+    };
 
     let mut scan_results: Vec<ScanResultRow> = Vec::new();
     let mut scan_result_index: HashMap<i64, usize> = HashMap::new();
-    for row in result_rows {
-        let (id, row) = row.map_err(|e| format!("Failed to read scan_results row: {e}"))?;
+    for (id, row) in result_rows {
         scan_result_index.insert(id, scan_results.len());
         scan_results.push(row);
     }
