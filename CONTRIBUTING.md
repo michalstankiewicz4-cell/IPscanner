@@ -261,9 +261,10 @@ Mozliwe sa trzy sciezki:
 - przez rozszerzenie: `contributions.i18n` w manifescie.
 
 Language Manager pokazuje liste **zainstalowanych** jezykow (flaga emoji +
-nazwa + wersja jesli dotyczy, radio-button do wyboru aktywnego jezyka; bez
-mozliwosci odinstalowania - dotyczy to takze jezykow zaimportowanych z
-katalogu lub pliku lokalnego).
+nazwa + wersja aplikacji, dla ktorej tlumaczenie zostalo zrobione, jesli
+podana, radio-button do wyboru aktywnego jezyka; bez mozliwosci
+odinstalowania - dotyczy to takze jezykow zaimportowanych z katalogu lub
+pliku lokalnego).
 
 Dwa formaty pliku jezykowego, w zaleznosci od sciezki importu:
 
@@ -283,7 +284,13 @@ literami, brak wersji):
 
 **Katalog GitHub (`languages/<code>.json`)** - "bogaty" manifest, mirrorujacy
 `tools/*.json`; bez pliku ikony do parowania - flaga to pole tekstowe w
-manifescie, nie osobny obrazek. Opcjonalne pole `rtl` (boolean, domyslnie
+manifescie, nie osobny obrazek. Pole `version` to **wersja aplikacji**
+(zgodna z `package.json`, np. `"2.6.0"`), z ktora tlumaczenie zostalo
+zweryfikowane - NIE wlasny, niezalezny numer rewizji samego pliku
+tlumaczenia. Language Manager pokazuje je jako "Dla aplikacji <wersja>"
+zarowno na liscie zainstalowanych jezykow, jak i w katalogu importu -
+dzieki temu widac od razu, czy tlumaczenie moze byc nieaktualne wzgledem
+biezacej wersji aplikacji. Opcjonalne pole `rtl` (boolean, domyslnie
 `false`) oznacza jezyk pisany od prawej do lewej (RTL, np. arabski) -
 Language Manager po aktywacji takiego jezyka sam ustawia
 `document.documentElement`'s `dir="rtl"` (patrz `i18n.js`'s
@@ -295,7 +302,7 @@ odbicie ukladu to osobny, przyszly temat (patrz ROADMAP.md):
 {
   "code": "ar",
   "name": "العربية",
-  "version": "1.0.0",
+  "version": "2.6.0",
   "flag": "🇸🇦",
   "rtl": true,
   "dictionary": {
