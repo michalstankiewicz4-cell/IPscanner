@@ -285,12 +285,15 @@ literami, brak wersji):
 **Katalog GitHub (`languages/<code>.json`)** - "bogaty" manifest, mirrorujacy
 `tools/*.json`; bez pliku ikony do parowania - flaga to pole tekstowe w
 manifescie, nie osobny obrazek. Pole `version` to **wersja aplikacji**
-(zgodna z `package.json`, np. `"2.6.0"`), z ktora tlumaczenie zostalo
-zweryfikowane - NIE wlasny, niezalezny numer rewizji samego pliku
-tlumaczenia. Language Manager pokazuje je jako "Dla aplikacji <wersja>"
-zarowno na liscie zainstalowanych jezykow, jak i w katalogu importu -
-dzieki temu widac od razu, czy tlumaczenie moze byc nieaktualne wzgledem
-biezacej wersji aplikacji. Opcjonalne pole `rtl` (boolean, domyslnie
+(zgodna z `package.json`, np. `"2.6.0"`), dla ktorej tlumaczenie jest
+przeznaczone - NIE wlasny, niezalezny numer rewizji samego pliku
+tlumaczenia. Nie musi to oznaczac 100% pokrycia kluczy - brakujace wpisy i
+tak fallbackuja do EN (patrz nizej), wiec tlumaczenie zostaje uzywalne z
+nowsza wersja apki nawet gdy nie nadazylo jeszcze za najnowszymi stringami;
+`version` to najlepsze przyblizenie autora co do tego, z jaka wersja apki
+warto to tlumaczenie kojarzyc. Language Manager pokazuje je jako "Dla
+aplikacji <wersja>" zarowno na liscie zainstalowanych jezykow, jak i w
+katalogu importu. Opcjonalne pole `rtl` (boolean, domyslnie
 `false`) oznacza jezyk pisany od prawej do lewej (RTL, np. arabski) -
 Language Manager po aktywacji takiego jezyka sam ustawia
 `document.documentElement`'s `dir="rtl"` (patrz `i18n.js`'s
