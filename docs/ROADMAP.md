@@ -8,9 +8,7 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
 ## Done
 
 - Core IP/port scanner (range scanning, results browser, port presets,
-  country IP library, session save/load). Topology and globe views existed
-  in the legacy UI only — in the New UI they are unfinished placeholders,
-  hidden by default (see backlog items 14-15).
+  country IP library, session save/load).
 - New UI shell (VS Code-style layout: menu bar, activity bar, left/right/center
   panels, bottom terminal/console).
 - Shell vs. tool code split across `js/new-ui/core/**` so the UI layer isn't
@@ -121,6 +119,47 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   default 1024/6) instead of hardcoded constants — edited via RS's new "AI
   Properties" tab, which shows whichever provider is currently active and
   switches live when the provider is changed elsewhere.
+- Agent Identity (Options menu, renamed from "Agent Profiles"): saved
+  OSINT account-creation identities — name/nickname/email/login/password/
+  note, optional photo and file attachments, and per-identity social-media
+  service fields. Synced to both localStorage and the session file's own
+  SQLite tables (with attachment bytes stored separately via IndexedDB /
+  a dedicated BLOB table, not inline).
+- ipscanner.pl (the www build) ships a Content-Security-Policy and
+  Referrer-Policy via a `<meta>` tag, since GitHub Pages can't set real
+  HTTP response headers for a static site.
+- Topology (Tools menu, renamed from "Pulpit"): a manually-curated visual
+  inventory of computers — Library (LS) / Canvas (CS) / Inspector (RS),
+  reusing ShellCraft's canvas/drag/selection architecture. Add icons for
+  remote/local/virtual/own devices, drag them anywhere on the canvas, keep
+  a name/host/note on each from the right panel. A normal, always-visible
+  tab — no longer gated behind "Show unfinished tools".
+- Globe (Tools menu): a real 3D globe (globe.gl/Three.js, vendored) that
+  plots scanned hosts by geolocation. Prefers each row's own persisted
+  lat/lon (see the Location column below) over a live lookup, and now also
+  renders on the www build from a loaded session's persisted coordinates —
+  a live `geo_lookup` itself stays desktop-only (it's a Tauri command, and
+  ip-api.com's free tier has no HTTPS, so a direct browser fetch from an
+  HTTPS page like ipscanner.pl would be blocked as mixed content
+  regardless). Also a normal, always-visible tab now.
+- Persisted host Location (city/country): a dedicated "Location" checkbox
+  in RS Config's Host Enrichment section captures city/country/lat/lon per
+  scan result independently of the "Country Flag" checkbox, shown as its
+  own results-table column and carried through the session file and both
+  SQLite backends — the same data Globe above reuses instead of
+  re-fetching it.
+- Session file versioning + addon tracking: every save now stamps the app
+  version that wrote it; on load, a version mismatch shows an informational
+  dialog (doesn't block loading). The save also embeds the full manifest of
+  every currently-installed addon, so loading a session that depended on
+  one you don't have offers a one-click reinstall straight from the
+  file's own embedded copy — no GitHub round-trip needed, works offline.
+- Target-app-version labeling for translations and addons: the `version`
+  field on a language pack (`languages/*.json`) or addon manifest
+  (`tools/*.json`) now means the app version it's written for (shown as
+  "For app X" next to the name in Language Manager / Import Tool), not an
+  arbitrary, meaningless revision number. Missing strings still fall back
+  to English regardless of how current the version tag is.
 
 ## In progress
 
@@ -275,9 +314,10 @@ A pass over every menu/tool, numbered for easy reference in discussion:
 4. Finish the core IP Scanner (the deprioritized item from "In progress"
    above).
 5. Country IP Library: work out what can run on www vs. app-only, and add
-   more library update sources. Hidden from the Options menu by default,
-   same as Topology/Globe (13/14 below) — the "Show unfinished tools"
-   toggle reveals it.
+   more library update sources. Hidden from the Options menu by default —
+   the "Show unfinished tools" toggle reveals it (Topology/Globe, items
+   13/14 below, used to be hidden the same way but are done now and no
+   longer gated behind this toggle).
 6. Port Presets — done, 100%.
 7. Audit the actual session save/load file format more closely (the
    `.sqlite3` schema shared with sql.js — see the www session-save work).
@@ -296,10 +336,16 @@ A pass over every menu/tool, numbered for easy reference in discussion:
     nesting/connections, and the Timeline/Tree/Layered views (the switcher
     exists, only Flow works).
 12. AI Assistant — ~1.5% done (just the tab exists).
-13. Topology Map — ~1% done (just the tab exists). Hidden from the LRSB and
-    Tools menu by default; the top-bar "Show unfinished tools" toggle
-    reveals it.
-14. Globe — ~1% done (just the tab exists). Hidden by default, same as 13.
+13. ~~Topology Map — ~1% done (just the tab exists). Hidden from the LRSB
+    and Tools menu by default; the top-bar "Show unfinished tools" toggle
+    reveals it.~~ **Done** — built as "Pulpit" (a real visual computer
+    inventory tool), then renamed to "Topology" as its display name. See
+    "Done" above; no longer hidden behind the toggle.
+14. ~~Globe — ~1% done (just the tab exists). Hidden by default, same as
+    13.~~ **Done** — a real globe.gl-powered 3D globe plotting scanned
+    hosts by geolocation, including on the www build from a loaded
+    session's persisted data. See "Done" above; no longer hidden behind
+    the toggle.
 15. ~~"Blur sensitive data" button — usefulness unclear, consider removing.~~
     **Done** — implemented as a `body.v1-blur-ip` CSS toggle (persisted,
     restored on launch) covering the IP Results table, IP detection results,
