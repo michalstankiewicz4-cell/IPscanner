@@ -70,7 +70,11 @@
     "  is_active INTEGER NOT NULL DEFAULT 0",
     ");",
     "CREATE TABLE IF NOT EXISTS session_meta (",
-    "  id INTEGER PRIMARY KEY CHECK (id = 1), saved_at TEXT NOT NULL, version INTEGER NOT NULL",
+    "  id INTEGER PRIMARY KEY CHECK (id = 1), saved_at TEXT NOT NULL, version INTEGER NOT NULL,",
+    "  app_version TEXT NOT NULL DEFAULT ''",
+    ");",
+    "CREATE TABLE IF NOT EXISTS session_extensions (",
+    "  id TEXT PRIMARY KEY, name TEXT NOT NULL, version TEXT NOT NULL, manifest_json TEXT NOT NULL",
     ");",
   ].join("\n");
 
@@ -287,7 +291,21 @@
         });
         insertTab.free();
 
-        db.run("INSERT INTO session_meta (id, saved_at, version) VALUES (1, strftime('%Y-%m-%dT%H:%M:%fZ','now'), 1)");
+        var extensions = Array.isArray(data.extensions) ? data.extensions : [];
+        var insertExtension = db.prepare("INSERT INTO session_extensions (id, name, version, manifest_json) VALUES (?,?,?,?)");
+        extensions.forEach(function (ext) {
+          ext = ext || {};
+          insertExtension.run([
+            String(ext.id || ""),
+            String(ext.name || ""),
+            String(ext.version || ""),
+            String(ext.manifestJson || ""),
+          ]);
+        });
+        insertExtension.free();
+
+        var appVersion = (window.NetReconNewUICore && window.NetReconNewUICore.APP_VERSION) || "";
+        db.run("INSERT INTO session_meta (id, saved_at, version, app_version) VALUES (1, strftime('%Y-%m-%dT%H:%M:%fZ','now'), 1, ?)", [appVersion]);
 
         return db.export();
       } finally {
@@ -517,6 +535,44 @@
           });
         }
 
+        // Older session files may be missing app_version (added for the
+        // session versioning feature) - db.exec() throws on unknown columns,
+        // so fall back to just saved_at on error, same discipline as every
+        // other column added after this file format's original release.
+        var meta = { savedAt: "", appVersion: "" };
+        try {
+          var metaWithVersionRows = db.exec("SELECT saved_at, app_version FROM session_meta WHERE id = 1");
+          if (metaWithVersionRows.length && metaWithVersionRows[0].values.length) {
+            var mv = metaWithVersionRows[0].values[0];
+            meta = { savedAt: String(mv[0] || ""), appVersion: String(mv[1] || "") };
+          }
+        } catch (_) {
+          try {
+            var metaRowsLegacy = db.exec("SELECT saved_at FROM session_meta WHERE id = 1");
+            if (metaRowsLegacy.length && metaRowsLegacy[0].values.length) {
+              meta = { savedAt: String(metaRowsLegacy[0].values[0][0] || ""), appVersion: "" };
+            }
+          } catch (__) {}
+        }
+
+        // session_extensions is a brand new table - a session file saved
+        // before this feature simply lacks it entirely, which db.exec()
+        // throws on the same as a missing column would.
+        var extensions = [];
+        try {
+          var extensionsRows = db.exec("SELECT id, name, version, manifest_json FROM session_extensions ORDER BY rowid");
+          if (extensionsRows.length) {
+            extensionsRows[0].values.forEach(function (row) {
+              extensions.push({
+                id: String(row[0] || ""),
+                name: String(row[1] || ""),
+                version: String(row[2] || ""),
+                manifestJson: String(row[3] || ""),
+              });
+            });
+          }
+        } catch (_) {}
+
         return {
           scanResults: scanResults,
           scanProgress: scanProgress,
@@ -525,6 +581,8 @@
           agentProfiles: { profiles: agentProfilesList, attachments: agentAttachmentsList, services: agentServicesList, fields: agentFieldsList },
           scanDefaults: scanDefaults,
           layout: layout,
+          meta: meta,
+          extensions: extensions,
         };
       } finally {
         db.close();

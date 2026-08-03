@@ -64,6 +64,7 @@
     var getNavigationRuntime = deps.getNavigationRuntime || function () { return null; };
     var refreshCustomScrollbars = deps.refreshCustomScrollbars || function () {};
     var sessionSqlite = deps.sessionSqlite || null;
+    var extensionHost = deps.extensionHost || null;
     var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils
       ? window.NetReconNewUICore.utils.net
       : null;
@@ -243,6 +244,16 @@
           left: collectLeftLayout(),
           right: collectRightLayout(),
         },
+        // Full manifests (not just id/version) of every currently-installed
+        // addon, so a future load on a machine missing one can reinstall it
+        // straight from the session file with no network call - there is no
+        // offline catalog cache anywhere else in the app to fall back on.
+        extensions: (function () {
+          var manifests = extensionHost && extensionHost.getInstalledManifests ? extensionHost.getInstalledManifests() : [];
+          return manifests.map(function (m) {
+            return { id: String(m.id || ""), name: String(m.name || ""), version: String(m.version || ""), manifestJson: JSON.stringify(m) };
+          });
+        })(),
       };
     }
 
@@ -314,6 +325,152 @@
         // Best-effort: a failed attachment restore shouldn't block the rest
         // of the session load - the metadata written above still reflects
         // what was in the file even if some/all blob writes failed.
+      });
+    }
+
+    // --- session versioning / addon tracking (load) ---
+
+    // Purely informational - resolves regardless of which button (or
+    // Escape/backdrop) the user picks, since an app-version mismatch never
+    // blocks a load, it's just a heads-up.
+    function checkVersionMismatch(data) {
+      var saved = data.meta && data.meta.appVersion;
+      var current = window.NetReconNewUICore && window.NetReconNewUICore.APP_VERSION;
+      if (!saved || !current || saved === current) return Promise.resolve();
+      var ui = window.NetReconNewUI;
+      if (!ui || typeof ui.openConfirmDialog !== "function") return Promise.resolve();
+      var message = tr("sessionVersionMismatchMessage").replace("{saved}", saved).replace("{current}", current);
+      return ui.openConfirmDialog(tr("sessionVersionMismatchTitle"), message, tr("sessionVersionMismatchOk"), tr("exitPromptCancel")).then(function () {});
+    }
+
+    // Lazily-built modal, structurally mirroring menu-runtime.js's own
+    // buildButtonDialog()/openConfirmDialog() (same .v1-exit-modal/-panel/
+    // -head/-message/-actions/-btn CSS classes for visual consistency), with
+    // one addition: a scrollable checkbox list between the message and the
+    // action buttons, since (unlike every other confirm dialog in this app)
+    // this one needs to show a variable-length, per-item-selectable list.
+    var missingExtDialogState = null;
+
+    function ensureMissingExtDialog() {
+      if (missingExtDialogState && missingExtDialogState.root.isConnected) return missingExtDialogState;
+
+      var root = document.createElement("div");
+      root.className = "v1-exit-modal";
+      root.setAttribute("hidden", "hidden");
+      root.setAttribute("role", "dialog");
+      root.setAttribute("aria-modal", "true");
+
+      var panel = document.createElement("div");
+      panel.className = "v1-exit-panel";
+
+      var head = document.createElement("div");
+      head.className = "v1-exit-head";
+      var title = document.createElement("h3");
+      head.appendChild(title);
+
+      var message = document.createElement("p");
+      message.className = "v1-exit-message";
+
+      var list = document.createElement("div");
+      list.className = "v1-session-missing-ext-list";
+
+      var actions = document.createElement("div");
+      actions.className = "v1-exit-actions";
+      var installBtn = document.createElement("button");
+      installBtn.type = "button";
+      installBtn.className = "v1-exit-btn v1-exit-btn--primary";
+      var skipBtn = document.createElement("button");
+      skipBtn.type = "button";
+      skipBtn.className = "v1-exit-btn";
+      actions.appendChild(installBtn);
+      actions.appendChild(skipBtn);
+
+      panel.appendChild(head);
+      panel.appendChild(message);
+      panel.appendChild(list);
+      panel.appendChild(actions);
+      root.appendChild(panel);
+      document.body.appendChild(root);
+
+      var state = {
+        root: root, title: title, message: message, list: list,
+        installBtn: installBtn, skipBtn: skipBtn, resolver: null, checkboxes: [],
+      };
+
+      function finish(result) {
+        root.setAttribute("hidden", "hidden");
+        document.removeEventListener("keydown", state._keyHandler, true);
+        root.removeEventListener("mousedown", state._backdropHandler);
+        var done = state.resolver;
+        state.resolver = null;
+        if (typeof done === "function") done(result || []);
+      }
+
+      installBtn.addEventListener("click", function () {
+        var picked = state.checkboxes.filter(function (c) { return c.input.checked; }).map(function (c) { return c.entry; });
+        finish(picked);
+      });
+      skipBtn.addEventListener("click", function () { finish([]); });
+
+      state._keyHandler = function (event) {
+        if (event.key === "Escape") { event.preventDefault(); finish([]); }
+      };
+      state._backdropHandler = function (event) {
+        if (event.target === root) finish([]);
+      };
+
+      missingExtDialogState = state;
+      return state;
+    }
+
+    function promptMissingExtensions(missingList) {
+      var state = ensureMissingExtDialog();
+      state.title.textContent = tr("sessionMissingAddonsTitle");
+      state.message.textContent = tr("sessionMissingAddonsMessage");
+      state.installBtn.textContent = tr("sessionMissingAddonsInstall");
+      state.skipBtn.textContent = tr("sessionMissingAddonsSkip");
+
+      state.list.innerHTML = "";
+      state.checkboxes = missingList.map(function (entry) {
+        var row = document.createElement("label");
+        row.className = "v1-session-missing-ext-row";
+        var input = document.createElement("input");
+        input.type = "checkbox";
+        input.checked = true;
+        var span = document.createElement("span");
+        span.textContent = (entry.name || entry.id) + " (" + (entry.version || "0.0.0") + ")";
+        row.appendChild(input);
+        row.appendChild(span);
+        state.list.appendChild(row);
+        return { input: input, entry: entry };
+      });
+
+      return new Promise(function (resolve) {
+        state.resolver = resolve;
+        state.root.removeAttribute("hidden");
+        document.addEventListener("keydown", state._keyHandler, true);
+        state.root.addEventListener("mousedown", state._backdropHandler);
+      });
+    }
+
+    // Skipped cleanly (resolves immediately, no dialog) when nothing
+    // recorded in the session is actually missing right now.
+    function checkMissingExtensions(data) {
+      var recorded = Array.isArray(data.extensions) ? data.extensions : [];
+      if (!recorded.length || !extensionHost) return Promise.resolve();
+      var installedIds = (typeof extensionHost.listExtensions === "function" ? extensionHost.listExtensions() : []).map(function (e) { return e.id; });
+      var missing = recorded.filter(function (e) { return installedIds.indexOf(e.id) === -1; });
+      if (!missing.length) return Promise.resolve();
+
+      return promptMissingExtensions(missing).then(function (toInstall) {
+        if (!toInstall || !toInstall.length) return;
+        toInstall.forEach(function (entry) {
+          try {
+            if (typeof extensionHost.installExtension === "function") extensionHost.installExtension(JSON.parse(entry.manifestJson));
+          } catch (_) {}
+        });
+        var ui = window.NetReconNewUI;
+        if (ui && typeof ui.syncExtensionToolUi === "function") ui.syncExtensionToolUi();
       });
     }
 
@@ -591,8 +748,16 @@
       // Attachment blobs are written to IndexedDB asynchronously - the
       // reload below must wait for that to finish, otherwise a reload
       // firing mid-write would leave attachment metadata pointing at blobs
-      // that never actually landed in the store.
-      return restoreAgentProfileAttachments(data.agentProfiles).then(function () {
+      // that never actually landed in the store. The version/addon checks
+      // run first (both are dialogs the user should see before the reload
+      // wipes the loading screen state) - each resolves immediately when
+      // its own trigger condition doesn't apply, so a normal same-version,
+      // same-addons load is unaffected.
+      return checkVersionMismatch(data).then(function () {
+        return checkMissingExtensions(data);
+      }).then(function () {
+        return restoreAgentProfileAttachments(data.agentProfiles);
+      }).then(function () {
         rememberPathContext(path);
         statusMsg(tr("sessionLoadOk"));
         window.location.reload();

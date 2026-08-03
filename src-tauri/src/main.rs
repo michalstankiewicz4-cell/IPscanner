@@ -1857,6 +1857,22 @@ struct LayoutData {
     right: SectionLayout,
 }
 
+#[derive(Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct SessionMetaData {
+    saved_at: String,
+    app_version: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct SessionExtensionRow {
+    id: String,
+    name: String,
+    version: String,
+    manifest_json: String,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SessionData {
@@ -1868,6 +1884,10 @@ struct SessionData {
     #[serde(default)]
     agent_profiles: AgentProfilesData,
     layout: LayoutData,
+    #[serde(default)]
+    meta: SessionMetaData,
+    #[serde(default)]
+    extensions: Vec<SessionExtensionRow>,
 }
 
 const SESSION_SCHEMA_SQL: &str = "
@@ -1962,7 +1982,14 @@ const SESSION_SCHEMA_SQL: &str = "
     CREATE TABLE IF NOT EXISTS session_meta (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       saved_at TEXT NOT NULL,
-      version INTEGER NOT NULL
+      version INTEGER NOT NULL,
+      app_version TEXT NOT NULL DEFAULT ''
+    );
+    CREATE TABLE IF NOT EXISTS session_extensions (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      version TEXT NOT NULL,
+      manifest_json TEXT NOT NULL
     );
 ";
 
@@ -2029,6 +2056,23 @@ fn open_session_sqlite_conn(path: &Path) -> Result<Connection, String> {
                 conn.execute_batch(ddl)
                     .map_err(|e| format!("Failed to migrate scan_results.{column}: {e}"))?;
             }
+        }
+    }
+    // Same migration discipline, for session_meta's own newer column
+    // (app_version - the session versioning feature).
+    {
+        let existing: Vec<String> = {
+            let mut stmt = conn.prepare("PRAGMA table_info(session_meta)")
+                .map_err(|e| format!("Failed to inspect session_meta schema: {e}"))?;
+            let names = stmt.query_map([], |row| row.get::<_, String>(1))
+                .map_err(|e| format!("Failed to read session_meta columns: {e}"))?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| format!("Failed to read session_meta column name: {e}"))?;
+            names
+        };
+        if !existing.iter().any(|c| c == "app_version") {
+            conn.execute_batch("ALTER TABLE session_meta ADD COLUMN app_version TEXT NOT NULL DEFAULT ''")
+                .map_err(|e| format!("Failed to migrate session_meta.app_version: {e}"))?;
         }
     }
     Ok(conn)
@@ -2176,9 +2220,22 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
     }
 
     tx.execute(
-        "INSERT INTO session_meta (id, saved_at, version) VALUES (1, strftime('%Y-%m-%dT%H:%M:%fZ','now'), 1) ON CONFLICT(id) DO UPDATE SET saved_at = excluded.saved_at, version = excluded.version",
-        [],
+        "INSERT INTO session_meta (id, saved_at, app_version, version) VALUES (1, strftime('%Y-%m-%dT%H:%M:%fZ','now'), ?1, 1) ON CONFLICT(id) DO UPDATE SET saved_at = excluded.saved_at, app_version = excluded.app_version, version = excluded.version",
+        params![env!("CARGO_PKG_VERSION")],
     ).map_err(|e| format!("Failed to write session_meta: {e}"))?;
+
+    tx.execute("DELETE FROM session_extensions", [])
+        .map_err(|e| format!("Failed to clear session_extensions: {e}"))?;
+    {
+        let mut insert_ext = tx
+            .prepare_cached("INSERT INTO session_extensions (id, name, version, manifest_json) VALUES (?1,?2,?3,?4)")
+            .map_err(|e| format!("Failed to prepare session_extensions insert: {e}"))?;
+        for ext in &data.extensions {
+            insert_ext
+                .execute(params![ext.id, ext.name, ext.version, ext.manifest_json])
+                .map_err(|e| format!("Failed to insert session_extensions row: {e}"))?;
+        }
+    }
 
     tx.commit().map_err(|e| format!("Failed to commit session write: {e}"))?;
     Ok(())
@@ -2522,6 +2579,47 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         LayoutData { center, left, right }
     };
 
+    // Older session files may be missing app_version (added for the session
+    // versioning feature) - same newest-first-then-fallback discipline as
+    // scan_results' own city/country_code/lat/lon columns above.
+    let meta = {
+        let newest: Result<(String, String), rusqlite::Error> = conn.query_row(
+            "SELECT saved_at, app_version FROM session_meta WHERE id = 1",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        );
+        match newest {
+            Ok((saved_at, app_version)) => SessionMetaData { saved_at, app_version },
+            Err(_) => {
+                let saved_at: String = conn.query_row(
+                    "SELECT saved_at FROM session_meta WHERE id = 1",
+                    [],
+                    |row| row.get(0),
+                ).unwrap_or_default();
+                SessionMetaData { saved_at, app_version: String::new() }
+            }
+        }
+    };
+
+    // session_extensions is a brand new table, and read_session_data (unlike
+    // write_session_data) opens a plain Connection rather than going through
+    // open_session_sqlite_conn's migrations - so a session file saved before
+    // this feature genuinely has no such table yet, and the query below
+    // errors. Same discipline as every other newest-shape-then-fallback read
+    // in this function: treat a query failure as "no extensions recorded".
+    let extensions: Vec<SessionExtensionRow> = (|| -> Result<Vec<SessionExtensionRow>, rusqlite::Error> {
+        let mut stmt = conn.prepare("SELECT id, name, version, manifest_json FROM session_extensions ORDER BY rowid")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(SessionExtensionRow {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                version: row.get(2)?,
+                manifest_json: row.get(3)?,
+            })
+        })?.collect();
+        rows
+    })().unwrap_or_default();
+
     Ok(SessionData {
         scan_results,
         scan_progress,
@@ -2535,6 +2633,8 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
             fields: agent_profile_service_fields,
         },
         layout,
+        meta,
+        extensions,
     })
 }
 

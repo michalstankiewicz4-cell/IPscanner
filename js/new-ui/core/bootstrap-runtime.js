@@ -1276,6 +1276,7 @@
             getNavigationRuntime: function () { return navigationRuntime; },
             refreshCustomScrollbars: function () { refreshCustomScrollbars(); },
             sessionSqlite: sessionSqliteRuntime,
+            extensionHost: extensionHost,
           })
         : null;
 
