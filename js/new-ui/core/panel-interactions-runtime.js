@@ -8,7 +8,9 @@
     var renderShellCraftInspector = typeof deps.renderShellCraftInspector === "function" ? deps.renderShellCraftInspector : null;
     var renderPulpitLibrary = typeof deps.renderPulpitLibrary === "function" ? deps.renderPulpitLibrary : null;
     var renderPulpitNodeHtml = typeof deps.renderPulpitNodeHtml === "function" ? deps.renderPulpitNodeHtml : null;
+    var renderPulpitLinksSvg = typeof deps.renderPulpitLinksSvg === "function" ? deps.renderPulpitLinksSvg : null;
     var renderPulpitInspector = typeof deps.renderPulpitInspector === "function" ? deps.renderPulpitInspector : null;
+    var pulpitEdgeAnchor = typeof deps.pulpitEdgeAnchor === "function" ? deps.pulpitEdgeAnchor : function (node) { return { x: node.x + 42, y: node.y + 22 }; };
     var renderAgentProfileLibrary = typeof deps.renderAgentProfileLibrary === "function" ? deps.renderAgentProfileLibrary : null;
     var renderAgentProfileDetailFields = typeof deps.renderAgentProfileDetailFields === "function" ? deps.renderAgentProfileDetailFields : null;
     var globeRuntime = deps.globeRuntime || null;
@@ -1439,7 +1441,8 @@
 
       function render() {
         var state = canvasApi.getState();
-        canvasEl.innerHTML = state.nodes.map(renderPulpitNodeHtml).join("");
+        var linksHtml = renderPulpitLinksSvg ? renderPulpitLinksSvg(state) : "";
+        canvasEl.innerHTML = linksHtml + state.nodes.map(renderPulpitNodeHtml).join("");
         if (selectedNodeId) {
           var selectedEl = canvasEl.querySelector('[data-node-id="' + selectedNodeId + '"]');
           if (selectedEl) selectedEl.classList.add("is-selected");
@@ -1514,10 +1517,134 @@
         event.preventDefault();
       });
 
+      // Drag-to-connect: pointerdown on a node's connector handle starts a
+      // live line that follows the pointer (mirrors the reference mockup's
+      // startLink/onLinkMove/endLink, not HTML5 DnD - the existing
+      // move-drag on .v1-pulpit-node already owns that gesture via
+      // dragstart below, and doesn't suit a "line follows the cursor"
+      // interaction). On drop: another node is a valid target for every
+      // source type (creates a normal addEdge); an existing connection
+      // line is only a valid target when the source is a scanner/sniffer
+      // (creates a addTap "monitoring" link) - a plain device can't tap a
+      // wire.
+      var PULPIT_TOOL_TYPES = ["scanner", "sniffer"];
+      var connectDragSourceId = "";
+      var connectDragSourceType = "";
+      var tempLinkEl = null;
+
+      function pulpitCanvasPoint(event) {
+        var rect = canvasEl.getBoundingClientRect();
+        return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      }
+
+      function distanceToSegment(p, a, b) {
+        var dx = b.x - a.x;
+        var dy = b.y - a.y;
+        var lenSq = dx * dx + dy * dy;
+        var t = lenSq > 0 ? ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq : 0;
+        t = Math.max(0, Math.min(1, t));
+        var projX = a.x + t * dx;
+        var projY = a.y + t * dy;
+        return Math.sqrt((p.x - projX) * (p.x - projX) + (p.y - projY) * (p.y - projY));
+      }
+
+      function findConnectDropNode(point, excludeId) {
+        var state = canvasApi.getState();
+        var hit = "";
+        var hitDist = 30;
+        state.nodes.forEach(function (n) {
+          if (n.id === excludeId) return;
+          var anchor = pulpitEdgeAnchor(n);
+          var d = Math.sqrt((point.x - anchor.x) * (point.x - anchor.x) + (point.y - anchor.y) * (point.y - anchor.y));
+          if (d <= hitDist) { hit = n.id; hitDist = d; }
+        });
+        return hit;
+      }
+
+      function findConnectDropEdge(point) {
+        var state = canvasApi.getState();
+        var nodeById = {};
+        state.nodes.forEach(function (n) { nodeById[n.id] = n; });
+        var hit = "";
+        var hitDist = 14;
+        state.edges.forEach(function (e) {
+          var a = nodeById[e.fromId];
+          var b = nodeById[e.toId];
+          if (!a || !b) return;
+          var d = distanceToSegment(point, pulpitEdgeAnchor(a), pulpitEdgeAnchor(b));
+          if (d <= hitDist) { hit = e.id; hitDist = d; }
+        });
+        return hit;
+      }
+
+      function onConnectorPointerDown(event) {
+        var connectorEl = event.target && event.target.closest ? event.target.closest(".v1-pulpit-connector") : null;
+        if (!connectorEl) return;
+        // Prevents the parent .v1-pulpit-node's own draggable="true"
+        // move-drag from also starting off this same pointerdown.
+        event.preventDefault();
+        event.stopPropagation();
+
+        var sourceNodeEl = connectorEl.closest(".v1-pulpit-node");
+        if (!sourceNodeEl) return;
+        connectDragSourceId = sourceNodeEl.getAttribute("data-node-id");
+        var state = canvasApi.getState();
+        var sourceNode = state.nodes.find(function (n) { return n.id === connectDragSourceId; });
+        if (!sourceNode) { connectDragSourceId = ""; return; }
+        connectDragSourceType = sourceNode.type;
+
+        var svg = canvasEl.querySelector(".v1-pulpit-links");
+        if (svg) {
+          var anchor = pulpitEdgeAnchor(sourceNode);
+          tempLinkEl = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          tempLinkEl.setAttribute("class", "v1-pulpit-temp-link");
+          tempLinkEl.setAttribute("x1", anchor.x);
+          tempLinkEl.setAttribute("y1", anchor.y);
+          tempLinkEl.setAttribute("x2", anchor.x);
+          tempLinkEl.setAttribute("y2", anchor.y);
+          svg.appendChild(tempLinkEl);
+        }
+        canvasEl.classList.add("is-connect-dragging");
+      }
+
+      function onConnectDragMove(event) {
+        if (!connectDragSourceId || !tempLinkEl) return;
+        var point = pulpitCanvasPoint(event);
+        tempLinkEl.setAttribute("x2", point.x);
+        tempLinkEl.setAttribute("y2", point.y);
+      }
+
+      function onConnectDragUp(event) {
+        if (!connectDragSourceId) return;
+        var point = pulpitCanvasPoint(event);
+        var isTool = PULPIT_TOOL_TYPES.indexOf(connectDragSourceType) >= 0;
+
+        var targetNodeId = findConnectDropNode(point, connectDragSourceId);
+        if (targetNodeId) {
+          if (isTool) canvasApi.addTap(connectDragSourceId, "node", targetNodeId);
+          else canvasApi.addEdge(connectDragSourceId, targetNodeId);
+        } else if (isTool) {
+          var targetEdgeId = findConnectDropEdge(point);
+          if (targetEdgeId) canvasApi.addTap(connectDragSourceId, "edge", targetEdgeId);
+        }
+
+        if (tempLinkEl && tempLinkEl.parentNode) tempLinkEl.parentNode.removeChild(tempLinkEl);
+        tempLinkEl = null;
+        connectDragSourceId = "";
+        connectDragSourceType = "";
+        canvasEl.classList.remove("is-connect-dragging");
+      }
+
+      canvasEl.addEventListener("pointerdown", onConnectorPointerDown);
+      document.addEventListener("pointermove", onConnectDragMove);
+      document.addEventListener("pointerup", onConnectDragUp);
+
       pulpitCanvasTeardown = function () {
         document.removeEventListener("newui:pulpit-canvas-changed", onCanvasChanged);
         document.removeEventListener("mousemove", onDocumentMouseMove);
         document.removeEventListener("mouseup", onDocumentMouseUp);
+        document.removeEventListener("pointermove", onConnectDragMove);
+        document.removeEventListener("pointerup", onConnectDragUp);
       };
 
       // Only the "move an existing node" case exists here - adding a new
@@ -1544,6 +1671,14 @@
       });
 
       canvasEl.addEventListener("dragstart", function (event) {
+        // Dragging from the connector handle is the pointer-events-based
+        // connect gesture wired above, not the native HTML5 move-drag -
+        // onConnectorPointerDown already calls preventDefault/stopPropagation
+        // on the originating pointerdown, this is a defensive second guard.
+        if (event.target && event.target.closest && event.target.closest(".v1-pulpit-connector")) {
+          event.preventDefault();
+          return;
+        }
         var nodeEl = event.target && event.target.closest ? event.target.closest(".v1-pulpit-node") : null;
         if (!nodeEl) return;
         var nodeRect = nodeEl.getBoundingClientRect();
@@ -1563,7 +1698,20 @@
           return;
         }
 
+        var edgeHit = event.target && event.target.closest ? event.target.closest("[data-pulpit-edge-remove]") : null;
+        if (edgeHit) {
+          canvasApi.removeEdge(edgeHit.getAttribute("data-pulpit-edge-remove"));
+          return;
+        }
+
+        var tapHit = event.target && event.target.closest ? event.target.closest("[data-pulpit-tap-remove]") : null;
+        if (tapHit) {
+          canvasApi.removeTap(tapHit.getAttribute("data-pulpit-tap-remove"));
+          return;
+        }
+
         var nodeEl = event.target && event.target.closest ? event.target.closest(".v1-pulpit-node") : null;
+
         if (!nodeEl) return;
 
         selectedNodeId = nodeEl.getAttribute("data-node-id");
@@ -1767,7 +1915,16 @@
 
         var field = target.getAttribute("data-inspector-field");
         var patch = {};
-        patch[field] = target.value;
+        // Per-type fields are named "fields.<id>" (see renderPulpitInspector)
+        // - updateNodeProperties expects those nested under patch.fields so
+        // it can merge into the node's existing fields{} bag instead of
+        // clobbering the other per-type values.
+        if (field.indexOf("fields.") === 0) {
+          patch.fields = {};
+          patch.fields[field.slice("fields.".length)] = target.value;
+        } else {
+          patch[field] = target.value;
+        }
 
         pulpitInspectorSuppressNextRender = true;
         canvasApi.updateNodeProperties(pulpitInspectorSelectedNodeId, patch);
@@ -1803,6 +1960,58 @@
 
         var nameKey = "pulpitDefaultName" + type.charAt(0).toUpperCase() + type.slice(1);
         canvasApi.addNode(type, x, y, { name: tr(nameKey) });
+      });
+
+      mount.addEventListener("click", function (event) {
+        var autoDiscoverBtn = event.target && event.target.closest ? event.target.closest("[data-pulpit-auto-discover]") : null;
+        if (!autoDiscoverBtn) return;
+
+        var canvasApi = (window.NetReconNewUICore && window.NetReconNewUICore.pulpitCanvas) || null;
+        if (!canvasApi) return;
+
+        var rows = [];
+        try {
+          var raw = window.localStorage ? window.localStorage.getItem("netrecon_scan_results_v1") : "";
+          var parsed = raw ? JSON.parse(raw) : [];
+          rows = Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+          rows = [];
+        }
+
+        var state = canvasApi.getState();
+        var existingHosts = {};
+        state.nodes.forEach(function (n) { if (n.host) existingHosts[n.host] = true; });
+
+        var toAdd = rows.filter(function (row) {
+          return row && row.ip && !existingHosts[row.ip];
+        });
+
+        if (!toAdd.length) {
+          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("pulpitAutoDiscoverNoneFound"));
+          return;
+        }
+
+        // Batch grid layout (not the single-node cascade above, which would
+        // badly overlap for many hosts at once) - starts below the lowest
+        // existing node so a repeated run stacks under prior work instead
+        // of overlapping it.
+        var startY = 40;
+        state.nodes.forEach(function (n) { if (n.y + 140 > startY) startY = n.y + 140; });
+        var columns = 6;
+        var cellW = 140;
+        var cellH = 140;
+        toAdd.forEach(function (row, index) {
+          var col = index % columns;
+          var line = Math.floor(index / columns);
+          var x = 40 + col * cellW;
+          var y = startY + line * cellH;
+          var name = row.hostname && row.hostname !== "-" ? row.hostname : row.ip;
+          canvasApi.addNode("local", x, y, { name: name, host: row.ip });
+        });
+
+        if (setStatusLine) {
+          setStatusLine(tr("menuPrefix") + ": " + tr("pulpitAutoDiscoverBtn") + " - " + toAdd.length);
+        }
       });
     }
 

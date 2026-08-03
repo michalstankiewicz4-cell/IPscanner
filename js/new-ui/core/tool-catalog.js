@@ -118,7 +118,7 @@
     pulpit: {
       titleKey: "toolTitle_pulpit",
       textKey: "toolText_pulpit",
-      points: ["Freely placed computer icons", "Per-computer notes", "Remote / local / virtual / own types"],
+      points: ["10 device types incl. servers, switches, printers, scanner/sniffer icons", "Per-type config fields plus name/host/note", "Draw connections between devices, or auto-build from your last scan"],
       icon: "🖥",
       labelKey: "tabLabel_pulpit",
       ui: { showAsTab: true, order: 115 }

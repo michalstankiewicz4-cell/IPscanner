@@ -1536,6 +1536,8 @@
         renderShellCraftInspector: panelContentRuntime && panelContentRuntime.renderShellCraftInspector,
         renderPulpitLibrary: panelContentRuntime && panelContentRuntime.renderPulpitLibrary,
         renderPulpitNodeHtml: panelContentRuntime && panelContentRuntime.renderPulpitNodeHtml,
+        renderPulpitLinksSvg: panelContentRuntime && panelContentRuntime.renderPulpitLinksSvg,
+        pulpitEdgeAnchor: panelContentRuntime && panelContentRuntime.pulpitEdgeAnchor,
         renderPulpitInspector: panelContentRuntime && panelContentRuntime.renderPulpitInspector,
         renderAgentProfileLibrary: panelContentRuntime && panelContentRuntime.renderAgentProfileLibrary,
         renderAgentProfileDetailFields: panelContentRuntime && panelContentRuntime.renderAgentProfileDetailFields,

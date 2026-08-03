@@ -776,12 +776,32 @@
       ].join("");
     }
 
+    // "fields" (beyond the universal name/host/note every type already
+    // has) is a list of {id, label, kind} describing that type's own extra
+    // config values, stored in the node's fields{} bag (pulpit-canvas-runtime.js).
+    // Adding a whole new device type later is just one more entry here plus
+    // matching i18n keys - no other file needs to change.
     var PULPIT_TYPES = [
-      { type: "remote", icon: "🌐", labelKey: "pulpitAddRemoteBtn", nameKey: "pulpitDefaultNameRemote" },
-      { type: "local", icon: "💻", labelKey: "pulpitAddLocalBtn", nameKey: "pulpitDefaultNameLocal" },
-      { type: "virtual", icon: "🗔", labelKey: "pulpitAddVirtualBtn", nameKey: "pulpitDefaultNameVirtual" },
-      { type: "own", icon: "⚙", labelKey: "pulpitAddOwnBtn", nameKey: "pulpitDefaultNameOwn" },
+      { type: "remote", icon: "🌐", labelKey: "pulpitAddRemoteBtn", nameKey: "pulpitDefaultNameRemote", fields: [] },
+      { type: "local", icon: "💻", labelKey: "pulpitAddLocalBtn", nameKey: "pulpitDefaultNameLocal", fields: [] },
+      { type: "virtual", icon: "🗔", labelKey: "pulpitAddVirtualBtn", nameKey: "pulpitDefaultNameVirtual", fields: [] },
+      { type: "own", icon: "⚙", labelKey: "pulpitAddOwnBtn", nameKey: "pulpitDefaultNameOwn", fields: [] },
+      { type: "server", icon: "🖧", labelKey: "pulpitAddServerBtn", nameKey: "pulpitDefaultNameServer",
+        fields: [{ id: "os", label: "pulpitFieldOsLabel" }, { id: "role", label: "pulpitFieldRoleLabel" }] },
+      { type: "switch", icon: "🔀", labelKey: "pulpitAddSwitchBtn", nameKey: "pulpitDefaultNameSwitch",
+        fields: [{ id: "ports", label: "pulpitFieldPortsLabel" }, { id: "vlan", label: "pulpitFieldVlanLabel" }] },
+      { type: "printer", icon: "🖨", labelKey: "pulpitAddPrinterBtn", nameKey: "pulpitDefaultNamePrinter",
+        fields: [{ id: "model", label: "pulpitFieldModelLabel" }, { id: "queue", label: "pulpitFieldQueueLabel" }] },
+      { type: "router", icon: "📡", labelKey: "pulpitAddRouterBtn", nameKey: "pulpitDefaultNameRouter",
+        fields: [{ id: "wan", label: "pulpitFieldWanLabel" }] },
+      { type: "scanner", icon: "🔍", labelKey: "pulpitAddScannerBtn", nameKey: "pulpitDefaultNameScanner", fields: [], isTool: true },
+      { type: "sniffer", icon: "🛰", labelKey: "pulpitAddSnifferBtn", nameKey: "pulpitDefaultNameSniffer", fields: [], isTool: true },
     ];
+
+    function pulpitFieldsFor(type) {
+      var entry = PULPIT_TYPES.filter(function (t) { return t.type === type; })[0];
+      return entry ? entry.fields : [];
+    }
 
     function pulpitIconFor(type) {
       var entry = PULPIT_TYPES.filter(function (t) { return t.type === type; })[0];
@@ -795,21 +815,33 @@
     // LS: plain click-to-add buttons (not draggable rows like ShellCraft's
     // library - adding a computer doesn't need a drag gesture, a button is
     // simpler and the pulpitCanvas API already takes an explicit x/y).
+    function pulpitAddButtonHtml(entry) {
+      return [
+        "<button type=\"button\" class=\"v1-pulpit-add-btn\" data-pulpit-add-type=\"" + entry.type + "\">",
+        "<span class=\"v1-pulpit-add-icon\" aria-hidden=\"true\">" + escapeHtml(entry.icon) + "</span>",
+        "<span class=\"v1-pulpit-add-name\">" + escapeHtml(tr(entry.labelKey)) + "</span>",
+        "</button>"
+      ].join("");
+    }
+
     function renderPulpitLibrary() {
-      var buttonsHtml = PULPIT_TYPES.map(function (entry) {
-        return [
-          "<button type=\"button\" class=\"v1-pulpit-add-btn\" data-pulpit-add-type=\"" + entry.type + "\">",
-          "<span class=\"v1-pulpit-add-icon\" aria-hidden=\"true\">" + escapeHtml(entry.icon) + "</span>",
-          "<span class=\"v1-pulpit-add-name\">" + escapeHtml(tr(entry.labelKey)) + "</span>",
-          "</button>"
-        ].join("");
-      }).join("");
+      var deviceButtonsHtml = PULPIT_TYPES.filter(function (entry) { return !entry.isTool; }).map(pulpitAddButtonHtml).join("");
+      var toolButtonsHtml = PULPIT_TYPES.filter(function (entry) { return entry.isTool; }).map(pulpitAddButtonHtml).join("");
 
       return [
         "<ul class=\"v1-tool-list\">",
         "<li>",
         "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("pulpitLibraryHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
-        "<div class=\"v1-section-body\">" + buttonsHtml + "</div>",
+        "<div class=\"v1-section-body\">",
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-pulpit-auto-discover>" + escapeHtml(tr("pulpitAutoDiscoverBtn")) + "</button>",
+        deviceButtonsHtml,
+        "</div>",
+        "</li>",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("pulpitLibraryToolsHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">",
+        toolButtonsHtml,
+        "</div>",
         "</li>",
         "</ul>"
       ].join("");
@@ -827,6 +859,7 @@
         "<button type=\"button\" class=\"v1-pulpit-node-remove\" data-pulpit-node-remove=\"" + escapeHtml(node.id) + "\" aria-label=\"" + escapeHtml(tr("pulpitNodeDeleteBtn")) + "\" title=\"" + escapeHtml(tr("pulpitNodeDeleteBtn")) + "\">&times;</button>",
         "<span class=\"v1-pulpit-node-icon\" aria-hidden=\"true\">" + escapeHtml(icon) + "</span>",
         "<span class=\"v1-pulpit-node-label\">" + escapeHtml(label) + "</span>",
+        "<span class=\"v1-pulpit-connector\" data-connector-for=\"" + escapeHtml(node.id) + "\" draggable=\"false\"></span>",
         "</div>"
       ].join("");
     }
@@ -858,7 +891,17 @@
         "<div class=\"v1-pulpit-inspector-field\">",
         "<label for=\"v1InspectorPulpitNote\">" + escapeHtml(tr("pulpitInspectorNoteLabel")) + "</label>",
         "<textarea id=\"v1InspectorPulpitNote\" rows=\"3\" data-inspector-field=\"note\">" + escapeHtml(node.note) + "</textarea>",
-        "</div>"
+        "</div>",
+        pulpitFieldsFor(node.type).map(function (f) {
+          var fieldId = "v1InspectorPulpitField_" + f.id;
+          var value = (node.fields && node.fields[f.id]) || "";
+          return [
+            "<div class=\"v1-pulpit-inspector-field\">",
+            "<label for=\"" + fieldId + "\">" + escapeHtml(tr(f.label)) + "</label>",
+            "<input id=\"" + fieldId + "\" type=\"text\" data-inspector-field=\"fields." + f.id + "\" value=\"" + escapeHtml(value) + "\" />",
+            "</div>"
+          ].join("");
+        }).join("")
       ].join("");
     }
 
@@ -872,13 +915,99 @@
       return "<div class=\"v1-globe-shell\" id=\"v1GlobeContainer\"></div>";
     }
 
+    // Anchors a connection line on roughly the icon glyph's center, not the
+    // node div's raw top-left (x,y) - node.x/node.y are the div's top-left
+    // per renderPulpitNodeHtml's own "left:Xpx;top:Ypx" - and not the whole
+    // 84px-wide/icon+label block's center either, since the label sits
+    // below the icon (see pulpit.css); this offset is a visual
+    // approximation, not tied to any exact CSS value.
+    function pulpitEdgeAnchor(node) {
+      return { x: node.x + 42, y: node.y + 22 };
+    }
+
+    // A tap targeting an existing edge (rather than a device) has no single
+    // node to anchor to - it points at the wire itself, so it's drawn to
+    // the midpoint between that edge's own two endpoints.
+    function pulpitEdgeMidpoint(edge, nodeById) {
+      var a = nodeById[edge.fromId];
+      var b = nodeById[edge.toId];
+      if (!a || !b) return null;
+      var pa = pulpitEdgeAnchor(a);
+      var pb = pulpitEdgeAnchor(b);
+      return { x: (pa.x + pb.x) / 2, y: (pa.y + pb.y) / 2 };
+    }
+
+    // Rendered as an SVG sibling BEHIND the node divs (see pulpit.css's
+    // z-index) inside the same 3000x2000 canvas coordinate space, so line
+    // endpoints can be computed directly from each node's x/y - no separate
+    // coordinate system to keep in sync. Each edge gets two overlapping
+    // lines: a thin visible one and a fatter, normally-invisible "hit" line
+    // (wider stroke, transparent) so clicking near-but-not-exactly on the
+    // thin line still registers - mirrors the reference mockup's
+    // click-to-remove affordance on a thin line.
+    function renderPulpitLinksSvg(state) {
+      var nodeById = {};
+      state.nodes.forEach(function (n) { nodeById[n.id] = n; });
+      var edgeById = {};
+      state.edges.forEach(function (e) { edgeById[e.id] = e; });
+
+      var lines = state.edges.map(function (edge) {
+        var a = nodeById[edge.fromId];
+        var b = nodeById[edge.toId];
+        if (!a || !b) return "";
+        var pa = pulpitEdgeAnchor(a);
+        var pb = pulpitEdgeAnchor(b);
+        // Hit-line first, visible line second - lets the CSS ":hover + "
+        // adjacent-sibling highlight work (only selects a FOLLOWING
+        // sibling), so hovering the generous invisible hit target
+        // highlights the thin visible line drawn on top of it.
+        return [
+          "<g data-edge-id=\"" + escapeHtml(edge.id) + "\">",
+          "<line class=\"v1-pulpit-link-hit\" data-pulpit-edge-remove=\"" + escapeHtml(edge.id) + "\" x1=\"" + pa.x + "\" y1=\"" + pa.y + "\" x2=\"" + pb.x + "\" y2=\"" + pb.y + "\"></line>",
+          "<line class=\"v1-pulpit-link\" x1=\"" + pa.x + "\" y1=\"" + pa.y + "\" x2=\"" + pb.x + "\" y2=\"" + pb.y + "\"></line>",
+          "</g>"
+        ].join("");
+      }).join("");
+
+      // Scanner/sniffer taps: same hit-line + visible-line pattern, but the
+      // second endpoint is either another node's anchor (targetKind "node")
+      // or an existing edge's midpoint (targetKind "edge") - and the
+      // visible line is colored per tool type instead of the dim default,
+      // since a tap represents monitoring activity, not a documented
+      // physical connection.
+      var tapLines = state.taps.map(function (tap) {
+        var toolNode = nodeById[tap.toolNodeId];
+        if (!toolNode) return "";
+        var pa = pulpitEdgeAnchor(toolNode);
+        var pb = null;
+        if (tap.targetKind === "node") {
+          var targetNode = nodeById[tap.targetId];
+          pb = targetNode ? pulpitEdgeAnchor(targetNode) : null;
+        } else {
+          var targetEdge = edgeById[tap.targetId];
+          pb = targetEdge ? pulpitEdgeMidpoint(targetEdge, nodeById) : null;
+        }
+        if (!pb) return "";
+        return [
+          "<g data-tap-id=\"" + escapeHtml(tap.id) + "\">",
+          "<line class=\"v1-pulpit-link-hit\" data-pulpit-tap-remove=\"" + escapeHtml(tap.id) + "\" x1=\"" + pa.x + "\" y1=\"" + pa.y + "\" x2=\"" + pb.x + "\" y2=\"" + pb.y + "\"></line>",
+          "<line class=\"v1-pulpit-tap-link v1-pulpit-tap-link--" + escapeHtml(toolNode.type) + "\" x1=\"" + pa.x + "\" y1=\"" + pa.y + "\" x2=\"" + pb.x + "\" y2=\"" + pb.y + "\"></line>",
+          "</g>"
+        ].join("");
+      }).join("");
+
+      return "<svg class=\"v1-pulpit-links\">" + lines + tapLines + "</svg>";
+    }
+
     function renderPulpitCanvasTool() {
-      var state = pulpitCanvasApi ? pulpitCanvasApi.getState() : { nodes: [] };
+      var state = pulpitCanvasApi ? pulpitCanvasApi.getState() : { nodes: [], edges: [], taps: [] };
+      var linksHtml = renderPulpitLinksSvg(state);
       var nodesHtml = state.nodes.map(renderPulpitNodeHtml).join("");
 
       return [
         "<div class=\"v1-pulpit-canvas-shell\">",
         "<div class=\"v1-pulpit-canvas\" id=\"v1PulpitCanvas\">",
+        linksHtml,
         nodesHtml,
         "</div>",
         "</div>"
@@ -2022,7 +2151,9 @@
       renderShellCraftInspector: renderShellCraftInspector,
       renderPulpitLibrary: renderPulpitLibrary,
       renderPulpitNodeHtml: renderPulpitNodeHtml,
+      renderPulpitLinksSvg: renderPulpitLinksSvg,
       renderPulpitInspector: renderPulpitInspector,
+      pulpitEdgeAnchor: pulpitEdgeAnchor,
       renderAgentProfileLibrary: renderAgentProfileLibrary,
       renderAgentProfileDetailFields: renderAgentProfileDetailFields,
       renderNetworkMonitorConnectionsRows: renderNetworkMonitorConnectionsRows,
