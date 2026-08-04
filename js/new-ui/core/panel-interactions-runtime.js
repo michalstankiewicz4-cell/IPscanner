@@ -1639,12 +1639,87 @@
       document.addEventListener("pointermove", onConnectDragMove);
       document.addEventListener("pointerup", onConnectDragUp);
 
+      // Right-click context menu ("Uruchom" / Run) - a single static menu
+      // element rendered as a SIBLING of canvasEl (renderPulpitCanvasTool),
+      // not inside it, since canvasEl's innerHTML is fully replaced on every
+      // render() above - a menu living inside it would be destroyed (and any
+      // reference to it go stale) on the very next state change.
+      var contextMenuEl = canvasShellEl ? canvasShellEl.querySelector("[data-pulpit-context-menu]") : null;
+      var contextMenuNodeId = "";
+
+      function closePulpitContextMenu() {
+        if (!contextMenuEl) return;
+        contextMenuEl.setAttribute("hidden", "hidden");
+        contextMenuNodeId = "";
+      }
+
+      function openPulpitContextMenu(x, y, nodeId) {
+        if (!contextMenuEl) return;
+        contextMenuNodeId = nodeId;
+
+        var margin = 8;
+        var viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1024;
+        var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 768;
+
+        contextMenuEl.style.visibility = "hidden";
+        contextMenuEl.removeAttribute("hidden");
+        var menuWidth = Math.max(120, Math.ceil(contextMenuEl.offsetWidth || 0));
+        var menuHeight = Math.max(32, Math.ceil(contextMenuEl.offsetHeight || 0));
+        var left = Math.max(margin, Math.min(x, viewportWidth - margin - menuWidth));
+        var top = Math.max(margin, Math.min(y, viewportHeight - margin - menuHeight));
+        contextMenuEl.style.left = Math.round(left) + "px";
+        contextMenuEl.style.top = Math.round(top) + "px";
+        contextMenuEl.style.visibility = "";
+      }
+
+      canvasEl.addEventListener("contextmenu", function (event) {
+        var nodeEl = event.target && event.target.closest ? event.target.closest(".v1-pulpit-node") : null;
+        if (!nodeEl) return;
+        event.preventDefault();
+        openPulpitContextMenu(event.clientX, event.clientY, nodeEl.getAttribute("data-node-id"));
+      });
+
+      if (contextMenuEl) {
+        contextMenuEl.addEventListener("click", function (event) {
+          var runBtn = event.target && event.target.closest ? event.target.closest("[data-pulpit-context-run]") : null;
+          if (!runBtn) return;
+          var nodeId = contextMenuNodeId;
+          closePulpitContextMenu();
+          if (!nodeId) return;
+
+          selectedNodeId = nodeId;
+          canvasEl.querySelectorAll(".v1-pulpit-node.is-selected").forEach(function (el) {
+            el.classList.remove("is-selected");
+          });
+          var targetNodeEl = canvasEl.querySelector('[data-node-id="' + nodeId + '"]');
+          if (targetNodeEl) targetNodeEl.classList.add("is-selected");
+          try {
+            document.dispatchEvent(new CustomEvent("newui:pulpit-node-selected", { detail: { nodeId: nodeId } }));
+          } catch (_) {
+            // ignore event dispatch failures
+          }
+        });
+      }
+
+      function onDocumentClickForPulpitContextMenu(event) {
+        if (!contextMenuEl || contextMenuEl.hasAttribute("hidden")) return;
+        if (contextMenuEl.contains(event.target)) return;
+        closePulpitContextMenu();
+      }
+      function onDocumentKeydownForPulpitContextMenu(event) {
+        if (event.key === "Escape") closePulpitContextMenu();
+      }
+      document.addEventListener("click", onDocumentClickForPulpitContextMenu);
+      document.addEventListener("keydown", onDocumentKeydownForPulpitContextMenu);
+
       pulpitCanvasTeardown = function () {
         document.removeEventListener("newui:pulpit-canvas-changed", onCanvasChanged);
         document.removeEventListener("mousemove", onDocumentMouseMove);
         document.removeEventListener("mouseup", onDocumentMouseUp);
         document.removeEventListener("pointermove", onConnectDragMove);
         document.removeEventListener("pointerup", onConnectDragUp);
+        document.removeEventListener("click", onDocumentClickForPulpitContextMenu);
+        document.removeEventListener("keydown", onDocumentKeydownForPulpitContextMenu);
       };
 
       // Only the "move an existing node" case exists here - adding a new
@@ -1928,6 +2003,108 @@
 
         pulpitInspectorSuppressNextRender = true;
         canvasApi.updateNodeProperties(pulpitInspectorSelectedNodeId, patch);
+      });
+
+      // Neither QEMU nor VirtualBox publish a stable "latest.exe" direct
+      // download link (both are per-version filenames on an index page) -
+      // rather than guess/hardcode one that will go stale, these buttons
+      // just open the real official download page (reusing the existing
+      // open_browser command) so the user can copy the current installer
+      // link themselves into the field below.
+      mount.addEventListener("click", function (event) {
+        var quickpick = event.target && event.target.closest ? event.target.closest("[data-pulpit-remote-quickpick]") : null;
+        if (!quickpick) return;
+        var pages = {
+          qemu: "https://qemu.weilnetz.de/w64/",
+          virtualbox: "https://www.virtualbox.org/wiki/Downloads",
+        };
+        var url = pages[quickpick.getAttribute("data-pulpit-remote-quickpick")];
+        var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+        if (url && platform) {
+          Promise.resolve(platform.invoke("open_browser", { url: url })).catch(function () {
+            // ignore - www build has no open_browser command
+          });
+        }
+      });
+
+      // Deliberately reads data-remote-run-field inputs directly at submit
+      // time rather than tracking them via any persisted/canvas state - see
+      // renderPulpitRemoteRunSection's comment (panel-content-runtime.js):
+      // this credential never touches canvasApi/localStorage.
+      mount.addEventListener("submit", function (event) {
+        var form = event.target && event.target.closest ? event.target.closest("[data-pulpit-remote-run-form]") : null;
+        if (!form) return;
+        event.preventDefault();
+
+        var nodeId = form.getAttribute("data-pulpit-remote-run-form");
+        var resultEl = nodeId ? mount.querySelector('[data-pulpit-remote-run-result="' + nodeId + '"]') : null;
+
+        function fieldValue(name) {
+          var el = form.querySelector('[data-remote-run-field="' + name + '"]');
+          return el ? el.value : "";
+        }
+
+        function showResult(text, isError) {
+          if (!resultEl) return;
+          resultEl.textContent = text;
+          resultEl.classList.toggle("is-error", !!isError);
+          resultEl.removeAttribute("hidden");
+        }
+
+        var computerName = fieldValue("computerName").trim();
+        var username = fieldValue("username").trim();
+        var password = fieldValue("password");
+        var installerUrl = fieldValue("installerUrl").trim();
+
+        if (!computerName || !username || !password || !installerUrl) {
+          showResult(tr("pulpitRemoteRunMissingFieldsNote"), true);
+          return;
+        }
+
+        var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+        if (!platform) return;
+
+        var submitBtn = form.querySelector("[data-pulpit-remote-run-submit]");
+        if (submitBtn) submitBtn.disabled = true;
+        showResult(tr("pulpitRemoteRunPendingNote"), false);
+
+        // Password reaches the child powershell.exe via an env var
+        // (run_powershell_with_args' new `env` param), never as a bound
+        // -Password arg on args{} - args{} values are visible on the child
+        // process's own command line for its whole run (Task Manager /
+        // Get-Process / WMI Win32_Process.CommandLine), env vars aren't.
+        // Silent-install switch is guessed from the URL (VirtualBox's NSIS
+        // installer takes --silent, QEMU's takes /S) - if a pasted URL is
+        // for neither, /S is the more common NSIS-installer default.
+        var script = [
+          "param([string]$ComputerName, [string]$Username, [string]$InstallerUrl)",
+          "$securePw = ConvertTo-SecureString $env:IpsRemotePassword -AsPlainText -Force",
+          "$cred = New-Object System.Management.Automation.PSCredential($Username, $securePw)",
+          "Invoke-Command -ComputerName $ComputerName -Credential $cred -ScriptBlock {",
+          "  param([string]$InstallerUrl)",
+          "  $dest = Join-Path $env:TEMP ('ips_install_' + [guid]::NewGuid().ToString('N') + '.exe')",
+          "  Invoke-WebRequest -Uri $InstallerUrl -OutFile $dest -UseBasicParsing",
+          "  $silentArgs = if ($InstallerUrl -match 'virtualbox') { '--silent' } else { '/S' }",
+          "  Start-Process -FilePath $dest -ArgumentList $silentArgs -Wait",
+          "  Remove-Item $dest -ErrorAction SilentlyContinue",
+          "} -ArgumentList $InstallerUrl",
+        ].join("\n");
+
+        Promise.resolve(platform.invoke("run_powershell_with_args", {
+          script: script,
+          args: { ComputerName: computerName, Username: username, InstallerUrl: installerUrl },
+          env: { IpsRemotePassword: password },
+        })).then(function (result) {
+          if (submitBtn) submitBtn.disabled = false;
+          var ok = !!result && result.exit_code === 0;
+          var pieces = [ok ? tr("pulpitRemoteRunSuccessNote") : tr("pulpitRemoteRunErrorPrefix")];
+          if (result && result.stderr) pieces.push(result.stderr);
+          if (result && result.stdout) pieces.push(result.stdout);
+          showResult(pieces.join(" ").trim(), !ok);
+        }).catch(function (err) {
+          if (submitBtn) submitBtn.disabled = false;
+          showResult(tr("pulpitRemoteRunErrorPrefix") + " " + (err && err.message ? err.message : String(err)), true);
+        });
       });
     }
 

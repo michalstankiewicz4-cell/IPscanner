@@ -292,3 +292,101 @@
   box-sizing: border-box;
   width: 100%;
 }
+
+/* Right-click "Uruchom" menu - a single static element (rendered as a
+   sibling of the canvas, see renderPulpitCanvasTool) toggled via [hidden],
+   position:fixed + JS viewport coords like the columns/filter menus
+   elsewhere in this app (an absolute popover here could get painted over by
+   later sibling canvas content despite z-index - see project memory on that
+   gotcha). */
+.v1-pulpit-context-menu {
+  position: fixed;
+  z-index: 40;
+  min-width: 120px;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #1b1c1f;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  padding: 4px;
+}
+
+.v1-pulpit-context-menu[hidden] {
+  display: none;
+}
+
+.v1-pulpit-context-menu button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--txt);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.v1-pulpit-context-menu button:hover {
+  background: #2a2b2f;
+}
+
+.v1-pulpit-remote-run {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #2a2b2f;
+}
+
+.v1-pulpit-remote-hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--txt-dim);
+}
+
+.v1-pulpit-remote-quickpicks {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.v1-pulpit-remote-quickpicks button {
+  flex: 1 1 auto;
+}
+
+.v1-pulpit-remote-run-submit {
+  display: block;
+  width: 100%;
+  padding: 7px 8px;
+  margin-top: 4px;
+  border: 1px solid var(--brand);
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--brand) 16%, transparent);
+  color: var(--txt);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.v1-pulpit-remote-run-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.v1-pulpit-remote-run-result {
+  margin-top: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #1f2024;
+  color: var(--txt-dim);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.v1-pulpit-remote-run-result.is-error {
+  color: #ff6b6b;
+}
+
+.v1-pulpit-remote-run-result[hidden] {
+  display: none;
+}

@@ -1508,7 +1508,19 @@ async fn run_powershell_with_args(
     app: AppHandle,
     script: String,
     args: HashMap<String, String>,
+    // Secrets (e.g. a remote-credential password) go here instead of in
+    // `args` - `args` values are bound onto the child process's own command
+    // line ("-key value"), which is visible for the process's whole
+    // lifetime to any other locally-elevated process (Task Manager's
+    // "Command line" column, WMI Win32_Process.CommandLine, etc). Env vars
+    // set on the child via Command::envs() don't show up there. Option<T>
+    // (not a plain HashMap + #[serde(default)], which tauri::command
+    // doesn't support on individual parameters) so the 4 existing JS
+    // callers, which omit this field entirely, still deserialize fine -
+    // serde treats a missing Option field as None.
+    env: Option<HashMap<String, String>>,
 ) -> Result<PowerShellExecResult, String> {
+    let env = env.unwrap_or_default();
     let script = script.trim().to_string();
     if script.is_empty() {
         return Err("Script is empty".into());
@@ -1555,6 +1567,7 @@ async fn run_powershell_with_args(
             for (key, value) in &args {
                 command.arg(format!("-{}", key)).arg(value);
             }
+            command.envs(&env);
             if let Some(base_dir) = script_base_dir.as_ref() {
                 command.current_dir(base_dir);
             }
@@ -1570,6 +1583,7 @@ async fn run_powershell_with_args(
             for (key, value) in &args {
                 command.arg(format!("-{}", key)).arg(value);
             }
+            command.envs(&env);
             if let Some(base_dir) = script_base_dir.as_ref() {
                 command.current_dir(base_dir);
             }

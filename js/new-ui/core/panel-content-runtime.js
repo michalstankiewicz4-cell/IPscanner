@@ -901,7 +901,50 @@
             "<input id=\"" + fieldId + "\" type=\"text\" data-inspector-field=\"fields." + f.id + "\" value=\"" + escapeHtml(value) + "\" />",
             "</div>"
           ].join("");
-        }).join("")
+        }).join(""),
+        renderPulpitRemoteRunSection(node)
+      ].join("");
+    }
+
+    // A deliberately separate form from the fields above: none of these
+    // inputs use data-inspector-field, so wirePulpitInspector's delegated
+    // "input" listener (which persists every keystroke into the canvas's
+    // own localStorage-backed state via updateNodeProperties) never sees
+    // them - a remote-install password must never end up in
+    // netrecon_pulpit_canvas_v1. Wrapped in <form> (submit handled in JS,
+    // never actually navigates) and the password field gets an explicit
+    // autocomplete/name/id set so Chromium doesn't warn about an
+    // unidentified or formless password field.
+    function renderPulpitRemoteRunSection(node) {
+      return [
+        "<div class=\"v1-pulpit-remote-run\">",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("pulpitRemoteRunHeading")) + "</strong></div>",
+        "<form data-pulpit-remote-run-form=\"" + escapeHtml(node.id) + "\">",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1PulpitRemoteHost\">" + escapeHtml(tr("pulpitRemoteHostLabel")) + "</label>",
+        "<input id=\"v1PulpitRemoteHost\" name=\"pulpitRemoteHost\" type=\"text\" autocomplete=\"off\" data-remote-run-field=\"computerName\" value=\"" + escapeHtml(node.host) + "\" />",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1PulpitRemoteUsername\">" + escapeHtml(tr("pulpitRemoteUsernameLabel")) + "</label>",
+        "<input id=\"v1PulpitRemoteUsername\" name=\"pulpitRemoteUsername\" type=\"text\" autocomplete=\"off\" data-remote-run-field=\"username\" />",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1PulpitRemotePassword\">" + escapeHtml(tr("pulpitRemotePasswordLabel")) + "</label>",
+        "<input id=\"v1PulpitRemotePassword\" name=\"pulpitRemotePassword\" type=\"password\" autocomplete=\"off\" data-remote-run-field=\"password\" />",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1PulpitRemoteInstallerUrl\">" + escapeHtml(tr("pulpitRemoteInstallerUrlLabel")) + "</label>",
+        "<input id=\"v1PulpitRemoteInstallerUrl\" name=\"pulpitRemoteInstallerUrl\" type=\"text\" autocomplete=\"off\" data-remote-run-field=\"installerUrl\" />",
+        "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("pulpitRemoteInstallerUrlHint")) + "</p>",
+        "<div class=\"v1-pulpit-remote-quickpicks\">",
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-pulpit-remote-quickpick=\"qemu\">" + escapeHtml(tr("pulpitRemoteQemuQuickpickBtn")) + "</button>",
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-pulpit-remote-quickpick=\"virtualbox\">" + escapeHtml(tr("pulpitRemoteVirtualboxQuickpickBtn")) + "</button>",
+        "</div>",
+        "</div>",
+        "<button type=\"submit\" class=\"v1-pulpit-remote-run-submit\" data-pulpit-remote-run-submit=\"" + escapeHtml(node.id) + "\">" + escapeHtml(tr("pulpitRemoteRunSubmitBtn")) + "</button>",
+        "</form>",
+        "<div class=\"v1-pulpit-remote-run-result\" data-pulpit-remote-run-result=\"" + escapeHtml(node.id) + "\" hidden></div>",
+        "</div>"
       ].join("");
     }
 
@@ -1009,6 +1052,12 @@
         "<div class=\"v1-pulpit-canvas\" id=\"v1PulpitCanvas\">",
         linksHtml,
         nodesHtml,
+        "</div>",
+        // Sibling of the canvas, not a child of it - canvasEl.innerHTML gets
+        // fully replaced on every render() (wirePulpitCanvas), which would
+        // destroy this and any listener bound to it if it lived inside.
+        "<div class=\"v1-pulpit-context-menu\" data-pulpit-context-menu hidden>",
+        "<button type=\"button\" data-pulpit-context-run>" + escapeHtml(tr("pulpitNodeRunBtn")) + "</button>",
         "</div>",
         "</div>"
       ].join("");
