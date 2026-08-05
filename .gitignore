@@ -9,3 +9,7 @@ native-ui/**/obj/
 release/
 release-*/
 Pre-Flight Security Audit.txt
+
+# Windows install ISOs (multi-GB, GitHub rejects anything >100MB anyway)
+ISO/
+*.iso

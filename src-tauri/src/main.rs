@@ -21,8 +21,11 @@ use rusqlite::{Connection, params};
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
 use base64::Engine as _;
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
-use tokio::net::TcpStream;
+use tokio::net::{TcpListener, TcpStream};
 use tokio::time::timeout;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use futures_util::{SinkExt, StreamExt};
+use tokio_tungstenite::tungstenite::Message;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -1419,6 +1422,22 @@ fn open_browser(url: String) {
     // Open URL in system default browser (Windows)
     let _ = std::process::Command::new("cmd")
         .args(["/c", "start", "", url.as_str()])
+        .spawn();
+}
+
+// Topology's RDP checkbox - opens Windows' own Remote Desktop Connection
+// client in its own OS window. Deliberately not an embedded-in-webview
+// viewer (unlike the VNC preview): no mature browser-side RDP decoder
+// exists the way noVNC exists for VNC, and standing up Guacamole (the
+// alternative) would be a whole new server dependency - rejected this
+// session for the same reason TigerVNC's manual guest-side setup was
+// unsatisfying. mstsc.exe is a standard Windows binary, no extra
+// capability/crate needed - same fire-and-forget shape as open_browser
+// above.
+#[tauri::command]
+fn open_rdp(host: String) {
+    let _ = std::process::Command::new("mstsc")
+        .arg(format!("/v:{}", host))
         .spawn();
 }
 
@@ -3060,6 +3079,141 @@ fn list_arp_entries() -> Result<Vec<ArpEntryRow>, String> {
 
 // ─── Main ────────────────────────────────────────────────────────────────────────────
 
+// Topology's VNC desktop preview: browsers can't open raw TCP sockets, so
+// noVNC (browser side) speaks WebSocket to this bridge instead, and the
+// bridge is the one that actually opens a plain TCP connection to the
+// target node's real VNC server and pipes bytes both directions - same
+// "dumb pipe, no VNC protocol parsing" shape as a typical websockify
+// bridge. Loopback-only (127.0.0.1) - nothing outside this machine's own
+// webview is meant to reach it. Unlike a single fixed target, Topology can
+// have many nodes, so the target host:port travels per-connection as a
+// query string on the WS upgrade request (?host=...&port=...) rather than
+// being fixed at bridge-startup time.
+const VNC_BRIDGE_PORT: u16 = 17900;
+
+fn percent_decode(input: &str) -> String {
+    let bytes = input.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 3 <= bytes.len() {
+            if let Ok(byte) = u8::from_str_radix(&input[i + 1..i + 3], 16) {
+                out.push(byte);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+fn parse_vnc_bridge_target(query: &str) -> Option<(String, u16)> {
+    let mut host: Option<String> = None;
+    let mut port: Option<u16> = None;
+    for pair in query.split('&') {
+        let mut it = pair.splitn(2, '=');
+        let key = it.next().unwrap_or("");
+        let value = percent_decode(it.next().unwrap_or(""));
+        if key == "host" {
+            host = Some(value);
+        } else if key == "port" {
+            port = value.parse::<u16>().ok();
+        }
+    }
+    match (host, port) {
+        (Some(h), Some(p)) if !h.is_empty() => Some((h, p)),
+        _ => None,
+    }
+}
+
+async fn handle_vnc_bridge_connection(stream: TcpStream) {
+    let mut target: Option<(String, u16)> = None;
+    let callback = |req: &tokio_tungstenite::tungstenite::handshake::server::Request,
+                     response: tokio_tungstenite::tungstenite::handshake::server::Response|
+     -> Result<
+        tokio_tungstenite::tungstenite::handshake::server::Response,
+        tokio_tungstenite::tungstenite::handshake::server::ErrorResponse,
+    > {
+        target = parse_vnc_bridge_target(req.uri().query().unwrap_or(""));
+        Ok(response)
+    };
+
+    let ws_stream = match tokio_tungstenite::accept_hdr_async(stream, callback).await {
+        Ok(s) => s,
+        Err(_) => return,
+    };
+
+    let (host, port) = match target {
+        Some(t) => t,
+        None => return,
+    };
+
+    let tcp = match TcpStream::connect((host.as_str(), port)).await {
+        Ok(t) => t,
+        Err(_) => return,
+    };
+    let (mut tcp_read, mut tcp_write) = tcp.into_split();
+    let (mut ws_write, mut ws_read) = ws_stream.split();
+
+    let ws_to_tcp = async {
+        while let Some(msg) = ws_read.next().await {
+            let msg = match msg {
+                Ok(m) => m,
+                Err(_) => break,
+            };
+            match msg {
+                Message::Binary(data) => {
+                    if tcp_write.write_all(&data).await.is_err() {
+                        break;
+                    }
+                }
+                Message::Close(_) => break,
+                _ => {}
+            }
+        }
+    };
+
+    let tcp_to_ws = async {
+        let mut buf = [0u8; 8192];
+        loop {
+            let n = match tcp_read.read(&mut buf).await {
+                Ok(0) => break,
+                Ok(n) => n,
+                Err(_) => break,
+            };
+            if ws_write.send(Message::Binary(buf[..n].to_vec())).await.is_err() {
+                break;
+            }
+        }
+    };
+
+    tokio::select! {
+        _ = ws_to_tcp => {},
+        _ = tcp_to_ws => {},
+    }
+}
+
+// Started once at app startup (see main()'s .setup()). A bind failure (e.g.
+// a second instance of the app already holds the port) just means preview
+// won't work this run - not worth failing the whole app over.
+fn spawn_vnc_bridge() {
+    tauri::async_runtime::spawn(async move {
+        let listener = match TcpListener::bind(("127.0.0.1", VNC_BRIDGE_PORT)).await {
+            Ok(l) => l,
+            Err(_) => return,
+        };
+        loop {
+            let stream = match listener.accept().await {
+                Ok((stream, _)) => stream,
+                Err(_) => continue,
+            };
+            tauri::async_runtime::spawn(handle_vnc_bridge_connection(stream));
+        }
+    });
+}
+
 fn main() {
     use std::io::Write;
     
@@ -3080,6 +3234,7 @@ fn main() {
     tauri::Builder::default()
         .manage(Arc::new(ScanState { stop: AtomicBool::new(false) }))
         .setup(|app| {
+            spawn_vnc_bridge();
             // tauri.conf.json starts the main window maximized, which hits the
             // same frameless-window work-area bug as window_toggle_maximize
             // (see its comment) - correct it once at startup too.
@@ -3104,6 +3259,7 @@ fn main() {
             hostname_lookup,
             email_recon_lookup,
             open_browser,
+            open_rdp,
             window_minimize,
             window_toggle_maximize,
             window_toggle_fullscreen,

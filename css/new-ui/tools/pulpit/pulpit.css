@@ -390,3 +390,211 @@
 .v1-pulpit-remote-run-result[hidden] {
   display: none;
 }
+
+/* RDP/VNC + QEMU/VB checkbox row in the Inspector. */
+.v1-pulpit-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.v1-pulpit-checkbox-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--txt);
+}
+
+.v1-pulpit-checkbox-item input[type="checkbox"] {
+  margin: 0;
+}
+
+.v1-pulpit-checkbox-item label {
+  cursor: pointer;
+}
+
+.v1-pulpit-checkbox-divider {
+  width: 1px;
+  align-self: stretch;
+  background: #31333a;
+}
+
+/* Re-added for the "Podgląd"/preview toggle button in the Inspector -
+   .v1-pulpit-connect-btn's own .is-active rule was removed when the old
+   click-a-toggle connect mode was replaced by drag-to-connect; this is an
+   unrelated, new use of the same base button look. */
+.v1-pulpit-connect-btn.is-active {
+  border-color: var(--brand);
+  background: color-mix(in oklab, var(--brand) 14%, transparent);
+}
+
+/* CS: live desktop preview - same overflow:hidden/height:100% fix Globe
+   and the Topology diagram canvas both already need (cards.css would
+   otherwise add a second, outer scrollbar around the video area). */
+#v1MainCard.is-pulpit-preview-view {
+  overflow: hidden;
+}
+
+#v1MainCard.is-pulpit-preview-view #v1ToolDetail {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.v1-detached-tool-card.is-pulpit-preview-view .v1-detached-tool-body {
+  overflow: hidden;
+}
+
+.v1-detached-tool-card.is-pulpit-preview-view .tool-detail {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.v1-pulpit-preview-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  background: var(--bg-elev);
+}
+
+.v1-pulpit-preview-shell .v1-import-manager-note {
+  margin: auto;
+}
+
+.v1-pulpit-preview-big {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+
+/* The live surface a session's RFB canvas actually lives in - created once
+   in JS (pulpit-preview-runtime.js) and re-parented between here and a
+   thumbnail slot, never recreated from HTML. Must fill whatever wrapper it
+   is currently mounted into. */
+.v1-pulpit-preview-surface {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+.v1-pulpit-preview-surface canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* RS: the "camera wall" - a grid of small live thumbnails, one per
+   currently-watched node. */
+.v1-pulpit-preview-list-mount {
+  padding: 8px 4px;
+}
+
+.v1-pulpit-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.v1-pulpit-preview-thumb {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border: 1px solid #31333a;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+  cursor: pointer;
+}
+
+.v1-pulpit-preview-thumb.is-focused {
+  border-color: var(--brand);
+}
+
+.v1-pulpit-preview-thumb-mount {
+  position: absolute;
+  inset: 0;
+}
+
+.v1-pulpit-preview-thumb-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 2px 6px;
+  font-size: 10px;
+  color: #fff;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.v1-pulpit-preview-thumb-stop {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  border: 0;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 5px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.v1-pulpit-preview-thumb:hover .v1-pulpit-preview-thumb-stop {
+  opacity: 1;
+}
+
+.v1-pulpit-preview-thumb-stop:hover {
+  color: #ff6b6b;
+}
+
+/* Overlay on top of (not replacing) the RFB canvas already attached to the
+   surface - see pulpit-preview-runtime.js's showCredentialsOverlay. */
+.v1-pulpit-preview-credentials {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8px;
+}
+
+.v1-pulpit-preview-credentials input {
+  border: 1px solid #31333a;
+  background: #1f2024;
+  color: var(--txt);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px 8px;
+  max-width: 160px;
+}
+
+.v1-pulpit-preview-credentials button {
+  border: 1px solid var(--brand);
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--brand) 16%, transparent);
+  color: var(--txt);
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+}

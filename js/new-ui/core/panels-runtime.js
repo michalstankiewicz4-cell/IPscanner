@@ -1121,6 +1121,8 @@
       cardB.classList.toggle("is-shellcraft-view", toolA === "shellcraft");
       cardA.classList.toggle("is-pulpit-view", toolB === "pulpit");
       cardB.classList.toggle("is-pulpit-view", toolA === "pulpit");
+      cardA.classList.toggle("is-pulpit-preview-view", toolB === "pulpit-preview");
+      cardB.classList.toggle("is-pulpit-preview-view", toolA === "pulpit-preview");
       cardA.classList.toggle("is-globe-view", toolB === "globe");
       cardB.classList.toggle("is-globe-view", toolA === "globe");
       detachedCards[toolA] = cardB;
@@ -1142,6 +1144,7 @@
       card.classList.toggle("is-versions-view", tool === "versions");
       card.classList.toggle("is-shellcraft-view", tool === "shellcraft");
       card.classList.toggle("is-pulpit-view", tool === "pulpit");
+      card.classList.toggle("is-pulpit-preview-view", tool === "pulpit-preview");
       card.classList.toggle("is-globe-view", tool === "globe");
 
       var header = document.createElement("div");
@@ -1538,6 +1541,8 @@
         renderPulpitNodeHtml: panelContentRuntime && panelContentRuntime.renderPulpitNodeHtml,
         renderPulpitLinksSvg: panelContentRuntime && panelContentRuntime.renderPulpitLinksSvg,
         pulpitEdgeAnchor: panelContentRuntime && panelContentRuntime.pulpitEdgeAnchor,
+        renderPulpitPreviewList: panelContentRuntime && panelContentRuntime.renderPulpitPreviewList,
+        renderPulpitPreviewTool: panelContentRuntime && panelContentRuntime.renderPulpitPreviewTool,
         renderPulpitInspector: panelContentRuntime && panelContentRuntime.renderPulpitInspector,
         renderAgentProfileLibrary: panelContentRuntime && panelContentRuntime.renderAgentProfileLibrary,
         renderAgentProfileDetailFields: panelContentRuntime && panelContentRuntime.renderAgentProfileDetailFields,
@@ -1851,6 +1856,13 @@
         return;
       }
 
+      if (tool === "pulpit-preview") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wirePulpitPreviewTool) {
+          panelInteractionsRuntime.wirePulpitPreviewTool(scope);
+        }
+        return;
+      }
+
       if (tool === "globe") { // shell
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireGlobeTool) {
           panelInteractionsRuntime.wireGlobeTool(scope);
@@ -2121,6 +2133,7 @@
           v1MainCard.classList.remove("is-versions-view");
           v1MainCard.classList.remove("is-shellcraft-view");
           v1MainCard.classList.remove("is-pulpit-view");
+          v1MainCard.classList.remove("is-pulpit-preview-view");
           v1MainCard.classList.remove("is-globe-view");
         }
         if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + tr("noActiveTab"));
@@ -2137,6 +2150,7 @@
         v1MainCard.classList.toggle("is-versions-view", activeTool === "versions");
         v1MainCard.classList.toggle("is-shellcraft-view", activeTool === "shellcraft");
         v1MainCard.classList.toggle("is-pulpit-view", activeTool === "pulpit");
+        v1MainCard.classList.toggle("is-pulpit-preview-view", activeTool === "pulpit-preview");
         v1MainCard.classList.toggle("is-globe-view", activeTool === "globe");
       }
       applyDetachedCardState();
@@ -2243,6 +2257,9 @@
       }
       if (panelInteractionsRuntime && panelInteractionsRuntime.wirePulpitInspector) {
         panelInteractionsRuntime.wirePulpitInspector();
+      }
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wirePulpitPreviewList) {
+        panelInteractionsRuntime.wirePulpitPreviewList();
       }
     }
 

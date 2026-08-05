@@ -133,6 +133,26 @@
       labelKey: "tabLabel_pulpit_inspector",
       ui: { showInRightPanel: true, rightOrder: 25 }
     },
+    // Live VNC desktop preview - a separate CS tab from the diagram canvas
+    // above (that's drag/connect UI, a live video feed doesn't fit in the
+    // same space) showing whichever node is currently "focused"
+    // (pulpit-preview-runtime.js), plus an RS panel listing every node
+    // currently being watched as a small live thumbnail each ("like
+    // cameras"). Desktop-only - see pulpit-preview-runtime.js's own
+    // comment; both renderers show a plain explanatory note on www instead.
+    "pulpit-preview": {
+      titleKey: "toolTitle_pulpit_preview",
+      textKey: "toolText_pulpit_preview",
+      points: ["Live VNC view of a Topology node's desktop", "Desktop app only - needs a raw TCP connection to the target"],
+      icon: "🖵",
+      labelKey: "tabLabel_pulpit_preview",
+      ui: { showAsTab: true, order: 116 }
+    },
+    "pulpit-preview-list": {
+      icon: null,
+      labelKey: "tabLabel_pulpit_preview_list",
+      ui: { showInRightPanel: true, rightOrder: 26 }
+    },
     // Agent Profiles: the user's own account-creation identities (nickname/
     // email/login/password/note/attachments), reachable from Options (not
     // Tools) - see index.html's Options dropdown. LS list + CS detail card

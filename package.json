@@ -10,6 +10,7 @@
     "tauri:build": "npm run prepare:app && tauri build"
   },
   "devDependencies": {
+    "@novnc/novnc": "^1.7.0",
     "@tauri-apps/cli": "^2.0.0",
     "http-server": "^14.1.1"
   }

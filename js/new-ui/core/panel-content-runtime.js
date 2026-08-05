@@ -16,6 +16,8 @@
     var macrosApi = core.macros || null;
     var shellcraftCanvasApi = core.shellcraftCanvas || null;
     var pulpitCanvasApi = core.pulpitCanvas || null;
+    var pulpitPreviewApi = core.pulpitPreview || null;
+    var platformApi = core.platform || null;
     var agentProfilesApi = core.agentProfiles || null;
     var generalSettingsApi = core.generalSettings || null;
 
@@ -864,6 +866,101 @@
       ].join("");
     }
 
+    // Resolves which host/port pair is "live" right now based on the
+    // node's hypervisor pick - null if no hypervisor is selected yet (VNC
+    // has nothing to connect to in that state). Duplicated (not shared via
+    // import) in pulpit-preview-runtime.js, same small-logic-duplication
+    // convention this codebase already uses between independent runtime
+    // modules elsewhere.
+    function pulpitResolveVncTarget(node) {
+      if (node.hypervisor === "qemu") return { host: node.vncQemuHost, port: node.vncQemuPort };
+      if (node.hypervisor === "vb") return { host: node.vncVbHost, port: node.vncVbPort };
+      return null;
+    }
+
+    // Desktop-only (see pulpit-preview-runtime.js's own comment) - a raw TCP
+    // connection to the node's VNC server has to be opened by the native
+    // Rust process, no browser (including the www/GitHub Pages build) can
+    // do this itself. Rather than let a click silently fail there, the
+    // button is replaced by an explanatory note.
+    function renderPulpitPreviewToggle(node) {
+      if (platformApi && typeof platformApi.isDesktop === "function" && !platformApi.isDesktop()) {
+        return "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("pulpitPreviewDesktopOnlyNote")) + "</p>";
+      }
+      var target = pulpitResolveVncTarget(node);
+      var ready = !!(target && target.host && target.port);
+      var active = !!(pulpitPreviewApi && pulpitPreviewApi.isActive && pulpitPreviewApi.isActive(node.id));
+      var labelKey = active ? "pulpitPreviewStopBtn" : "pulpitPreviewStartBtn";
+      return [
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn" + (active ? " is-active" : "") + "\" data-pulpit-preview-toggle=\"" + escapeHtml(node.id) + "\"" + (ready ? "" : " disabled") + ">",
+        escapeHtml(tr(labelKey)),
+        "</button>",
+        ready ? "" : "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("pulpitPreviewNeedsHostNote")) + "</p>"
+      ].join("");
+    }
+
+    // Two independent checkboxes (RDP/VNC - a node can expose either, both,
+    // or neither) then a divider then two radio-like checkboxes (QEMU/VB -
+    // mutually exclusive, enforced by only ever rendering ONE of them
+    // checked based on the single node.hypervisor string - see
+    // panel-interactions-runtime.js's change handler for the other half of
+    // that). Wired via [data-pulpit-conn-checkbox]/[data-pulpit-hypervisor-
+    // checkbox], deliberately NOT data-inspector-field - the existing
+    // delegated "input" listener only ever reads target.value, and
+    // overloading it to also branch on .checked risks a regression in the
+    // text-field path it already handles correctly.
+    function renderPulpitConnCheckboxRow(node) {
+      function checkboxItem(id, checked, labelKey, extraAttrs) {
+        return [
+          "<span class=\"v1-pulpit-checkbox-item\">",
+          "<input id=\"" + id + "\" type=\"checkbox\"" + extraAttrs + (checked ? " checked" : "") + " />",
+          "<label for=\"" + id + "\">" + escapeHtml(tr(labelKey)) + "</label>",
+          "</span>"
+        ].join("");
+      }
+      return [
+        "<div class=\"v1-pulpit-checkbox-row\">",
+        checkboxItem("v1InspectorPulpitConnRdp", node.connRdp, "pulpitConnRdpLabel", " data-pulpit-conn-checkbox=\"connRdp\""),
+        checkboxItem("v1InspectorPulpitConnVnc", node.connVnc, "pulpitConnVncLabel", " data-pulpit-conn-checkbox=\"connVnc\""),
+        "<span class=\"v1-pulpit-checkbox-divider\" aria-hidden=\"true\"></span>",
+        checkboxItem("v1InspectorPulpitHypervisorQemu", node.hypervisor === "qemu", "pulpitHypervisorQemuLabel", " data-pulpit-hypervisor-checkbox data-hypervisor-value=\"qemu\""),
+        checkboxItem("v1InspectorPulpitHypervisorVb", node.hypervisor === "vb", "pulpitHypervisorVbLabel", " data-pulpit-hypervisor-checkbox data-hypervisor-value=\"vb\""),
+        "</div>"
+      ].join("");
+    }
+
+    // A QEMU-managed VM and a VirtualBox-managed VM are physically
+    // different machines (e.g. QEMU's own loopback-bound native VNC vs. a
+    // VirtualBox VM's bridged LAN IP running a guest-side TigerVNC), so
+    // which host/port pair is shown - and which one Podgląd actually
+    // connects to, see pulpit-preview-runtime.js's resolveVncTarget() -
+    // switches with the hypervisor checkbox instead of being one shared
+    // field. No hypervisor picked yet -> a note instead of fields, since
+    // there'd be no way to know which pair to show/edit.
+    function renderPulpitVncFieldsForHypervisor(node) {
+      if (!node.hypervisor) {
+        return "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("pulpitVncNeedsHypervisorNote")) + "</p>";
+      }
+      var isQemu = node.hypervisor === "qemu";
+      var hostField = isQemu ? "vncQemuHost" : "vncVbHost";
+      var portField = isQemu ? "vncQemuPort" : "vncVbPort";
+      var hostValue = isQemu ? node.vncQemuHost : node.vncVbHost;
+      var portValue = isQemu ? node.vncQemuPort : node.vncVbPort;
+      var hintKey = isQemu ? "pulpitHypervisorQemuVncHint" : "pulpitHypervisorVbVncHint";
+      return [
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1InspectorPulpitVncHost\">" + escapeHtml(tr("pulpitInspectorHostLabel")) + " (" + escapeHtml(tr(isQemu ? "pulpitHypervisorQemuLabel" : "pulpitHypervisorVbLabel")) + ")</label>",
+        "<input id=\"v1InspectorPulpitVncHost\" type=\"text\" data-inspector-field=\"" + hostField + "\" placeholder=\"127.0.0.1\" value=\"" + escapeHtml(hostValue) + "\" />",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1InspectorPulpitVncPort\">" + escapeHtml(tr("pulpitInspectorVncPortLabel")) + "</label>",
+        "<input id=\"v1InspectorPulpitVncPort\" type=\"text\" data-inspector-field=\"" + portField + "\" placeholder=\"5900\" value=\"" + escapeHtml(portValue) + "\" />",
+        "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr(hintKey)) + "</p>",
+        "</div>",
+        renderPulpitPreviewToggle(node)
+      ].join("");
+    }
+
     // RS: name/host/note are editable (data-inspector-field, same delegated-
     // input-listener convention ShellCraft's inspector already uses); type is
     // fixed at creation, shown read-only.
@@ -888,6 +985,11 @@
         "<label for=\"v1InspectorPulpitHost\">" + escapeHtml(tr("pulpitInspectorHostLabel")) + "</label>",
         "<input id=\"v1InspectorPulpitHost\" type=\"text\" data-inspector-field=\"host\" value=\"" + escapeHtml(node.host) + "\" />",
         "</div>",
+        renderPulpitConnCheckboxRow(node),
+        node.connRdp
+          ? "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-pulpit-rdp-connect=\"" + escapeHtml(node.id) + "\">" + escapeHtml(tr("pulpitRdpConnectBtn")) + "</button>"
+          : "",
+        node.connVnc ? renderPulpitVncFieldsForHypervisor(node) : "",
         "<div class=\"v1-pulpit-inspector-field\">",
         "<label for=\"v1InspectorPulpitNote\">" + escapeHtml(tr("pulpitInspectorNoteLabel")) + "</label>",
         "<textarea id=\"v1InspectorPulpitNote\" rows=\"3\" data-inspector-field=\"note\">" + escapeHtml(node.note) + "</textarea>",
@@ -946,6 +1048,65 @@
         "<div class=\"v1-pulpit-remote-run-result\" data-pulpit-remote-run-result=\"" + escapeHtml(node.id) + "\" hidden></div>",
         "</div>"
       ].join("");
+    }
+
+    // CS: the currently-focused live preview session, big. The actual live
+    // surface (noVNC's canvas) is mounted into [data-pulpit-preview-mount]
+    // AFTER this string is assigned via innerHTML - by
+    // wirePulpitPreviewTool (panel-interactions-runtime.js), via
+    // pulpitPreviewApi.mountSurface(), never by this function itself: a
+    // live RFB session lives in a real DOM node that must survive being
+    // moved around, not be re-created from an HTML string on every render.
+    function renderPulpitPreviewTool() {
+      // Always wrapped in this one stable element (regardless of which of
+      // the 3 states below applies) so wirePulpitPreviewTool
+      // (panel-interactions-runtime.js) has something constant to capture
+      // at wire-time and check document.body.contains(...) against on
+      // later re-renders - the same staleness-guard shape wirePulpitCanvas
+      // already uses for its own canvasEl, needed here because this tool's
+      // CS content gets fully replaced whenever the user switches to a
+      // different tab.
+      var inner;
+      if (platformApi && typeof platformApi.isDesktop === "function" && !platformApi.isDesktop()) {
+        inner = "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("pulpitPreviewDesktopOnlyNote")) + "</div>";
+      } else {
+        var focusedId = pulpitPreviewApi ? pulpitPreviewApi.getFocusedNodeId() : "";
+        inner = focusedId
+          ? "<div class=\"v1-pulpit-preview-big\" data-pulpit-preview-mount=\"" + escapeHtml(focusedId) + "\"></div>"
+          : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("pulpitPreviewEmptyNote")) + "</div>";
+      }
+      return "<div class=\"v1-pulpit-preview-shell\">" + inner + "</div>";
+    }
+
+    // RS: every currently-watched node as a small live thumbnail ("like
+    // cameras") - same mount-after-render discipline as
+    // renderPulpitPreviewTool above.
+    function renderPulpitPreviewList() {
+      if (platformApi && typeof platformApi.isDesktop === "function" && !platformApi.isDesktop()) {
+        return "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("pulpitPreviewDesktopOnlyNote")) + "</div>";
+      }
+      var activeIds = pulpitPreviewApi ? pulpitPreviewApi.getActiveNodeIds() : [];
+      if (!activeIds.length) {
+        return "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("pulpitPreviewNoneActiveNote")) + "</div>";
+      }
+      var state = pulpitCanvasApi ? pulpitCanvasApi.getState() : { nodes: [] };
+      var nodeById = {};
+      state.nodes.forEach(function (n) { nodeById[n.id] = n; });
+      var focusedId = pulpitPreviewApi.getFocusedNodeId();
+
+      var thumbsHtml = activeIds.map(function (nodeId) {
+        var node = nodeById[nodeId];
+        var label = node ? (node.name || node.host || nodeId) : nodeId;
+        return [
+          "<div class=\"v1-pulpit-preview-thumb" + (nodeId === focusedId ? " is-focused" : "") + "\" data-pulpit-preview-thumb=\"" + escapeHtml(nodeId) + "\">",
+          "<div class=\"v1-pulpit-preview-thumb-mount\" data-pulpit-preview-mount=\"" + escapeHtml(nodeId) + "\"></div>",
+          "<div class=\"v1-pulpit-preview-thumb-label\">" + escapeHtml(label) + "</div>",
+          "<button type=\"button\" class=\"v1-pulpit-preview-thumb-stop\" data-pulpit-preview-stop=\"" + escapeHtml(nodeId) + "\" aria-label=\"" + escapeHtml(tr("pulpitPreviewStopBtn")) + "\" title=\"" + escapeHtml(tr("pulpitPreviewStopBtn")) + "\">&times;</button>",
+          "</div>"
+        ].join("");
+      }).join("");
+
+      return "<div class=\"v1-pulpit-preview-grid\">" + thumbsHtml + "</div>";
     }
 
     // shell: Globe - CS-only tab (no LS/RS), a lazy-loaded globe.gl WebGL
@@ -2176,6 +2337,7 @@
       "language-manager": renderLanguageManagerTool,
       shellcraft: renderShellCraftCanvasTool,
       pulpit: renderPulpitCanvasTool,
+      "pulpit-preview": renderPulpitPreviewTool,
       globe: renderGlobeTool,
       "agent-profiles": renderAgentProfileDetailTool,
 
@@ -2202,6 +2364,8 @@
       renderPulpitNodeHtml: renderPulpitNodeHtml,
       renderPulpitLinksSvg: renderPulpitLinksSvg,
       renderPulpitInspector: renderPulpitInspector,
+      renderPulpitPreviewList: renderPulpitPreviewList,
+      renderPulpitPreviewTool: renderPulpitPreviewTool,
       pulpitEdgeAnchor: pulpitEdgeAnchor,
       renderAgentProfileLibrary: renderAgentProfileLibrary,
       renderAgentProfileDetailFields: renderAgentProfileDetailFields,

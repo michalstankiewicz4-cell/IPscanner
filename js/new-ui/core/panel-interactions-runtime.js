@@ -11,6 +11,8 @@
     var renderPulpitLinksSvg = typeof deps.renderPulpitLinksSvg === "function" ? deps.renderPulpitLinksSvg : null;
     var renderPulpitInspector = typeof deps.renderPulpitInspector === "function" ? deps.renderPulpitInspector : null;
     var pulpitEdgeAnchor = typeof deps.pulpitEdgeAnchor === "function" ? deps.pulpitEdgeAnchor : function (node) { return { x: node.x + 42, y: node.y + 22 }; };
+    var renderPulpitPreviewList = typeof deps.renderPulpitPreviewList === "function" ? deps.renderPulpitPreviewList : null;
+    var renderPulpitPreviewTool = typeof deps.renderPulpitPreviewTool === "function" ? deps.renderPulpitPreviewTool : null;
     var renderAgentProfileLibrary = typeof deps.renderAgentProfileLibrary === "function" ? deps.renderAgentProfileLibrary : null;
     var renderAgentProfileDetailFields = typeof deps.renderAgentProfileDetailFields === "function" ? deps.renderAgentProfileDetailFields : null;
     var globeRuntime = deps.globeRuntime || null;
@@ -55,6 +57,10 @@
     // separate (own variables, own canvas element class) since both tools'
     // canvases can be detached into floating windows independently.
     var pulpitCanvasTeardown = null;
+    // Same reasoning as pulpitCanvasTeardown above - wirePulpitPreviewTool
+    // runs again on every CS tab (re)activation, so its own document-level
+    // listener needs the same explicit teardown-before-rewire discipline.
+    var pulpitPreviewToolTeardown = null;
     var pulpitInspectorSelectedNodeId = "";
     var pulpitInspectorSuppressNextRender = false;
 
@@ -1983,6 +1989,103 @@
         render();
       });
 
+      // The "Podgląd"/preview toggle's label and active state depend on
+      // pulpitPreviewApi's own session state, not canvas state - re-render
+      // whenever a session starts/stops from ANY surface (RS thumbnail
+      // wall's stop button, or another Inspector instance), not just from
+      // this button.
+      document.addEventListener("newui:pulpit-preview-changed", function () {
+        if (!document.body.contains(mount)) return;
+        render();
+      });
+
+      mount.addEventListener("click", function (event) {
+        var toggleBtn = event.target && event.target.closest ? event.target.closest("[data-pulpit-preview-toggle]") : null;
+        if (!toggleBtn) return;
+        var previewApi = window.NetReconNewUICore && window.NetReconNewUICore.pulpitPreview;
+        if (!previewApi) return;
+        var nodeId = toggleBtn.getAttribute("data-pulpit-preview-toggle");
+        if (previewApi.isActive(nodeId)) {
+          previewApi.stopPreview(nodeId);
+        } else {
+          previewApi.startPreview(nodeId);
+          // Both the RS "camera wall" and the CS big-view tab start out
+          // [hidden] like every catalog-driven tab does until something
+          // actually opens them once (switchTool()/the sidebar-tab-intent
+          // events are what remove that attribute - just being flagged
+          // showAsTab/showInRightPanel in tool-catalog.js only controls
+          // whether the row gets generated at boot, not whether it's ever
+          // shown) - nothing else in this UI opens these two tabs, so do
+          // it here, the one place a preview session actually begins.
+          try {
+            document.dispatchEvent(new CustomEvent("newui:right-tab-intent-open", { detail: { tool: "pulpit-preview-list", activate: true } }));
+          } catch (_) {
+            // ignore event dispatch failures
+          }
+          if (window.NetReconNewUI && typeof window.NetReconNewUI.switchTool === "function") {
+            window.NetReconNewUI.switchTool("pulpit-preview");
+          }
+        }
+        // No explicit render() here - newui:pulpit-preview-changed (above)
+        // fires from pulpitPreviewApi itself and re-renders already.
+      });
+
+      mount.addEventListener("click", function (event) {
+        var rdpBtn = event.target && event.target.closest ? event.target.closest("[data-pulpit-rdp-connect]") : null;
+        if (!rdpBtn) return;
+        var nodeId = rdpBtn.getAttribute("data-pulpit-rdp-connect");
+        var state = canvasApi.getState();
+        var node = state.nodes.find(function (n) { return n.id === nodeId; });
+        if (!node || !node.host) return;
+        var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+        if (!platform) return;
+        Promise.resolve(platform.invoke("open_rdp", { host: node.host })).catch(function () {
+          // ignore - www build has no open_rdp command
+        });
+      });
+
+      // Deliberately a separate listener from the "input" one below - that
+      // one only ever reads target.value for data-inspector-field text/
+      // textarea fields; these checkboxes use their own data-pulpit-*
+      // attributes precisely so a checkbox's .checked never has to be
+      // shoehorned through that generic .value-reading path. Unlike the
+      // text-field path, these DON'T set pulpitInspectorSuppressNextRender -
+      // checking RDP/VNC needs the normal re-render to actually reveal/hide
+      // their conditional sections, and checking one hypervisor checkbox
+      // needs the re-render to visually uncheck the other one.
+      mount.addEventListener("change", function (event) {
+        if (!pulpitInspectorSelectedNodeId) return;
+
+        var connCheckbox = event.target && event.target.matches && event.target.matches("[data-pulpit-conn-checkbox]") ? event.target : null;
+        if (connCheckbox) {
+          var field = connCheckbox.getAttribute("data-pulpit-conn-checkbox");
+          var patch = {};
+          patch[field] = connCheckbox.checked;
+          if (field === "connVnc" && !connCheckbox.checked) {
+            var previewApi = window.NetReconNewUICore && window.NetReconNewUICore.pulpitPreview;
+            if (previewApi && previewApi.isActive(pulpitInspectorSelectedNodeId)) {
+              previewApi.stopPreview(pulpitInspectorSelectedNodeId);
+            }
+          }
+          canvasApi.updateNodeProperties(pulpitInspectorSelectedNodeId, patch);
+          return;
+        }
+
+        var hypervisorCheckbox = event.target && event.target.matches && event.target.matches("[data-pulpit-hypervisor-checkbox]") ? event.target : null;
+        if (hypervisorCheckbox) {
+          var value = hypervisorCheckbox.getAttribute("data-hypervisor-value");
+          // Switching hypervisor switches the whole VNC target (QEMU and
+          // VirtualBox are physically different machines) - a live session
+          // pointed at the OLD target no longer makes sense once the
+          // Inspector's fields swap to the new hypervisor's host/port.
+          var previewApi = window.NetReconNewUICore && window.NetReconNewUICore.pulpitPreview;
+          if (previewApi && previewApi.isActive(pulpitInspectorSelectedNodeId)) {
+            previewApi.stopPreview(pulpitInspectorSelectedNodeId);
+          }
+          canvasApi.updateNodeProperties(pulpitInspectorSelectedNodeId, { hypervisor: hypervisorCheckbox.checked ? value : "" });
+        }
+      });
+
       mount.addEventListener("input", function (event) {
         var target = event.target;
         if (!target || !target.matches || !target.matches("[data-inspector-field]")) return;
@@ -2106,6 +2209,95 @@
           showResult(tr("pulpitRemoteRunErrorPrefix") + " " + (err && err.message ? err.message : String(err)), true);
         });
       });
+    }
+
+    // RS: every currently-watched node as a small live thumbnail. Unlike
+    // wirePulpitCanvas's canvasEl (bound once, only its innerHTML changes),
+    // this mount is rebuilt via renderPulpitPreviewList() on every relevant
+    // change - each active session's real surfaceEl (with noVNC's live
+    // canvas) is re-parented into its freshly-built thumbnail slot right
+    // after via mountSurface(), never recreated - see pulpit-preview-
+    // runtime.js's own file-level comment on why that matters.
+    function wirePulpitPreviewList() {
+      var mount = document.getElementById("v1PulpitPreviewList");
+      if (!mount || !renderPulpitPreviewList) return;
+
+      function render() {
+        mount.innerHTML = renderPulpitPreviewList();
+        var previewApi = window.NetReconNewUICore && window.NetReconNewUICore.pulpitPreview;
+        if (!previewApi) return;
+        previewApi.getActiveNodeIds().forEach(function (nodeId) {
+          var slot = mount.querySelector('[data-pulpit-preview-mount="' + nodeId + '"]');
+          if (slot) previewApi.mountSurface(nodeId, slot);
+        });
+      }
+
+      render();
+
+      if (mount.dataset.pulpitBound === "1") return;
+      mount.dataset.pulpitBound = "1";
+
+      document.addEventListener("newui:pulpit-preview-changed", function () {
+        if (!document.body.contains(mount)) return;
+        render();
+      });
+
+      mount.addEventListener("click", function (event) {
+        var previewApi = window.NetReconNewUICore && window.NetReconNewUICore.pulpitPreview;
+        if (!previewApi) return;
+
+        var stopBtn = event.target && event.target.closest ? event.target.closest("[data-pulpit-preview-stop]") : null;
+        if (stopBtn) {
+          previewApi.stopPreview(stopBtn.getAttribute("data-pulpit-preview-stop"));
+          return;
+        }
+
+        var thumb = event.target && event.target.closest ? event.target.closest("[data-pulpit-preview-thumb]") : null;
+        if (thumb) {
+          previewApi.setFocusedNodeId(thumb.getAttribute("data-pulpit-preview-thumb"));
+        }
+      });
+    }
+
+    // CS: the focused session's surface, big. root gets fully replaced
+    // (buildDetailHtml/toolRenderers) whenever the user switches CS tabs,
+    // so - same reasoning as wirePulpitPreviewList above - the whole shell
+    // is rebuilt via renderPulpitPreviewTool() on each relevant change; the
+    // one stable .v1-pulpit-preview-shell wrapper that function always
+    // returns is what document.body.contains() checks against to detect
+    // "user has since switched to a different CS tab, stop touching this".
+    function wirePulpitPreviewTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function" ? rootEl : document.getElementById("v1ToolDetail");
+      if (!root || !renderPulpitPreviewTool) return;
+
+      var shellEl = root.querySelector(".v1-pulpit-preview-shell");
+      if (!shellEl) return;
+
+      if (pulpitPreviewToolTeardown) {
+        pulpitPreviewToolTeardown();
+        pulpitPreviewToolTeardown = null;
+      }
+
+      function mountFocused() {
+        var previewApi = window.NetReconNewUICore && window.NetReconNewUICore.pulpitPreview;
+        var mountEl = shellEl.querySelector("[data-pulpit-preview-mount]");
+        if (!mountEl || !previewApi) return;
+        previewApi.mountSurface(mountEl.getAttribute("data-pulpit-preview-mount"), mountEl);
+      }
+
+      mountFocused();
+
+      function onChanged() {
+        if (!document.body.contains(shellEl)) return;
+        shellEl.outerHTML = renderPulpitPreviewTool();
+        shellEl = root.querySelector(".v1-pulpit-preview-shell");
+        mountFocused();
+      }
+      document.addEventListener("newui:pulpit-preview-changed", onChanged);
+
+      pulpitPreviewToolTeardown = function () {
+        document.removeEventListener("newui:pulpit-preview-changed", onChanged);
+      };
     }
 
     function wirePulpitLibrary() {
@@ -3406,6 +3598,8 @@
       wirePulpitLibrary: wirePulpitLibrary,
       wirePulpitCanvas: wirePulpitCanvas,
       wirePulpitInspector: wirePulpitInspector,
+      wirePulpitPreviewList: wirePulpitPreviewList,
+      wirePulpitPreviewTool: wirePulpitPreviewTool,
       wireGlobeTool: wireGlobeTool,
       wireAgentProfileLibrary: wireAgentProfileLibrary,
       wireAgentProfileDetail: wireAgentProfileDetail,

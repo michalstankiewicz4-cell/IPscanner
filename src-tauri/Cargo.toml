@@ -12,7 +12,13 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = ["devtools"] }
-tokio = { version = "1", features = ["net", "time", "rt-multi-thread", "macros"] }
+tokio = { version = "1", features = ["net", "time", "rt-multi-thread", "macros", "io-util"] }
+# WS<->TCP bridge for Topology's VNC desktop preview - browsers can't open
+# raw TCP sockets, so the native process pipes bytes between a WebSocket
+# (noVNC, browser side) and a plain TCP connection to the target's real VNC
+# server (see vnc_bridge_task in main.rs).
+tokio-tungstenite = "0.24"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 serde = { version = "1", features = ["derive"] }
 # Already compiled in transitively (tauri, reqwest's "json" feature) - only
 # added directly so LeakCheck's unconfirmed per-record schema can be parsed

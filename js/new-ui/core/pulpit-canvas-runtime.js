@@ -58,6 +58,24 @@
       name: safeString(item.name),
       host: safeString(item.host),
       note: safeString(item.note),
+      // Inspector checkboxes: RDP/VNC are independent (a node can expose
+      // either, both, or neither); hypervisor is radio-like (a VM runs
+      // under one at a time) - enforced by the UI only ever rendering one
+      // of "qemu"/"vb" as checked, not by validation here.
+      connRdp: !!item.connRdp,
+      connVnc: !!item.connVnc,
+      hypervisor: item.hypervisor === "qemu" || item.hypervisor === "vb" ? item.hypervisor : "",
+      // VNC target is kept SEPARATE per hypervisor, not one shared
+      // host/port - a QEMU-managed VM and a VirtualBox-managed VM are
+      // physically different machines (e.g. QEMU's own loopback-bound
+      // native VNC vs. a VirtualBox VM's bridged LAN IP running TigerVNC),
+      // so switching the hypervisor checkbox switches which of these two
+      // pairs Podgląd actually connects to - see pulpit-preview-
+      // runtime.js's resolveVncTarget().
+      vncQemuHost: safeString(item.vncQemuHost),
+      vncQemuPort: safeString(item.vncQemuPort),
+      vncVbHost: safeString(item.vncVbHost),
+      vncVbPort: safeString(item.vncVbPort),
       fields: sanitizeFields(item.fields),
       x: Math.max(0, Math.round(safeNumber(item.x, 40))),
       y: Math.max(0, Math.round(safeNumber(item.y, 40))),

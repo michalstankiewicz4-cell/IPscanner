@@ -64,6 +64,17 @@
     },
   };
 
+  toolContentRuntime["pulpit-preview-list"] = {
+    render: function () {
+      return '<div id="v1PulpitPreviewList" class="v1-pulpit-preview-list-mount"></div>';
+    },
+    wire: function () {
+      if (window.NetReconNewUI && window.NetReconNewUI.wirePulpitPanels) {
+        window.NetReconNewUI.wirePulpitPanels();
+      }
+    },
+  };
+
   toolContentRuntime["agent-profiles-library"] = {
     render: function () {
       return '<div id="v1AgentProfileLibrary" class="v1-agentprofile-library"></div>';
