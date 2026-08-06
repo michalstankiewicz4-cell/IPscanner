@@ -18,6 +18,7 @@
     var pulpitCanvasApi = core.pulpitCanvas || null;
     var pulpitPreviewApi = core.pulpitPreview || null;
     var platformApi = core.platform || null;
+    var mailXssTesterApi = core.mailXssTester || null;
     var agentProfilesApi = core.agentProfiles || null;
     var generalSettingsApi = core.generalSettings || null;
 
@@ -1117,6 +1118,165 @@
     // calls to resolve, neither of which this synchronous renderer can do.
     function renderGlobeTool() {
       return "<div class=\"v1-globe-shell\" id=\"v1GlobeContainer\"></div>";
+    }
+
+    // Mail XSS Tester: desktop-only for the same reason Topology's VNC
+    // preview is - the beacon HTTP listener and the cloudflared tunnel
+    // process both need Rust's raw TCP/process-spawn capability, neither
+    // of which any browser (including the www/GitHub Pages build) has.
+    function renderMailXssTesterDesktopOnlyNote() {
+      return "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("mailXssDesktopOnlyNote")) + "</div>";
+    }
+
+    function mailXssTesterIsDesktop() {
+      return !(platformApi && typeof platformApi.isDesktop === "function" && !platformApi.isDesktop());
+    }
+
+    // LS: payload picker, tunnel start/stop + status, and the send form -
+    // password/app-password fields are read directly at submit time by
+    // wireMailXssTesterLibrary (panel-interactions-runtime.js), never
+    // routed through any persisted-state mechanism, same one-time
+    // credential discipline as the remote-install password field.
+    function renderMailXssTesterLibrary() {
+      if (!mailXssTesterIsDesktop()) return renderMailXssTesterDesktopOnlyNote();
+
+      var payloads = mailXssTesterApi ? mailXssTesterApi.getPayloads() : [];
+      var selected = mailXssTesterApi ? mailXssTesterApi.getSelectedPayloadIds() : [];
+      var status = mailXssTesterApi ? mailXssTesterApi.getTunnelStatus() : "idle";
+      var url = mailXssTesterApi ? mailXssTesterApi.getTunnelUrl() : "";
+      var error = mailXssTesterApi ? mailXssTesterApi.getTunnelError() : "";
+
+      var payloadsHtml = payloads.map(function (p) {
+        var checked = selected.indexOf(p.id) !== -1;
+        var fieldId = "v1MailXssPayload_" + p.id;
+        return [
+          "<span class=\"v1-pulpit-checkbox-item\">",
+          "<input id=\"" + fieldId + "\" type=\"checkbox\" data-mail-xss-payload-checkbox=\"" + escapeHtml(p.id) + "\"" + (checked ? " checked" : "") + " />",
+          "<label for=\"" + fieldId + "\">" + escapeHtml(tr(p.labelKey)) + "</label>",
+          "</span>"
+        ].join("");
+      }).join("");
+
+      var tunnelStatusHtml = "";
+      if (status === "running") {
+        tunnelStatusHtml = "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssTunnelRunningNote")) + " " + escapeHtml(url) + "</p>";
+      } else if (status === "starting") {
+        tunnelStatusHtml = "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssTunnelStartingNote")) + "</p>";
+      } else if (status === "error") {
+        tunnelStatusHtml = [
+          "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssTunnelErrorPrefix")) + " " + escapeHtml(error) + "</p>",
+          "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-mail-xss-cloudflared-download>" + escapeHtml(tr("mailXssDownloadCloudflaredBtn")) + "</button>"
+        ].join("");
+      }
+
+      var sendDisabled = status !== "running";
+
+      return [
+        "<ul class=\"v1-tool-list\">",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("mailXssPayloadsHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body v1-pulpit-checkbox-row\">",
+        payloadsHtml,
+        "</div>",
+        "</li>",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("mailXssTunnelHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">",
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn" + (status === "running" ? " is-active" : "") + "\" data-mail-xss-tunnel-toggle" + (status === "starting" ? " disabled" : "") + ">" + escapeHtml(tr(status === "running" ? "mailXssStopTunnelBtn" : "mailXssStartTunnelBtn")) + "</button>",
+        tunnelStatusHtml,
+        "</div>",
+        "</li>",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("mailXssSendHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">",
+        "<form data-mail-xss-send-form>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1MailXssGmailAddress\">" + escapeHtml(tr("mailXssGmailAddressLabel")) + "</label>",
+        "<input id=\"v1MailXssGmailAddress\" name=\"mailXssGmailAddress\" type=\"email\" autocomplete=\"off\" data-mail-xss-field=\"gmailAddress\" />",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1MailXssAppPassword\">" + escapeHtml(tr("mailXssAppPasswordLabel")) + "</label>",
+        "<input id=\"v1MailXssAppPassword\" name=\"mailXssAppPassword\" type=\"password\" autocomplete=\"off\" data-mail-xss-field=\"appPassword\" />",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1MailXssTo\">" + escapeHtml(tr("mailXssToLabel")) + "</label>",
+        "<input id=\"v1MailXssTo\" name=\"mailXssTo\" type=\"email\" autocomplete=\"off\" data-mail-xss-field=\"to\" />",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1MailXssSubject\">" + escapeHtml(tr("mailXssSubjectLabel")) + "</label>",
+        "<input id=\"v1MailXssSubject\" name=\"mailXssSubject\" type=\"text\" autocomplete=\"off\" data-mail-xss-field=\"subject\" value=\"" + escapeHtml(tr("mailXssDefaultSubject")) + "\" />",
+        "</div>",
+        "<button type=\"submit\" class=\"v1-pulpit-remote-run-submit\" data-mail-xss-send-submit" + (sendDisabled ? " disabled" : "") + ">" + escapeHtml(tr("mailXssSendBtn")) + "</button>",
+        "</form>",
+        "<div class=\"v1-pulpit-remote-run-result\" data-mail-xss-send-result hidden></div>",
+        "</div>",
+        "</li>",
+        "</ul>"
+      ].join("");
+    }
+
+    // CS: a live results summary - one row per selected payload, updating
+    // as newui:mail-xss-tester-changed fires (wireMailXssTesterResults
+    // re-renders this same shell, see panel-interactions-runtime.js).
+    function renderMailXssTesterTool() {
+      var inner;
+      if (!mailXssTesterIsDesktop()) {
+        inner = renderMailXssTesterDesktopOnlyNote();
+      } else {
+        var payloads = mailXssTesterApi ? mailXssTesterApi.getPayloads() : [];
+        var selected = mailXssTesterApi ? mailXssTesterApi.getSelectedPayloadIds() : [];
+        var triggered = mailXssTesterApi ? mailXssTesterApi.getTriggeredPayloadIds() : [];
+        var status = mailXssTesterApi ? mailXssTesterApi.getTunnelStatus() : "idle";
+
+        var rowsHtml = payloads.filter(function (p) {
+          return selected.indexOf(p.id) !== -1;
+        }).map(function (p) {
+          var isTriggered = triggered.indexOf(p.id) !== -1;
+          return [
+            "<tr>",
+            "<td>" + escapeHtml(tr(p.labelKey)) + "</td>",
+            "<td class=\"" + (isTriggered ? "v1-mail-xss-triggered-yes" : "v1-mail-xss-triggered-no") + "\">" + escapeHtml(tr(isTriggered ? "mailXssTriggeredYes" : "mailXssTriggeredNo")) + "</td>",
+            "</tr>"
+          ].join("");
+        }).join("");
+
+        inner = [
+          "<div class=\"v1-pulpit-inspector-field\">",
+          "<label>" + escapeHtml(tr("mailXssTunnelHeading")) + "</label>",
+          "<div>" + escapeHtml(tr("mailXssStatus_" + status)) + "</div>",
+          "</div>",
+          rowsHtml
+            ? "<table class=\"v1-mail-xss-results-table\"><thead><tr><th>" + escapeHtml(tr("mailXssPayloadColumnLabel")) + "</th><th>" + escapeHtml(tr("mailXssTriggeredColumnLabel")) + "</th></tr></thead><tbody>" + rowsHtml + "</tbody></table>"
+            : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("mailXssNoPayloadsSelectedNote")) + "</div>"
+        ].join("");
+      }
+      return "<div class=\"v1-mail-xss-tester-shell\">" + inner + "</div>";
+    }
+
+    // RS: raw hit log, newest first - the User-Agent header is useful for
+    // identifying which mail client/proxy actually fetched the beacon
+    // (e.g. Gmail's own image-proxy UA vs. a desktop client's).
+    function renderMailXssTesterResults() {
+      if (!mailXssTesterIsDesktop()) return renderMailXssTesterDesktopOnlyNote();
+
+      var hits = mailXssTesterApi ? mailXssTesterApi.getHits() : [];
+      if (!hits.length) {
+        return "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("mailXssNoHitsYetNote")) + "</div>";
+      }
+
+      var rowsHtml = hits.slice().reverse().map(function (h) {
+        var time = h.timestamp_ms ? new Date(h.timestamp_ms).toLocaleTimeString() : "";
+        return [
+          "<div class=\"v1-mail-xss-hit-row\">",
+          "<div class=\"v1-mail-xss-hit-time\">" + escapeHtml(time) + "</div>",
+          "<div class=\"v1-mail-xss-hit-payload\">" + escapeHtml(h.payload_id || "") + "</div>",
+          "<div class=\"v1-mail-xss-hit-ua\">" + escapeHtml(h.user_agent || "") + "</div>",
+          "<div class=\"v1-mail-xss-hit-addr\">" + escapeHtml(h.remote_addr || "") + "</div>",
+          "</div>"
+        ].join("");
+      }).join("");
+
+      return "<div class=\"v1-mail-xss-hit-log\">" + rowsHtml + "</div>";
     }
 
     // Anchors a connection line on roughly the icon glyph's center, not the
@@ -2338,6 +2498,7 @@
       shellcraft: renderShellCraftCanvasTool,
       pulpit: renderPulpitCanvasTool,
       "pulpit-preview": renderPulpitPreviewTool,
+      "mail-xss-tester": renderMailXssTesterTool,
       globe: renderGlobeTool,
       "agent-profiles": renderAgentProfileDetailTool,
 
@@ -2366,6 +2527,9 @@
       renderPulpitInspector: renderPulpitInspector,
       renderPulpitPreviewList: renderPulpitPreviewList,
       renderPulpitPreviewTool: renderPulpitPreviewTool,
+      renderMailXssTesterLibrary: renderMailXssTesterLibrary,
+      renderMailXssTesterTool: renderMailXssTesterTool,
+      renderMailXssTesterResults: renderMailXssTesterResults,
       pulpitEdgeAnchor: pulpitEdgeAnchor,
       renderAgentProfileLibrary: renderAgentProfileLibrary,
       renderAgentProfileDetailFields: renderAgentProfileDetailFields,

@@ -205,6 +205,8 @@
         const toolsMenuIpScanner = document.getElementById("v1ToolsMenuIpScanner");
         const toolsMenuLoremIpsum = document.getElementById("v1ToolsMenuLoremIpsum");
         const toolsMenuGlobe = document.getElementById("v1ToolsMenuGlobe");
+        const toolsMenuPulpitPreview = document.getElementById("v1ToolsMenuPulpitPreview");
+        const toolsMenuMailXssTester = document.getElementById("v1ToolsMenuMailXssTester");
         const toolsMenuNetworkMonitor = document.getElementById("v1ToolsMenuNetworkMonitor");
         const toolsMenuEmailRecon = document.getElementById("v1ToolsMenuEmailRecon");
         tabsTrack = document.getElementById("v1TabsTrack");
@@ -317,6 +319,8 @@
         if (toolsMenuIpScanner) toolsMenuIpScanner.textContent = tr("ipScanner");
         if (toolsMenuLoremIpsum) toolsMenuLoremIpsum.textContent = tr("toolTitle_lorem_ipsum");
         if (toolsMenuGlobe) toolsMenuGlobe.textContent = tr("toolTitle_globe");
+        if (toolsMenuPulpitPreview) toolsMenuPulpitPreview.textContent = tr("toolTitle_pulpit_preview");
+        if (toolsMenuMailXssTester) toolsMenuMailXssTester.textContent = tr("toolTitle_mail_xss_tester");
         if (toolsMenuNetworkMonitor) toolsMenuNetworkMonitor.textContent = tr("toolTitle_network_monitor");
         if (toolsMenuEmailRecon) toolsMenuEmailRecon.textContent = tr("toolTitle_email_recon");
         document.querySelectorAll("[data-sidebar-tab-close]").forEach((el) => {
@@ -477,6 +481,16 @@
       window.NetReconNewUI.wireNetworkMonitorLeftPanel = function (rootEl) {
         if (panelsRuntime && panelsRuntime.wireNetworkMonitorLeftPanel) {
           panelsRuntime.wireNetworkMonitorLeftPanel(rootEl);
+        }
+      };
+      window.NetReconNewUI.wireMailXssTesterLibrary = function (rootEl) {
+        if (panelsRuntime && panelsRuntime.wireMailXssTesterLibrary) {
+          panelsRuntime.wireMailXssTesterLibrary(rootEl);
+        }
+      };
+      window.NetReconNewUI.wireMailXssTesterResults = function (rootEl) {
+        if (panelsRuntime && panelsRuntime.wireMailXssTesterResults) {
+          panelsRuntime.wireMailXssTesterResults(rootEl);
         }
       };
       // Exposed for navigation-runtime.js's activateGenericContent() LS/RS

@@ -13,6 +13,9 @@
     var pulpitEdgeAnchor = typeof deps.pulpitEdgeAnchor === "function" ? deps.pulpitEdgeAnchor : function (node) { return { x: node.x + 42, y: node.y + 22 }; };
     var renderPulpitPreviewList = typeof deps.renderPulpitPreviewList === "function" ? deps.renderPulpitPreviewList : null;
     var renderPulpitPreviewTool = typeof deps.renderPulpitPreviewTool === "function" ? deps.renderPulpitPreviewTool : null;
+    var renderMailXssTesterLibrary = typeof deps.renderMailXssTesterLibrary === "function" ? deps.renderMailXssTesterLibrary : null;
+    var renderMailXssTesterTool = typeof deps.renderMailXssTesterTool === "function" ? deps.renderMailXssTesterTool : null;
+    var renderMailXssTesterResults = typeof deps.renderMailXssTesterResults === "function" ? deps.renderMailXssTesterResults : null;
     var renderAgentProfileLibrary = typeof deps.renderAgentProfileLibrary === "function" ? deps.renderAgentProfileLibrary : null;
     var renderAgentProfileDetailFields = typeof deps.renderAgentProfileDetailFields === "function" ? deps.renderAgentProfileDetailFields : null;
     var globeRuntime = deps.globeRuntime || null;
@@ -61,6 +64,8 @@
     // runs again on every CS tab (re)activation, so its own document-level
     // listener needs the same explicit teardown-before-rewire discipline.
     var pulpitPreviewToolTeardown = null;
+    // Same reasoning as pulpitPreviewToolTeardown above.
+    var mailXssTesterToolTeardown = null;
     var pulpitInspectorSelectedNodeId = "";
     var pulpitInspectorSuppressNextRender = false;
 
@@ -2300,6 +2305,159 @@
       };
     }
 
+    // LS: payload picker, tunnel start/stop, and the send form. Rebuilt
+    // wholesale (mount.innerHTML =) on every newui:mail-xss-tester-changed
+    // event rather than patched in place - unlike Topology's live VNC
+    // surfaces, nothing here owns a persistent DOM node that a full
+    // rebuild would tear down, so the simpler always-rebuild approach is
+    // fine.
+    function wireMailXssTesterLibrary() {
+      var mount = document.getElementById("v1MailXssTesterLibrary");
+      if (!mount || !renderMailXssTesterLibrary) return;
+
+      function render() {
+        mount.innerHTML = renderMailXssTesterLibrary();
+      }
+
+      render();
+
+      if (mount.dataset.mailXssBound === "1") return;
+      mount.dataset.mailXssBound = "1";
+
+      document.addEventListener("newui:mail-xss-tester-changed", function () {
+        if (!document.body.contains(mount)) return;
+        render();
+      });
+
+      mount.addEventListener("click", function (event) {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
+        if (!api) return;
+
+        var tunnelBtn = event.target && event.target.closest ? event.target.closest("[data-mail-xss-tunnel-toggle]") : null;
+        if (tunnelBtn) {
+          if (api.getTunnelStatus() === "running") api.stopTunnel();
+          else api.startTunnel();
+          return;
+        }
+
+        var downloadBtn = event.target && event.target.closest ? event.target.closest("[data-mail-xss-cloudflared-download]") : null;
+        if (downloadBtn) {
+          var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+          if (platform) {
+            Promise.resolve(platform.invoke("open_browser", { url: "https://github.com/cloudflare/cloudflared/releases/latest" })).catch(function () {
+              // ignore - www build has no open_browser command
+            });
+          }
+        }
+      });
+
+      // Payload selection deliberately isn't data-inspector-field - there's
+      // no canvas/persisted-node state involved here at all, just this
+      // module's own in-memory selectedIds array.
+      mount.addEventListener("change", function (event) {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
+        if (!api) return;
+        var checkbox = event.target && event.target.matches && event.target.matches("[data-mail-xss-payload-checkbox]") ? event.target : null;
+        if (!checkbox) return;
+        api.setPayloadSelected(checkbox.getAttribute("data-mail-xss-payload-checkbox"), checkbox.checked);
+      });
+
+      // Same credential discipline as the remote-install password field -
+      // read directly from the form at submit time, forwarded straight to
+      // the Rust command, never persisted anywhere in between.
+      mount.addEventListener("submit", function (event) {
+        var form = event.target && event.target.closest ? event.target.closest("[data-mail-xss-send-form]") : null;
+        if (!form) return;
+        event.preventDefault();
+
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
+        if (!api) return;
+
+        function fieldValue(name) {
+          var el = form.querySelector('[data-mail-xss-field="' + name + '"]');
+          return el ? el.value : "";
+        }
+
+        var resultEl = mount.querySelector("[data-mail-xss-send-result]");
+        function showResult(text, isError) {
+          if (!resultEl) return;
+          resultEl.textContent = text;
+          resultEl.classList.toggle("is-error", !!isError);
+          resultEl.removeAttribute("hidden");
+        }
+
+        var gmailAddress = fieldValue("gmailAddress").trim();
+        var appPassword = fieldValue("appPassword");
+        var to = fieldValue("to").trim();
+        var subject = fieldValue("subject").trim();
+
+        if (!gmailAddress || !appPassword || !to || !subject) {
+          showResult(tr("mailXssSendMissingFieldsNote"), true);
+          return;
+        }
+
+        var submitBtn = form.querySelector("[data-mail-xss-send-submit]");
+        if (submitBtn) submitBtn.disabled = true;
+        showResult(tr("mailXssSendPendingNote"), false);
+
+        api.sendTestEmail({ gmailAddress: gmailAddress, appPassword: appPassword, to: to, subject: subject }).then(function () {
+          if (submitBtn) submitBtn.disabled = false;
+          showResult(tr("mailXssSendSuccessNote"), false);
+        }).catch(function (err) {
+          if (submitBtn) submitBtn.disabled = false;
+          showResult(tr("mailXssSendErrorPrefix") + " " + ((err && err.message) ? err.message : String(err)), true);
+        });
+      });
+    }
+
+    // RS: raw hit log, rebuilt the same way as the LS panel above.
+    function wireMailXssTesterResults() {
+      var mount = document.getElementById("v1MailXssTesterResults");
+      if (!mount || !renderMailXssTesterResults) return;
+
+      function render() {
+        mount.innerHTML = renderMailXssTesterResults();
+      }
+
+      render();
+
+      if (mount.dataset.mailXssBound === "1") return;
+      mount.dataset.mailXssBound = "1";
+
+      document.addEventListener("newui:mail-xss-tester-changed", function () {
+        if (!document.body.contains(mount)) return;
+        render();
+      });
+    }
+
+    // CS: same teardown-before-rewire + stable-shell-element staleness
+    // guard as wirePulpitPreviewTool above - root gets fully replaced
+    // whenever the user switches CS tabs, so the whole shell is rebuilt on
+    // each relevant change rather than patched in place.
+    function wireMailXssTesterTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function" ? rootEl : document.getElementById("v1ToolDetail");
+      if (!root || !renderMailXssTesterTool) return;
+
+      var shellEl = root.querySelector(".v1-mail-xss-tester-shell");
+      if (!shellEl) return;
+
+      if (mailXssTesterToolTeardown) {
+        mailXssTesterToolTeardown();
+        mailXssTesterToolTeardown = null;
+      }
+
+      function onChanged() {
+        if (!document.body.contains(shellEl)) return;
+        shellEl.outerHTML = renderMailXssTesterTool();
+        shellEl = root.querySelector(".v1-mail-xss-tester-shell");
+      }
+      document.addEventListener("newui:mail-xss-tester-changed", onChanged);
+
+      mailXssTesterToolTeardown = function () {
+        document.removeEventListener("newui:mail-xss-tester-changed", onChanged);
+      };
+    }
+
     function wirePulpitLibrary() {
       var mount = document.getElementById("v1PulpitLibrary");
       if (!mount || !renderPulpitLibrary) return;
@@ -3600,6 +3758,9 @@
       wirePulpitInspector: wirePulpitInspector,
       wirePulpitPreviewList: wirePulpitPreviewList,
       wirePulpitPreviewTool: wirePulpitPreviewTool,
+      wireMailXssTesterLibrary: wireMailXssTesterLibrary,
+      wireMailXssTesterResults: wireMailXssTesterResults,
+      wireMailXssTesterTool: wireMailXssTesterTool,
       wireGlobeTool: wireGlobeTool,
       wireAgentProfileLibrary: wireAgentProfileLibrary,
       wireAgentProfileDetail: wireAgentProfileDetail,

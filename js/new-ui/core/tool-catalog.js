@@ -146,7 +146,7 @@
       points: ["Live VNC view of a Topology node's desktop", "Desktop app only - needs a raw TCP connection to the target"],
       icon: "🖵",
       labelKey: "tabLabel_pulpit_preview",
-      ui: { showAsTab: true, order: 116 }
+      ui: { showAsTab: true, order: 117 }
     },
     "pulpit-preview-list": {
       icon: null,
@@ -188,6 +188,32 @@
       icon: "🌍",
       labelKey: "tabLabel_globe",
       ui: { showAsTab: true, order: 120 }
+    },
+    // Mail XSS Tester: self-test which HTML/XSS payload variants survive
+    // YOUR OWN webmail's sanitization - every payload's only effect is
+    // firing a beacon request, proving it executed; nothing here
+    // exfiltrates anything or persists. Needs a publicly reachable beacon
+    // (see mail-xss-tester-runtime.js) and Rust's raw TCP/process-spawn
+    // capability for the tunnel, so - like Topology's VNC preview - this
+    // is desktop-only, gated via platform.isDesktop() in the renderer
+    // rather than hidden from the catalog outright.
+    "mail-xss-tester": {
+      titleKey: "toolTitle_mail_xss_tester",
+      textKey: "toolText_mail_xss_tester",
+      points: ["Send yourself a test email with several sanitization-bypass payloads", "Each payload proves execution via a unique beacon URL, nothing more", "Desktop app only - needs a publicly reachable beacon endpoint"],
+      icon: "🛡",
+      labelKey: "tabLabel_mail_xss_tester",
+      ui: { showAsTab: true, order: 121 }
+    },
+    "mail-xss-tester-library": {
+      icon: null,
+      labelKey: "tabLabel_mail_xss_tester_library",
+      ui: { showInLeftPanel: true, leftOrder: 46 }
+    },
+    "mail-xss-tester-results": {
+      icon: null,
+      labelKey: "tabLabel_mail_xss_tester_results",
+      ui: { showInRightPanel: true, rightOrder: 27 }
     },
     "ip-library": {
       titleKey: "toolTitle_ip_library",

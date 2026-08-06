@@ -1,0 +1,80 @@
+/* shell: Mail XSS Tester - Test setup (LS), status/results (CS), hit log
+   (RS). Reuses several Pulpit-prefixed generic classes already loaded
+   (.v1-tool-list, .v1-pulpit-checkbox-row/item, .v1-pulpit-connect-btn,
+   .v1-pulpit-remote-hint, .v1-pulpit-remote-run-submit/-result,
+   .v1-import-manager-note) rather than duplicating that styling here -
+   same reuse convention .v1-import-manager-note itself already has across
+   many unrelated tools' empty states. */
+
+.v1-mail-xss-tester-shell {
+  padding: 12px;
+  overflow-y: auto;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.v1-mail-xss-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.v1-mail-xss-results-table th,
+.v1-mail-xss-results-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #2a2b2f;
+}
+
+.v1-mail-xss-results-table th {
+  color: var(--txt-dim);
+  font-weight: 600;
+}
+
+.v1-mail-xss-triggered-yes {
+  color: #2dcc71;
+  font-weight: 600;
+}
+
+.v1-mail-xss-triggered-no {
+  color: var(--txt-dim);
+}
+
+.v1-mail-xss-tester-library,
+.v1-mail-xss-tester-results {
+  padding: 4px;
+}
+
+.v1-mail-xss-hit-log {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px;
+}
+
+.v1-mail-xss-hit-row {
+  border: 1px solid #2a2b2f;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 11px;
+}
+
+.v1-mail-xss-hit-time {
+  color: var(--txt-dim);
+}
+
+.v1-mail-xss-hit-payload {
+  font-family: var(--font-mono);
+  color: var(--brand);
+  overflow-wrap: break-word;
+}
+
+.v1-mail-xss-hit-ua {
+  color: var(--txt);
+  overflow-wrap: break-word;
+}
+
+.v1-mail-xss-hit-addr {
+  color: var(--txt-dim);
+}

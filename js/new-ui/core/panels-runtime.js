@@ -1543,6 +1543,9 @@
         pulpitEdgeAnchor: panelContentRuntime && panelContentRuntime.pulpitEdgeAnchor,
         renderPulpitPreviewList: panelContentRuntime && panelContentRuntime.renderPulpitPreviewList,
         renderPulpitPreviewTool: panelContentRuntime && panelContentRuntime.renderPulpitPreviewTool,
+        renderMailXssTesterLibrary: panelContentRuntime && panelContentRuntime.renderMailXssTesterLibrary,
+        renderMailXssTesterTool: panelContentRuntime && panelContentRuntime.renderMailXssTesterTool,
+        renderMailXssTesterResults: panelContentRuntime && panelContentRuntime.renderMailXssTesterResults,
         renderPulpitInspector: panelContentRuntime && panelContentRuntime.renderPulpitInspector,
         renderAgentProfileLibrary: panelContentRuntime && panelContentRuntime.renderAgentProfileLibrary,
         renderAgentProfileDetailFields: panelContentRuntime && panelContentRuntime.renderAgentProfileDetailFields,
@@ -1859,6 +1862,13 @@
       if (tool === "pulpit-preview") { // shell
         if (panelInteractionsRuntime && panelInteractionsRuntime.wirePulpitPreviewTool) {
           panelInteractionsRuntime.wirePulpitPreviewTool(scope);
+        }
+        return;
+      }
+
+      if (tool === "mail-xss-tester") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireMailXssTesterTool) {
+          panelInteractionsRuntime.wireMailXssTesterTool(scope);
         }
         return;
       }
@@ -2292,6 +2302,21 @@
       }
     }
 
+    // Exposed for LS/RS's generic-content-slot mechanism (tool-content-
+    // runtime.js's "mail-xss-tester-library"/"-results" entries) - same
+    // idea as wireNetworkMonitorLeftPanel above.
+    function wireMailXssTesterLibrary(rootEl) {
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireMailXssTesterLibrary) {
+        panelInteractionsRuntime.wireMailXssTesterLibrary(rootEl);
+      }
+    }
+
+    function wireMailXssTesterResults(rootEl) {
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireMailXssTesterResults) {
+        panelInteractionsRuntime.wireMailXssTesterResults(rootEl);
+      }
+    }
+
     return {
       setTooltips: setTooltips,
       refreshActiveUI: refreshActiveUI,
@@ -2311,6 +2336,8 @@
       refreshAgentProfilePanels: refreshAgentProfilePanels,
       wireIpLibraryPanel: wireIpLibraryPanel,
       wireNetworkMonitorLeftPanel: wireNetworkMonitorLeftPanel,
+      wireMailXssTesterLibrary: wireMailXssTesterLibrary,
+      wireMailXssTesterResults: wireMailXssTesterResults,
       refreshDetachedTool: refreshDetachedTool,
       applyEmailReconResult: function (email, result) {
         if (panelInteractionsRuntime && panelInteractionsRuntime.applyEmailReconResult) {

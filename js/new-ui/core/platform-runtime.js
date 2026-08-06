@@ -67,6 +67,22 @@
       return inv(command, payload || {});
     }
 
+    // Mail XSS Tester's beacon-hit events (main.rs's app.emit("mail-xss-
+    // beacon-hit", ...)) are the first thing in this codebase needing a
+    // backend-push channel instead of a request/response invoke() - same
+    // parity-mode/unavailable-on-www guard as invoke() above, resolving to
+    // a no-op unlisten function instead of rejecting so a bare .then() call
+    // site doesn't need its own try/catch for the www build.
+    function listen(eventName, callback) {
+      var noopUnlisten = function () {};
+      if (isParityMode()) return Promise.resolve(noopUnlisten);
+      var evt = window.__TAURI__ && window.__TAURI__.event;
+      if (!evt || typeof evt.listen !== "function") return Promise.resolve(noopUnlisten);
+      return evt.listen(eventName, function (event) {
+        callback(event && event.payload);
+      });
+    }
+
     function getWindowApi() {
       var tauri = window.__TAURI__;
       return tauri && (tauri.window || tauri.webviewWindow)
@@ -221,6 +237,7 @@
     return {
       getInvoke: getInvoke,
       invoke: invoke,
+      listen: listen,
       getCurrentWindow: getCurrentWindow,
       getDpi: getDpi,
       isDesktop: isDesktop,

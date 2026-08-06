@@ -9,7 +9,7 @@ use std::str::FromStr;
 use std::collections::HashMap;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Arc,
+    Arc, Mutex,
 };
 use std::time::{Duration, Instant, SystemTime};
 
@@ -26,6 +26,7 @@ use tokio::time::timeout;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use futures_util::{SinkExt, StreamExt};
 use tokio_tungstenite::tungstenite::Message;
+use lettre::AsyncTransport;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -3214,6 +3215,249 @@ fn spawn_vnc_bridge() {
     });
 }
 
+// ─── Mail XSS Tester ─────────────────────────────────────────────────────────
+// Self-test which HTML/XSS payloads survive a webmail's sanitization: send
+// yourself an email containing several payload variants, each proving
+// execution by calling out to a unique beacon URL - a stripped/sanitized
+// payload never runs, so it never calls out. Every payload's ONLY effect is
+// firing that beacon request (no exfiltration, no persistence) - this is a
+// sanitization diagnostic for your OWN mailbox, not an attack tool.
+//
+// Detection needs a PUBLICLY reachable beacon endpoint: webmail providers
+// (Gmail in particular) fetch/proxy embedded images through their own
+// infrastructure, not from the recipient's machine, so a plain localhost
+// listener can never receive the hit. `method` is a string ("cloudflare" for
+// now) rather than a hardcoded single path, so a second, dependency-free
+// method (e.g. UPnP router port-mapping) can be added later without renaming
+// these commands.
+
+#[derive(Serialize, Clone)]
+struct BeaconHit {
+    payload_id: String,
+    timestamp_ms: u64,
+    user_agent: String,
+    remote_addr: String,
+}
+
+struct MailXssTesterState {
+    hits: Mutex<Vec<BeaconHit>>,
+    beacon_task: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
+    tunnel_child: Mutex<Option<std::process::Child>>,
+}
+
+// 1x1 transparent GIF - a well-known, standard minimal tracking-pixel byte
+// sequence, valid regardless of whether a payload embedded the beacon as an
+// <img src>, a CSS @import, or a fetch()/Image() call.
+const BEACON_GIF: [u8; 43] = [
+    0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x21, 0xF9, 0x04, 0x01, 0x00, 0x00, 0x00,
+    0x00, 0x2C, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x02,
+    0x44, 0x01, 0x00, 0x3B,
+];
+
+async fn handle_beacon_connection(mut stream: TcpStream, app: AppHandle, state: Arc<MailXssTesterState>) {
+    let peer = stream.peer_addr().map(|a| a.to_string()).unwrap_or_default();
+
+    let mut buf = vec![0u8; 8192];
+    let mut total = 0usize;
+    loop {
+        if total >= buf.len() {
+            break;
+        }
+        let n = match stream.read(&mut buf[total..]).await {
+            Ok(0) => break,
+            Ok(n) => n,
+            Err(_) => return,
+        };
+        total += n;
+        if buf[..total].windows(4).any(|w| w == b"\r\n\r\n") {
+            break;
+        }
+    }
+
+    let request = String::from_utf8_lossy(&buf[..total]).to_string();
+    let mut lines = request.lines();
+    let request_line = lines.next().unwrap_or("");
+    let path = request_line.split_whitespace().nth(1).unwrap_or("");
+    let payload_id = path.trim_start_matches('/').trim_start_matches("hit/").trim_end_matches('/').to_string();
+
+    let mut user_agent = String::new();
+    for line in lines {
+        if let Some(idx) = line.find(':') {
+            let (name, value) = line.split_at(idx);
+            if name.eq_ignore_ascii_case("user-agent") {
+                user_agent = value[1..].trim().to_string();
+            }
+        }
+    }
+
+    if !payload_id.is_empty() {
+        let hit = BeaconHit {
+            payload_id,
+            timestamp_ms: SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_millis() as u64)
+                .unwrap_or(0),
+            user_agent,
+            remote_addr: peer,
+        };
+        state.hits.lock().unwrap().push(hit.clone());
+        let _ = app.emit("mail-xss-beacon-hit", &hit);
+    }
+
+    let header = format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: image/gif\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+        BEACON_GIF.len()
+    );
+    let _ = stream.write_all(header.as_bytes()).await;
+    let _ = stream.write_all(&BEACON_GIF).await;
+}
+
+#[tauri::command]
+async fn start_beacon_server(app: AppHandle) -> Result<u16, String> {
+    let state = app.state::<Arc<MailXssTesterState>>().inner().clone();
+    state.hits.lock().unwrap().clear();
+
+    // Loopback-only - cloudflared (or, later, a UPnP-mapped router) is what
+    // makes this reachable from the internet, this listener itself never
+    // needs to accept connections from anywhere but the local machine.
+    let listener = TcpListener::bind(("127.0.0.1", 0)).await.map_err(|e| e.to_string())?;
+    let port = listener.local_addr().map_err(|e| e.to_string())?.port();
+
+    let app2 = app.clone();
+    let state2 = state.clone();
+    let handle = tauri::async_runtime::spawn(async move {
+        loop {
+            let stream = match listener.accept().await {
+                Ok((s, _)) => s,
+                Err(_) => continue,
+            };
+            tauri::async_runtime::spawn(handle_beacon_connection(stream, app2.clone(), state2.clone()));
+        }
+    });
+    *state.beacon_task.lock().unwrap() = Some(handle);
+
+    Ok(port)
+}
+
+#[tauri::command]
+fn stop_beacon_server(app: AppHandle) {
+    let state = app.state::<Arc<MailXssTesterState>>().inner().clone();
+    let handle = state.beacon_task.lock().unwrap().take();
+    if let Some(handle) = handle {
+        handle.abort();
+    }
+}
+
+#[tauri::command]
+fn get_beacon_hits(app: AppHandle) -> Vec<BeaconHit> {
+    let state = app.state::<Arc<MailXssTesterState>>().inner().clone();
+    let hits = state.hits.lock().unwrap().clone();
+    hits
+}
+
+// method is a string (only "cloudflare" implemented today) rather than a
+// hardcoded single code path, so a second, dependency-free method (UPnP
+// router port-mapping) can be added later without renaming this command or
+// touching the JS call sites' shape.
+#[tauri::command]
+async fn start_tunnel(app: AppHandle, method: String, local_port: u16) -> Result<String, String> {
+    if method != "cloudflare" {
+        return Err(format!("Unknown tunnel method: {}", method));
+    }
+
+    use std::io::{BufRead, BufReader};
+    use std::process::Stdio;
+
+    let mut child = Command::new("cloudflared")
+        .args(["tunnel", "--url", &format!("http://127.0.0.1:{}", local_port)])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("cloudflared not found or failed to start: {}", e))?;
+
+    // cloudflared prints its assigned public URL to stderr during startup -
+    // there is no API for the free/anonymous Quick Tunnel feature (that's
+    // precisely why it needs no account), so scraping the CLI's own output
+    // for the generated https://*.trycloudflare.com URL is the standard,
+    // documented way other tools integrate with it, not a workaround.
+    let stderr = child.stderr.take().ok_or("cloudflared gave no stderr handle")?;
+    let url_future = tokio::task::spawn_blocking(move || {
+        let reader = BufReader::new(stderr);
+        for line in reader.lines() {
+            let line = match line {
+                Ok(l) => l,
+                Err(_) => continue,
+            };
+            if let Some(idx) = line.find("https://") {
+                if line[idx..].contains("trycloudflare.com") {
+                    let rest = &line[idx..];
+                    let end = rest.find(char::is_whitespace).unwrap_or(rest.len());
+                    return Some(rest[..end].to_string());
+                }
+            }
+        }
+        None
+    });
+
+    let url = match timeout(Duration::from_secs(20), url_future).await {
+        Ok(Ok(Some(url))) => url,
+        Ok(Ok(None)) => {
+            let _ = child.kill();
+            return Err("cloudflared exited without printing a tunnel URL".into());
+        }
+        Ok(Err(e)) => {
+            let _ = child.kill();
+            return Err(e.to_string());
+        }
+        Err(_) => {
+            let _ = child.kill();
+            return Err("Timed out waiting for cloudflared to report its tunnel URL".into());
+        }
+    };
+
+    let state = app.state::<Arc<MailXssTesterState>>();
+    *state.tunnel_child.lock().unwrap() = Some(child);
+
+    Ok(url)
+}
+
+#[tauri::command]
+fn stop_tunnel(app: AppHandle) {
+    let state = app.state::<Arc<MailXssTesterState>>().inner().clone();
+    let child = state.tunnel_child.lock().unwrap().take();
+    if let Some(mut child) = child {
+        let _ = child.kill();
+    }
+}
+
+#[tauri::command]
+async fn send_test_email(
+    gmail_address: String,
+    app_password: String,
+    to: String,
+    subject: String,
+    html_body: String,
+) -> Result<(), String> {
+    let email = lettre::Message::builder()
+        .from(gmail_address.parse().map_err(|e: lettre::address::AddressError| e.to_string())?)
+        .to(to.parse().map_err(|e: lettre::address::AddressError| e.to_string())?)
+        .subject(subject)
+        .header(lettre::message::header::ContentType::TEXT_HTML)
+        .body(html_body)
+        .map_err(|e| e.to_string())?;
+
+    let creds = lettre::transport::smtp::authentication::Credentials::new(gmail_address, app_password);
+
+    let mailer = lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::relay("smtp.gmail.com")
+        .map_err(|e| e.to_string())?
+        .credentials(creds)
+        .build();
+
+    mailer.send(email).await.map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 fn main() {
     use std::io::Write;
     
@@ -3233,6 +3477,11 @@ fn main() {
     
     tauri::Builder::default()
         .manage(Arc::new(ScanState { stop: AtomicBool::new(false) }))
+        .manage(Arc::new(MailXssTesterState {
+            hits: Mutex::new(Vec::new()),
+            beacon_task: Mutex::new(None),
+            tunnel_child: Mutex::new(None),
+        }))
         .setup(|app| {
             spawn_vnc_bridge();
             // tauri.conf.json starts the main window maximized, which hits the
@@ -3260,6 +3509,12 @@ fn main() {
             email_recon_lookup,
             open_browser,
             open_rdp,
+            start_beacon_server,
+            stop_beacon_server,
+            get_beacon_hits,
+            start_tunnel,
+            stop_tunnel,
+            send_test_email,
             window_minimize,
             window_toggle_maximize,
             window_toggle_fullscreen,

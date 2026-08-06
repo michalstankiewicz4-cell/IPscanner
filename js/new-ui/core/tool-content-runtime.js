@@ -75,6 +75,28 @@
     },
   };
 
+  toolContentRuntime["mail-xss-tester-library"] = {
+    render: function () {
+      return '<div id="v1MailXssTesterLibrary" class="v1-mail-xss-tester-library"></div>';
+    },
+    wire: function (rootEl) {
+      if (window.NetReconNewUI && window.NetReconNewUI.wireMailXssTesterLibrary) {
+        window.NetReconNewUI.wireMailXssTesterLibrary(rootEl);
+      }
+    },
+  };
+
+  toolContentRuntime["mail-xss-tester-results"] = {
+    render: function () {
+      return '<div id="v1MailXssTesterResults" class="v1-mail-xss-tester-results"></div>';
+    },
+    wire: function (rootEl) {
+      if (window.NetReconNewUI && window.NetReconNewUI.wireMailXssTesterResults) {
+        window.NetReconNewUI.wireMailXssTesterResults(rootEl);
+      }
+    },
+  };
+
   toolContentRuntime["agent-profiles-library"] = {
     render: function () {
       return '<div id="v1AgentProfileLibrary" class="v1-agentprofile-library"></div>';
