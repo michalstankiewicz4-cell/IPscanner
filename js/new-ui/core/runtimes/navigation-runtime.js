@@ -1512,6 +1512,11 @@
           } else if (tool === "agent-profiles") {
             ensureSidebarTabOpen("agent-profiles-library");
             setLeftActiveTab("agent-profiles-library");
+          } else if (tool === "mail-xss-tester") {
+            ensureSidebarTabOpen("mail-xss-tester-library");
+            setLeftActiveTab("mail-xss-tester-library");
+            ensureRightTabOpen("mail-xss-tester-results");
+            setRightTabActive("mail-xss-tester-results");
           }
           switchTool(tool);
           return;
@@ -1560,6 +1565,17 @@
         } else if (tool === "agent-profiles") {
           ensureSidebarTabOpen("agent-profiles-library");
           setLeftActiveTab("agent-profiles-library");
+        } else if (tool === "mail-xss-tester") {
+          // Same idea as "lorem-ipsum" below - 3 independent surfaces (CS's
+          // own "mail-xss-tester" via switchTool() below, plus its own
+          // "-library"/"-results" LS/RS tool ids) opened together on one
+          // click, unconditionally (no "closed by user" tracking like
+          // ShellCraft/Pulpit's Inspector - this tool has no reason to stay
+          // half-open once the user has explicitly asked for it).
+          ensureSidebarTabOpen("mail-xss-tester-library");
+          setLeftActiveTab("mail-xss-tester-library");
+          ensureRightTabOpen("mail-xss-tester-results");
+          setRightTabActive("mail-xss-tester-results");
         } else if (tool === "lorem-ipsum") {
           // Placeholder tool: one click opens all three independent
           // surfaces (CS's own "lorem-ipsum" via switchTool() below, plus
