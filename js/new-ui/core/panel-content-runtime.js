@@ -622,6 +622,34 @@
           + aiSystemPromptRow("ps", "aiSystemPromptPsLabel", "System prompt (PS mode)");
       }
 
+      // Google Dork API config - just the key/CX fields for now (no
+      // consumer yet); reuses the AI provider block's colon-aligned
+      // label/value layout since it's a generic shape, not AI-specific.
+      function googleDorkApiRow() {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.googleDorkApiConfig;
+        var apiKey = api ? api.getApiKey() : "";
+        var cx = api ? api.getCx() : "";
+
+        return [
+          "<div class=\"v1-ai-provider-block\">",
+
+          "<span class=\"v1-ai-provider-field-label\">" + escapeHtml(trOr("googleDorkApiKeyLabel", "API key:")) + "</span>",
+          "<span class=\"v1-ai-provider-field-value\">",
+          "<input type=\"text\" data-google-dork-api-key autocomplete=\"off\" value=\"" + escapeHtml(apiKey) + "\" placeholder=\"" + escapeHtml(trOr("googleDorkApiKeyPlaceholder", "Custom Search API key")) + "\" />",
+          " <a href=\"https://console.cloud.google.com/apis/credentials\" target=\"_blank\" rel=\"noopener\" class=\"v1-ai-provider-link\">" + escapeHtml(trOr("aiGetKeyLinkText", "get API key")) + "</a>",
+          "</span>",
+
+          "<span class=\"v1-ai-provider-field-label\">" + escapeHtml(trOr("googleDorkApiCxLabel", "Search engine ID:")) + "</span>",
+          "<span class=\"v1-ai-provider-field-value\">",
+          "<input type=\"text\" data-google-dork-api-cx autocomplete=\"off\" value=\"" + escapeHtml(cx) + "\" placeholder=\"" + escapeHtml(trOr("googleDorkApiCxPlaceholder", "Search engine ID (cx)")) + "\" />",
+          " <a href=\"https://programmablesearchengine.google.com/controlpanel/all\" target=\"_blank\" rel=\"noopener\" class=\"v1-ai-provider-link\">" + escapeHtml(trOr("googleDorkApiCxLinkText", "create one")) + "</a>",
+          "</span>",
+
+          "</div>",
+          "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("googleDorkApiNote", "Not used yet - saved for a future \"extract results\" feature on Google Dork Finder.")) + "</div>"
+        ].join("");
+      }
+
       // Small, deliberately non-persisted test: a live "switch UI" toggle,
       // gated behind "Show unfinished tools" like every other unfinished
       // feature. Never written to localStorage on purpose - picking "Test"
@@ -693,6 +721,9 @@
         "<div class=\"v1-scanner-actions v1-scanner-actions--spaced\">",
         "<button type=\"button\" data-general-action=\"ai-permissions\">🔐 " + escapeHtml(trOr("aiManagePermissionsBtn", "Manage AI Tools & Permissions...")) + "</button>",
         "</div>",
+
+        groupHeading("generalGroupGoogleDorkApi", "Google Dork API"),
+        googleDorkApiRow(),
 
         "</div>"
       ].join("");

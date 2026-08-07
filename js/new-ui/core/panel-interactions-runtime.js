@@ -3137,6 +3137,26 @@
           window.NetReconNewUI.switchTool("ai-permissions");
         }
       });
+
+      // Google Dork API config - just persists key/CX, no consumer yet.
+      var googleDorkApiConfigApi = core.googleDorkApiConfig;
+      if (googleDorkApiConfigApi) {
+        root.addEventListener("change", function (event) {
+          var target = event.target;
+          if (!target) return;
+
+          var apiKeyInput = target.closest ? target.closest("[data-google-dork-api-key]") : null;
+          if (apiKeyInput) {
+            googleDorkApiConfigApi.setApiKey(apiKeyInput.value);
+            return;
+          }
+
+          var cxInput = target.closest ? target.closest("[data-google-dork-api-cx]") : null;
+          if (cxInput) {
+            googleDorkApiConfigApi.setCx(cxInput.value);
+          }
+        });
+      }
     }
 
     // ip-scanner tool: Network Monitor (local connections + ARP table).

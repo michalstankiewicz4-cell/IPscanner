@@ -529,4 +529,53 @@
   wireAiPropertiesFields();
   document.addEventListener("newui:ai-assistant-config-changed", updateAiModeBadge);
   document.addEventListener("newui:ai-assistant-config-changed", updateAiPropertiesFields);
+
+  // Google Dork API config (General tab, below AI Assistant) - the
+  // Google Custom Search JSON API key + Search Engine ID (CX) that a
+  // future "extract results" feature on Google Dork Finder will read.
+  // Deliberately just persisted key/value pairs (no RAM-vs-localStorage
+  // choice like the AI Assistant keys above) - a Custom Search key is
+  // lower-stakes than a chat-provider key, same simple persistence as
+  // Email Recon's own HIBP key field.
+  var GOOGLE_DORK_API_KEY_STORAGE = "netrecon_google_dork_api_key";
+  var GOOGLE_DORK_API_CX_STORAGE = "netrecon_google_dork_api_cx";
+
+  function getGoogleDorkApiKey() {
+    try {
+      return (window.localStorage && window.localStorage.getItem(GOOGLE_DORK_API_KEY_STORAGE)) || "";
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function setGoogleDorkApiKey(value) {
+    try {
+      if (window.localStorage) window.localStorage.setItem(GOOGLE_DORK_API_KEY_STORAGE, String(value || ""));
+    } catch (_) {
+      // ignore persistence failures
+    }
+  }
+
+  function getGoogleDorkApiCx() {
+    try {
+      return (window.localStorage && window.localStorage.getItem(GOOGLE_DORK_API_CX_STORAGE)) || "";
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function setGoogleDorkApiCx(value) {
+    try {
+      if (window.localStorage) window.localStorage.setItem(GOOGLE_DORK_API_CX_STORAGE, String(value || ""));
+    } catch (_) {
+      // ignore persistence failures
+    }
+  }
+
+  window.NetReconNewUICore.googleDorkApiConfig = {
+    getApiKey: getGoogleDorkApiKey,
+    setApiKey: setGoogleDorkApiKey,
+    getCx: getGoogleDorkApiCx,
+    setCx: setGoogleDorkApiCx,
+  };
 })();
