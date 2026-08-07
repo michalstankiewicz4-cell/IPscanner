@@ -207,6 +207,7 @@
         const toolsMenuGlobe = document.getElementById("v1ToolsMenuGlobe");
         const toolsMenuPulpitPreview = document.getElementById("v1ToolsMenuPulpitPreview");
         const toolsMenuMailXssTester = document.getElementById("v1ToolsMenuMailXssTester");
+        const toolsMenuGoogleDork = document.getElementById("v1ToolsMenuGoogleDork");
         const toolsMenuNetworkMonitor = document.getElementById("v1ToolsMenuNetworkMonitor");
         const toolsMenuEmailRecon = document.getElementById("v1ToolsMenuEmailRecon");
         tabsTrack = document.getElementById("v1TabsTrack");
@@ -322,6 +323,7 @@
         if (toolsMenuGlobe) toolsMenuGlobe.textContent = tr("toolTitle_globe");
         if (toolsMenuPulpitPreview) toolsMenuPulpitPreview.textContent = tr("toolTitle_pulpit_preview");
         if (toolsMenuMailXssTester) toolsMenuMailXssTester.textContent = tr("toolTitle_mail_xss_tester");
+        if (toolsMenuGoogleDork) toolsMenuGoogleDork.textContent = tr("toolTitle_google_dork");
         if (toolsMenuNetworkMonitor) toolsMenuNetworkMonitor.textContent = tr("toolTitle_network_monitor");
         if (toolsMenuEmailRecon) toolsMenuEmailRecon.textContent = tr("toolTitle_email_recon");
         document.querySelectorAll("[data-sidebar-tab-close]").forEach((el) => {
@@ -499,6 +501,16 @@
       window.NetReconNewUI.wireMailXssTesterResults = function (rootEl) {
         if (panelsRuntime && panelsRuntime.wireMailXssTesterResults) {
           panelsRuntime.wireMailXssTesterResults(rootEl);
+        }
+      };
+      window.NetReconNewUI.wireGoogleDorkLibrary = function (rootEl) {
+        if (panelsRuntime && panelsRuntime.wireGoogleDorkLibrary) {
+          panelsRuntime.wireGoogleDorkLibrary(rootEl);
+        }
+      };
+      window.NetReconNewUI.wireGoogleDorkTemplates = function (rootEl) {
+        if (panelsRuntime && panelsRuntime.wireGoogleDorkTemplates) {
+          panelsRuntime.wireGoogleDorkTemplates(rootEl);
         }
       };
       // Exposed for navigation-runtime.js's activateGenericContent() LS/RS

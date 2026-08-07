@@ -16,6 +16,9 @@
     var renderMailXssTesterLibrary = typeof deps.renderMailXssTesterLibrary === "function" ? deps.renderMailXssTesterLibrary : null;
     var renderMailXssTesterTool = typeof deps.renderMailXssTesterTool === "function" ? deps.renderMailXssTesterTool : null;
     var renderMailXssTesterResults = typeof deps.renderMailXssTesterResults === "function" ? deps.renderMailXssTesterResults : null;
+    var renderGoogleDorkLibrary = typeof deps.renderGoogleDorkLibrary === "function" ? deps.renderGoogleDorkLibrary : null;
+    var renderGoogleDorkTool = typeof deps.renderGoogleDorkTool === "function" ? deps.renderGoogleDorkTool : null;
+    var renderGoogleDorkTemplates = typeof deps.renderGoogleDorkTemplates === "function" ? deps.renderGoogleDorkTemplates : null;
     var renderAgentProfileLibrary = typeof deps.renderAgentProfileLibrary === "function" ? deps.renderAgentProfileLibrary : null;
     var renderAgentProfileDetailFields = typeof deps.renderAgentProfileDetailFields === "function" ? deps.renderAgentProfileDetailFields : null;
     var globeRuntime = deps.globeRuntime || null;
@@ -66,6 +69,8 @@
     var pulpitPreviewToolTeardown = null;
     // Same reasoning as pulpitPreviewToolTeardown above.
     var mailXssTesterToolTeardown = null;
+    // Same reasoning as mailXssTesterToolTeardown above.
+    var googleDorkToolTeardown = null;
     var pulpitInspectorSelectedNodeId = "";
     var pulpitInspectorSuppressNextRender = false;
 
@@ -2458,6 +2463,110 @@
       };
     }
 
+    // LS: the 9 builder-field inputs - rebuilt wholesale on every
+    // newui:google-dork-changed event, same simple always-rebuild
+    // approach as wireMailXssTesterLibrary (no persistent DOM node here
+    // worth patching in place).
+    function wireGoogleDorkLibrary() {
+      var mount = document.getElementById("v1GoogleDorkLibrary");
+      if (!mount || !renderGoogleDorkLibrary) return;
+
+      function render() {
+        mount.innerHTML = renderGoogleDorkLibrary();
+      }
+
+      render();
+
+      if (mount.dataset.googleDorkBound === "1") return;
+      mount.dataset.googleDorkBound = "1";
+
+      document.addEventListener("newui:google-dork-changed", function () {
+        if (!document.body.contains(mount)) return;
+        // Re-rendering on every keystroke would steal focus/caret position
+        // mid-type - only rebuild when the edit came from somewhere else
+        // (a template applied, history reused), not from this same panel's
+        // own input listener below.
+        if (document.activeElement && mount.contains(document.activeElement)) return;
+        render();
+      });
+
+      mount.addEventListener("input", function (event) {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.googleDork;
+        if (!api) return;
+        var field = event.target && event.target.matches && event.target.matches("[data-google-dork-field]") ? event.target : null;
+        if (!field) return;
+        api.setField(field.getAttribute("data-google-dork-field"), field.value);
+      });
+    }
+
+    // RS: categorized preset template buttons - static content, wired once
+    // (nothing here needs to react to newui:google-dork-changed since the
+    // template list itself never changes).
+    function wireGoogleDorkTemplates() {
+      var mount = document.getElementById("v1GoogleDorkTemplates");
+      if (!mount || !renderGoogleDorkTemplates) return;
+
+      mount.innerHTML = renderGoogleDorkTemplates();
+
+      if (mount.dataset.googleDorkBound === "1") return;
+      mount.dataset.googleDorkBound = "1";
+
+      mount.addEventListener("click", function (event) {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.googleDork;
+        if (!api) return;
+        var btn = event.target && event.target.closest ? event.target.closest("[data-google-dork-template]") : null;
+        if (!btn) return;
+        api.applyTemplate(btn.getAttribute("data-google-dork-template"));
+      });
+    }
+
+    // CS: same teardown-before-rewire + stable-shell-element staleness
+    // guard as wireMailXssTesterTool above.
+    function wireGoogleDorkTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function" ? rootEl : document.getElementById("v1ToolDetail");
+      if (!root || !renderGoogleDorkTool) return;
+
+      var shellEl = root.querySelector(".v1-google-dork-shell");
+      if (!shellEl) return;
+
+      if (googleDorkToolTeardown) {
+        googleDorkToolTeardown();
+        googleDorkToolTeardown = null;
+      }
+
+      function onClick(event) {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.googleDork;
+        if (!api || !document.body.contains(shellEl)) return;
+
+        var openBtn = event.target && event.target.closest ? event.target.closest("[data-google-dork-open-btn]") : null;
+        if (openBtn) {
+          api.openInGoogle();
+          return;
+        }
+
+        var historyBtn = event.target && event.target.closest ? event.target.closest("[data-google-dork-history-action]") : null;
+        if (historyBtn) {
+          var idx = Number(historyBtn.getAttribute("data-google-dork-history-index"));
+          var action = historyBtn.getAttribute("data-google-dork-history-action");
+          if (action === "use") api.useHistoryEntry(idx);
+          else if (action === "delete") api.removeFromHistory(idx);
+        }
+      }
+      shellEl.addEventListener("click", onClick);
+
+      function onChanged() {
+        if (!document.body.contains(shellEl)) return;
+        shellEl.outerHTML = renderGoogleDorkTool();
+        shellEl = root.querySelector(".v1-google-dork-shell");
+        shellEl.addEventListener("click", onClick);
+      }
+      document.addEventListener("newui:google-dork-changed", onChanged);
+
+      googleDorkToolTeardown = function () {
+        document.removeEventListener("newui:google-dork-changed", onChanged);
+      };
+    }
+
     function wirePulpitLibrary() {
       var mount = document.getElementById("v1PulpitLibrary");
       if (!mount || !renderPulpitLibrary) return;
@@ -3761,6 +3870,9 @@
       wireMailXssTesterLibrary: wireMailXssTesterLibrary,
       wireMailXssTesterResults: wireMailXssTesterResults,
       wireMailXssTesterTool: wireMailXssTesterTool,
+      wireGoogleDorkLibrary: wireGoogleDorkLibrary,
+      wireGoogleDorkTemplates: wireGoogleDorkTemplates,
+      wireGoogleDorkTool: wireGoogleDorkTool,
       wireGlobeTool: wireGlobeTool,
       wireAgentProfileLibrary: wireAgentProfileLibrary,
       wireAgentProfileDetail: wireAgentProfileDetail,

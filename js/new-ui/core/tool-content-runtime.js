@@ -97,6 +97,28 @@
     },
   };
 
+  toolContentRuntime["google-dork-library"] = {
+    render: function () {
+      return '<div id="v1GoogleDorkLibrary" class="v1-google-dork-library"></div>';
+    },
+    wire: function (rootEl) {
+      if (window.NetReconNewUI && window.NetReconNewUI.wireGoogleDorkLibrary) {
+        window.NetReconNewUI.wireGoogleDorkLibrary(rootEl);
+      }
+    },
+  };
+
+  toolContentRuntime["google-dork-templates"] = {
+    render: function () {
+      return '<div id="v1GoogleDorkTemplates" class="v1-google-dork-templates"></div>';
+    },
+    wire: function (rootEl) {
+      if (window.NetReconNewUI && window.NetReconNewUI.wireGoogleDorkTemplates) {
+        window.NetReconNewUI.wireGoogleDorkTemplates(rootEl);
+      }
+    },
+  };
+
   toolContentRuntime["agent-profiles-library"] = {
     render: function () {
       return '<div id="v1AgentProfileLibrary" class="v1-agentprofile-library"></div>';

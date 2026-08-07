@@ -1517,6 +1517,11 @@
             setLeftActiveTab("mail-xss-tester-library");
             ensureRightTabOpen("mail-xss-tester-results");
             setRightTabActive("mail-xss-tester-results");
+          } else if (tool === "google-dork") {
+            ensureSidebarTabOpen("google-dork-library");
+            setLeftActiveTab("google-dork-library");
+            ensureRightTabOpen("google-dork-templates");
+            setRightTabActive("google-dork-templates");
           }
           switchTool(tool);
           return;
@@ -1576,6 +1581,12 @@
           setLeftActiveTab("mail-xss-tester-library");
           ensureRightTabOpen("mail-xss-tester-results");
           setRightTabActive("mail-xss-tester-results");
+        } else if (tool === "google-dork") {
+          // Same idea as "mail-xss-tester" above.
+          ensureSidebarTabOpen("google-dork-library");
+          setLeftActiveTab("google-dork-library");
+          ensureRightTabOpen("google-dork-templates");
+          setRightTabActive("google-dork-templates");
         } else if (tool === "lorem-ipsum") {
           // Placeholder tool: one click opens all three independent
           // surfaces (CS's own "lorem-ipsum" via switchTool() below, plus

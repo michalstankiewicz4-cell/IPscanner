@@ -215,6 +215,30 @@
       labelKey: "tabLabel_mail_xss_tester_results",
       ui: { showInRightPanel: true, rightOrder: 27 }
     },
+    // Google Dork Finder: build an advanced Google search-operator query
+    // (site:/filetype:/inurl:/intitle:/intext:) and open it in a real
+    // browser tab - the app never scrapes/parses Google's own result
+    // pages (violates their ToS). Works fully on desktop AND www, unlike
+    // Mail XSS Tester/Pulpit Preview above - opening a URL only needs the
+    // existing platform.openExternalUrl() helper, no new backend at all.
+    "google-dork": {
+      titleKey: "toolTitle_google_dork",
+      textKey: "toolText_google_dork",
+      points: ["Compose site:/filetype:/inurl:/intitle:/intext: queries", "Start from a categorized preset (exposed .env, admin panels, DB dumps...)", "Opens in your browser - saved query history, nothing scraped in-app"],
+      icon: "🔎",
+      labelKey: "tabLabel_google_dork",
+      ui: { showAsTab: true, order: 122 }
+    },
+    "google-dork-library": {
+      icon: null,
+      labelKey: "tabLabel_google_dork_library",
+      ui: { showInLeftPanel: true, leftOrder: 47 }
+    },
+    "google-dork-templates": {
+      icon: null,
+      labelKey: "tabLabel_google_dork_templates",
+      ui: { showInRightPanel: true, rightOrder: 28 }
+    },
     "ip-library": {
       titleKey: "toolTitle_ip_library",
       textKey: "toolText_ip_library",

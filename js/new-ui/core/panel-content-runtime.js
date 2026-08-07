@@ -19,6 +19,7 @@
     var pulpitPreviewApi = core.pulpitPreview || null;
     var platformApi = core.platform || null;
     var mailXssTesterApi = core.mailXssTester || null;
+    var googleDorkApi = core.googleDork || null;
     var agentProfilesApi = core.agentProfiles || null;
     var generalSettingsApi = core.generalSettings || null;
 
@@ -1276,6 +1277,112 @@
       return "<div class=\"v1-mail-xss-hit-log\">" + rowsHtml + "</div>";
     }
 
+    // LS: the 9 builder fields (site:/filetype:/inurl:/intitle:/intext:,
+    // exact phrase, +include/-exclude, and a verbatim "raw" field for
+    // anything else) - no action button here, "Open in Google" lives on
+    // CS next to the live query preview it actually opens.
+    function renderGoogleDorkLibrary() {
+      var fields = googleDorkApi ? googleDorkApi.getFields() : {};
+
+      function fieldRow(key, labelKey) {
+        var id = "v1GoogleDorkField_" + key;
+        return [
+          "<div class=\"v1-pulpit-inspector-field\">",
+          "<label for=\"" + id + "\">" + escapeHtml(tr(labelKey)) + "</label>",
+          "<input id=\"" + id + "\" type=\"text\" autocomplete=\"off\" data-google-dork-field=\"" + key + "\" value=\"" + escapeHtml(fields[key] || "") + "\" />",
+          "</div>"
+        ].join("");
+      }
+
+      return [
+        "<ul class=\"v1-tool-list\">",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("googleDorkFieldsHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">",
+        fieldRow("target", "googleDorkTargetLabel"),
+        fieldRow("filetype", "googleDorkFiletypeLabel"),
+        fieldRow("inurl", "googleDorkInurlLabel"),
+        fieldRow("intitle", "googleDorkIntitleLabel"),
+        fieldRow("intext", "googleDorkIntextLabel"),
+        fieldRow("phrase", "googleDorkPhraseLabel"),
+        fieldRow("include", "googleDorkIncludeLabel"),
+        fieldRow("exclude", "googleDorkExcludeLabel"),
+        fieldRow("raw", "googleDorkRawLabel"),
+        "</div>",
+        "</li>",
+        "</ul>"
+      ].join("");
+    }
+
+    // CS: live composed query, "Open in Google" (disabled while the query
+    // is blank), and the saved query history - use/delete buttons mirror
+    // scanner-sidebar-runtime.js's renderRangeHistory() convention (the
+    // closest existing analog: a capped, dedupe-on-add local history).
+    function renderGoogleDorkTool() {
+      var query = googleDorkApi ? googleDorkApi.getComposedQuery() : "";
+      var history = googleDorkApi ? googleDorkApi.getHistory() : [];
+
+      var historyHtml = history.length
+        ? history.map(function (item, idx) {
+            return [
+              "<div class=\"v1-google-dork-history-row\">",
+              "<span class=\"v1-google-dork-history-text\" title=\"" + escapeHtml(item.query) + "\">" + escapeHtml(item.query) + "</span>",
+              "<span class=\"v1-google-dork-history-actions\">",
+              "<button type=\"button\" class=\"v1-range-history-btn\" data-google-dork-history-action=\"use\" data-google-dork-history-index=\"" + idx + "\" title=\"" + escapeHtml(tr("googleDorkHistoryUseAria")) + "\" aria-label=\"" + escapeHtml(tr("googleDorkHistoryUseAria")) + "\">&gt;</button>",
+              "<button type=\"button\" class=\"v1-range-history-btn\" data-google-dork-history-action=\"delete\" data-google-dork-history-index=\"" + idx + "\" title=\"" + escapeHtml(tr("googleDorkHistoryDeleteAria")) + "\" aria-label=\"" + escapeHtml(tr("googleDorkHistoryDeleteAria")) + "\">&times;</button>",
+              "</span>",
+              "</div>"
+            ].join("");
+          }).join("")
+        : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("googleDorkHistoryEmptyNote")) + "</div>";
+
+      return [
+        "<div class=\"v1-google-dork-shell\">",
+        "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("googleDorkResponsibleUseNote")) + "</p>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label>" + escapeHtml(tr("googleDorkQueryHeading")) + "</label>",
+        query
+          ? "<div class=\"v1-google-dork-query-preview\">" + escapeHtml(query) + "</div>"
+          : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("googleDorkQueryEmptyNote")) + "</div>",
+        "</div>",
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-google-dork-open-btn" + (query ? "" : " disabled") + ">" + escapeHtml(tr("googleDorkOpenBtn")) + "</button>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("googleDorkHistoryHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        historyHtml,
+        "</div>"
+      ].join("");
+    }
+
+    // RS: categorized preset templates - clicking one fills LS's fields
+    // (target/include/exclude untouched, see google-dork-runtime.js's
+    // applyTemplate()) rather than opening anything directly.
+    function renderGoogleDorkTemplates() {
+      var templates = googleDorkApi ? googleDorkApi.getTemplates() : [];
+      var categories = googleDorkApi ? googleDorkApi.getTemplateCategories() : [];
+      var byCategory = {};
+      templates.forEach(function (item) {
+        if (!byCategory[item.category]) byCategory[item.category] = [];
+        byCategory[item.category].push(item);
+      });
+
+      var sectionsHtml = categories.map(function (cat) {
+        var items = byCategory[cat] || [];
+        if (!items.length) return "";
+        var itemsHtml = items.map(function (item) {
+          return "<button type=\"button\" class=\"v1-google-dork-template-btn\" data-google-dork-template=\"" + escapeHtml(item.id) + "\">" + escapeHtml(tr(item.labelKey)) + "</button>";
+        }).join("");
+        return [
+          "<li>",
+          "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("googleDorkCategory_" + cat)) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+          "<div class=\"v1-section-body v1-google-dork-template-list\">",
+          itemsHtml,
+          "</div>",
+          "</li>"
+        ].join("");
+      }).join("");
+
+      return "<ul class=\"v1-tool-list\">" + sectionsHtml + "</ul>";
+    }
+
     // Anchors a connection line on roughly the icon glyph's center, not the
     // node div's raw top-left (x,y) - node.x/node.y are the div's top-left
     // per renderPulpitNodeHtml's own "left:Xpx;top:Ypx" - and not the whole
@@ -2502,6 +2609,7 @@
       pulpit: renderPulpitCanvasTool,
       "pulpit-preview": renderPulpitPreviewTool,
       "mail-xss-tester": renderMailXssTesterTool,
+      "google-dork": renderGoogleDorkTool,
       globe: renderGlobeTool,
       "agent-profiles": renderAgentProfileDetailTool,
 
@@ -2533,6 +2641,9 @@
       renderMailXssTesterLibrary: renderMailXssTesterLibrary,
       renderMailXssTesterTool: renderMailXssTesterTool,
       renderMailXssTesterResults: renderMailXssTesterResults,
+      renderGoogleDorkLibrary: renderGoogleDorkLibrary,
+      renderGoogleDorkTool: renderGoogleDorkTool,
+      renderGoogleDorkTemplates: renderGoogleDorkTemplates,
       pulpitEdgeAnchor: pulpitEdgeAnchor,
       renderAgentProfileLibrary: renderAgentProfileLibrary,
       renderAgentProfileDetailFields: renderAgentProfileDetailFields,

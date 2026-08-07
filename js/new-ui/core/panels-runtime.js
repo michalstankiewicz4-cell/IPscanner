@@ -1546,6 +1546,9 @@
         renderMailXssTesterLibrary: panelContentRuntime && panelContentRuntime.renderMailXssTesterLibrary,
         renderMailXssTesterTool: panelContentRuntime && panelContentRuntime.renderMailXssTesterTool,
         renderMailXssTesterResults: panelContentRuntime && panelContentRuntime.renderMailXssTesterResults,
+        renderGoogleDorkLibrary: panelContentRuntime && panelContentRuntime.renderGoogleDorkLibrary,
+        renderGoogleDorkTool: panelContentRuntime && panelContentRuntime.renderGoogleDorkTool,
+        renderGoogleDorkTemplates: panelContentRuntime && panelContentRuntime.renderGoogleDorkTemplates,
         renderPulpitInspector: panelContentRuntime && panelContentRuntime.renderPulpitInspector,
         renderAgentProfileLibrary: panelContentRuntime && panelContentRuntime.renderAgentProfileLibrary,
         renderAgentProfileDetailFields: panelContentRuntime && panelContentRuntime.renderAgentProfileDetailFields,
@@ -1869,6 +1872,13 @@
       if (tool === "mail-xss-tester") { // shell
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireMailXssTesterTool) {
           panelInteractionsRuntime.wireMailXssTesterTool(scope);
+        }
+        return;
+      }
+
+      if (tool === "google-dork") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireGoogleDorkTool) {
+          panelInteractionsRuntime.wireGoogleDorkTool(scope);
         }
         return;
       }
@@ -2317,6 +2327,21 @@
       }
     }
 
+    // Exposed for LS/RS's generic-content-slot mechanism (tool-content-
+    // runtime.js's "google-dork-library"/"-templates" entries) - same
+    // idea as wireMailXssTesterLibrary/-Results above.
+    function wireGoogleDorkLibrary(rootEl) {
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireGoogleDorkLibrary) {
+        panelInteractionsRuntime.wireGoogleDorkLibrary(rootEl);
+      }
+    }
+
+    function wireGoogleDorkTemplates(rootEl) {
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireGoogleDorkTemplates) {
+        panelInteractionsRuntime.wireGoogleDorkTemplates(rootEl);
+      }
+    }
+
     return {
       setTooltips: setTooltips,
       refreshActiveUI: refreshActiveUI,
@@ -2338,6 +2363,8 @@
       wireNetworkMonitorLeftPanel: wireNetworkMonitorLeftPanel,
       wireMailXssTesterLibrary: wireMailXssTesterLibrary,
       wireMailXssTesterResults: wireMailXssTesterResults,
+      wireGoogleDorkLibrary: wireGoogleDorkLibrary,
+      wireGoogleDorkTemplates: wireGoogleDorkTemplates,
       refreshDetachedTool: refreshDetachedTool,
       applyEmailReconResult: function (email, result) {
         if (panelInteractionsRuntime && panelInteractionsRuntime.applyEmailReconResult) {
