@@ -1124,10 +1124,6 @@
     // preview is - the beacon HTTP listener and the cloudflared tunnel
     // process both need Rust's raw TCP/process-spawn capability, neither
     // of which any browser (including the www/GitHub Pages build) has.
-    function renderMailXssTesterDesktopOnlyNote() {
-      return "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("mailXssDesktopOnlyNote")) + "</div>";
-    }
-
     function mailXssTesterIsDesktop() {
       return !(platformApi && typeof platformApi.isDesktop === "function" && !platformApi.isDesktop());
     }
@@ -1138,7 +1134,11 @@
     // routed through any persisted-state mechanism, same one-time
     // credential discipline as the remote-install password field.
     function renderMailXssTesterLibrary() {
-      if (!mailXssTesterIsDesktop()) return renderMailXssTesterDesktopOnlyNote();
+      // Full form stays visible on www (payload picker, fields, buttons) -
+      // only the two actions that need the desktop backend (tunnel,
+      // send) are disabled with an inline hint, instead of blocking the
+      // whole panel behind a single "desktop only" note.
+      var isDesktopMode = mailXssTesterIsDesktop();
 
       var payloads = mailXssTesterApi ? mailXssTesterApi.getPayloads() : [];
       var selected = mailXssTesterApi ? mailXssTesterApi.getSelectedPayloadIds() : [];
@@ -1169,7 +1169,9 @@
         ].join("");
       }
 
-      var sendDisabled = status !== "running";
+      var sendDisabled = status !== "running" || !isDesktopMode;
+      var tunnelBtnDisabled = status === "starting" || !isDesktopMode;
+      var desktopOnlyHintHtml = isDesktopMode ? "" : "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssDesktopOnlyNote")) + "</p>";
 
       return [
         "<ul class=\"v1-tool-list\">",
@@ -1182,7 +1184,8 @@
         "<li>",
         "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("mailXssTunnelHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
         "<div class=\"v1-section-body\">",
-        "<button type=\"button\" class=\"v1-pulpit-connect-btn" + (status === "running" ? " is-active" : "") + "\" data-mail-xss-tunnel-toggle" + (status === "starting" ? " disabled" : "") + ">" + escapeHtml(tr(status === "running" ? "mailXssStopTunnelBtn" : "mailXssStartTunnelBtn")) + "</button>",
+        desktopOnlyHintHtml,
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn" + (status === "running" ? " is-active" : "") + "\" data-mail-xss-tunnel-toggle" + (tunnelBtnDisabled ? " disabled" : "") + ">" + escapeHtml(tr(status === "running" ? "mailXssStopTunnelBtn" : "mailXssStartTunnelBtn")) + "</button>",
         tunnelStatusHtml,
         "</div>",
         "</li>",
@@ -1219,37 +1222,33 @@
     // as newui:mail-xss-tester-changed fires (wireMailXssTesterResults
     // re-renders this same shell, see panel-interactions-runtime.js).
     function renderMailXssTesterTool() {
-      var inner;
-      if (!mailXssTesterIsDesktop()) {
-        inner = renderMailXssTesterDesktopOnlyNote();
-      } else {
-        var payloads = mailXssTesterApi ? mailXssTesterApi.getPayloads() : [];
-        var selected = mailXssTesterApi ? mailXssTesterApi.getSelectedPayloadIds() : [];
-        var triggered = mailXssTesterApi ? mailXssTesterApi.getTriggeredPayloadIds() : [];
-        var status = mailXssTesterApi ? mailXssTesterApi.getTunnelStatus() : "idle";
+      var payloads = mailXssTesterApi ? mailXssTesterApi.getPayloads() : [];
+      var selected = mailXssTesterApi ? mailXssTesterApi.getSelectedPayloadIds() : [];
+      var triggered = mailXssTesterApi ? mailXssTesterApi.getTriggeredPayloadIds() : [];
+      var status = mailXssTesterApi ? mailXssTesterApi.getTunnelStatus() : "idle";
 
-        var rowsHtml = payloads.filter(function (p) {
-          return selected.indexOf(p.id) !== -1;
-        }).map(function (p) {
-          var isTriggered = triggered.indexOf(p.id) !== -1;
-          return [
-            "<tr>",
-            "<td>" + escapeHtml(tr(p.labelKey)) + "</td>",
-            "<td class=\"" + (isTriggered ? "v1-mail-xss-triggered-yes" : "v1-mail-xss-triggered-no") + "\">" + escapeHtml(tr(isTriggered ? "mailXssTriggeredYes" : "mailXssTriggeredNo")) + "</td>",
-            "</tr>"
-          ].join("");
-        }).join("");
-
-        inner = [
-          "<div class=\"v1-pulpit-inspector-field\">",
-          "<label>" + escapeHtml(tr("mailXssTunnelHeading")) + "</label>",
-          "<div>" + escapeHtml(tr("mailXssStatus_" + status)) + "</div>",
-          "</div>",
-          rowsHtml
-            ? "<table class=\"v1-mail-xss-results-table\"><thead><tr><th>" + escapeHtml(tr("mailXssPayloadColumnLabel")) + "</th><th>" + escapeHtml(tr("mailXssTriggeredColumnLabel")) + "</th></tr></thead><tbody>" + rowsHtml + "</tbody></table>"
-            : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("mailXssNoPayloadsSelectedNote")) + "</div>"
+      var rowsHtml = payloads.filter(function (p) {
+        return selected.indexOf(p.id) !== -1;
+      }).map(function (p) {
+        var isTriggered = triggered.indexOf(p.id) !== -1;
+        return [
+          "<tr>",
+          "<td>" + escapeHtml(tr(p.labelKey)) + "</td>",
+          "<td class=\"" + (isTriggered ? "v1-mail-xss-triggered-yes" : "v1-mail-xss-triggered-no") + "\">" + escapeHtml(tr(isTriggered ? "mailXssTriggeredYes" : "mailXssTriggeredNo")) + "</td>",
+          "</tr>"
         ].join("");
-      }
+      }).join("");
+
+      var inner = [
+        !mailXssTesterIsDesktop() ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssDesktopOnlyNote")) + "</p>" : "",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label>" + escapeHtml(tr("mailXssTunnelHeading")) + "</label>",
+        "<div>" + escapeHtml(tr("mailXssStatus_" + status)) + "</div>",
+        "</div>",
+        rowsHtml
+          ? "<table class=\"v1-mail-xss-results-table\"><thead><tr><th>" + escapeHtml(tr("mailXssPayloadColumnLabel")) + "</th><th>" + escapeHtml(tr("mailXssTriggeredColumnLabel")) + "</th></tr></thead><tbody>" + rowsHtml + "</tbody></table>"
+          : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("mailXssNoPayloadsSelectedNote")) + "</div>"
+      ].join("");
       return "<div class=\"v1-mail-xss-tester-shell\">" + inner + "</div>";
     }
 
@@ -1257,8 +1256,6 @@
     // identifying which mail client/proxy actually fetched the beacon
     // (e.g. Gmail's own image-proxy UA vs. a desktop client's).
     function renderMailXssTesterResults() {
-      if (!mailXssTesterIsDesktop()) return renderMailXssTesterDesktopOnlyNote();
-
       var hits = mailXssTesterApi ? mailXssTesterApi.getHits() : [];
       if (!hits.length) {
         return "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("mailXssNoHitsYetNote")) + "</div>";
