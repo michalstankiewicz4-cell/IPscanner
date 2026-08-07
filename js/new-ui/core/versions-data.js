@@ -14,9 +14,19 @@
       notes: [
         "Added a reusable addon \"custom markup\" system: an installable tool can now declare its own input fields and a structured results table (not just a static card), so addons can collect input and show real data instead of plain text output.",
         "Added IP Scanner Heuristic JS, a real installable addon built on that system: pick a target and one of 5 client-side techniques (Fetch, Image, Link/CSS, WebSocket, IFrame) to heuristically check common ports - works fully on www, not just desktop, with an editable port list. Opens as two linked tabs: target/technique/ports on the left, results on the right.",
-        "Added Pulpit (Tools -> Virtual Machines): a manually-curated visual inventory of computers. Add icons for remote, local, virtual, or your own devices from the left panel, drag them anywhere on the canvas, and keep a name/host/note on each from the right panel.",
+        "Addons can now ship a real JS program of their own instead of only a declarative config - IP Scanner Heuristic JS was migrated to this model as the first example.",
+        "Added Topology (Tools menu - previously \"Virtual Machines\"): a manually-curated visual computer inventory. Add device icons (including new server/switch/printer/router/scanner/sniffer types), connect them by dragging from a node's connector handle or auto-discover new ones from your last scan, and attach color-coded Scanner/Sniffer taps to any device or connection.",
+        "Topology nodes gained real remote-management: right-click a computer and choose \"Uruchom\" to remote-install a program over PowerShell Remoting (with quick links to the QEMU/VirtualBox download pages), or check RDP/VNC per node for a live desktop preview - a real in-app VNC viewer, or Windows' own Remote Desktop Connection.",
+        "Added Globe (Tools menu): scanned hosts plotted on an interactive 3D globe, powered by a new persisted Location (city/country) field you can enable in Config's Host Enrichment section.",
+        "Added Agent Identity (Options - previously \"Agent Profiles\"): save your own OSINT account-creation identities - name, nickname, email, login, masked password, notes, photo, file attachments, and any number of linked services (e.g. social media accounts), each with its own freeform fields.",
+        "Added Mail XSS Tester (Tools menu): send yourself a test email containing several known HTML/XSS payload variants and get an automatic report of which ones survived your webmail's own sanitization - nothing is exfiltrated, each payload only proves execution by calling a private beacon URL.",
+        "Added a Demo Data toggle to the top bar: switches the IP Results tool's two placeholder example rows on/off, so sample data never gets mixed up with your real scan results.",
+        "Saved sessions are now stamped with the app version that created them (warns if you load one from a different version) and remember which addons were installed, offering one-click reinstall if any are missing on load.",
+        "The version shown next to a translation or addon now means the app version it targets, not an arbitrary revision number - shown as \"For app X\" in the Language Manager and the addon catalog alike.",
+        "ipscanner.pl (the web build) now ships a Content-Security-Policy and Referrer-Policy.",
         "Fixed a rendering bug where an extension-contributed left-panel tool (and any tool sharing the generic card template) could get its content or title rendered twice.",
-        "Fixed several accessibility/autofill warnings raised by the browser on addon-declared input fields and the AI Properties panel."
+        "Fixed several accessibility/autofill warnings raised by the browser on addon-declared input fields and the AI Properties panel.",
+        "Added a \"Special thanks\" section in About, crediting testers."
       ]
     },
     {
