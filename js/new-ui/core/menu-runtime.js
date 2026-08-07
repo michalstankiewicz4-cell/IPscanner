@@ -454,6 +454,26 @@
         return;
       }
 
+      if (behavior === "toggle-demo-data") {
+        var nextDemoState = !document.body.classList.contains("v1-demo-data-on");
+        document.body.classList.toggle("v1-demo-data-on", nextDemoState);
+        try {
+          localStorage.setItem("netrecon_demo_data_mode", nextDemoState ? "1" : "0");
+        } catch (_) {}
+        try {
+          window.dispatchEvent(new CustomEvent("newui:demo-data-changed", { detail: { active: nextDemoState } }));
+        } catch (_) {}
+        var demoDataBtn = document.querySelector('[data-menu-action="demo-data"]');
+        if (demoDataBtn) {
+          demoDataBtn.classList.toggle("is-active", nextDemoState);
+          demoDataBtn.setAttribute("aria-pressed", nextDemoState ? "true" : "false");
+        }
+        if (setStatusLine) {
+          setStatusLine(tr("menuPrefix") + ": " + (nextDemoState ? tr("statusDemoDataOn") : tr("statusDemoDataOff")));
+        }
+        return;
+      }
+
       if (behavior === "save-session") {
         return session ? session.saveSession() : undefined;
       }

@@ -261,6 +261,7 @@
         const windowFullscreenBtn = document.querySelector('[data-menu-action="window-fullscreen"]');
         const windowCloseBtn = document.querySelector('[data-menu-action="window-close"]');
         const showUnfinishedToolsBtn = document.querySelector('[data-menu-action="show-unfinished-tools"]');
+        const demoDataBtn = document.querySelector('[data-menu-action="demo-data"]');
         const autoArrangeWindowsBtn = document.querySelector('[data-menu-action="auto-arrange-windows"]');
 
         if (fileTrigger) fileTrigger.textContent = tr("menuFile");
@@ -367,6 +368,13 @@
         if (showUnfinishedToolsBtn) {
           showUnfinishedToolsBtn.setAttribute("title", tr("showUnfinishedToolsTitle"));
           showUnfinishedToolsBtn.setAttribute("aria-label", tr("showUnfinishedToolsTitle"));
+        }
+        if (demoDataBtn) {
+          demoDataBtn.setAttribute("title", tr("demoDataButtonTitle"));
+          demoDataBtn.setAttribute("aria-label", tr("demoDataButtonTitle"));
+          var demoDataActive = document.body.classList.contains("v1-demo-data-on");
+          demoDataBtn.classList.toggle("is-active", demoDataActive);
+          demoDataBtn.setAttribute("aria-pressed", demoDataActive ? "true" : "false");
         }
         if (autoArrangeWindowsBtn) {
           autoArrangeWindowsBtn.setAttribute("title", tr("autoArrangeWindowsBtnTitle"));
@@ -1402,6 +1410,17 @@
           if (unfinishedBtn) {
             unfinishedBtn.classList.add("is-active");
             unfinishedBtn.setAttribute("aria-pressed", "true");
+          }
+        }
+      } catch (_) {}
+
+      try {
+        if (localStorage.getItem("netrecon_demo_data_mode") === "1") {
+          document.body.classList.add("v1-demo-data-on");
+          var demoDataBtnBoot = document.querySelector('[data-menu-action="demo-data"]');
+          if (demoDataBtnBoot) {
+            demoDataBtnBoot.classList.add("is-active");
+            demoDataBtnBoot.setAttribute("aria-pressed", "true");
           }
         }
       } catch (_) {}

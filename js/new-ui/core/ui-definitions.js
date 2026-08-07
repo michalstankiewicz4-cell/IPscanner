@@ -156,6 +156,12 @@
       purpose: "Pokazuje/ukrywa niedokonczone narzedzia w menu Tools i LRSB.",
       behavior: "toggle-unfinished-tools",
     },
+    "demo-data": {
+      label: "Demo data mode",
+      purposeKey: "tipActionDemoData",
+      purpose: "Wlacza tryb danych przykladowych - nowe wpisy narzedzi sa oznaczane jako demo, zeby mozna je bylo hurtowo usunac bez ruszania prawdziwych danych.",
+      behavior: "toggle-demo-data",
+    },
     "window-close": {
       label: "Window close",
       purposeKey: "tipActionWindowClose",

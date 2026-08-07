@@ -1799,6 +1799,15 @@
         pulpitInspectorClosedByUser = false;
       });
 
+      // Demo Data mode is a pure visibility filter over the Results IP
+      // sample rows (see readPersistedScanRows()'s fallback in
+      // panel-content-runtime.js's renderResultsIp) - re-run the same
+      // refresh a real scan result uses so the toggle takes effect
+      // immediately without needing a tab switch/reload.
+      window.addEventListener("newui:demo-data-changed", function () {
+        refreshResultsViewIfVisible();
+      });
+
       var chat = document.getElementById("v1AiChatHistory");
       var promptInput = document.getElementById("v1AiPromptInput");
       var stopBtn = document.getElementById("v1AiStopBtn");

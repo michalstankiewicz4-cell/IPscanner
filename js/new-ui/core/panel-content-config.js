@@ -25,8 +25,15 @@
   ].join("\n");
 
   // --- ip-scanner tool keys ---
+  // Only ever shown while there's no real scan data yet, and only when
+  // Demo Data mode (top-bar toggle) is on - see panel-content-runtime.js's
+  // renderResultsIp(). isDemo is informational here (the gating itself
+  // happens by omitting these rows entirely when the toggle is off), kept
+  // on each row in case a future consumer (export, session save) needs to
+  // recognize them.
   var RESULTS_IP_SAMPLE_ROWS = [
     {
+      isDemo: true,
       ip: "83.9.186.53",
       ping: "23 ms",
       hostname: "83.9.186.53.ipv4.supermedia.pl",
@@ -59,6 +66,7 @@
       ]
     },
     {
+      isDemo: true,
       ip: "83.9.186.185",
       ping: "4 ms",
       hostname: "83.9.186.185.ipv4.supermedia.pl",

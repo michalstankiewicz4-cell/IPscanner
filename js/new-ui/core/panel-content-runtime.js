@@ -1691,10 +1691,16 @@
         }
       }
 
+      // Demo Data mode gates the sample rows shown while there's no real
+      // scan yet - a pure visibility filter (no functional side effects),
+      // never mixed with real persisted rows once those exist. See
+      // project memory "Demo Data mode" for the constraints this must
+      // keep following.
+      var demoDataModeOn = document.body.classList.contains("v1-demo-data-on");
       var persistedRows = readPersistedScanRows();
       var rows = persistedRows.length
         ? persistedRows
-        : (Array.isArray(resultsIpConfig.sampleRows) ? resultsIpConfig.sampleRows : []);
+        : (demoDataModeOn && Array.isArray(resultsIpConfig.sampleRows) ? resultsIpConfig.sampleRows : []);
       var selectedPreset = getSelectedPresetInfo();
       var selectedPresetEmoji = selectedPreset.emoji || "🔎";
       var selectedPresetLabel = selectedPreset.name || selectedPreset.id || "";
