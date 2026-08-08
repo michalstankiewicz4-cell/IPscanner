@@ -725,7 +725,8 @@
 }
 
 .v1-ai-provider-field-value select,
-.v1-ai-provider-field-value input[type="text"] {
+.v1-ai-provider-field-value input[type="text"],
+.v1-ai-provider-field-value input[type="password"] {
   border: 1px solid #3d424d;
   background: #22242a;
   color: var(--txt);

@@ -19,6 +19,9 @@
     var renderGoogleDorkLibrary = typeof deps.renderGoogleDorkLibrary === "function" ? deps.renderGoogleDorkLibrary : null;
     var renderGoogleDorkTool = typeof deps.renderGoogleDorkTool === "function" ? deps.renderGoogleDorkTool : null;
     var renderGoogleDorkTemplates = typeof deps.renderGoogleDorkTemplates === "function" ? deps.renderGoogleDorkTemplates : null;
+    var renderKomunikatorLibrary = typeof deps.renderKomunikatorLibrary === "function" ? deps.renderKomunikatorLibrary : null;
+    var renderKomunikatorTool = typeof deps.renderKomunikatorTool === "function" ? deps.renderKomunikatorTool : null;
+    var renderKomunikatorMembers = typeof deps.renderKomunikatorMembers === "function" ? deps.renderKomunikatorMembers : null;
     var renderAgentProfileLibrary = typeof deps.renderAgentProfileLibrary === "function" ? deps.renderAgentProfileLibrary : null;
     var renderAgentProfileDetailFields = typeof deps.renderAgentProfileDetailFields === "function" ? deps.renderAgentProfileDetailFields : null;
     var globeRuntime = deps.globeRuntime || null;
@@ -71,6 +74,8 @@
     var mailXssTesterToolTeardown = null;
     // Same reasoning as mailXssTesterToolTeardown above.
     var googleDorkToolTeardown = null;
+    // Same reasoning as googleDorkToolTeardown above.
+    var komunikatorToolTeardown = null;
     var pulpitInspectorSelectedNodeId = "";
     var pulpitInspectorSuppressNextRender = false;
 
@@ -2567,6 +2572,90 @@
       };
     }
 
+    // Shared click handling for the sign-in/sign-out buttons that appear in
+    // both Komunikator's LS and CS status blocks (komunikatorStatusBlockHtml
+    // in panel-content-runtime.js) - one function, bound from both wire
+    // functions below, so the two surfaces never drift out of sync.
+    function bindKomunikatorStatusClicks(root) {
+      root.addEventListener("click", function (event) {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.komunikator;
+        if (!api) return;
+
+        var signInBtn = event.target && event.target.closest ? event.target.closest("[data-komunikator-signin-btn]") : null;
+        if (signInBtn) {
+          api.signInWithGoogle();
+          return;
+        }
+
+        var signOutBtn = event.target && event.target.closest ? event.target.closest("[data-komunikator-signout-btn]") : null;
+        if (signOutBtn) {
+          api.signOut();
+        }
+      });
+    }
+
+    // LS: account status + sign-in/out - rebuilt wholesale on every
+    // newui:komunikator-changed event, same always-rebuild approach as
+    // wireMailXssTesterLibrary/wireGoogleDorkLibrary (no persistent DOM
+    // state worth patching in place here).
+    function wireKomunikatorLibrary() {
+      var mount = document.getElementById("v1KomunikatorLibrary");
+      if (!mount || !renderKomunikatorLibrary) return;
+
+      function render() {
+        mount.innerHTML = renderKomunikatorLibrary();
+      }
+
+      render();
+
+      if (mount.dataset.komunikatorBound === "1") return;
+      mount.dataset.komunikatorBound = "1";
+
+      document.addEventListener("newui:komunikator-changed", function () {
+        if (!document.body.contains(mount)) return;
+        render();
+      });
+
+      bindKomunikatorStatusClicks(mount);
+    }
+
+    // RS: static placeholder for now (Phase 2 adds the member list/invite
+    // flow here) - wired once, no live-update need yet.
+    function wireKomunikatorMembers() {
+      var mount = document.getElementById("v1KomunikatorMembers");
+      if (!mount || !renderKomunikatorMembers) return;
+      mount.innerHTML = renderKomunikatorMembers();
+    }
+
+    // CS: same teardown-before-rewire + stable-shell-element staleness
+    // guard as wireGoogleDorkTool above.
+    function wireKomunikatorTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function" ? rootEl : document.getElementById("v1ToolDetail");
+      if (!root || !renderKomunikatorTool) return;
+
+      var shellEl = root.querySelector(".v1-komunikator-shell");
+      if (!shellEl) return;
+
+      if (komunikatorToolTeardown) {
+        komunikatorToolTeardown();
+        komunikatorToolTeardown = null;
+      }
+
+      bindKomunikatorStatusClicks(shellEl);
+
+      function onChanged() {
+        if (!document.body.contains(shellEl)) return;
+        shellEl.outerHTML = renderKomunikatorTool();
+        shellEl = root.querySelector(".v1-komunikator-shell");
+        bindKomunikatorStatusClicks(shellEl);
+      }
+      document.addEventListener("newui:komunikator-changed", onChanged);
+
+      komunikatorToolTeardown = function () {
+        document.removeEventListener("newui:komunikator-changed", onChanged);
+      };
+    }
+
     function wirePulpitLibrary() {
       var mount = document.getElementById("v1PulpitLibrary");
       if (!mount || !renderPulpitLibrary) return;
@@ -3154,6 +3243,27 @@
           var cxInput = target.closest ? target.closest("[data-google-dork-api-cx]") : null;
           if (cxInput) {
             googleDorkApiConfigApi.setCx(cxInput.value);
+          }
+        });
+      }
+
+      // Firebase config (Komunikator's Google Sign-In) - same simple
+      // per-field persistence as the Google Dork API block above.
+      var firebaseConfigApi = core.firebaseConfig;
+      if (firebaseConfigApi) {
+        root.addEventListener("change", function (event) {
+          var fieldInput = event.target && event.target.closest ? event.target.closest("[data-firebase-config-field]") : null;
+          if (!fieldInput) return;
+          firebaseConfigApi.setField(fieldInput.getAttribute("data-firebase-config-field"), fieldInput.value);
+        });
+        // Fields commit individually on "change" above - the <form>
+        // wrapper exists only so the password-type clientSecret field
+        // doesn't trigger Chromium's "not contained in a form" console
+        // warning, so an actual submit (e.g. pressing Enter) has nothing
+        // useful to do and must not reload the page.
+        root.addEventListener("submit", function (event) {
+          if (event.target && event.target.closest && event.target.closest("[data-firebase-config-form]")) {
+            event.preventDefault();
           }
         });
       }
@@ -3893,6 +4003,9 @@
       wireGoogleDorkLibrary: wireGoogleDorkLibrary,
       wireGoogleDorkTemplates: wireGoogleDorkTemplates,
       wireGoogleDorkTool: wireGoogleDorkTool,
+      wireKomunikatorLibrary: wireKomunikatorLibrary,
+      wireKomunikatorMembers: wireKomunikatorMembers,
+      wireKomunikatorTool: wireKomunikatorTool,
       wireGlobeTool: wireGlobeTool,
       wireAgentProfileLibrary: wireAgentProfileLibrary,
       wireAgentProfileDetail: wireAgentProfileDetail,

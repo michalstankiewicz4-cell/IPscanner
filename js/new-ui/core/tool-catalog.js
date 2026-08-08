@@ -239,6 +239,29 @@
       labelKey: "tabLabel_google_dork_templates",
       ui: { showInRightPanel: true, rightOrder: 28 }
     },
+    // Komunikator Phase 1: Google Sign-In only (no chat yet - see
+    // komunikator-runtime.js's own header comment for why this needs a
+    // loopback OAuth listener instead of Firebase's usual popup/redirect
+    // sign-in). RS is a placeholder for now so Phase 2 (chat/members) can
+    // reuse this same registration without a fresh pass.
+    "komunikator": {
+      titleKey: "toolTitle_komunikator",
+      textKey: "toolText_komunikator",
+      points: ["Sign in with your Google account", "Group chat with a few invited friends (coming soon)", "Invite-code gated rooms (coming soon)"],
+      icon: "💬",
+      labelKey: "tabLabel_komunikator",
+      ui: { showAsTab: true, order: 123 }
+    },
+    "komunikator-library": {
+      icon: null,
+      labelKey: "tabLabel_komunikator_library",
+      ui: { showInLeftPanel: true, leftOrder: 48 }
+    },
+    "komunikator-members": {
+      icon: null,
+      labelKey: "tabLabel_komunikator_members",
+      ui: { showInRightPanel: true, rightOrder: 29 }
+    },
     "ip-library": {
       titleKey: "toolTitle_ip_library",
       textKey: "toolText_ip_library",

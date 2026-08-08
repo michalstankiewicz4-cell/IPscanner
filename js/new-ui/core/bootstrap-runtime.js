@@ -208,6 +208,7 @@
         const toolsMenuPulpitPreview = document.getElementById("v1ToolsMenuPulpitPreview");
         const toolsMenuMailXssTester = document.getElementById("v1ToolsMenuMailXssTester");
         const toolsMenuGoogleDork = document.getElementById("v1ToolsMenuGoogleDork");
+        const toolsMenuKomunikator = document.getElementById("v1ToolsMenuKomunikator");
         const toolsMenuNetworkMonitor = document.getElementById("v1ToolsMenuNetworkMonitor");
         const toolsMenuEmailRecon = document.getElementById("v1ToolsMenuEmailRecon");
         tabsTrack = document.getElementById("v1TabsTrack");
@@ -324,6 +325,7 @@
         if (toolsMenuPulpitPreview) toolsMenuPulpitPreview.textContent = tr("toolTitle_pulpit_preview");
         if (toolsMenuMailXssTester) toolsMenuMailXssTester.textContent = tr("toolTitle_mail_xss_tester");
         if (toolsMenuGoogleDork) toolsMenuGoogleDork.textContent = tr("toolTitle_google_dork");
+        if (toolsMenuKomunikator) toolsMenuKomunikator.textContent = tr("toolTitle_komunikator");
         if (toolsMenuNetworkMonitor) toolsMenuNetworkMonitor.textContent = tr("toolTitle_network_monitor");
         if (toolsMenuEmailRecon) toolsMenuEmailRecon.textContent = tr("toolTitle_email_recon");
         document.querySelectorAll("[data-sidebar-tab-close]").forEach((el) => {
@@ -511,6 +513,16 @@
       window.NetReconNewUI.wireGoogleDorkTemplates = function (rootEl) {
         if (panelsRuntime && panelsRuntime.wireGoogleDorkTemplates) {
           panelsRuntime.wireGoogleDorkTemplates(rootEl);
+        }
+      };
+      window.NetReconNewUI.wireKomunikatorLibrary = function (rootEl) {
+        if (panelsRuntime && panelsRuntime.wireKomunikatorLibrary) {
+          panelsRuntime.wireKomunikatorLibrary(rootEl);
+        }
+      };
+      window.NetReconNewUI.wireKomunikatorMembers = function (rootEl) {
+        if (panelsRuntime && panelsRuntime.wireKomunikatorMembers) {
+          panelsRuntime.wireKomunikatorMembers(rootEl);
         }
       };
       // Exposed for navigation-runtime.js's activateGenericContent() LS/RS
