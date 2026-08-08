@@ -1504,22 +1504,120 @@
       ].join("");
     }
 
-    // CS: same status block, full-width shell - Phase 1 has nothing else to
-    // show yet (chat UI arrives in a later phase).
-    function renderKomunikatorTool() {
+    // CS: signed-out/error -> the status block (Phase 1 behavior, unchanged);
+    // signed-in but not a room member yet -> a short pointer to RS's "join
+    // with code" form; signed-in member -> the actual chat, reusing the AI
+    // Assistant's own message-list/bubble/input CSS directly (.v1-ai-chat,
+    // .v1-ai-msg, .v1-ai-input, .v1-ai-prompt) rather than duplicating that
+    // styling - same reuse convention already used repeatedly this session.
+    function renderKomunikatorChatMessageHtml(msg, currentUid) {
+      var isOwn = msg.senderUid === currentUid;
       return [
-        "<div class=\"v1-komunikator-shell\">",
-        "<div class=\"v1-pulpit-inspector-field\">",
-        "<label>" + escapeHtml(tr("komunikatorStatusHeading")) + "</label>",
-        "<div>" + komunikatorStatusBlockHtml() + "</div>",
-        "</div>",
+        "<div class=\"v1-ai-msg " + (isOwn ? "user" : "assistant") + "\">",
+        isOwn ? "" : "<div class=\"v1-komunikator-msg-sender\">" + escapeHtml(msg.senderName || "") + "</div>",
+        "<span class=\"v1-ai-msg-text\">" + escapeHtml(msg.text || "") + "</span>",
         "</div>"
       ].join("");
     }
 
-    // RS: placeholder for Phase 2 (chat/member list).
+    function renderKomunikatorTool() {
+      var status = komunikatorApi ? komunikatorApi.getStatus() : "signed-out";
+      var user = komunikatorApi ? komunikatorApi.getUser() : null;
+      var isMember = komunikatorApi ? komunikatorApi.getIsMember() : false;
+
+      var inner;
+      if (status !== "signed-in" || !user) {
+        inner = [
+          "<div class=\"v1-pulpit-inspector-field\">",
+          "<label>" + escapeHtml(tr("komunikatorStatusHeading")) + "</label>",
+          "<div>" + komunikatorStatusBlockHtml() + "</div>",
+          "</div>"
+        ].join("");
+      } else if (!isMember) {
+        inner = "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("komunikatorNotAMemberNote")) + "</div>";
+      } else {
+        var messages = komunikatorApi ? komunikatorApi.getMessages() : [];
+        var actionError = komunikatorApi ? komunikatorApi.getActionError() : "";
+        var messagesHtml = messages.length
+          ? messages.map(function (m) { return renderKomunikatorChatMessageHtml(m, user.uid); }).join("")
+          : "<div class=\"v1-ai-msg assistant\" data-ai-meta=\"true\"><span class=\"v1-ai-msg-text\">" + escapeHtml(tr("komunikatorNoMessagesYetNote")) + "</span></div>";
+
+        inner = [
+          "<div class=\"v1-komunikator-chat-shell\">",
+          "<div class=\"v1-ai-chat-wrap\">",
+          "<div class=\"v1-ai-chat\" data-komunikator-messages>",
+          messagesHtml,
+          "</div>",
+          "</div>",
+          actionError ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("komunikatorErrorPrefix")) + " " + escapeHtml(actionError) + "</p>" : "",
+          "<div class=\"v1-ai-input\">",
+          "<textarea class=\"v1-ai-prompt\" rows=\"2\" data-komunikator-message-input placeholder=\"" + escapeHtml(tr("komunikatorMessagePlaceholder")) + "\"></textarea>",
+          "</div>",
+          "</div>"
+        ].join("");
+      }
+
+      return "<div class=\"v1-komunikator-shell\">" + inner + "</div>";
+    }
+
+    // RS: member list + invite generate/redeem - the two entry points into
+    // room membership. Both actions stay visible regardless of current
+    // membership (generate is member-only functionally, but the button is
+    // simplest kept always-rendered and just no-ops if not a member; join
+    // is the only way a non-member can act at all).
     function renderKomunikatorMembers() {
-      return "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("komunikatorMembersComingSoon")) + "</div>";
+      var user = komunikatorApi ? komunikatorApi.getUser() : null;
+      if (!user) {
+        return "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("komunikatorMembersSignInFirstNote")) + "</div>";
+      }
+
+      var isMember = komunikatorApi ? komunikatorApi.getIsMember() : false;
+      var members = komunikatorApi ? komunikatorApi.getMembers() : [];
+      var lastInviteCode = komunikatorApi ? komunikatorApi.getLastInviteCode() : "";
+      var actionError = komunikatorApi ? komunikatorApi.getActionError() : "";
+
+      var membersHtml = members.length
+        ? members.map(function (m) {
+            return [
+              "<div class=\"v1-komunikator-member-row\">",
+              m.photoURL ? "<img class=\"v1-komunikator-avatar v1-komunikator-avatar--small\" src=\"" + escapeHtml(m.photoURL) + "\" alt=\"\" />" : "",
+              "<span>" + escapeHtml(m.displayName || m.email || "?") + "</span>",
+              "</div>"
+            ].join("");
+          }).join("")
+        : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("komunikatorNoMembersYetNote")) + "</div>";
+
+      var inviteSectionHtml = isMember
+        ? [
+            "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-komunikator-generate-invite-btn>" + escapeHtml(tr("komunikatorGenerateInviteBtn")) + "</button>",
+            lastInviteCode ? "<div class=\"v1-komunikator-invite-code-box\" data-komunikator-invite-code>" + escapeHtml(lastInviteCode) + "</div>" : "",
+            lastInviteCode ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("komunikatorInviteCodeNote")) + "</p>" : ""
+          ].join("")
+        : [
+            "<div class=\"v1-pulpit-inspector-field\">",
+            "<label for=\"v1KomunikatorJoinCode\">" + escapeHtml(tr("komunikatorJoinCodeLabel")) + "</label>",
+            "<input id=\"v1KomunikatorJoinCode\" type=\"text\" autocomplete=\"off\" data-komunikator-join-code-input />",
+            "</div>",
+            "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-komunikator-join-btn>" + escapeHtml(tr("komunikatorJoinBtn")) + "</button>"
+          ].join("");
+
+      return [
+        "<ul class=\"v1-tool-list\">",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("komunikatorMembersHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">",
+        membersHtml,
+        "</div>",
+        "</li>",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("komunikatorInviteHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">",
+        inviteSectionHtml,
+        actionError ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("komunikatorErrorPrefix")) + " " + escapeHtml(actionError) + "</p>" : "",
+        "</div>",
+        "</li>",
+        "</ul>"
+      ].join("");
     }
 
     // Anchors a connection line on roughly the icon glyph's center, not the
