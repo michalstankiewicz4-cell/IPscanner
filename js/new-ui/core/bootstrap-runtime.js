@@ -1599,11 +1599,20 @@
 
       window.addEventListener("netrecon:language-changed", refreshLanguageUi);
 
-      // Collapsible sidebar sections
-      document.querySelectorAll('.v1-section-header').forEach(function (header) {
-        header.addEventListener('click', function (e) {
-          if (e.target.closest('button, input, select, textarea, a')) return;
-          header.closest('li').classList.toggle('v1-collapsed');
-        });
+      // Collapsible sidebar sections - delegated on document rather than
+      // bound per-element at boot time, since most LS/RS panel content
+      // (ShellCraft/Topology included, not just the newer tools) only
+      // renders once its own tool is actually opened/rebuilt, well after
+      // this file's own boot-time querySelectorAll ran - a per-element
+      // binding at boot could only ever reach whatever .v1-section-header
+      // elements happened to already exist in the DOM at that instant,
+      // which for lazily-mounted panels is effectively none. Delegation
+      // works for every header regardless of when it's added.
+      document.addEventListener('click', function (e) {
+        var header = e.target.closest('.v1-section-header');
+        if (!header) return;
+        if (e.target.closest('button, input, select, textarea, a')) return;
+        var li = header.closest('li');
+        if (li) li.classList.toggle('v1-collapsed');
       });
     })();
