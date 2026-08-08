@@ -517,6 +517,10 @@
     // toggle state.
     function renderGeneralSettingsTool() {
       var settings = generalSettingsApi ? generalSettingsApi.getState() : {};
+      var unfinishedVisible = false;
+      try {
+        unfinishedVisible = localStorage.getItem("netrecon_show_unfinished_tools") === "1";
+      } catch (_) {}
 
       function checkboxRow(key, icon, labelKey, labelFallback) {
         var checked = !!settings[key];
@@ -694,11 +698,6 @@
       // works via a plain page load); a normal relaunch always lands back
       // on the default UI (index.html) since nothing records the choice.
       function uiSwitchRow() {
-        var unfinishedVisible = false;
-        try {
-          unfinishedVisible = localStorage.getItem("netrecon_show_unfinished_tools") === "1";
-        } catch (_) {}
-
         return [
           "<div class=\"v1-general-settings-ui-switch\" data-general-ui-switch" + (unfinishedVisible ? "" : " hidden") + ">",
           "<span class=\"v1-general-settings-ui-switch-label\">" + escapeHtml(trOr("generalUiSwitchLabel", "UI")) + "</span>",
@@ -762,8 +761,16 @@
         groupHeading("generalGroupGoogleDorkApi", "Google Dork API"),
         googleDorkApiRow(),
 
+        // Same "gate behind Show unfinished tools" treatment as
+        // uiSwitchRow() above (data-attribute + hidden, so the existing
+        // toggle-unfinished-tools handler's unfinishedSelectors list can
+        // show/hide it live too, not just on next render) - Communicator
+        // works end-to-end but its Firebase setup is real friction most
+        // users won't want, see docs/COMMUNICATOR_SETUP.md.
+        "<div data-general-firebase-config" + (unfinishedVisible ? "" : " hidden") + ">",
         groupHeading("generalGroupFirebaseConfig", "Firebase (Communicator)"),
         firebaseConfigRow(),
+        "</div>",
 
         "</div>"
       ].join("");
