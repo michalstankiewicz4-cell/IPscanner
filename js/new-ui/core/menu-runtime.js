@@ -387,16 +387,6 @@
           ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]",
           ".v1-menu-dd-item[data-menu-action=\"countries\"]",
           "[data-general-ui-switch]",
-          // Communicator: works end-to-end but the Firebase setup (own
-          // project, Firestore database, a Desktop-app OAuth client,
-          // hand-pasted security rules) is real friction most users won't
-          // want - kept reachable via this toggle rather than removed or
-          // split into a real installable addon, see docs/
-          // COMMUNICATOR_SETUP.md. This is the only entry point (no
-          // activity-bar icon), so hiding it alone makes all 3 of its
-          // panels unreachable too, same as the lorem-ipsum precedent above.
-          ".v1-menu-dd-item[data-tool=\"komunikator\"]",
-          "[data-general-firebase-config]",
           // TCP SYN has zero backend support (no SYN scanning code exists
           // at all in main.rs), unlike OS Detection below which is merely
           // grayed out - stays fully hidden, not just disabled.

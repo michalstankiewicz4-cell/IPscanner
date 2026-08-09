@@ -1416,7 +1416,7 @@
 
       try {
         if (localStorage.getItem("netrecon_show_unfinished_tools") === "1") {
-          ["#v1ActivityLoremIpsum", ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]", ".v1-menu-dd-item[data-menu-action=\"countries\"]", "[data-general-ui-switch]", "#v1ConfigProtocolTcpSynRow", ".v1-menu-dd-item[data-tool=\"komunikator\"]", "[data-general-firebase-config]"].forEach(function (selector) {
+          ["#v1ActivityLoremIpsum", ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]", ".v1-menu-dd-item[data-menu-action=\"countries\"]", "[data-general-ui-switch]", "#v1ConfigProtocolTcpSynRow"].forEach(function (selector) {
             var el = document.querySelector(selector);
             if (el) el.removeAttribute("hidden");
           });
