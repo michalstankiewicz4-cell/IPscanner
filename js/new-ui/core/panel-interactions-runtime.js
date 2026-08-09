@@ -19,6 +19,9 @@
     var renderGoogleDorkLibrary = typeof deps.renderGoogleDorkLibrary === "function" ? deps.renderGoogleDorkLibrary : null;
     var renderGoogleDorkTool = typeof deps.renderGoogleDorkTool === "function" ? deps.renderGoogleDorkTool : null;
     var renderGoogleDorkTemplates = typeof deps.renderGoogleDorkTemplates === "function" ? deps.renderGoogleDorkTemplates : null;
+    var renderWifiTool = typeof deps.renderWifiTool === "function" ? deps.renderWifiTool : null;
+    var renderWifiLibrary = typeof deps.renderWifiLibrary === "function" ? deps.renderWifiLibrary : null;
+    var renderWifiAdapter = typeof deps.renderWifiAdapter === "function" ? deps.renderWifiAdapter : null;
     var renderAgentProfileLibrary = typeof deps.renderAgentProfileLibrary === "function" ? deps.renderAgentProfileLibrary : null;
     var renderAgentProfileDetailFields = typeof deps.renderAgentProfileDetailFields === "function" ? deps.renderAgentProfileDetailFields : null;
     var globeRuntime = deps.globeRuntime || null;
@@ -71,6 +74,8 @@
     var mailXssTesterToolTeardown = null;
     // Same reasoning as mailXssTesterToolTeardown above.
     var googleDorkToolTeardown = null;
+    // Same reasoning as googleDorkToolTeardown above.
+    var wifiToolTeardown = null;
     var pulpitInspectorSelectedNodeId = "";
     var pulpitInspectorSuppressNextRender = false;
 
@@ -2567,6 +2572,158 @@
       };
     }
 
+    // Tab switching between the 3 CS sections is pure DOM class toggling
+    // (all 3 sections are always in the markup, hidden via CSS - see
+    // .v1-wifi-section/.is-active in wifi.css), no re-render or event
+    // dispatch needed - only actual data changes (scan/refresh/reveal
+    // results) go through newui:wifi-changed and a full outerHTML rebuild.
+    function wifiActiveSectionFromDom(shellEl) {
+      var activeBtn = shellEl.querySelector(".v1-wifi-tab-btn.is-active");
+      return activeBtn ? activeBtn.getAttribute("data-wifi-tab") : "nearby";
+    }
+
+    // CS: same teardown-before-rewire + stable-shell-element staleness
+    // guard as wireGoogleDorkTool above.
+    function wireWifiTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function" ? rootEl : document.getElementById("v1ToolDetail");
+      if (!root || !renderWifiTool) return;
+
+      var shellEl = root.querySelector(".v1-wifi-shell");
+      if (!shellEl) return;
+
+      if (wifiToolTeardown) {
+        wifiToolTeardown();
+        wifiToolTeardown = null;
+      }
+
+      function onClick(event) {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.wifi;
+        if (!api || !document.body.contains(shellEl)) return;
+
+        var tabBtn = event.target && event.target.closest ? event.target.closest("[data-wifi-tab]") : null;
+        if (tabBtn) {
+          var section = tabBtn.getAttribute("data-wifi-tab");
+          shellEl.querySelectorAll(".v1-wifi-tab-btn").forEach(function (btn) {
+            btn.classList.toggle("is-active", btn === tabBtn);
+          });
+          shellEl.querySelectorAll(".v1-wifi-section").forEach(function (sec) {
+            sec.classList.toggle("is-active", sec.getAttribute("data-wifi-section") === section);
+          });
+          return;
+        }
+
+        var scanBtn = event.target && event.target.closest ? event.target.closest("[data-wifi-scan-btn]") : null;
+        if (scanBtn) {
+          api.scanNearby();
+          return;
+        }
+
+        var refreshCurrentBtn = event.target && event.target.closest ? event.target.closest("[data-wifi-refresh-current-btn]") : null;
+        if (refreshCurrentBtn) {
+          api.refreshCurrentConnection();
+          return;
+        }
+
+        var listProfilesBtn = event.target && event.target.closest ? event.target.closest("[data-wifi-list-profiles-btn]") : null;
+        if (listProfilesBtn) {
+          api.listSavedProfiles();
+          return;
+        }
+
+        var revealBtn = event.target && event.target.closest ? event.target.closest("[data-wifi-reveal-btn]") : null;
+        if (revealBtn) {
+          api.revealProfilePassword(revealBtn.getAttribute("data-wifi-reveal-btn"));
+        }
+      }
+      shellEl.addEventListener("click", onClick);
+
+      function onChanged() {
+        if (!document.body.contains(shellEl)) return;
+        var activeSection = wifiActiveSectionFromDom(shellEl);
+        shellEl.outerHTML = renderWifiTool(activeSection);
+        shellEl = root.querySelector(".v1-wifi-shell");
+        if (shellEl) shellEl.addEventListener("click", onClick);
+      }
+      document.addEventListener("newui:wifi-changed", onChanged);
+
+      wifiToolTeardown = function () {
+        document.removeEventListener("newui:wifi-changed", onChanged);
+      };
+    }
+
+    // LS: scan-history list - rebuilt wholesale on every newui:wifi-changed
+    // event, same simple always-rebuild approach as wireGoogleDorkLibrary
+    // (no inputs here to lose focus/caret on, unlike that tool's field
+    // list, so there's no need for its activeElement guard).
+    function wireWifiLibrary() {
+      var mount = document.getElementById("v1WifiLibrary");
+      if (!mount || !renderWifiLibrary) return;
+
+      function render() {
+        mount.innerHTML = renderWifiLibrary();
+      }
+
+      render();
+
+      if (mount.dataset.wifiBound === "1") return;
+      mount.dataset.wifiBound = "1";
+
+      document.addEventListener("newui:wifi-changed", function () {
+        if (!document.body.contains(mount)) return;
+        render();
+      });
+
+      mount.addEventListener("click", function (event) {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.wifi;
+        if (!api) return;
+        var btn = event.target && event.target.closest ? event.target.closest("[data-wifi-history-action]") : null;
+        if (!btn) return;
+        var idx = Number(btn.getAttribute("data-wifi-history-index"));
+        var action = btn.getAttribute("data-wifi-history-action");
+        if (action === "use") api.useHistoryEntry(idx);
+        else if (action === "delete") api.removeFromHistory(idx);
+      });
+    }
+
+    // RS: adapter/driver diagnostics - fetched once automatically the first
+    // time this panel is wired (not on every re-activation, which would
+    // shell out to netsh every time the user just switches tabs), plus a
+    // manual refresh button. Rebuilt wholesale on newui:wifi-changed, same
+    // reasoning as wireWifiLibrary above.
+    function wireWifiAdapter() {
+      var mount = document.getElementById("v1WifiAdapter");
+      if (!mount || !renderWifiAdapter) return;
+
+      function render() {
+        mount.innerHTML = renderWifiAdapter();
+      }
+
+      render();
+
+      if (mount.dataset.wifiBound !== "1") {
+        mount.dataset.wifiBound = "1";
+
+        document.addEventListener("newui:wifi-changed", function () {
+          if (!document.body.contains(mount)) return;
+          render();
+        });
+
+        mount.addEventListener("click", function (event) {
+          var api = window.NetReconNewUICore && window.NetReconNewUICore.wifi;
+          if (!api) return;
+          var btn = event.target && event.target.closest ? event.target.closest("[data-wifi-refresh-adapter-btn]") : null;
+          if (!btn) return;
+          api.refreshAdapterInfo();
+        });
+      }
+
+      var api = window.NetReconNewUICore && window.NetReconNewUICore.wifi;
+      var state = api ? api.getAdapterInfo() : null;
+      if (api && state && !state.updatedAt && !state.loading && api.isDesktop()) {
+        api.refreshAdapterInfo();
+      }
+    }
+
     function wirePulpitLibrary() {
       var mount = document.getElementById("v1PulpitLibrary");
       if (!mount || !renderPulpitLibrary) return;
@@ -3893,6 +4050,9 @@
       wireGoogleDorkLibrary: wireGoogleDorkLibrary,
       wireGoogleDorkTemplates: wireGoogleDorkTemplates,
       wireGoogleDorkTool: wireGoogleDorkTool,
+      wireWifiLibrary: wireWifiLibrary,
+      wireWifiAdapter: wireWifiAdapter,
+      wireWifiTool: wireWifiTool,
       wireGlobeTool: wireGlobeTool,
       wireAgentProfileLibrary: wireAgentProfileLibrary,
       wireAgentProfileDetail: wireAgentProfileDetail,

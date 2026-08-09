@@ -97,6 +97,28 @@
     },
   };
 
+  toolContentRuntime["wifi-library"] = {
+    render: function () {
+      return '<div id="v1WifiLibrary" class="v1-wifi-library"></div>';
+    },
+    wire: function (rootEl) {
+      if (window.NetReconNewUI && window.NetReconNewUI.wireWifiLibrary) {
+        window.NetReconNewUI.wireWifiLibrary(rootEl);
+      }
+    },
+  };
+
+  toolContentRuntime["wifi-adapter"] = {
+    render: function () {
+      return '<div id="v1WifiAdapter" class="v1-wifi-adapter"></div>';
+    },
+    wire: function (rootEl) {
+      if (window.NetReconNewUI && window.NetReconNewUI.wireWifiAdapter) {
+        window.NetReconNewUI.wireWifiAdapter(rootEl);
+      }
+    },
+  };
+
   toolContentRuntime["google-dork-library"] = {
     render: function () {
       return '<div id="v1GoogleDorkLibrary" class="v1-google-dork-library"></div>';

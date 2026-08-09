@@ -239,6 +239,29 @@
       labelKey: "tabLabel_google_dork_templates",
       ui: { showInRightPanel: true, rightOrder: 28 }
     },
+    // WiFi tool, Phase 1: nearby-network scan, current-connection info, and
+    // saved-profile listing with on-demand password reveal - all backed by
+    // the existing generic run_powershell command (netsh wlan ... parsed
+    // into JSON in-script), no new Rust/backend code needed. Desktop only -
+    // there is no www equivalent of shelling out to a local netsh.exe.
+    "wifi": {
+      titleKey: "toolTitle_wifi",
+      textKey: "toolText_wifi",
+      points: ["Scan nearby WiFi networks (signal, security, channel)", "Current connection details (SSID, IP, signal, rates)", "Saved profiles with on-demand password reveal"],
+      icon: "📶",
+      labelKey: "tabLabel_wifi",
+      ui: { showAsTab: true, order: 123 }
+    },
+    "wifi-library": {
+      icon: null,
+      labelKey: "tabLabel_wifi_library",
+      ui: { showInLeftPanel: true, leftOrder: 48 }
+    },
+    "wifi-adapter": {
+      icon: null,
+      labelKey: "tabLabel_wifi_adapter",
+      ui: { showInRightPanel: true, rightOrder: 29 }
+    },
     "ip-library": {
       titleKey: "toolTitle_ip_library",
       textKey: "toolText_ip_library",

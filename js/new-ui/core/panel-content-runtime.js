@@ -20,6 +20,7 @@
     var platformApi = core.platform || null;
     var mailXssTesterApi = core.mailXssTester || null;
     var googleDorkApi = core.googleDork || null;
+    var wifiApi = core.wifi || null;
     var agentProfilesApi = core.agentProfiles || null;
     var generalSettingsApi = core.generalSettings || null;
 
@@ -1414,6 +1415,252 @@
       return "<ul class=\"v1-tool-list\">" + sectionsHtml + "</ul>";
     }
 
+    // WiFi tool, Phase 1: nearby scan / current connection / saved profiles
+    // (CS, tabbed), scan history (LS), adapter+driver diagnostics (RS).
+    // Every surface is 100% backed by run_powershell (wifi-runtime.js) with
+    // no meaningful degraded www rendering (unlike Google Dork, which stays
+    // fully functional there since it only opens a URL) - so each render
+    // function gates its ENTIRE output behind platformApi.isDesktop(),
+    // reusing the same .v1-pulpit-remote-hint note idiom already
+    // established by renderPulpitPreviewToggle() above.
+    function wifiIsDesktop() {
+      return !(platformApi && typeof platformApi.isDesktop === "function" && !platformApi.isDesktop());
+    }
+
+    function wifiDesktopGateHtml() {
+      return "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("wifiDesktopOnlyNote")) + "</p>";
+    }
+
+    function wifiFieldRow(labelKey, value) {
+      return [
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label>" + escapeHtml(tr(labelKey)) + "</label>",
+        "<div>" + escapeHtml(value === null || value === undefined || value === "" ? "-" : String(value)) + "</div>",
+        "</div>"
+      ].join("");
+    }
+
+    // Password cell has 4 states, driven by wifiApi.getPasswordEntry(name):
+    // unfetched (show the reveal button), loading, revealed (cleartext
+    // key), or a terminal note (open network / denied - key=clear was
+    // refused, no elevation flow exists in this phase, see wifi-runtime.js).
+    function wifiPasswordCellHtml(profileName) {
+      var entry = wifiApi ? wifiApi.getPasswordEntry(profileName) : null;
+      if (!entry) {
+        return "<span class=\"v1-wifi-password-cell\"><button type=\"button\" class=\"v1-range-history-btn\" data-wifi-reveal-btn=\"" + escapeHtml(profileName) + "\">" + escapeHtml(tr("wifiShowPasswordBtn")) + "</button></span>";
+      }
+      if (entry.status === "loading") {
+        return "<span class=\"v1-wifi-password-cell\"><span class=\"v1-wifi-password-note\">" + escapeHtml(tr("wifiPasswordLoadingNote")) + "</span></span>";
+      }
+      if (entry.status === "revealed") {
+        return "<span class=\"v1-wifi-password-cell\"><span class=\"v1-wifi-password-value\">" + escapeHtml(entry.keyContent) + "</span></span>";
+      }
+      if (entry.status === "open") {
+        return "<span class=\"v1-wifi-password-cell\"><span class=\"v1-wifi-password-note\">" + escapeHtml(tr("wifiPasswordOpenNote")) + "</span></span>";
+      }
+      return "<span class=\"v1-wifi-password-cell\"><span class=\"v1-wifi-password-note\">" + escapeHtml(tr("wifiPasswordDeniedNote")) + "</span></span>";
+    }
+
+    function renderWifiNearbySection(active) {
+      var state = wifiApi ? wifiApi.getNearby() : { networks: [], loading: false, error: null };
+      var networks = state.networks || [];
+      var bodyHtml;
+      if (networks.length) {
+        var rowsHtml = networks.map(function (n) {
+          return [
+            "<tr title=\"" + escapeHtml(n.bssid || "") + "\">",
+            "<td>" + escapeHtml(n.ssid || "") + "</td>",
+            "<td>" + escapeHtml(n.signal || "-") + "</td>",
+            "<td>" + escapeHtml(n.security || "-") + "</td>",
+            "<td>" + escapeHtml(n.channel || "-") + "</td>",
+            "<td>" + escapeHtml(n.radioType || "-") + "</td>",
+            "</tr>"
+          ].join("");
+        }).join("");
+        bodyHtml = [
+          "<div class=\"v1-results-table-scroll\">",
+          "<table class=\"v1-results-table\">",
+          "<thead><tr>",
+          "<th>" + escapeHtml(tr("wifiColSsid")) + "</th>",
+          "<th>" + escapeHtml(tr("wifiColSignal")) + "</th>",
+          "<th>" + escapeHtml(tr("wifiColSecurity")) + "</th>",
+          "<th>" + escapeHtml(tr("wifiColChannel")) + "</th>",
+          "<th>" + escapeHtml(tr("wifiColRadioType")) + "</th>",
+          "</tr></thead>",
+          "<tbody>" + rowsHtml + "</tbody>",
+          "</table>",
+          "</div>"
+        ].join("");
+      } else {
+        bodyHtml = "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("wifiNearbyEmptyNote")) + "</div>";
+      }
+      return [
+        "<div class=\"v1-wifi-section" + (active ? " is-active" : "") + "\" data-wifi-section=\"nearby\">",
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-wifi-scan-btn" + (state.loading ? " disabled" : "") + ">" + escapeHtml(tr(state.loading ? "wifiScanningNote" : "wifiScanBtn")) + "</button>",
+        state.error ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(state.error) + "</p>" : "",
+        bodyHtml,
+        "</div>"
+      ].join("");
+    }
+
+    function renderWifiCurrentSection(active) {
+      var state = wifiApi ? wifiApi.getCurrent() : { info: null, loading: false, error: null };
+      var info = state.info || {};
+      var connected = info.state === "connected";
+      var bodyHtml = connected
+        ? [
+            wifiFieldRow("wifiFieldSsid", info.ssid),
+            wifiFieldRow("wifiFieldState", info.state),
+            wifiFieldRow("wifiFieldAdapter", info.adapter),
+            wifiFieldRow("wifiFieldIp", info.ipAddress),
+            wifiFieldRow("wifiFieldSignal", info.signal),
+            wifiFieldRow("wifiFieldChannel", info.channel),
+            wifiFieldRow("wifiFieldSecurity", info.security),
+            wifiFieldRow("wifiFieldRadioType", info.radioType),
+            wifiFieldRow("wifiFieldReceiveRate", info.receiveRate),
+            wifiFieldRow("wifiFieldTransmitRate", info.transmitRate),
+          ].join("")
+        : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("wifiCurrentNotConnectedNote")) + "</div>";
+      return [
+        "<div class=\"v1-wifi-section" + (active ? " is-active" : "") + "\" data-wifi-section=\"current\">",
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-wifi-refresh-current-btn" + (state.loading ? " disabled" : "") + ">" + escapeHtml(tr("wifiRefreshBtn")) + "</button>",
+        state.error ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(state.error) + "</p>" : "",
+        bodyHtml,
+        "</div>"
+      ].join("");
+    }
+
+    function renderWifiSavedSection(active) {
+      var state = wifiApi ? wifiApi.getProfiles() : { list: [], loading: false, error: null };
+      var list = state.list || [];
+      var bodyHtml;
+      if (list.length) {
+        var rowsHtml = list.map(function (name) {
+          return [
+            "<tr>",
+            "<td>" + escapeHtml(name) + "</td>",
+            "<td>" + wifiPasswordCellHtml(name) + "</td>",
+            "</tr>"
+          ].join("");
+        }).join("");
+        bodyHtml = [
+          "<div class=\"v1-results-table-scroll\">",
+          "<table class=\"v1-results-table\">",
+          "<thead><tr><th>" + escapeHtml(tr("wifiColProfile")) + "</th><th>" + escapeHtml(tr("wifiColPassword")) + "</th></tr></thead>",
+          "<tbody>" + rowsHtml + "</tbody>",
+          "</table>",
+          "</div>"
+        ].join("");
+      } else {
+        bodyHtml = "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("wifiSavedEmptyNote")) + "</div>";
+      }
+      return [
+        "<div class=\"v1-wifi-section" + (active ? " is-active" : "") + "\" data-wifi-section=\"saved\">",
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-wifi-list-profiles-btn" + (state.loading ? " disabled" : "") + ">" + escapeHtml(tr("wifiListProfilesBtn")) + "</button>",
+        state.error ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(state.error) + "</p>" : "",
+        bodyHtml,
+        "</div>"
+      ].join("");
+    }
+
+    // CS: tab strip (Nearby / Current Connection / Saved Networks) over one
+    // content area - activeSection is passed in by the wire layer (read off
+    // the DOM before a full outerHTML rebuild) rather than tracked as
+    // module state here, keeping this render function stateless like its
+    // siblings.
+    function renderWifiTool(activeSection) {
+      if (!wifiIsDesktop()) {
+        return "<div class=\"v1-wifi-shell\">" + wifiDesktopGateHtml() + "</div>";
+      }
+      var section = activeSection === "current" || activeSection === "saved" ? activeSection : "nearby";
+      function tabBtn(id, labelKey) {
+        return "<button type=\"button\" class=\"v1-wifi-tab-btn" + (section === id ? " is-active" : "") + "\" data-wifi-tab=\"" + id + "\">" + escapeHtml(tr(labelKey)) + "</button>";
+      }
+      return [
+        "<div class=\"v1-wifi-shell\">",
+        "<div class=\"v1-wifi-tabs\">",
+        tabBtn("nearby", "wifiTabNearby"),
+        tabBtn("current", "wifiTabCurrent"),
+        tabBtn("saved", "wifiTabSaved"),
+        "</div>",
+        renderWifiNearbySection(section === "nearby"),
+        renderWifiCurrentSection(section === "current"),
+        renderWifiSavedSection(section === "saved"),
+        "</div>"
+      ].join("");
+    }
+
+    // LS: scan-history list, mirrors renderGoogleDorkTool's history block
+    // (same .v1-google-dork-history-row/-text/-actions classes reused,
+    // .v1-range-history-btn for use/delete) - "use" replays a snapshot into
+    // the corresponding CS section via wifiApi.useHistoryEntry(), read-only,
+    // no live re-scan.
+    function renderWifiLibrary() {
+      if (!wifiIsDesktop()) {
+        return "<ul class=\"v1-tool-list\"><li>" + wifiDesktopGateHtml() + "</li></ul>";
+      }
+      var history = wifiApi ? wifiApi.getHistory() : [];
+      var historyHtml = history.length
+        ? history.map(function (item, idx) {
+            var ts = item.updatedAt ? new Date(item.updatedAt).toLocaleTimeString() : "";
+            var label = [item.kind, ts, item.summary].filter(Boolean).join(" · ");
+            return [
+              "<div class=\"v1-google-dork-history-row\">",
+              "<span class=\"v1-google-dork-history-text\" title=\"" + escapeHtml(label) + "\">" + escapeHtml(label) + "</span>",
+              "<span class=\"v1-google-dork-history-actions\">",
+              "<button type=\"button\" class=\"v1-range-history-btn\" data-wifi-history-action=\"use\" data-wifi-history-index=\"" + idx + "\" title=\"" + escapeHtml(tr("wifiHistoryUseAria")) + "\" aria-label=\"" + escapeHtml(tr("wifiHistoryUseAria")) + "\">&gt;</button>",
+              "<button type=\"button\" class=\"v1-range-history-btn\" data-wifi-history-action=\"delete\" data-wifi-history-index=\"" + idx + "\" title=\"" + escapeHtml(tr("wifiHistoryDeleteAria")) + "\" aria-label=\"" + escapeHtml(tr("wifiHistoryDeleteAria")) + "\">&times;</button>",
+              "</span>",
+              "</div>"
+            ].join("");
+          }).join("")
+        : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("wifiHistoryEmptyNote")) + "</div>";
+
+      return [
+        "<ul class=\"v1-tool-list\">",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("wifiHistoryHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">",
+        historyHtml,
+        "</div>",
+        "</li>",
+        "</ul>"
+      ].join("");
+    }
+
+    // RS: static adapter/driver diagnostics (netsh wlan show drivers) -
+    // "Hosted network supported" is deliberately surfaced here now to give
+    // a future Hotspot/ICS phase real diagnostic data instead of guessing.
+    function renderWifiAdapter() {
+      if (!wifiIsDesktop()) {
+        return "<div class=\"v1-wifi-adapter\">" + wifiDesktopGateHtml() + "</div>";
+      }
+      var state = wifiApi ? wifiApi.getAdapterInfo() : { info: null, loading: false, error: null, updatedAt: null };
+      var info = state.info || {};
+      var hasInfo = !!state.updatedAt;
+      var hostedNetwork = info.hostedNetworkSupported || tr("wifiAdapterHostedNetworkNotReported");
+      var bodyHtml = hasInfo
+        ? [
+            wifiFieldRow("wifiAdapterFieldInterface", info.interfaceName),
+            wifiFieldRow("wifiAdapterFieldDriver", info.driver),
+            wifiFieldRow("wifiAdapterFieldVendor", info.vendor),
+            wifiFieldRow("wifiAdapterFieldProvider", info.provider),
+            wifiFieldRow("wifiAdapterFieldVersion", info.version),
+            wifiFieldRow("wifiAdapterFieldType", info.type),
+            wifiFieldRow("wifiAdapterFieldRadioTypes", info.radioTypesSupported),
+            wifiFieldRow("wifiAdapterFieldHostedNetwork", hostedNetwork),
+          ].join("")
+        : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("wifiAdapterEmptyNote")) + "</div>";
+      return [
+        "<div class=\"v1-wifi-adapter\">",
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-wifi-refresh-adapter-btn" + (state.loading ? " disabled" : "") + ">" + escapeHtml(tr("wifiAdapterRefreshBtn")) + "</button>",
+        state.error ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(state.error) + "</p>" : "",
+        bodyHtml,
+        "<p class=\"v1-import-manager-note\">" + escapeHtml(tr("wifiAdapterFutureNote")) + "</p>",
+        "</div>"
+      ].join("");
+    }
+
     // Anchors a connection line on roughly the icon glyph's center, not the
     // node div's raw top-left (x,y) - node.x/node.y are the div's top-left
     // per renderPulpitNodeHtml's own "left:Xpx;top:Ypx" - and not the whole
@@ -2641,6 +2888,7 @@
       "pulpit-preview": renderPulpitPreviewTool,
       "mail-xss-tester": renderMailXssTesterTool,
       "google-dork": renderGoogleDorkTool,
+      wifi: renderWifiTool,
       globe: renderGlobeTool,
       "agent-profiles": renderAgentProfileDetailTool,
 
@@ -2675,6 +2923,9 @@
       renderGoogleDorkLibrary: renderGoogleDorkLibrary,
       renderGoogleDorkTool: renderGoogleDorkTool,
       renderGoogleDorkTemplates: renderGoogleDorkTemplates,
+      renderWifiTool: renderWifiTool,
+      renderWifiLibrary: renderWifiLibrary,
+      renderWifiAdapter: renderWifiAdapter,
       pulpitEdgeAnchor: pulpitEdgeAnchor,
       renderAgentProfileLibrary: renderAgentProfileLibrary,
       renderAgentProfileDetailFields: renderAgentProfileDetailFields,

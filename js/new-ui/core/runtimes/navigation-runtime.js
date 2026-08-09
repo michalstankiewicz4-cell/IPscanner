@@ -1522,6 +1522,11 @@
             setLeftActiveTab("google-dork-library");
             ensureRightTabOpen("google-dork-templates");
             setRightTabActive("google-dork-templates");
+          } else if (tool === "wifi") {
+            ensureSidebarTabOpen("wifi-library");
+            setLeftActiveTab("wifi-library");
+            ensureRightTabOpen("wifi-adapter");
+            setRightTabActive("wifi-adapter");
           }
           switchTool(tool);
           return;
@@ -1587,6 +1592,12 @@
           setLeftActiveTab("google-dork-library");
           ensureRightTabOpen("google-dork-templates");
           setRightTabActive("google-dork-templates");
+        } else if (tool === "wifi") {
+          // Same idea as "google-dork" above.
+          ensureSidebarTabOpen("wifi-library");
+          setLeftActiveTab("wifi-library");
+          ensureRightTabOpen("wifi-adapter");
+          setRightTabActive("wifi-adapter");
         } else if (tool === "lorem-ipsum") {
           // Placeholder tool: one click opens all three independent
           // surfaces (CS's own "lorem-ipsum" via switchTool() below, plus
@@ -1610,7 +1621,8 @@
     // unrecognized or tampered-with hash value is a silent no-op, not an
     // error or an arbitrary call.
     var HASH_TOOL_ROUTES = [
-      { hash: "dorking", tool: "google-dork" }
+      { hash: "dorking", tool: "google-dork" },
+      { hash: "wifi", tool: "wifi" }
     ];
 
     function openToolFromHash() {

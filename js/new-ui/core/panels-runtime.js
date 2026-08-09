@@ -1549,6 +1549,9 @@
         renderGoogleDorkLibrary: panelContentRuntime && panelContentRuntime.renderGoogleDorkLibrary,
         renderGoogleDorkTool: panelContentRuntime && panelContentRuntime.renderGoogleDorkTool,
         renderGoogleDorkTemplates: panelContentRuntime && panelContentRuntime.renderGoogleDorkTemplates,
+        renderWifiTool: panelContentRuntime && panelContentRuntime.renderWifiTool,
+        renderWifiLibrary: panelContentRuntime && panelContentRuntime.renderWifiLibrary,
+        renderWifiAdapter: panelContentRuntime && panelContentRuntime.renderWifiAdapter,
         renderPulpitInspector: panelContentRuntime && panelContentRuntime.renderPulpitInspector,
         renderAgentProfileLibrary: panelContentRuntime && panelContentRuntime.renderAgentProfileLibrary,
         renderAgentProfileDetailFields: panelContentRuntime && panelContentRuntime.renderAgentProfileDetailFields,
@@ -1879,6 +1882,13 @@
       if (tool === "google-dork") { // shell
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireGoogleDorkTool) {
           panelInteractionsRuntime.wireGoogleDorkTool(scope);
+        }
+        return;
+      }
+
+      if (tool === "wifi") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireWifiTool) {
+          panelInteractionsRuntime.wireWifiTool(scope);
         }
         return;
       }
@@ -2342,6 +2352,21 @@
       }
     }
 
+    // Exposed for LS/RS's generic-content-slot mechanism (tool-content-
+    // runtime.js's "wifi-library"/"wifi-adapter" entries) - same idea as
+    // wireGoogleDorkLibrary/-Templates above.
+    function wireWifiLibrary(rootEl) {
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireWifiLibrary) {
+        panelInteractionsRuntime.wireWifiLibrary(rootEl);
+      }
+    }
+
+    function wireWifiAdapter(rootEl) {
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireWifiAdapter) {
+        panelInteractionsRuntime.wireWifiAdapter(rootEl);
+      }
+    }
+
     return {
       setTooltips: setTooltips,
       refreshActiveUI: refreshActiveUI,
@@ -2365,6 +2390,8 @@
       wireMailXssTesterResults: wireMailXssTesterResults,
       wireGoogleDorkLibrary: wireGoogleDorkLibrary,
       wireGoogleDorkTemplates: wireGoogleDorkTemplates,
+      wireWifiLibrary: wireWifiLibrary,
+      wireWifiAdapter: wireWifiAdapter,
       refreshDetachedTool: refreshDetachedTool,
       applyEmailReconResult: function (email, result) {
         if (panelInteractionsRuntime && panelInteractionsRuntime.applyEmailReconResult) {
