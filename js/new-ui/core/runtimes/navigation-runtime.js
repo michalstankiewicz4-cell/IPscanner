@@ -1601,6 +1601,32 @@
       });
     }
 
+    // Deep-linking via URL hash, e.g. ipscanner.pl/#dorking - opens the same
+    // tool a real Tools-menu click would. "wanted" (the raw hash) is only
+    // ever compared for exact equality against a fixed allowlist below, and
+    // the resulting tool id is only ever compared for exact equality against
+    // real, already-rendered Tools-menu buttons - never interpolated into a
+    // selector string or used to look up a function/property by name. An
+    // unrecognized or tampered-with hash value is a silent no-op, not an
+    // error or an arbitrary call.
+    var HASH_TOOL_ROUTES = [
+      { hash: "dorking", tool: "google-dork" }
+    ];
+
+    function openToolFromHash() {
+      var wanted = (location.hash || "").replace(/^#/, "");
+      if (!wanted) return;
+      var route = HASH_TOOL_ROUTES.find(function (r) { return r.hash === wanted; });
+      if (!route) return;
+      var buttons = document.querySelectorAll('.v1-menu-dd-item[data-tool]');
+      for (var i = 0; i < buttons.length; i++) {
+        if (buttons[i].getAttribute("data-tool") === route.tool) {
+          buttons[i].click();
+          break;
+        }
+      }
+    }
+
     // shell dispatch mechanism (generic sidebar tab close) - fully generic,
     // no ip-scanner-specific id checks.
     function bindSidebarTabClosers() {
@@ -2334,6 +2360,8 @@
       bindConsoleTabs();
       bindMacroConsolePane();
       bindRightTabsAndAssistant();
+      openToolFromHash();
+      window.addEventListener("hashchange", openToolFromHash);
     }
 
     function getOpenLeftTools() {
