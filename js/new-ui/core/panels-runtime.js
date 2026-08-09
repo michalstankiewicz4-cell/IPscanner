@@ -1549,9 +1549,6 @@
         renderGoogleDorkLibrary: panelContentRuntime && panelContentRuntime.renderGoogleDorkLibrary,
         renderGoogleDorkTool: panelContentRuntime && panelContentRuntime.renderGoogleDorkTool,
         renderGoogleDorkTemplates: panelContentRuntime && panelContentRuntime.renderGoogleDorkTemplates,
-        renderKomunikatorLibrary: panelContentRuntime && panelContentRuntime.renderKomunikatorLibrary,
-        renderKomunikatorTool: panelContentRuntime && panelContentRuntime.renderKomunikatorTool,
-        renderKomunikatorMembers: panelContentRuntime && panelContentRuntime.renderKomunikatorMembers,
         renderPulpitInspector: panelContentRuntime && panelContentRuntime.renderPulpitInspector,
         renderAgentProfileLibrary: panelContentRuntime && panelContentRuntime.renderAgentProfileLibrary,
         renderAgentProfileDetailFields: panelContentRuntime && panelContentRuntime.renderAgentProfileDetailFields,
@@ -1882,13 +1879,6 @@
       if (tool === "google-dork") { // shell
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireGoogleDorkTool) {
           panelInteractionsRuntime.wireGoogleDorkTool(scope);
-        }
-        return;
-      }
-
-      if (tool === "komunikator") { // shell
-        if (panelInteractionsRuntime && panelInteractionsRuntime.wireKomunikatorTool) {
-          panelInteractionsRuntime.wireKomunikatorTool(scope);
         }
         return;
       }
@@ -2352,21 +2342,6 @@
       }
     }
 
-    // Exposed for LS/RS's generic-content-slot mechanism (tool-content-
-    // runtime.js's "komunikator-library"/"-members" entries) - same idea
-    // as wireGoogleDorkLibrary/-Templates above.
-    function wireKomunikatorLibrary(rootEl) {
-      if (panelInteractionsRuntime && panelInteractionsRuntime.wireKomunikatorLibrary) {
-        panelInteractionsRuntime.wireKomunikatorLibrary(rootEl);
-      }
-    }
-
-    function wireKomunikatorMembers(rootEl) {
-      if (panelInteractionsRuntime && panelInteractionsRuntime.wireKomunikatorMembers) {
-        panelInteractionsRuntime.wireKomunikatorMembers(rootEl);
-      }
-    }
-
     return {
       setTooltips: setTooltips,
       refreshActiveUI: refreshActiveUI,
@@ -2390,8 +2365,6 @@
       wireMailXssTesterResults: wireMailXssTesterResults,
       wireGoogleDorkLibrary: wireGoogleDorkLibrary,
       wireGoogleDorkTemplates: wireGoogleDorkTemplates,
-      wireKomunikatorLibrary: wireKomunikatorLibrary,
-      wireKomunikatorMembers: wireKomunikatorMembers,
       refreshDetachedTool: refreshDetachedTool,
       applyEmailReconResult: function (email, result) {
         if (panelInteractionsRuntime && panelInteractionsRuntime.applyEmailReconResult) {

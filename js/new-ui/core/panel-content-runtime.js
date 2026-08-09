@@ -20,7 +20,6 @@
     var platformApi = core.platform || null;
     var mailXssTesterApi = core.mailXssTester || null;
     var googleDorkApi = core.googleDork || null;
-    var komunikatorApi = core.komunikator || null;
     var agentProfilesApi = core.agentProfiles || null;
     var generalSettingsApi = core.generalSettings || null;
 
@@ -651,42 +650,6 @@
         ].join("");
       }
 
-      // Firebase config for Komunikator's Google Sign-In (Phase 1) - just
-      // the 3 fields Firebase's own "register a Web App" console screen
-      // shows (apiKey/authDomain/projectId). Same block layout as the two
-      // rows above.
-      function firebaseConfigRow() {
-        var api = window.NetReconNewUICore && window.NetReconNewUICore.firebaseConfig;
-        var cfg = api ? api.getConfig() : { apiKey: "", authDomain: "", projectId: "" };
-
-        function field(key, labelKey, labelFallback, placeholderKey, placeholderFallback) {
-          var inputType = key === "clientSecret" ? "password" : "text";
-          return [
-            "<span class=\"v1-ai-provider-field-label\">" + escapeHtml(trOr(labelKey, labelFallback)) + "</span>",
-            "<span class=\"v1-ai-provider-field-value\">",
-            "<input type=\"" + inputType + "\" data-firebase-config-field=\"" + escapeHtml(key) + "\" autocomplete=\"off\" value=\"" + escapeHtml(cfg[key] || "") + "\" placeholder=\"" + escapeHtml(trOr(placeholderKey, placeholderFallback)) + "\" />",
-            "</span>"
-          ].join("");
-        }
-
-        return [
-          // <form>, not <div> - clientSecret below is type="password", and
-          // Chromium warns in the console about any password input not
-          // contained in a <form> (same fix Mail XSS Tester's app-password
-          // field already needed). Submit is prevented in
-          // wireGeneralSettingsTool since these fields commit individually
-          // on "change", not via a submit button.
-          "<form class=\"v1-ai-provider-block\" data-firebase-config-form>",
-          field("apiKey", "firebaseConfigApiKeyLabel", "API key:", "firebaseConfigApiKeyPlaceholder", "apiKey"),
-          field("authDomain", "firebaseConfigAuthDomainLabel", "Auth domain:", "firebaseConfigAuthDomainPlaceholder", "authDomain"),
-          field("projectId", "firebaseConfigProjectIdLabel", "Project ID:", "firebaseConfigProjectIdPlaceholder", "projectId"),
-          field("oauthClientId", "firebaseConfigOauthClientIdLabel", "OAuth client ID (Desktop app type):", "firebaseConfigOauthClientIdPlaceholder", "...apps.googleusercontent.com"),
-          field("clientSecret", "firebaseConfigClientSecretLabel", "OAuth client secret:", "firebaseConfigClientSecretPlaceholder", "GOCSPX-..."),
-          "</form>",
-          "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("firebaseConfigNote", "First 3 fields: Firebase Console -> Project settings -> Your apps -> Web app config. OAuth client ID + secret: Google Cloud Console -> Credentials -> Create Credentials -> OAuth client ID -> Desktop app.")) + "</div>"
-        ].join("");
-      }
-
       // Small, deliberately non-persisted test: a live "switch UI" toggle,
       // gated behind "Show unfinished tools" like every other unfinished
       // feature. Never written to localStorage on purpose - picking "Test"
@@ -761,9 +724,6 @@
 
         groupHeading("generalGroupGoogleDorkApi", "Google Dork API"),
         googleDorkApiRow(),
-
-        groupHeading("generalGroupFirebaseConfig", "Firebase (Communicator)"),
-        firebaseConfigRow(),
 
         "</div>"
       ].join("");
@@ -1452,74 +1412,6 @@
       }).join("");
 
       return "<ul class=\"v1-tool-list\">" + sectionsHtml + "</ul>";
-    }
-
-    // Komunikator LS/CS share the same status block (sign-in button /
-    // signing-in note / signed-in user card / error), just laid out inside
-    // a different wrapper per surface - kept as one shared helper so the
-    // two never drift out of sync.
-    function komunikatorStatusBlockHtml() {
-      var status = komunikatorApi ? komunikatorApi.getStatus() : "signed-out";
-      var user = komunikatorApi ? komunikatorApi.getUser() : null;
-      var error = komunikatorApi ? komunikatorApi.getError() : "";
-
-      if (status === "signed-in" && user) {
-        return [
-          "<div class=\"v1-komunikator-user-card\">",
-          user.photoURL ? "<img class=\"v1-komunikator-avatar\" src=\"" + escapeHtml(user.photoURL) + "\" alt=\"\" />" : "",
-          "<div>",
-          "<div>" + escapeHtml(tr("komunikatorSignedInAs")) + " <strong>" + escapeHtml(user.displayName || user.email || "") + "</strong></div>",
-          user.email ? "<div class=\"v1-pulpit-remote-hint\">" + escapeHtml(user.email) + "</div>" : "",
-          "</div>",
-          "</div>",
-          "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-komunikator-signout-btn>" + escapeHtml(tr("komunikatorSignOutBtn")) + "</button>"
-        ].join("");
-      }
-
-      var noteHtml = "";
-      if (status === "signing-in") {
-        noteHtml = "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("komunikatorSigningInNote")) + "</p>";
-      } else if (status === "error") {
-        var errText = error === "missing_config" ? tr("komunikatorErrorMissingConfig") : (tr("komunikatorErrorPrefix") + " " + error);
-        noteHtml = "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(errText) + "</p>";
-      }
-
-      return [
-        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-komunikator-signin-btn" + (status === "signing-in" ? " disabled" : "") + ">" + escapeHtml(tr("komunikatorSignInBtn")) + "</button>",
-        noteHtml
-      ].join("");
-    }
-
-    // LS: account status + sign-in/out action.
-    function renderKomunikatorLibrary() {
-      return [
-        "<ul class=\"v1-tool-list\">",
-        "<li>",
-        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("komunikatorAccountHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
-        "<div class=\"v1-section-body\">",
-        komunikatorStatusBlockHtml(),
-        "</div>",
-        "</li>",
-        "</ul>"
-      ].join("");
-    }
-
-    // CS: same status block, full-width shell - Phase 1 has nothing else to
-    // show yet (chat UI arrives in a later phase).
-    function renderKomunikatorTool() {
-      return [
-        "<div class=\"v1-komunikator-shell\">",
-        "<div class=\"v1-pulpit-inspector-field\">",
-        "<label>" + escapeHtml(tr("komunikatorStatusHeading")) + "</label>",
-        "<div>" + komunikatorStatusBlockHtml() + "</div>",
-        "</div>",
-        "</div>"
-      ].join("");
-    }
-
-    // RS: placeholder for Phase 2 (chat/member list).
-    function renderKomunikatorMembers() {
-      return "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("komunikatorMembersComingSoon")) + "</div>";
     }
 
     // Anchors a connection line on roughly the icon glyph's center, not the
@@ -2749,7 +2641,6 @@
       "pulpit-preview": renderPulpitPreviewTool,
       "mail-xss-tester": renderMailXssTesterTool,
       "google-dork": renderGoogleDorkTool,
-      komunikator: renderKomunikatorTool,
       globe: renderGlobeTool,
       "agent-profiles": renderAgentProfileDetailTool,
 
@@ -2784,9 +2675,6 @@
       renderGoogleDorkLibrary: renderGoogleDorkLibrary,
       renderGoogleDorkTool: renderGoogleDorkTool,
       renderGoogleDorkTemplates: renderGoogleDorkTemplates,
-      renderKomunikatorLibrary: renderKomunikatorLibrary,
-      renderKomunikatorTool: renderKomunikatorTool,
-      renderKomunikatorMembers: renderKomunikatorMembers,
       pulpitEdgeAnchor: pulpitEdgeAnchor,
       renderAgentProfileLibrary: renderAgentProfileLibrary,
       renderAgentProfileDetailFields: renderAgentProfileDetailFields,

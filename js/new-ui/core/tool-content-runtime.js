@@ -119,28 +119,6 @@
     },
   };
 
-  toolContentRuntime["komunikator-library"] = {
-    render: function () {
-      return '<div id="v1KomunikatorLibrary" class="v1-komunikator-library"></div>';
-    },
-    wire: function (rootEl) {
-      if (window.NetReconNewUI && window.NetReconNewUI.wireKomunikatorLibrary) {
-        window.NetReconNewUI.wireKomunikatorLibrary(rootEl);
-      }
-    },
-  };
-
-  toolContentRuntime["komunikator-members"] = {
-    render: function () {
-      return '<div id="v1KomunikatorMembers" class="v1-komunikator-members"></div>';
-    },
-    wire: function (rootEl) {
-      if (window.NetReconNewUI && window.NetReconNewUI.wireKomunikatorMembers) {
-        window.NetReconNewUI.wireKomunikatorMembers(rootEl);
-      }
-    },
-  };
-
   toolContentRuntime["agent-profiles-library"] = {
     render: function () {
       return '<div id="v1AgentProfileLibrary" class="v1-agentprofile-library"></div>';

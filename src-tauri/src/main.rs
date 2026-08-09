@@ -1420,22 +1420,9 @@ async fn email_recon_lookup(
 
 #[tauri::command]
 fn open_browser(url: String) {
-    // Open URL in system default browser (Windows). `cmd /c start` re-
-    // parses its whole command line for shell metacharacters (&, |, ^)
-    // even when the URL arrives as a single argv entry (it has no spaces,
-    // so Rust's own Windows argument-quoting never wraps it in quotes),
-    // silently truncating any URL with more than one query parameter at
-    // the first "&" - confirmed live via Komunikator's multi-param OAuth
-    // URL, which only ever reached Google with its first query param
-    // (client_id) intact, producing a "missing response_type" error.
-    // `explorer.exe <url>` (tried as a first fix) turned out unreliable
-    // too - it opened a plain file-browser window instead of handing the
-    // URL to the default browser. `rundll32 url.dll,FileProtocolHandler`
-    // is the standard, long-established Windows mechanism specifically
-    // for this - verified empirically (a query param placed AFTER the
-    // first "&" survives intact, unlike the `cmd /c start` bug above).
-    let _ = std::process::Command::new("rundll32")
-        .args(["url.dll,FileProtocolHandler", url.as_str()])
+    // Open URL in system default browser (Windows)
+    let _ = std::process::Command::new("cmd")
+        .args(["/c", "start", "", url.as_str()])
         .spawn();
 }
 
@@ -3471,100 +3458,6 @@ async fn send_test_email(
     Ok(())
 }
 
-// ─── Komunikator: Google Sign-In OAuth loopback listener ───────────────────
-// Google actively blocks its own OAuth consent screen from loading inside an
-// embedded webview (403 disallowed_useragent, enforced since 2023), so
-// signInWithPopup/signInWithRedirect can never work directly inside this
-// app's WebView2 window. The desktop-app-correct pattern (same one Google's
-// own "OAuth for Desktop Apps" docs describe, and what VS Code/Slack/Discord
-// desktop all do) is: open the consent screen in the user's REAL system
-// browser (open_browser, already exists), and catch the redirect back here
-// via a one-shot local HTTP listener - exactly the same shape as the Mail
-// XSS Tester's beacon listener above (start_beacon_server/
-// handle_beacon_connection), just answering exactly one request instead of
-// many, and forwarding the query string instead of accumulating hits.
-async fn handle_oauth_callback_connection(mut stream: TcpStream, app: AppHandle) {
-    let mut buf = vec![0u8; 8192];
-    let mut total = 0usize;
-    loop {
-        if total >= buf.len() {
-            break;
-        }
-        let n = match stream.read(&mut buf[total..]).await {
-            Ok(0) => break,
-            Ok(n) => n,
-            Err(_) => return,
-        };
-        total += n;
-        if buf[..total].windows(4).any(|w| w == b"\r\n\r\n") {
-            break;
-        }
-    }
-
-    let request = String::from_utf8_lossy(&buf[..total]).to_string();
-    let request_line = request.lines().next().unwrap_or("");
-    let path = request_line.split_whitespace().nth(1).unwrap_or("");
-    let query = path.splitn(2, '?').nth(1).unwrap_or("");
-
-    let mut code = String::new();
-    let mut error = String::new();
-    for pair in query.split('&') {
-        let mut it = pair.splitn(2, '=');
-        let key = it.next().unwrap_or("");
-        let value = percent_decode(it.next().unwrap_or(""));
-        if key == "code" {
-            code = value;
-        } else if key == "error" {
-            error = value;
-        }
-    }
-
-    let _ = app.emit("oauth-callback", serde_json::json!({ "code": code, "error": error }));
-
-    let body = "<html><body style=\"font-family:sans-serif;text-align:center;margin-top:80px;\"><h2>You can close this tab</h2><p>Return to the app to continue.</p></body></html>";
-    let header = format!(
-        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-        body.len()
-    );
-    let _ = stream.write_all(header.as_bytes()).await;
-    let _ = stream.write_all(body.as_bytes()).await;
-}
-
-// One-shot by design (unlike start_beacon_server's persistent accept loop) -
-// exits after handling exactly one connection, since a single OAuth redirect
-// is all this is ever meant to catch per sign-in attempt. No shared state to
-// .manage() either, since there's nothing to accumulate between calls.
-// Fixed, not OS-assigned like the beacon/VNC listeners (same idea as
-// VNC_BRIDGE_PORT above) - confirmed live that Firebase's auto-created
-// "Web application"-type OAuth client requires an EXACT redirect_uri
-// match (scheme+host+port+path), not just scheme+host the way a genuine
-// "Desktop app"-type client would get from Google's documented loopback
-// flow. A random OS-assigned port can never satisfy an exact match, so
-// this needs to be one fixed value the user registers once in Google
-// Cloud Console's Authorized redirect URIs as "http://localhost:53682/".
-const OAUTH_LOOPBACK_PORT: u16 = 53682;
-
-#[tauri::command]
-async fn start_oauth_listener(app: AppHandle) -> Result<u16, String> {
-    let listener = TcpListener::bind(("127.0.0.1", OAUTH_LOOPBACK_PORT)).await.map_err(|e| e.to_string())?;
-    let port = listener.local_addr().map_err(|e| e.to_string())?.port();
-
-    tauri::async_runtime::spawn(async move {
-        // Without this, an abandoned attempt (browser tab closed without
-        // finishing, or the user just changes their mind) leaves this
-        // listener bound to OAUTH_LOOPBACK_PORT forever - since that port
-        // is a fixed value (not OS-assigned), every subsequent sign-in
-        // attempt would then fail to bind it until the app restarts. 5
-        // minutes is generous enough for a real sign-in (including 2FA)
-        // while still releasing the port in a reasonable time otherwise.
-        if let Ok(Ok((stream, _))) = timeout(Duration::from_secs(300), listener.accept()).await {
-            handle_oauth_callback_connection(stream, app).await;
-        }
-    });
-
-    Ok(port)
-}
-
 fn main() {
     use std::io::Write;
     
@@ -3622,7 +3515,6 @@ fn main() {
             start_tunnel,
             stop_tunnel,
             send_test_email,
-            start_oauth_listener,
             window_minimize,
             window_toggle_maximize,
             window_toggle_fullscreen,

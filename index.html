@@ -18,7 +18,7 @@
        are NOT achievable this way at all - GitHub Pages has no header
        injection point, that gap needs a proxy (e.g. Cloudflare) or a
        different host in front of/instead of GitHub Pages. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob: http: https:; script-src 'self' 'wasm-unsafe-eval' blob: https://www.gstatic.com; style-src 'self' 'unsafe-inline' http: https:; img-src 'self' data: blob: http: https:; connect-src 'self' http: https: ws: wss:; font-src 'self' data:; frame-src 'self' http: https:; object-src 'none'; base-uri 'self';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob: http: https:; script-src 'self' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline' http: https:; img-src 'self' data: blob: http: https:; connect-src 'self' http: https: ws: wss:; font-src 'self' data:; frame-src 'self' http: https:; object-src 'none'; base-uri 'self';" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <title>OSINT NET Auditor | IP Scanner & Network Recon Tool</title>
   <meta name="description" content="OSINT NET Auditor is a desktop IP/port scanner for network reconnaissance: scan IP ranges, browse results, explore host topology and geolocation, manage port presets, and save/load scan sessions." />
@@ -98,7 +98,6 @@
           <button class="v1-menu-dd-item" data-tool="globe"><span id="v1ToolsMenuGlobe">Globe</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-tool="mail-xss-tester"><span id="v1ToolsMenuMailXssTester">Mail XSS Tester</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-tool="google-dork"><span id="v1ToolsMenuGoogleDork">Google Dork Finder</span><span class="shortcut"></span></button>
-          <button class="v1-menu-dd-item" data-tool="komunikator"><span id="v1ToolsMenuKomunikator">Communicator</span><span class="shortcut"></span></button>
         </div>
       </div>
 
@@ -752,7 +751,6 @@
   <script src="js/new-ui/core/pulpit-preview-runtime.js?v=20260975" defer></script>
   <script src="js/new-ui/core/mail-xss-tester-runtime.js?v=20260976" defer></script>
   <script src="js/new-ui/core/google-dork-runtime.js?v=20260976" defer></script>
-  <script src="js/new-ui/core/komunikator-runtime.js?v=20260976" defer></script>
   <script src="js/new-ui/core/agent-profile-attachments-db.js?v=20260974" defer></script>
   <script src="js/new-ui/core/agent-profiles-runtime.js?v=20260974" defer></script>
   <script src="js/new-ui/core/versions-data.js?v=20260951" defer></script>
