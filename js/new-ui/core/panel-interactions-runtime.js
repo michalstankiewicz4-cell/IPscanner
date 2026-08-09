@@ -2611,14 +2611,6 @@
       if (mount.dataset.komunikatorBound === "1") return;
       mount.dataset.komunikatorBound = "1";
 
-      // Restores a persisted sign-in session the moment Communicator is
-      // opened (LS is always one of the 3 surfaces auto-opened together) -
-      // without this, a previous session's login was never even checked
-      // until the user clicked "Sign in" again, since nothing else called
-      // into the Firebase Auth SDK before that click.
-      var api = window.NetReconNewUICore && window.NetReconNewUICore.komunikator;
-      if (api && api.checkExistingSession) api.checkExistingSession();
-
       document.addEventListener("newui:komunikator-changed", function () {
         if (!document.body.contains(mount)) return;
         render();
@@ -2627,64 +2619,16 @@
       bindKomunikatorStatusClicks(mount);
     }
 
-    // RS: member list + invite generate/join - rebuilt wholesale on every
-    // newui:komunikator-changed event, same always-rebuild approach as the
-    // LS account panel. The members Firestore listener only starts once
-    // isMember is true (the security rule for reading the members
-    // subcollection requires it anyway) - re-checked on every change event
-    // rather than once at wire time, so it starts the moment membership is
-    // granted (sign-in as founder, or a successful invite redeem) without
-    // needing the RS panel to be closed and reopened.
+    // RS: static placeholder for now (Phase 2 adds the member list/invite
+    // flow here) - wired once, no live-update need yet.
     function wireKomunikatorMembers() {
       var mount = document.getElementById("v1KomunikatorMembers");
       if (!mount || !renderKomunikatorMembers) return;
-
-      function render() {
-        mount.innerHTML = renderKomunikatorMembers();
-      }
-
-      function maybeStartMembersListener() {
-        var api = window.NetReconNewUICore && window.NetReconNewUICore.komunikator;
-        if (api && api.getIsMember()) api.startListeningToMembers();
-      }
-
-      render();
-      maybeStartMembersListener();
-
-      if (mount.dataset.komunikatorBound === "1") return;
-      mount.dataset.komunikatorBound = "1";
-
-      document.addEventListener("newui:komunikator-changed", function () {
-        if (!document.body.contains(mount)) return;
-        render();
-        maybeStartMembersListener();
-      });
-
-      mount.addEventListener("click", function (event) {
-        var api = window.NetReconNewUICore && window.NetReconNewUICore.komunikator;
-        if (!api) return;
-
-        var generateBtn = event.target && event.target.closest ? event.target.closest("[data-komunikator-generate-invite-btn]") : null;
-        if (generateBtn) {
-          api.generateInviteCode();
-          return;
-        }
-
-        var joinBtn = event.target && event.target.closest ? event.target.closest("[data-komunikator-join-btn]") : null;
-        if (joinBtn) {
-          var input = mount.querySelector("[data-komunikator-join-code-input]");
-          if (input) api.redeemInviteCode(input.value);
-        }
-      });
+      mount.innerHTML = renderKomunikatorMembers();
     }
 
     // CS: same teardown-before-rewire + stable-shell-element staleness
-    // guard as wireGoogleDorkTool above, plus the chat-specific bits: start/
-    // stop the messages Firestore listener with the panel's own lifecycle,
-    // Enter-to-send (Shift+Enter for a newline, same convention as the AI
-    // Assistant's own prompt textarea), and auto-scroll-to-bottom on every
-    // render (same "chat.scrollTop = chat.scrollHeight" as
-    // navigation-runtime.js's appendMessage()).
+    // guard as wireGoogleDorkTool above.
     function wireKomunikatorTool(rootEl) {
       var root = rootEl && typeof rootEl.querySelector === "function" ? rootEl : document.getElementById("v1ToolDetail");
       if (!root || !renderKomunikatorTool) return;
@@ -2697,51 +2641,18 @@
         komunikatorToolTeardown = null;
       }
 
-      function scrollChatToBottom() {
-        var chat = shellEl.querySelector("[data-komunikator-messages]");
-        if (chat) chat.scrollTop = chat.scrollHeight;
-      }
-
-      function bindChatSend() {
-        var input = shellEl.querySelector("[data-komunikator-message-input]");
-        if (!input) return;
-        input.addEventListener("keydown", function (event) {
-          if (event.key !== "Enter" || event.shiftKey) return;
-          event.preventDefault();
-          var api = window.NetReconNewUICore && window.NetReconNewUICore.komunikator;
-          if (!api) return;
-          var text = input.value;
-          if (!text.trim()) return;
-          input.value = "";
-          api.sendMessage(text);
-        });
-      }
-
-      function maybeStartMessagesListener() {
-        var api = window.NetReconNewUICore && window.NetReconNewUICore.komunikator;
-        if (api && api.getIsMember()) api.startListeningToMessages();
-      }
-
       bindKomunikatorStatusClicks(shellEl);
-      bindChatSend();
-      scrollChatToBottom();
-      maybeStartMessagesListener();
 
       function onChanged() {
         if (!document.body.contains(shellEl)) return;
         shellEl.outerHTML = renderKomunikatorTool();
         shellEl = root.querySelector(".v1-komunikator-shell");
         bindKomunikatorStatusClicks(shellEl);
-        bindChatSend();
-        scrollChatToBottom();
-        maybeStartMessagesListener();
       }
       document.addEventListener("newui:komunikator-changed", onChanged);
 
       komunikatorToolTeardown = function () {
         document.removeEventListener("newui:komunikator-changed", onChanged);
-        var api = window.NetReconNewUICore && window.NetReconNewUICore.komunikator;
-        if (api) api.stopListeningToMessages();
       };
     }
 
