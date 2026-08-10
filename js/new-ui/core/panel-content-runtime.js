@@ -285,12 +285,13 @@
       var projectUrl = "https://" + String(tr("aboutProjectPageUrl") || "").trim();
       var zrzutkaUrl = "https://" + String(tr("aboutZrzutkaUrl") || "").trim();
       var testersUrl = "https://github.com/tBane-Dev";
+      var tester2Url = "https://4programmers.net/Profile/98598";
       return [
         "<div class=\"v1-about\">",
         "<h4>" + heading + "</h4>",
         "<p>" + escapeHtml(tr("aboutByAuthor")) + "</p>",
         "<p>" + escapeHtml(tr("aboutSpecialThanksHeading")) + "</p>",
-        "<p>" + escapeHtml(tr("aboutTestersLabel")) + " <a href=\"" + escapeHtml(testersUrl) + "\" target=\"_blank\" rel=\"noopener noreferrer\">GitHub</a></p>",
+        "<p>" + escapeHtml(tr("aboutTestersLabel")) + " <a href=\"" + escapeHtml(testersUrl) + "\" target=\"_blank\" rel=\"noopener noreferrer\">GitHub</a>, " + escapeHtml(tr("aboutTesters2Label")) + " <a href=\"" + escapeHtml(tester2Url) + "\" target=\"_blank\" rel=\"noopener noreferrer\">4Programmers</a></p>",
         "<p>" + escapeHtml(tr("aboutVibecodingNote")) + "</p>",
         "<h4>" + escapeHtml(tr("aboutSupportHeading")) + "</h4>",
         "<p>" + escapeHtml(tr("aboutSupportBody")) + "</p>",
