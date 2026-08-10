@@ -27,6 +27,15 @@
     var setStatusLine = deps.setStatusLine;
     // Domyślnie brak aktywnej zakładki, wszystkie taby zamknięte
     var activeTool = null;
+    // Single writer for the activeTool/store pair - was previously
+    // hand-duplicated at 4 call sites (`activeTool = X; store.setState({
+    // activeTool: X })`), risking the module-local view and the store's
+    // own view of activeTool silently desyncing if a future call site set
+    // one half and forgot the other.
+    function setActiveTool(tool) {
+      activeTool = tool;
+      if (store && store.setState) store.setState({ activeTool: tool });
+    }
     var detachedCards = Object.create(null);
     var swapSourceCard = null;
     var detachedZCounter = 70;
@@ -356,8 +365,7 @@
           }
         }
 
-        activeTool = null;
-        if (store && store.setState) store.setState({ activeTool: null });
+        setActiveTool(null);
         refreshActiveUI();
         return;
       }
@@ -610,6 +618,7 @@
         isp: true,
         as: true,
         device: true,
+        location: true,
         http: true,
         access: true,
         banner: true,
@@ -719,39 +728,7 @@
         });
       }
 
-      function positionFloatingMenu(toggleBtn, menu) {
-        if (!toggleBtn || !menu || menu.hasAttribute("hidden")) return;
-
-        var margin = 8;
-        var gap = 4;
-        var viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1024;
-        var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 768;
-        var triggerRect = toggleBtn.getBoundingClientRect();
-
-        menu.style.position = "fixed";
-        menu.style.left = "0px";
-        menu.style.top = "0px";
-        menu.style.visibility = "hidden";
-        menu.style.maxHeight = "";
-        menu.style.overflowY = "";
-
-        var menuWidth = Math.max(220, Math.ceil(menu.offsetWidth || 0));
-        var menuHeight = Math.max(160, Math.ceil(menu.offsetHeight || 0));
-        var openUp = (triggerRect.bottom + gap + menuHeight + margin > viewportHeight)
-          && (triggerRect.top - gap - menuHeight > margin);
-
-        var top = openUp ? (triggerRect.top - menuHeight - gap) : (triggerRect.bottom + gap);
-        var left = triggerRect.right - menuWidth;
-
-        top = Math.max(margin, Math.min(top, viewportHeight - margin - menuHeight));
-        left = Math.max(margin, Math.min(left, viewportWidth - margin - menuWidth));
-
-        menu.style.left = Math.round(left) + "px";
-        menu.style.top = Math.round(top) + "px";
-        menu.style.maxHeight = Math.max(120, viewportHeight - margin - top) + "px";
-        menu.style.overflowY = "auto";
-        menu.style.visibility = "";
-      }
+      var positionFloatingMenu = window.NetReconNewUICore.utils.dom.positionFloatingMenu;
 
       function positionColumnsMenu() {
         positionFloatingMenu(rootEl.querySelector("[data-columns-toggle]"), rootEl.querySelector("[data-columns-menu]"));
@@ -1791,8 +1768,7 @@
           if (nextDockedTab) {
             switchTool(nextDockedTab.getAttribute("data-tool"));
           } else {
-            activeTool = null;
-            if (store && store.setState) store.setState({ activeTool: null });
+            setActiveTool(null);
             refreshActiveUI();
           }
         } else {
@@ -2200,8 +2176,7 @@
         return;
       }
       if (tool === "scan-runner" && !document.querySelector('.v1-tab[data-tool="scan-runner"]')) { // ip-scanner tool
-        activeTool = null;
-        if (store && store.setState) store.setState({ activeTool: null });
+        setActiveTool(null);
         refreshActiveUI();
         updateEmptyState();
         updateTabPopoutUi();
@@ -2226,8 +2201,7 @@
         tab.removeAttribute("hidden");
       }
 
-      activeTool = tool;
-      if (store && store.setState) store.setState({ activeTool: tool });
+      setActiveTool(tool);
       refreshActiveUI();
       updateEmptyState();
       updateTabPopoutUi();

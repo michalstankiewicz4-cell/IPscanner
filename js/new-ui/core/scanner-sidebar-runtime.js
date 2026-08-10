@@ -21,15 +21,12 @@
       ? window.NetReconNewUICore.utils.dom.escapeHtml
       : function (value) { return String(value == null ? "" : value); };
 
+    // No hand-rolled fallback regex here - net-utils.js always loads
+    // before this factory is invoked (see index.html script order), and a
+    // second copy of this validation would only silently drift from the
+    // canonical one in net-utils.js if it's ever tightened.
     function isValidIpv4(value) {
-      if (sharedNet && typeof sharedNet.isValidIpv4 === "function") {
-        return sharedNet.isValidIpv4(value);
-      }
-      var parts = String(value || "").trim().split(".");
-      if (parts.length !== 4) return false;
-      return parts.every(function (part) {
-        return /^\d{1,3}$/.test(part) && Number(part) >= 0 && Number(part) <= 255;
-      });
+      return !!(sharedNet && typeof sharedNet.isValidIpv4 === "function" && sharedNet.isValidIpv4(value));
     }
 
     function isLikelyDomain(value) {
@@ -590,26 +587,32 @@
         var added = 0;
         var unresolved = 0;
 
-        for (var i = 0; i < tokens.length; i += 1) {
-          var token = tokens[i];
+        // Domain lookups are independent DNS-over-HTTPS round trips -
+        // firing them one at a time via a serial `for` + `await` made
+        // pasting a long domain list feel hung (~200-500ms each); resolve
+        // them all concurrently instead, same total added/unresolved
+        // accounting as before.
+        var domainTokens = [];
+        tokens.forEach(function (token) {
           if (isValidIpv4(token)) {
             if (!dedupe.has(token)) {
               dedupe.add(token);
               added += 1;
             }
-            continue;
+          } else if (isLikelyDomain(token)) {
+            domainTokens.push(token);
           }
+        });
 
-          if (isLikelyDomain(token)) {
-            var resolved = await resolveDomainToIp(token);
-            if (resolved && !dedupe.has(resolved)) {
-              dedupe.add(resolved);
-              added += 1;
-            } else if (!resolved) {
-              unresolved += 1;
-            }
+        var resolved = await Promise.all(domainTokens.map(function (token) { return resolveDomainToIp(token); }));
+        resolved.forEach(function (ip) {
+          if (ip && !dedupe.has(ip)) {
+            dedupe.add(ip);
+            added += 1;
+          } else if (!ip) {
+            unresolved += 1;
           }
-        }
+        });
 
         output.value = Array.from(dedupe).join("\n");
         if (typeof setStatusLine === "function") {

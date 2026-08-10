@@ -509,7 +509,13 @@
 
     function commit(field, input) {
       var next = getAiConfigState();
-      next[next.provider][field] = Number(input.value) || next[next.provider][field];
+      var parsed = Number(input.value);
+      // `Number(x) || fallback` treats a legitimate 0 the same as NaN/empty
+      // and silently keeps the old value - check finiteness explicitly so
+      // a user typing 0 actually saves 0.
+      if (String(input.value).trim() !== "" && Number.isFinite(parsed)) {
+        next[next.provider][field] = parsed;
+      }
       replaceAiConfigState(next);
     }
 

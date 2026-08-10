@@ -4,15 +4,12 @@
       ? window.NetReconNewUICore.utils.net
       : null;
 
+    // No hand-rolled fallback regex here - net-utils.js always loads
+    // before this factory is invoked (see bootstrap-runtime.js), and a
+    // second copy of this validation would only silently drift from the
+    // canonical one in net-utils.js if it's ever tightened.
     function isValidIpv4(value) {
-      if (sharedNet && typeof sharedNet.isValidIpv4 === "function") {
-        return sharedNet.isValidIpv4(value);
-      }
-      var parts = String(value || "").trim().split(".");
-      if (parts.length !== 4) return false;
-      return parts.every(function (part) {
-        return /^\d{1,3}$/.test(part) && Number(part) >= 0 && Number(part) <= 255;
-      });
+      return !!(sharedNet && typeof sharedNet.isValidIpv4 === "function" && sharedNet.isValidIpv4(value));
     }
 
     function setRangeInputs(fromIp, toIp) {

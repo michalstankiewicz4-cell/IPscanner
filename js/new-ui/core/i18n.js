@@ -2147,7 +2147,14 @@
       return { ok: false, error: "Invalid language dictionary" };
     }
 
-    dictionaries[normalizedCode] = Object.assign({}, dictionary);
+    // Merge onto the built-in dictionary for this code (if any) rather than
+    // replacing it wholesale - an imported pack that predates newer app
+    // features (e.g. the official languages/*.json packs, which lag behind
+    // baseDictionaries.pl) would otherwise silently downgrade every key it
+    // doesn't carry to the English fallback in t() below. Keys the
+    // imported dictionary DOES provide still win, since dictionary is
+    // spread last.
+    dictionaries[normalizedCode] = Object.assign({}, baseDictionaries[normalizedCode] || {}, dictionary);
     langMeta[normalizedCode] = {
       name: String((meta && meta.name) || normalizedCode.toUpperCase()),
       flag: String((meta && meta.flag) || "🌐"),

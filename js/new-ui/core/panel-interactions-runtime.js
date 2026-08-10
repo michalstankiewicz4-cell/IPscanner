@@ -77,6 +77,18 @@
     var googleDorkToolTeardown = null;
     // Same reasoning as googleDorkToolTeardown above.
     var wifiToolTeardown = null;
+    // LS/RS generic-content-slot mounts (v1GoogleDorkLibrary, v1WifiLibrary,
+    // v1WifiCurrent, v1WifiAdapter) get a brand-new DOM node every time
+    // activateGenericContent() re-renders their slot's innerHTML - a
+    // mount.dataset flag guard can never prevent re-registering a
+    // document-level listener on a fresh node, so each of these instead
+    // tracks its own last-bound listener function here and removes it
+    // before adding a new one, same idea as the *ToolTeardown vars above
+    // but for LS/RS wire functions that don't take a teardown-closure shape.
+    var googleDorkLibraryChangeListener = null;
+    var wifiLibraryChangeListener = null;
+    var wifiCurrentChangeListener = null;
+    var wifiAdapterChangeListener = null;
     var pulpitInspectorSelectedNodeId = "";
     var pulpitInspectorSuppressNextRender = false;
 
@@ -150,49 +162,61 @@
     var netMonConnNew = {};
     var netMonLanNew = {};
 
+    // Shared safe-access primitives behind the 5 NetMon settings pairs
+    // below (sort/view/visibility/keepMarks/displayMode) - each pair still
+    // owns its own per-field defaulting/merge logic (different shapes:
+    // objects, booleans, an allowlisted string), only the raw
+    // localStorage.getItem/setItem-can-throw boilerplate was duplicated 5x.
+    function readNetMonStorage(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+    function writeNetMonStorage(key, value) {
+      try { localStorage.setItem(key, value); } catch (e) { /* ignore */ }
+    }
+
     function loadNetMonSort() {
-      try {
-        var raw = localStorage.getItem(NETMON_SORT_KEY);
-        if (raw) {
+      var raw = readNetMonStorage(NETMON_SORT_KEY);
+      if (raw) {
+        try {
           var parsed = JSON.parse(raw);
           return {
             connections: parsed && parsed.connections ? parsed.connections : { col: null, dir: "asc" },
             lan: parsed && parsed.lan ? parsed.lan : { col: null, dir: "asc" },
           };
-        }
-      } catch (e) { /* fall through to default */ }
+        } catch (e) { /* fall through to default */ }
+      }
       return { connections: { col: null, dir: "asc" }, lan: { col: null, dir: "asc" } };
     }
     function saveNetMonSort(sort) {
-      try { localStorage.setItem(NETMON_SORT_KEY, JSON.stringify(sort)); } catch (e) { /* ignore */ }
+      writeNetMonStorage(NETMON_SORT_KEY, JSON.stringify(sort));
     }
 
     function loadNetMonView() {
-      try {
-        var raw = localStorage.getItem(NETMON_VIEW_KEY);
-        if (raw) {
+      var raw = readNetMonStorage(NETMON_VIEW_KEY);
+      if (raw) {
+        try {
           var parsed = JSON.parse(raw);
           return { connections: parsed.connections || "flat", lan: parsed.lan || "flat" };
-        }
-      } catch (e) { /* fall through to default */ }
+        } catch (e) { /* fall through to default */ }
+      }
       return { connections: "flat", lan: "flat" };
     }
     function saveNetMonView(view) {
-      try { localStorage.setItem(NETMON_VIEW_KEY, JSON.stringify(view)); } catch (e) { /* ignore */ }
+      writeNetMonStorage(NETMON_VIEW_KEY, JSON.stringify(view));
     }
 
     function loadNetMonVisibility() {
-      try {
-        var raw = localStorage.getItem(NETMON_VISIBILITY_KEY);
-        if (raw) {
+      var raw = readNetMonStorage(NETMON_VISIBILITY_KEY);
+      if (raw) {
+        try {
           var parsed = JSON.parse(raw);
           return { connections: parsed.connections !== false, lan: parsed.lan !== false };
-        }
-      } catch (e) { /* fall through to default */ }
+        } catch (e) { /* fall through to default */ }
+      }
       return { connections: true, lan: true };
     }
     function saveNetMonVisibility(vis) {
-      try { localStorage.setItem(NETMON_VISIBILITY_KEY, JSON.stringify(vis)); } catch (e) { /* ignore */ }
+      writeNetMonStorage(NETMON_VISIBILITY_KEY, JSON.stringify(vis));
     }
 
     // "Keep changes visible" (checkbox) - a single, shared-across-both-
@@ -204,21 +228,19 @@
     // current snapshot plus marks (today's default), or only the marked
     // (changed) rows.
     function loadNetMonKeepMarks() {
-      try { return localStorage.getItem(NETMON_KEEP_MARKS_KEY) === "1"; } catch (e) { return false; }
+      return readNetMonStorage(NETMON_KEEP_MARKS_KEY) === "1";
     }
     function saveNetMonKeepMarks(keep) {
-      try { localStorage.setItem(NETMON_KEEP_MARKS_KEY, keep ? "1" : "0"); } catch (e) { /* ignore */ }
+      writeNetMonStorage(NETMON_KEEP_MARKS_KEY, keep ? "1" : "0");
     }
 
     function loadNetMonDisplayMode() {
-      try {
-        var raw = localStorage.getItem(NETMON_DISPLAY_MODE_KEY);
-        if (raw === "actual" || raw === "all" || raw === "changes") return raw;
-      } catch (e) { /* fall through to default */ }
+      var raw = readNetMonStorage(NETMON_DISPLAY_MODE_KEY);
+      if (raw === "actual" || raw === "all" || raw === "changes") return raw;
       return "all";
     }
     function saveNetMonDisplayMode(mode) {
-      try { localStorage.setItem(NETMON_DISPLAY_MODE_KEY, mode); } catch (e) { /* ignore */ }
+      writeNetMonStorage(NETMON_DISPLAY_MODE_KEY, mode);
     }
 
     // ip-scanner tool: Email Recon - same "survive detach/redock" reasoning
@@ -574,39 +596,7 @@
         });
       }
 
-      function positionFloatingMenu(toggleBtn, menu) {
-        if (!toggleBtn || !menu || menu.hasAttribute("hidden")) return;
-
-        var margin = 8;
-        var gap = 4;
-        var viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1024;
-        var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 768;
-        var triggerRect = toggleBtn.getBoundingClientRect();
-
-        menu.style.position = "fixed";
-        menu.style.left = "0px";
-        menu.style.top = "0px";
-        menu.style.visibility = "hidden";
-        menu.style.maxHeight = "";
-        menu.style.overflowY = "";
-
-        var menuWidth = Math.max(220, Math.ceil(menu.offsetWidth || 0));
-        var menuHeight = Math.max(160, Math.ceil(menu.offsetHeight || 0));
-        var openUp = (triggerRect.bottom + gap + menuHeight + margin > viewportHeight)
-          && (triggerRect.top - gap - menuHeight > margin);
-
-        var top = openUp ? (triggerRect.top - menuHeight - gap) : (triggerRect.bottom + gap);
-        var left = triggerRect.right - menuWidth;
-
-        top = Math.max(margin, Math.min(top, viewportHeight - margin - menuHeight));
-        left = Math.max(margin, Math.min(left, viewportWidth - margin - menuWidth));
-
-        menu.style.left = Math.round(left) + "px";
-        menu.style.top = Math.round(top) + "px";
-        menu.style.maxHeight = Math.max(120, viewportHeight - margin - top) + "px";
-        menu.style.overflowY = "auto";
-        menu.style.visibility = "";
-      }
+      var positionFloatingMenu = window.NetReconNewUICore.utils.dom.positionFloatingMenu;
 
       function positionColumnsMenu() {
         positionFloatingMenu(root.querySelector("[data-columns-toggle]"), root.querySelector("[data-columns-menu]"));
@@ -1136,6 +1126,16 @@
               var dir = action === "move-up" ? -1 : 1;
               var target = idx + dir;
               if (target < 0 || target >= next.presets.length) return null;
+              // presetsApi.replaceState() -> sanitizeState() unconditionally
+              // pins "all-ports" back to index 0 (see presets-runtime.js) -
+              // without this guard, moving the second preset up (or
+              // "all-ports" itself down) would splice the array, get
+              // silently un-spliced by sanitizeState, and still report
+              // "Preset moved" despite nothing actually changing. Treat it
+              // as the no-op it really is instead of lying about success.
+              var movingId = next.presets[idx].id;
+              if (target === 0 && movingId !== "all-ports") return null;
+              if (idx === 0 && movingId === "all-ports") return null;
               var moved = next.presets.splice(idx, 1)[0];
               next.presets.splice(target, 0, moved);
               selectedPresetId = moved.id;
@@ -2483,18 +2483,20 @@
 
       render();
 
-      if (mount.dataset.googleDorkBound === "1") return;
-      mount.dataset.googleDorkBound = "1";
-
-      document.addEventListener("newui:google-dork-changed", function () {
-        if (!document.body.contains(mount)) return;
+      if (googleDorkLibraryChangeListener) {
+        document.removeEventListener("newui:google-dork-changed", googleDorkLibraryChangeListener);
+      }
+      googleDorkLibraryChangeListener = function () {
+        var freshMount = document.getElementById("v1GoogleDorkLibrary");
+        if (!freshMount) return;
         // Re-rendering on every keystroke would steal focus/caret position
         // mid-type - only rebuild when the edit came from somewhere else
         // (a template applied, history reused), not from this same panel's
         // own input listener below.
-        if (document.activeElement && mount.contains(document.activeElement)) return;
-        render();
-      });
+        if (document.activeElement && freshMount.contains(document.activeElement)) return;
+        freshMount.innerHTML = renderGoogleDorkLibrary();
+      };
+      document.addEventListener("newui:google-dork-changed", googleDorkLibraryChangeListener);
 
       mount.addEventListener("input", function (event) {
         var api = window.NetReconNewUICore && window.NetReconNewUICore.googleDork;
@@ -2675,13 +2677,15 @@
 
       render();
 
-      if (mount.dataset.wifiBound === "1") return;
-      mount.dataset.wifiBound = "1";
-
-      document.addEventListener("newui:wifi-changed", function () {
-        if (!document.body.contains(mount)) return;
-        render();
-      });
+      if (wifiLibraryChangeListener) {
+        document.removeEventListener("newui:wifi-changed", wifiLibraryChangeListener);
+      }
+      wifiLibraryChangeListener = function () {
+        var freshMount = document.getElementById("v1WifiLibrary");
+        if (!freshMount) return;
+        freshMount.innerHTML = renderWifiLibrary();
+      };
+      document.addEventListener("newui:wifi-changed", wifiLibraryChangeListener);
 
       mount.addEventListener("click", function (event) {
         var api = window.NetReconNewUICore && window.NetReconNewUICore.wifi;
@@ -2721,13 +2725,15 @@
 
       render();
 
-      if (mount.dataset.wifiBound !== "1") {
-        mount.dataset.wifiBound = "1";
-        document.addEventListener("newui:wifi-changed", function () {
-          if (!document.body.contains(mount)) return;
-          render();
-        });
+      if (wifiCurrentChangeListener) {
+        document.removeEventListener("newui:wifi-changed", wifiCurrentChangeListener);
       }
+      wifiCurrentChangeListener = function () {
+        var freshMount = document.getElementById("v1WifiCurrent");
+        if (!freshMount) return;
+        freshMount.innerHTML = renderWifiCurrent();
+      };
+      document.addEventListener("newui:wifi-changed", wifiCurrentChangeListener);
 
       var api = window.NetReconNewUICore && window.NetReconNewUICore.wifi;
       var state = api ? api.getCurrent() : null;
@@ -2749,13 +2755,15 @@
 
       render();
 
-      if (mount.dataset.wifiBound !== "1") {
-        mount.dataset.wifiBound = "1";
-        document.addEventListener("newui:wifi-changed", function () {
-          if (!document.body.contains(mount)) return;
-          render();
-        });
+      if (wifiAdapterChangeListener) {
+        document.removeEventListener("newui:wifi-changed", wifiAdapterChangeListener);
       }
+      wifiAdapterChangeListener = function () {
+        var freshMount = document.getElementById("v1WifiAdapter");
+        if (!freshMount) return;
+        freshMount.innerHTML = renderWifiAdapter();
+      };
+      document.addEventListener("newui:wifi-changed", wifiAdapterChangeListener);
 
       var api = window.NetReconNewUICore && window.NetReconNewUICore.wifi;
       var state = api ? api.getAdapterInfo() : null;
@@ -3918,9 +3926,11 @@
 
         var input = document.getElementById("v1EmailReconInput");
         var email = input ? String(input.value || "").trim() : "";
-        var isValid = sharedNet && typeof sharedNet.isValidEmail === "function"
-          ? sharedNet.isValidEmail(email)
-          : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        // No hand-rolled fallback regex here - net-utils.js is always
+        // loaded by the time a user can trigger this lookup, and a second
+        // copy of this pattern would only silently drift from the
+        // canonical isValidEmail if it's ever tightened.
+        var isValid = !!(sharedNet && typeof sharedNet.isValidEmail === "function" && sharedNet.isValidEmail(email));
         if (!isValid) {
           if (setStatusLine) setStatusLine(tr("emailReconInvalidEmail"));
           return;
@@ -4046,7 +4056,13 @@
 
         if (target.id === "v1AiPermMaxActions") {
           var nextMax = api.getState();
-          nextMax.maxActionsPerConversation = Number(target.value) || nextMax.maxActionsPerConversation;
+          var parsedMax = Number(target.value);
+          // Same falsy-zero fix as general-settings-runtime.js's AI
+          // Properties commit() - `Number(x) || fallback` silently keeps
+          // the old value when the user types 0.
+          if (String(target.value).trim() !== "" && Number.isFinite(parsedMax)) {
+            nextMax.maxActionsPerConversation = parsedMax;
+          }
           api.replaceState(nextMax);
           return;
         }

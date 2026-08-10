@@ -216,62 +216,60 @@
       emitChanged();
     }
 
-    function scanNearby() {
-      nearby.loading = true;
-      nearby.error = null;
+    // Shared shape behind scanNearby/refreshCurrentConnection/
+    // listSavedProfiles/refreshAdapterInfo below - each only differs in
+    // which state slice it tracks, which script it runs, how it applies
+    // the parsed result, and whether it logs a history entry.
+    // applyResult(parsed) must mutate the relevant state field(s) and
+    // return the value callers/history should see; historyFn(result), if
+    // given, returns {kind, summary, snapshot} or a falsy value to skip
+    // logging (refreshAdapterInfo has no history entry at all).
+    function runTracked(state, scriptBuilder, applyResult, historyFn) {
+      state.loading = true;
+      state.error = null;
       emitChanged();
-      return runAndParse(buildNearbyScanScript()).then(function (parsed) {
-        var networks = toArray(parsed).filter(function (n) { return n && n.ssid; });
-        nearby.networks = networks;
-        nearby.loading = false;
-        nearby.updatedAt = Date.now();
+      return runAndParse(scriptBuilder()).then(function (parsed) {
+        var result = applyResult(parsed);
+        state.loading = false;
+        state.updatedAt = Date.now();
         emitChanged();
-        addHistoryEntry("nearby", networks.length + " network" + (networks.length === 1 ? "" : "s"), networks);
-        return networks;
+        var entry = historyFn ? historyFn(result) : null;
+        if (entry) addHistoryEntry(entry.kind, entry.summary, entry.snapshot);
+        return result;
       }).catch(function (err) {
-        nearby.loading = false;
-        nearby.error = (err && err.message) ? err.message : String(err);
+        state.loading = false;
+        state.error = (err && err.message) ? err.message : String(err);
         emitChanged();
         throw err;
+      });
+    }
+
+    function scanNearby() {
+      return runTracked(nearby, buildNearbyScanScript, function (parsed) {
+        var networks = toArray(parsed).filter(function (n) { return n && n.ssid; });
+        nearby.networks = networks;
+        return networks;
+      }, function (networks) {
+        return { kind: "nearby", summary: networks.length + " network" + (networks.length === 1 ? "" : "s"), snapshot: networks };
       });
     }
 
     function refreshCurrentConnection() {
-      current.loading = true;
-      current.error = null;
-      emitChanged();
-      return runAndParse(buildCurrentConnectionScript()).then(function (parsed) {
+      return runTracked(current, buildCurrentConnectionScript, function (parsed) {
         current.info = parsed && typeof parsed === "object" ? parsed : {};
-        current.loading = false;
-        current.updatedAt = Date.now();
-        emitChanged();
-        addHistoryEntry("current", current.info.ssid || current.info.state || "snapshot", current.info);
         return current.info;
-      }).catch(function (err) {
-        current.loading = false;
-        current.error = (err && err.message) ? err.message : String(err);
-        emitChanged();
-        throw err;
+      }, function (info) {
+        return { kind: "current", summary: info.ssid || info.state || "snapshot", snapshot: info };
       });
     }
 
     function listSavedProfiles() {
-      profiles.loading = true;
-      profiles.error = null;
-      emitChanged();
-      return runAndParse(buildSavedProfilesScript()).then(function (parsed) {
+      return runTracked(profiles, buildSavedProfilesScript, function (parsed) {
         var list = toArray(parsed).filter(Boolean);
         profiles.list = list;
-        profiles.loading = false;
-        profiles.updatedAt = Date.now();
-        emitChanged();
-        addHistoryEntry("saved", list.length + " profile" + (list.length === 1 ? "" : "s"), list);
         return list;
-      }).catch(function (err) {
-        profiles.loading = false;
-        profiles.error = (err && err.message) ? err.message : String(err);
-        emitChanged();
-        throw err;
+      }, function (list) {
+        return { kind: "saved", summary: list.length + " profile" + (list.length === 1 ? "" : "s"), snapshot: list };
       });
     }
 
@@ -298,21 +296,10 @@
     }
 
     function refreshAdapterInfo() {
-      adapter.loading = true;
-      adapter.error = null;
-      emitChanged();
-      return runAndParse(buildAdapterInfoScript()).then(function (parsed) {
+      return runTracked(adapter, buildAdapterInfoScript, function (parsed) {
         adapter.info = parsed && typeof parsed === "object" ? parsed : {};
-        adapter.loading = false;
-        adapter.updatedAt = Date.now();
-        emitChanged();
         return adapter.info;
-      }).catch(function (err) {
-        adapter.loading = false;
-        adapter.error = (err && err.message) ? err.message : String(err);
-        emitChanged();
-        throw err;
-      });
+      }, null);
     }
 
     function getNearby() { return nearby; }

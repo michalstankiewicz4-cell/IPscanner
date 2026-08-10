@@ -141,16 +141,11 @@
 
   var currentState = loadState();
 
-  function emitChanged() {
-    try { document.dispatchEvent(new CustomEvent("newui:ai-permissions-changed", { detail: getState() })); } catch (_) { /* ignore */ }
-  }
-
   function getState() { return cloneState(currentState); }
 
   function replaceState(next) {
     currentState = cloneState(next);
     saveState(currentState);
-    emitChanged();
     return getState();
   }
 

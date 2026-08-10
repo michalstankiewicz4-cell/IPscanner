@@ -568,16 +568,26 @@ async fn scan_range(
 
     let mut found = 0u32;
     let mut processed = 0u32;
+    let mut last_progress_emit = std::time::Instant::now();
     while let Some(res) = set.join_next().await {
         processed += 1;
         if matches!(res, Ok(true)) { found += 1; }
-        let _ = app.emit("scan-progress", ScanProgress {
-            total,
-            processed,
-            found,
-            done: false,
-            stopped: false,
-        });
+        // One IPC event per completed host means a wide range (e.g. a /16,
+        // 65k hosts) dispatches tens of thousands of events the UI only
+        // ever needs a handful of visual updates per second from -
+        // throttle to roughly 10/sec; the final "done: true" event below
+        // always fires afterward with the complete, accurate count
+        // regardless of how the in-progress updates were coalesced.
+        if last_progress_emit.elapsed() >= std::time::Duration::from_millis(100) {
+            last_progress_emit = std::time::Instant::now();
+            let _ = app.emit("scan-progress", ScanProgress {
+                total,
+                processed,
+                found,
+                done: false,
+                stopped: false,
+            });
+        }
     }
 
     let stopped = stop.stop.load(Ordering::Relaxed);
@@ -1623,21 +1633,6 @@ async fn run_powershell_with_args(
         stderr: String::from_utf8_lossy(&output.stderr).to_string(),
         exit_code: output.status.code().unwrap_or(-1),
     })
-}
-
-#[tauri::command]
-fn open_extension_manifest_dialog() -> Result<String, String> {
-    let picked = rfd::FileDialog::new()
-        .set_title("Import Extension Manifest")
-        .add_filter("JSON", &["json"])
-        .pick_file();
-
-    let path = match picked {
-        Some(path) => path,
-        None => return Err("cancelled".into()),
-    };
-
-    fs::read_to_string(&path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
 #[derive(Serialize)]
@@ -2900,6 +2895,33 @@ fn alloc_word_buffer(min_bytes: usize) -> Vec<u64> {
     vec![0u64; min_bytes / 8 + 2]
 }
 
+// Shared "call with a null buffer to learn the required size, allocate,
+// call again, grow-and-retry on ERROR_INSUFFICIENT_BUFFER" pattern behind
+// both GetExtendedTcpTable and GetExtendedUdpTable in list_connections()
+// below - the two loops used to be hand-copied and had already started to
+// drift from each other (a common source of off-by-one/wrong-error-code
+// bugs in this pattern).
+unsafe fn query_growable_table<F>(label: &str, mut call: F) -> Result<Vec<u64>, String>
+where
+    F: FnMut(Option<*mut std::ffi::c_void>, &mut u32) -> u32,
+{
+    let mut size: u32 = 0;
+    let _ = call(None, &mut size);
+    let mut buf = alloc_word_buffer(size as usize);
+    loop {
+        size = (buf.len() * 8) as u32;
+        let ret = call(Some(buf.as_mut_ptr() as *mut std::ffi::c_void), &mut size);
+        if ret == 0 {
+            break;
+        } else if ret == ERROR_INSUFFICIENT_BUFFER.0 {
+            buf = alloc_word_buffer(size as usize);
+        } else {
+            return Err(format!("{} failed with code {}", label, ret));
+        }
+    }
+    Ok(buf)
+}
+
 fn tcp_state_name(state: u32) -> &'static str {
     let state = state as i32;
     if state == MIB_TCP_STATE_CLOSED.0 { "CLOSED" }
@@ -2965,27 +2987,9 @@ fn list_connections() -> Result<Vec<ConnectionRow>, String> {
     };
 
     unsafe {
-        let mut size: u32 = 0;
-        let _ = GetExtendedTcpTable(None, &mut size, false, AF_INET.0 as u32, TCP_TABLE_OWNER_PID_ALL, 0);
-        let mut buf = alloc_word_buffer(size as usize);
-        loop {
-            size = (buf.len() * 8) as u32;
-            let ret = GetExtendedTcpTable(
-                Some(buf.as_mut_ptr() as *mut std::ffi::c_void),
-                &mut size,
-                false,
-                AF_INET.0 as u32,
-                TCP_TABLE_OWNER_PID_ALL,
-                0,
-            );
-            if ret == 0 {
-                break;
-            } else if ret == ERROR_INSUFFICIENT_BUFFER.0 {
-                buf = alloc_word_buffer(size as usize);
-            } else {
-                return Err(format!("GetExtendedTcpTable failed with code {}", ret));
-            }
-        }
+        let buf = query_growable_table("GetExtendedTcpTable", |ptr, size| {
+            GetExtendedTcpTable(ptr, size, false, AF_INET.0 as u32, TCP_TABLE_OWNER_PID_ALL, 0)
+        })?;
         let table = &*(buf.as_ptr() as *const MIB_TCPTABLE_OWNER_PID);
         let entries = std::slice::from_raw_parts(table.table.as_ptr(), table.dwNumEntries as usize);
         for row in entries {
@@ -3002,27 +3006,9 @@ fn list_connections() -> Result<Vec<ConnectionRow>, String> {
             });
         }
 
-        let mut size: u32 = 0;
-        let _ = GetExtendedUdpTable(None, &mut size, false, AF_INET.0 as u32, UDP_TABLE_OWNER_PID, 0);
-        let mut buf = alloc_word_buffer(size as usize);
-        loop {
-            size = (buf.len() * 8) as u32;
-            let ret = GetExtendedUdpTable(
-                Some(buf.as_mut_ptr() as *mut std::ffi::c_void),
-                &mut size,
-                false,
-                AF_INET.0 as u32,
-                UDP_TABLE_OWNER_PID,
-                0,
-            );
-            if ret == 0 {
-                break;
-            } else if ret == ERROR_INSUFFICIENT_BUFFER.0 {
-                buf = alloc_word_buffer(size as usize);
-            } else {
-                return Err(format!("GetExtendedUdpTable failed with code {}", ret));
-            }
-        }
+        let buf = query_growable_table("GetExtendedUdpTable", |ptr, size| {
+            GetExtendedUdpTable(ptr, size, false, AF_INET.0 as u32, UDP_TABLE_OWNER_PID, 0)
+        })?;
         let table = &*(buf.as_ptr() as *const MIB_UDPTABLE_OWNER_PID);
         let entries = std::slice::from_raw_parts(table.table.as_ptr(), table.dwNumEntries as usize);
         for row in entries {
@@ -3521,7 +3507,6 @@ fn main() {
             window_get_state,
             window_start_dragging,
             window_close,
-            open_extension_manifest_dialog,
             open_extension_manifest_folder_dialog,
             open_language_file_dialog,
             open_agent_profile_file_dialog,

@@ -105,14 +105,6 @@
   pointer-events: none;
 }
 
-.v1-wifi-signal-bar {
-  display: inline-block;
-  min-width: 40px;
-  color: var(--txt-dim);
-  font-family: var(--font-mono, monospace);
-  font-size: 11px;
-}
-
 .v1-wifi-password-cell {
   display: inline-flex;
   align-items: center;

@@ -167,9 +167,14 @@
       return true;
     }
 
+    // Looked up lazily at call time, not hoisted to a module-level var -
+    // this factory runs immediately at tab-registry.js's own load time
+    // (see createTabRegistry() below), before dom-utils.js (loaded later
+    // in index.html) has registered window.NetReconNewUICore.utils.dom;
+    // renderTabRowHtml() itself is only ever invoked well after every
+    // deferred script has run, so the lookup is safe there.
     function escapeHtml(str) {
-      var map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-      return String(str == null ? "" : str).replace(/[&<>"']/g, function (ch) { return map[ch]; });
+      return window.NetReconNewUICore.utils.dom.escapeHtml(str);
     }
 
     // Builds one tab row's full markup (wrap + button + close) from a

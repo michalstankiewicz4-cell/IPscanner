@@ -86,18 +86,9 @@
     return cloneConfigState(currentConfigState);
   }
 
-  function emitConfigChanged() {
-    try {
-      document.dispatchEvent(new CustomEvent("newui:email-recon-config-changed", { detail: getConfigState() }));
-    } catch (_) {
-      // ignore event dispatch failures
-    }
-  }
-
   function replaceConfigState(nextState) {
     currentConfigState = cloneConfigState(nextState);
     saveConfigState(currentConfigState);
-    emitConfigChanged();
     return getConfigState();
   }
 
