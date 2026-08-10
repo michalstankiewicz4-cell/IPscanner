@@ -1525,6 +1525,7 @@
           } else if (tool === "wifi") {
             ensureSidebarTabOpen("wifi-library");
             setLeftActiveTab("wifi-library");
+            ensureRightTabOpen("wifi-current");
             ensureRightTabOpen("wifi-adapter");
             setRightTabActive("wifi-adapter");
           }
@@ -1593,9 +1594,13 @@
           ensureRightTabOpen("google-dork-templates");
           setRightTabActive("google-dork-templates");
         } else if (tool === "wifi") {
-          // Same idea as "google-dork" above.
+          // Same idea as "google-dork" above. Both RS tabs open together;
+          // "wifi-adapter" stays the default active one (unchanged from
+          // before wifi-current existed), wifi-current just becomes
+          // reachable via the RS tab strip.
           ensureSidebarTabOpen("wifi-library");
           setLeftActiveTab("wifi-library");
+          ensureRightTabOpen("wifi-current");
           ensureRightTabOpen("wifi-adapter");
           setRightTabActive("wifi-adapter");
         } else if (tool === "lorem-ipsum") {

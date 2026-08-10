@@ -22,6 +22,7 @@
     var renderWifiTool = typeof deps.renderWifiTool === "function" ? deps.renderWifiTool : null;
     var renderWifiLibrary = typeof deps.renderWifiLibrary === "function" ? deps.renderWifiLibrary : null;
     var renderWifiAdapter = typeof deps.renderWifiAdapter === "function" ? deps.renderWifiAdapter : null;
+    var renderWifiCurrent = typeof deps.renderWifiCurrent === "function" ? deps.renderWifiCurrent : null;
     var renderAgentProfileLibrary = typeof deps.renderAgentProfileLibrary === "function" ? deps.renderAgentProfileLibrary : null;
     var renderAgentProfileDetailFields = typeof deps.renderAgentProfileDetailFields === "function" ? deps.renderAgentProfileDetailFields : null;
     var globeRuntime = deps.globeRuntime || null;
@@ -2572,17 +2573,19 @@
       };
     }
 
-    // Tab switching between the 3 CS sections is pure DOM class toggling
-    // (all 3 sections are always in the markup, hidden via CSS - see
+    // Tab switching between the 2 CS sections is pure DOM class toggling
+    // (both sections are always in the markup, hidden via CSS - see
     // .v1-wifi-section/.is-active in wifi.css), no re-render or event
-    // dispatch needed - only actual data changes (scan/refresh/reveal
+    // dispatch needed - only actual data changes (scan/list/reveal
     // results) go through newui:wifi-changed and a full outerHTML rebuild.
     function wifiActiveSectionFromDom(shellEl) {
       var activeBtn = shellEl.querySelector(".v1-wifi-tab-btn.is-active");
       return activeBtn ? activeBtn.getAttribute("data-wifi-tab") : "nearby";
     }
 
-    // CS: same teardown-before-rewire + stable-shell-element staleness
+    // CS: no action buttons anymore (moved to LS) - only tab switching and
+    // the per-row password reveal button in the Saved Networks table stay
+    // here. Same teardown-before-rewire + stable-shell-element staleness
     // guard as wireGoogleDorkTool above.
     function wireWifiTool(rootEl) {
       var root = rootEl && typeof rootEl.querySelector === "function" ? rootEl : document.getElementById("v1ToolDetail");
@@ -2612,24 +2615,6 @@
           return;
         }
 
-        var scanBtn = event.target && event.target.closest ? event.target.closest("[data-wifi-scan-btn]") : null;
-        if (scanBtn) {
-          api.scanNearby();
-          return;
-        }
-
-        var refreshCurrentBtn = event.target && event.target.closest ? event.target.closest("[data-wifi-refresh-current-btn]") : null;
-        if (refreshCurrentBtn) {
-          api.refreshCurrentConnection();
-          return;
-        }
-
-        var listProfilesBtn = event.target && event.target.closest ? event.target.closest("[data-wifi-list-profiles-btn]") : null;
-        if (listProfilesBtn) {
-          api.listSavedProfiles();
-          return;
-        }
-
         var revealBtn = event.target && event.target.closest ? event.target.closest("[data-wifi-reveal-btn]") : null;
         if (revealBtn) {
           api.revealProfilePassword(revealBtn.getAttribute("data-wifi-reveal-btn"));
@@ -2651,10 +2636,12 @@
       };
     }
 
-    // LS: scan-history list - rebuilt wholesale on every newui:wifi-changed
-    // event, same simple always-rebuild approach as wireGoogleDorkLibrary
-    // (no inputs here to lose focus/caret on, unlike that tool's field
-    // list, so there's no need for its activeElement guard).
+    // LS: action buttons (scan nearby, refresh current connection, list
+    // saved profiles, refresh adapter info - all 4, disabled on www rather
+    // than hidden, see renderWifiActionsHtml) above the scan-history list.
+    // Rebuilt wholesale on every newui:wifi-changed event, same simple
+    // always-rebuild approach as wireGoogleDorkLibrary (no inputs here to
+    // lose focus/caret on, so there's no need for its activeElement guard).
     function wireWifiLibrary() {
       var mount = document.getElementById("v1WifiLibrary");
       if (!mount || !renderWifiLibrary) return;
@@ -2676,20 +2663,59 @@
       mount.addEventListener("click", function (event) {
         var api = window.NetReconNewUICore && window.NetReconNewUICore.wifi;
         if (!api) return;
-        var btn = event.target && event.target.closest ? event.target.closest("[data-wifi-history-action]") : null;
-        if (!btn) return;
-        var idx = Number(btn.getAttribute("data-wifi-history-index"));
-        var action = btn.getAttribute("data-wifi-history-action");
-        if (action === "use") api.useHistoryEntry(idx);
-        else if (action === "delete") api.removeFromHistory(idx);
+
+        var historyBtn = event.target && event.target.closest ? event.target.closest("[data-wifi-history-action]") : null;
+        if (historyBtn) {
+          var idx = Number(historyBtn.getAttribute("data-wifi-history-index"));
+          var action = historyBtn.getAttribute("data-wifi-history-action");
+          if (action === "use") api.useHistoryEntry(idx);
+          else if (action === "delete") api.removeFromHistory(idx);
+          return;
+        }
+
+        // Disabled buttons never dispatch click events natively (www build,
+        // or an operation already in flight) - no extra disabled check
+        // needed here, closest() just won't find an enabled match.
+        if (event.target && event.target.closest && event.target.closest("[data-wifi-scan-btn]")) { api.scanNearby(); return; }
+        if (event.target && event.target.closest && event.target.closest("[data-wifi-refresh-current-btn]")) { api.refreshCurrentConnection(); return; }
+        if (event.target && event.target.closest && event.target.closest("[data-wifi-list-profiles-btn]")) { api.listSavedProfiles(); return; }
+        if (event.target && event.target.closest && event.target.closest("[data-wifi-refresh-adapter-btn]")) { api.refreshAdapterInfo(); return; }
       });
     }
 
-    // RS: adapter/driver diagnostics - fetched once automatically the first
-    // time this panel is wired (not on every re-activation, which would
-    // shell out to netsh every time the user just switches tabs), plus a
-    // manual refresh button. Rebuilt wholesale on newui:wifi-changed, same
-    // reasoning as wireWifiLibrary above.
+    // RS tab 1: current-connection fields - fetched once automatically the
+    // first time this panel is wired (not on every re-activation, which
+    // would shell out to netsh every time the user just switches tabs); no
+    // button here anymore (moved to LS). Rebuilt wholesale on
+    // newui:wifi-changed, same reasoning as wireWifiLibrary above.
+    function wireWifiCurrent() {
+      var mount = document.getElementById("v1WifiCurrent");
+      if (!mount || !renderWifiCurrent) return;
+
+      function render() {
+        mount.innerHTML = renderWifiCurrent();
+      }
+
+      render();
+
+      if (mount.dataset.wifiBound !== "1") {
+        mount.dataset.wifiBound = "1";
+        document.addEventListener("newui:wifi-changed", function () {
+          if (!document.body.contains(mount)) return;
+          render();
+        });
+      }
+
+      var api = window.NetReconNewUICore && window.NetReconNewUICore.wifi;
+      var state = api ? api.getCurrent() : null;
+      if (api && state && !state.updatedAt && !state.loading && api.isDesktop()) {
+        api.refreshCurrentConnection();
+      }
+    }
+
+    // RS tab 2: adapter/driver diagnostics - same fetch-once-on-first-open
+    // discipline as wireWifiCurrent above; no button here anymore (moved
+    // to LS).
     function wireWifiAdapter() {
       var mount = document.getElementById("v1WifiAdapter");
       if (!mount || !renderWifiAdapter) return;
@@ -2702,18 +2728,9 @@
 
       if (mount.dataset.wifiBound !== "1") {
         mount.dataset.wifiBound = "1";
-
         document.addEventListener("newui:wifi-changed", function () {
           if (!document.body.contains(mount)) return;
           render();
-        });
-
-        mount.addEventListener("click", function (event) {
-          var api = window.NetReconNewUICore && window.NetReconNewUICore.wifi;
-          if (!api) return;
-          var btn = event.target && event.target.closest ? event.target.closest("[data-wifi-refresh-adapter-btn]") : null;
-          if (!btn) return;
-          api.refreshAdapterInfo();
         });
       }
 
@@ -4052,6 +4069,7 @@
       wireGoogleDorkTool: wireGoogleDorkTool,
       wireWifiLibrary: wireWifiLibrary,
       wireWifiAdapter: wireWifiAdapter,
+      wireWifiCurrent: wireWifiCurrent,
       wireWifiTool: wireWifiTool,
       wireGlobeTool: wireGlobeTool,
       wireAgentProfileLibrary: wireAgentProfileLibrary,

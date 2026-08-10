@@ -1,10 +1,11 @@
-/* shell: WiFi tool - nearby scan / current connection / saved profiles (CS),
-   scan history (LS), adapter+driver diagnostics (RS). Reuses several
-   generic classes already loaded (.v1-results-table, .v1-results-table-
-   scroll, .v1-pulpit-inspector-field, .v1-pulpit-remote-hint,
-   .v1-import-manager-note, .v1-google-dork-history-row/-text/-actions)
-   rather than duplicating that styling here - same reuse convention Google
-   Dork Finder's own CSS file already established. */
+/* shell: WiFi tool - nearby scan / saved profiles (CS, tabbed), action
+   buttons + scan history (LS), current connection + adapter/driver
+   diagnostics (RS, 2 tabs). Reuses several generic classes already loaded
+   (.v1-results-table, .v1-results-table-scroll, .v1-pulpit-inspector-field,
+   .v1-pulpit-remote-hint, .v1-pulpit-connect-btn, .v1-import-manager-note,
+   .v1-google-dork-history-row/-text/-actions) rather than duplicating that
+   styling here - same reuse convention Google Dork Finder's own CSS file
+   already established. */
 
 .v1-wifi-shell {
   padding: 12px;
@@ -14,8 +15,21 @@
 }
 
 .v1-wifi-library,
-.v1-wifi-adapter {
+.v1-wifi-adapter,
+.v1-wifi-current {
   padding: 4px;
+}
+
+.v1-wifi-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.v1-wifi-actions-list .v1-pulpit-connect-btn {
+  width: 100%;
+  text-align: center;
 }
 
 .v1-wifi-tabs {

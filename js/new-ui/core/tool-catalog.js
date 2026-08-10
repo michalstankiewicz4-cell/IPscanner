@@ -262,6 +262,11 @@
       labelKey: "tabLabel_wifi_adapter",
       ui: { showInRightPanel: true, rightOrder: 29 }
     },
+    "wifi-current": {
+      icon: null,
+      labelKey: "tabLabel_wifi_current",
+      ui: { showInRightPanel: true, rightOrder: 30 }
+    },
     "ip-library": {
       titleKey: "toolTitle_ip_library",
       textKey: "toolText_ip_library",

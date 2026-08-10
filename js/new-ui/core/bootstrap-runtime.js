@@ -525,6 +525,11 @@
           panelsRuntime.wireWifiAdapter(rootEl);
         }
       };
+      window.NetReconNewUI.wireWifiCurrent = function (rootEl) {
+        if (panelsRuntime && panelsRuntime.wireWifiCurrent) {
+          panelsRuntime.wireWifiCurrent(rootEl);
+        }
+      };
       // Exposed for navigation-runtime.js's activateGenericContent() LS/RS
       // fallback - reuses CS's own buildDetailHtml()/wireToolRuntime()
       // (panel-content-runtime.js/panels-runtime.js) as-is, already proven

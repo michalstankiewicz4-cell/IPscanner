@@ -1415,14 +1415,14 @@
       return "<ul class=\"v1-tool-list\">" + sectionsHtml + "</ul>";
     }
 
-    // WiFi tool, Phase 1: nearby scan / current connection / saved profiles
-    // (CS, tabbed), scan history (LS), adapter+driver diagnostics (RS).
-    // Every surface is 100% backed by run_powershell (wifi-runtime.js) with
-    // no meaningful degraded www rendering (unlike Google Dork, which stays
-    // fully functional there since it only opens a URL) - so each render
-    // function gates its ENTIRE output behind platformApi.isDesktop(),
-    // reusing the same .v1-pulpit-remote-hint note idiom already
-    // established by renderPulpitPreviewToggle() above.
+    // WiFi tool, Phase 1: nearby scan + saved profiles (CS, tabbed),
+    // action buttons + scan history (LS), current-connection info +
+    // adapter/driver diagnostics (RS, 2 tabs). Every action is 100% backed
+    // by run_powershell (wifi-runtime.js), but unlike the earlier
+    // full-panel "desktop only" gate, this follows Mail XSS Tester's own
+    // precedent instead: tables and buttons always render, only the
+    // action buttons themselves are disabled (with an inline hint) when
+    // not on desktop - there's no reason to hide read-only, empty tables.
     function wifiIsDesktop() {
       return !(platformApi && typeof platformApi.isDesktop === "function" && !platformApi.isDesktop());
     }
@@ -1441,13 +1441,14 @@
     }
 
     // Password cell has 4 states, driven by wifiApi.getPasswordEntry(name):
-    // unfetched (show the reveal button), loading, revealed (cleartext
-    // key), or a terminal note (open network / denied - key=clear was
-    // refused, no elevation flow exists in this phase, see wifi-runtime.js).
+    // unfetched (show the reveal button, disabled on www like every other
+    // action button here), loading, revealed (cleartext key), or a
+    // terminal note (open network / denied - key=clear was refused, no
+    // elevation flow exists in this phase, see wifi-runtime.js).
     function wifiPasswordCellHtml(profileName) {
       var entry = wifiApi ? wifiApi.getPasswordEntry(profileName) : null;
       if (!entry) {
-        return "<span class=\"v1-wifi-password-cell\"><button type=\"button\" class=\"v1-range-history-btn\" data-wifi-reveal-btn=\"" + escapeHtml(profileName) + "\">" + escapeHtml(tr("wifiShowPasswordBtn")) + "</button></span>";
+        return "<span class=\"v1-wifi-password-cell\"><button type=\"button\" class=\"v1-range-history-btn\" data-wifi-reveal-btn=\"" + escapeHtml(profileName) + "\"" + (wifiIsDesktop() ? "" : " disabled") + ">" + escapeHtml(tr("wifiShowPasswordBtn")) + "</button></span>";
       }
       if (entry.status === "loading") {
         return "<span class=\"v1-wifi-password-cell\"><span class=\"v1-wifi-password-note\">" + escapeHtml(tr("wifiPasswordLoadingNote")) + "</span></span>";
@@ -1496,34 +1497,6 @@
       }
       return [
         "<div class=\"v1-wifi-section" + (active ? " is-active" : "") + "\" data-wifi-section=\"nearby\">",
-        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-wifi-scan-btn" + (state.loading ? " disabled" : "") + ">" + escapeHtml(tr(state.loading ? "wifiScanningNote" : "wifiScanBtn")) + "</button>",
-        state.error ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(state.error) + "</p>" : "",
-        bodyHtml,
-        "</div>"
-      ].join("");
-    }
-
-    function renderWifiCurrentSection(active) {
-      var state = wifiApi ? wifiApi.getCurrent() : { info: null, loading: false, error: null };
-      var info = state.info || {};
-      var connected = info.state === "connected";
-      var bodyHtml = connected
-        ? [
-            wifiFieldRow("wifiFieldSsid", info.ssid),
-            wifiFieldRow("wifiFieldState", info.state),
-            wifiFieldRow("wifiFieldAdapter", info.adapter),
-            wifiFieldRow("wifiFieldIp", info.ipAddress),
-            wifiFieldRow("wifiFieldSignal", info.signal),
-            wifiFieldRow("wifiFieldChannel", info.channel),
-            wifiFieldRow("wifiFieldSecurity", info.security),
-            wifiFieldRow("wifiFieldRadioType", info.radioType),
-            wifiFieldRow("wifiFieldReceiveRate", info.receiveRate),
-            wifiFieldRow("wifiFieldTransmitRate", info.transmitRate),
-          ].join("")
-        : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("wifiCurrentNotConnectedNote")) + "</div>";
-      return [
-        "<div class=\"v1-wifi-section" + (active ? " is-active" : "") + "\" data-wifi-section=\"current\">",
-        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-wifi-refresh-current-btn" + (state.loading ? " disabled" : "") + ">" + escapeHtml(tr("wifiRefreshBtn")) + "</button>",
         state.error ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(state.error) + "</p>" : "",
         bodyHtml,
         "</div>"
@@ -1556,23 +1529,20 @@
       }
       return [
         "<div class=\"v1-wifi-section" + (active ? " is-active" : "") + "\" data-wifi-section=\"saved\">",
-        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-wifi-list-profiles-btn" + (state.loading ? " disabled" : "") + ">" + escapeHtml(tr("wifiListProfilesBtn")) + "</button>",
         state.error ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(state.error) + "</p>" : "",
         bodyHtml,
         "</div>"
       ].join("");
     }
 
-    // CS: tab strip (Nearby / Current Connection / Saved Networks) over one
-    // content area - activeSection is passed in by the wire layer (read off
-    // the DOM before a full outerHTML rebuild) rather than tracked as
-    // module state here, keeping this render function stateless like its
-    // siblings.
+    // CS: tab strip (WiFi/nearby / Saved Networks) over one content area -
+    // no action buttons here anymore (moved to LS, above the scan history
+    // list) - activeSection is passed in by the wire layer (read off the
+    // DOM before a full outerHTML rebuild) rather than tracked as module
+    // state here, keeping this render function stateless like its
+    // siblings. Always renders (even on www) - only LS's buttons disable.
     function renderWifiTool(activeSection) {
-      if (!wifiIsDesktop()) {
-        return "<div class=\"v1-wifi-shell\">" + wifiDesktopGateHtml() + "</div>";
-      }
-      var section = activeSection === "current" || activeSection === "saved" ? activeSection : "nearby";
+      var section = activeSection === "saved" ? activeSection : "nearby";
       function tabBtn(id, labelKey) {
         return "<button type=\"button\" class=\"v1-wifi-tab-btn" + (section === id ? " is-active" : "") + "\" data-wifi-tab=\"" + id + "\">" + escapeHtml(tr(labelKey)) + "</button>";
       }
@@ -1580,25 +1550,44 @@
         "<div class=\"v1-wifi-shell\">",
         "<div class=\"v1-wifi-tabs\">",
         tabBtn("nearby", "wifiTabNearby"),
-        tabBtn("current", "wifiTabCurrent"),
         tabBtn("saved", "wifiTabSaved"),
         "</div>",
         renderWifiNearbySection(section === "nearby"),
-        renderWifiCurrentSection(section === "current"),
         renderWifiSavedSection(section === "saved"),
         "</div>"
       ].join("");
     }
 
-    // LS: scan-history list, mirrors renderGoogleDorkTool's history block
-    // (same .v1-google-dork-history-row/-text/-actions classes reused,
-    // .v1-range-history-btn for use/delete) - "use" replays a snapshot into
-    // the corresponding CS section via wifiApi.useHistoryEntry(), read-only,
-    // no live re-scan.
-    function renderWifiLibrary() {
-      if (!wifiIsDesktop()) {
-        return "<ul class=\"v1-tool-list\"><li>" + wifiDesktopGateHtml() + "</li></ul>";
+    // LS: action buttons (all of them - scan nearby, refresh current
+    // connection, list saved profiles, refresh adapter info) in a section
+    // above the scan-history list. Disabled + a single inline hint on www,
+    // never a full-panel gate.
+    function renderWifiActionsHtml() {
+      var nearbyState = wifiApi ? wifiApi.getNearby() : { loading: false };
+      var currentState = wifiApi ? wifiApi.getCurrent() : { loading: false };
+      var profilesState = wifiApi ? wifiApi.getProfiles() : { loading: false };
+      var adapterState = wifiApi ? wifiApi.getAdapterInfo() : { loading: false };
+      var desktop = wifiIsDesktop();
+      function actionBtn(attr, loading, labelKey, loadingKey) {
+        return "<button type=\"button\" class=\"v1-pulpit-connect-btn\" " + attr + (loading || !desktop ? " disabled" : "") + ">" + escapeHtml(tr(loading && loadingKey ? loadingKey : labelKey)) + "</button>";
       }
+      return [
+        "<div class=\"v1-wifi-actions-list\">",
+        actionBtn("data-wifi-scan-btn", nearbyState.loading, "wifiScanBtn", "wifiScanningNote"),
+        actionBtn("data-wifi-refresh-current-btn", currentState.loading, "wifiRefreshBtn"),
+        actionBtn("data-wifi-list-profiles-btn", profilesState.loading, "wifiListProfilesBtn"),
+        actionBtn("data-wifi-refresh-adapter-btn", adapterState.loading, "wifiAdapterRefreshBtn"),
+        "</div>",
+        desktop ? "" : wifiDesktopGateHtml()
+      ].join("");
+    }
+
+    // LS: action buttons section + scan-history list below it, mirrors
+    // renderGoogleDorkTool's history block (same .v1-google-dork-history-
+    // row/-text/-actions classes reused, .v1-range-history-btn for
+    // use/delete) - "use" replays a snapshot into the corresponding CS/RS
+    // surface via wifiApi.useHistoryEntry(), read-only, no live re-scan.
+    function renderWifiLibrary() {
       var history = wifiApi ? wifiApi.getHistory() : [];
       var historyHtml = history.length
         ? history.map(function (item, idx) {
@@ -1619,6 +1608,12 @@
       return [
         "<ul class=\"v1-tool-list\">",
         "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("wifiActionsHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">",
+        renderWifiActionsHtml(),
+        "</div>",
+        "</li>",
+        "<li>",
         "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("wifiHistoryHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
         "<div class=\"v1-section-body\">",
         historyHtml,
@@ -1628,13 +1623,41 @@
       ].join("");
     }
 
-    // RS: static adapter/driver diagnostics (netsh wlan show drivers) -
-    // "Hosted network supported" is deliberately surfaced here now to give
-    // a future Hotspot/ICS phase real diagnostic data instead of guessing.
+    // RS tab 1: current-connection field list (moved out of CS - see
+    // renderWifiTool above). No button here (refresh lives in LS); fetched
+    // automatically once on first open, see wireWifiCurrent.
+    function renderWifiCurrent() {
+      var state = wifiApi ? wifiApi.getCurrent() : { info: null, loading: false, error: null, updatedAt: null };
+      var info = state.info || {};
+      var connected = info.state === "connected";
+      var bodyHtml = connected
+        ? [
+            wifiFieldRow("wifiFieldSsid", info.ssid),
+            wifiFieldRow("wifiFieldState", info.state),
+            wifiFieldRow("wifiFieldAdapter", info.adapter),
+            wifiFieldRow("wifiFieldIp", info.ipAddress),
+            wifiFieldRow("wifiFieldSignal", info.signal),
+            wifiFieldRow("wifiFieldChannel", info.channel),
+            wifiFieldRow("wifiFieldSecurity", info.security),
+            wifiFieldRow("wifiFieldRadioType", info.radioType),
+            wifiFieldRow("wifiFieldReceiveRate", info.receiveRate),
+            wifiFieldRow("wifiFieldTransmitRate", info.transmitRate),
+          ].join("")
+        : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("wifiCurrentNotConnectedNote")) + "</div>";
+      return [
+        "<div class=\"v1-wifi-current\">",
+        state.error ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(state.error) + "</p>" : "",
+        bodyHtml,
+        "</div>"
+      ].join("");
+    }
+
+    // RS tab 2: static adapter/driver diagnostics (netsh wlan show
+    // drivers) - "Hosted network supported" is deliberately surfaced here
+    // now to give a future Hotspot/ICS phase real diagnostic data instead
+    // of guessing. No button here (refresh lives in LS); fetched once on
+    // first open, see wireWifiAdapter.
     function renderWifiAdapter() {
-      if (!wifiIsDesktop()) {
-        return "<div class=\"v1-wifi-adapter\">" + wifiDesktopGateHtml() + "</div>";
-      }
       var state = wifiApi ? wifiApi.getAdapterInfo() : { info: null, loading: false, error: null, updatedAt: null };
       var info = state.info || {};
       var hasInfo = !!state.updatedAt;
@@ -1653,7 +1676,6 @@
         : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("wifiAdapterEmptyNote")) + "</div>";
       return [
         "<div class=\"v1-wifi-adapter\">",
-        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-wifi-refresh-adapter-btn" + (state.loading ? " disabled" : "") + ">" + escapeHtml(tr("wifiAdapterRefreshBtn")) + "</button>",
         state.error ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(state.error) + "</p>" : "",
         bodyHtml,
         "<p class=\"v1-import-manager-note\">" + escapeHtml(tr("wifiAdapterFutureNote")) + "</p>",
@@ -2926,6 +2948,7 @@
       renderWifiTool: renderWifiTool,
       renderWifiLibrary: renderWifiLibrary,
       renderWifiAdapter: renderWifiAdapter,
+      renderWifiCurrent: renderWifiCurrent,
       pulpitEdgeAnchor: pulpitEdgeAnchor,
       renderAgentProfileLibrary: renderAgentProfileLibrary,
       renderAgentProfileDetailFields: renderAgentProfileDetailFields,

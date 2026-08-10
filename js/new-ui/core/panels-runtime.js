@@ -1552,6 +1552,7 @@
         renderWifiTool: panelContentRuntime && panelContentRuntime.renderWifiTool,
         renderWifiLibrary: panelContentRuntime && panelContentRuntime.renderWifiLibrary,
         renderWifiAdapter: panelContentRuntime && panelContentRuntime.renderWifiAdapter,
+        renderWifiCurrent: panelContentRuntime && panelContentRuntime.renderWifiCurrent,
         renderPulpitInspector: panelContentRuntime && panelContentRuntime.renderPulpitInspector,
         renderAgentProfileLibrary: panelContentRuntime && panelContentRuntime.renderAgentProfileLibrary,
         renderAgentProfileDetailFields: panelContentRuntime && panelContentRuntime.renderAgentProfileDetailFields,
@@ -2367,6 +2368,12 @@
       }
     }
 
+    function wireWifiCurrent(rootEl) {
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireWifiCurrent) {
+        panelInteractionsRuntime.wireWifiCurrent(rootEl);
+      }
+    }
+
     return {
       setTooltips: setTooltips,
       refreshActiveUI: refreshActiveUI,
@@ -2392,6 +2399,7 @@
       wireGoogleDorkTemplates: wireGoogleDorkTemplates,
       wireWifiLibrary: wireWifiLibrary,
       wireWifiAdapter: wireWifiAdapter,
+      wireWifiCurrent: wireWifiCurrent,
       refreshDetachedTool: refreshDetachedTool,
       applyEmailReconResult: function (email, result) {
         if (panelInteractionsRuntime && panelInteractionsRuntime.applyEmailReconResult) {

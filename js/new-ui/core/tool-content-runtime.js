@@ -119,6 +119,17 @@
     },
   };
 
+  toolContentRuntime["wifi-current"] = {
+    render: function () {
+      return '<div id="v1WifiCurrent" class="v1-wifi-current"></div>';
+    },
+    wire: function (rootEl) {
+      if (window.NetReconNewUI && window.NetReconNewUI.wireWifiCurrent) {
+        window.NetReconNewUI.wireWifiCurrent(rootEl);
+      }
+    },
+  };
+
   toolContentRuntime["google-dork-library"] = {
     render: function () {
       return '<div id="v1GoogleDorkLibrary" class="v1-google-dork-library"></div>';
