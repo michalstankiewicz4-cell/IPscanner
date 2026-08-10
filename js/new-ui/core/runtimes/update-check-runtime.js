@@ -63,15 +63,102 @@
       .then(function (data) { return data && data.tag_name; });
   }
 
+  // The updater plugin can only silently re-run a downloaded NSIS installer -
+  // it has nothing to overwrite for a portable .exe, and process.relaunch()
+  // afterwards would restart the OLD portable copy while a second copy sits
+  // newly installed elsewhere. main.rs's is_installer_install command
+  // detects this (the NSIS template always installs to
+  // %LOCALAPPDATA%\OSINT NET Auditor\, a portable zip unzipped anywhere else
+  // won't match) so a portable desktop build falls back to the same
+  // open-releases-page prompt the www build uses instead of offering a
+  // native install it can't safely complete.
+  function getUpdaterApi() {
+    var t = window.__TAURI__;
+    return t && t.updater && typeof t.updater.check === "function" ? t.updater : null;
+  }
+
+  function getProcessApi() {
+    var t = window.__TAURI__;
+    return t && t.process && typeof t.process.relaunch === "function" ? t.process : null;
+  }
+
   function createUpdateCheckRuntime(deps) {
     var tr = deps.tr;
     var platform = deps.platform;
     var generalSettings = deps.generalSettings;
+    var setStatusLine = typeof deps.setStatusLine === "function" ? deps.setStatusLine : function () {};
 
-    function checkForUpdate() {
-      var settings = generalSettings && generalSettings.getState ? generalSettings.getState() : {};
-      if (!settings.checkForUpdates) return Promise.resolve(false);
+    function promptOpenReleasesPage(tag) {
+      var title = tr("updateAvailableTitle");
+      var message = tr("updateAvailableMessage") + " " + tag;
+      var okLabel = tr("updateAvailableDownload");
+      var cancelLabel = tr("updateAvailableLater");
 
+      return window.NetReconNewUI && window.NetReconNewUI.openConfirmDialog
+        ? window.NetReconNewUI.openConfirmDialog(title, message, okLabel, cancelLabel).then(function (confirmed) {
+            if (confirmed && platform && platform.openExternalUrl) {
+              platform.openExternalUrl(RELEASES_PAGE_URL);
+            }
+            return true;
+          })
+        : false;
+    }
+
+    function installAndRelaunch(update) {
+      setStatusLine(tr("updateDownloading"));
+      return update.downloadAndInstall(function (event) {
+        if (event && event.event === "Finished") setStatusLine(tr("updateInstalling"));
+      })
+        .then(function () {
+          setStatusLine(tr("updateRestarting"));
+          var proc = getProcessApi();
+          return proc ? proc.relaunch() : null;
+        })
+        .catch(function (err) {
+          setStatusLine(tr("updateFailed") + (err && err.message ? " (" + err.message + ")" : ""));
+        });
+    }
+
+    function promptNativeInstall(update, tag) {
+      var title = tr("updateAvailableTitle");
+      var message = tr("updateAvailableMessage") + " " + tag;
+      var okLabel = tr("updateAvailableInstallRestart");
+      var cancelLabel = tr("updateAvailableLater");
+
+      return window.NetReconNewUI && window.NetReconNewUI.openConfirmDialog
+        ? window.NetReconNewUI.openConfirmDialog(title, message, okLabel, cancelLabel).then(function (confirmed) {
+            if (confirmed) return installAndRelaunch(update).then(function () { return true; });
+            return true;
+          })
+        : false;
+    }
+
+    function checkForUpdateDesktop() {
+      var updater = getUpdaterApi();
+      if (!updater) return Promise.resolve(false);
+
+      return updater.check()
+        .then(function (update) {
+          if (!update) return false;
+
+          var tag = "v" + String(update.version || "").replace(/^v/i, "");
+          if (alreadyNotifiedFor(tag)) return false;
+          markNotified(tag);
+
+          return platform.invoke("is_installer_install")
+            .catch(function () { return false; })
+            .then(function (isInstaller) {
+              return isInstaller ? promptNativeInstall(update, tag) : promptOpenReleasesPage(tag);
+            });
+        })
+        .catch(function () {
+          // No latest.json yet, network error, bad signature, etc. - stay
+          // silent, matching the web path's catch-all below.
+          return false;
+        });
+    }
+
+    function checkForUpdateWeb() {
       var localVersion = (window.NetReconNewUICore && window.NetReconNewUICore.APP_VERSION) || "";
 
       return fetchLatestTag()
@@ -80,24 +167,20 @@
           if (alreadyNotifiedFor(remoteTag)) return false;
 
           markNotified(remoteTag);
-
-          var title = tr("updateAvailableTitle");
-          var message = tr("updateAvailableMessage") + " " + remoteTag;
-          var okLabel = tr("updateAvailableDownload");
-          var cancelLabel = tr("updateAvailableLater");
-
-          return window.NetReconNewUI && window.NetReconNewUI.openConfirmDialog
-            ? window.NetReconNewUI.openConfirmDialog(title, message, okLabel, cancelLabel).then(function (confirmed) {
-                if (confirmed && platform && platform.openExternalUrl) {
-                  platform.openExternalUrl(RELEASES_PAGE_URL);
-                }
-                return true;
-              })
-            : false;
+          return promptOpenReleasesPage(remoteTag);
         })
         .catch(function () {
           return false;
         });
+    }
+
+    function checkForUpdate() {
+      var settings = generalSettings && generalSettings.getState ? generalSettings.getState() : {};
+      if (!settings.checkForUpdates) return Promise.resolve(false);
+
+      return platform && platform.isDesktop && platform.isDesktop()
+        ? checkForUpdateDesktop()
+        : checkForUpdateWeb();
     }
 
     return {

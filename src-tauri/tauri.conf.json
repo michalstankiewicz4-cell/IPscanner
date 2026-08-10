@@ -35,6 +35,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "resources": [
       "../scripts/*.ps1"
     ],
@@ -49,5 +50,13 @@
     "icon": [
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFDNzYwQTg3RjdCMTg0RkUKUldUK2hMSDNod3AySENlSWlsNldRM2sxbHFncndWSFZxN28vTWtFcHNVdXczY2ViTmk1Zmd3VVcK",
+      "endpoints": [
+        "https://github.com/michalstankiewicz4-cell/IPscanner/releases/latest/download/latest.json"
+      ]
+    }
   }
 }

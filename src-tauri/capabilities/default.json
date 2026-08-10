@@ -4,6 +4,8 @@
   "description": "Default capability for main window IPC and core APIs",
   "windows": ["main"],
   "permissions": [
-    "core:default"
+    "core:default",
+    "updater:default",
+    "process:allow-restart"
   ]
 }

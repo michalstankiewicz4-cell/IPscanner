@@ -12,6 +12,7 @@
     {
       version: "v2.7.0",
       notes: [
+        "Added real auto-update: alongside the usual portable zip, releases now also ship a signed NSIS installer - installer users get a native \"Update & Restart\" prompt that downloads, verifies, and installs the new version automatically. Portable-zip users keep the exact same experience as before (a prompt that opens the Releases page).",
         "Big hotfix pass from a full-app code review: fixed a port preset reorder bug that silently reverted the move while still claiming success, a falsy-zero bug that silently dropped \"0\" in AI Properties/Permissions fields, a missing Location column toggle in the detached IP Results window, and a memory leak in WiFi/Google Dork from repeated tab switching.",
         "Fixed importing the app's own downloadable Polish language pack overwriting newer translations with the English fallback instead of merging - Google Dork Finder, Mail XSS Tester, WiFi, and 280 other keys were missing from that pack and are now filled in and up to date.",
         "A round of internal cleanup: removed dead code, deduplicated repeated logic across several files, and throttled/parallelized a few things that were doing more work than needed (large scans, DNS lookups in IP Extractor)."

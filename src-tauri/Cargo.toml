@@ -40,3 +40,10 @@ windows = { version = "0.62.2", features = ["Win32_NetworkManagement_IpHelper", 
 # implementation. Exact feature names confirmed against `cargo check`
 # output, not asserted from memory.
 lettre = { version = "0.11", default-features = false, features = ["tokio1-rustls-tls", "smtp-transport", "builder"] }
+# Auto-update: Ed25519-signed, self-hosted manifest (latest.json uploaded to
+# each GitHub Release) - no Microsoft Store, no paid Authenticode cert.
+# Only meaningful for installer builds (NSIS/MSI); the portable zip has no
+# installer to silently re-run, see update-check-runtime.js's isDesktop()
+# gate for how that's handled on the JS side.
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"

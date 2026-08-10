@@ -1436,6 +1436,29 @@ fn open_browser(url: String) {
         .spawn();
 }
 
+// Auto-update (tauri-plugin-updater) can only silently re-run a downloaded
+// NSIS installer - it has nothing to overwrite for a portable .exe launched
+// from an arbitrary folder, and relaunch() afterwards would just restart the
+// OLD portable copy while a second copy sits newly installed elsewhere. The
+// frontend uses this to gate the native "Update & Restart" flow to real
+// installer installs only, falling back to the old open-releases-page flow
+// otherwise. Detection: the NSIS template's currentUser install mode
+// (installer-template.nsi's INSTALLMODE) always lands at
+// `%LOCALAPPDATA%\<PRODUCTNAME>\<exe>` - a portable zip, unzipped anywhere
+// by the user, will not coincidentally match that exact path.
+#[tauri::command]
+fn is_installer_install() -> bool {
+    let exe_dir = match std::env::current_exe().ok().and_then(|p| p.parent().map(|d| d.to_path_buf())) {
+        Some(dir) => dir,
+        None => return false,
+    };
+    let local_appdata = match std::env::var_os("LOCALAPPDATA") {
+        Some(v) => std::path::PathBuf::from(v),
+        None => return false,
+    };
+    exe_dir == local_appdata.join("OSINT NET Auditor")
+}
+
 // Topology's RDP checkbox - opens Windows' own Remote Desktop Connection
 // client in its own OS window. Deliberately not an embedded-in-webview
 // viewer (unlike the VNC preview): no mature browser-side RDP decoder
@@ -3462,6 +3485,8 @@ fn main() {
     }
     
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .manage(Arc::new(ScanState { stop: AtomicBool::new(false) }))
         .manage(Arc::new(MailXssTesterState {
             hits: Mutex::new(Vec::new()),
@@ -3494,6 +3519,7 @@ fn main() {
             hostname_lookup,
             email_recon_lookup,
             open_browser,
+            is_installer_install,
             open_rdp,
             start_beacon_server,
             stop_beacon_server,

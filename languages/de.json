@@ -983,6 +983,11 @@
     "googleDorkApiCxPlaceholder": "Suchmaschinen-ID (cx)",
     "googleDorkApiCxLinkText": "eine erstellen",
     "googleDorkApiNote": "Noch nicht verwendet - vorgesehen für eine zukünftige \"Ergebnisse extrahieren\"-Funktion im Google Dork Finder.",
-    "tipActionDemoData": "Demodaten-Modus aktivieren - neue Werkzeugeinträge werden als Demo markiert, sodass sie gesammelt entfernt werden können, ohne echte Daten zu berühren."
+    "tipActionDemoData": "Demodaten-Modus aktivieren - neue Werkzeugeinträge werden als Demo markiert, sodass sie gesammelt entfernt werden können, ohne echte Daten zu berühren.",
+    "updateAvailableInstallRestart": "Installieren & Neu starten",
+    "updateDownloading": "Update wird heruntergeladen...",
+    "updateInstalling": "Update wird installiert...",
+    "updateRestarting": "Neu starten...",
+    "updateFailed": "Aktualisierung fehlgeschlagen"
   }
 }

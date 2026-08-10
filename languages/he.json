@@ -984,6 +984,11 @@
     "googleDorkApiCxPlaceholder": "מזהה מנוע חיפוש (cx)",
     "googleDorkApiCxLinkText": "צור אחד",
     "googleDorkApiNote": "עדיין לא בשימוש - נשמר לתכונת \"חילוץ תוצאות\" עתידית במחפש Google Dork.",
-    "tipActionDemoData": "הפעל מצב נתוני הדגמה - ערכי כלים חדשים מסומנים כהדגמה כך שניתן להסיר אותם בבת אחת מבלי לגעת בנתונים האמיתיים."
+    "tipActionDemoData": "הפעל מצב נתוני הדגמה - ערכי כלים חדשים מסומנים כהדגמה כך שניתן להסיר אותם בבת אחת מבלי לגעת בנתונים האמיתיים.",
+    "updateAvailableInstallRestart": "התקן והפעל מחדש",
+    "updateDownloading": "מוריד עדכון...",
+    "updateInstalling": "מתקין עדכון...",
+    "updateRestarting": "מפעיל מחדש...",
+    "updateFailed": "העדכון נכשל"
   }
 }

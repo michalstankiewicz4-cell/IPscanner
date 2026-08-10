@@ -983,6 +983,11 @@
     "googleDorkApiCxPlaceholder": "ID wyszukiwarki (cx)",
     "googleDorkApiCxLinkText": "utworz",
     "googleDorkApiNote": "Jeszcze nie uzywane - zapisane na przyszla funkcje \"wyciagnij wyniki\" w Google Dork Finder.",
-    "tipActionDemoData": "Wlacza tryb danych przykladowych - nowe wpisy narzedzi sa oznaczane jako demo, zeby mozna je bylo hurtowo usunac bez ruszania prawdziwych danych."
+    "tipActionDemoData": "Wlacza tryb danych przykladowych - nowe wpisy narzedzi sa oznaczane jako demo, zeby mozna je bylo hurtowo usunac bez ruszania prawdziwych danych.",
+    "updateAvailableInstallRestart": "Zainstaluj i uruchom ponownie",
+    "updateDownloading": "Pobieranie aktualizacji...",
+    "updateInstalling": "Instalowanie aktualizacji...",
+    "updateRestarting": "Ponowne uruchamianie...",
+    "updateFailed": "Aktualizacja nie powiodla sie"
   }
 }
