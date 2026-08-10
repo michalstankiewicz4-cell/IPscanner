@@ -2579,8 +2579,15 @@
     // dispatch needed - only actual data changes (scan/list/reveal
     // results) go through newui:wifi-changed and a full outerHTML rebuild.
     function wifiActiveSectionFromDom(shellEl) {
-      var activeBtn = shellEl.querySelector(".v1-wifi-tab-btn.is-active");
+      var activeBtn = shellEl.querySelector(".v1-wifi-tab-btn.is-active[data-wifi-tab]");
       return activeBtn ? activeBtn.getAttribute("data-wifi-tab") : "nearby";
+    }
+
+    // Same pure-DOM-toggle idea as wifiActiveSectionFromDom above, for the
+    // Nearby section's own Table/Radar sub-toggle.
+    function wifiActiveViewFromDom(shellEl) {
+      var activeBtn = shellEl.querySelector(".v1-wifi-tab-btn.is-active[data-wifi-view]");
+      return activeBtn ? activeBtn.getAttribute("data-wifi-view") : "table";
     }
 
     // CS: no action buttons anymore (moved to LS) - only tab switching and
@@ -2606,11 +2613,26 @@
         var tabBtn = event.target && event.target.closest ? event.target.closest("[data-wifi-tab]") : null;
         if (tabBtn) {
           var section = tabBtn.getAttribute("data-wifi-tab");
-          shellEl.querySelectorAll(".v1-wifi-tab-btn").forEach(function (btn) {
+          shellEl.querySelectorAll(".v1-wifi-tab-btn[data-wifi-tab]").forEach(function (btn) {
             btn.classList.toggle("is-active", btn === tabBtn);
           });
           shellEl.querySelectorAll(".v1-wifi-section").forEach(function (sec) {
             sec.classList.toggle("is-active", sec.getAttribute("data-wifi-section") === section);
+          });
+          return;
+        }
+
+        var viewBtn = event.target && event.target.closest ? event.target.closest("[data-wifi-view]") : null;
+        if (viewBtn) {
+          var view = viewBtn.getAttribute("data-wifi-view");
+          var toggle = viewBtn.closest(".v1-wifi-view-toggle");
+          if (toggle) {
+            toggle.querySelectorAll(".v1-wifi-tab-btn[data-wifi-view]").forEach(function (btn) {
+              btn.classList.toggle("is-active", btn === viewBtn);
+            });
+          }
+          shellEl.querySelectorAll("[data-wifi-view-panel]").forEach(function (panel) {
+            panel.classList.toggle("is-active", panel.getAttribute("data-wifi-view-panel") === view);
           });
           return;
         }
@@ -2625,7 +2647,8 @@
       function onChanged() {
         if (!document.body.contains(shellEl)) return;
         var activeSection = wifiActiveSectionFromDom(shellEl);
-        shellEl.outerHTML = renderWifiTool(activeSection);
+        var activeView = wifiActiveViewFromDom(shellEl);
+        shellEl.outerHTML = renderWifiTool(activeSection, activeView);
         shellEl = root.querySelector(".v1-wifi-shell");
         if (shellEl) shellEl.addEventListener("click", onClick);
       }

@@ -62,6 +62,49 @@
   display: block;
 }
 
+.v1-wifi-view-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.v1-wifi-view {
+  display: none;
+}
+
+.v1-wifi-view.is-active {
+  display: block;
+}
+
+.v1-wifi-radar {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.v1-wifi-radar-ring {
+  fill: none;
+  stroke: #3f3f46;
+  stroke-dasharray: 3 4;
+}
+
+.v1-wifi-radar-center {
+  fill: var(--txt-dim);
+}
+
+.v1-wifi-radar-dot {
+  stroke: #0b0c0e;
+  stroke-width: 1.5;
+}
+
+.v1-wifi-radar-label {
+  font-size: 9px;
+  font-family: var(--font-ui);
+  fill: var(--txt-dim);
+  pointer-events: none;
+}
+
 .v1-wifi-signal-bar {
   display: inline-block;
   min-width: 40px;

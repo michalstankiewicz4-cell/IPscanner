@@ -1462,10 +1462,83 @@
       return "<span class=\"v1-wifi-password-cell\"><span class=\"v1-wifi-password-note\">" + escapeHtml(tr("wifiPasswordDeniedNote")) + "</span></span>";
     }
 
-    function renderWifiNearbySection(active) {
+    // "80%" -> 80, missing/unparseable -> null (kept distinct from 0% -
+    // this dev machine's own scan-networks output often omits Signal
+    // entirely even when BSSID/Channel are also missing, see wifi-runtime.js
+    // - a real 0% and "unknown" shouldn't render identically).
+    function wifiParseSignalPercent(signalStr) {
+      var m = /(-?\d+(?:\.\d+)?)/.exec(String(signalStr || ""));
+      if (!m) return null;
+      var n = Number(m[1]);
+      return isNaN(n) ? null : Math.max(0, Math.min(100, n));
+    }
+
+    // Red (weak) -> green (strong) via hue interpolation; unknown signal
+    // gets a neutral gray rather than being misread as "0% = weakest".
+    function wifiSignalColor(pct) {
+      if (pct === null) return "#6b7280";
+      return "hsl(" + Math.round(pct * 1.2) + ", 70%, 50%)";
+    }
+
+    // Distance from center is inverse to signal strength - strongest
+    // networks ring the middle, weakest (and unknown) sit near the rim.
+    function wifiSignalRadius(pct) {
+      var minR = 32, maxR = 125;
+      if (pct === null) return maxR;
+      return minR + (1 - pct / 100) * (maxR - minR);
+    }
+
+    // Radar view: networks placed around a 360 circle in alphabetical SSID
+    // order (0 at the top, sweeping clockwise - the "which order" the user
+    // asked for once they couldn't recall the original spec), distance
+    // from center driven by signal strength, dot color mirroring the same
+    // strength. Self-contained inline SVG string, same string-building
+    // convention as renderPulpitLinksSvg above, just not split into a
+    // separate persistent element since this widget has no drag state to
+    // preserve across re-renders.
+    function renderWifiRadarSvg(networks) {
+      var cx = 150, cy = 150;
+      var sorted = networks.slice().sort(function (a, b) {
+        return String(a.ssid || "").toLowerCase().localeCompare(String(b.ssid || "").toLowerCase());
+      });
+      var count = sorted.length || 1;
+      var ringsHtml = [40, 80, 120].map(function (r) {
+        return "<circle class=\"v1-wifi-radar-ring\" cx=\"" + cx + "\" cy=\"" + cy + "\" r=\"" + r + "\"></circle>";
+      }).join("");
+      var dotsHtml = sorted.map(function (n, i) {
+        var pct = wifiParseSignalPercent(n.signal);
+        var r = wifiSignalRadius(pct);
+        var angleDeg = (i * 360 / count) - 90;
+        var angleRad = angleDeg * Math.PI / 180;
+        var x = cx + r * Math.cos(angleRad);
+        var y = cy + r * Math.sin(angleRad);
+        var color = wifiSignalColor(pct);
+        var labelX = cx + (r + 12) * Math.cos(angleRad);
+        var labelY = cy + (r + 12) * Math.sin(angleRad);
+        var anchor = Math.cos(angleRad) > 0.15 ? "start" : (Math.cos(angleRad) < -0.15 ? "end" : "middle");
+        var title = n.ssid + " · " + (pct === null ? "?" : pct + "%") + (n.security ? " · " + n.security : "");
+        return [
+          "<g data-wifi-radar-bssid=\"" + escapeHtml(n.bssid || "") + "\">",
+          "<title>" + escapeHtml(title) + "</title>",
+          "<circle class=\"v1-wifi-radar-dot\" cx=\"" + x.toFixed(1) + "\" cy=\"" + y.toFixed(1) + "\" r=\"6\" fill=\"" + color + "\"></circle>",
+          "<text class=\"v1-wifi-radar-label\" x=\"" + labelX.toFixed(1) + "\" y=\"" + labelY.toFixed(1) + "\" text-anchor=\"" + anchor + "\">" + escapeHtml(n.ssid || "") + "</text>",
+          "</g>"
+        ].join("");
+      }).join("");
+      return [
+        "<svg class=\"v1-wifi-radar\" viewBox=\"0 0 300 300\" role=\"img\" aria-label=\"" + escapeHtml(tr("wifiRadarAriaLabel")) + "\">",
+        ringsHtml,
+        "<circle class=\"v1-wifi-radar-center\" cx=\"" + cx + "\" cy=\"" + cy + "\" r=\"4\"></circle>",
+        dotsHtml,
+        "</svg>"
+      ].join("");
+    }
+
+    function renderWifiNearbySection(active, view) {
       var state = wifiApi ? wifiApi.getNearby() : { networks: [], loading: false, error: null };
       var networks = state.networks || [];
-      var bodyHtml;
+      var currentView = view === "radar" ? "radar" : "table";
+      var contentHtml;
       if (networks.length) {
         var rowsHtml = networks.map(function (n) {
           return [
@@ -1478,7 +1551,7 @@
             "</tr>"
           ].join("");
         }).join("");
-        bodyHtml = [
+        var tableHtml = [
           "<div class=\"v1-results-table-scroll\">",
           "<table class=\"v1-results-table\">",
           "<thead><tr>",
@@ -1492,13 +1565,21 @@
           "</table>",
           "</div>"
         ].join("");
+        contentHtml = [
+          "<div class=\"v1-wifi-view-toggle\">",
+          "<button type=\"button\" class=\"v1-wifi-tab-btn" + (currentView === "table" ? " is-active" : "") + "\" data-wifi-view=\"table\">" + escapeHtml(tr("wifiViewTable")) + "</button>",
+          "<button type=\"button\" class=\"v1-wifi-tab-btn" + (currentView === "radar" ? " is-active" : "") + "\" data-wifi-view=\"radar\">" + escapeHtml(tr("wifiViewRadar")) + "</button>",
+          "</div>",
+          "<div class=\"v1-wifi-view" + (currentView === "table" ? " is-active" : "") + "\" data-wifi-view-panel=\"table\">" + tableHtml + "</div>",
+          "<div class=\"v1-wifi-view" + (currentView === "radar" ? " is-active" : "") + "\" data-wifi-view-panel=\"radar\">" + renderWifiRadarSvg(networks) + "<p class=\"v1-import-manager-note\">" + escapeHtml(tr("wifiRadarLegendNote")) + "</p></div>"
+        ].join("");
       } else {
-        bodyHtml = "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("wifiNearbyEmptyNote")) + "</div>";
+        contentHtml = "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("wifiNearbyEmptyNote")) + "</div>";
       }
       return [
         "<div class=\"v1-wifi-section" + (active ? " is-active" : "") + "\" data-wifi-section=\"nearby\">",
         state.error ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(state.error) + "</p>" : "",
-        bodyHtml,
+        contentHtml,
         "</div>"
       ].join("");
     }
@@ -1541,7 +1622,7 @@
     // DOM before a full outerHTML rebuild) rather than tracked as module
     // state here, keeping this render function stateless like its
     // siblings. Always renders (even on www) - only LS's buttons disable.
-    function renderWifiTool(activeSection) {
+    function renderWifiTool(activeSection, activeView) {
       var section = activeSection === "saved" ? activeSection : "nearby";
       function tabBtn(id, labelKey) {
         return "<button type=\"button\" class=\"v1-wifi-tab-btn" + (section === id ? " is-active" : "") + "\" data-wifi-tab=\"" + id + "\">" + escapeHtml(tr(labelKey)) + "</button>";
@@ -1552,7 +1633,7 @@
         tabBtn("nearby", "wifiTabNearby"),
         tabBtn("saved", "wifiTabSaved"),
         "</div>",
-        renderWifiNearbySection(section === "nearby"),
+        renderWifiNearbySection(section === "nearby", activeView),
         renderWifiSavedSection(section === "saved"),
         "</div>"
       ].join("");
