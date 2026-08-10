@@ -26,7 +26,12 @@
         "ipscanner.pl (the web build) now ships a Content-Security-Policy and Referrer-Policy.",
         "Fixed a rendering bug where an extension-contributed left-panel tool (and any tool sharing the generic card template) could get its content or title rendered twice.",
         "Fixed several accessibility/autofill warnings raised by the browser on addon-declared input fields and the AI Properties panel.",
-        "Added a \"Special thanks\" section in About, crediting testers."
+        "Added a \"Special thanks\" section in About, crediting testers.",
+        "Added Google Dork Finder (Tools menu): compose an advanced Google search query (site:/filetype:/inurl:/intitle:/intext:, exact phrases, +include/-exclude) from categorized presets (exposed .env files, admin panels, DB dumps, and more) and open it in your browser - saved query history, nothing scraped in-app. An optional Google Custom Search API key/CX can be set in Options - General for a future \"extract results\" feature.",
+        "Added WiFi (Tools menu): scan nearby networks (table or a radar-style visual view - closer to center and greener means a stronger signal), check your current connection's details, and view saved profiles with on-demand password reveal - read-only, desktop only.",
+        "Deep links now work from the web build too: e.g. ipscanner.pl/#dorking or #wifi opens that tool directly, same as clicking it in the Tools menu.",
+        "Mail XSS Tester's form now stays visible on the web build - only the actions that need the desktop backend (tunnel, send) are disabled there, instead of hiding the whole tool.",
+        "Fixed collapsible sidebar sections (Topology, ShellCraft, Mail XSS Tester, Google Dork, and others) not responding to clicks unless their panel had already been opened once this session."
       ]
     },
     {
