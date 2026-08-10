@@ -10,6 +10,12 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.7.0",
+      notes: [
+        "In development."
+      ]
+    },
+    {
       version: "v2.6.0",
       notes: [
         "Added a reusable addon \"custom markup\" system: an installable tool can now declare its own input fields and a structured results table (not just a static card), so addons can collect input and show real data instead of plain text output.",
