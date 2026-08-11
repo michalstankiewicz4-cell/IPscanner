@@ -10,6 +10,14 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.8.0",
+      notes: [
+        "Added Community (Help menu, and a new icon at the top of the Left Shortcut Bar): a shared chat with other users of the app, backed by a Discord channel behind a small proxy - no account, login, or setup needed, just pick a nickname once. Works on desktop and www.",
+        "Anti-abuse, since there are no real accounts yet: Cloudflare Turnstile blocks scripted/curl access to the chat's backend before a message can ever reach Discord, nicknames are validated and can only be changed once a day, every message is marked as coming from an unverified sender, and repeated identical messages collapse into one entry with a counter instead of flooding the list.",
+        "Fixed detaching a tab into its own floating window breaking any tool (like the new Community chat) whose controls are wired up by element id - detaching strips ids to avoid clashing with the still-docked copy, so wiring now uses attributes that survive it instead."
+      ]
+    },
+    {
       version: "v2.7.0",
       notes: [
         "Added real auto-update: alongside the usual portable zip, releases now also ship a signed NSIS installer - installer users get a native \"Update & Restart\" prompt that downloads, verifies, and installs the new version automatically. Portable-zip users keep the exact same experience as before (a prompt that opens the Releases page).",
