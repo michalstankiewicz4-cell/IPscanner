@@ -988,6 +988,7 @@
     "updateDownloading": "Pobieranie aktualizacji...",
     "updateInstalling": "Instalowanie aktualizacji...",
     "updateRestarting": "Ponowne uruchamianie...",
-    "updateFailed": "Aktualizacja nie powiodla sie"
+    "updateFailed": "Aktualizacja nie powiodla sie",
+    "updateAvailableWhatsNew": "Co nowego"
   }
 }

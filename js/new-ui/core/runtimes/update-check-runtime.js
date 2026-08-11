@@ -122,15 +122,26 @@
     function promptNativeInstall(update, tag) {
       var title = tr("updateAvailableTitle");
       var message = tr("updateAvailableMessage") + " " + tag;
-      var okLabel = tr("updateAvailableInstallRestart");
-      var cancelLabel = tr("updateAvailableLater");
 
-      return window.NetReconNewUI && window.NetReconNewUI.openConfirmDialog
-        ? window.NetReconNewUI.openConfirmDialog(title, message, okLabel, cancelLabel).then(function (confirmed) {
-            if (confirmed) return installAndRelaunch(update).then(function () { return true; });
-            return true;
-          })
-        : false;
+      if (!window.NetReconNewUI || !window.NetReconNewUI.openUpdateDialog) return false;
+
+      return window.NetReconNewUI.openUpdateDialog(
+        title,
+        message,
+        tr("updateAvailableInstallRestart"),
+        tr("updateAvailableWhatsNew"),
+        tr("updateAvailableLater")
+      ).then(function (choice) {
+        if (choice === "install") return installAndRelaunch(update).then(function () { return true; });
+        if (choice === "whatsnew") {
+          if (platform && platform.openExternalUrl) platform.openExternalUrl(RELEASES_PAGE_URL);
+          // Re-prompt after sending them to the release notes, rather than
+          // treating "What's new" as a final answer - they still need to
+          // say install-or-not once they're done reading.
+          return promptNativeInstall(update, tag);
+        }
+        return true;
+      });
     }
 
     function checkForUpdateDesktop() {

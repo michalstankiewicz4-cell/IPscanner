@@ -988,6 +988,7 @@
     "updateDownloading": "Update wird heruntergeladen...",
     "updateInstalling": "Update wird installiert...",
     "updateRestarting": "Neu starten...",
-    "updateFailed": "Aktualisierung fehlgeschlagen"
+    "updateFailed": "Aktualisierung fehlgeschlagen",
+    "updateAvailableWhatsNew": "Was ist neu"
   }
 }

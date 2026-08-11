@@ -1370,6 +1370,7 @@
         applyMenuAndPanelDefinitions = menuRuntime.applyMenuAndPanelDefinitions;
         window.NetReconNewUI = window.NetReconNewUI || {};
         window.NetReconNewUI.openConfirmDialog = menuRuntime.openConfirmDialog;
+        window.NetReconNewUI.openUpdateDialog = menuRuntime.openUpdateDialog;
       }
 
       const navigationRuntimeFactory = runtimeFactory.createNavigationRuntime

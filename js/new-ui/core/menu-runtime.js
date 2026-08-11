@@ -190,6 +190,11 @@
 
     var exitDialog = buildButtonDialog("v1ExitModal", ["save", "discard", "cancel"]);
     var confirmDialog = buildButtonDialog("v1ConfirmModal", ["ok", "cancel"]);
+    // Separate 3-button instance (not just openConfirmDialog + an extra
+    // arg) since buildButtonDialog's button set is fixed per instance -
+    // used by the update-available prompt so "What's new" can sit between
+    // Install and Cancel instead of only having a binary choice.
+    var updateDialog = buildButtonDialog("v1UpdateModal", ["install", "whatsnew", "cancel"]);
 
     function openExitConfirmDialog() {
       return exitDialog.open({
@@ -211,6 +216,18 @@
         labels: { ok: okLabel, cancel: cancelLabel },
         focusKey: "ok",
       }).then(function (choice) { return choice === "ok"; });
+    }
+
+    // Resolves with the raw choice string ("install" | "whatsnew" |
+    // "cancel"), unlike openConfirmDialog's boolean - the caller needs to
+    // tell three outcomes apart, not just yes/no.
+    function openUpdateDialog(titleText, messageText, installLabel, whatsnewLabel, cancelLabel) {
+      return updateDialog.open({
+        title: titleText,
+        message: messageText,
+        labels: { install: installLabel, whatsnew: whatsnewLabel, cancel: cancelLabel },
+        focusKey: "install",
+      });
     }
 
     function runMenuAction(action) {
@@ -682,6 +699,7 @@
       applyMenuAndPanelDefinitions: applyMenuAndPanelDefinitions,
       runMenuAction: runMenuAction,
       openConfirmDialog: openConfirmDialog,
+      openUpdateDialog: openUpdateDialog,
     };
   }
 

@@ -989,6 +989,7 @@
     "updateDownloading": "جارٍ تنزيل التحديث...",
     "updateInstalling": "جارٍ تثبيت التحديث...",
     "updateRestarting": "جارٍ إعادة التشغيل...",
-    "updateFailed": "فشل التحديث"
+    "updateFailed": "فشل التحديث",
+    "updateAvailableWhatsNew": "ما الجديد"
   }
 }

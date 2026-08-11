@@ -989,6 +989,7 @@
     "updateDownloading": "מוריד עדכון...",
     "updateInstalling": "מתקין עדכון...",
     "updateRestarting": "מפעיל מחדש...",
-    "updateFailed": "העדכון נכשל"
+    "updateFailed": "העדכון נכשל",
+    "updateAvailableWhatsNew": "מה חדש"
   }
 }
