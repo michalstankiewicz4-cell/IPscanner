@@ -2722,9 +2722,45 @@
         if (target.closest("[data-comm-change-nick]")) {
           var api = window.NetReconNewUICore && window.NetReconNewUICore.communityChat;
           if (api) api.setNickname("");
+          return;
+        }
+        var unignoreBtn = target.closest("[data-comm-unignore]");
+        if (unignoreBtn) {
+          var unignoreApi = window.NetReconNewUICore && window.NetReconNewUICore.communityChat;
+          if (unignoreApi) unignoreApi.unignoreNickname(unignoreBtn.getAttribute("data-comm-unignore"));
         }
       }
       shellEl.addEventListener("click", onClick);
+
+      // Right-click a name (own messages included - closing the loophole
+      // of only being able to ignore other people costs nothing) to hide
+      // that nickname's messages on this device only - see
+      // community-chat-runtime.js's ignoreNickname comment for why this is
+      // the honest, achievable version of "block this person" rather than
+      // real moderation.
+      function onContextMenu(event) {
+        if (!document.body.contains(shellEl)) return;
+        var target = event.target;
+        if (!target || !target.closest) return;
+        var nameEl = target.closest("[data-comm-author]");
+        if (!nameEl) return;
+        event.preventDefault();
+        var nick = nameEl.getAttribute("data-comm-author");
+        if (!nick) return;
+        var ui = window.NetReconNewUI;
+        if (!ui || !ui.openConfirmDialog) return;
+        ui.openConfirmDialog(
+          tr("commChatIgnoreConfirmTitle"),
+          tr("commChatIgnoreConfirmMessage") + " \"" + nick + "\"?",
+          tr("commChatIgnoreConfirmOk"),
+          tr("exitPromptCancel")
+        ).then(function (confirmed) {
+          if (!confirmed) return;
+          var api = window.NetReconNewUICore && window.NetReconNewUICore.communityChat;
+          if (api) api.ignoreNickname(nick);
+        });
+      }
+      shellEl.addEventListener("contextmenu", onContextMenu);
 
       function onKeydown(event) {
         if (event.key !== "Enter") return;
@@ -2740,6 +2776,7 @@
         if (!shellEl) return;
         shellEl.addEventListener("click", onClick);
         shellEl.addEventListener("keydown", onKeydown);
+        shellEl.addEventListener("contextmenu", onContextMenu);
         scrollToBottom();
       }
 
@@ -2747,21 +2784,26 @@
       var lastSending = null;
       var lastSendError = null;
       var lastNicknameError = null;
+      var lastIgnoredKey = null;
 
       function onChanged(event) {
         if (!document.body.contains(shellEl)) return;
         var detail = (event && event.detail) || {};
-        var structuralChange = detail.nickname !== lastNickname || detail.sending !== lastSending || detail.sendError !== lastSendError || detail.nicknameError !== lastNicknameError;
+        var ignoredKey = (detail.ignored || []).join("\n");
+        var structuralChange = detail.nickname !== lastNickname || detail.sending !== lastSending || detail.sendError !== lastSendError || detail.nicknameError !== lastNicknameError || ignoredKey !== lastIgnoredKey;
         lastNickname = detail.nickname;
         lastSending = detail.sending;
         lastSendError = detail.sendError;
         lastNicknameError = detail.nicknameError;
+        lastIgnoredKey = ignoredKey;
 
         // The targeted (message-list-only) fast path below is only valid
         // once a nickname is set - with none set, ".v1-comm-chat-list" is
         // the nickname-setup card, not a message list, and overwriting its
         // innerHTML on a background poll tick would wipe out whatever the
-        // user is mid-typing into the nickname field.
+        // user is mid-typing into the nickname field. The ignored list is
+        // also treated as structural (not just message content) since it
+        // changes the "Ignored: ..." pill row outside the list too.
         if (structuralChange || !detail.nickname) {
           shellEl.outerHTML = renderCommunityChatTool();
           rebind();
@@ -2770,7 +2812,7 @@
 
         var list = shellEl.querySelector(".v1-comm-chat-list");
         if (list) {
-          list.innerHTML = renderCommunityChatMessagesHtml(detail.messages || [], detail.nickname || "");
+          list.innerHTML = renderCommunityChatMessagesHtml(detail.messages || [], detail.nickname || "", detail.ignored || []);
           scrollToBottom();
         }
       }

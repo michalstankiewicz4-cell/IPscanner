@@ -3028,16 +3028,28 @@
     // anyone, including someone else's. Shown on every message for now;
     // once verified/logged-in senders exist, gate this on the message not
     // being verified instead of showing it unconditionally.
-    function renderCommunityChatMessagesHtml(messages, nickname) {
-      if (!messages.length) return "<div class=\"v1-comm-empty\">" + escapeHtml(trOr("commChatEmptyNote", "No messages yet - say hi!")) + "</div>";
+    //
+    // Each name inside the author line is its own data-comm-author span
+    // (not one flat string) so a right-click can target one specific
+    // person even inside a grouped/repeated-message entry with several
+    // senders - see wireCommunityChatTool's contextmenu handler.
+    function renderCommunityChatMessagesHtml(messages, nickname, ignored) {
+      var ignoredSet = {};
+      (ignored || []).forEach(function (n) { ignoredSet[n] = true; });
+      var visible = messages.filter(function (m) { return !ignoredSet[m.author]; });
 
-      return groupCommunityChatMessages(messages).map(function (group) {
+      if (!visible.length) return "<div class=\"v1-comm-empty\">" + escapeHtml(trOr("commChatEmptyNote", "No messages yet - say hi!")) + "</div>";
+
+      return groupCommunityChatMessages(visible).map(function (group) {
         var own = group.authors.indexOf(nickname) !== -1;
         var ts = group.lastTimestamp ? new Date(group.lastTimestamp).toLocaleTimeString() : "";
         var textLine = group.count > 1 ? (group.count + " x " + (group.content || "")) : (group.content || "");
+        var authorsHtml = group.authors.map(function (a) {
+          return "<span class=\"v1-comm-msg-author-name\" data-comm-author=\"" + escapeHtml(a) + "\">" + escapeHtml(a) + "</span>";
+        }).join(", ");
         return [
           "<div class=\"v1-comm-msg" + (own ? " own" : "") + "\">",
-          "<span class=\"v1-comm-msg-author\">" + escapeHtml(group.authors.join(", ")) + "</span>",
+          "<span class=\"v1-comm-msg-author\">" + authorsHtml + "</span>",
           "<span class=\"v1-comm-msg-time\">" + escapeHtml(ts) + "</span>",
           "<span class=\"v1-comm-msg-text\">" + escapeHtml(textLine) + "</span>",
           "<span class=\"v1-comm-msg-warn\" title=\"" + escapeHtml(trOr("commChatUnverifiedWarnTitle", "This sender picked their own name - it isn't verified and could be impersonating someone.")) + "\">⚠ " + escapeHtml(trOr("commChatUnverifiedWarn", "unverified sender")) + "</span>",
@@ -3103,7 +3115,19 @@
         ? trOr("commChatTurnstileFailed", "Couldn't verify this isn't a script - try again in a moment.")
         : rawSendError;
       var sending = communityChatApi ? communityChatApi.getSending() : false;
-      var listHtml = renderCommunityChatMessagesHtml(messages, nickname);
+      var ignored = communityChatApi ? communityChatApi.getIgnored() : [];
+      var listHtml = renderCommunityChatMessagesHtml(messages, nickname, ignored);
+
+      var ignoredRowHtml = ignored.length
+        ? [
+            "<div class=\"v1-comm-ignored-row\">",
+            "<span class=\"v1-comm-ignored-label\">" + escapeHtml(trOr("commChatIgnoredLabel", "Ignored:")) + "</span>",
+            ignored.map(function (n) {
+              return "<span class=\"v1-comm-ignored-pill\">" + escapeHtml(n) + "<button type=\"button\" class=\"v1-comm-unignore-btn\" data-comm-unignore=\"" + escapeHtml(n) + "\" title=\"" + escapeHtml(trOr("commChatUnignoreAria", "Stop ignoring")) + "\" aria-label=\"" + escapeHtml(trOr("commChatUnignoreAria", "Stop ignoring")) + "\">&times;</button></span>";
+            }).join(""),
+            "</div>"
+          ].join("")
+        : "";
 
       var inputAreaHtml = [
         "<div class=\"v1-comm-status-row\">",
@@ -3119,6 +3143,7 @@
 
       return [
         "<div class=\"v1-comm-chat-shell\">",
+        ignoredRowHtml,
         "<div class=\"v1-comm-chat-list\" id=\"v1CommChatMessages\">",
         listHtml,
         "</div>",

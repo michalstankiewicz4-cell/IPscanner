@@ -12,6 +12,7 @@
   var NICKNAME_STORAGE_KEY = "netrecon_community_chat_nickname_v1";
   var NICKNAME_CHANGED_AT_STORAGE_KEY = "netrecon_community_chat_nickname_changed_at_v1";
   var NICKNAME_CHANGE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+  var IGNORED_STORAGE_KEY = "netrecon_community_chat_ignored_v1";
   var POLL_INTERVAL_MS = 5000;
   var MAX_MESSAGES = 200;
 
@@ -174,9 +175,34 @@
     }
   }
 
+  // Purely a local display filter (persisted per-device, never sent
+  // anywhere) - not real moderation. There's no way to actually block one
+  // person server-side here (every message shares the same webhook
+  // identity - see docs/COMMUNITY_CHAT_SETUP.md), so this is the honest,
+  // achievable version: hide messages from a nickname on MY screen only.
+  function loadIgnored() {
+    try {
+      var raw = window.localStorage && window.localStorage.getItem(IGNORED_STORAGE_KEY);
+      var parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveIgnored(list) {
+    try {
+      if (!window.localStorage) return;
+      window.localStorage.setItem(IGNORED_STORAGE_KEY, JSON.stringify(list));
+    } catch (_) {
+      // ignore persistence failures
+    }
+  }
+
   function createCommunityChatRuntime() {
     var nickname = loadNickname();
     var nicknameChangedAt = loadNicknameChangedAt();
+    var ignored = loadIgnored();
     var messages = [];
     var messageIds = {};
     var pollTimer = null;
@@ -188,7 +214,7 @@
     function emitChanged() {
       try {
         document.dispatchEvent(new CustomEvent("newui:community-chat-changed", {
-          detail: { messages: messages.slice(), nickname: nickname, sending: sending, sendError: sendError, loadError: loadError, nicknameError: nicknameError, nicknameCooldownRemainingMs: getNicknameCooldownRemainingMs() }
+          detail: { messages: messages.slice(), nickname: nickname, sending: sending, sendError: sendError, loadError: loadError, nicknameError: nicknameError, nicknameCooldownRemainingMs: getNicknameCooldownRemainingMs(), ignored: ignored.slice() }
         }));
       } catch (_) {
         // ignore event dispatch failures
@@ -200,6 +226,23 @@
     function getSending() { return sending; }
     function getSendError() { return sendError; }
     function getNicknameError() { return nicknameError; }
+    function getIgnored() { return ignored.slice(); }
+
+    function ignoreNickname(nick) {
+      var value = String(nick || "").trim();
+      if (!value || ignored.indexOf(value) !== -1) return;
+      ignored.push(value);
+      saveIgnored(ignored);
+      emitChanged();
+    }
+
+    function unignoreNickname(nick) {
+      var idx = ignored.indexOf(String(nick || "").trim());
+      if (idx === -1) return;
+      ignored.splice(idx, 1);
+      saveIgnored(ignored);
+      emitChanged();
+    }
 
     // No cooldown until a nickname has actually been set once - the first
     // pick is free, only *changing* an existing one is rate-limited.
@@ -338,6 +381,9 @@
       getSendError: getSendError,
       getNicknameError: getNicknameError,
       getNicknameCooldownRemainingMs: getNicknameCooldownRemainingMs,
+      getIgnored: getIgnored,
+      ignoreNickname: ignoreNickname,
+      unignoreNickname: unignoreNickname,
       startPolling: startPolling,
       sendMessage: sendMessage,
     };
