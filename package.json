@@ -1,7 +1,7 @@
 {
   "name": "ipscanner-tauri",
   "private": true,
-  "version": "2.8.0",
+  "version": "2.8.1",
   "scripts": {
     "sync-version": "node scripts/sync-version.js",
     "prepare:app": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path 'app') { Remove-Item -Path 'app' -Recurse -Force }; New-Item -ItemType Directory -Path 'app','app/css','app/js' -Force | Out-Null; Copy-Item -Path 'index.html','test-ui.html','zebrus.png' -Destination 'app' -Force; Copy-Item -Path 'css/new-ui' -Destination 'app/css' -Recurse -Force; Copy-Item -Path 'js/new-ui' -Destination 'app/js' -Recurse -Force\"",

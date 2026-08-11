@@ -10,6 +10,12 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.8.1",
+      notes: [
+        "Community: right-click a sender's name to ignore them - hides their messages on your device only (a local filter, not real moderation, since the chat has no real per-user accounts yet), with a small \"Ignored: ...\" list to undo it any time."
+      ]
+    },
+    {
       version: "v2.8.0",
       notes: [
         "Added Community (Help menu, and a new icon at the top of the Left Shortcut Bar): a shared chat with other users of the app, backed by a Discord channel behind a small proxy - no account, login, or setup needed, just pick a nickname once. Works on desktop and www.",
