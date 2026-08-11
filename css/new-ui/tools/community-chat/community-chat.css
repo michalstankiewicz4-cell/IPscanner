@@ -1,0 +1,167 @@
+.v1-comm-chat-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 8px;
+}
+
+.v1-comm-chat-list {
+  border: 0;
+  background: #1a1a1c;
+  padding: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.v1-comm-empty {
+  color: var(--txt-dim);
+  font-size: 12px;
+  padding: 8px;
+}
+
+.v1-comm-chat-list--setup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.v1-comm-nickname-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  padding: 16px;
+  text-align: center;
+}
+
+.v1-comm-nickname-setup-title {
+  color: var(--txt);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.v1-comm-nickname-setup-note {
+  color: var(--txt-dim);
+  font-size: 10px;
+}
+
+.v1-comm-msg {
+  border: 0;
+  padding: 7px 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #d7d9de;
+  background: #202024;
+}
+
+.v1-comm-msg.own {
+  background: #212b3b;
+  color: #d8e6ff;
+}
+
+.v1-comm-msg-author {
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.v1-comm-msg-time {
+  font-size: 10px;
+  color: var(--txt-dim);
+  margin-left: 6px;
+}
+
+.v1-comm-msg-text {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-top: 2px;
+}
+
+/* Deliberately low-key (small, muted yellow, no background/border) - a
+   factual disclosure that the sender name is unverified, not an alarm.
+   Shown on every message today since no verified-login path exists yet
+   (see renderCommunityChatMessagesHtml's comment). */
+.v1-comm-msg-warn {
+  display: block;
+  margin-top: 3px;
+  font-size: 9px;
+  color: #a89a5c;
+  opacity: 0.75;
+  cursor: help;
+}
+
+.v1-comm-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--txt-dim);
+  flex: 0 0 auto;
+}
+
+.v1-comm-change-nick-btn {
+  border: 0;
+  background: transparent;
+  color: var(--txt-dim);
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.v1-comm-change-nick-btn:hover {
+  color: var(--txt);
+}
+
+.v1-comm-nickname-row,
+.v1-comm-input-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.v1-comm-nickname-row input,
+.v1-comm-input-row input {
+  border: 0;
+  background: #18181a;
+  color: var(--txt);
+  padding: 7px 8px;
+  font-size: 12px;
+  font-family: var(--font-ui);
+}
+
+.v1-comm-nickname-row button,
+.v1-comm-input-row button {
+  border: 0;
+  background: color-mix(in oklab, var(--brand) 20%, var(--bg-soft));
+  color: var(--txt);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+}
+
+.v1-comm-nickname-row button:hover,
+.v1-comm-input-row button:hover {
+  background: color-mix(in oklab, var(--brand) 34%, var(--bg-soft));
+  color: #ffffff;
+}
+
+.v1-comm-input-row button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.v1-comm-error {
+  color: #e08787;
+  font-size: 11px;
+  flex: 0 0 auto;
+}

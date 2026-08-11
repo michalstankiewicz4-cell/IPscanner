@@ -18,7 +18,7 @@
        are NOT achievable this way at all - GitHub Pages has no header
        injection point, that gap needs a proxy (e.g. Cloudflare) or a
        different host in front of/instead of GitHub Pages. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob: http: https:; script-src 'self' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline' http: https:; img-src 'self' data: blob: http: https:; connect-src 'self' http: https: ws: wss:; font-src 'self' data:; frame-src 'self' http: https:; object-src 'none'; base-uri 'self';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob: http: https:; script-src 'self' 'wasm-unsafe-eval' blob: https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' http: https:; img-src 'self' data: blob: http: https:; connect-src 'self' http: https: ws: wss:; font-src 'self' data:; frame-src 'self' http: https:; object-src 'none'; base-uri 'self';" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <title>OSINT NET Auditor | IP Scanner & Network Recon Tool</title>
   <meta name="description" content="OSINT NET Auditor is a desktop IP/port scanner for network reconnaissance: scan IP ranges, browse results, explore host topology and geolocation, manage port presets, and save/load scan sessions." />
@@ -105,6 +105,7 @@
       <div class="v1-menu-group" data-menu="help">
         <button class="v1-menu-trigger">Help</button>
         <div class="v1-menu-dropdown">
+          <button class="v1-menu-dd-item" data-tool="community-chat"><span id="v1HelpMenuCommunityChat">Community</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-menu-action="versions"><span>Versions</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-menu-action="download"><span>Download</span><span class="shortcut"></span></button>
           <button class="v1-menu-dd-item" data-menu-action="about"><span>About</span><span class="shortcut"></span></button>
@@ -139,6 +140,7 @@
     <main class="v1-main">
       <!-- Left icon bar -->
       <aside class="v1-activity">
+        <button id="v1ActivityCommunityChat" data-tool="community-chat" title="Community" aria-label="Community">💬</button>
         <button id="v1ActivityResults" data-activity="results" data-tool="results-ip" title="Result Data List" aria-label="Result Data List">📊</button>
         <button id="v1ActivityScanner" data-activity="scanner" data-tool="scan-runner" class="active" title="IP Scanner" aria-label="IP Scanner">📡</button>
         <button id="v1ActivityNetworkMonitor" data-tool="network-monitor" title="Network Monitor" aria-label="Network Monitor">🖧</button>
@@ -733,9 +735,9 @@
 
   <script src="js/new-ui/core/app-version.js?v=2.7.0" defer></script>
   <script src="js/new-ui/core/store.js" defer></script>
-  <script src="js/new-ui/core/i18n.js?v=20260983" defer></script>
+  <script src="js/new-ui/core/i18n.js?v=20261010" defer></script>
   <script src="js/new-ui/core/theme.js?v=20260604" defer></script>
-  <script src="js/new-ui/core/tool-catalog.js?v=20260978" defer></script>
+  <script src="js/new-ui/core/tool-catalog.js?v=20260989" defer></script>
   <script src="js/new-ui/core/tab-registry.js?v=20260104" defer></script>
   <script src="js/new-ui/core/tool-content-runtime.js?v=20260978" defer></script>
   <script src="js/new-ui/core/presets-runtime.js?v=20260817" defer></script>
@@ -753,6 +755,7 @@
   <script src="js/new-ui/core/mail-xss-tester-runtime.js?v=20260976" defer></script>
   <script src="js/new-ui/core/google-dork-runtime.js?v=20260976" defer></script>
   <script src="js/new-ui/core/wifi-runtime.js?v=20260977" defer></script>
+  <script src="js/new-ui/core/community-chat-runtime.js?v=20261007" defer></script>
   <script src="js/new-ui/core/agent-profile-attachments-db.js?v=20260974" defer></script>
   <script src="js/new-ui/core/agent-profiles-runtime.js?v=20260974" defer></script>
   <script src="js/new-ui/core/versions-data.js?v=20260984" defer></script>
@@ -774,19 +777,19 @@
   <script src="js/new-ui/core/runtimes/globe-runtime.js?v=20260975" defer></script>
   <script src="js/new-ui/core/runtimes/update-check-runtime.js?v=20260985" defer></script>
   <script src="js/new-ui/core/panel-content-config.js?v=20260713" defer></script>
-  <script src="js/new-ui/core/panel-content-runtime.js?v=20260980" defer></script>
-  <script src="js/new-ui/core/panel-interactions-runtime.js?v=20260979" defer></script>
+  <script src="js/new-ui/core/panel-content-runtime.js?v=20261013" defer></script>
+  <script src="js/new-ui/core/panel-interactions-runtime.js?v=20261014" defer></script>
   <script src="js/new-ui/core/panel-renderers-runtime.js?v=20260717" defer></script>
   <script src="js/new-ui/core/runtimes/language-catalog-runtime.js?v=20260924" defer></script>
   <script src="js/new-ui/core/runtimes/ip-library-runtime.js?v=20260924" defer></script>
   <script src="js/new-ui/core/runtimes/addon-catalog-runtime.js?v=20260924" defer></script>
-  <script src="js/new-ui/core/panels-runtime.js?v=20260978" defer></script>
+  <script src="js/new-ui/core/panels-runtime.js?v=20260992" defer></script>
   <script src="js/new-ui/core/menu-runtime.js?v=20260963" defer></script>
   <script src="js/new-ui/core/session-runtime.js?v=20260912" defer></script>
   <script src="js/new-ui/core/scanner-sidebar-runtime.js?v=20260933" defer></script>
   <script src="js/new-ui/core/email-recon-runtime.js?v=20260968" defer></script>
   <script src="js/new-ui/core/powershell-console-runtime.js?v=20260604" defer></script>
-    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260986" defer></script>
+    <script src="js/new-ui/core/bootstrap-runtime.js?v=20260998" defer></script>
 </body>
 </html> 
 </html> 

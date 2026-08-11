@@ -209,6 +209,7 @@
         const toolsMenuMailXssTester = document.getElementById("v1ToolsMenuMailXssTester");
         const toolsMenuGoogleDork = document.getElementById("v1ToolsMenuGoogleDork");
         const toolsMenuWifi = document.getElementById("v1ToolsMenuWifi");
+        const helpMenuCommunityChat = document.getElementById("v1HelpMenuCommunityChat");
         const toolsMenuNetworkMonitor = document.getElementById("v1ToolsMenuNetworkMonitor");
         const toolsMenuEmailRecon = document.getElementById("v1ToolsMenuEmailRecon");
         tabsTrack = document.getElementById("v1TabsTrack");
@@ -326,6 +327,7 @@
         if (toolsMenuMailXssTester) toolsMenuMailXssTester.textContent = tr("toolTitle_mail_xss_tester");
         if (toolsMenuGoogleDork) toolsMenuGoogleDork.textContent = tr("toolTitle_google_dork");
         if (toolsMenuWifi) toolsMenuWifi.textContent = tr("toolTitle_wifi");
+        if (helpMenuCommunityChat) helpMenuCommunityChat.textContent = tr("toolTitle_community_chat");
         if (toolsMenuNetworkMonitor) toolsMenuNetworkMonitor.textContent = tr("toolTitle_network_monitor");
         if (toolsMenuEmailRecon) toolsMenuEmailRecon.textContent = tr("toolTitle_email_recon");
         document.querySelectorAll("[data-sidebar-tab-close]").forEach((el) => {

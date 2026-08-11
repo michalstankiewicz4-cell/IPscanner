@@ -267,6 +267,19 @@
       labelKey: "tabLabel_wifi_current",
       ui: { showInRightPanel: true, rightOrder: 30 }
     },
+    // Community Chat: shared chat backed by a Discord channel via a small
+    // Cloudflare Worker proxy (see docs/COMMUNITY_CHAT_SETUP.md) - the app
+    // never holds the Discord webhook/bot token itself. Works fully on
+    // desktop AND www, same as Google Dork Finder - CS-only, no
+    // library/results split needed (message list + input fit one panel).
+    "community-chat": {
+      titleKey: "toolTitle_community_chat",
+      textKey: "toolText_community_chat",
+      points: ["Chat with other users of the app", "Backed by a shared Discord channel", "Pick a nickname once, no account needed"],
+      icon: "💬",
+      labelKey: "tabLabel_community_chat",
+      ui: { showAsTab: true, order: 130 }
+    },
     "ip-library": {
       titleKey: "toolTitle_ip_library",
       textKey: "toolText_ip_library",

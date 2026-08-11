@@ -1530,6 +1530,8 @@
         renderWifiLibrary: panelContentRuntime && panelContentRuntime.renderWifiLibrary,
         renderWifiAdapter: panelContentRuntime && panelContentRuntime.renderWifiAdapter,
         renderWifiCurrent: panelContentRuntime && panelContentRuntime.renderWifiCurrent,
+        renderCommunityChatTool: panelContentRuntime && panelContentRuntime.renderCommunityChatTool,
+        renderCommunityChatMessagesHtml: panelContentRuntime && panelContentRuntime.renderCommunityChatMessagesHtml,
         renderPulpitInspector: panelContentRuntime && panelContentRuntime.renderPulpitInspector,
         renderAgentProfileLibrary: panelContentRuntime && panelContentRuntime.renderAgentProfileLibrary,
         renderAgentProfileDetailFields: panelContentRuntime && panelContentRuntime.renderAgentProfileDetailFields,
@@ -1859,6 +1861,13 @@
       if (tool === "google-dork") { // shell
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireGoogleDorkTool) {
           panelInteractionsRuntime.wireGoogleDorkTool(scope);
+        }
+        return;
+      }
+
+      if (tool === "community-chat") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireCommunityChatTool) {
+          panelInteractionsRuntime.wireCommunityChatTool(scope);
         }
         return;
       }

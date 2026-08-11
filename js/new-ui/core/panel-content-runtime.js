@@ -21,6 +21,7 @@
     var mailXssTesterApi = core.mailXssTester || null;
     var googleDorkApi = core.googleDork || null;
     var wifiApi = core.wifi || null;
+    var communityChatApi = core.communityChat || null;
     var agentProfilesApi = core.agentProfiles || null;
     var generalSettingsApi = core.generalSettings || null;
 
@@ -2978,6 +2979,155 @@
       ].join("");
     }
 
+    // Anti-flood display measure: repeated identical text (whether from one
+    // spammy sender or several, e.g. a scripted flood using random
+    // nicknames - a random nick doesn't evade Discord's own webhook rate
+    // limit, but it would still visually flood the list) collapses into one
+    // entry instead of N separate bubbles. The entry re-anchors to the
+    // newest occurrence's position every time a duplicate arrives (bottom,
+    // matching normal newest-at-bottom chat order) and accumulates a
+    // newest-first author list + a repeat count. This is a display-only
+    // grouping - every underlying message is still really in Discord for
+    // real moderation, this just keeps the in-app reading experience from
+    // being buried by repeated text.
+    function groupCommunityChatMessages(messages) {
+      var groups = [];
+      var groupsByContent = {};
+      messages.forEach(function (m) {
+        var key = String(m.content || "");
+        var group = groupsByContent[key];
+        if (!group) {
+          group = { content: m.content, authors: [], count: 0, lastTimestamp: m.timestamp, lastId: m.id };
+          groupsByContent[key] = group;
+          groups.push(group);
+        }
+        group.authors.unshift(m.author || "?");
+        group.count += 1;
+        group.lastTimestamp = m.timestamp;
+        group.lastId = m.id;
+      });
+      groups.sort(function (a, b) {
+        var ai = BigInt(a.lastId), bi = BigInt(b.lastId);
+        return ai < bi ? -1 : (ai > bi ? 1 : 0);
+      });
+      return groups;
+    }
+
+    // Community Chat: single CS panel (no LS/RS split, message list + input
+    // fit one panel) - shown identically on desktop and www, backed by a
+    // Cloudflare Worker (see community-chat-runtime.js's own comment).
+    //
+    // Message-list markup is its own function (not inlined into
+    // renderCommunityChatTool) so panel-interactions-runtime.js can
+    // refresh just the list on every ~5s poll tick without replacing the
+    // input row's outerHTML - a wholesale re-render would wipe whatever
+    // the user is mid-typing every single poll.
+    // Every message today comes from the free-text nickname path (no
+    // verified-login option exists yet - see the Discord-OAuth plan this
+    // warning is a placeholder for) - so any sender name can be typed by
+    // anyone, including someone else's. Shown on every message for now;
+    // once verified/logged-in senders exist, gate this on the message not
+    // being verified instead of showing it unconditionally.
+    function renderCommunityChatMessagesHtml(messages, nickname) {
+      if (!messages.length) return "<div class=\"v1-comm-empty\">" + escapeHtml(trOr("commChatEmptyNote", "No messages yet - say hi!")) + "</div>";
+
+      return groupCommunityChatMessages(messages).map(function (group) {
+        var own = group.authors.indexOf(nickname) !== -1;
+        var ts = group.lastTimestamp ? new Date(group.lastTimestamp).toLocaleTimeString() : "";
+        var textLine = group.count > 1 ? (group.count + " x " + (group.content || "")) : (group.content || "");
+        return [
+          "<div class=\"v1-comm-msg" + (own ? " own" : "") + "\">",
+          "<span class=\"v1-comm-msg-author\">" + escapeHtml(group.authors.join(", ")) + "</span>",
+          "<span class=\"v1-comm-msg-time\">" + escapeHtml(ts) + "</span>",
+          "<span class=\"v1-comm-msg-text\">" + escapeHtml(textLine) + "</span>",
+          "<span class=\"v1-comm-msg-warn\" title=\"" + escapeHtml(trOr("commChatUnverifiedWarnTitle", "This sender picked their own name - it isn't verified and could be impersonating someone.")) + "\">⚠ " + escapeHtml(trOr("commChatUnverifiedWarn", "unverified sender")) + "</span>",
+          "</div>"
+        ].join("");
+      }).join("");
+    }
+
+    function communityChatNicknameErrorText(code, cooldownRemainingMs) {
+      if (code === "cooldown") {
+        var hours = Math.ceil((cooldownRemainingMs || 0) / (60 * 60 * 1000));
+        return trOr("commChatNicknameCooldown", "You can change your nickname once a day - try again in ~{hours}h.").replace("{hours}", String(hours));
+      }
+      if (code === "forbidden_substring") return trOr("commChatNicknameForbiddenWord", "Nickname can't contain \"discord\" or \"clyde\" (Discord blocks it).");
+      if (code === "forbidden_chars") return trOr("commChatNicknameForbiddenChars", "Nickname can't contain @ # : or `");
+      if (code) return trOr("commChatNicknameInvalid", "Invalid nickname.");
+      return "";
+    }
+
+    // No nickname yet: a centered setup card takes over the message-list
+    // area entirely (no bottom bar at all in this state) - the previous
+    // layout put the nickname field in the same bottom-bar spot the real
+    // message composer uses, which read as "type something to send" rather
+    // than "pick a name first".
+    //
+    // The interactive elements below carry BOTH an id and a matching
+    // data-comm-* attribute - detaching a tab into its own floating card
+    // (panels-runtime.js's createDetachedCard) strips every id (stripIds())
+    // to avoid duplicate-id collisions with the still-docked copy, so
+    // wireCommunityChatTool queries by the data-attribute (survives
+    // stripping) rather than by id (same fix results-ip needed for its
+    // detached view).
+    function renderCommunityChatNicknameSetup(nicknameErrorText) {
+      return [
+        "<div class=\"v1-comm-chat-list v1-comm-chat-list--setup\" id=\"v1CommChatMessages\">",
+        "<div class=\"v1-comm-nickname-setup\">",
+        "<div class=\"v1-comm-nickname-setup-title\">" + escapeHtml(trOr("commChatNicknameSetupTitle", "Pick a nickname to start chatting")) + "</div>",
+        nicknameErrorText ? "<div class=\"v1-comm-error\">" + escapeHtml(nicknameErrorText) + "</div>" : "",
+        "<div class=\"v1-comm-nickname-row\">",
+        "<input type=\"text\" id=\"v1CommChatNicknameInput\" data-comm-nickname-input name=\"communityChatNickname\" autocomplete=\"off\" placeholder=\"" + escapeHtml(trOr("commChatNicknamePlaceholder", "Pick a nickname...")) + "\" maxlength=\"32\" />",
+        "<button type=\"button\" id=\"v1CommChatSaveNicknameBtn\" data-comm-save-nickname-btn>" + escapeHtml(trOr("commChatSaveNicknameBtn", "Start chatting")) + "</button>",
+        "</div>",
+        "<div class=\"v1-comm-nickname-setup-note\">" + escapeHtml(trOr("commChatNicknameSetupNote", "You can change your nickname once a day.")) + "</div>",
+        "</div>",
+        "</div>"
+      ].join("");
+    }
+
+    function renderCommunityChatTool() {
+      var messages = communityChatApi ? communityChatApi.getMessages() : [];
+      var nickname = communityChatApi ? communityChatApi.getNickname() : "";
+      var nicknameErrorText = communityChatNicknameErrorText(
+        communityChatApi ? communityChatApi.getNicknameError() : "",
+        communityChatApi ? communityChatApi.getNicknameCooldownRemainingMs() : 0
+      );
+
+      if (!nickname) {
+        return "<div class=\"v1-comm-chat-shell\">" + renderCommunityChatNicknameSetup(nicknameErrorText) + "</div>";
+      }
+
+      var rawSendError = communityChatApi ? communityChatApi.getSendError() : "";
+      var sendError = rawSendError === "turnstile_failed"
+        ? trOr("commChatTurnstileFailed", "Couldn't verify this isn't a script - try again in a moment.")
+        : rawSendError;
+      var sending = communityChatApi ? communityChatApi.getSending() : false;
+      var listHtml = renderCommunityChatMessagesHtml(messages, nickname);
+
+      var inputAreaHtml = [
+        "<div class=\"v1-comm-status-row\">",
+        "<span>" + escapeHtml(trOr("commChatChattingAs", "Chatting as")) + " <strong>" + escapeHtml(nickname) + "</strong></span>",
+        "<button type=\"button\" class=\"v1-comm-change-nick-btn\" data-comm-change-nick>" + escapeHtml(trOr("commChatChangeNickname", "change")) + "</button>",
+        "</div>",
+        nicknameErrorText ? "<div class=\"v1-comm-error\">" + escapeHtml(nicknameErrorText) + "</div>" : "",
+        "<div class=\"v1-comm-input-row\">",
+        "<input type=\"text\" id=\"v1CommChatMessageInput\" data-comm-message-input name=\"communityChatMessage\" autocomplete=\"off\" placeholder=\"" + escapeHtml(trOr("commChatMessagePlaceholder", "Message...")) + "\" maxlength=\"500\" />",
+        "<button type=\"button\" id=\"v1CommChatSendBtn\" data-comm-send-btn" + (sending ? " disabled" : "") + ">" + escapeHtml(trOr("commChatSendBtn", "Send")) + "</button>",
+        "</div>"
+      ].join("");
+
+      return [
+        "<div class=\"v1-comm-chat-shell\">",
+        "<div class=\"v1-comm-chat-list\" id=\"v1CommChatMessages\">",
+        listHtml,
+        "</div>",
+        sendError ? "<div class=\"v1-comm-error\">" + escapeHtml(sendError) + "</div>" : "",
+        inputAreaHtml,
+        "</div>"
+      ].join("");
+    }
+
     var toolRenderers = {
       // --- shell keys ---
       versions: renderVersionsTool,
@@ -2993,6 +3143,7 @@
       "mail-xss-tester": renderMailXssTesterTool,
       "google-dork": renderGoogleDorkTool,
       wifi: renderWifiTool,
+      "community-chat": renderCommunityChatTool,
       globe: renderGlobeTool,
       "agent-profiles": renderAgentProfileDetailTool,
 
@@ -3031,6 +3182,8 @@
       renderWifiLibrary: renderWifiLibrary,
       renderWifiAdapter: renderWifiAdapter,
       renderWifiCurrent: renderWifiCurrent,
+      renderCommunityChatTool: renderCommunityChatTool,
+      renderCommunityChatMessagesHtml: renderCommunityChatMessagesHtml,
       pulpitEdgeAnchor: pulpitEdgeAnchor,
       renderAgentProfileLibrary: renderAgentProfileLibrary,
       renderAgentProfileDetailFields: renderAgentProfileDetailFields,

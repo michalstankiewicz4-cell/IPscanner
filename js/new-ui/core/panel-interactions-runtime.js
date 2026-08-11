@@ -21,6 +21,8 @@
     var renderGoogleDorkTemplates = typeof deps.renderGoogleDorkTemplates === "function" ? deps.renderGoogleDorkTemplates : null;
     var renderWifiTool = typeof deps.renderWifiTool === "function" ? deps.renderWifiTool : null;
     var renderWifiLibrary = typeof deps.renderWifiLibrary === "function" ? deps.renderWifiLibrary : null;
+    var renderCommunityChatTool = typeof deps.renderCommunityChatTool === "function" ? deps.renderCommunityChatTool : null;
+    var renderCommunityChatMessagesHtml = typeof deps.renderCommunityChatMessagesHtml === "function" ? deps.renderCommunityChatMessagesHtml : null;
     var renderWifiAdapter = typeof deps.renderWifiAdapter === "function" ? deps.renderWifiAdapter : null;
     var renderWifiCurrent = typeof deps.renderWifiCurrent === "function" ? deps.renderWifiCurrent : null;
     var renderAgentProfileLibrary = typeof deps.renderAgentProfileLibrary === "function" ? deps.renderAgentProfileLibrary : null;
@@ -77,6 +79,7 @@
     var googleDorkToolTeardown = null;
     // Same reasoning as googleDorkToolTeardown above.
     var wifiToolTeardown = null;
+    var communityChatToolTeardown = null;
     // LS/RS generic-content-slot mounts (v1GoogleDorkLibrary, v1WifiLibrary,
     // v1WifiCurrent, v1WifiAdapter) get a brand-new DOM node every time
     // activateGenericContent() re-renders their slot's innerHTML - a
@@ -2661,6 +2664,126 @@
       };
     }
 
+    // Community Chat: CS-only, no LS/RS split. Polling (~5s, started here,
+    // idempotent - see community-chat-runtime.js's startPolling) fires
+    // "newui:community-chat-changed" on every tick whether or not new
+    // messages actually arrived. Only the message list is refreshed on
+    // that event (via renderCommunityChatMessagesHtml, not a full
+    // shellEl.outerHTML replace) so a user mid-typing in the message box
+    // doesn't have their draft wiped every poll tick - the input row is
+    // only rebuilt when the nickname/sending/error state actually changes
+    // structure (nickname set/cleared).
+    function wireCommunityChatTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function" ? rootEl : document.getElementById("v1ToolDetail");
+      if (!root || !renderCommunityChatTool || !renderCommunityChatMessagesHtml) return;
+
+      var shellEl = root.querySelector(".v1-comm-chat-shell");
+      if (!shellEl) return;
+
+      if (communityChatToolTeardown) {
+        communityChatToolTeardown();
+        communityChatToolTeardown = null;
+      }
+
+      function scrollToBottom() {
+        var list = shellEl.querySelector(".v1-comm-chat-list");
+        if (list) list.scrollTop = list.scrollHeight;
+      }
+      scrollToBottom();
+
+      // Queried by data-comm-* attribute, not id - a detached tab
+      // (panels-runtime.js's createDetachedCard) strips every id via
+      // stripIds() to avoid clashing with the still-docked copy's ids, so
+      // id-based lookups here would silently find nothing once detached
+      // (same issue results-ip had, see renderCommunityChatNicknameSetup's
+      // comment).
+      function submitNickname() {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.communityChat;
+        var input = shellEl.querySelector("[data-comm-nickname-input]");
+        if (!api || !input || !input.value.trim()) return;
+        api.setNickname(input.value);
+      }
+
+      function submitMessage() {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.communityChat;
+        var input = shellEl.querySelector("[data-comm-message-input]");
+        if (!api || !input || !input.value.trim()) return;
+        var value = input.value;
+        input.value = "";
+        api.sendMessage(value);
+      }
+
+      function onClick(event) {
+        if (!document.body.contains(shellEl)) return;
+        var target = event.target;
+        if (!target || !target.closest) return;
+        if (target.closest("[data-comm-save-nickname-btn]")) { submitNickname(); return; }
+        if (target.closest("[data-comm-send-btn]")) { submitMessage(); return; }
+        if (target.closest("[data-comm-change-nick]")) {
+          var api = window.NetReconNewUICore && window.NetReconNewUICore.communityChat;
+          if (api) api.setNickname("");
+        }
+      }
+      shellEl.addEventListener("click", onClick);
+
+      function onKeydown(event) {
+        if (event.key !== "Enter") return;
+        var target = event.target;
+        if (!target) return;
+        if (target.hasAttribute && target.hasAttribute("data-comm-nickname-input")) { event.preventDefault(); submitNickname(); }
+        else if (target.hasAttribute && target.hasAttribute("data-comm-message-input")) { event.preventDefault(); submitMessage(); }
+      }
+      shellEl.addEventListener("keydown", onKeydown);
+
+      function rebind() {
+        shellEl = root.querySelector(".v1-comm-chat-shell");
+        if (!shellEl) return;
+        shellEl.addEventListener("click", onClick);
+        shellEl.addEventListener("keydown", onKeydown);
+        scrollToBottom();
+      }
+
+      var lastNickname = null;
+      var lastSending = null;
+      var lastSendError = null;
+      var lastNicknameError = null;
+
+      function onChanged(event) {
+        if (!document.body.contains(shellEl)) return;
+        var detail = (event && event.detail) || {};
+        var structuralChange = detail.nickname !== lastNickname || detail.sending !== lastSending || detail.sendError !== lastSendError || detail.nicknameError !== lastNicknameError;
+        lastNickname = detail.nickname;
+        lastSending = detail.sending;
+        lastSendError = detail.sendError;
+        lastNicknameError = detail.nicknameError;
+
+        // The targeted (message-list-only) fast path below is only valid
+        // once a nickname is set - with none set, ".v1-comm-chat-list" is
+        // the nickname-setup card, not a message list, and overwriting its
+        // innerHTML on a background poll tick would wipe out whatever the
+        // user is mid-typing into the nickname field.
+        if (structuralChange || !detail.nickname) {
+          shellEl.outerHTML = renderCommunityChatTool();
+          rebind();
+          return;
+        }
+
+        var list = shellEl.querySelector(".v1-comm-chat-list");
+        if (list) {
+          list.innerHTML = renderCommunityChatMessagesHtml(detail.messages || [], detail.nickname || "");
+          scrollToBottom();
+        }
+      }
+      document.addEventListener("newui:community-chat-changed", onChanged);
+
+      communityChatToolTeardown = function () {
+        document.removeEventListener("newui:community-chat-changed", onChanged);
+      };
+
+      var chatApi = window.NetReconNewUICore && window.NetReconNewUICore.communityChat;
+      if (chatApi && chatApi.startPolling) chatApi.startPolling();
+    }
+
     // LS: action buttons (scan nearby, refresh current connection, list
     // saved profiles, refresh adapter info - all 4, disabled on www rather
     // than hidden, see renderWifiActionsHtml) above the scan-history list.
@@ -4110,6 +4233,7 @@
       wireWifiAdapter: wireWifiAdapter,
       wireWifiCurrent: wireWifiCurrent,
       wireWifiTool: wireWifiTool,
+      wireCommunityChatTool: wireCommunityChatTool,
       wireGlobeTool: wireGlobeTool,
       wireAgentProfileLibrary: wireAgentProfileLibrary,
       wireAgentProfileDetail: wireAgentProfileDetail,
