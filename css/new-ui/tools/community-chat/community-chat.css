@@ -52,6 +52,32 @@
   font-size: 10px;
 }
 
+.v1-comm-setup-divider {
+  color: var(--txt-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.v1-comm-discord-login-btn {
+  border: 0;
+  background: #5865f2;
+  color: #ffffff;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+}
+
+.v1-comm-discord-login-btn:hover {
+  background: #4752c4;
+}
+
+.v1-comm-discord-login-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .v1-comm-msg {
   border: 0;
   padding: 7px 8px;

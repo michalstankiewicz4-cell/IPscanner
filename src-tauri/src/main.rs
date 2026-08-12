@@ -1430,9 +1430,20 @@ async fn email_recon_lookup(
 
 #[tauri::command]
 fn open_browser(url: String) {
-    // Open URL in system default browser (Windows)
+    // Open URL in system default browser (Windows). `cmd /c` re-scans its
+    // whole trailing command line for shell metacharacters (&, |, >, <)
+    // outside of quotes - any URL with multiple query params (an OAuth
+    // authorize link, for instance) hits this, since Rust's own Command
+    // arg-escaper only quotes an argument when it contains whitespace, not
+    // `&`. Without the explicit quotes below, cmd.exe silently splits the
+    // URL into several "commands" at each `&`, so `start` only ever
+    // launches the browser with the first query param - everything after
+    // the first `&` is dropped, not just mis-parsed. raw_arg() bypasses
+    // Rust's own escaping so these are the literal quote characters cmd.exe
+    // needs to see, protecting the `&`s inside from being re-interpreted.
     let _ = std::process::Command::new("cmd")
-        .args(["/c", "start", "", url.as_str()])
+        .args(["/c", "start", ""])
+        .raw_arg(format!("\"{}\"", url))
         .spawn();
 }
 

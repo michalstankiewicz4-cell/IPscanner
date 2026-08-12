@@ -16,6 +16,16 @@
   var POLL_INTERVAL_MS = 5000;
   var MAX_MESSAGES = 200;
 
+  // Discord OAuth login ("verified sender" upgrade over the free-text
+  // nickname above - see docs/COMMUNITY_CHAT_SETUP.md section 3b/4). The
+  // client poll timeout deliberately MATCHES the Worker's KV pending-state
+  // TTL (both 10 min) - a shorter client timeout would show "login timed
+  // out" while the callback could still silently succeed seconds later with
+  // nobody polling for it anymore.
+  var DISCORD_SESSION_STORAGE_KEY = "netrecon_community_chat_discord_session_v1";
+  var OAUTH_POLL_INTERVAL_MS = 2000;
+  var OAUTH_POLL_TIMEOUT_MS = 10 * 60 * 1000;
+
   // Cloudflare Turnstile: proves a /send request came from a real
   // browser/webview running this app's JS, not a bare script hitting the
   // Worker URL directly (the Worker URL itself is necessarily public - see
@@ -199,10 +209,35 @@
     }
   }
 
+  function loadDiscordSession() {
+    try {
+      var raw = window.localStorage && window.localStorage.getItem(DISCORD_SESSION_STORAGE_KEY);
+      var parsed = raw ? JSON.parse(raw) : null;
+      return (parsed && parsed.sessionToken && parsed.discordUsername) ? parsed : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function saveDiscordSession(session) {
+    try {
+      if (!window.localStorage) return;
+      if (session) window.localStorage.setItem(DISCORD_SESSION_STORAGE_KEY, JSON.stringify(session));
+      else window.localStorage.removeItem(DISCORD_SESSION_STORAGE_KEY);
+    } catch (_) {
+      // ignore persistence failures
+    }
+  }
+
   function createCommunityChatRuntime() {
     var nickname = loadNickname();
     var nicknameChangedAt = loadNicknameChangedAt();
     var ignored = loadIgnored();
+    var discordSession = loadDiscordSession();
+    var loginPromise = null;
+    var loginPollTimer = null;
+    var loginPending = false;
+    var loginError = "";
     var messages = [];
     var messageIds = {};
     var pollTimer = null;
@@ -210,11 +245,21 @@
     var sendError = "";
     var loadError = "";
     var nicknameError = "";
+    // Transient (not persisted) "show the identity picker even though a
+    // nickname is already set" flag - lets someone who already picked a
+    // nickname reach the setup card (to switch nickname or log in with
+    // Discord instead) WITHOUT first destructively clearing their current
+    // nickname, which used to be the only way in and was itself gated by
+    // the 24h cooldown - meaning a cooldown-blocked user had no way to even
+    // see the Discord login option. Only opening/closing this view is free;
+    // actually landing on a genuinely different nickname is still
+    // cooldown-gated inside setNickname() below.
+    var showSwitcher = false;
 
     function emitChanged() {
       try {
         document.dispatchEvent(new CustomEvent("newui:community-chat-changed", {
-          detail: { messages: messages.slice(), nickname: nickname, sending: sending, sendError: sendError, loadError: loadError, nicknameError: nicknameError, nicknameCooldownRemainingMs: getNicknameCooldownRemainingMs(), ignored: ignored.slice() }
+          detail: { messages: messages.slice(), nickname: nickname, sending: sending, sendError: sendError, loadError: loadError, nicknameError: nicknameError, nicknameCooldownRemainingMs: getNicknameCooldownRemainingMs(), ignored: ignored.slice(), discordSession: discordSession, discordLoginPending: loginPending, discordLoginError: loginError, showSwitcher: showSwitcher }
         }));
       } catch (_) {
         // ignore event dispatch failures
@@ -227,6 +272,112 @@
     function getSendError() { return sendError; }
     function getNicknameError() { return nicknameError; }
     function getIgnored() { return ignored.slice(); }
+    function getDiscordSession() { return discordSession; }
+    function getDiscordLoginPending() { return loginPending; }
+    function getDiscordLoginError() { return loginError; }
+    function getShowSwitcher() { return showSwitcher; }
+
+    function openIdentitySwitcher() {
+      if (showSwitcher) return;
+      showSwitcher = true;
+      nicknameError = "";
+      emitChanged();
+    }
+
+    function closeIdentitySwitcher() {
+      if (!showSwitcher) return;
+      showSwitcher = false;
+      nicknameError = "";
+      emitChanged();
+    }
+
+    function logoutDiscord() {
+      if (!discordSession) return;
+      discordSession = null;
+      saveDiscordSession(null);
+      showSwitcher = false;
+      emitChanged();
+    }
+
+    // Guarded by a single in-flight promise, NOT the Turnstile-style shared
+    // resolver queue further up this file - that shape exists specifically
+    // because Turnstile's widget is one shared DOM singleton multiple
+    // sendMessage() calls must wait on together. Login has no equivalent
+    // shared resource (each call mints its own independent `state`), so
+    // reusing that machinery here would either be dead complexity or a real
+    // bug (a double-click could attach one attempt's resolution to another
+    // attempt's poll loop / wrong state).
+    function startDiscordLogin() {
+      if (loginPromise) return loginPromise;
+      loginError = "";
+      loginPending = true;
+      emitChanged();
+
+      loginPromise = fetch(WORKER_URL + "/oauth/start", { method: "POST" })
+        .then(function (res) {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+          if (platform && platform.openExternalUrl) platform.openExternalUrl(data.authorizeUrl);
+
+          return new Promise(function (resolve, reject) {
+            var settled = false;
+            var startedAt = Date.now();
+
+            function finish(fn, arg) {
+              if (settled) return;
+              settled = true;
+              if (loginPollTimer) { window.clearInterval(loginPollTimer); loginPollTimer = null; }
+              fn(arg);
+            }
+
+            loginPollTimer = window.setInterval(function () {
+              if (Date.now() - startedAt > OAUTH_POLL_TIMEOUT_MS) {
+                finish(reject, new Error("timeout"));
+                return;
+              }
+              fetch(WORKER_URL + "/oauth/status?state=" + encodeURIComponent(data.state))
+                .then(function (statusRes) {
+                  if (statusRes.status === 404) return null;
+                  if (!statusRes.ok) throw new Error("HTTP " + statusRes.status);
+                  return statusRes.json();
+                })
+                .then(function (statusData) {
+                  if (statusData && statusData.status === "done" && statusData.sessionToken) {
+                    finish(resolve, { sessionToken: statusData.sessionToken, discordUsername: statusData.discordUsername });
+                  }
+                  // "pending", or not-found-yet (null) - keep polling.
+                })
+                .catch(function () {
+                  // A single failed poll tick isn't fatal - keep trying until the timeout above.
+                });
+            }, OAUTH_POLL_INTERVAL_MS);
+          });
+        })
+        .then(function (session) {
+          discordSession = session;
+          saveDiscordSession(session);
+          loginPending = false;
+          loginError = "";
+          showSwitcher = false;
+          emitChanged();
+          return true;
+        })
+        .catch(function (err) {
+          loginPending = false;
+          loginError = (err && err.message === "timeout") ? "timeout" : "failed";
+          emitChanged();
+          return false;
+        })
+        .then(function (result) {
+          loginPromise = null;
+          return result;
+        });
+
+      return loginPromise;
+    }
 
     function ignoreNickname(nick) {
       var value = String(nick || "").trim();
@@ -253,11 +404,9 @@
     }
 
     function setNickname(nick) {
-      // Clearing (the "change nickname" link) is how a change starts - gate
-      // it behind the cooldown, since by the time a new value would be
-      // submitted the old one is already gone and there'd be nothing left
-      // to check against.
-      if (!String(nick || "").trim()) {
+      var trimmed = String(nick || "").trim();
+
+      if (!trimmed) {
         var remaining = getNicknameCooldownRemainingMs();
         if (remaining > 0) {
           nicknameError = "cooldown";
@@ -266,21 +415,45 @@
         }
         nickname = "";
         nicknameError = "";
+        showSwitcher = false;
         saveNickname(nickname);
         emitChanged();
         return true;
       }
 
-      var result = sanitizeNickname(nick);
+      var result = sanitizeNickname(trimmed);
       if (!result.value) {
         nicknameError = result.error || "invalid";
         emitChanged();
         return false;
       }
 
+      // Re-submitting the exact nickname already in use (e.g. the identity
+      // switcher's prefilled input, sent back unedited) is a no-op - just
+      // close the switcher, don't burn the cooldown for nothing.
+      if (nickname && result.value === nickname) {
+        nicknameError = "";
+        showSwitcher = false;
+        emitChanged();
+        return true;
+      }
+
+      // The once-a-day cooldown protects OVERWRITING an existing nickname
+      // with a different one - the very first pick (nickname still unset)
+      // stays free.
+      if (nickname) {
+        var remaining2 = getNicknameCooldownRemainingMs();
+        if (remaining2 > 0) {
+          nicknameError = "cooldown";
+          emitChanged();
+          return false;
+        }
+      }
+
       nickname = result.value;
       nicknameError = "";
       nicknameChangedAt = Date.now();
+      showSwitcher = false;
       saveNickname(nickname);
       saveNicknameChangedAt(nicknameChangedAt);
       emitChanged();
@@ -338,7 +511,7 @@
 
     function sendMessage(text) {
       var trimmed = String(text || "").trim().slice(0, 500);
-      if (!nickname || !trimmed) return Promise.resolve(false);
+      if (!trimmed || (!nickname && !discordSession)) return Promise.resolve(false);
 
       sending = true;
       sendError = "";
@@ -350,14 +523,27 @@
           throw err;
         })
         .then(function (turnstileToken) {
+          var payload = { text: trimmed, turnstileToken: turnstileToken };
+          if (discordSession) payload.sessionToken = discordSession.sessionToken;
+          else payload.nickname = nickname;
           return fetch(WORKER_URL + "/send", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ nickname: nickname, text: trimmed, turnstileToken: turnstileToken }),
+            body: JSON.stringify(payload),
           });
         })
         .then(function (res) {
-          if (!res.ok) throw new Error("HTTP " + res.status);
+          if (!res.ok) {
+            // The Worker's sessionToken record can outlive our local copy's
+            // usefulness (e.g. its 30-day KV TTL lapsed) - a 401 here means
+            // the login this device thinks it has is no longer valid, so
+            // drop it rather than let every future send keep failing silently.
+            if (res.status === 401 && discordSession) {
+              discordSession = null;
+              saveDiscordSession(null);
+            }
+            throw new Error("HTTP " + res.status);
+          }
           sending = false;
           emitChanged();
           return fetchMessages();
@@ -384,6 +570,14 @@
       getIgnored: getIgnored,
       ignoreNickname: ignoreNickname,
       unignoreNickname: unignoreNickname,
+      getDiscordSession: getDiscordSession,
+      getDiscordLoginPending: getDiscordLoginPending,
+      getDiscordLoginError: getDiscordLoginError,
+      startDiscordLogin: startDiscordLogin,
+      logoutDiscord: logoutDiscord,
+      getShowSwitcher: getShowSwitcher,
+      openIdentitySwitcher: openIdentitySwitcher,
+      closeIdentitySwitcher: closeIdentitySwitcher,
       startPolling: startPolling,
       sendMessage: sendMessage,
     };

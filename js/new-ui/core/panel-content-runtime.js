@@ -3046,13 +3046,13 @@
     // refresh just the list on every ~5s poll tick without replacing the
     // input row's outerHTML - a wholesale re-render would wipe whatever
     // the user is mid-typing every single poll.
-    // Every message today comes from the free-text nickname path (no
-    // verified-login option exists yet - see the Discord-OAuth plan this
-    // warning is a placeholder for) - so any sender name can be typed by
-    // anyone, including someone else's. Shown once per cluster (not once
-    // per underlying message) for now; once verified/logged-in senders
-    // exist, gate this on the cluster's sender not being verified instead
-    // of showing it unconditionally.
+    // Messages from the free-text nickname path can be typed by anyone,
+    // including someone else's name - shown once per cluster (not once per
+    // underlying message). A cluster whose author(s) all carry the
+    // Worker-enforced "✓ " verified-login prefix (see /send's sessionToken
+    // branch in docs/COMMUNITY_CHAT_SETUP.md) skips this warning instead -
+    // that prefix can't be faked from the anonymous path, the Worker
+    // rejects it server-side.
     //
     // Each name inside the author line is its own data-comm-author span
     // (not one flat string) so a right-click can target one specific
@@ -3077,12 +3077,15 @@
           var textLine = group.count > 1 ? (group.count + " x " + (group.content || "")) : (group.content || "");
           return "<span class=\"v1-comm-msg-text\">" + escapeHtml(textLine) + "</span>";
         }).join("");
+        var verified = cluster.singleAuthor
+          ? cluster.singleAuthor.indexOf("✓ ") === 0
+          : cluster.authors.every(function (a) { return a.indexOf("✓ ") === 0; });
         return [
           "<div class=\"v1-comm-msg" + (own ? " own" : "") + "\">",
           "<span class=\"v1-comm-msg-author\">" + authorsHtml + "</span>",
           "<span class=\"v1-comm-msg-time\">" + escapeHtml(ts) + "</span>",
           linesHtml,
-          "<span class=\"v1-comm-msg-warn\" title=\"" + escapeHtml(trOr("commChatUnverifiedWarnTitle", "This sender picked their own name - it isn't verified and could be impersonating someone.")) + "\">⚠ " + escapeHtml(trOr("commChatUnverifiedWarn", "unverified sender")) + "</span>",
+          verified ? "" : "<span class=\"v1-comm-msg-warn\" title=\"" + escapeHtml(trOr("commChatUnverifiedWarnTitle", "This sender picked their own name - it isn't verified and could be impersonating someone.")) + "\">⚠ " + escapeHtml(trOr("commChatUnverifiedWarn", "unverified sender")) + "</span>",
           "</div>"
         ].join("");
       }).join("");
@@ -3099,6 +3102,12 @@
       return "";
     }
 
+    function communityChatLoginErrorText(code) {
+      if (code === "timeout") return trOr("commChatLoginTimeout", "Login timed out - try again.");
+      if (code) return trOr("commChatLoginFailed", "Discord login failed - try again.");
+      return "";
+    }
+
     // No nickname yet: a centered setup card takes over the message-list
     // area entirely (no bottom bar at all in this state) - the previous
     // layout put the nickname field in the same bottom-bar spot the real
@@ -3112,17 +3121,23 @@
     // wireCommunityChatTool queries by the data-attribute (survives
     // stripping) rather than by id (same fix results-ip needed for its
     // detached view).
-    function renderCommunityChatNicknameSetup(nicknameErrorText) {
+    function renderCommunityChatNicknameSetup(nicknameErrorText, loginPending, loginErrorText, currentNickname) {
       return [
         "<div class=\"v1-comm-chat-list v1-comm-chat-list--setup\" id=\"v1CommChatMessages\">",
         "<div class=\"v1-comm-nickname-setup\">",
         "<div class=\"v1-comm-nickname-setup-title\">" + escapeHtml(trOr("commChatNicknameSetupTitle", "Pick a nickname to start chatting")) + "</div>",
         nicknameErrorText ? "<div class=\"v1-comm-error\">" + escapeHtml(nicknameErrorText) + "</div>" : "",
         "<div class=\"v1-comm-nickname-row\">",
-        "<input type=\"text\" id=\"v1CommChatNicknameInput\" data-comm-nickname-input name=\"communityChatNickname\" autocomplete=\"off\" placeholder=\"" + escapeHtml(trOr("commChatNicknamePlaceholder", "Pick a nickname...")) + "\" maxlength=\"32\" />",
+        "<input type=\"text\" id=\"v1CommChatNicknameInput\" data-comm-nickname-input name=\"communityChatNickname\" autocomplete=\"off\" placeholder=\"" + escapeHtml(trOr("commChatNicknamePlaceholder", "Pick a nickname...")) + "\" maxlength=\"32\"" + (currentNickname ? " value=\"" + escapeHtml(currentNickname) + "\"" : "") + " />",
         "<button type=\"button\" id=\"v1CommChatSaveNicknameBtn\" data-comm-save-nickname-btn>" + escapeHtml(trOr("commChatSaveNicknameBtn", "Start chatting")) + "</button>",
         "</div>",
         "<div class=\"v1-comm-nickname-setup-note\">" + escapeHtml(trOr("commChatNicknameSetupNote", "You can change your nickname once a day.")) + "</div>",
+        currentNickname ? "<button type=\"button\" class=\"v1-comm-change-nick-btn\" data-comm-cancel-switch>" + escapeHtml(trOr("commChatCancelSwitch", "Cancel")) + "</button>" : "",
+        "<div class=\"v1-comm-setup-divider\">" + escapeHtml(trOr("commChatSetupDivider", "or")) + "</div>",
+        loginErrorText ? "<div class=\"v1-comm-error\">" + escapeHtml(loginErrorText) + "</div>" : "",
+        "<button type=\"button\" class=\"v1-comm-discord-login-btn\" data-comm-discord-login" + (loginPending ? " disabled" : "") + ">" +
+          escapeHtml(loginPending ? trOr("commChatLoginPending", "Waiting for Discord...") : trOr("commChatLoginWithDiscord", "Login with Discord")) +
+          "</button>",
         "</div>",
         "</div>"
       ].join("");
@@ -3131,22 +3146,27 @@
     function renderCommunityChatTool() {
       var messages = communityChatApi ? communityChatApi.getMessages() : [];
       var nickname = communityChatApi ? communityChatApi.getNickname() : "";
+      var discordSession = communityChatApi ? communityChatApi.getDiscordSession() : null;
       var nicknameErrorText = communityChatNicknameErrorText(
         communityChatApi ? communityChatApi.getNicknameError() : "",
         communityChatApi ? communityChatApi.getNicknameCooldownRemainingMs() : 0
       );
 
-      if (!nickname) {
-        return "<div class=\"v1-comm-chat-shell\">" + renderCommunityChatNicknameSetup(nicknameErrorText) + "</div>";
+      var showSwitcher = communityChatApi ? communityChatApi.getShowSwitcher() : false;
+      if ((!nickname && !discordSession) || (showSwitcher && !discordSession)) {
+        var loginPending = communityChatApi ? communityChatApi.getDiscordLoginPending() : false;
+        var loginErrorText = communityChatLoginErrorText(communityChatApi ? communityChatApi.getDiscordLoginError() : "");
+        return "<div class=\"v1-comm-chat-shell\">" + renderCommunityChatNicknameSetup(nicknameErrorText, loginPending, loginErrorText, nickname) + "</div>";
       }
 
+      var identity = discordSession ? ("✓ " + discordSession.discordUsername) : nickname;
       var rawSendError = communityChatApi ? communityChatApi.getSendError() : "";
       var sendError = rawSendError === "turnstile_failed"
         ? trOr("commChatTurnstileFailed", "Couldn't verify this isn't a script - try again in a moment.")
         : rawSendError;
       var sending = communityChatApi ? communityChatApi.getSending() : false;
       var ignored = communityChatApi ? communityChatApi.getIgnored() : [];
-      var listHtml = renderCommunityChatMessagesHtml(messages, nickname, ignored);
+      var listHtml = renderCommunityChatMessagesHtml(messages, identity, ignored);
 
       var ignoredRowHtml = ignored.length
         ? [
@@ -3159,11 +3179,22 @@
           ].join("")
         : "";
 
+      var statusRowHtml = discordSession
+        ? [
+            "<div class=\"v1-comm-status-row\">",
+            "<span>" + escapeHtml(trOr("commChatLoggedInAs", "Logged in as")) + " <strong>✓ " + escapeHtml(discordSession.discordUsername) + "</strong></span>",
+            "<button type=\"button\" class=\"v1-comm-change-nick-btn\" data-comm-discord-logout>" + escapeHtml(trOr("commChatLogout", "Logout")) + "</button>",
+            "</div>"
+          ].join("")
+        : [
+            "<div class=\"v1-comm-status-row\">",
+            "<span>" + escapeHtml(trOr("commChatChattingAs", "Chatting as")) + " <strong>" + escapeHtml(nickname) + "</strong></span>",
+            "<button type=\"button\" class=\"v1-comm-change-nick-btn\" data-comm-change-nick>" + escapeHtml(trOr("commChatChangeNickname", "change")) + "</button>",
+            "</div>"
+          ].join("");
+
       var inputAreaHtml = [
-        "<div class=\"v1-comm-status-row\">",
-        "<span>" + escapeHtml(trOr("commChatChattingAs", "Chatting as")) + " <strong>" + escapeHtml(nickname) + "</strong></span>",
-        "<button type=\"button\" class=\"v1-comm-change-nick-btn\" data-comm-change-nick>" + escapeHtml(trOr("commChatChangeNickname", "change")) + "</button>",
-        "</div>",
+        statusRowHtml,
         nicknameErrorText ? "<div class=\"v1-comm-error\">" + escapeHtml(nicknameErrorText) + "</div>" : "",
         "<div class=\"v1-comm-input-row\">",
         "<input type=\"text\" id=\"v1CommChatMessageInput\" data-comm-message-input name=\"communityChatMessage\" autocomplete=\"off\" placeholder=\"" + escapeHtml(trOr("commChatMessagePlaceholder", "Message...")) + "\" maxlength=\"500\" />",

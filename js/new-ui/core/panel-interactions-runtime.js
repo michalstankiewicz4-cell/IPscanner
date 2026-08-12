@@ -2720,8 +2720,29 @@
         if (target.closest("[data-comm-save-nickname-btn]")) { submitNickname(); return; }
         if (target.closest("[data-comm-send-btn]")) { submitMessage(); return; }
         if (target.closest("[data-comm-change-nick]")) {
+          // Non-destructive: just opens the setup card (prefilled with the
+          // current nickname, see renderCommunityChatNicknameSetup) so a
+          // cooldown-blocked user can still reach the Discord login option
+          // instead of being stuck - the old behavior cleared the nickname
+          // immediately via setNickname(""), which is itself cooldown-gated
+          // and left a blocked user with no way out at all.
           var api = window.NetReconNewUICore && window.NetReconNewUICore.communityChat;
-          if (api) api.setNickname("");
+          if (api) api.openIdentitySwitcher();
+          return;
+        }
+        if (target.closest("[data-comm-cancel-switch]")) {
+          var cancelApi = window.NetReconNewUICore && window.NetReconNewUICore.communityChat;
+          if (cancelApi) cancelApi.closeIdentitySwitcher();
+          return;
+        }
+        if (target.closest("[data-comm-discord-login]")) {
+          var loginApi = window.NetReconNewUICore && window.NetReconNewUICore.communityChat;
+          if (loginApi) loginApi.startDiscordLogin();
+          return;
+        }
+        if (target.closest("[data-comm-discord-logout]")) {
+          var logoutApi = window.NetReconNewUICore && window.NetReconNewUICore.communityChat;
+          if (logoutApi) logoutApi.logoutDiscord();
           return;
         }
         var unignoreBtn = target.closest("[data-comm-unignore]");
@@ -2785,34 +2806,49 @@
       var lastSendError = null;
       var lastNicknameError = null;
       var lastIgnoredKey = null;
+      var lastSessionKey = null;
+      var lastLoginPending = null;
+      var lastLoginError = null;
+      var lastShowSwitcher = null;
 
       function onChanged(event) {
         if (!document.body.contains(shellEl)) return;
         var detail = (event && event.detail) || {};
         var ignoredKey = (detail.ignored || []).join("\n");
-        var structuralChange = detail.nickname !== lastNickname || detail.sending !== lastSending || detail.sendError !== lastSendError || detail.nicknameError !== lastNicknameError || ignoredKey !== lastIgnoredKey;
+        var sessionKey = detail.discordSession ? detail.discordSession.sessionToken : "";
+        var structuralChange = detail.nickname !== lastNickname || detail.sending !== lastSending || detail.sendError !== lastSendError ||
+          detail.nicknameError !== lastNicknameError || ignoredKey !== lastIgnoredKey || sessionKey !== lastSessionKey ||
+          detail.discordLoginPending !== lastLoginPending || detail.discordLoginError !== lastLoginError ||
+          detail.showSwitcher !== lastShowSwitcher;
         lastNickname = detail.nickname;
         lastSending = detail.sending;
         lastSendError = detail.sendError;
         lastNicknameError = detail.nicknameError;
         lastIgnoredKey = ignoredKey;
+        lastSessionKey = sessionKey;
+        lastLoginPending = detail.discordLoginPending;
+        lastLoginError = detail.discordLoginError;
+        lastShowSwitcher = detail.showSwitcher;
 
         // The targeted (message-list-only) fast path below is only valid
-        // once a nickname is set - with none set, ".v1-comm-chat-list" is
-        // the nickname-setup card, not a message list, and overwriting its
-        // innerHTML on a background poll tick would wipe out whatever the
-        // user is mid-typing into the nickname field. The ignored list is
-        // also treated as structural (not just message content) since it
-        // changes the "Ignored: ..." pill row outside the list too.
-        if (structuralChange || !detail.nickname) {
+        // once an identity (nickname OR a Discord login) is set AND the
+        // identity switcher isn't open - in either of those cases
+        // ".v1-comm-chat-list" is the nickname-setup card, not a message
+        // list, and overwriting its innerHTML on a background poll tick
+        // would wipe out whatever the user is mid-typing. The ignored list
+        // and the Discord session/login state are also treated as
+        // structural (not just message content) since they change rows
+        // outside the list too.
+        if (structuralChange || (!detail.nickname && !detail.discordSession) || (detail.showSwitcher && !detail.discordSession)) {
           shellEl.outerHTML = renderCommunityChatTool();
           rebind();
           return;
         }
 
+        var identity = detail.discordSession ? ("✓ " + detail.discordSession.discordUsername) : (detail.nickname || "");
         var list = shellEl.querySelector(".v1-comm-chat-list");
         if (list) {
-          list.innerHTML = renderCommunityChatMessagesHtml(detail.messages || [], detail.nickname || "", detail.ignored || []);
+          list.innerHTML = renderCommunityChatMessagesHtml(detail.messages || [], identity, detail.ignored || []);
           scrollToBottom();
         }
       }
