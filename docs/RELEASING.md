@@ -46,6 +46,16 @@ Jak dotychczas: `OSINTNETAuditor.exe` + `scripts/*.ps1` (ze zrodel repo, NIE
 z `_up_/scripts` w katalogu builda) w plaskiej strukturze, spakowane
 `Compress-Archive`.
 
+**Zmien nazwe NSIS installer-a PRZED uploadem** - `tauri build` generuje go
+ze spacjami (`OSINT NET Auditor_X.Y.Z_x64-setup.exe`), a GitHub przy
+uploadzie cicho zamienia spacje na kropki (`OSINT.NET.Auditor_...`). Jesli
+wgrasz plik ze spacjami bezposrednio, jego prawdziwa nazwa na GitHubie NIE
+bedzie pasowac do `url` w `latest.json` (krok 4 nizej) - auto-update
+sciagnie 404 i cicho sie wywali (tylko status-line, latwo przeoczyc, "klikam
+Zainstaluj i nic sie nie dzieje"). Skopiuj/zmien nazwe na bezspacyjna (np.
+`OSINTNETAuditor_X.Y.Z_x64-setup.exe`) ZANIM go wgrasz, i uzyj DOKLADNIE tej
+samej nazwy w `latest.json`'s `url`.
+
 ## 4. latest.json
 
 ```json
