@@ -6,6 +6,27 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-08-12
+
+- Added Discord login to Community chat: authorize with your real Discord
+  account to post as a "✓ <name>" verified sender instead of a free-text
+  nickname. New Cloudflare Worker routes (`/oauth/start`, `/oauth/callback`,
+  `/oauth/status`) built on a short-lived `state` + long-lived `sessionToken`
+  KV pair; the Worker now also validates nicknames server-side on the
+  anonymous path (previously only the app's own JS did, including a new
+  block on faking the "✓ " verified prefix).
+- Fixed `open_browser` (Rust) silently truncating any URL with more than one
+  query parameter when opening it in the system browser - `cmd /c start`
+  re-parses its command line for shell metacharacters outside of quotes, so
+  an unquoted `&`-separated OAuth URL only ever reached the browser up to
+  its first parameter. Fixed via `raw_arg()` with an explicit quoted URL.
+- Fixed Community chat's "change nickname" link clearing the nickname
+  immediately, which was itself gated by the once-a-day cooldown - a user
+  who'd already changed today had no way back to the setup screen at all.
+  Replaced with a non-destructive identity switcher that reopens the setup
+  card (prefilled with the current nickname) without changing anything
+  until a genuinely different value is submitted.
+
 ## 2026-07-18
 
 - Added Hebrew (`languages/he.json`) as the second RTL language, published

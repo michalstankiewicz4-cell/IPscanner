@@ -10,6 +10,14 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.8.2",
+      notes: [
+        "Community: added Discord login - authorize with your real Discord account to post as a \"✓ <name>\" verified sender instead of a free-text nickname, no longer able to be impersonated. The Worker now also validates nicknames server-side (closing a gap where only the app's own JS checked them, including a new block on faking the \"✓ \" verified prefix from the anonymous path).",
+        "Fixed the \"change nickname\" link clearing your nickname immediately - since that clear was itself limited to once a day, a nickname you'd already changed today left you with no way back to the setup screen at all (including no way to see the new Discord login option). It's now a non-destructive switcher: reopens the setup card with your current nickname still filled in, and only actually applies a change (still once-a-day) once you submit something different.",
+        "Fixed opening an external link (e.g. the new Discord login flow) from the desktop app silently truncating any URL with more than one query parameter - Windows' command shell was splitting on \"&\" and only the first parameter ever reached the browser."
+      ]
+    },
+    {
       version: "v2.8.1",
       notes: [
         "Community: right-click a sender's name to ignore them - hides their messages on your device only (a local filter, not real moderation, since the chat has no real per-user accounts yet), with a small \"Ignored: ...\" list to undo it any time."
