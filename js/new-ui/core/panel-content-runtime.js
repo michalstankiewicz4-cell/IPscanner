@@ -3013,6 +3013,30 @@
       return groups;
     }
 
+    // Readability pass on top of the flood-grouping above: several
+    // consecutive entries that all boil down to one single author (a
+    // multi-author flood-group never counts, even if every group next to
+    // it happens to share the SAME null "no single author" - the truthy
+    // check on singleAuthor below is what keeps two unrelated mixed-author
+    // groups from accidentally merging) collapse under one shared
+    // author/time header instead of repeating it for every message, same
+    // idea as Discord/Slack clustering someone's consecutive messages.
+    function clusterCommunityChatGroups(groups) {
+      var clusters = [];
+      groups.forEach(function (group) {
+        var uniqueAuthors = group.authors.filter(function (a, i) { return group.authors.indexOf(a) === i; });
+        var singleAuthor = uniqueAuthors.length === 1 ? uniqueAuthors[0] : null;
+        var last = clusters[clusters.length - 1];
+        if (singleAuthor && last && last.singleAuthor === singleAuthor) {
+          last.entries.push(group);
+          last.lastTimestamp = group.lastTimestamp;
+        } else {
+          clusters.push({ singleAuthor: singleAuthor, authors: group.authors, entries: [group], lastTimestamp: group.lastTimestamp });
+        }
+      });
+      return clusters;
+    }
+
     // Community Chat: single CS panel (no LS/RS split, message list + input
     // fit one panel) - shown identically on desktop and www, backed by a
     // Cloudflare Worker (see community-chat-runtime.js's own comment).
@@ -3025,9 +3049,10 @@
     // Every message today comes from the free-text nickname path (no
     // verified-login option exists yet - see the Discord-OAuth plan this
     // warning is a placeholder for) - so any sender name can be typed by
-    // anyone, including someone else's. Shown on every message for now;
-    // once verified/logged-in senders exist, gate this on the message not
-    // being verified instead of showing it unconditionally.
+    // anyone, including someone else's. Shown once per cluster (not once
+    // per underlying message) for now; once verified/logged-in senders
+    // exist, gate this on the cluster's sender not being verified instead
+    // of showing it unconditionally.
     //
     // Each name inside the author line is its own data-comm-author span
     // (not one flat string) so a right-click can target one specific
@@ -3040,18 +3065,23 @@
 
       if (!visible.length) return "<div class=\"v1-comm-empty\">" + escapeHtml(trOr("commChatEmptyNote", "No messages yet - say hi!")) + "</div>";
 
-      return groupCommunityChatMessages(visible).map(function (group) {
-        var own = group.authors.indexOf(nickname) !== -1;
-        var ts = group.lastTimestamp ? new Date(group.lastTimestamp).toLocaleTimeString() : "";
-        var textLine = group.count > 1 ? (group.count + " x " + (group.content || "")) : (group.content || "");
-        var authorsHtml = group.authors.map(function (a) {
+      var groups = groupCommunityChatMessages(visible);
+
+      return clusterCommunityChatGroups(groups).map(function (cluster) {
+        var own = cluster.singleAuthor ? cluster.singleAuthor === nickname : cluster.authors.indexOf(nickname) !== -1;
+        var ts = cluster.lastTimestamp ? new Date(cluster.lastTimestamp).toLocaleTimeString() : "";
+        var authorsHtml = (cluster.singleAuthor ? [cluster.singleAuthor] : cluster.authors).map(function (a) {
           return "<span class=\"v1-comm-msg-author-name\" data-comm-author=\"" + escapeHtml(a) + "\">" + escapeHtml(a) + "</span>";
         }).join(", ");
+        var linesHtml = cluster.entries.map(function (group) {
+          var textLine = group.count > 1 ? (group.count + " x " + (group.content || "")) : (group.content || "");
+          return "<span class=\"v1-comm-msg-text\">" + escapeHtml(textLine) + "</span>";
+        }).join("");
         return [
           "<div class=\"v1-comm-msg" + (own ? " own" : "") + "\">",
           "<span class=\"v1-comm-msg-author\">" + authorsHtml + "</span>",
           "<span class=\"v1-comm-msg-time\">" + escapeHtml(ts) + "</span>",
-          "<span class=\"v1-comm-msg-text\">" + escapeHtml(textLine) + "</span>",
+          linesHtml,
           "<span class=\"v1-comm-msg-warn\" title=\"" + escapeHtml(trOr("commChatUnverifiedWarnTitle", "This sender picked their own name - it isn't verified and could be impersonating someone.")) + "\">⚠ " + escapeHtml(trOr("commChatUnverifiedWarn", "unverified sender")) + "</span>",
           "</div>"
         ].join("");

@@ -297,6 +297,21 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   then regex-based detection would miss non-IPv4 leaks (hostnames, IPv6),
   which risks false confidence worse than today's honest "we blur the whole
   thing" behavior.
+- **Gaze-following privacy screen** (idea from AMD's "Privacy View") — blur
+  the whole window except the small area the user is actually looking at,
+  so shoulder-surfing someone's scan results/OSINT data is much harder.
+  AMD's version uses dedicated NPU + calibrated-camera hardware, not
+  replicable as-is; the achievable approximation is
+  [WebGazer.js](https://webgazer.js.org/) (open-source, webcam + in-browser
+  ML, no special hardware), which needs a short click-while-looking
+  calibration flow and drives a `backdrop-filter: blur()` overlay with a
+  cutout following the estimated gaze point. Honest tradeoffs before
+  committing to this: accuracy is centimeters, not pixels (lighting/webcam
+  quality dependent, nowhere near AMD's precision); requires an always-on
+  camera + continuous per-frame ML inference (real CPU/GPU cost); for a
+  security/OSINT tool specifically, an always-on camera may read as more
+  alarming than reassuring to some users - should ship opt-in/off by
+  default if built at all. Not started - purely an idea so far.
 
 ## Backlog
 
