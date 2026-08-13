@@ -56,6 +56,19 @@ Zainstaluj i nic sie nie dzieje"). Skopiuj/zmien nazwe na bezspacyjna (np.
 `OSINTNETAuditor_X.Y.Z_x64-setup.exe`) ZANIM go wgrasz, i uzyj DOKLADNIE tej
 samej nazwy w `latest.json`'s `url`.
 
+**Zrodlo spacji to `productName` w `tauri.conf.json` (`"OSINT NET
+Auditor"`)** - to jedno pole rozlewa sie na nazwe instalatora, MSI, i
+folder instalacji `%LOCALAPPDATA%\OSINT NET Auditor\`. Rozwazane i
+SWIADOMIE odrzucone: zmiana `productName` na cos bezspacyjnego (np.
+`OSINTNETAuditor`) zeby ten caly problem znikl u zrodla. Nie robic tego bez
+dobrego powodu - zmiana `productName` zmienia tez folder instalacji, co
+osieroca juz zainstalowane (przez NSIS) kopie u userow (nowy wpis w
+"Dodaj/Usun programy" zamiast czystego upgrade'u w miejscu) i wymaga
+przy okazji poprawienia sciezki zaszytej w `is_installer_install()`
+(`main.rs`). Recznie zmienianie nazwy pliku przed uploadem (wyzej) zostaje
+jako swiadomy kompromis - udokumentowany, jednolinijkowy krok checklisty,
+nie ukryty bug.
+
 ## 4. latest.json
 
 ```json
