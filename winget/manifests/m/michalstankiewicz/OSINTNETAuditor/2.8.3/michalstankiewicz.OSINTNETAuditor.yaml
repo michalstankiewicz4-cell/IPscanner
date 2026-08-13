@@ -1,0 +1,8 @@
+# Created for the michalstankiewicz.OSINTNETAuditor package.
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.version.1.12.0.schema.json
+
+PackageIdentifier: michalstankiewicz.OSINTNETAuditor
+PackageVersion: 2.8.3
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.12.0
