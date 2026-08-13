@@ -372,7 +372,7 @@
                 })
                 .then(function (statusData) {
                   if (statusData && statusData.status === "done" && statusData.sessionToken) {
-                    finish(resolve, { sessionToken: statusData.sessionToken, discordUsername: statusData.discordUsername });
+                    finish(resolve, { sessionToken: statusData.sessionToken, discordUsername: statusData.discordUsername, avatarUrl: statusData.avatarUrl || null });
                   }
                   // "pending", or not-found-yet (null) - keep polling.
                 })

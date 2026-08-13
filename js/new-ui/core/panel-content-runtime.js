@@ -3066,6 +3066,16 @@
 
       if (!visible.length) return "<div class=\"v1-comm-empty\">" + escapeHtml(trOr("commChatEmptyNote", "No messages yet - say hi!")) + "</div>";
 
+      // Avatar is a property of the AUTHOR, not any one message - built once
+      // from the raw list (last one wins, harmless since the same author's
+      // avatar doesn't change message-to-message) rather than threading it
+      // through groupCommunityChatMessages/clusterCommunityChatGroups, which
+      // group by message CONTENT and don't otherwise need to know about it.
+      var authorAvatars = {};
+      visible.forEach(function (m) {
+        if (m.author && m.authorAvatarUrl) authorAvatars[m.author] = m.authorAvatarUrl;
+      });
+
       var groups = groupCommunityChatMessages(visible);
 
       return clusterCommunityChatGroups(groups).map(function (cluster) {
@@ -3074,6 +3084,10 @@
         var authorsHtml = (cluster.singleAuthor ? [cluster.singleAuthor] : cluster.authors).map(function (a) {
           return "<span class=\"v1-comm-msg-author-name\" data-comm-author=\"" + escapeHtml(a) + "\">" + escapeHtml(a) + "</span>";
         }).join(", ");
+        // Only for single-author clusters - showing one person's avatar on
+        // a multi-author flood-group would misrepresent who actually sent it.
+        var avatarUrl = cluster.singleAuthor ? authorAvatars[cluster.singleAuthor] : null;
+        var avatarHtml = avatarUrl ? "<img class=\"v1-comm-msg-avatar\" src=\"" + escapeHtml(avatarUrl) + "\" alt=\"\" />" : "";
         var linesHtml = cluster.entries.map(function (group) {
           var textLine = group.count > 1 ? (group.count + " x " + (group.content || "")) : (group.content || "");
           return "<span class=\"v1-comm-msg-text\">" + escapeHtml(textLine) + "</span>";
@@ -3083,6 +3097,7 @@
           : cluster.authors.every(function (a) { return a.indexOf("✓ ") === 0; });
         return [
           "<div class=\"v1-comm-msg" + (own ? " own" : "") + "\">",
+          avatarHtml,
           "<span class=\"v1-comm-msg-author\">" + authorsHtml + "</span>",
           "<span class=\"v1-comm-msg-time\">" + escapeHtml(ts) + "</span>",
           linesHtml,
@@ -3193,7 +3208,10 @@
       var statusRowHtml = discordSession
         ? [
             "<div class=\"v1-comm-status-row\">",
-            "<span>" + escapeHtml(trOr("commChatLoggedInAs", "Logged in as")) + " <strong>✓ " + escapeHtml(discordSession.discordUsername) + "</strong></span>",
+            "<span class=\"v1-comm-status-identity\">",
+            discordSession.avatarUrl ? "<img class=\"v1-comm-status-avatar\" src=\"" + escapeHtml(discordSession.avatarUrl) + "\" alt=\"\" />" : "",
+            escapeHtml(trOr("commChatLoggedInAs", "Logged in as")) + " <strong>✓ " + escapeHtml(discordSession.discordUsername) + "</strong>",
+            "</span>",
             "<button type=\"button\" class=\"v1-comm-change-nick-btn\" data-comm-discord-logout>" + escapeHtml(trOr("commChatLogout", "Logout")) + "</button>",
             "</div>"
           ].join("")

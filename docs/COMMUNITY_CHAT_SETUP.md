@@ -227,6 +227,7 @@ export default {
       }
 
       let username;
+      let avatarUrl = null;
       if (sessionToken) {
         const session = await env.OAUTH_SESSIONS.get(sessionToken, "json");
         if (!session || !session.discordUsername) {
@@ -239,6 +240,7 @@ export default {
         // blocks that at account-creation time) so it skips validateNickname
         // entirely - it's not user-supplied free text on this path.
         username = "✓ " + session.discordUsername;
+        avatarUrl = session.avatarUrl || null;
       } else {
         const nickname = String(body.nickname || "").trim().slice(0, 32);
         const nicknameError = validateNickname(nickname);
@@ -271,10 +273,18 @@ export default {
         });
       }
 
+      // avatar_url is the webhook API's own per-message avatar override -
+      // only set on the verified/logged-in path (avatarUrl stays null for
+      // anonymous nicknames, which just get Discord's default webhook
+      // avatar as before). This makes the real Discord message itself show
+      // the correct avatar too, not just this app's own rendering of it.
+      const webhookBody = { content: text, username: username };
+      if (avatarUrl) webhookBody.avatar_url = avatarUrl;
+
       const discordRes = await fetch(env.DISCORD_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text, username: username }),
+        body: JSON.stringify(webhookBody),
       });
 
       if (!discordRes.ok) {
@@ -348,6 +358,14 @@ export default {
       }
       const me = await meRes.json();
       const discordUsername = me.username;
+      // Only set when the user has a real custom avatar - deliberately NOT
+      // replicating Discord's default-avatar formula (id-based bit-shift
+      // for the new username system, discriminator-based mod-5 for legacy
+      // accounts) here, since getting a shifting internal formula wrong is
+      // worse than just having no image for that case.
+      const avatarUrl = me.avatar
+        ? `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png?size=64`
+        : null;
 
       // Two independent KV writes, each with its OWN explicit expirationTtl
       // (a put() on an existing key does not carry forward a previous key's
@@ -355,8 +373,8 @@ export default {
       // `state` just needs to survive long enough for the app's poll to
       // pick up the "done" result (10 min, same window as step 1).
       const sessionToken = crypto.randomUUID();
-      await env.OAUTH_SESSIONS.put(sessionToken, JSON.stringify({ discordUsername }), { expirationTtl: 2592000 });
-      await env.OAUTH_SESSIONS.put(state, JSON.stringify({ status: "done", sessionToken, discordUsername }), { expirationTtl: 600 });
+      await env.OAUTH_SESSIONS.put(sessionToken, JSON.stringify({ discordUsername, avatarUrl }), { expirationTtl: 2592000 });
+      await env.OAUTH_SESSIONS.put(state, JSON.stringify({ status: "done", sessionToken, discordUsername, avatarUrl }), { expirationTtl: 600 });
 
       return new Response(
         "<html><body style=\"font-family:sans-serif;padding:40px;text-align:center;\">Logged in as " +
@@ -402,6 +420,13 @@ export default {
         .map((m) => ({
           id: m.id,
           author: (m.author && m.author.username) || "?",
+          // Reflects the SAME per-message avatar override /send set via
+          // avatar_url (for the "✓ " verified path) - Discord returns it as
+          // a normal avatar hash on the message's own author object, same
+          // shape as a real user's avatar, so the URL is built the same way.
+          authorAvatarUrl: (m.author && m.author.avatar && m.author.id)
+            ? `https://cdn.discordapp.com/avatars/${m.author.id}/${m.author.avatar}.png?size=32`
+            : null,
           content: m.content,
           timestamp: m.timestamp,
         }))

@@ -87,6 +87,30 @@
   background: #202024;
 }
 
+.v1-comm-msg-avatar {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.v1-comm-status-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.v1-comm-status-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
 .v1-comm-msg.own {
   background: #212b3b;
   color: #d8e6ff;
