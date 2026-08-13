@@ -151,16 +151,45 @@ microsoft/winget-pkgs --json statusCheckRollup`).
 Skopiuj tez wygenerowane pliki do `winget/manifests/.../<nowa-wersja>/` w
 tym repo dla historii (opcjonalne, ale wygodne).
 
-### scoop - NIE zaimplementowane jeszcze
+### scoop - wlasny bucket dziala, Extras zalezne od zgody maintainera
 
-Rozwazane, nie zbudowane. Do wyboru przy budowie: wlasny bucket (szybko,
-pelna kontrola, mniej odkrywalne) vs PR do oficjalnego `ScoopInstaller/
-Extras` (jak winget, ale manifest wskazuje na PORTABLE ZIP z kroku 3
-wyzej, nie na installer - Scoop wprost tego woli). Manifest scoopa
-(`.json`) ma pola `checkver`/`autoupdate` - dobrze skonfigurowane, moga
-zdjac z nas obowiazek recznej aktualizacji przy kazdym wydaniu (bot albo
-scheduled Action wykrywa nowa wersje sam). Jak/czy to budowac - do
-ustalenia, nie zakladac ze juz istnieje.
+Wlasny bucket: `michalstankiewicz4-cell/scoop-bucket` (osobne repo),
+manifest w `bucket/osintnetauditor.json` tam ORAZ kopia w tym repo w
+`scoop/bucket/osintnetauditor.json` (kopia dla historii, nie zrodlo
+prawdy - `scoop-bucket` jest zrodlem prawdy, tak samo jak przy winget).
+Wskazuje na PORTABLE ZIP z kroku 3 wyzej (nie na installer - Scoop wprost
+tego preferuje), przetestowane end-to-end (`scoop install`/`uninstall`
+lokalnie i przez prawdziwy URL buckета).
+
+Manifest ma skonfigurowane `checkver`/`autoupdate` (`"github":
+"https://github.com/michalstankiewicz4-cell/IPscanner"` - Scoop sam
+odpyta najnowszy tag Release). To NIE dziala samo z siebie - ktos/cos
+musi odpalic `checkver -u` zeby faktycznie przepisac `version`/`url`/
+`hash` w manifescie. Recznie, przy kazdym nowym wydaniu:
+
+```powershell
+cd sciezka\do\sklonowanego\scoop-bucket
+scoop update  # zeby miec swiezy silnik checkver
+.\bin\checkver.ps1 osintnetauditor -u  # wymaga oficjalnych skryptow Scoopa w repo, patrz nizej
+git commit -am "osintnetauditor: update to <wersja>"
+git push
+```
+
+(`bin/checkver.ps1`/`bin/auto-pr.ps1` nie sa jeszcze skopiowane do naszego
+`scoop-bucket` - trzeba je wziac z `ScoopInstaller/Excavator` albo
+`ScoopInstaller/BucketTemplate` zanim powyzsze zadziala. Alternatywa,
+mniej pracy na przyszlosc: dodac scheduled GitHub Action w `scoop-bucket`
+uzywajacy oficjalnego `ScoopInstaller/GithubActions` workflow - wtedy
+odpala sie samo, nic nie trzeba pamietac. Nie zrobione jeszcze, tylko
+zaplanowane).
+
+Extras (`ScoopInstaller/Extras`, bardziej odkrywalne): WYMAGA otwarcia
+issue z propozycja pakietu i zgody maintainera PRZED PR-em (inaczej niz
+winget - "We are very reluctant to accept random pull requests without a
+related issue created first"). Status: [wpisz tu numer issue/PR jak
+powstanie]. Jesli/kiedy zaakceptowane, PR z manifestem (ten sam format co
+wlasny bucket) + komentarz `/verify` po zlozeniu zeby odpalic automatyczny
+walidator.
 
 ## Uwagi
 

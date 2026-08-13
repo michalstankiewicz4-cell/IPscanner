@@ -31,6 +31,22 @@ instead to pass any):
 & ([scriptblock]::Create((irm https://raw.githubusercontent.com/michalstankiewicz4-cell/IPscanner/main/install.ps1))) -Interactive
 ```
 
+### winget
+
+```powershell
+winget install michalstankiewicz.OSINTNETAuditor
+```
+
+(Package submitted to the community `winget-pkgs` repo - may take a little
+while after a release before `winget` picks up the newest version.)
+
+### Scoop
+
+```powershell
+scoop bucket add osintnetauditor https://github.com/michalstankiewicz4-cell/scoop-bucket
+scoop install osintnetauditor
+```
+
 ### Build from source
 
 **Requirements:**

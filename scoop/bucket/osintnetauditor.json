@@ -1,0 +1,29 @@
+{
+    "version": "2.8.3",
+    "description": "Desktop IP/port scanner and OSINT network reconnaissance tool.",
+    "homepage": "https://github.com/michalstankiewicz4-cell/IPscanner",
+    "license": "MIT",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/michalstankiewicz4-cell/IPscanner/releases/download/v2.8.3/OSINTNETAuditor-portable-v2.8.3.zip",
+            "hash": "a03ac11024aa0b4cde27e04e7034fec378d46973c2c19038d2f9b6826b0c1cf6"
+        }
+    },
+    "bin": "OSINTNETAuditor.exe",
+    "shortcuts": [
+        [
+            "OSINTNETAuditor.exe",
+            "OSINT NET Auditor"
+        ]
+    ],
+    "checkver": {
+        "github": "https://github.com/michalstankiewicz4-cell/IPscanner"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/michalstankiewicz4-cell/IPscanner/releases/download/v$version/OSINTNETAuditor-portable-v$version.zip"
+            }
+        }
+    }
+}
