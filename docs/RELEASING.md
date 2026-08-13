@@ -186,10 +186,11 @@ zaplanowane).
 Extras (`ScoopInstaller/Extras`, bardziej odkrywalne): WYMAGA otwarcia
 issue z propozycja pakietu i zgody maintainera PRZED PR-em (inaczej niz
 winget - "We are very reluctant to accept random pull requests without a
-related issue created first"). Status: [wpisz tu numer issue/PR jak
-powstanie]. Jesli/kiedy zaakceptowane, PR z manifestem (ten sam format co
-wlasny bucket) + komentarz `/verify` po zlozeniu zeby odpalic automatyczny
-walidator.
+related issue created first"). Status: issue otwarte -
+[ScoopInstaller/Extras#18520](https://github.com/ScoopInstaller/Extras/issues/18520),
+czeka na ocene maintainera. Jesli/kiedy zaakceptowane, PR z manifestem
+(ten sam format co wlasny bucket) + komentarz `/verify` po zlozeniu zeby
+odpalic automatyczny walidator.
 
 ## Uwagi
 
