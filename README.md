@@ -14,6 +14,23 @@ Desktop IP/port scanner application built with [Tauri](https://tauri.app/).
 2. Run the downloaded file and follow the installer instructions.
 3. After installation, launch **OSINT NET Auditor** from the Start Menu or desktop shortcut.
 
+### One-line install (PowerShell)
+
+Fetches the latest NSIS installer (the same one the app's own auto-update
+uses) and installs it silently:
+
+```powershell
+irm https://raw.githubusercontent.com/michalstankiewicz4-cell/IPscanner/main/install.ps1 | iex
+```
+
+Pass `-Interactive` to see the normal install wizard instead of a silent
+install (piping straight into `iex` can't take arguments, so use this form
+instead to pass any):
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/michalstankiewicz4-cell/IPscanner/main/install.ps1))) -Interactive
+```
+
 ### Build from source
 
 **Requirements:**
