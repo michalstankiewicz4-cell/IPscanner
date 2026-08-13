@@ -186,9 +186,16 @@ zaplanowane).
 Extras (`ScoopInstaller/Extras`, bardziej odkrywalne): WYMAGA otwarcia
 issue z propozycja pakietu i zgody maintainera PRZED PR-em (inaczej niz
 winget - "We are very reluctant to accept random pull requests without a
-related issue created first"). Status: issue otwarte -
-[ScoopInstaller/Extras#18520](https://github.com/ScoopInstaller/Extras/issues/18520),
-czeka na ocene maintainera. Jesli/kiedy zaakceptowane, PR z manifestem
+related issue created first"). Status: **ODRZUCONE (2026-08-13)** -
+[ScoopInstaller/Extras#18520](https://github.com/ScoopInstaller/Extras/issues/18520)
+zamkniete przez maintainera: projekt nie spelnia progu popularnosci
+("Reasonably well-known and widely used... at least 100 stars and/or 50
+forks"). To kryterium ilosciowe, nie ocena jakosci - nie ma sensu probowac
+ponownie zanim repo faktycznie urosnie. Wlasny bucket (wyzej) zostaje
+JEDYNA droga Scoopa na razie - dziala w pelni, nic nie stracone. Mozna
+sprobowac Extras ponownie w przyszlosci, jesli gwiazdki/forki wzrosna.
+
+Jesli/kiedy kiedys zaakceptowane, PR z manifestem
 (ten sam format co wlasny bucket) + komentarz `/verify` po zlozeniu zeby
 odpalic automatyczny walidator.
 
