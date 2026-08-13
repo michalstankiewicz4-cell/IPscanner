@@ -688,6 +688,7 @@
         "</div>",
 
         groupHeading("generalGroupSession", "Session"),
+        checkboxRow("showStartupDisclaimer", "⚠️", "generalShowStartupDisclaimer", "Show amateur-project disclaimer on startup"),
         checkboxRow("autoLoadLastSession", "🗂", "generalAutoLoadLastSession", "Auto Load last session"),
 
         groupHeading("generalGroupUpdates", "Updates"),

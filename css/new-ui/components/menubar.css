@@ -409,6 +409,17 @@ html[dir="rtl"] .v1-window-controls {
   padding: 0 10px 10px;
 }
 
+.v1-exit-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0 10px 12px;
+  color: #a9b1bf;
+  font: 400 12px/1.3 var(--font-ui);
+  cursor: pointer;
+}
+
 .v1-exit-btn {
   border: 1px solid #4a4f58;
   border-radius: 0;

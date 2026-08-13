@@ -1371,6 +1371,7 @@
         window.NetReconNewUI = window.NetReconNewUI || {};
         window.NetReconNewUI.openConfirmDialog = menuRuntime.openConfirmDialog;
         window.NetReconNewUI.openUpdateDialog = menuRuntime.openUpdateDialog;
+        window.NetReconNewUI.openStartupDisclaimerDialog = menuRuntime.openStartupDisclaimerDialog;
       }
 
       const navigationRuntimeFactory = runtimeFactory.createNavigationRuntime
@@ -1572,6 +1573,29 @@
         : null;
       if (updateCheckRuntime && updateCheckRuntime.checkForUpdate) {
         updateCheckRuntime.checkForUpdate();
+      }
+
+      // General settings -> "Show amateur-project disclaimer on startup":
+      // fire-and-forget like the update check above, shown after UI reveal -
+      // a liability-style notice, not a blocking gate on using the app.
+      // Checking the dialog's own "don't show again" box persists the same
+      // showStartupDisclaimer=false back into generalSettings, so Options ->
+      // General's checkbox and the dialog's checkbox stay in sync either way.
+      if (core.generalSettings && typeof core.generalSettings.getState === "function"
+          && core.generalSettings.getState().showStartupDisclaimer
+          && window.NetReconNewUI && window.NetReconNewUI.openStartupDisclaimerDialog) {
+        window.NetReconNewUI.openStartupDisclaimerDialog(
+          tr("startupDisclaimerTitle"),
+          tr("startupDisclaimerMessage"),
+          tr("startupDisclaimerDontShowAgain"),
+          tr("startupDisclaimerOk")
+        ).then(function (result) {
+          if (result && result.checkboxChecked && core.generalSettings && typeof core.generalSettings.replaceState === "function") {
+            var next = core.generalSettings.getState();
+            next.showStartupDisclaimer = false;
+            core.generalSettings.replaceState(next);
+          }
+        });
       }
 
       window.NetReconNewUI = window.NetReconNewUI || {};

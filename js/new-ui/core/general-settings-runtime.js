@@ -3,6 +3,7 @@
 
   function makeDefaultState() {
     return {
+      showStartupDisclaimer: true,
       autoLoadLastSession: false,
       panelSideRight: false,
       checkForUpdates: true,

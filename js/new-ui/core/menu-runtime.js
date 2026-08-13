@@ -51,8 +51,14 @@
     // in-flight one's resolver, and Tab is trapped within the button row so
     // background controls stay unreachable while the dialog is open - both
     // properties window.confirm() had "for free" as a native blocking modal.
-    function buildButtonDialog(idPrefix, buttonKeys) {
-      var state = { root: null, title: null, message: null, buttons: {}, resolver: null, queue: [], lastFocused: null };
+    // checkboxKey (optional): when provided, ensure() also builds an extra
+    // "don't show this again"-style checkbox row between the message and
+    // the button row, and finish()/open() resolve with { choice,
+    // checkboxChecked } instead of a plain choice string - existing callers
+    // that don't pass it (exitDialog/confirmDialog/updateDialog) keep
+    // resolving exactly as before, zero behavior change.
+    function buildButtonDialog(idPrefix, buttonKeys, checkboxKey) {
+      var state = { root: null, title: null, message: null, buttons: {}, checkbox: null, checkboxLabel: null, resolver: null, queue: [], lastFocused: null };
 
       function focusableButtons() {
         return buttonKeys
@@ -69,7 +75,11 @@
         }
         var done = state.resolver;
         state.resolver = null;
-        if (typeof done === "function") done(choice || "cancel");
+        if (typeof done === "function") {
+          done(checkboxKey
+            ? { choice: choice || "cancel", checkboxChecked: !!(state.checkbox && state.checkbox.checked) }
+            : (choice || "cancel"));
+        }
         if (state.queue.length) {
           var nextRequest = state.queue.shift();
           showNow(nextRequest.texts, nextRequest.resolve);
@@ -115,6 +125,20 @@
 
         panel.appendChild(head);
         panel.appendChild(message);
+
+        if (checkboxKey) {
+          var checkboxRow = document.createElement("label");
+          checkboxRow.className = "v1-exit-checkbox-row";
+          var checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          var checkboxLabel = document.createElement("span");
+          checkboxRow.appendChild(checkbox);
+          checkboxRow.appendChild(checkboxLabel);
+          panel.appendChild(checkboxRow);
+          state.checkbox = checkbox;
+          state.checkboxLabel = checkboxLabel;
+        }
+
         panel.appendChild(actions);
         root.appendChild(panel);
         document.body.appendChild(root);
@@ -158,6 +182,10 @@
         var modal = ensure();
         modal.title.textContent = texts.title;
         modal.message.textContent = texts.message;
+        if (checkboxKey && modal.checkbox) {
+          modal.checkbox.checked = false;
+          modal.checkboxLabel.textContent = texts.checkboxLabel || "";
+        }
         buttonKeys.forEach(function (key) {
           if (modal.buttons[key]) modal.buttons[key].textContent = (texts.labels && texts.labels[key]) || "";
         });
@@ -195,6 +223,10 @@
     // used by the update-available prompt so "What's new" can sit between
     // Install and Cancel instead of only having a binary choice.
     var updateDialog = buildButtonDialog("v1UpdateModal", ["install", "whatsnew", "cancel"]);
+    // Single-button dialog with a "don't show again" checkbox baked in
+    // (the checkboxKey arg) - used for the startup amateur-project
+    // disclaimer (Options -> General's "showStartupDisclaimer" setting).
+    var disclaimerDialog = buildButtonDialog("v1DisclaimerModal", ["ok"], "dontShowAgain");
 
     function openExitConfirmDialog() {
       return exitDialog.open({
@@ -227,6 +259,19 @@
         message: messageText,
         labels: { install: installLabel, whatsnew: whatsnewLabel, cancel: cancelLabel },
         focusKey: "install",
+      });
+    }
+
+    // Resolves with { choice, checkboxChecked } (see buildButtonDialog's
+    // checkboxKey doc comment) - the caller decides what checking the box
+    // means (here: persist Options -> General's showStartupDisclaimer=false).
+    function openStartupDisclaimerDialog(titleText, messageText, checkboxLabelText, okLabel) {
+      return disclaimerDialog.open({
+        title: titleText,
+        message: messageText,
+        checkboxLabel: checkboxLabelText,
+        labels: { ok: okLabel },
+        focusKey: "ok",
       });
     }
 
@@ -700,6 +745,7 @@
       runMenuAction: runMenuAction,
       openConfirmDialog: openConfirmDialog,
       openUpdateDialog: openUpdateDialog,
+      openStartupDisclaimerDialog: openStartupDisclaimerDialog,
     };
   }
 

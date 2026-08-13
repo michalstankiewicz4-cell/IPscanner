@@ -297,21 +297,6 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
   then regex-based detection would miss non-IPv4 leaks (hostnames, IPv6),
   which risks false confidence worse than today's honest "we blur the whole
   thing" behavior.
-- **Gaze-following privacy screen** (idea from AMD's "Privacy View") — blur
-  the whole window except the small area the user is actually looking at,
-  so shoulder-surfing someone's scan results/OSINT data is much harder.
-  AMD's version uses dedicated NPU + calibrated-camera hardware, not
-  replicable as-is; the achievable approximation is
-  [WebGazer.js](https://webgazer.js.org/) (open-source, webcam + in-browser
-  ML, no special hardware), which needs a short click-while-looking
-  calibration flow and drives a `backdrop-filter: blur()` overlay with a
-  cutout following the estimated gaze point. Honest tradeoffs before
-  committing to this: accuracy is centimeters, not pixels (lighting/webcam
-  quality dependent, nowhere near AMD's precision); requires an always-on
-  camera + continuous per-frame ML inference (real CPU/GPU cost); for a
-  security/OSINT tool specifically, an always-on camera may read as more
-  alarming than reassuring to some users - should ship opt-in/off by
-  default if built at all. Not started - purely an idea so far.
 
 ## Backlog
 
@@ -467,3 +452,17 @@ A repo-wide audit removed code that was unreachable or misleading:
   arithmetic, opaque traps with no error message) was judged too costly
   relative to the benefit at this stage. The addon system stays JS-only; see
   the note at the top of `FUTURE_PLUGIN_SHELL.md` for details.
+- **Gaze-following privacy screen** (idea from AMD's "Privacy View" - blur
+  the whole window except the small area the user is actually looking at,
+  via [WebGazer.js](https://webgazer.js.org/), see the old Planned entry
+  this replaces for the full UX sketch: checkbox + Calibrate button in
+  Options → General, a `backdrop-filter: blur()` overlay with a
+  gaze-following clear cutout) — investigated in real implementation detail
+  (CSS mask/blur technique, WebGazer lifecycle, file layout) and rejected:
+  WebGazer.js is GPLv3-licensed (LGPLv3 only under a company-valuation
+  carve-out), while this repo is MIT throughout. Vendoring it directly the
+  way `globe-gl`/`sql-js`/`novnc` are vendored (all permissively licensed)
+  would change the whole project's licensing posture, not just this
+  feature's. Distributing it instead through the existing addon system (so
+  the MIT core never bundles GPL code) remains a possible future path if
+  this gets revisited, but isn't committed to now.
