@@ -10,6 +10,12 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.8.3",
+      notes: [
+        "Added a startup disclaimer: Options → General now has a checkbox that shows a one-time-per-launch notice that this is an amateur/vibecoded project, not suitable for commercial or corporate use. The dialog has its own \"Don't show this again\" checkbox, which controls the exact same setting as the one in General."
+      ]
+    },
+    {
       version: "v2.8.2",
       notes: [
         "Community: added Discord login - authorize with your real Discord account to post as a \"✓ <name>\" verified sender instead of a free-text nickname, no longer able to be impersonated. The Worker now also validates nicknames server-side (closing a gap where only the app's own JS checked them, including a new block on faking the \"✓ \" verified prefix from the anonymous path).",

@@ -22,8 +22,8 @@ ${StrLoc}
 
 !define MANUFACTURER "netrecon"
 !define PRODUCTNAME "OSINT NET Auditor"
-!define VERSION "2.8.2"
-!define VERSIONWITHBUILD "2.8.2.0"
+!define VERSION "2.8.3"
+!define VERSIONWITHBUILD "2.8.3.0"
 !define HOMEPAGE ""
 !define INSTALLMODE "currentUser"
 !define LICENSE ""

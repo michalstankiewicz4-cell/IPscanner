@@ -6,6 +6,22 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-08-13
+
+- Added a startup disclaimer: Options → General has a checkbox controlling
+  a one-time-per-launch dialog stating the app is an amateur/vibecoded
+  project, not suitable for commercial or corporate use. Implemented by
+  teaching the shared modal-dialog factory (`menu-runtime.js`'s
+  `buildButtonDialog`) an optional embedded "don't show again" checkbox,
+  reused as-is by the existing exit/confirm/update dialogs with zero
+  behavior change.
+- Investigated the "Gaze-following privacy screen" idea (WebGazer.js-based
+  webcam gaze tracking to drive a blur overlay) in real implementation
+  detail, then dropped it: WebGazer.js is GPLv3-licensed and this repo is
+  MIT throughout - vendoring it in directly would change the whole
+  project's licensing posture. Moved from ROADMAP.md's Planned section to
+  Considered and rejected.
+
 ## 2026-08-12
 
 - Added Discord login to Community chat: authorize with your real Discord
