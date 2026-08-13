@@ -256,7 +256,33 @@
     // cooldown-gated inside setNickname() below.
     var showSwitcher = false;
 
+    // Mirrors each error code into the app's own Console pane (the same
+    // "[HH:MM:SS] ..." log the menu/status runtimes already write to,
+    // window.NetReconNewUI.setStatusLine - see bootstrap-runtime.js) so a
+    // rejected send/nickname/login shows up somewhere visible even if the
+    // chat tab isn't the one currently open. Centralized here (once per
+    // emitChanged(), diffed against the last-logged value) rather than at
+    // every individual assignment site, so a persisting error never logs
+    // twice and a genuinely NEW one always logs exactly once.
+    var lastLoggedSendError = "";
+    var lastLoggedNicknameError = "";
+    var lastLoggedLoginError = "";
+
+    function logChatErrorToConsole(label, code) {
+      var ui = window.NetReconNewUI;
+      if (ui && typeof ui.setStatusLine === "function") {
+        ui.setStatusLine("Community Chat: " + label + " (" + code + ")");
+      }
+    }
+
     function emitChanged() {
+      if (sendError && sendError !== lastLoggedSendError) logChatErrorToConsole("send failed", sendError);
+      lastLoggedSendError = sendError;
+      if (nicknameError && nicknameError !== lastLoggedNicknameError) logChatErrorToConsole("nickname rejected", nicknameError);
+      lastLoggedNicknameError = nicknameError;
+      if (loginError && loginError !== lastLoggedLoginError) logChatErrorToConsole("Discord login failed", loginError);
+      lastLoggedLoginError = loginError;
+
       try {
         document.dispatchEvent(new CustomEvent("newui:community-chat-changed", {
           detail: { messages: messages.slice(), nickname: nickname, sending: sending, sendError: sendError, loadError: loadError, nicknameError: nicknameError, nicknameCooldownRemainingMs: getNicknameCooldownRemainingMs(), ignored: ignored.slice(), discordSession: discordSession, discordLoginPending: loginPending, discordLoginError: loginError, showSwitcher: showSwitcher }
@@ -542,7 +568,15 @@
               discordSession = null;
               saveDiscordSession(null);
             }
-            throw new Error("HTTP " + res.status);
+            // Read the Worker's own {"error":"code"} body instead of just
+            // throwing "HTTP 400" - without this, a real reason (a nickname
+            // rejected by the content filter, say) never reached the UI,
+            // only an opaque status code.
+            return res.json().catch(function () { return null; }).then(function (body) {
+              var err = new Error((body && body.error) || ("HTTP " + res.status));
+              if (body && body.error) err.code = body.error;
+              throw err;
+            });
           }
           sending = false;
           emitChanged();
@@ -553,7 +587,7 @@
           sending = false;
           sendError = (err && err.isTurnstileError)
             ? "turnstile_failed"
-            : ((err && err.message) ? err.message : String(err));
+            : ((err && err.code) || (err && err.message) || String(err));
           emitChanged();
           return false;
         });

@@ -143,6 +143,23 @@
         }
       }
 
+      // Safety net: any JS error/rejection that isn't already handled by a
+      // more specific try/catch surfaces here too, so it's visible in the
+      // Console pane instead of only in devtools (which most users, and
+      // even most debugging sessions, never have open). Deliberately not a
+      // replacement for deliberate error handling elsewhere (e.g. Community
+      // Chat's own error-code logging) - this only catches what nothing
+      // else already caught.
+      window.addEventListener("error", function (event) {
+        var message = (event && event.error && event.error.message) || (event && event.message) || "unknown error";
+        setStatusLine("Error: " + message);
+      });
+      window.addEventListener("unhandledrejection", function (event) {
+        var reason = event && event.reason;
+        var message = (reason && reason.message) ? reason.message : String(reason);
+        setStatusLine("Unhandled error: " + message);
+      });
+
       let scannerSidebarRuntime = null;
       let emailReconRuntime = null;
       let powerShellConsoleRuntime = null;
@@ -463,6 +480,7 @@
       }
 
       window.NetReconNewUI = window.NetReconNewUI || {};
+      window.NetReconNewUI.setStatusLine = setStatusLine;
       window.NetReconNewUI.refreshLanguageUi = refreshLanguageUi;
       window.NetReconNewUI.syncExtensionToolUi = function () {
         if (typeof syncExtensionToolUi === "function") syncExtensionToolUi();

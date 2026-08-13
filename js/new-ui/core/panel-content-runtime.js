@@ -3109,6 +3109,18 @@
       return "";
     }
 
+    // Known /send error codes from the Worker (see docs/COMMUNITY_CHAT_
+    // SETUP.md) mapped to friendly text - anything unrecognized (a raw
+    // "HTTP 500", say) falls through and is shown as-is rather than
+    // silently swallowed, since an unmapped code is still more useful to
+    // the user than nothing.
+    function communityChatSendErrorText(code) {
+      if (code === "turnstile_failed") return trOr("commChatTurnstileFailed", "Couldn't verify this isn't a script - try again in a moment.");
+      if (code === "nickname_flagged") return trOr("commChatNicknameFlagged", "That nickname was flagged by the content filter.");
+      if (code === "message_flagged") return trOr("commChatMessageFlagged", "That message was flagged by the content filter.");
+      return code;
+    }
+
     // No nickname yet: a centered setup card takes over the message-list
     // area entirely (no bottom bar at all in this state) - the previous
     // layout put the nickname field in the same bottom-bar spot the real
@@ -3162,9 +3174,7 @@
 
       var identity = discordSession ? ("✓ " + discordSession.discordUsername) : nickname;
       var rawSendError = communityChatApi ? communityChatApi.getSendError() : "";
-      var sendError = rawSendError === "turnstile_failed"
-        ? trOr("commChatTurnstileFailed", "Couldn't verify this isn't a script - try again in a moment.")
-        : rawSendError;
+      var sendError = communityChatSendErrorText(rawSendError);
       var sending = communityChatApi ? communityChatApi.getSending() : false;
       var ignored = communityChatApi ? communityChatApi.getIgnored() : [];
       var listHtml = renderCommunityChatMessagesHtml(messages, identity, ignored);

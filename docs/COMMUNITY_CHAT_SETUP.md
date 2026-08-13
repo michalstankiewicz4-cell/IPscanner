@@ -24,14 +24,16 @@ to touch anything below except you, once.
 3b. **OAuth2 login (optional, for the "verified sender" checkmark feature)**:
    same Application as the bot above - OAuth2 tab -> add a redirect URI
    `https://<your-worker>.workers.dev/oauth/callback` (use the real Worker
-   URL from section 3, not this placeholder) -> note the **Client ID** and
+   URL from section 4, not this placeholder) -> note the **Client ID** and
    (under "Reset Secret") the **Client Secret**. Only the `identify` scope
    is needed at runtime (username only - no email, no guild list). Both
    values go into the Worker's secrets below, never into the app.
 4. **Channel ID**: enable Developer Mode (User Settings -> Advanced),
    right-click the channel -> Copy Channel ID.
-5. Optional but recommended before going live: Server Settings -> Safety
-   Setup -> AutoMod -> add a keyword-filter rule on that channel.
+5. Discord's own AutoMod (Server Settings -> Safety Setup) does **not**
+   catch anything here - confirmed live, its block-message action doesn't
+   apply to webhook-posted messages at all, no matter how the rule is
+   configured. The real content filter is the Workers AI step below.
 
 You now have three values: webhook URL, bot token, channel ID. They go into
 Cloudflare below, not into the app.
@@ -54,7 +56,30 @@ app's JS can.
    `community-chat-runtime.js` (currently a placeholder,
    `REPLACE_WITH_TURNSTILE_SITE_KEY`).
 
-## 3. Cloudflare Worker (the proxy that hides the Discord + Turnstile secrets)
+## 3. Cloudflare Workers AI (content filter - catches toxic nicknames/messages)
+
+Discord's own AutoMod does NOT apply here, since every message arrives
+through a webhook rather than a real member typing - AutoMod's block-message
+action doesn't intercept webhook-posted content (confirmed live). Workers AI
+runs `llama-guard-3-8b` (Meta's purpose-built content-safety model) directly
+alongside the Worker itself - no new account, no API key to manage, since
+it's the same Cloudflare account/dashboard as everything else here. (An
+earlier draft of this doc used Google's Perspective API instead - dropped
+after Google announced Perspective is being sunset in 2026, not worth
+building on a service already on its way out.)
+
+1. In your Worker's dashboard (created in the next section): **Settings ->
+   Bindings -> Add binding -> Workers AI**. Variable name: `AI`. Save.
+2. That's it - no secret, no external account, no key to copy anywhere.
+
+Free allocation is 10,000 "Neurons" per day (resets at 00:00 UTC), more than
+enough for a hobby chat's volume - each message costs two small
+classification calls (nickname + text). The Worker below fails OPEN on any
+error from this model, same reasoning as everywhere else in this doc: an
+outage here shouldn't block the whole chat, Turnstile + nickname validation
+are the base anti-abuse layer this is additive to.
+
+## 4. Cloudflare Worker (the proxy that hides the Discord + Turnstile secrets)
 
 1. Sign up at [cloudflare.com](https://cloudflare.com) (free, no credit
    card needed for Workers' free tier).
@@ -72,7 +97,8 @@ app's JS can.
 5. Settings -> Bindings -> Add binding -> **KV namespace**, variable name
    `OAUTH_SESSIONS`, create a new namespace if you don't have one yet (this
    is where OAuth login state and sessions live - it needs no manual
-   entries, the Worker manages it).
+   entries, the Worker manages it). Also add the **Workers AI** binding
+   from section 3 above (`AI`) here if you haven't already.
 6. Deploy. Your Worker now has a public URL like
    `https://ipscanner-chat.<your-subdomain>.workers.dev`.
 7. Optional hardening: dashboard -> your Worker -> Settings -> Triggers/
@@ -84,7 +110,7 @@ app's JS can.
    only - the app never learns them, same trust boundary as the Discord
    webhook/bot token.
 
-### Worker script (paste this in step 3.3)
+### Worker script (paste this in step 4.3)
 
 ```js
 // Discord rejects webhook usernames containing these (confirmed live) or
@@ -109,6 +135,34 @@ function escapeHtmlBasic(s) {
   return String(s).replace(/[&<>"']/g, function (c) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
   });
+}
+
+// Cloudflare Workers AI - Llama Guard 3 (Meta's content-safety classifier),
+// the content filter Discord's own AutoMod can't provide here since its
+// block-message action doesn't apply to webhook-posted messages at all
+// (confirmed live). Runs on the SAME Cloudflare account as this Worker via
+// the `AI` binding (section 3 of the setup doc) - no external account, no
+// secret to manage, unlike the Google Perspective API this replaced (that
+// one's being sunset by Google in 2026). The model's standard output is
+// plain text - "safe", or "unsafe" followed by violated category codes -
+// parsed defensively below since Workers AI's exact response wrapper isn't
+// fully pinned down in Cloudflare's own docs as of writing. Fails OPEN
+// (lets the message through) on any error - an outage here shouldn't take
+// the whole chat down; Turnstile + nickname validation above are the base
+// anti-abuse layer this is additive to, not a replacement for.
+async function isToxic(text, ai) {
+  if (!text) return false;
+  try {
+    const result = await ai.run("@cf/meta/llama-guard-3-8b", {
+      messages: [{ role: "user", content: text }],
+    });
+    const raw = typeof result === "string"
+      ? result
+      : (result && (result.response || (result.result && result.result.response))) || "";
+    return String(raw).trim().toLowerCase().indexOf("unsafe") === 0;
+  } catch (e) {
+    return false;
+  }
 }
 
 export default {
@@ -195,6 +249,26 @@ export default {
           });
         }
         username = nickname;
+      }
+
+      // Runs on BOTH paths, against whatever the final identity ends up
+      // being (anonymous nickname or "✓ discordUsername") - the content
+      // filter cares what actually gets posted, not how it was chosen.
+      const [usernameToxic, textToxic] = await Promise.all([
+        isToxic(username, env.AI),
+        isToxic(text, env.AI),
+      ]);
+      if (usernameToxic) {
+        return new Response(JSON.stringify({ error: "nickname_flagged" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (textToxic) {
+        return new Response(JSON.stringify({ error: "message_flagged" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       const discordRes = await fetch(env.DISCORD_WEBHOOK_URL, {
