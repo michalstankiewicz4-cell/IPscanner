@@ -94,6 +94,61 @@ gh release create vX.Y.Z <portable.zip> <nsis-setup.exe> latest.json \
   (nie probuje natywnej instalacji - `is_installer_install` w `main.rs` ma
   to wykryc po sciezce `%LOCALAPPDATA%\OSINT NET Auditor\`).
 
+## 7. Inne kanaly dystrybucji (irm, winget, scoop)
+
+Trzy sposoby instalacji obok siebie - kazdy ma inny cykl aktualizacji, zeby
+nie pomylic "nic nie trzeba robic" z "trzeba zrobic nowy PR":
+
+### irm (jednolinijkowiec PowerShell) - NIC nie trzeba robic
+
+`install.ps1` (repo root) czyta `latest.json` w locie przy kazdym
+uruchomieniu - dokladnie ten sam plik co auto-update w apce (krok 4 wyzej).
+Nowe wydanie = automatycznie nowa wersja dla `irm ... | iex`, zero
+dodatkowej pracy. Nie trzeba tego nigdzie aktualizowac.
+
+### winget - NOWY manifest + PR przy KAZDYM wydaniu
+
+Pakiet: `michalstankiewicz.OSINTNETAuditor` (pierwsze wydanie: PR
+[#416981](https://github.com/microsoft/winget-pkgs/pull/416981), v2.8.3).
+Manifesty referencyjne trzymane w `winget/manifests/m/michalstankiewicz/
+OSINTNETAuditor/<wersja>/` w tym repo (kopia tego co poszlo do
+`winget-pkgs`, nie zrodlo prawdy - `winget-pkgs` jest zrodlem prawdy).
+
+Wymaga `wingetcreate` (`winget install Microsoft.WingetCreate`, raz).
+Przy kazdym nowym wydaniu (PO opublikowaniu release'u z krokow 1-6 wyzej,
+zeby URL/hash byly aktualne):
+
+```powershell
+wingetcreate update michalstankiewicz.OSINTNETAuditor `
+  --version X.Y.Z `
+  --urls "https://github.com/michalstankiewicz4-cell/IPscanner/releases/download/vX.Y.Z/OSINTNETAuditor_X.Y.Z_x64-setup.exe" `
+  --submit
+```
+
+To samo narzedzie co przy pierwszym wydaniu, ale komenda `update` (nie
+`new`) - samo sciaga poprzedni manifest z `winget-pkgs`, podmienia
+wersje/URL, liczy nowy SHA256, i sklada PR. Otworzy przegladarke do
+logowania GitHub (Device Flow - kod do wpisania na
+`github.com/login/device`, tak jak przy pierwszym wydaniu). Po zlozeniu
+PR-a: sprawdz go, dodaj komentarz `@microsoft-github-policy-service agree`
+jesli bot o to poprosi (CLA - zwykle wystarczy raz na konto, ale sprawdz),
+poczekaj na automatyczna walidacje (`gh pr view <numer> --repo
+microsoft/winget-pkgs --json statusCheckRollup`).
+
+Skopiuj tez wygenerowane pliki do `winget/manifests/.../<nowa-wersja>/` w
+tym repo dla historii (opcjonalne, ale wygodne).
+
+### scoop - NIE zaimplementowane jeszcze
+
+Rozwazane, nie zbudowane. Do wyboru przy budowie: wlasny bucket (szybko,
+pelna kontrola, mniej odkrywalne) vs PR do oficjalnego `ScoopInstaller/
+Extras` (jak winget, ale manifest wskazuje na PORTABLE ZIP z kroku 3
+wyzej, nie na installer - Scoop wprost tego woli). Manifest scoopa
+(`.json`) ma pola `checkver`/`autoupdate` - dobrze skonfigurowane, moga
+zdjac z nas obowiazek recznej aktualizacji przy kazdym wydaniu (bot albo
+scheduled Action wykrywa nowa wersje sam). Jak/czy to budowac - do
+ustalenia, nie zakladac ze juz istnieje.
+
 ## Uwagi
 
 - Prywatny klucz podpisujacy (`%USERPROFILE%\.tauri\ipscanner-updater.key`)
