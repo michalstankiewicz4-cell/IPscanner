@@ -12,6 +12,10 @@
     {
       version: "v2.8.3",
       notes: [
+        "Added a Browser tool (Tools menu): an in-app browser tab for viewing a site without leaving the app, embedded as a normal page (iframe) by default. Some sites refuse to be embedded this way (banks, Google, and others that send X-Frame-Options/frame-ancestors) - when that happens, the tab automatically detects the block after a few seconds and offers to open the same address in its own separate app window instead, which isn't restricted the same way. The ⧉ button in the toolbar opens the current address in that separate window at any time, and detached (undocked) Browser cards work the same way as the docked tab.",
+        "IP Library: updating the country-range list now refreshes the visible table immediately - previously the new data was saved but the table only picked it up after pressing F5. Removed the now-redundant \"Load cached\" button (the table always reflects the current cache already), and the update logic no longer depends on a separate .ps1 script file shipped alongside the app - it's generated in-app, the same way local/external IP detection already avoided an external script dependency.",
+        "Removed the \"Show unfinished tools\" toggle and the in-progress tools it was hiding: the Style tab (formerly \"Lorem Ipsum\", used for UI experiments) is now reachable directly, Country IP Library is always visible, and TCP SYN Scan / OS Detection / ShellCraft's not-yet-working blocks are shown but permanently grayed out instead of hidden behind a toggle.",
+        "Removed \"Demo Data mode\" and its two hardcoded example IP rows - it predated real scanning and wasn't needed anymore.",
         "Added a startup disclaimer: Options → General now has a checkbox that shows a one-time-per-launch notice that this is an amateur/vibecoded project, not suitable for commercial or corporate use. The dialog has its own \"Don't show this again\" checkbox, which controls the exact same setting as the one in General."
       ]
     },
