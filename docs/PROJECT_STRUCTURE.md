@@ -84,8 +84,7 @@ IPscanner/
 ├── languages/                      # jezyki doinstalowywane: ar.json, de.json, pl.json
 │
 ├── scripts/
-│   ├── sync-version.js
-│   └── update-country-ip-library.ps1
+│   └── sync-version.js
 │
 ├── src-tauri/                      # backend desktopowy (Tauri v2, Rust)
 │   ├── src/main.rs                 # komendy Tauri (invoke)
@@ -246,10 +245,10 @@ to jezyki doinstalowywane.
 ## `scripts/`
 
 - `sync-version.js` - synchronizuje numer wersji miedzy `package.json` a
-  `tauri.conf.json`/UI.
-- `update-country-ip-library.ps1` - skrypt PowerShell pobierajacy zakresy IP
-  wedlug krajow (wywolywany przez IP Library); ma znany bug "Missing
-  script" w wersji portable (patrz `docs/ROADMAP.md`).
+  `tauri.conf.json`/UI. Jedyny plik w tym katalogu - logika PowerShell
+  aktualizujaca Country IP Library jest teraz inline w
+  `ip-library-runtime.js` (`buildUpdateCountryIpLibraryCommand`), tak samo
+  jak wykrywanie IP w `navigation-runtime.js`.
 
 ## `src-tauri/`
 

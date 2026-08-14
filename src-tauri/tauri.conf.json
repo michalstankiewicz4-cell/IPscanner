@@ -36,9 +36,6 @@
     "active": true,
     "targets": "all",
     "createUpdaterArtifacts": true,
-    "resources": [
-      "../scripts/*.ps1"
-    ],
     "windows": {
       "nsis": {
         "template": "nsis/installer-template.nsi"

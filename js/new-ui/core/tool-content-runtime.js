@@ -197,7 +197,6 @@
         '<div class="v1-section-body">' +
         '<div class="v1-scanner-actions v1-iplib-actions">' +
         '<button type="button" data-iplib-action="update" id="v1IpLibraryUpdateBtn">' + t("ipLibraryUpdateBtn") + "</button>" +
-        '<button type="button" data-iplib-action="load" id="v1IpLibraryLoadBtn">' + t("ipLibraryLoadBtn") + "</button>" +
         '<button type="button" data-iplib-action="clear" id="v1IpLibraryClearBtn">' + t("ipLibraryClearBtn") + "</button>" +
         "</div>" +
         "</div>" +

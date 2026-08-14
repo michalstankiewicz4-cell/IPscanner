@@ -40,11 +40,14 @@ Efekt w `src-tauri/target/release/bundle/`:
 Jesli `.sig` sie nie pojawil - zmienna srodowiskowa nie byla ustawiona w tej
 samej sesji shell-a co `npm run tauri:build`.
 
-## 3. Portable zip (bez zmian)
+## 3. Portable zip
 
-Jak dotychczas: `OSINTNETAuditor.exe` + `scripts/*.ps1` (ze zrodel repo, NIE
-z `_up_/scripts` w katalogu builda) w plaskiej strukturze, spakowane
-`Compress-Archive`.
+Od 2026-08-14: **tylko** `OSINTNETAuditor.exe`, spakowane
+`Compress-Archive`. `scripts/` juz nie trzeba dolaczac - cala logika
+PowerShell wywolywana z apki (wykrywanie IP + aktualizacja Country IP
+Library) jest inline w JS (patrz CONTRIBUTING.md), `scripts/*.ps1` nie ma
+juz zadnego pliku pasujacego do tego wzorca (zostal tylko build-time
+`sync-version.js`, node, nie potrzebny w dystrybucji).
 
 **Zmien nazwe NSIS installer-a PRZED uploadem** - `tauri build` generuje go
 ze spacjami (`OSINT NET Auditor_X.Y.Z_x64-setup.exe`), a GitHub przy

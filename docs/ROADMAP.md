@@ -381,13 +381,17 @@ A pass over every menu/tool, numbered for easy reference in discussion:
 22. Match the CS "Lorem Ipsum" tab's color-picker demo (STYLELIST.md
     scaffolding, see "Inne style"/other-styles section) to whatever the
     improved RS Config color picker ends up looking like (item 21).
-23. `scripts/update-country-ip-library.ps1` has the same "Missing script"
+23. ~~`scripts/update-country-ip-library.ps1` has the same "Missing script"
     bug that was fixed for the IP-detect scripts (a portable `.exe` built
     with `tauri build --no-bundle` never ships a `scripts/` folder next to
-    it — see the "Removed" section below once this is fixed). Needs the
-    same inline-in-JS fix, just bigger/more complex than the detect
-    scripts (149 lines, takes `-TopRanges`/`-CountryCodes` params that need
-    to survive the switch from a script file to an inline command string).
+    it). Needs the same inline-in-JS fix, just bigger/more complex than the
+    detect scripts (149 lines, takes `-TopRanges`/`-CountryCodes` params
+    that need to survive the switch from a script file to an inline
+    command string).~~ **Done (2026-08-14)** — inlined verbatim as
+    `buildUpdateCountryIpLibraryCommand(topRanges, countryCodes)` in
+    `ip-library-runtime.js`, same technique as `detectLocalIpCommand()`/
+    `detectExternalIpCommand()` in `navigation-runtime.js`. The script file
+    is deleted; `scripts/` now only holds the build-time `sync-version.js`.
 24. **`js/new-ui/` file/folder organization audit (2026-07-18)** — the
     "shell vs. tool split" from "Done" above happened at the
     comment-annotation level (`// shell:` / `// ip-scanner tool:` / `//

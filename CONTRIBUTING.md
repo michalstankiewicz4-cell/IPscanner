@@ -82,27 +82,28 @@ Minimalny podzial odpowiedzialnosci:
 - runtimes/ip-inputs-runtime.js - segmentowane pola IP oraz synchronizacja hidden inputow zakresu.
 - runtimes/navigation-runtime.js - obsluga aktywnosci sidebar/results, zakladek dolnego panelu i routingu klikniec data-tool; LS/RS otwieranie zakladek dla dodatkow przez zdarzenia `newui:sidebar-tab-intent-open`/`newui:right-tab-intent-open`.
 - runtimes/command-bus-runtime.js - generyczny rejestr nazwanych komend (`register`/`invoke`/`unregisterAllFor`); dzis uzywany przez komendy PowerShell zadeklarowane w `contributions.commands` rozszerzen (patrz sekcja 4).
-- runtimes/ip-library-runtime.js - narzedzie Country IP Library: parsowanie wpisow, cache (localStorage + pamiec), wywolanie PowerShell (`update-country-ip-library.ps1`).
+- runtimes/ip-library-runtime.js - narzedzie Country IP Library: parsowanie wpisow, cache (localStorage + pamiec), wywolanie PowerShell (`buildUpdateCountryIpLibraryCommand()`, inline w JS).
 - runtimes/addon-catalog-runtime.js - katalog dodatkow z GitHuba (`fetchCatalog`/`renderCatalog`) i instalacja/deinstalacja (`installManifestObject`/`performUninstall`) dla zakladki "Import Tool" ("www addons").
 - runtimes/language-catalog-runtime.js - katalog jezykow z GitHuba (`fetchLanguageCatalog`/`renderCatalog`) dla Language Managera (patrz sekcja 5).
 
 Skrypty PowerShell (source of truth):
 
 - wykrywanie IP (`detectExternalIpCommand`/`detectLocalIpCommand`/`detectSubnetCidrCommand`
-  w `runtimes/navigation-runtime.js`) jest inline w JS, nie jako osobne pliki -
-  wczesniej to byly osobne skrypty w `scripts/`, ale `Join-Path (Get-Location)
-  'scripts\...'` psulo sie dla kazdego portable exe (`tauri build --no-bundle`
-  pomija `tauri.conf.json`'s `bundle.resources`, wiec `scripts/` nigdy nie
-  ladowal sie obok samodzielnego .exe) - rzucalo "Missing script" przy
-  wykrywaniu IP. Przy zmianie tej logiki edytuj bezposrednio te funkcje w JS,
-  nie twórz ponownie osobnych plikow `.ps1` dla nich,
-- katalog `scripts/` nadal zawiera `update-country-ip-library.ps1`
-  (uruchamiany przez Tauri `run_powershell`, wciaz przez ten sam
-  `Join-Path (Get-Location) ...` wzorzec - ma ten sam bug dla portable exe,
-  jeszcze nie naprawiony),
-- przy dodawaniu nowej logiki PowerShell wywolywanej z JS preferuj inline
-  command string (jak detect-*) zamiast osobnego pliku `.ps1`, chyba ze
-  skrypt jest naprawde duzy/zlozony.
+  w `runtimes/navigation-runtime.js`) i aktualizacja Country IP Library
+  (`buildUpdateCountryIpLibraryCommand` w `runtimes/ip-library-runtime.js`)
+  sa inline w JS, nie jako osobne pliki - wczesniej to byly osobne skrypty
+  w `scripts/`, ale `Join-Path (Get-Location) 'scripts\...'` psulo sie dla
+  kazdego portable exe (`tauri build --no-bundle` pomija `tauri.conf.json`'s
+  `bundle.resources`, wiec `scripts/` nigdy nie ladowal sie obok
+  samodzielnego .exe) - rzucalo "Missing script". Przy zmianie tej logiki
+  edytuj bezposrednio te funkcje w JS, nie twórz ponownie osobnych plikow
+  `.ps1` dla nich,
+- `scripts/` dzis zawiera tylko `sync-version.js` (build-time, node, nie
+  PowerShell) - katalog nie jest juz kopiowany/wymagany dla zadnej logiki
+  PowerShell uruchamianej z apki,
+- przy dodawaniu nowej logiki PowerShell wywolywanej z JS zawsze uzywaj
+  inline command string (jak powyzej) zamiast osobnego pliku `.ps1` - nawet
+  149-liniowy skrypt (Country IP Library) inlinuje sie bez problemu.
 
 index.html powinien byc glownie adapterem DOM i eventow.
 
