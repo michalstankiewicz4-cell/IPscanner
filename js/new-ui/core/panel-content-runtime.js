@@ -3214,12 +3214,45 @@
       ].join("");
     }
 
+    // shell: address bar + a plain <iframe>. Wiring (navigation, the
+    // blocked-embedding fallback) is panel-interactions-runtime.js's
+    // wireBrowserTool().
+    function renderBrowserTool() {
+      return [
+        "<div class=\"v1-embedded-browser\">",
+        "<div class=\"v1-embedded-browser-toolbar\">",
+        "<button type=\"button\" data-browser-action=\"reload\" title=\"" + escapeHtml(trOr("browserReloadTitle", "Reload")) + "\">⟳</button>",
+        "<input type=\"text\" id=\"v1BrowserAddress\" class=\"v1-embedded-browser-address\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"https://...\" />",
+        "<button type=\"button\" data-browser-action=\"go\">" + escapeHtml(trOr("browserGoBtn", "Go")) + "</button>",
+        "<button type=\"button\" data-browser-action=\"open-native\" class=\"v1-embedded-browser-native-btn\" title=\"" + escapeHtml(trOr("browserOpenNativeTitle", "Open in a real browser window (bypasses embedding restrictions)")) + "\">⧉</button>",
+        "</div>",
+        "<div class=\"v1-embedded-browser-frame-wrap\">",
+        // Plain <iframe> - normal DOM content in this same webview, not a
+        // separate native surface, so it can never compete for the main
+        // window's own input the way the abandoned docked-child-webview
+        // approach did (see main.rs's Browser tool comment). Cross-origin
+        // by construction (any real target site), so its content/network
+        // traffic is opaque to us - the [⧉] button above and the banner
+        // below both hand off to a real, independent browser window
+        // (open_browser_window) for sites that need it, rather than
+        // pretending this can see into the framed page.
+        "<iframe class=\"v1-embedded-browser-frame\" title=\"" + escapeHtml(trOr("toolTitle_browser", "Browser")) + "\"></iframe>",
+        "<div class=\"v1-embedded-browser-blocked\" data-browser-blocked hidden>",
+        "<span>" + escapeHtml(trOr("browserBlockedText", "This site may be blocking embedding.")) + "</span>",
+        "<button type=\"button\" data-browser-blocked-open>" + escapeHtml(trOr("browserBlockedOpenBtn", "Open in a real browser window")) + "</button>",
+        "</div>",
+        "</div>",
+        "</div>"
+      ].join("");
+    }
+
     var toolRenderers = {
       // --- shell keys ---
       versions: renderVersionsTool,
       about: renderAboutTool,
       license: renderLicenseTool,
       "lorem-ipsum": renderLoremIpsumTool,
+      browser: renderBrowserTool,
       general: renderGeneralSettingsTool,
       "import-tool": renderImportTool,
       "language-manager": renderLanguageManagerTool,

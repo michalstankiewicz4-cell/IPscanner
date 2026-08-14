@@ -1968,6 +1968,112 @@
       });
     }
 
+    var EMBEDDED_BROWSER_HOME_URL = "https://duckduckgo.com";
+    // Module-level, not per-call: a plain <iframe> has no backend process to
+    // ask "what URL are you actually on" the way the abandoned docked-
+    // webview approach could (main.rs's Webview::url()) - re-wiring (e.g.
+    // detach/re-dock) always renders a fresh, empty iframe from scratch, so
+    // this is the only memory of where the user was, across that re-render.
+    // Trade-off worth knowing: unlike the old approach, detaching/re-
+    // docking now actually reloads the page (in-page state like scroll
+    // position or a half-filled form is lost) - a real webview held onto
+    // that in the background; a destroyed-and-recreated iframe can't.
+    var embeddedBrowserLastUrl = EMBEDDED_BROWSER_HOME_URL;
+
+    // Plain <iframe> - normal DOM content in the same webview as the rest
+    // of the app, not a separate native surface (see main.rs's Browser tool
+    // comment for why that distinction matters). Cross-origin by
+    // construction, so this can't see whether a load actually succeeded
+    // the way it could for same-origin content - detectBlocked() below is a
+    // best-effort heuristic (timeout + the classic "reading
+    // contentWindow.location doesn't throw" tell for a same-origin/
+    // about:blank frame, i.e. one that never actually navigated away),
+    // backed up by an always-visible manual [⧉] button so the user is never
+    // stuck on a false negative.
+    function wireBrowserTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
+      if (!root) return;
+
+      var frame = root.querySelector(".v1-embedded-browser-frame");
+      var addressInput = root.querySelector(".v1-embedded-browser-address");
+      var blockedBanner = root.querySelector("[data-browser-blocked]");
+      if (!frame) return;
+
+      var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+
+      function normalizedUrl() {
+        var value = (addressInput && addressInput.value || "").trim();
+        if (!value) return EMBEDDED_BROWSER_HOME_URL;
+        if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(value)) value = "https://" + value;
+        return value;
+      }
+
+      function openInRealBrowser(url) {
+        if (platform && typeof platform.invoke === "function") {
+          platform.invoke("open_browser_window", { url: url }).catch(function () {
+            if (platform.openExternalUrl) platform.openExternalUrl(url);
+          });
+        } else if (platform && typeof platform.openExternalUrl === "function") {
+          platform.openExternalUrl(url);
+        }
+      }
+
+      var blockTimer = null;
+      function hideBlocked() {
+        if (blockTimer) { clearTimeout(blockTimer); blockTimer = null; }
+        if (blockedBanner) blockedBanner.hidden = true;
+      }
+      function showBlocked() {
+        if (blockedBanner) blockedBanner.hidden = false;
+      }
+
+      function loadUrl(url) {
+        hideBlocked();
+        embeddedBrowserLastUrl = url;
+        if (addressInput) addressInput.value = url;
+        frame.src = url;
+        blockTimer = setTimeout(showBlocked, 8000);
+      }
+
+      frame.addEventListener("load", function () {
+        if (blockTimer) { clearTimeout(blockTimer); blockTimer = null; }
+        try {
+          // Throws for a genuinely cross-origin-loaded frame (success) -
+          // only reachable without throwing if the frame is still
+          // same-origin (about:blank, i.e. the real navigation never
+          // committed - X-Frame-Options/frame-ancestors blocked it).
+          var href = frame.contentWindow.location.href;
+          if (href === "about:blank") showBlocked();
+        } catch (_) {
+          hideBlocked();
+        }
+      });
+
+      root.addEventListener("click", function (event) {
+        var btn = event.target && event.target.closest ? event.target.closest("[data-browser-action]") : null;
+        if (btn) {
+          var action = btn.getAttribute("data-browser-action");
+          if (action === "go") loadUrl(normalizedUrl());
+          else if (action === "reload") frame.src = frame.src;
+          else if (action === "open-native") openInRealBrowser(normalizedUrl());
+          return;
+        }
+        if (event.target && event.target.closest && event.target.closest("[data-browser-blocked-open]")) {
+          openInRealBrowser(addressInput ? addressInput.value.trim() || embeddedBrowserLastUrl : embeddedBrowserLastUrl);
+        }
+      });
+
+      if (addressInput) {
+        addressInput.addEventListener("keydown", function (event) {
+          if (event.key === "Enter") loadUrl(normalizedUrl());
+        });
+      }
+
+      loadUrl(embeddedBrowserLastUrl);
+    }
+
     function wirePulpitInspector() {
       var mount = document.getElementById("v1PulpitInspector");
       if (!mount || !renderPulpitInspector) return;
@@ -4307,6 +4413,7 @@
       wireWifiTool: wireWifiTool,
       wireCommunityChatTool: wireCommunityChatTool,
       wireGlobeTool: wireGlobeTool,
+      wireBrowserTool: wireBrowserTool,
       wireAgentProfileLibrary: wireAgentProfileLibrary,
       wireAgentProfileDetail: wireAgentProfileDetail,
       // ip-scanner tool

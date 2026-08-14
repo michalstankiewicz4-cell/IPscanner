@@ -74,6 +74,18 @@
       labelKey: "toolTitle_lorem_ipsum",
       ui: { showAsTab: true, order: 100 }
     },
+    // Browser (CS-only) - a docked child webview (Tauri multi-webview,
+    // Window::add_child), not an iframe, so it isn't subject to
+    // X-Frame-Options/frame-ancestors blocking. See panel-content-runtime.js's
+    // renderBrowserTool() and panel-interactions-runtime.js's wireBrowserTool().
+    browser: {
+      titleKey: "toolTitle_browser",
+      textKey: "toolText_browser",
+      points: [],
+      icon: "🌐",
+      labelKey: "toolTitle_browser",
+      ui: { showAsTab: true, order: 110 }
+    },
     // ShellCraft stays in the base shell (confirmed by the user, not a
     // judgment call like the ones above) - see SHELL_PROGRESS.md.
     shellcraft: {

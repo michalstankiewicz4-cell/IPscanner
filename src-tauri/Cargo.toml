@@ -12,7 +12,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = ["devtools"] }
-tokio = { version = "1", features = ["net", "time", "rt-multi-thread", "macros", "io-util"] }
+tokio = { version = "1", features = ["net", "time", "rt-multi-thread", "macros", "io-util", "sync"] }
 # WS<->TCP bridge for Topology's VNC desktop preview - browsers can't open
 # raw TCP sockets, so the native process pipes bytes between a WebSocket
 # (noVNC, browser side) and a plain TCP connection to the target's real VNC

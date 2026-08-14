@@ -219,6 +219,7 @@
         const aiPropTokenCounterLabel = document.getElementById("v1AiPropTokenCounterLabel");
         const toolsMenuIpScanner = document.getElementById("v1ToolsMenuIpScanner");
         const toolsMenuGlobe = document.getElementById("v1ToolsMenuGlobe");
+        const toolsMenuBrowser = document.getElementById("v1ToolsMenuBrowser");
         const toolsMenuPulpitPreview = document.getElementById("v1ToolsMenuPulpitPreview");
         const toolsMenuMailXssTester = document.getElementById("v1ToolsMenuMailXssTester");
         const toolsMenuGoogleDork = document.getElementById("v1ToolsMenuGoogleDork");
@@ -330,6 +331,7 @@
         }
         if (toolsMenuIpScanner) toolsMenuIpScanner.textContent = tr("ipScanner");
         if (toolsMenuGlobe) toolsMenuGlobe.textContent = tr("toolTitle_globe");
+        if (toolsMenuBrowser) toolsMenuBrowser.textContent = tr("toolTitle_browser");
         if (toolsMenuPulpitPreview) toolsMenuPulpitPreview.textContent = tr("toolTitle_pulpit_preview");
         if (toolsMenuMailXssTester) toolsMenuMailXssTester.textContent = tr("toolTitle_mail_xss_tester");
         if (toolsMenuGoogleDork) toolsMenuGoogleDork.textContent = tr("toolTitle_google_dork");

@@ -1486,6 +1486,59 @@ fn open_rdp(host: String) {
         .spawn();
 }
 
+// ─── Browser tool ────────────────────────────────────────────────────────
+// The CS "Browser" tab itself is a plain <iframe> now (js/new-ui/core's
+// wireBrowserTool) - normal DOM content in the main webview, so it can
+// never compete for the main window's own input the way a docked child
+// webview (Window::add_child, the "unstable" multi-webview API) did:
+// confirmed by hand, that approach blocked drag/resize/minimize on the
+// whole app whenever the browser tab was open. Abandoned entirely, not
+// just patched - see git history if it's ever worth revisiting.
+//
+// This command is only the fallback for sites that refuse to be iframed
+// (X-Frame-Options/frame-ancestors) - a genuine, independent, natively
+// decorated top-level window (WebviewWindowBuilder, the long-stable
+// multi-*window* API, not the same thing as the abandoned approach above).
+// Two separate OS windows never contend for each other's input, so this
+// doesn't reintroduce the bug either.
+async fn run_on_main<T, F>(app: &AppHandle, f: F) -> Result<T, String>
+where
+    T: Send + 'static,
+    F: FnOnce(&AppHandle) -> Result<T, String> + Send + 'static,
+{
+    let (tx, rx) = tokio::sync::oneshot::channel::<Result<T, String>>();
+    let app_for_closure = app.clone();
+    app.run_on_main_thread(move || {
+        let _ = tx.send(f(&app_for_closure));
+    })
+    .map_err(|e| e.to_string())?;
+    rx.await.map_err(|e| e.to_string())?
+}
+
+const BROWSER_FALLBACK_WINDOW_LABEL: &str = "browser-fallback";
+
+#[tauri::command]
+async fn open_browser_window(app: AppHandle, url: String) -> Result<(), String> {
+    run_on_main(&app, move |app| {
+        let parsed = tauri::Url::parse(&url).map_err(|e| e.to_string())?;
+
+        if let Some(existing) = app.get_webview_window(BROWSER_FALLBACK_WINDOW_LABEL) {
+            let webview_ref: &tauri::Webview = existing.as_ref();
+            webview_ref.navigate(parsed).map_err(|e| e.to_string())?;
+            existing.set_focus().map_err(|e| e.to_string())?;
+            return Ok(());
+        }
+
+        tauri::WebviewWindowBuilder::new(app, BROWSER_FALLBACK_WINDOW_LABEL, tauri::WebviewUrl::External(parsed))
+            .title("OSINT NET Auditor - Browser")
+            .inner_size(1100.0, 800.0)
+            .build()
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    })
+    .await
+}
+
 #[tauri::command]
 async fn run_powershell(app: AppHandle, command: String) -> Result<PowerShellExecResult, String> {
     let cmd = command.trim().to_string();
@@ -2884,8 +2937,19 @@ fn window_start_dragging(window: WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn window_close(window: WebviewWindow) -> Result<(), String> {
-    window.close().map_err(|e| e.to_string())
+fn window_close(app: AppHandle) -> Result<(), String> {
+    // Was window.close() on the main WebviewWindow, but that left the
+    // embedded Browser's child webview (Window::add_child) as an orphaned
+    // ghost frame - Windows' own "app not responding" ghost-window overlay
+    // showed up around it, confirming the app was genuinely hanging during
+    // an attempted graceful close, not just failing to tear the child down.
+    // Tried closing the child explicitly first (several orderings/thread
+    // hops, see git history) without success - hard-exiting the whole
+    // process sidesteps whatever that deadlock actually was: the OS
+    // guarantees every window/webview belonging to the process, orphaned
+    // children included, goes away together, with nothing left to hang.
+    app.exit(0);
+    Ok(())
 }
 
 fn ip_to_u32(ip: &str) -> Result<u32, String> {
@@ -3554,6 +3618,7 @@ fn main() {
             read_session_file,
             run_powershell,
             run_powershell_with_args,
+            open_browser_window,
             list_connections,
             list_arp_entries,
         ])
