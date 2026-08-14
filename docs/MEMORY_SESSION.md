@@ -63,12 +63,6 @@ Klucze sa podzielone na dwie grupy, bo maja rozny cykl zycia:
 - Typ: `"1"` albo `"0"`.
 - Fallback: `"0"` (wylaczone).
 
-`netrecon_show_unfinished_tools`
-- Czy pokazywac niedokonczone narzedzia (Topology/Globe) w menu Tools i na
-  LSB (przycisk 🚧 na TBM).
-- Typ: `"1"` albo `"0"`.
-- Fallback: `"0"` (ukryte).
-
 ### 4a-0) Stan okna
 
 `netrecon_window_state_v1`
@@ -115,15 +109,15 @@ Klucze sa podzielone na dwie grupy, bo maja rozny cykl zycia:
 
 `netrecon_general_settings_v1`
 - Checkboxy "pamietaj X przy nastepnym uruchomieniu" dla ustawien powloki
-  (jezyk, skin, rozmiary paneli, blur IP, show-unfinished-tools, uklad
-  odczepionych okien, stan okna, otwarte zakladki, Clippy, rozszerzenia,
-  historia zakresow IP) oraz "Auto Load last session", "Swap panel sides"
-  i "Check for updates on startup".
-- Typ: JSON object, 14 pol boolean (`autoLoadLastSession`, `panelSideRight`,
-  `checkForUpdates`, `remember*` x11: `rememberLanguage`, `rememberSkin`,
-  `rememberPanelSizes`, `rememberBlurIp`, `rememberShowUnfinishedTools`,
-  `rememberDetachedWindows`, `rememberWindowState`, `rememberOpenTabs`,
-  `rememberClippyEnabled`, `rememberExtensions`, `rememberRangeHistory`).
+  (jezyk, skin, rozmiary paneli, blur IP, uklad odczepionych okien, stan
+  okna, otwarte zakladki, Clippy, rozszerzenia, historia zakresow IP) oraz
+  "Auto Load last session", "Swap panel sides" i "Check for updates on
+  startup".
+- Typ: JSON object, 13 pol boolean (`autoLoadLastSession`, `panelSideRight`,
+  `checkForUpdates`, `remember*` x10: `rememberLanguage`, `rememberSkin`,
+  `rememberPanelSizes`, `rememberBlurIp`, `rememberDetachedWindows`,
+  `rememberWindowState`, `rememberOpenTabs`, `rememberClippyEnabled`,
+  `rememberExtensions`, `rememberRangeHistory`).
 - Fallback: wszystko `true` poza `autoLoadLastSession` i `panelSideRight`
   (oba `false`).
 - Wymuszanie dziala w `bootstrap-runtime.js`'s `applyRememberedSettingsGate()`
@@ -255,7 +249,7 @@ Klucze sa podzielone na dwie grupy, bo maja rozny cykl zycia:
 
 Program zapamietuje dane w dwoch niezaleznych warstwach:
 
-- **Ustawienia** (grupa A) — dotycza calej instalacji, nie sesji: jezyk, skin, rozmiary paneli, stan Clippy, przelaczniki TBM (blur, show unfinished tools), canvas ShellCraft, historia zakresow, rozszerzenia, uklad undocked okien, lista "Recent sessions", checkboxy General ("pamietaj X").
+- **Ustawienia** (grupa A) — dotycza calej instalacji, nie sesji: jezyk, skin, rozmiary paneli, stan Clippy, przelacznik TBM (blur), canvas ShellCraft, historia zakresow, rozszerzenia, uklad undocked okien, lista "Recent sessions", checkboxy General ("pamietaj X").
 - **Dane sesji** (grupa B) — dotycza konkretnego projektu/pliku: wyniki skanu, biblioteka IP, presety, domyslne wartosci skanu, uklad zakladek, sciezka biezacego pliku sesji.
 
 `closeSession()` w `session-runtime.js` czysci wszystkie 8 kluczy grupy B: `netrecon_scan_results_v1`, `netrecon_scan_progress_v1`, `netrecon_country_ip_library_json`, `netrecon_country_ip_library_updated_at`, `netrecon_scan_presets_v1`, `netrecon_scan_defaults_v1`, `netrecon_session_pending_layout_v1`, `netrecon_session_current_path` (wczesniej opisany tu jako otwarty bug — bledny zakres czyszczenia zostal od tego czasu naprawiony w kodzie).

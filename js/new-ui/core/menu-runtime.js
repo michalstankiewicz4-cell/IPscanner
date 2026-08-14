@@ -443,59 +443,6 @@
         return;
       }
 
-      if (behavior === "toggle-unfinished-tools") {
-        var unfinishedSelectors = [
-          "#v1ActivityLoremIpsum",
-          ".v1-menu-dd-item[data-tool=\"lorem-ipsum\"]",
-          ".v1-menu-dd-item[data-menu-action=\"countries\"]",
-          "[data-general-ui-switch]",
-          // TCP SYN has zero backend support (no SYN scanning code exists
-          // at all in main.rs), unlike OS Detection below which is merely
-          // grayed out - stays fully hidden, not just disabled.
-          "#v1ConfigProtocolTcpSynRow",
-        ];
-        // Not-yet-implemented scan techniques (OS Detection needs raw
-        // sockets/admin rights) - grayed out (disabled, not hidden) so
-        // it's visible-but-unselectable until "Show unfinished tools" is
-        // on, instead of only failing after Start is pressed. ICMP and UDP
-        // used to be here too but are both genuinely implemented now (see
-        // main.rs's probe_host_icmp/probe_port_udp) - leaving them listed
-        // would re-disable them every time this toggle is switched off.
-        var unfinishedDisabledSelectors = [
-          "#v1ConfigOsDetection",
-        ];
-        var unfinishedBtn = document.querySelector('[data-menu-action="show-unfinished-tools"]');
-        var nextShowState = !(unfinishedBtn && unfinishedBtn.classList.contains("is-active"));
-        unfinishedSelectors.forEach(function (selector) {
-          var el = document.querySelector(selector);
-          if (!el) return;
-          if (nextShowState) el.removeAttribute("hidden");
-          else el.setAttribute("hidden", "hidden");
-        });
-        unfinishedDisabledSelectors.forEach(function (selector) {
-          var el = document.querySelector(selector);
-          if (!el) return;
-          if (nextShowState) el.removeAttribute("disabled");
-          else el.setAttribute("disabled", "disabled");
-        });
-        try {
-          localStorage.setItem("netrecon_show_unfinished_tools", nextShowState ? "1" : "0");
-        } catch (_) {}
-        // ShellCraft Library's functional block rows are dimmed/blocked via
-        // this body class + CSS instead of a per-row disabled attribute
-        // (they're draggable divs, not form controls - see the dragstart
-        // guard in panel-interactions-runtime.js's wireShellCraftLibrary()).
-        document.body.classList.toggle("v1-unfinished-tools-on", nextShowState);
-        if (unfinishedBtn) {
-          unfinishedBtn.classList.toggle("is-active", nextShowState);
-          unfinishedBtn.setAttribute("aria-pressed", nextShowState ? "true" : "false");
-        }
-        if (setStatusLine) {
-          setStatusLine(tr("menuPrefix") + ": " + (nextShowState ? tr("statusUnfinishedToolsOn") : tr("statusUnfinishedToolsOff")));
-        }
-        return;
-      }
-
       if (behavior === "toggle-blur-ip") {
         var nextBlurState = !document.body.classList.contains("v1-blur-ip");
         document.body.classList.toggle("v1-blur-ip", nextBlurState);
@@ -512,26 +459,6 @@
         }
         if (setStatusLine) {
           setStatusLine(tr("menuPrefix") + ": " + (nextBlurState ? tr("statusBlurIpOn") : tr("statusBlurIpOff")));
-        }
-        return;
-      }
-
-      if (behavior === "toggle-demo-data") {
-        var nextDemoState = !document.body.classList.contains("v1-demo-data-on");
-        document.body.classList.toggle("v1-demo-data-on", nextDemoState);
-        try {
-          localStorage.setItem("netrecon_demo_data_mode", nextDemoState ? "1" : "0");
-        } catch (_) {}
-        try {
-          window.dispatchEvent(new CustomEvent("newui:demo-data-changed", { detail: { active: nextDemoState } }));
-        } catch (_) {}
-        var demoDataBtn = document.querySelector('[data-menu-action="demo-data"]');
-        if (demoDataBtn) {
-          demoDataBtn.classList.toggle("is-active", nextDemoState);
-          demoDataBtn.setAttribute("aria-pressed", nextDemoState ? "true" : "false");
-        }
-        if (setStatusLine) {
-          setStatusLine(tr("menuPrefix") + ": " + (nextDemoState ? tr("statusDemoDataOn") : tr("statusDemoDataOff")));
         }
         return;
       }

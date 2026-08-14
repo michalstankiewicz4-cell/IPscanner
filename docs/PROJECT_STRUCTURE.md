@@ -110,9 +110,12 @@ IPscanner/
 - `index.html` - aktywny, domyslny entrypoint aplikacji (New UI). Jedyne
   miejsce, gdzie recznie dodaje sie `<script>`/`<link>` do plikow z
   `css/new-ui/**` i `js/new-ui/**`.
-- `test-ui.html` - minimalny placeholder, demonstruje koncepcje
-  przelaczania UI (Options -> General -> "UI", ukryte za "Show unfinished
-  tools"), nawigacja zwykla podmiana strony, bez zapisu wyboru.
+- `test-ui.html` - minimalny placeholder, demonstrowal kiedys koncepcje
+  przelaczania UI przez zwykla podmiane strony (bez zapisu wyboru); jedyny
+  punkt dostepu (radio "Default"/"Test" w Options -> General) zostal
+  usuniety razem z mechanizmem "Show unfinished tools" - plik nadal
+  istnieje i jest kopiowany do builda (`prepare:app`), ale nic go dzis nie
+  linkuje.
 - `package.json` - skrypty npm (`prepare:app`, `dev`, `tauri:dev`,
   `tauri:build`, `sync-version`) i devDependencies (Tauri CLI, http-server).
 - `zebrus.png` - logo/branding aplikacji.
@@ -143,7 +146,7 @@ Dokumentacja pomocnicza, nie ladowana przez aplikacje:
 - `MEMORY_SESSION.md` - notatki miedzy-sesyjne (kontekst dla dalszej pracy).
 - `TROUBLESHOOTING.md` - znane problemy i ich rozwiazania.
 - `STYLELIST.md` - notatki z powolnego, przyrostowego eksperymentu z
-  alternatywnym UI (scaffolding "Lorem Ipsum").
+  alternatywnym UI (zakladka "Style" w CS).
 - `PROJECT_STRUCTURE.md` - ten plik.
 
 ## `css/new-ui/`
@@ -182,8 +185,7 @@ bundlera), kazdy plik w IIFE rejestrujacym sie na
     mapa odpowiedzialnosci menu/paneli.
   - `extensions.js` - host rozszerzen: manifest, uprawnienia, install/
     uninstall, katalog.
-  - `menu-runtime.js` - obsluga menubara i akcji menu (w tym "Show
-    unfinished tools").
+  - `menu-runtime.js` - obsluga menubara i akcji menu.
   - `panels-runtime.js` - routing aktywnego narzedzia, generyczny silnik
     detached-card/workbench-tab (open/close/detach/arrange/resize).
   - `panel-content-runtime.js` / `panel-content-config.js` - renderowanie

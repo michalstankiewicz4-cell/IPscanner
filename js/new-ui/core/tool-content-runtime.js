@@ -163,35 +163,6 @@
     },
   };
 
-  var LOREM_PARAGRAPHS = [
-    "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.",
-    "Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt.",
-    "Ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam.",
-    "Nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur.",
-    "Vel illum qui dolorem eum fugiat quo voluptas nulla pariatur, at vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis.",
-    "Praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.",
-    "Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga et harum quidem rerum facilis est.",
-    "Et expedita distinctio nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime.",
-    "Placeat facere possimus, omnis voluptas assumenda est omnis dolor repellendus temporibus autem quibusdam et aut officiis.",
-    "Debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae itaque earum rerum.",
-    "Hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores.",
-    "Repellat class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos curabitur suscipit.",
-    "Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae praesent libero sed cursus ante dapibus.",
-    "Eleifend tellus, integer feugiat scelerisque varius morbi enim nunc faucibus a pellentesque sit amet porttitor eget dolor.",
-  ];
-
-  // lorem-ipsum-left/-right: independent tools from CS's own "lorem-ipsum"
-  // (panel-content-runtime.js's renderLoremIpsumTool, different paragraphs -
-  // that's fine now, they're 3 separate placeholder tools, not the same
-  // tool id shown in 3 places, see tool-catalog.js's comment).
-  function renderLoremIpsum(tr) {
-    var heading = tr ? tr("toolTitle_lorem_ipsum") : "Lorem Ipsum";
-    var body = LOREM_PARAGRAPHS.map(function (p) { return "<p>" + p + "</p>"; }).join("");
-    return '<div class="tool-detail"><h4>' + heading + "</h4>" + body + "</div>";
-  }
-  toolContentRuntime["lorem-ipsum-left"] = { render: renderLoremIpsum, wire: null };
-  toolContentRuntime["lorem-ipsum-right"] = { render: renderLoremIpsum, wire: null };
-
   // This is specifically LS's tiny 3-item launcher list ("open the real
   // results-ip/ip-library/presets tool"), not the actual results table -
   // CS's results-ip (the real table) is a completely separate, much

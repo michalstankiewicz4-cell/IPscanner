@@ -975,9 +975,8 @@
     var activeMovableNode = { left: null, right: null };
 
     // LS/RS "generic content slot": for tools with an entry in
-    // tool-content-runtime.js (currently lorem-ipsum-left/-right,
-    // shellcraft-library, shellcraft-inspector, results-ip's LS nav-list,
-    // ip-library) render+
+    // tool-content-runtime.js (currently shellcraft-library,
+    // shellcraft-inspector, results-ip's LS nav-list, ip-library) render+
     // wire that entry into the section's ONE shared slot element; for
     // "move" entries (scan-runner/config/assistant - live DOM-only state
     // that regeneration would destroy) reparent their one persistent node
@@ -1550,7 +1549,7 @@
           activateSidebarTool(tool);
         } else if (tool === "email-recon") {
           // 3 independent surfaces on one click (LS/CS/RS), same idea as
-          // "lorem-ipsum" below - but open-only for RS (no
+          // "mail-xss-tester" below - but open-only for RS (no
           // setRightTabActive), matching "config"'s precedent above: the
           // Sources/API-Keys/Profiles pane should be reachable without
           // stealing focus from whatever's already active in RS (e.g. AI
@@ -1577,8 +1576,8 @@
           ensureSidebarTabOpen("agent-profiles-library");
           setLeftActiveTab("agent-profiles-library");
         } else if (tool === "mail-xss-tester") {
-          // Same idea as "lorem-ipsum" below - 3 independent surfaces (CS's
-          // own "mail-xss-tester" via switchTool() below, plus its own
+          // 3 independent surfaces (CS's own "mail-xss-tester" via
+          // switchTool() below, plus its own
           // "-library"/"-results" LS/RS tool ids) opened together on one
           // click, unconditionally (no "closed by user" tracking like
           // ShellCraft/Pulpit's Inspector - this tool has no reason to stay
@@ -1603,15 +1602,6 @@
           ensureRightTabOpen("wifi-current");
           ensureRightTabOpen("wifi-adapter");
           setRightTabActive("wifi-adapter");
-        } else if (tool === "lorem-ipsum") {
-          // Placeholder tool: one click opens all three independent
-          // surfaces (CS's own "lorem-ipsum" via switchTool() below, plus
-          // its own separate lorem-ipsum-left/-right tool ids here - 3
-          // distinct tools, not one id shared across sections).
-          ensureSidebarTabOpen("lorem-ipsum-left");
-          setLeftActiveTab("lorem-ipsum-left");
-          ensureRightTabOpen("lorem-ipsum-right");
-          setRightTabActive("lorem-ipsum-right");
         }
         switchTool(tool);
       });
@@ -1851,15 +1841,6 @@
 
       document.addEventListener("newui:pulpit-node-selected", function () {
         pulpitInspectorClosedByUser = false;
-      });
-
-      // Demo Data mode is a pure visibility filter over the Results IP
-      // sample rows (see readPersistedScanRows()'s fallback in
-      // panel-content-runtime.js's renderResultsIp) - re-run the same
-      // refresh a real scan result uses so the toggle takes effect
-      // immediately without needing a tab switch/reload.
-      window.addEventListener("newui:demo-data-changed", function () {
-        refreshResultsViewIfVisible();
       });
 
       var chat = document.getElementById("v1AiChatHistory");

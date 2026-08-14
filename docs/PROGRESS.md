@@ -9,7 +9,7 @@
 - DSB — Down Status Bar
 - ST — Sub-Tool (litery a/b/c pod numerowanym Tool = jego sub-tools)
 - [^nr] - Odnośnik z numerem do informacji z wyjaśnieniami do funkcji/karty
-- [HDN] - Hidden (narzędzie/funkcja ukryta za Unfinished Tools)
+- [HDN] - Hidden (narzędzie/funkcja ukryta lub na stałe wyszarzona)
 
 `DS` (panel terminala) i `DSB` (pasek statusu) to CELOWO dwie rozne rzeczy mimo podobnego skrotu — latwo je pomylic przy szybkim czytaniu, stad to zaznaczenie.
 
@@ -34,10 +34,10 @@ IP Scanner (LRSB, TBM-Tools -> LS)
    a. Logo — logo + tooltip z nazwa + aktualna wersja.
    b. Menu:
       - File: new, open, open recent (flyout), import[^1], save, save as, close, exit
-      - Options: Country IP Library[HDN][^4], Port Presets, language, General[^2], import tools[^3] 
+      - Options: Country IP Library[^4], Port Presets, language, General[^2], import tools[^3] 
       - Tools: ShellCraft, IP Scanner, AI Assistant[HDN], Topology[HDN], Globe[HDN]
       - Help: version[^5], download, about, license[^7], assistant[^8]
-   c. Przyciski: zamykanie, zarzadzanie ukladem okien, ukrywanie wrazliwych danych, full reset, "Show unfinished tools"[^9]
+   c. Przyciski: zamykanie, zarzadzanie ukladem okien, ukrywanie wrazliwych danych, full reset
 2. **Left Section (LS)**
 3. **Right Section (RS)**
    a. AI Assistant[HDN] (dostep: TBM-Tools -> otwiera sie w: RS)
@@ -72,15 +72,14 @@ CONTRIBUTING.md §3a).
 [^5]: W aktualizowana na żądanie użytkownika, potem zazwyczaj build portable i relase a w przyszłości instalator z WW2 i PS
 [^7]: W przyszłości może przetłumaczymy na różne języki
 [^8]: Triggerować podpowiedzi dla aktywnej zakładki
-[^9]: Pokazuje ukryte funkcje i karty stan trzymany w localStorage
 ## Tools
 
 1. **IP Scanner** (LRSB, TBM-Tools -> LS)
    - wynik -> CS, jako "IP Results"
    - LS "IP Range": przelacznik Range/CIDR (jeden zakres, dwa tryby wpisywania)
-   - RS "Config" (otwiera sie razem z LS/CS przy aktywnym IP Scannerze): Protocol - TCP Connect/UDP/ICMP sa realne i dowolnie laczalne w jednym skanie, bez uprawnien administratora (UDP przez polaczony socket + wykrywanie ECONNRESET, ICMP przez Windows IP Helper API); TCP SYN dalej UI-only scaffolding, ukryty pod "Show unfinished tools" (brak backendu na surowych socketach). Pozostale sekcje Config (Detect/Performance/Security) nieaudytowane przy tej zmianie, patrz ROADMAP item 17
+   - RS "Config" (otwiera sie razem z LS/CS przy aktywnym IP Scannerze): Protocol - TCP Connect/UDP/ICMP sa realne i dowolnie laczalne w jednym skanie, bez uprawnien administratora (UDP przez polaczony socket + wykrywanie ECONNRESET, ICMP przez Windows IP Helper API); TCP SYN dalej UI-only scaffolding, na stale wyszarzony/nieklikalny (brak backendu na surowych socketach). Pozostale sekcje Config (Detect/Performance/Security) nieaudytowane przy tej zmianie, patrz ROADMAP item 17
    - ST a. Port Presets (LS, TBM-Options -> CS, jako "Presets")
-2. **Country IP Library[HDN]** (TBM-Options)
+2. **Country IP Library** (TBM-Options)
    - edytor -> LS, jako "IP Library (edytor)"
    - podglad -> CS, jako "IP Library (widok)"
 3. **Topology Map[HDN]** (LRSB, TBM-Tools -> CS)

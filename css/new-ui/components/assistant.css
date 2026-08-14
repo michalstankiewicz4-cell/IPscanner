@@ -505,9 +505,9 @@ html[dir="rtl"] .v1-ai-mode-badge {
 /* This class's own display:flex above beats the browser's default
    [hidden]{display:none} UA rule (author style always wins over UA style,
    regardless of hidden being a boolean attribute) - same specificity
-   gotcha documented elsewhere in this codebase. Needed for
-   #v1ConfigProtocolTcpSynRow's hidden-until-"Show unfinished tools"
-   toggle to actually hide it. */
+   gotcha documented elsewhere in this codebase. Defensive: no row in this
+   group uses [hidden] today, but the next one that does would silently stay
+   visible without this override. */
 .v1-config-checkbox-row[hidden] {
   display: none !important;
 }
@@ -532,9 +532,8 @@ html[dir="rtl"] .v1-ai-mode-badge {
   cursor: pointer;
 }
 
-/* TCP SYN/UDP/OS Detection aren't implemented yet - grayed out (disabled,
-   not hidden) until "Show unfinished tools" is on, see menu-runtime.js's
-   unfinishedDisabledSelectors. */
+/* TCP SYN/OS Detection aren't implemented yet - permanently grayed out
+   (disabled, not hidden) rather than only failing after Start is pressed. */
 .v1-config-checkbox-row:has(input:disabled) {
   opacity: 0.5;
   cursor: not-allowed;

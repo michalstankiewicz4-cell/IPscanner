@@ -1414,16 +1414,10 @@
         var blockType = row.getAttribute("data-block-type");
 
         // Functional blocks (if / repeat-until / powershell / time-trigger)
-        // have no interpreter yet - block dragging them onto the canvas
-        // until "Show unfinished tools" is on. Checked live (not just at
-        // render time) so a mid-session toggle takes effect immediately.
+        // have no interpreter yet - block dragging them onto the canvas.
         if (row.getAttribute("data-block-category") === "functional") {
-          var unfinishedOn = false;
-          try { unfinishedOn = localStorage.getItem("netrecon_show_unfinished_tools") === "1"; } catch (_) {}
-          if (!unfinishedOn) {
-            event.preventDefault();
-            return;
-          }
+          event.preventDefault();
+          return;
         }
 
         var properties = {};

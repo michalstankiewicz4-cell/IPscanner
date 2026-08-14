@@ -314,10 +314,9 @@ A pass over every menu/tool, numbered for easy reference in discussion:
 4. Finish the core IP Scanner (the deprioritized item from "In progress"
    above).
 5. Country IP Library: work out what can run on www vs. app-only, and add
-   more library update sources. Hidden from the Options menu by default —
-   the "Show unfinished tools" toggle reveals it (Topology/Globe, items
-   13/14 below, used to be hidden the same way but are done now and no
-   longer gated behind this toggle).
+   more library update sources. Now a normal, always-visible Options menu
+   entry (the "Show unfinished tools" toggle that used to gate it was
+   removed entirely, along with the other one-off placeholders it gated).
 6. Port Presets — done, 100%.
 7. Audit the actual session save/load file format more closely (the
    `.sqlite3` schema shared with sql.js — see the www session-save work).
@@ -360,8 +359,9 @@ A pass over every menu/tool, numbered for easy reference in discussion:
     was dead text with no JS reference and has been removed.
 17. **Real IP Scanner functionality** — Protocol's TCP Connect/UDP/ICMP are
     now real and independently combinable (see "Done" above). TCP SYN
-    remains UI-only scaffolding - no raw-socket backend exists, hidden
-    behind "Show unfinished tools" rather than merely grayed out. Detect's
+    remains UI-only scaffolding - no raw-socket backend exists, permanently
+    grayed out/unclickable (the "Show unfinished tools" toggle that used to
+    hide it entirely was removed). Detect's
     Service Probing/Host Enrichment checkboxes, Performance's Retries/Max
     concurrent ports per host, and Security's Randomize ports/hosts and
     Scan delay weren't touched by that work - still need their own audit to

@@ -11,7 +11,6 @@
       rememberSkin: true,
       rememberPanelSizes: true,
       rememberBlurIp: true,
-      rememberShowUnfinishedTools: true,
       rememberDetachedWindows: true,
       rememberWindowState: true,
       rememberOpenTabs: true,

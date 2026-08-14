@@ -647,20 +647,14 @@
   margin-top: 0;
 }
 
-/* shell: General settings' "UI" test switch (Options -> General, hidden
-   behind "Show unfinished tools") - deliberately not part of the
-   .v1-results-columns-item checkbox grid above, since it's a radio pair
-   and intentionally never persisted. */
+/* shell: radio-row markup, currently used by AI Permissions' Profile picker
+   (--stacked variant below) - deliberately not part of the
+   .v1-results-columns-item checkbox grid above, since it's a radio group. */
 .v1-general-settings-ui-switch {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-top: 4px;
-}
-
-.v1-general-settings-ui-switch-label {
-  color: var(--txt-dim);
-  font-size: 12px;
 }
 
 .v1-general-settings-ui-switch-option {

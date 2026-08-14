@@ -63,13 +63,9 @@
       labelKey: "tabLicenseTitle",
       ui: { showAsTab: true, order: 80 }
     },
-    // 3 independent placeholder tools, not one id shared across sections -
-    // each opens/closes on its own, and each is free to have its own
-    // content. "lorem-ipsum" (CS) keeps the titleKey/textKey/points used by
-    // panel-content-runtime.js's own renderer; lorem-ipsum-left/-right have
-    // no CS presence, so no titleKey/textKey/points needed (same pattern as
-    // shellcraft-library/shellcraft-inspector below) - their content comes
-    // from tool-content-runtime.js instead.
+    // "Style" catalog (CS-only) - reachable via the [Style] button in
+    // Options -> General -> Appearance, see panel-content-runtime.js's
+    // renderLoremIpsumTool() and docs/STYLELIST.md.
     "lorem-ipsum": {
       titleKey: "toolTitle_lorem_ipsum",
       textKey: "toolText_lorem_ipsum",
@@ -77,16 +73,6 @@
       icon: "📄",
       labelKey: "toolTitle_lorem_ipsum",
       ui: { showAsTab: true, order: 100 }
-    },
-    "lorem-ipsum-left": {
-      icon: "📄",
-      labelKey: "toolTitle_lorem_ipsum",
-      ui: { showInLeftPanel: true, leftOrder: 50 }
-    },
-    "lorem-ipsum-right": {
-      icon: "📄",
-      labelKey: "toolTitle_lorem_ipsum",
-      ui: { showInRightPanel: true, rightOrder: 30 }
     },
     // ShellCraft stays in the base shell (confirmed by the user, not a
     // judgment call like the ones above) - see SHELL_PROGRESS.md.

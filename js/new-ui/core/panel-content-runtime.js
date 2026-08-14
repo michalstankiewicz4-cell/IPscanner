@@ -353,9 +353,9 @@
       ].join("");
     }
 
-    // shell: throwaway placeholder tool (static lorem ipsum) - a first,
-    // deliberately minimal step toward exploring an alternate UI later;
-    // gated behind Options -> "Show unfinished tools".
+    // shell: "Style" tab - live catalog of every native <input>/form widget
+    // style used across the app (see docs/STYLELIST.md), reachable via the
+    // [Style] button in Options -> General -> Appearance.
     function renderLoremIpsumTool() {
       var paragraphs = [
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
@@ -653,29 +653,10 @@
         ].join("");
       }
 
-      // Small, deliberately non-persisted test: a live "switch UI" toggle,
-      // gated behind "Show unfinished tools" like every other unfinished
-      // feature. Never written to localStorage on purpose - picking "Test"
-      // just navigates to test-ui.html (a placeholder proving the swap
-      // works via a plain page load); a normal relaunch always lands back
-      // on the default UI (index.html) since nothing records the choice.
-      function uiSwitchRow() {
-        var unfinishedVisible = false;
-        try {
-          unfinishedVisible = localStorage.getItem("netrecon_show_unfinished_tools") === "1";
-        } catch (_) {}
-
+      function styleButtonRow() {
         return [
-          "<div class=\"v1-general-settings-ui-switch\" data-general-ui-switch" + (unfinishedVisible ? "" : " hidden") + ">",
-          "<span class=\"v1-general-settings-ui-switch-label\">" + escapeHtml(trOr("generalUiSwitchLabel", "UI")) + "</span>",
-          "<label class=\"v1-general-settings-ui-switch-option\">",
-          "<input type=\"radio\" name=\"v1UiSwitch\" value=\"default\" checked />",
-          "<span>" + escapeHtml(trOr("generalUiSwitchDefault", "Default")) + "</span>",
-          "</label>",
-          "<label class=\"v1-general-settings-ui-switch-option\">",
-          "<input type=\"radio\" name=\"v1UiSwitch\" value=\"test\" />",
-          "<span>" + escapeHtml(trOr("generalUiSwitchTest", "Test")) + "</span>",
-          "</label>",
+          "<div class=\"v1-scanner-actions v1-scanner-actions--spaced\">",
+          "<button type=\"button\" data-tool=\"lorem-ipsum\">🖌️ " + escapeHtml(trOr("toolTitle_lorem_ipsum", "Style")) + "</button>",
           "</div>"
         ].join("");
       }
@@ -698,12 +679,11 @@
         checkboxRow("panelSideRight", "🔀", "generalPanelSideRight", "Swap panel sides (activity bar/LS on the right, RS on the left)"),
         checkboxRow("rememberLanguage", "🌐", "generalRememberLanguage", "Remember UI language"),
         checkboxRow("rememberSkin", "🎨", "generalRememberSkin", "Remember skin / theme"),
-        uiSwitchRow(),
+        styleButtonRow(),
         checkboxRow("rememberPanelSizes", "↔️", "generalRememberPanelSizes", "Remember panel sizes and collapsed state"),
 
         groupHeading("generalGroupPrivacyTools", "Privacy & tools"),
         checkboxRow("rememberBlurIp", "👁", "generalRememberBlurIp", "Remember \"Blur IP addresses\" state"),
-        checkboxRow("rememberShowUnfinishedTools", "🚧", "generalRememberShowUnfinishedTools", "Remember \"Show unfinished tools\" state"),
 
         groupHeading("generalGroupWindows", "Windows"),
         checkboxRow("rememberWindowState", "🖥️", "generalRememberWindowState", "Remember window state (windowed / maximized / fullscreen)"),
@@ -2179,16 +2159,7 @@
         }
       }
 
-      // Demo Data mode gates the sample rows shown while there's no real
-      // scan yet - a pure visibility filter (no functional side effects),
-      // never mixed with real persisted rows once those exist. See
-      // project memory "Demo Data mode" for the constraints this must
-      // keep following.
-      var demoDataModeOn = document.body.classList.contains("v1-demo-data-on");
-      var persistedRows = readPersistedScanRows();
-      var rows = persistedRows.length
-        ? persistedRows
-        : (demoDataModeOn && Array.isArray(resultsIpConfig.sampleRows) ? resultsIpConfig.sampleRows : []);
+      var rows = readPersistedScanRows();
       var selectedPreset = getSelectedPresetInfo();
       var selectedPresetEmoji = selectedPreset.emoji || "🔎";
       var selectedPresetLabel = selectedPreset.name || selectedPreset.id || "";

@@ -1,8 +1,8 @@
 # Style List
 
 Katalog wszystkich elementów wizualnych aplikacji — punkt wyjścia do
-zaprojektowania nowego UI. Podgląd na żywo: zakładka **Lorem Ipsum** w CS
-(Options -> ukryte za "Show unfinished tools" w TBM, ikona 📄 w LRSB).
+zaprojektowania nowego UI. Podgląd na żywo: zakładka **Style** w CS (Options -> General -> Appearance
+-> przycisk [Style]).
 
 Odhaczamy tu, co już ma działający podgląd / ustalone źródło prawdy /
 docelowy nowy styl. Format: `[ ]` do zrobienia, `[x]` zrobione.
