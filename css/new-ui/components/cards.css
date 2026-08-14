@@ -1,5 +1,5 @@
-/* shell: generic detail-panel card/meta/pill/tool-detail base, used by
-   every center-panel view (shell and ip-scanner tool alike) */
+/* shell: generic detail-panel card/tool-detail base, used by every
+   center-panel view (shell and ip-scanner tool alike) */
 .v1-card {
   border: 0;
   background: var(--bg-elev);
@@ -16,28 +16,6 @@
   margin: 0 0 8px;
   font-family: var(--font-head);
   font-size: 16px;
-}
-
-.v1-meta {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.v1-pill {
-  border: 0;
-  padding: 7px;
-  font-size: 11px;
-  color: var(--txt-dim);
-  background: #2b2b2e;
-}
-
-.v1-pill b {
-  display: block;
-  margin-top: 2px;
-  color: var(--txt);
-  font-size: 13px;
 }
 
 .tool-detail {
@@ -1090,29 +1068,6 @@
 .v1-import-empty {
   color: var(--txt-dim);
   font-style: italic;
-}
-
-/* ip-scanner tool: scanner action buttons (#v1ScanActions in index.html) */
-.v1-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
-
-.v1-actions button {
-  border: 0;
-  background: #2f2f33;
-  color: var(--txt);
-  font-size: 12px;
-  font-family: var(--font-ui);
-  padding: 8px 11px;
-  cursor: pointer;
-}
-
-.v1-actions button:hover {
-  background: color-mix(in oklab, var(--bg-soft) 70%, var(--brand) 30%);
-  color: #ffffff;
 }
 
 /* ip-scanner tool: Results views (Results IP + IP Library table styling) -

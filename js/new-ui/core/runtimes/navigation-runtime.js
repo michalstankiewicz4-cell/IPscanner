@@ -898,10 +898,6 @@
       tabRegistry.setActiveTab("right", tool);
     }
 
-    function firstOpenRightTab(excludedTool) {
-      return tabRegistry.firstOpenTab("right", excludedTool);
-    }
-
     function activateSidebarTool(tool) {
       if (!tool) return;
       ensureSidebarTabOpen(tool);
@@ -957,10 +953,6 @@
 
     function syncLeftTabActivationInvariant() {
       tabRegistry.syncActivationInvariant("left");
-    }
-
-    function isSidebarTabOpen(tool) {
-      return tabRegistry.isTabOpen("left", tool);
     }
 
     function firstOpenSidebarTab(excludedTool) {
