@@ -1,0 +1,70 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 240px;
+  margin: 0;
+  padding: 12px 14px 14px;
+  font: 13px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #1f2937;
+  background: #ffffff;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 8px 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.row--master {
+  font-weight: 600;
+}
+
+.row--slider {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  cursor: default;
+}
+
+.row--slider input[type="range"] {
+  width: 100%;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.dot--ip {
+  background: rgba(59, 130, 246, 1);
+}
+
+.dot--domain {
+  background: rgba(34, 197, 94, 1);
+}
+
+.dot--email {
+  background: rgba(168, 85, 247, 1);
+}
+
+.dot--hidden-link {
+  background: rgba(239, 68, 68, 1);
+}

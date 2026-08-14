@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "OSINT NET Auditor - Highlighter",
+  "version": "0.1.0",
+  "description": "Podswietla adresy IP, domeny i emaile na kazdej stronie oraz dodaje menu kontekstowe do zaznaczonego tekstu.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["contextMenus", "storage", "clipboardWrite"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "OSINT NET Auditor - podświetlanie"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["settings.js", "content.js"],
+      "css": ["highlight.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

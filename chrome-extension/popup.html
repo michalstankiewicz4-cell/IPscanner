@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>OSINT NET Auditor</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <h1>Podświetlanie</h1>
+
+  <label class="row row--master">
+    <input type="checkbox" id="osint-enabled">
+    Włącz podświetlanie
+  </label>
+
+  <hr>
+
+  <label class="row">
+    <input type="checkbox" id="osint-ip">
+    <span class="dot dot--ip"></span>
+    Adresy IP
+  </label>
+  <label class="row">
+    <input type="checkbox" id="osint-domain">
+    <span class="dot dot--domain"></span>
+    Domeny
+  </label>
+  <label class="row">
+    <input type="checkbox" id="osint-email">
+    <span class="dot dot--email"></span>
+    Emaile
+  </label>
+  <label class="row">
+    <input type="checkbox" id="osint-hidden-link">
+    <span class="dot dot--hidden-link"></span>
+    Ukryte linki (tekst ≠ adres)
+  </label>
+
+  <hr>
+
+  <div class="row row--slider">
+    <label for="osint-opacity">Intensywność</label>
+    <input type="range" id="osint-opacity" min="0.1" max="0.6" step="0.05">
+  </div>
+
+  <script src="settings.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

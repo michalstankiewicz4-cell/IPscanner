@@ -1,0 +1,71 @@
+:root {
+  --osint-highlight-opacity: 0.25;
+}
+
+.osint-highlight {
+  display: inline;
+  border-radius: 3px;
+  padding: 0 2px;
+  cursor: default;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+}
+
+.osint-highlight--ip {
+  background-color: rgba(59, 130, 246, var(--osint-highlight-opacity));
+  text-decoration-color: rgba(59, 130, 246, 0.8);
+}
+
+.osint-highlight--domain {
+  background-color: rgba(34, 197, 94, var(--osint-highlight-opacity));
+  text-decoration-color: rgba(34, 197, 94, 0.8);
+}
+
+.osint-highlight--email {
+  background-color: rgba(168, 85, 247, var(--osint-highlight-opacity));
+  text-decoration-color: rgba(168, 85, 247, 0.8);
+}
+
+.osint-highlight--hidden-link {
+  background-color: rgba(239, 68, 68, var(--osint-highlight-opacity));
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: rgba(239, 68, 68, 0.9);
+  text-underline-offset: 2px;
+}
+
+/* Regulacja z popupu (settings.js/popup.js) - czysto wizualne wylaczenie,
+   tekst zostaje, znika tylko podswietlenie danego typu. */
+body.osint-disabled .osint-highlight,
+body.osint-hide-ip .osint-highlight--ip,
+body.osint-hide-domain .osint-highlight--domain,
+body.osint-hide-email .osint-highlight--email,
+body.osint-hide-hiddenLink .osint-highlight--hidden-link {
+  background: none;
+  text-decoration: none;
+  padding: 0;
+}
+
+#osint-net-auditor-toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483647;
+  max-width: 360px;
+  padding: 10px 14px;
+  background: #1f2937;
+  color: #f9fafb;
+  font: 13px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+
+#osint-net-auditor-toast.osint-toast--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
