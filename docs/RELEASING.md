@@ -204,6 +204,12 @@ odpalic automatyczny walidator.
 
 ## Uwagi
 
+- Publisher name to `michalstankiewicz` (`bundle.publisher` w
+  `tauri.conf.json`) - realna nazwa wydawcy uzywana m.in. przy walidacji
+  certyfikatu Microsoft Store (musi zgadzac sie z `Publisher`/`MANUFACTURER`
+  zaszytym tez w NSIS template, `installer-template.nsi`). Nie zmieniac bez
+  powodu - rozjazd miedzy tymi miejscami to dokladnie ten blad, ktory
+  naprawiono w commicie "Fix MS Store cert findings: real publisher name".
 - Prywatny klucz podpisujacy (`%USERPROFILE%\.tauri\ipscanner-updater.key`)
   NIE jest w repo i nie ma hasla - pilnuj go, bez niego nie da sie podpisac
   kolejnych wydan zgodnych z kluczem publicznym juz zaszytym w

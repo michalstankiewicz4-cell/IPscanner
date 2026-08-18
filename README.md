@@ -4,6 +4,13 @@ An amateur project made solely using vibe-coding for scientific purposes.
 
 Desktop IP/port scanner application built with [Tauri](https://tauri.app/).
 
+OSINT NET Auditor scans IP ranges and ports, and browses the results in a
+VS Code-style UI (menu bar, activity bar, panels, terminal/console). It
+includes a country IP library for geolocating scan results, session
+save/load (including a browser build with no server/backend), and a
+JSON-manifest addon/extension system for adding new tools and languages at
+runtime.
+
 ## Installation
 
 ### Ready-to-use installer (recommended)
