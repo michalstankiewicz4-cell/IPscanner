@@ -273,7 +273,6 @@
         const optionsImportToolLabel = document.querySelector('[data-menu-action="customization"] span:first-child');
         const toolsAiAssistantLabel = document.querySelector('[data-menu-action="assistant-right"] span:first-child');
         const helpVersionsLabel = document.querySelector('[data-menu-action="versions"] span:first-child');
-        const helpDownloadLabel = document.querySelector('[data-menu-action="download"] span:first-child');
         const windowMinBtn = document.querySelector('[data-menu-action="window-min"]');
         const windowMaxBtn = document.querySelector('[data-menu-action="window-max"]');
         const windowFullscreenBtn = document.querySelector('[data-menu-action="window-fullscreen"]');
@@ -363,7 +362,6 @@
         if (optionsImportToolLabel) optionsImportToolLabel.textContent = tr("menuOptionsImportTool");
         if (toolsAiAssistantLabel) toolsAiAssistantLabel.textContent = "🤖 " + tr("menuToolsAiAssistant");
         if (helpVersionsLabel) helpVersionsLabel.textContent = tr("menuHelpVersions");
-        if (helpDownloadLabel) helpDownloadLabel.textContent = tr("menuHelpDownload");
         if (windowMinBtn) {
           windowMinBtn.setAttribute("title", tr("windowMinimizeTitle"));
           windowMinBtn.setAttribute("aria-label", tr("windowMinimizeTitle"));
@@ -634,8 +632,6 @@
         menuActions: {},
         panelDefinitions: {},
       };
-      const appLinks = uiDefinitions.appLinks || {};
-
       // ip-scanner tool: fallback entry only used if tool-catalog.js failed
       // to load (core.toolCatalog missing).
       const baseToolInfo = core.toolCatalog || {
@@ -1337,7 +1333,6 @@
             tr,
             platform,
             uiDefinitions,
-            appLinks,
             getActionMap,
             setStatusLine,
             onOpenLanguageManager: openLanguageManager,

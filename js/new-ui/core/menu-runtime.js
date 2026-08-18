@@ -2,7 +2,6 @@
   function createMenuRuntime(deps) {
     var tr = deps.tr;
     var uiDefinitions = deps.uiDefinitions || { menuGroups: {}, menuActions: {}, panelDefinitions: {} };
-    var appLinks = deps.appLinks || {};
     var platform = deps.platform || ((window.NetReconNewUICore && window.NetReconNewUICore.platform) || {});
     var getActionMap = deps.getActionMap;
     var setStatusLine = deps.setStatusLine;
@@ -20,17 +19,6 @@
         return platform.getInvoke();
       }
       return null;
-    }
-
-    function openExternalUrl(url) {
-      var safeUrl = String(url || "").trim();
-      if (!safeUrl) return;
-
-      if (platform && typeof platform.openExternalUrl === "function") {
-        if (platform.openExternalUrl(safeUrl)) return;
-      }
-
-      try { window.open(safeUrl, "_blank", "noopener"); } catch (_) {}
     }
 
     function requestSidebarToolTabOpen(tool) {
@@ -280,13 +268,6 @@
       var label = action && actionMap[action] ? actionMap[action] : action;
       var def = actionDefinition(action);
       var behavior = def && def.behavior ? def.behavior : "status";
-
-      // Obsługa otwierania GitHuba dla Download
-      if (behavior === "open-github-download") {
-        openExternalUrl(appLinks.downloadUrl);
-        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
-        return;
-      }
 
       async function runNativeWindowAction(kind) {
         if (platform && typeof platform.windowAction === "function") {

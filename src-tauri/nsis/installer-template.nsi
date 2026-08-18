@@ -20,7 +20,7 @@ ${StrLoc}
 
 !define WEBVIEW2APPGUID "{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
 
-!define MANUFACTURER "netrecon"
+!define MANUFACTURER "michalstankiewicz"
 !define PRODUCTNAME "OSINT NET Auditor"
 !define VERSION "2.8.3"
 !define VERSIONWITHBUILD "2.8.3.0"

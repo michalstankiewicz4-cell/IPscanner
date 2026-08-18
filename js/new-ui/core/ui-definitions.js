@@ -90,12 +90,6 @@
       purpose: "Informacje o wersjach aplikacji.",
       behavior: "open-tab:center:versions",
     },
-    download: {
-      label: "Download",
-      purposeKey: "tipActionDownload",
-      purpose: "Linki do pobrania aplikacji.",
-      behavior: "open-github-download",
-    },
     about: {
       label: "About",
       purposeKey: "tipActionAbout",
@@ -208,15 +202,10 @@
     },
   };
 
-  var appLinks = {
-    downloadUrl: "https://github.com/michalstankiewicz4-cell/IPscanner",
-  };
-
   window.NetReconNewUICore = window.NetReconNewUICore || {};
   window.NetReconNewUICore.uiDefinitions = {
     menuGroups: menuGroups,
     menuActions: menuActions,
     panelDefinitions: panelDefinitions,
-    appLinks: appLinks,
   };
 })();
