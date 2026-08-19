@@ -38,14 +38,19 @@ instead to pass any):
 & ([scriptblock]::Create((irm https://raw.githubusercontent.com/michalstankiewicz4-cell/IPscanner/main/install.ps1))) -Interactive
 ```
 
+### Microsoft Store
+
+[Get it from the Microsoft Store](https://apps.microsoft.com/store/detail/XP9MCW35D1W4PW)
+(`ms-windows-store://pdp/?productid=XP9MCW35D1W4PW`)
+
 ### winget
 
 ```powershell
 winget install michalstankiewicz.OSINTNETAuditor
 ```
 
-(Package submitted to the community `winget-pkgs` repo - may take a little
-while after a release before `winget` picks up the newest version.)
+(Package submitted to the community `winget-pkgs` repo, PR pending review -
+not installable via `winget` yet.)
 
 ### Scoop
 

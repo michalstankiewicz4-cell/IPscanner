@@ -110,9 +110,9 @@ gh release create vX.Y.Z <portable.zip> <nsis-setup.exe> latest.json \
   (nie probuje natywnej instalacji - `is_installer_install` w `main.rs` ma
   to wykryc po sciezce `%LOCALAPPDATA%\OSINT NET Auditor\`).
 
-## 7. Inne kanaly dystrybucji (irm, winget, scoop)
+## 7. Inne kanaly dystrybucji (irm, winget, scoop, Microsoft Store)
 
-Trzy sposoby instalacji obok siebie - kazdy ma inny cykl aktualizacji, zeby
+Cztery sposoby instalacji obok siebie - kazdy ma inny cykl aktualizacji, zeby
 nie pomylic "nic nie trzeba robic" z "trzeba zrobic nowy PR":
 
 ### irm (jednolinijkowiec PowerShell) - NIC nie trzeba robic
@@ -126,6 +126,9 @@ dodatkowej pracy. Nie trzeba tego nigdzie aktualizowac.
 
 Pakiet: `michalstankiewicz.OSINTNETAuditor` (pierwsze wydanie: PR
 [#416981](https://github.com/microsoft/winget-pkgs/pull/416981), v2.8.3).
+Status (2026-08-19): PR **OPEN**, czekamy na automatyczna walidacje/merge -
+`winget install michalstankiewicz.OSINTNETAuditor` w README zadziala dopiero
+po zmergowaniu. Sprawdzaj `gh pr view 416981 --repo microsoft/winget-pkgs`.
 Manifesty referencyjne trzymane w `winget/manifests/m/michalstankiewicz/
 OSINTNETAuditor/<wersja>/` w tym repo (kopia tego co poszlo do
 `winget-pkgs`, nie zrodlo prawdy - `winget-pkgs` jest zrodlem prawdy).
@@ -201,6 +204,22 @@ sprobowac Extras ponownie w przyszlosci, jesli gwiazdki/forki wzrosna.
 Jesli/kiedy kiedys zaakceptowane, PR z manifestem
 (ten sam format co wlasny bucket) + komentarz `/verify` po zlozeniu zeby
 odpalic automatyczny walidator.
+
+### Microsoft Store - ZYWA (od 2026-08-19), aktualizacja przez recertyfikacje
+
+Product ID: `XP9MCW35D1W4PW`.
+- Store deep link: `ms-windows-store://pdp/?productid=XP9MCW35D1W4PW`
+- Web Store URL: https://apps.microsoft.com/store/detail/XP9MCW35D1W4PW
+
+Paczka wgrywana recznie przez Partner Center (nie ma tu automatycznego
+`gh release`/CLI kroku jak w pozostalych kanalach). Instalator do zgloszenia
+sciagany bezposrednio z `microsoft-store/` w tym repo (patrz
+[microsoft-store/README.md](../microsoft-store/README.md) - plik tam
+NADPISYWANY przy kazdym nowym zgloszeniu, nie trzyma historii wersji).
+Kazde nowe wydanie ktore ma trafic do Store wymaga: podmiany pliku w
+`microsoft-store/`, nowego zgloszenia w Partner Center, i przejscia
+certyfikacji Microsoftu od nowa (ma to swoj wlasny czas oczekiwania,
+niezalezny od GitHub Release).
 
 ## Uwagi
 
