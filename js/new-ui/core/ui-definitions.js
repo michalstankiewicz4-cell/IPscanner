@@ -78,12 +78,6 @@
       purpose: "Wybor, ktore ustawienia powloki maja byc pamietane przy nastepnym uruchomieniu.",
       behavior: "open-tab:center:general",
     },
-    customization: {
-      label: "Import Tool",
-      purposeKey: "tipActionCustomization",
-      purpose: "Import rozszerzen i zarzadzanie toolami.",
-      behavior: "open-tab:center:import-tool",
-    },
     versions: {
       label: "Versions",
       purposeKey: "tipActionVersions",

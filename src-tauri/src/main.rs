@@ -3560,8 +3560,23 @@ fn main() {
     }
     
     tauri::Builder::default()
+        // Must be first (per the plugin's own docs). Windows always spawns
+        // a SECOND process when it resolves our custom URL scheme back to
+        // the app (the original window is still running mid-login at that
+        // point) - this plugin detects that, forwards the second process's
+        // argv to the FIRST instance as a plain event, and exits the
+        // second process before it ever opens a window. See
+        // community-auth-runtime.js's "single-instance-deep-link" listener
+        // for the JS side.
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            let _ = app.emit("single-instance-deep-link", args);
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_deep_link::init())
         .manage(Arc::new(ScanState { stop: AtomicBool::new(false) }))
         .manage(Arc::new(MailXssTesterState {
             hits: Mutex::new(Vec::new()),
@@ -3569,6 +3584,16 @@ fn main() {
             tunnel_child: Mutex::new(None),
         }))
         .setup(|app| {
+            // Community Catalog GitHub login: NSIS/MSI do NOT register the
+            // custom URL scheme at install time (confirmed against the
+            // plugin's own docs) - registering here at every launch is the
+            // documented way to get it into the Windows registry, and is a
+            // no-op if already registered.
+            #[cfg(desktop)]
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                let _ = app.deep_link().register("osintnetauditor");
+            }
             spawn_vnc_bridge();
             // tauri.conf.json starts the main window maximized, which hits the
             // same frameless-window work-area bug as window_toggle_maximize

@@ -1587,6 +1587,39 @@
       });
     }
 
+    // Community Catalog: GitHub OAuth (auth) + Supabase REST reads/writes
+    // (data) + left-panel list / center detail wiring (detail), layered on
+    // top of addonCatalogRuntime's discovery/install/uninstall above.
+    var communityAuthRuntime = null;
+    if (window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes && window.NetReconNewUICore.newUiRuntimes.createCommunityAuthRuntime) {
+      communityAuthRuntime = window.NetReconNewUICore.newUiRuntimes.createCommunityAuthRuntime({
+        platform: platform,
+      });
+      window.NetReconNewUI.communityAuth = communityAuthRuntime;
+    }
+
+    var communityDataRuntime = null;
+    if (communityAuthRuntime && window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes && window.NetReconNewUICore.newUiRuntimes.createCommunityDataRuntime) {
+      communityDataRuntime = window.NetReconNewUICore.newUiRuntimes.createCommunityDataRuntime({
+        authRuntime: communityAuthRuntime,
+      });
+    }
+
+    var communityCatalogDetailRuntime = null;
+    if (addonCatalogRuntime && communityAuthRuntime && communityDataRuntime
+      && window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes && window.NetReconNewUICore.newUiRuntimes.createCommunityCatalogDetailRuntime) {
+      communityCatalogDetailRuntime = window.NetReconNewUICore.newUiRuntimes.createCommunityCatalogDetailRuntime({
+        tr: tr,
+        setStatusLine: setStatusLine,
+        extensionHost: extensionHost,
+        addonCatalogRuntime: addonCatalogRuntime,
+        authRuntime: communityAuthRuntime,
+        dataRuntime: communityDataRuntime,
+        switchTool: switchTool,
+      });
+      window.NetReconNewUI.wireCommunityCatalogLibrary = communityCatalogDetailRuntime.wireCommunityCatalogLibrary;
+    }
+
     function setTooltips() {
       document.querySelectorAll("[data-tool]").forEach(function (el) {
         var tool = el.getAttribute("data-tool");
@@ -1950,8 +1983,8 @@
         return;
       }
 
-      if (tool === "import-tool") { // shell
-        if (addonCatalogRuntime) addonCatalogRuntime.wireImportToolButtons(scope);
+      if (tool === "community-catalog") { // shell
+        if (communityCatalogDetailRuntime) communityCatalogDetailRuntime.wireCommunityCatalogDetail(scope);
         return;
       }
 

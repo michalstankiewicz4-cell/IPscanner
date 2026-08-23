@@ -5,12 +5,10 @@
     var infoFor = deps.infoFor;
     var versionsData = Array.isArray(deps.versionsData) ? deps.versionsData : [];
     var i18n = deps.i18n;
-    var extensionHost = deps.extensionHost;
     var core = window.NetReconNewUICore || {};
     var sharedNet = core.utils ? core.utils.net : null;
     var contentConfig = core.panelContentConfig || {};
     var versionsConfig = contentConfig.versions || {};
-    var importToolConfig = contentConfig.importTool || {};
     var resultsIpConfig = contentConfig.resultsIp || {};
     var presetsApi = core.presets || null;
     var macrosApi = core.macros || null;
@@ -709,40 +707,6 @@
         groupHeading("generalGroupGoogleDorkApi", "Google Dork API"),
         googleDorkApiRow(),
 
-        "</div>"
-      ].join("");
-    }
-
-    function renderImportTool() {
-      var tools = [];
-      try {
-        tools = extensionHost && extensionHost.listExtensions ? extensionHost.listExtensions() : [];
-      } catch (_) {
-        tools = [];
-      }
-
-      var listHtml = tools.length
-        ? tools.map(function (item) {
-            return "<div class=\"v1-import-item\"><strong>" + escapeHtml(item.id) + "</strong> <span>" + escapeHtml(tr("forAppVersionPrefix")) + " " + escapeHtml(item.version) + "</span><div>" + escapeHtml(item.name) + "</div>"
-              + "<button type=\"button\" class=\"v1-import-item-uninstall\" data-import-uninstall-id=\"" + escapeHtml(item.id) + "\">" + escapeHtml(tr("importToolUninstallBtn")) + "</button></div>";
-          }).join("")
-        : "<div class=\"v1-import-empty\">" + escapeHtml(trOr("importToolEmptyText", importToolConfig.emptyText || "No imported tools yet.")) + "</div>";
-
-      var subtitleText = trOr("importToolSubtitle", importToolConfig.subtitle || "Install addons from the GitHub catalog or load a manifest from a local file.");
-
-      return [
-        "<div class=\"v1-import-manager\">",
-        "<div class=\"v1-import-manager-head\">",
-        "<h4 style=\"margin:0 0 4px;\">" + tr("tipActionCustomization") + "</h4>",
-        "<div class=\"v1-import-manager-note\">" + escapeHtml(subtitleText) + "</div>",
-        "</div>",
-        "<h4 style=\"margin:0 0 4px;\">" + escapeHtml(trOr("importToolCatalogHeading", importToolConfig.catalogHeading || "Www addons")) + "</h4>",
-        "<div id=\"v1ImportCatalog\" data-import-role=\"catalog\" class=\"v1-import-output v1-catalog-list\">" + escapeHtml(trOr("importToolCatalogEmpty", importToolConfig.catalogEmpty || "Loading...")) + "</div>",
-        "<div class=\"v1-import-manager-actions\">",
-        "<button type=\"button\" data-import-action=\"load-file\">" + escapeHtml(trOr("importToolLoadFileBtn", importToolConfig.loadFileBtn || "Load from file...")) + "</button>",
-        "</div>",
-        "<h4 style=\"margin:12px 0 4px;\">" + escapeHtml(tr("extListHeader")) + "</h4>",
-        "<div id=\"v1ImportOutput\" data-import-role=\"output\" class=\"v1-import-output\">" + listHtml + "</div>",
         "</div>"
       ].join("");
     }
@@ -2062,6 +2026,16 @@
         + "</div>";
     }
 
+    // Shell only - all real content (name/rating/Verified/description/
+    // README-LICENSE/comments/review form/admin panel, per whichever addon
+    // is selected in the left panel) is built by
+    // community-catalog-detail-runtime.js's wireCommunityCatalogDetail(),
+    // same split as ip-library's CENTER table above (static labels here,
+    // dynamic rows filled in by its own wire function).
+    function renderCommunityCatalogDetail() {
+      return "<div class=\"v1-community-detail-body\"></div>";
+    }
+
     // --- ip-scanner tool keys ---
     function renderIpLibraryTool() {
       return [
@@ -3254,7 +3228,6 @@
       "lorem-ipsum": renderLoremIpsumTool,
       browser: renderBrowserTool,
       general: renderGeneralSettingsTool,
-      "import-tool": renderImportTool,
       "language-manager": renderLanguageManagerTool,
       shellcraft: renderShellCraftCanvasTool,
       pulpit: renderPulpitCanvasTool,
@@ -3265,6 +3238,7 @@
       "community-chat": renderCommunityChatTool,
       globe: renderGlobeTool,
       "agent-profiles": renderAgentProfileDetailTool,
+      "community-catalog": renderCommunityCatalogDetail,
 
       // --- ip-scanner tool keys ---
       "ip-library": renderIpLibraryTool,

@@ -26,11 +26,10 @@
 
   window.NetReconNewUICore = window.NetReconNewUICore || {};
   window.NetReconNewUICore.panelContentConfig = {
-    // shell: versions/languageManager/importTool/licenseText (Help + Options
+    // shell: versions/languageManager/licenseText (Help + Options
     // entries that stay in the base shell per FUTURE_PLUGIN_SHELL.md)
     versions: {},
     languageManager: {},
-    importTool: {},
     licenseText: LICENSE_TEXT,
     // ip-scanner tool: Results IP tool config
     resultsIp: {

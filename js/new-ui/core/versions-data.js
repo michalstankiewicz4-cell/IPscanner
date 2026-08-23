@@ -10,6 +10,15 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.8.4",
+      notes: [
+        "Added Community Catalog (Options -> Community Catalog, and a new left-panel section): browse addons published in ANY GitHub repo tagged \"osintnetauditor-addon\" (not just this project's own tools/ folder), with a rating/review system - GitHub login (real OAuth via Supabase, opens your system browser), 1-5 star ratings with optional comments, a reply from the addon's own author under each review, and (for the project owner) a moderation panel to mark an addon Verified, block an addon, or block an author's account entirely. Self-rating your own addon is blocked. Selecting an addon in the left-panel list opens a detail tab with its description (from the GitHub repo itself), README/LICENSE links, and the Install button - the same install path (permission confirmation, etc.) already used for locally-added tools.",
+        "Desktop-only: GitHub login uses your system browser (not the app's own window) plus a custom URL scheme (osintnetauditor://) to hand the result back to the app - a second Windows process spawned by that handoff is caught and merged into the already-open window instead of opening a duplicate.",
+        "GitHub API responses are cached (5 minutes, survives an app restart) to stay well under GitHub's unauthenticated rate limit; if the limit is still hit, the app now shows exactly how long to wait instead of a bare error, and logs it to the bottom Console pane.",
+        "Removed the old \"Import Tool\" panel (own tools/ folder browsing, \"Load from file...\", and the separate installed-extensions list) - Community Catalog is now the single place for all addon management."
+      ]
+    },
+    {
       version: "v2.8.3",
       notes: [
         "Added a Browser tool (Tools menu): an in-app browser tab for viewing a site without leaving the app, embedded as a normal page (iframe) by default. Some sites refuse to be embedded this way (banks, Google, and others that send X-Frame-Options/frame-ancestors) - when that happens, the tab automatically detects the block after a few seconds and offers to open the same address in its own separate app window instead, which isn't restricted the same way. The ⧉ button in the toolbar opens the current address in that separate window at any time, and detached (undocked) Browser cards work the same way as the docked tab.",

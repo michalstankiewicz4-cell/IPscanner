@@ -6,6 +6,28 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-08-23
+
+- Added Community Catalog (v2.8.4): browse/install addons from any GitHub
+  repo tagged `osintnetauditor-addon`, with GitHub-login-gated ratings,
+  comments, author replies, and an owner moderation panel (Verified/block
+  addon/block author), backed by Supabase (plain REST for data, the JS SDK
+  only for the OAuth flow itself). New left-panel section + center detail
+  tab (master-detail, same pattern as Agent Profiles). Desktop login uses
+  the system browser plus a custom URL scheme
+  (`osintnetauditor://auth-callback`) and `tauri-plugin-deep-link` +
+  `tauri-plugin-single-instance` (the latter needed because Windows always
+  spawns a second process for a custom-scheme redirect while the app is
+  still running mid-login - it forwards the URL to the existing window and
+  exits instead of opening a duplicate).
+- Removed the old "Import Tool" panel (own `tools/` folder browsing, "Load
+  from file...", and the separate installed-extensions list) - Community
+  Catalog is now the single place for all addon management.
+- Built and iterated on this feature first as a standalone prototype
+  (`addon-marketplace-poc/`, since deleted) before porting it in - see
+  `docs/RELEASING.md` history / git log for the Supabase schema and RLS
+  policies that back it.
+
 ## 2026-08-13
 
 - Added a startup disclaimer: Options → General has a checkbox controlling

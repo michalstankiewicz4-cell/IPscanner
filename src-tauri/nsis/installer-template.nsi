@@ -22,8 +22,8 @@ ${StrLoc}
 
 !define MANUFACTURER "michalstankiewicz"
 !define PRODUCTNAME "OSINT NET Auditor"
-!define VERSION "2.8.3"
-!define VERSIONWITHBUILD "2.8.3.0"
+!define VERSION "2.8.4"
+!define VERSIONWITHBUILD "2.8.4.0"
 !define HOMEPAGE ""
 !define INSTALLMODE "currentUser"
 !define LICENSE ""

@@ -981,7 +981,7 @@
     // home), so a cross-section toggle call always no-ops. This function
     // manages visibility itself via inline style.display (wins by
     // specificity over both sections' CSS) instead. For every other tool
-    // (versions/presets/general/about/license/globe/import-tool/
+    // (versions/presets/general/about/license/globe/
     // language-manager/shellcraft - CS-only today, no tool-content-
     // runtime.js entry) fall back to CS's own already-proven
     // buildDetailHtml()/wireToolRuntime() (panel-content-runtime.js/
@@ -1503,6 +1503,9 @@
           } else if (tool === "agent-profiles") {
             ensureSidebarTabOpen("agent-profiles-library");
             setLeftActiveTab("agent-profiles-library");
+          } else if (tool === "community-catalog") {
+            ensureSidebarTabOpen("community-catalog-library");
+            setLeftActiveTab("community-catalog-library");
           } else if (tool === "mail-xss-tester") {
             ensureSidebarTabOpen("mail-xss-tester-library");
             setLeftActiveTab("mail-xss-tester-library");
@@ -1567,6 +1570,9 @@
         } else if (tool === "agent-profiles") {
           ensureSidebarTabOpen("agent-profiles-library");
           setLeftActiveTab("agent-profiles-library");
+        } else if (tool === "community-catalog") {
+          ensureSidebarTabOpen("community-catalog-library");
+          setLeftActiveTab("community-catalog-library");
         } else if (tool === "mail-xss-tester") {
           // 3 independent surfaces (CS's own "mail-xss-tester" via
           // switchTool() below, plus its own

@@ -23,14 +23,6 @@
       labelKey: "tabGeneralTitle",
       ui: { showAsTab: true, order: 40 }
     },
-    "import-tool": {
-      titleKey: "toolTitle_import_tool",
-      textKey: "toolText_import_tool",
-      points: ["Paste manifest JSON", "List installed tools", "Uninstall by id"],
-      icon: "📦",
-      labelKey: "importToolTitle",
-      ui: { showAsTab: true, order: 50 }
-    },
     "language-manager": {
       titleKey: "toolTitle_language_manager",
       textKey: "toolText_language_manager",
@@ -335,6 +327,23 @@
       icon: "🔐",
       labelKey: "tabLabel_ai_permissions",
       ui: { showAsTab: true, order: 97 }
+    },
+
+    // Community Catalog: browse/rate/comment on GitHub-topic-tagged addon
+    // repos (Supabase-backed) - LS list + CS detail, master-detail shape
+    // copied from Agent Profiles (see community-catalog-detail-runtime.js).
+    "community-catalog": {
+      titleKey: "toolTitle_community_catalog",
+      textKey: "toolText_community_catalog",
+      points: ["Rate and comment with your GitHub account", "Author replies", "Admin moderation (Verified / block)"],
+      icon: "🧩",
+      labelKey: "tabLabel_community_catalog",
+      ui: { showAsTab: true, order: 135 }
+    },
+    "community-catalog-library": {
+      icon: null,
+      labelKey: "communityCatalogLeftLabel",
+      ui: { showInLeftPanel: true, leftOrder: 65 }
     },
 
     // --- RS-only built-ins (no CS tab, no generic content renderer) ---

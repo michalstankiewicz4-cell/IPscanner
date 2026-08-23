@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "OSINT NET Auditor",
   "mainBinaryName": "OSINTNETAuditor",
-  "version": "2.8.3",
+  "version": "2.8.4",
   "identifier": "com.netrecon.ipscanner",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -14,7 +14,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "OSINT NET Auditor v2.8.3",
+        "title": "OSINT NET Auditor v2.8.4",
         "url": "index.html",
         "width": 900,
         "height": 620,
@@ -26,7 +26,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' data: blob: http: https:; script-src 'self' 'unsafe-inline' blob: https://cdnjs.cloudflare.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' http: https:; img-src 'self' data: blob: http: https:; connect-src 'self' ipc: http: https: ws: wss:; font-src 'self' data:; frame-src 'self' http: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+      "csp": "default-src 'self' data: blob: http: https:; script-src 'self' 'unsafe-inline' blob: https://cdnjs.cloudflare.com https://challenges.cloudflare.com https://esm.sh; style-src 'self' 'unsafe-inline' http: https:; img-src 'self' data: blob: http: https:; connect-src 'self' ipc: http: https: ws: wss:; font-src 'self' data:; frame-src 'self' http: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
       "capabilities": [
         "default"
       ]
@@ -50,6 +50,11 @@
     ]
   },
   "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["osintnetauditor"]
+      }
+    },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFDNzYwQTg3RjdCMTg0RkUKUldUK2hMSDNod3AySENlSWlsNldRM2sxbHFncndWSFZxN28vTWtFcHNVdXczY2ViTmk1Zmd3VVcK",
       "endpoints": [

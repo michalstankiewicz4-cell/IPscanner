@@ -163,6 +163,20 @@
     },
   };
 
+  toolContentRuntime["community-catalog-library"] = {
+    render: function () {
+      return (
+        '<div id="v1CommunityCatalogLoginBar" class="v1-community-login-bar"></div>' +
+        '<div id="v1CommunityCatalogList" class="v1-catalog-list"></div>'
+      );
+    },
+    wire: function () {
+      if (window.NetReconNewUI && window.NetReconNewUI.wireCommunityCatalogLibrary) {
+        window.NetReconNewUI.wireCommunityCatalogLibrary();
+      }
+    },
+  };
+
   // This is specifically LS's tiny 3-item launcher list ("open the real
   // results-ip/ip-library/presets tool"), not the actual results table -
   // CS's results-ip (the real table) is a completely separate, much

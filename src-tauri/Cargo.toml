@@ -1,6 +1,6 @@
 [package]
 name = "ipscanner"
-version = "2.8.3"
+version = "2.8.4"
 edition = "2021"
 
 [[bin]]
@@ -47,3 +47,15 @@ lettre = { version = "0.11", default-features = false, features = ["tokio1-rustl
 # gate for how that's handled on the JS side.
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+# Community Catalog GitHub login: OAuth authorize opens in the SYSTEM
+# browser (open_browser, existing command) since the app's own webview
+# can't complete a provider redirect round-trip; the provider's final
+# redirect to our custom URL scheme is what this plugin catches and hands
+# back to the running app - see community-auth-runtime.js.
+tauri-plugin-deep-link = "2"
+# Windows always launches a SECOND process when the OS resolves our custom
+# URL scheme back to the app (the original window is still running at that
+# point, mid-login) - without this plugin that just opens a second, blank
+# app window instead of completing the login in the original one. Must be
+# registered FIRST in the Builder chain (see main.rs).
+tauri-plugin-single-instance = "2"

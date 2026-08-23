@@ -1116,6 +1116,58 @@
   color: var(--txt);
 }
 
+.v1-catalog-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.v1-catalog-rating {
+  color: var(--txt-dim);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  white-space: nowrap;
+}
+
+.v1-catalog-verified-badge {
+  border: 0;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-family: var(--font-ui);
+  letter-spacing: 0.02em;
+  color: #c7e8c9;
+  background: #253524;
+  white-space: nowrap;
+}
+
+.v1-catalog-repo-link {
+  display: block;
+  color: var(--txt-dim);
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.v1-catalog-repo-link:hover {
+  text-decoration: underline;
+}
+
+.v1-catalog-links-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.v1-catalog-links-row a {
+  color: #9db5ff;
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.v1-catalog-links-row a:hover {
+  text-decoration: underline;
+}
+
 .v1-catalog-version {
   color: #9db5ff;
   font-size: 11px;
@@ -1123,6 +1175,179 @@
 
 .v1-catalog-install-btn {
   justify-self: end;
+}
+
+/* Community Catalog - left panel list, detail tab, login bar, reviews/
+   replies, admin panel. Reuses .v1-catalog-* tokens/classes above for the
+   shared bits (icon cell, name row, rating, Verified badge, repo link,
+   README/LICENSE links) - only the pieces unique to this feature (login
+   bar, stars widget, comments, forms, admin buttons) get their own
+   classes here. */
+
+.v1-community-login-bar {
+  padding: 6px 8px;
+  border-bottom: 1px solid #2f3238;
+}
+
+.v1-community-session {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--txt-dim);
+}
+
+.v1-community-avatar {
+  width: 18px;
+  height: 18px;
+  object-fit: cover;
+}
+
+.v1-catalog-item--selectable {
+  cursor: pointer;
+}
+
+.v1-catalog-item--selectable.is-selected {
+  border-color: var(--brand);
+}
+
+.v1-community-detail-body {
+  padding: 4px 2px;
+}
+
+.v1-community-detail-header {
+  margin-bottom: 12px;
+}
+
+.v1-community-detail-desc {
+  color: var(--txt-dim);
+  font-size: 12px;
+  margin: 6px 0;
+}
+
+.v1-community-stars {
+  display: inline-flex;
+  gap: 2px;
+  color: var(--txt-dim);
+  font-size: 14px;
+}
+
+.v1-community-stars--interactive span {
+  cursor: pointer;
+}
+
+.v1-community-stars span.is-picked {
+  color: #d8973c;
+}
+
+.v1-community-rating-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.v1-community-reviews {
+  border-top: 1px solid #2f3238;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.v1-community-reviews h4 {
+  margin: 0 0 8px;
+}
+
+.v1-community-comments {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+}
+
+.v1-community-comments li {
+  padding: 6px 0;
+  border-top: 1px solid #2a2c31;
+}
+
+.v1-community-comments-empty {
+  color: var(--txt-dim);
+  font-size: 12px;
+  border-top: none !important;
+}
+
+.v1-community-comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--txt-dim);
+}
+
+.v1-community-comment-body {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--txt);
+}
+
+.v1-community-reply,
+.v1-community-reply-form {
+  margin-top: 6px;
+  margin-left: 14px;
+  padding-left: 8px;
+  border-left: 2px solid #2f3238;
+}
+
+.v1-community-reply-label {
+  color: var(--txt-dim);
+  font-size: 11px;
+}
+
+.v1-community-review-form,
+.v1-community-reply-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.v1-community-review-form textarea,
+.v1-community-reply-form textarea {
+  min-height: 44px;
+  resize: vertical;
+  font-family: var(--font-ui);
+}
+
+.v1-community-review-form button,
+.v1-community-reply-form button {
+  align-self: flex-start;
+}
+
+.v1-community-review-locked {
+  color: var(--txt-dim);
+  font-size: 12px;
+}
+
+.v1-community-admin-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 8px;
+  border: 1px dashed #2f3238;
+}
+
+.v1-community-admin-panel h4 {
+  width: 100%;
+  margin: 0 0 2px;
+}
+
+.v1-community-danger-btn {
+  border-color: #b3261e;
+  color: #f2a19c;
+}
+
+.v1-community-delete-btn {
+  margin-left: auto;
+  font-size: 11px;
 }
 
 /* shell: generic action buttons + output box for extension-contributed
