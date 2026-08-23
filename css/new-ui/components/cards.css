@@ -1189,6 +1189,18 @@
   border-bottom: 1px solid #2f3238;
 }
 
+/* .v1-catalog-list itself has no padding (it's also reused by Language
+   Manager's CS catalog, which gets its inset from a CS card ancestor
+   .v1-import-manager provides there - adding padding to the shared class
+   would double it up there). LS's generic content slot deliberately
+   supplies NONE of its own either (see #v1SidebarGenericContent's comment
+   in layout/main.css) - every other LS list gets its inset from
+   .v1-tool-list's 8px, so this id-scoped rule gives this one the same
+   8px instead of sitting flush against the panel edge. */
+#v1CommunityCatalogList {
+  padding: 8px;
+}
+
 .v1-community-session {
   display: flex;
   align-items: center;

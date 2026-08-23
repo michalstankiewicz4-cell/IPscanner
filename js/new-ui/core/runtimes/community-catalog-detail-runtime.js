@@ -211,6 +211,23 @@
         });
       }
 
+      function reload() {
+        mount.textContent = tr("communityCatalogLoading");
+        // Wait for auth to settle too - the catalog can resolve almost
+        // instantly from the localStorage cache, which could otherwise
+        // race ahead of session restore and render a first pass as
+        // "not admin" (hiding blocked entries) even for the actual admin.
+        Promise.all([authRuntime.init(), addonCatalogRuntime.loadCommunityCatalogCached()]).then(function (results) {
+          latestEntries = results[1];
+          renderList();
+        }).catch(function (err) {
+          mount.textContent = tr("communityCatalogError");
+          if (typeof setStatusLine === "function") {
+            setStatusLine(tr("menuPrefix") + ": " + tr("communityCatalogError") + " - " + String((err && err.message) || err));
+          }
+        });
+      }
+
       renderLoginBar();
       authRuntime.onSessionChange(function () {
         renderLoginBar();
@@ -218,16 +235,16 @@
       });
       authRuntime.init();
 
-      mount.textContent = tr("communityCatalogLoading");
-      addonCatalogRuntime.loadCommunityCatalogCached().then(function (entries) {
-        latestEntries = entries;
-        renderList();
-      }).catch(function (err) {
-        mount.textContent = tr("communityCatalogError");
-        if (typeof setStatusLine === "function") {
-          setStatusLine(tr("menuPrefix") + ": " + tr("communityCatalogError") + " - " + String((err && err.message) || err));
-        }
-      });
+      // Fired by the detail tab (a separate mount with its own copy of the
+      // catalog) after an install/review/moderation action - the cache is
+      // already invalidated by then, so this is a real refetch, not stale
+      // data.
+      if (mount.dataset.communityChangeBound !== "1") {
+        mount.dataset.communityChangeBound = "1";
+        document.addEventListener("newui:community-catalog-changed", reload);
+      }
+
+      reload();
     }
 
     // ---------- center detail tab ----------
@@ -563,12 +580,25 @@
       var mount = root.querySelector(".v1-community-detail-body");
       if (!mount) return;
 
-      addonCatalogRuntime.loadCommunityCatalogCached().then(function (entries) {
+      Promise.all([authRuntime.init(), addonCatalogRuntime.loadCommunityCatalogCached()]).then(function (results) {
+        var entries = results[1];
         var session = authRuntime.getSession();
         var admin = isAdminSession(session);
         var entry = findEntry(entries, selectedRatingKey);
         if (entry && !isVisibleToViewer(entry, admin)) entry = null;
-        renderDetail(mount, entry, session, admin, { onChanged: function () { renderDetailNow(root); } });
+        renderDetail(mount, entry, session, admin, { onChanged: function () {
+          renderDetailNow(root);
+          // Installs/reviews/moderation done from THIS tab also need to
+          // reach the left-panel list (rating/Verified/blocked shown
+          // there, or the entry's visibility to a non-admin) - that list
+          // is a separate mount with its own stale copy of the catalog,
+          // see wireCommunityCatalogLibrary's listener for this event.
+          try {
+            document.dispatchEvent(new CustomEvent("newui:community-catalog-changed"));
+          } catch (_) {
+            // ignore event dispatch failures
+          }
+        } });
       }).catch(function (err) {
         mount.textContent = tr("communityCatalogError");
         if (typeof setStatusLine === "function") {
