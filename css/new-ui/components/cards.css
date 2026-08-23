@@ -1310,9 +1310,19 @@
 
 .v1-community-review-form textarea,
 .v1-community-reply-form textarea {
+  /* Same field look as .v1-import-manager-grid textarea (shared shell
+     form style), just shorter - this is a comment box, not a manifest
+     paste area. */
+  width: 100%;
+  border: 1px solid #31333a;
+  background: #1f2024;
+  color: var(--txt);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px 10px;
   min-height: 44px;
   resize: vertical;
-  font-family: var(--font-ui);
+  box-sizing: border-box;
 }
 
 .v1-community-review-form button,

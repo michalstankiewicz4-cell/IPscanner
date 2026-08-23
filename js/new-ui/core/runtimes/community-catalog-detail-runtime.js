@@ -234,7 +234,7 @@
 
     function renderAdminPanel(entry, ctx) {
       var wrap = document.createElement("div");
-      wrap.className = "v1-community-admin-panel";
+      wrap.className = "v1-community-admin-panel v1-scanner-actions";
 
       var heading = document.createElement("h4");
       heading.textContent = tr("communityCatalogAdminHeading");
@@ -295,10 +295,13 @@
       textarea.value = commentEntry.reply ? commentEntry.reply.text : "";
       form.appendChild(textarea);
 
+      var actions = document.createElement("div");
+      actions.className = "v1-scanner-actions";
       var submit = document.createElement("button");
       submit.type = "submit";
       submit.textContent = tr("communityCatalogReplySubmitBtn");
-      form.appendChild(submit);
+      actions.appendChild(submit);
+      form.appendChild(actions);
 
       form.addEventListener("submit", function (e) {
         e.preventDefault();
@@ -315,7 +318,7 @@
     function renderCommentItem(commentEntry, entry, isAuthor, isAdmin, ctx) {
       var item = document.createElement("li");
       var meta = document.createElement("div");
-      meta.className = "v1-community-comment-meta";
+      meta.className = "v1-community-comment-meta v1-scanner-actions";
       var login = document.createElement("span");
       login.textContent = commentEntry.login;
       meta.appendChild(login);
@@ -392,10 +395,13 @@
       textarea.placeholder = tr("communityCatalogReviewPlaceholder");
       form.appendChild(textarea);
 
+      var actions = document.createElement("div");
+      actions.className = "v1-scanner-actions";
       var submit = document.createElement("button");
       submit.type = "submit";
       submit.textContent = tr("communityCatalogReviewSubmitBtn");
-      form.appendChild(submit);
+      actions.appendChild(submit);
+      form.appendChild(actions);
 
       form.addEventListener("submit", function (e) {
         e.preventDefault();

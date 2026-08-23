@@ -166,7 +166,7 @@
   toolContentRuntime["community-catalog-library"] = {
     render: function () {
       return (
-        '<div id="v1CommunityCatalogLoginBar" class="v1-community-login-bar"></div>' +
+        '<div id="v1CommunityCatalogLoginBar" class="v1-community-login-bar v1-scanner-actions"></div>' +
         '<div id="v1CommunityCatalogList" class="v1-catalog-list"></div>'
       );
     },
