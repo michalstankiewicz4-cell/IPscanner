@@ -1141,6 +1141,17 @@
   white-space: nowrap;
 }
 
+.v1-catalog-installed-badge-inline {
+  border: 0;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-family: var(--font-ui);
+  letter-spacing: 0.02em;
+  color: #cfe0f5;
+  background: #22303f;
+  white-space: nowrap;
+}
+
 .v1-catalog-repo-link {
   display: block;
   color: var(--txt-dim);

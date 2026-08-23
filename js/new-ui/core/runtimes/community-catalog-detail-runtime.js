@@ -85,6 +85,13 @@
       return badge;
     }
 
+    function renderInstalledBadge() {
+      var badge = document.createElement("span");
+      badge.className = "v1-catalog-installed-badge-inline";
+      badge.textContent = tr("communityCatalogInstalledBadge");
+      return badge;
+    }
+
     function renderRatingLabel(summary) {
       var el = document.createElement("span");
       el.className = "v1-catalog-rating";
@@ -155,6 +162,10 @@
           return;
         }
 
+        var installedIds = extensionHost && extensionHost.listExtensions
+          ? extensionHost.listExtensions().map(function (item) { return item.id; })
+          : [];
+
         visible.forEach(function (entry) {
           var manifest = entry.manifest || {};
           var itemEl = document.createElement("div");
@@ -180,6 +191,7 @@
           nameRow.appendChild(nameEl);
           nameRow.appendChild(renderRatingLabel(entry.ratingSummary));
           if (entry.moderation && entry.moderation.verified) nameRow.appendChild(renderVerifiedBadge());
+          if (installedIds.indexOf(manifest.id) !== -1) nameRow.appendChild(renderInstalledBadge());
           infoEl.appendChild(nameRow);
           itemEl.appendChild(infoEl);
 
