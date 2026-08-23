@@ -1185,7 +1185,13 @@
    classes here. */
 
 .v1-community-login-bar {
-  padding: 6px 8px;
+  /* Inset to match #v1CommunityCatalogList's own 8px padding below it -
+     was previously flush with the panel edges (full-width padding only
+     moves the *content*, not the border, which still sat at the outer
+     edge) while the list right underneath it is inset, so the divider
+     line looked like it belonged to a different, wider card. */
+  margin: 0 8px;
+  padding: 6px 0;
   border-bottom: 1px solid #2f3238;
 }
 
