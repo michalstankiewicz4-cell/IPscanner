@@ -219,9 +219,23 @@
     // its content) and a link to its README, both via the api.github.com
     // contents endpoints (not raw.githubusercontent.com) because only
     // those return the SPDX-detected license name, not just the file.
-    function fetchCommunityLicense(repo) {
+    // rateLimitState (optional, shared across one catalog fetch pass) gets
+    // its .message set when a 403 turns out to be the unauthenticated
+    // rate limit, not a genuine "no license/README here" - without this,
+    // a rate-limited response and a real 404 look identical to the caller
+    // (both just resolve to null/""), so a rate-limited addon's README/
+    // LICENSE would render as a permanent-looking ⚠️ "missing" instead of
+    // "couldn't check right now", and that wrong state would get cached
+    // for LOCAL_CACHE_TTL_MS same as a real successful fetch.
+    function fetchCommunityLicense(repo, rateLimitState) {
       return fetch("https://api.github.com/repos/" + repo.full_name + "/license", { headers: { Accept: "application/vnd.github+json" } })
-        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (res) {
+          if (!res.ok) {
+            if (rateLimitState) rateLimitState.message = rateLimitState.message || rateLimitWaitMessage(res);
+            return null;
+          }
+          return res.json();
+        })
         .then(function (data) {
           if (!data) return null;
           return {
@@ -232,9 +246,15 @@
         }).catch(function () { return null; });
     }
 
-    function fetchCommunityReadmeUrl(repo) {
+    function fetchCommunityReadmeUrl(repo, rateLimitState) {
       return fetch("https://api.github.com/repos/" + repo.full_name + "/readme", { headers: { Accept: "application/vnd.github+json" } })
-        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (res) {
+          if (!res.ok) {
+            if (rateLimitState) rateLimitState.message = rateLimitState.message || rateLimitWaitMessage(res);
+            return null;
+          }
+          return res.json();
+        })
         .then(function (data) { return (data && data.html_url) || ""; })
         .catch(function () { return ""; });
     }
@@ -258,7 +278,7 @@
     // Manifest is validated with the SAME core.extensions.validateManifest
     // used by installManifestObject below - a repo with a missing/broken
     // manifest.json is silently dropped, not shown with an error card.
-    function fetchCommunityEntry(repo) {
+    function fetchCommunityEntry(repo, rateLimitState) {
       var rawBase = "https://raw.githubusercontent.com/" + repo.full_name + "/" + repo.default_branch + "/";
 
       return fetch(rawBase + COMMUNITY_MANIFEST_NAME).then(function (res) {
@@ -272,8 +292,8 @@
         return Promise.all([
           fetch(rawBase + COMMUNITY_ICON_NAME).then(function (r) { return r.ok ? rawBase + COMMUNITY_ICON_NAME : ""; }).catch(function () { return ""; }),
           fetch(rawBase + COMMUNITY_PROGRAM_NAME).then(function (r) { return r.ok ? r.text() : ""; }).catch(function () { return ""; }),
-          fetchCommunityLicense(repo),
-          fetchCommunityReadmeUrl(repo),
+          fetchCommunityLicense(repo, rateLimitState),
+          fetchCommunityReadmeUrl(repo, rateLimitState),
           fetchCommunityDocumentationUrl(repo)
         ]).then(function (results) {
           return {
@@ -294,19 +314,26 @@
 
     // shell: search never throws past this function - a rate-limited or
     // failed Community Catalog fetch just contributes zero entries instead
-    // of throwing.
+    // of throwing. Returns { entries, rateLimitMessage } rather than a
+    // bare array - rateLimitMessage is set whenever ANY request in this
+    // pass (the search itself, or a per-entry license/README check) hit
+    // the unauthenticated rate limit, so loadCommunityCatalogCached()
+    // below can skip caching a batch that may contain false "missing"
+    // README/LICENSE data instead of locking it in for LOCAL_CACHE_TTL_MS.
     function fetchCommunityCatalog() {
+      var rateLimitState = { message: null };
       return fetch(COMMUNITY_SEARCH_URL, { headers: { Accept: "application/vnd.github+json" } }).then(function (res) {
         if (!res.ok) throw githubError(res);
         return res.json();
       }).then(function (data) {
         var repos = (data && Array.isArray(data.items)) ? data.items : [];
-        return Promise.all(repos.map(fetchCommunityEntry));
+        return Promise.all(repos.map(function (repo) { return fetchCommunityEntry(repo, rateLimitState); }));
       }).then(function (results) {
-        return results.filter(Boolean);
+        if (rateLimitState.message && setStatusLine) setStatusLine(tr("menuPrefix") + ": " + rateLimitState.message);
+        return { entries: results.filter(Boolean), rateLimitMessage: rateLimitState.message };
       }).catch(function (err) {
         if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + ((err && err.message) || err));
-        return [];
+        return { entries: [], rateLimitMessage: (err && err.message) || String(err) };
       });
     }
 
@@ -328,8 +355,10 @@
         return Promise.resolve(cached);
       }
 
+      var rateLimitMessage = null;
       communityFetchPromise = Promise.all([fetchCommunityCatalog(), fetchBlockedUsers()]).then(function (results) {
-        var entries = results[0];
+        var entries = results[0].entries;
+        rateLimitMessage = results[0].rateLimitMessage;
         var blockedUsers = results[1];
         return Promise.all(entries.map(function (entry) {
           return Promise.all([
@@ -351,7 +380,12 @@
         // community-catalog-detail-runtime.js's list rendering instead.
         communityEntriesCache = entries;
         communityFetchPromise = null;
-        writeLocalCache("community-catalog", entries);
+        // A batch that hit the rate limit partway through may have some
+        // entries with false-"missing" README/LICENSE data (couldn't
+        // check, not actually absent) - shown once, but not written to
+        // the 5-minute cache, so the next reload gets a clean retry
+        // instead of that wrong state sticking around.
+        if (!rateLimitMessage) writeLocalCache("community-catalog", entries);
         return entries;
       }).catch(function (err) {
         communityFetchPromise = null;

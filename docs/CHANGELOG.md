@@ -29,6 +29,15 @@ of prior context — for full history use `git log`.
   leading "v" when a manifest's own `version`/`targetAppVersion` value
   already included one (e.g. `"v2.8.4"` rendered as "vv2.8.4", which
   visually merges into what reads as a "w" at small font sizes).
+- Fixed README/LICENSE showing a permanent-looking ⚠️ "missing" when a
+  per-entry GitHub API check (the `license`/`readme` endpoints, separate
+  from the raw-content fetches manifest/icon/main.js/DOCUMENTATION.md use)
+  actually just hit the unauthenticated rate limit - a rate-limited
+  response was indistinguishable from a genuine 404 to the UI, and the
+  wrong "missing" state then got locked into the 5-minute localStorage
+  cache. A rate-limited batch is now detected, surfaced via the Console
+  pane (same message the top-level catalog search already showed), and
+  skipped from that cache so the next reload gets a clean retry instead.
 
 - Added an "Installed" badge to Community Catalog list rows (mirrors the
   existing "Verified" badge, checks the row's addon id against
