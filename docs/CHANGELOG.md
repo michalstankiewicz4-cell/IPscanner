@@ -6,6 +6,17 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-08-24
+
+- Added an "Installed" badge to Community Catalog list rows (mirrors the
+  existing "Verified" badge, checks the row's addon id against
+  `extensionHost.listExtensions()`).
+- Added `docs/COMMUNITY_ADDON_GUIDELINES.md` covering what's required for
+  a repo to be listed (topic tag, manifest.json, permissions, content
+  rules, licensing) and how moderation (Verified/block addon/block
+  author) works. Linked from the Community Catalog panel's login bar as
+  "Community addon guidelines".
+
 ## 2026-08-23
 
 - Added Community Catalog (v2.8.4): browse/install addons from any GitHub

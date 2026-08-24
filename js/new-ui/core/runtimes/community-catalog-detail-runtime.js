@@ -19,6 +19,7 @@
 
     var config = (window.NetReconNewUICore && window.NetReconNewUICore.communityConfig) || {};
     var ADMIN_GITHUB_LOGIN = (config.ADMIN_GITHUB_LOGIN || "").toLowerCase();
+    var COMMUNITY_GUIDELINES_URL = "https://github.com/michalstankiewicz4-cell/IPscanner/blob/main/docs/COMMUNITY_ADDON_GUIDELINES.md";
 
     var selectedRatingKey = "";
     var detailListenersBound = false;
@@ -140,6 +141,16 @@
           loginBtn.addEventListener("click", function () { authRuntime.loginWithGitHub(); });
           loginBarMount.appendChild(loginBtn);
         }
+
+        var guidelinesRow = document.createElement("div");
+        guidelinesRow.className = "v1-catalog-links-row";
+        var guidelinesLink = document.createElement("a");
+        guidelinesLink.href = COMMUNITY_GUIDELINES_URL;
+        guidelinesLink.target = "_blank";
+        guidelinesLink.rel = "noopener noreferrer";
+        guidelinesLink.textContent = tr("communityCatalogGuidelinesLink");
+        guidelinesRow.appendChild(guidelinesLink);
+        loginBarMount.appendChild(guidelinesRow);
       }
 
       function renderList() {
