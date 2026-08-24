@@ -137,10 +137,10 @@
     }
 
     // Strips a leading "v"/"V" an author may or may not have included in
-    // their own manifest value (e.g. "v2.8.4" vs "2.8.4") - both render
-    // labels always prepend their own "v", so without this a value that
-    // already has one renders as a doubled "vv2.8.4" (which visually
-    // merges into what reads as a "w" at small font sizes).
+    // their own manifest value (e.g. "v2.8.4" vs "2.8.4") - the "Built for
+    // app v..." label below always prepends its own "v", so without this a
+    // value that already has one renders as a doubled "vv2.8.4" (which
+    // visually merges into what reads as a "w" at small font sizes).
     function stripLeadingV(value) {
       return String(value || "").replace(/^v/i, "");
     }
@@ -148,7 +148,7 @@
     function renderAddonVersionLabel(version) {
       var el = document.createElement("span");
       el.className = "v1-catalog-version";
-      el.textContent = "v" + (stripLeadingV(version) || "0.0.0");
+      el.textContent = stripLeadingV(version) || "0.0.0";
       return el;
     }
 
