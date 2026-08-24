@@ -2036,6 +2036,13 @@
       return "<div class=\"v1-community-detail-body\"></div>";
     }
 
+    // Shell only - real content (fetched + sanitized markdown, rendered to
+    // HTML) is built by markdown-viewer-runtime.js's wireMarkdownViewer(),
+    // same split as renderCommunityCatalogDetail() above.
+    function renderMarkdownViewerDetail() {
+      return "<div class=\"v1-md-viewer-root\"></div>";
+    }
+
     // --- ip-scanner tool keys ---
     function renderIpLibraryTool() {
       return [
@@ -3239,6 +3246,7 @@
       globe: renderGlobeTool,
       "agent-profiles": renderAgentProfileDetailTool,
       "community-catalog": renderCommunityCatalogDetail,
+      "md-viewer": renderMarkdownViewerDetail,
 
       // --- ip-scanner tool keys ---
       "ip-library": renderIpLibraryTool,

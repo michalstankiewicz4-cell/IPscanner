@@ -1578,6 +1578,22 @@
         const href = String(link.getAttribute("href") || "").trim();
         if (!/^https?:\/\//i.test(href)) return;
 
+        // data-force-external opts a link out of the .md interception below
+        // - e.g. the Markdown viewer's own "Open in browser" link, whose
+        // href is itself a .md URL and would otherwise just reopen the same
+        // doc in the same tab instead of actually leaving the app.
+        if (!link.hasAttribute("data-force-external")) {
+          // A link that clearly points to a .md file opens in the in-app
+          // Markdown viewer CS tab instead of the system browser - see
+          // markdown-viewer-runtime.js's isMarkdownLink()/openDoc().
+          if (window.NetReconNewUI && window.NetReconNewUI.isMarkdownLink && window.NetReconNewUI.openMarkdownDoc
+              && window.NetReconNewUI.isMarkdownLink(href)) {
+            event.preventDefault();
+            window.NetReconNewUI.openMarkdownDoc(href);
+            return;
+          }
+        }
+
         event.preventDefault();
         openExternalUrl(href);
       });

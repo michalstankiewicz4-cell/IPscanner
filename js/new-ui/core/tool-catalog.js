@@ -346,6 +346,20 @@
       ui: { showInLeftPanel: true, leftOrder: 65 }
     },
 
+    // In-app Markdown viewer - CS-only, not reachable from any menu, same
+    // idea as "ai-permissions"/"presets". Opened by markdown-viewer-
+    // runtime.js's openDoc() whenever the global external-link click
+    // handler (bootstrap-runtime.js) sees an <a href> that clearly points
+    // to a .md file, instead of routing it to the system browser.
+    "md-viewer": {
+      titleKey: "toolTitle_md_viewer",
+      textKey: "toolText_md_viewer",
+      points: [],
+      icon: "📝",
+      labelKey: "tabLabel_md_viewer",
+      ui: { showAsTab: true, order: 136 }
+    },
+
     // --- RS-only built-ins (no CS tab, no generic content renderer) ---
     assistant: {
       icon: "🤖",

@@ -1620,6 +1620,19 @@
       window.NetReconNewUI.wireCommunityCatalogLibrary = communityCatalogDetailRuntime.wireCommunityCatalogLibrary;
     }
 
+    // In-app Markdown viewer - opened via window.NetReconNewUI.openMarkdownDoc()
+    // from bootstrap-runtime.js's global external-link click handler.
+    var markdownViewerRuntime = null;
+    if (window.NetReconNewUICore && window.NetReconNewUICore.newUiRuntimes && window.NetReconNewUICore.newUiRuntimes.createMarkdownViewerRuntime) {
+      markdownViewerRuntime = window.NetReconNewUICore.newUiRuntimes.createMarkdownViewerRuntime({
+        tr: tr,
+        setStatusLine: setStatusLine,
+        switchTool: switchTool,
+      });
+      window.NetReconNewUI.openMarkdownDoc = markdownViewerRuntime.openDoc;
+      window.NetReconNewUI.isMarkdownLink = markdownViewerRuntime.isMarkdownLink;
+    }
+
     function setTooltips() {
       document.querySelectorAll("[data-tool]").forEach(function (el) {
         var tool = el.getAttribute("data-tool");
@@ -1985,6 +1998,11 @@
 
       if (tool === "community-catalog") { // shell
         if (communityCatalogDetailRuntime) communityCatalogDetailRuntime.wireCommunityCatalogDetail(scope);
+        return;
+      }
+
+      if (tool === "md-viewer") { // shell
+        if (markdownViewerRuntime) markdownViewerRuntime.wireMarkdownViewer(scope);
         return;
       }
 

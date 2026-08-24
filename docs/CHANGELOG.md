@@ -16,6 +16,16 @@ of prior context — for full history use `git log`.
   rules, licensing) and how moderation (Verified/block addon/block
   author) works. Linked from the Community Catalog panel's login bar as
   "Community addon guidelines".
+- Added an in-app Markdown viewer: any link that clearly points to a
+  `.md` file (checked in the same global click handler that already
+  routes external links to the system browser) now opens in a "Document"
+  center tab instead, rendered from the file's raw content via a locally
+  vendored `marked` + `DOMPurify` (sanitized before it ever touches
+  innerHTML, since this can render third-party GitHub content like addon
+  READMEs). A `github.com/.../blob/...` source link resolves relative
+  links/images inside the doc against the right repo path, so browsing
+  from one doc to another (e.g. this changelog to `ROADMAP.md`) stays
+  in-app.
 
 ## 2026-08-23
 
