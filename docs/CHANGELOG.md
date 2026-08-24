@@ -16,6 +16,12 @@ of prior context — for full history use `git log`.
   same anti-abuse idea community-chat's per-day nickname-change limit
   already uses elsewhere in this app. Doesn't require a GitHub login,
   matching that installing itself never has either.
+- Reworked the Community Catalog left-panel list row layout: name + the
+  addon's own version (`manifest.version`) on the first line, rating +
+  install count moved to a second line below it. Added a new optional
+  `targetAppVersion` manifest field (e.g. `"2.8.4"`) - purely
+  informational, shown as a third "Built for app vX.X.X" line only when
+  an addon's manifest declares it.
 
 - Added an "Installed" badge to Community Catalog list rows (mirrors the
   existing "Verified" badge, checks the row's addon id against

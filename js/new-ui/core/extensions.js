@@ -21,6 +21,11 @@
 
     var name = typeof raw.name === "string" ? raw.name.trim() : id;
     var version = typeof raw.version === "string" ? raw.version.trim() : "0.0.0";
+    // Optional - the app version the author wrote/tested the addon
+    // against, purely informational (not enforced/checked against the
+    // running app's own version). Shown in the Community Catalog list so
+    // a viewer can judge how current an addon's manifest.json likely is.
+    var targetAppVersion = typeof raw.targetAppVersion === "string" ? raw.targetAppVersion.trim() : "";
     var description = typeof raw.description === "string" ? raw.description.trim() : "";
     var contributions = isObject(raw.contributions) ? raw.contributions : {};
     var SUPPORTED_PERMISSIONS = ["powershell"];
@@ -34,6 +39,7 @@
         id: id,
         name: name,
         version: version,
+        targetAppVersion: targetAppVersion,
         description: description,
         permissions: permissions,
         contributions: {

@@ -12,9 +12,14 @@ Verified.
   `osintnetauditor-addon`.
 - Your repo needs a `manifest.json` at the root of its default branch,
   matching the app's extension manifest schema (`id` is required; `name`,
-  `version`, `description`, `permissions`, `contributions` are optional).
-  A repo with a missing or invalid manifest is silently skipped, not shown
-  with an error.
+  `version`, `targetAppVersion`, `description`, `permissions`,
+  `contributions` are optional). A repo with a missing or invalid manifest
+  is silently skipped, not shown with an error.
+- `targetAppVersion` (optional, e.g. `"2.8.4"`) declares which OSINT NET
+  Auditor version you wrote/tested the addon against. It's purely
+  informational — nothing checks it against the app the viewer is
+  actually running — shown on the catalog list as "Built for app vX.X.X"
+  so a viewer can judge how current your manifest is likely to be.
 - An optional `icon.png` and `main.js` (the program source, run on
   install) at the repo root are picked up automatically if present.
 - A `LICENSE` file and `README` are detected via the GitHub API and linked

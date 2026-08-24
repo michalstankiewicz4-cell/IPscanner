@@ -1203,6 +1203,13 @@
   font-size: 11px;
 }
 
+.v1-catalog-built-for {
+  color: var(--txt-dim);
+  font-size: 10px;
+  font-family: var(--font-ui);
+  margin-top: 2px;
+}
+
 .v1-catalog-install-btn {
   justify-self: end;
 }

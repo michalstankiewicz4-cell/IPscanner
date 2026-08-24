@@ -136,6 +136,24 @@
       return el;
     }
 
+    function renderAddonVersionLabel(version) {
+      var el = document.createElement("span");
+      el.className = "v1-catalog-version";
+      el.textContent = "v" + (version || "0.0.0");
+      return el;
+    }
+
+    // targetAppVersion is optional (manifest.json's own choice to declare
+    // it or not) - most existing addons won't have it, so this renders
+    // nothing rather than an empty/misleading "Built for app v" line.
+    function renderBuiltForVersionLabel(targetAppVersion) {
+      if (!targetAppVersion) return null;
+      var el = document.createElement("div");
+      el.className = "v1-catalog-built-for";
+      el.textContent = tr("communityCatalogBuiltForVersion").replace("{version}", targetAppVersion);
+      return el;
+    }
+
     // ---------- left panel list ----------
 
     function wireCommunityCatalogLibrary() {
@@ -229,16 +247,26 @@
 
           var infoEl = document.createElement("div");
           infoEl.className = "v1-catalog-info";
+
           var nameRow = document.createElement("div");
           nameRow.className = "v1-catalog-name-row";
           var nameEl = document.createElement("strong");
           nameEl.textContent = manifest.name || manifest.id || "";
           nameRow.appendChild(nameEl);
-          nameRow.appendChild(renderRatingLabel(entry.ratingSummary));
-          nameRow.appendChild(renderInstallCountLabel(entry.installCount));
+          nameRow.appendChild(renderAddonVersionLabel(manifest.version));
           if (entry.moderation && entry.moderation.verified) nameRow.appendChild(renderVerifiedBadge());
           if (installedIds.indexOf(manifest.id) !== -1) nameRow.appendChild(renderInstalledBadge());
           infoEl.appendChild(nameRow);
+
+          var statsRow = document.createElement("div");
+          statsRow.className = "v1-catalog-name-row";
+          statsRow.appendChild(renderRatingLabel(entry.ratingSummary));
+          statsRow.appendChild(renderInstallCountLabel(entry.installCount));
+          infoEl.appendChild(statsRow);
+
+          var builtForEl = renderBuiltForVersionLabel(manifest.targetAppVersion);
+          if (builtForEl) infoEl.appendChild(builtForEl);
+
           itemEl.appendChild(infoEl);
 
           mount.appendChild(itemEl);
