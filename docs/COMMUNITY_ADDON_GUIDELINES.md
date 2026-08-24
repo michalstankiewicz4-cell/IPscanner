@@ -34,12 +34,21 @@ Verified.
    lets the addon run PowerShell commands on the installing user's
    machine, so undocumented use of it is treated as a rule violation on
    its own.
-5. No malware, obfuscated/minified-to-hide code, telemetry or data
+5. `main.js` (if you ship one) runs automatically every time the app
+   starts, not just on install — that's the only way it can register your
+   addon's tools/commands, so the run itself is expected and fine. What
+   isn't: using that automatic run for anything beyond registering your
+   addon's declared functionality. No network requests, data collection,
+   or PowerShell execution the moment the app boots — those may only
+   happen after the user takes an action that clearly invokes your addon
+   (opening its tool, clicking its button, etc.), never silently in the
+   background at startup.
+6. No malware, obfuscated/minified-to-hide code, telemetry or data
    exfiltration without clear disclosure, cryptomining, or anything else
    that could damage a user's system or compromise their privacy.
-6. No impersonating the official app, another addon, or another person or
+7. No impersonating the official app, another addon, or another person or
    project — that includes misleading names, icons, or descriptions.
-7. Follow GitHub's own Acceptable Use Policies and applicable law (no
+8. Follow GitHub's own Acceptable Use Policies and applicable law (no
    illegal content, no DMCA-infringing material, etc.).
 
 ## Ratings, comments & replies

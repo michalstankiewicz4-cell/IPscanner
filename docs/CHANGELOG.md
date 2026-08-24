@@ -26,6 +26,12 @@ of prior context — for full history use `git log`.
   links/images inside the doc against the right repo path, so browsing
   from one doc to another (e.g. this changelog to `ROADMAP.md`) stays
   in-app.
+- `docs/COMMUNITY_ADDON_GUIDELINES.md`: added a rule clarifying that an
+  addon's `main.js` running automatically on every app start is expected
+  (it's the only way it registers its tools/commands), but that automatic
+  run may only register functionality — no network requests, data
+  collection, or PowerShell execution at startup without the user first
+  taking an action that invokes the addon.
 
 ## 2026-08-23
 
