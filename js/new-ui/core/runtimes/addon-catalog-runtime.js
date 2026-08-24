@@ -337,29 +337,15 @@
       });
     }
 
-    // shell: returns the cached Community Catalog if already fetched this
-    // session (memory) or recently enough (localStorage, survives an app
-    // restart), otherwise fetches once and caches both (also caches the
-    // in-flight promise so concurrent mounts - e.g. the left-panel list
-    // and the detail tab both loading at once - don't fire duplicate
-    // requests). Attaches a rating summary + moderation flags to every
-    // entry. Consumed by community-catalog-detail-runtime.js (left-panel
-    // list + detail tab).
-    function loadCommunityCatalogCached() {
-      if (communityEntriesCache) return Promise.resolve(communityEntriesCache);
-      if (communityFetchPromise) return communityFetchPromise;
-
-      var cached = readLocalCache("community-catalog");
-      if (cached) {
-        communityEntriesCache = cached;
-        return Promise.resolve(cached);
-      }
-
-      var rateLimitMessage = null;
-      communityFetchPromise = Promise.all([fetchCommunityCatalog(), fetchBlockedUsers()]).then(function (results) {
-        var entries = results[0].entries;
-        rateLimitMessage = results[0].rateLimitMessage;
-        var blockedUsers = results[1];
+    // shell: attaches/refreshes the Supabase-sourced annotations (rating
+    // summary, moderation flags, install count, author-blocked) on an
+    // already-fetched batch of entries. Split out from
+    // loadCommunityCatalogCached() below specifically so
+    // refreshCommunityCatalogStats() can reuse it WITHOUT re-fetching
+    // anything from GitHub - see that function's comment for why that
+    // split matters.
+    function attachCommunityStats(entries) {
+      return fetchBlockedUsers().then(function (blockedUsers) {
         return Promise.all(entries.map(function (entry) {
           return Promise.all([
             fetchRatingSummary(entry.ratingKey),
@@ -373,6 +359,30 @@
             return entry;
           });
         }));
+      });
+    }
+
+    // shell: returns the cached Community Catalog if already fetched this
+    // session (memory) or recently enough (localStorage, survives an app
+    // restart), otherwise fetches once and caches both (also caches the
+    // in-flight promise so concurrent mounts - e.g. the left-panel list
+    // and the detail tab both loading at once - don't fire duplicate
+    // requests). Consumed by community-catalog-detail-runtime.js
+    // (left-panel list + detail tab).
+    function loadCommunityCatalogCached() {
+      if (communityEntriesCache) return Promise.resolve(communityEntriesCache);
+      if (communityFetchPromise) return communityFetchPromise;
+
+      var cached = readLocalCache("community-catalog");
+      if (cached) {
+        communityEntriesCache = cached;
+        return Promise.resolve(cached);
+      }
+
+      var rateLimitMessage = null;
+      communityFetchPromise = fetchCommunityCatalog().then(function (result) {
+        rateLimitMessage = result.rateLimitMessage;
+        return attachCommunityStats(result.entries);
       }).then(function (entries) {
         // NOT filtered here on purpose - an admin needs to still see a
         // blocked entry (moderation.blocked / authorBlocked flags) to be
@@ -394,9 +404,33 @@
       return communityFetchPromise;
     }
 
-    // shell: forces the next loadCommunityCatalogCached() call to refetch -
-    // used after an admin write (verify/block/delete) so the left-panel
-    // list and detail tab reflect the change without a full app restart.
+    // shell: re-fetches ONLY the Supabase-sourced annotations for the
+    // already-cached catalog - no GitHub request at all. Rating a repo,
+    // (un)verifying/blocking an addon or author, and installing an addon
+    // never change that repo's manifest/icon/LICENSE/README/
+    // DOCUMENTATION.md/description on GitHub's side, so re-running the
+    // full loadCommunityCatalogCached() pipeline after one of those
+    // actions - as invalidateCommunityCatalogCache() + a reload used to -
+    // was burning a fresh GitHub API quota (the search call plus a
+    // license + README REST call PER catalog entry) just to reflect a
+    // rating/install-count bump. This is what community-catalog-detail-
+    // runtime.js's admin/review/install handlers call instead.
+    function refreshCommunityCatalogStats() {
+      var entries = communityEntriesCache || readLocalCache("community-catalog");
+      if (!entries) return loadCommunityCatalogCached();
+
+      return attachCommunityStats(entries).then(function (updated) {
+        communityEntriesCache = updated;
+        writeLocalCache("community-catalog", updated);
+        return updated;
+      });
+    }
+
+    // shell: forces the next loadCommunityCatalogCached() call to do a
+    // full re-fetch from GitHub, not just the Supabase-sourced stats above
+    // - only needed when the GitHub-sourced data itself may be stale
+    // (nothing currently calls this; kept for a future "force refresh"
+    // action, e.g. a manual reload button).
     function invalidateCommunityCatalogCache() {
       communityEntriesCache = null;
       communityFetchPromise = null;
@@ -513,6 +547,7 @@
 
     return {
       loadCommunityCatalogCached: loadCommunityCatalogCached,
+      refreshCommunityCatalogStats: refreshCommunityCatalogStats,
       invalidateCommunityCatalogCache: invalidateCommunityCatalogCache,
       fetchRatingSummary: fetchRatingSummary,
       fetchModerationFlags: fetchModerationFlags,

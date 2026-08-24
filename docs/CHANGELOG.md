@@ -38,6 +38,17 @@ of prior context — for full history use `git log`.
   cache. A rate-limited batch is now detected, surfaced via the Console
   pane (same message the top-level catalog search already showed), and
   skipped from that cache so the next reload gets a clean retry instead.
+- Fixed the real source of that rate limit getting hit at all: rating,
+  (un)verifying/blocking, and installing an addon each called
+  `invalidateCommunityCatalogCache()`, which forced the *entire* catalog
+  to be re-fetched from GitHub on the next render - the search call plus
+  a license + README REST request per catalog entry - even though none of
+  those actions change anything on GitHub's side, only in Supabase. Split
+  out a `refreshCommunityCatalogStats()` that re-fetches just the
+  Supabase-sourced rating/moderation/install-count/blocked-author
+  annotations on the already-cached entries, with no GitHub request at
+  all, and switched all five of those action handlers to it. Confirmed
+  live: clicking Install now fires zero `api.github.com` requests.
 
 - Added an "Installed" badge to Community Catalog list rows (mirrors the
   existing "Verified" badge, checks the row's addon id against

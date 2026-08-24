@@ -358,7 +358,8 @@
       verifyBtn.textContent = verified ? tr("communityCatalogUnverifyBtn") : tr("communityCatalogVerifyBtn");
       verifyBtn.addEventListener("click", function () {
         dataRuntime.setVerified(entry.ratingKey, !verified).then(function () {
-          addonCatalogRuntime.invalidateCommunityCatalogCache();
+          return addonCatalogRuntime.refreshCommunityCatalogStats();
+        }).then(function () {
           ctx.onChanged();
         }).catch(alertError);
       });
@@ -371,7 +372,8 @@
       blockBtn.textContent = blocked ? tr("communityCatalogUnblockAddonBtn") : tr("communityCatalogBlockAddonBtn");
       blockBtn.addEventListener("click", function () {
         dataRuntime.setBlocked(entry.ratingKey, !blocked).then(function () {
-          addonCatalogRuntime.invalidateCommunityCatalogCache();
+          return addonCatalogRuntime.refreshCommunityCatalogStats();
+        }).then(function () {
           ctx.onChanged();
         }).catch(alertError);
       });
@@ -387,7 +389,8 @@
         authorBtn.addEventListener("click", function () {
           var action = authorBlocked ? dataRuntime.unblockUser(ownerLogin) : dataRuntime.blockUser(ownerLogin);
           action.then(function () {
-            addonCatalogRuntime.invalidateCommunityCatalogCache();
+            return addonCatalogRuntime.refreshCommunityCatalogStats();
+          }).then(function () {
             ctx.onChanged();
           }).catch(alertError);
         });
@@ -525,7 +528,8 @@
           userId: session.userId,
           login: session.login
         }).then(function () {
-          addonCatalogRuntime.invalidateCommunityCatalogCache();
+          return addonCatalogRuntime.refreshCommunityCatalogStats();
+        }).then(function () {
           ctx.onChanged();
         }).catch(function (err) {
           submit.disabled = false;
@@ -648,7 +652,8 @@
           addonCatalogRuntime.installManifestObject(manifest, entry.iconUrl, entry.programSource, {
             afterInstall: function () {
               addonCatalogRuntime.recordInstall(entry.ratingKey).then(function () {
-                addonCatalogRuntime.invalidateCommunityCatalogCache();
+                return addonCatalogRuntime.refreshCommunityCatalogStats();
+              }).then(function () {
                 ctx.onChanged();
               });
             }
