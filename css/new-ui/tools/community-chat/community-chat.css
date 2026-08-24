@@ -1,4 +1,5 @@
 .v1-comm-chat-shell {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
@@ -25,10 +26,14 @@
   padding: 8px;
 }
 
-.v1-comm-chat-list--setup {
+.v1-comm-nickname-overlay {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(10, 10, 11, 0.72);
+  z-index: 5;
 }
 
 .v1-comm-nickname-setup {
@@ -39,6 +44,9 @@
   max-width: 320px;
   padding: 16px;
   text-align: center;
+  background: #202228;
+  border: 1px solid #2f3238;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .v1-comm-nickname-setup-title {

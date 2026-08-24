@@ -3088,11 +3088,13 @@
       return code;
     }
 
-    // No nickname yet: a centered setup card takes over the message-list
-    // area entirely (no bottom bar at all in this state) - the previous
-    // layout put the nickname field in the same bottom-bar spot the real
-    // message composer uses, which read as "type something to send" rather
-    // than "pick a name first".
+    // No nickname yet: a floating card OVERLAYS the message list (dimmed
+    // backdrop behind it), rather than replacing it - the chat's existing
+    // messages stay visible/scrollable underneath, only sending is blocked
+    // until an identity is picked. Previously this card replaced the
+    // message-list area entirely, hiding the chat's own history behind a
+    // blank setup screen, which read as "there's nothing here yet" even on
+    // an active channel.
     //
     // The interactive elements below carry BOTH an id and a matching
     // data-comm-* attribute - detaching a tab into its own floating card
@@ -3103,7 +3105,7 @@
     // detached view).
     function renderCommunityChatNicknameSetup(nicknameErrorText, loginPending, loginErrorText, currentNickname) {
       return [
-        "<div class=\"v1-comm-chat-list v1-comm-chat-list--setup\" id=\"v1CommChatMessages\">",
+        "<div class=\"v1-comm-nickname-overlay\">",
         "<div class=\"v1-comm-nickname-setup\">",
         "<div class=\"v1-comm-nickname-setup-title\">" + escapeHtml(trOr("commChatNicknameSetupTitle", "Pick a nickname to start chatting")) + "</div>",
         nicknameErrorText ? "<div class=\"v1-comm-error\">" + escapeHtml(nicknameErrorText) + "</div>" : "",
@@ -3133,10 +3135,12 @@
       );
 
       var showSwitcher = communityChatApi ? communityChatApi.getShowSwitcher() : false;
-      if ((!nickname && !discordSession) || (showSwitcher && !discordSession)) {
+      var needsSetup = (!nickname && !discordSession) || (showSwitcher && !discordSession);
+      var overlayHtml = "";
+      if (needsSetup) {
         var loginPending = communityChatApi ? communityChatApi.getDiscordLoginPending() : false;
         var loginErrorText = communityChatLoginErrorText(communityChatApi ? communityChatApi.getDiscordLoginError() : "");
-        return "<div class=\"v1-comm-chat-shell\">" + renderCommunityChatNicknameSetup(nicknameErrorText, loginPending, loginErrorText, nickname) + "</div>";
+        overlayHtml = renderCommunityChatNicknameSetup(nicknameErrorText, loginPending, loginErrorText, nickname);
       }
 
       var identity = discordSession ? ("✓ " + discordSession.discordUsername) : nickname;
@@ -3185,12 +3189,13 @@
 
       return [
         "<div class=\"v1-comm-chat-shell\">",
-        ignoredRowHtml,
+        overlayHtml,
+        needsSetup ? "" : ignoredRowHtml,
         "<div class=\"v1-comm-chat-list\" id=\"v1CommChatMessages\">",
         listHtml,
         "</div>",
-        sendError ? "<div class=\"v1-comm-error\">" + escapeHtml(sendError) + "</div>" : "",
-        inputAreaHtml,
+        needsSetup ? "" : (sendError ? "<div class=\"v1-comm-error\">" + escapeHtml(sendError) + "</div>" : ""),
+        needsSetup ? "" : inputAreaHtml,
         "</div>"
       ].join("");
     }

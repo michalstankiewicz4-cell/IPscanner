@@ -1,3 +1,6 @@
+# Local-only secrets - never commit (Blogger API credentials etc.)
+.secrets/
+
 node_modules/
 package-lock.json
 src-tauri/target/

@@ -8,6 +8,13 @@ of prior context — for full history use `git log`.
 
 ## 2026-08-24
 
+- Community Chat: the nickname/login prompt no longer replaces the whole
+  message list while you don't have an identity picked yet - it now
+  floats as a dimmed overlay card on top, with the channel's existing
+  messages still visible (scrollable, read-only) behind it. Previously a
+  fresh visitor with no nickname saw a blank setup screen with no sign
+  the channel had any activity at all.
+
 - Language Manager: tried gating its `languages/` GitHub fetch behind a
   new "Browse available languages" button (only fetch when asked, not
   automatically on every tab open), then reverted that per feedback -
