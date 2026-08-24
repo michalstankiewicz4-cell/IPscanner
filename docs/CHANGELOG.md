@@ -8,6 +8,18 @@ of prior context — for full history use `git log`.
 
 ## 2026-08-24
 
+- Added a new tool: **HTTPS Auditor** (Tools menu, desktop only). Checks a
+  target URL for MITM-relevant weaknesses - HSTS header + browser
+  preload-list status, security headers (CSP, X-Frame-Options,
+  X-Content-Type-Options, Referrer-Policy), whether the plain-HTTP origin
+  actually upgrades to HTTPS, the redirect chain, and mixed content in the
+  response body. Backed by a new Rust command (`https_audit` in
+  src-tauri/src/main.rs) that makes the real HTTP request from the
+  backend - a browser's own `fetch()` can't read another domain's
+  response headers cross-origin, so this only works in the desktop app,
+  not the web build. Verified live against ipscanner.pl, which confirmed
+  the missing-HSTS finding from earlier manual `curl` checks.
+
 - Community Chat: the nickname/login prompt no longer replaces the whole
   message list while you don't have an identity picked yet - it now
   floats as a dimmed overlay card on top, with the channel's existing

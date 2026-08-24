@@ -1526,6 +1526,7 @@
         renderMailXssTesterLibrary: panelContentRuntime && panelContentRuntime.renderMailXssTesterLibrary,
         renderMailXssTesterTool: panelContentRuntime && panelContentRuntime.renderMailXssTesterTool,
         renderMailXssTesterResults: panelContentRuntime && panelContentRuntime.renderMailXssTesterResults,
+        renderHttpsAuditorTool: panelContentRuntime && panelContentRuntime.renderHttpsAuditorTool,
         renderGoogleDorkLibrary: panelContentRuntime && panelContentRuntime.renderGoogleDorkLibrary,
         renderGoogleDorkTool: panelContentRuntime && panelContentRuntime.renderGoogleDorkTool,
         renderGoogleDorkTemplates: panelContentRuntime && panelContentRuntime.renderGoogleDorkTemplates,
@@ -1903,6 +1904,13 @@
       if (tool === "mail-xss-tester") { // shell
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireMailXssTesterTool) {
           panelInteractionsRuntime.wireMailXssTesterTool(scope);
+        }
+        return;
+      }
+
+      if (tool === "https-auditor") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireHttpsAuditorTool) {
+          panelInteractionsRuntime.wireHttpsAuditorTool(scope);
         }
         return;
       }

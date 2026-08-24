@@ -1,0 +1,53 @@
+/* shell: HTTPS Auditor - single CS view (no LS/RS). Reuses several
+   Pulpit-prefixed generic classes already loaded (.v1-pulpit-remote-hint,
+   .v1-pulpit-inspector-field, .v1-import-manager-note, .v1-import-manager-
+   actions, .v1-section-header) rather than duplicating that styling here -
+   only the result rows/redirect-hop lines below are specific to this tool. */
+
+.v1-https-auditor-shell {
+  padding: 12px;
+  overflow-y: auto;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.v1-https-auditor-result {
+  margin-top: 10px;
+}
+
+.v1-https-auditor-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #2a2b2f;
+  font-size: 12px;
+}
+
+.v1-https-auditor-row span {
+  color: var(--txt-dim);
+}
+
+.v1-https-auditor-row strong {
+  color: var(--txt);
+  font-weight: 600;
+  text-align: right;
+  word-break: break-all;
+}
+
+.v1-https-auditor-row.is-ok strong {
+  color: #2dcc71;
+}
+
+.v1-https-auditor-row.is-bad strong {
+  color: #e05252;
+}
+
+.v1-https-auditor-hop {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--txt-dim);
+  padding: 3px 8px;
+  word-break: break-all;
+}

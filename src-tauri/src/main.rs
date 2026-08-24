@@ -740,6 +740,189 @@ async fn hostname_lookup(ip: String) -> Option<String> {
     None
 }
 
+// ─── HTTPS Auditor (security-header / MITM-exposure check for one URL) ───────
+
+// Real HTTP requests from Rust, not the webview's own fetch() - the whole
+// point is reading response headers/redirect chains for ANY target domain,
+// which a browser's CORS rules would block for anything cross-origin. See
+// js/new-ui/core/runtimes/https-auditor-runtime.js for the caller.
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct RedirectHop {
+    url: String,
+    status: u16,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct HttpsAuditResult {
+    requested_url: String,
+    final_url: String,
+    final_status: u16,
+    redirect_chain: Vec<RedirectHop>,
+    http_upgrades_to_https: bool,
+    hsts: Option<String>,
+    hsts_preloaded: bool,
+    csp: Option<String>,
+    x_frame_options: Option<String>,
+    x_content_type_options: Option<String>,
+    referrer_policy: Option<String>,
+    server: Option<String>,
+    mixed_content_count: u32,
+    mixed_content_examples: Vec<String>,
+}
+
+async fn fetch_no_redirect(client: &reqwest::Client, url: &str) -> Result<reqwest::Response, String> {
+    client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| format!("Could not reach {}: {}", url, e))
+}
+
+fn header_str(resp: &reqwest::Response, name: reqwest::header::HeaderName) -> Option<String> {
+    resp.headers()
+        .get(name)
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string())
+}
+
+// Scans raw HTML for src="http://.../href="http://... references - a
+// same-page indicator that an otherwise-HTTPS site still loads some
+// resources over plain HTTP, each one its own MITM injection point even
+// though the main document itself is protected.
+fn find_mixed_content(body: &str) -> (u32, Vec<String>) {
+    let mut count = 0u32;
+    let mut examples = Vec::new();
+    for needle in ["src=\"http://", "src='http://", "href=\"http://", "href='http://"] {
+        let mut start = 0usize;
+        while let Some(pos) = body[start..].find(needle) {
+            let abs = start + pos + (needle.len() - 7); // back up to the "http://" itself
+            let rest = &body[abs..];
+            let end = rest.find(['"', '\'']).unwrap_or_else(|| rest.len().min(200));
+            let found = &rest[..end];
+            count += 1;
+            if examples.len() < 5 {
+                examples.push(found.to_string());
+            }
+            start = abs + end;
+        }
+    }
+    (count, examples)
+}
+
+// hstspreload.org's own public status API - tells us whether the domain is
+// baked into browsers' HSTS preload lists (protects even a user's very
+// first visit, before any HSTS header from the server could ever apply).
+async fn check_hsts_preload(client: &reqwest::Client, host: &str) -> bool {
+    let api_url = format!("https://hstspreload.org/api/v2/status?domain={}", host);
+    match client.get(&api_url).send().await {
+        Ok(resp) => match resp.json::<serde_json::Value>().await {
+            Ok(v) => v.get("status").and_then(|s| s.as_str()) == Some("preloaded"),
+            Err(_) => false,
+        },
+        Err(_) => false,
+    }
+}
+
+#[tauri::command]
+async fn https_audit(url: String) -> Result<HttpsAuditResult, String> {
+    let normalized = if url.starts_with("http://") || url.starts_with("https://") {
+        url.clone()
+    } else {
+        format!("https://{}", url)
+    };
+
+    let start_url = reqwest::Url::parse(&normalized).map_err(|e| format!("Invalid URL: {}", e))?;
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    // Follow redirects manually (max 10 hops) instead of reqwest's own
+    // redirect::Policy::limited(), which would follow automatically but
+    // discard each hop's own status/Location - exactly what a "does this
+    // silently downgrade somewhere along the way" check needs to see.
+    let mut current = start_url.clone();
+    let mut chain: Vec<RedirectHop> = Vec::new();
+    let mut resp = fetch_no_redirect(&client, current.as_str()).await?;
+
+    for _ in 0..10 {
+        if !resp.status().is_redirection() {
+            break;
+        }
+        let status = resp.status().as_u16();
+        let location = resp
+            .headers()
+            .get(reqwest::header::LOCATION)
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_string());
+        chain.push(RedirectHop { url: current.to_string(), status });
+        let next = match location {
+            Some(loc) => current.join(&loc).map_err(|e| e.to_string())?,
+            None => break,
+        };
+        current = next;
+        resp = fetch_no_redirect(&client, current.as_str()).await?;
+    }
+
+    let final_status = resp.status().as_u16();
+    let final_url = current.to_string();
+
+    let hsts = header_str(&resp, reqwest::header::STRICT_TRANSPORT_SECURITY);
+    let csp = header_str(&resp, reqwest::header::CONTENT_SECURITY_POLICY);
+    let x_frame_options = header_str(&resp, reqwest::header::X_FRAME_OPTIONS);
+    let x_content_type_options = header_str(&resp, reqwest::header::X_CONTENT_TYPE_OPTIONS);
+    let referrer_policy = header_str(&resp, reqwest::header::REFERRER_POLICY);
+    let server = header_str(&resp, reqwest::header::SERVER);
+
+    let body = resp.text().await.unwrap_or_default();
+    let (mixed_content_count, mixed_content_examples) = find_mixed_content(&body);
+
+    // Independent check: does the plain-HTTP origin actually redirect to
+    // HTTPS? (Separate from the chain above, which starts from whatever
+    // scheme the user typed - this always probes http:// specifically.)
+    let http_upgrades_to_https = if current.scheme() == "https" {
+        let mut http_url = current.clone();
+        let _ = http_url.set_scheme("http");
+        match fetch_no_redirect(&client, http_url.as_str()).await {
+            Ok(r) if r.status().is_redirection() => r
+                .headers()
+                .get(reqwest::header::LOCATION)
+                .and_then(|v| v.to_str().ok())
+                .map(|loc| loc.starts_with("https://"))
+                .unwrap_or(false),
+            _ => false,
+        }
+    } else {
+        false
+    };
+
+    let hsts_preloaded = match current.host_str() {
+        Some(host) => check_hsts_preload(&client, host).await,
+        None => false,
+    };
+
+    Ok(HttpsAuditResult {
+        requested_url: normalized,
+        final_url,
+        final_status,
+        redirect_chain: chain,
+        http_upgrades_to_https,
+        hsts,
+        hsts_preloaded,
+        csp,
+        x_frame_options,
+        x_content_type_options,
+        referrer_policy,
+        server,
+        mixed_content_count,
+        mixed_content_examples,
+    })
+}
+
 // ─── Email Recon (OSINT lookups: emailrep.io, Gravatar, GitHub, HIBP) ─────────────────
 
 // Hand-rolled RFC 1321 MD5 - only used to build a Gravatar hash. Not for
@@ -3646,6 +3829,7 @@ fn main() {
             open_browser_window,
             list_connections,
             list_arp_entries,
+            https_audit,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

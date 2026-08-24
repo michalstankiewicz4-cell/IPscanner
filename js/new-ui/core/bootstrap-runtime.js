@@ -222,6 +222,7 @@
         const toolsMenuBrowser = document.getElementById("v1ToolsMenuBrowser");
         const toolsMenuPulpitPreview = document.getElementById("v1ToolsMenuPulpitPreview");
         const toolsMenuMailXssTester = document.getElementById("v1ToolsMenuMailXssTester");
+        const toolsMenuHttpsAuditor = document.getElementById("v1ToolsMenuHttpsAuditor");
         const toolsMenuGoogleDork = document.getElementById("v1ToolsMenuGoogleDork");
         const toolsMenuWifi = document.getElementById("v1ToolsMenuWifi");
         const helpMenuCommunityChat = document.getElementById("v1HelpMenuCommunityChat");
@@ -333,6 +334,7 @@
         if (toolsMenuBrowser) toolsMenuBrowser.textContent = tr("toolTitle_browser");
         if (toolsMenuPulpitPreview) toolsMenuPulpitPreview.textContent = tr("toolTitle_pulpit_preview");
         if (toolsMenuMailXssTester) toolsMenuMailXssTester.textContent = tr("toolTitle_mail_xss_tester");
+        if (toolsMenuHttpsAuditor) toolsMenuHttpsAuditor.textContent = tr("toolTitle_https_auditor");
         if (toolsMenuGoogleDork) toolsMenuGoogleDork.textContent = tr("toolTitle_google_dork");
         if (toolsMenuWifi) toolsMenuWifi.textContent = tr("toolTitle_wifi");
         if (helpMenuCommunityChat) helpMenuCommunityChat.textContent = tr("toolTitle_community_chat");

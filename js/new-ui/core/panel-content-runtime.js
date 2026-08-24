@@ -1331,6 +1331,88 @@
       ].join("");
     }
 
+    // shell: single-field form + results, all backed by src-tauri/src/
+    // main.rs's https_audit command (real HTTP request from Rust, not the
+    // webview's own fetch(), so it can read another domain's response
+    // headers without hitting CORS) - see https-auditor-runtime.js for the
+    // state layer, wireHttpsAuditorTool (panel-interactions-runtime.js) for
+    // the click handling.
+    function httpsAuditorRow(label, value, isGood) {
+      var cls = "v1-https-auditor-row" + (isGood === true ? " is-ok" : isGood === false ? " is-bad" : "");
+      return "<div class=\"" + cls + "\"><span>" + escapeHtml(label) + "</span><strong>" + escapeHtml(value) + "</strong></div>";
+    }
+
+    function renderHttpsAuditorResult(result) {
+      if (!result) return "";
+      var redirectHtml = result.redirectChain && result.redirectChain.length
+        ? result.redirectChain.map(function (hop) {
+            return "<div class=\"v1-https-auditor-hop\">" + escapeHtml(hop.status) + " &rarr; " + escapeHtml(hop.url) + "</div>";
+          }).join("")
+        : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("httpsAuditorNoRedirectsNote")) + "</div>";
+
+      var mixedHtml = result.mixedContentCount > 0
+        ? [
+            httpsAuditorRow(tr("httpsAuditorMixedContentLabel"), String(result.mixedContentCount), false),
+            (result.mixedContentExamples || []).map(function (u) {
+              return "<div class=\"v1-https-auditor-hop\">" + escapeHtml(u) + "</div>";
+            }).join("")
+          ].join("")
+        : httpsAuditorRow(tr("httpsAuditorMixedContentLabel"), "0", true);
+
+      return [
+        "<div class=\"v1-https-auditor-result\">",
+        httpsAuditorRow(tr("httpsAuditorFinalUrlLabel"), result.finalUrl, null),
+        httpsAuditorRow(tr("httpsAuditorStatusLabel"), String(result.finalStatus), result.finalStatus >= 200 && result.finalStatus < 400),
+        httpsAuditorRow(tr("httpsAuditorHttpUpgradeLabel"), tr(result.httpUpgradesToHttps ? "httpsAuditorYes" : "httpsAuditorNo"), result.httpUpgradesToHttps),
+        httpsAuditorRow(tr("httpsAuditorHstsLabel"), result.hsts || tr("httpsAuditorMissing"), !!result.hsts),
+        httpsAuditorRow(tr("httpsAuditorHstsPreloadLabel"), tr(result.hstsPreloaded ? "httpsAuditorYes" : "httpsAuditorNo"), result.hstsPreloaded),
+        httpsAuditorRow(tr("httpsAuditorCspLabel"), result.csp || tr("httpsAuditorMissing"), !!result.csp),
+        httpsAuditorRow(tr("httpsAuditorXfoLabel"), result.xFrameOptions || tr("httpsAuditorMissing"), !!result.xFrameOptions),
+        httpsAuditorRow(tr("httpsAuditorXctoLabel"), result.xContentTypeOptions || tr("httpsAuditorMissing"), !!result.xContentTypeOptions),
+        httpsAuditorRow(tr("httpsAuditorReferrerPolicyLabel"), result.referrerPolicy || tr("httpsAuditorMissing"), !!result.referrerPolicy),
+        httpsAuditorRow(tr("httpsAuditorServerLabel"), result.server || tr("httpsAuditorMissing"), null),
+        mixedHtml,
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("httpsAuditorRedirectChainLabel")) + "</strong></div>",
+        redirectHtml,
+        "</div>"
+      ].join("");
+    }
+
+    function renderHttpsAuditorTool() {
+      var isDesktop = !(platformApi && typeof platformApi.isDesktop === "function" && !platformApi.isDesktop());
+      var api = window.NetReconNewUICore && window.NetReconNewUICore.httpsAuditor;
+      var loading = api ? api.getLoading() : false;
+      var error = api ? api.getError() : "";
+      var result = api ? api.getResult() : null;
+      var lastUrl = api ? api.getLastUrl() : "";
+
+      var bodyHtml;
+      if (!isDesktop) {
+        bodyHtml = "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("httpsAuditorDesktopOnlyNote")) + "</p>";
+      } else if (loading) {
+        bodyHtml = "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("httpsAuditorRunningNote")) + "</div>";
+      } else if (error) {
+        bodyHtml = "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("httpsAuditorErrorPrefix")) + " " + escapeHtml(error) + "</p>";
+      } else if (result) {
+        bodyHtml = renderHttpsAuditorResult(result);
+      } else {
+        bodyHtml = "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("httpsAuditorEmptyNote")) + "</div>";
+      }
+
+      return [
+        "<div class=\"v1-https-auditor-shell\">",
+        "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("httpsAuditorIntroNote")) + "</p>",
+        isDesktop ? [
+          "<div class=\"v1-import-manager-actions\">",
+          "<input type=\"text\" id=\"v1HttpsAuditorUrlInput\" data-https-auditor-url-input name=\"httpsAuditorUrl\" autocomplete=\"off\" placeholder=\"" + escapeHtml(tr("httpsAuditorUrlPlaceholder")) + "\"" + (lastUrl ? " value=\"" + escapeHtml(lastUrl) + "\"" : "") + " />",
+          "<button type=\"button\" data-https-auditor-run-btn" + (loading ? " disabled" : "") + ">" + escapeHtml(tr("httpsAuditorRunBtn")) + "</button>",
+          "</div>"
+        ].join("") : "",
+        bodyHtml,
+        "</div>"
+      ].join("");
+    }
+
     // RS: categorized preset templates - clicking one fills LS's fields
     // (target/include/exclude untouched, see google-dork-runtime.js's
     // applyTemplate()) rather than opening anything directly.
@@ -3245,6 +3327,7 @@
       pulpit: renderPulpitCanvasTool,
       "pulpit-preview": renderPulpitPreviewTool,
       "mail-xss-tester": renderMailXssTesterTool,
+      "https-auditor": renderHttpsAuditorTool,
       "google-dork": renderGoogleDorkTool,
       wifi: renderWifiTool,
       "community-chat": renderCommunityChatTool,
@@ -3281,6 +3364,7 @@
       renderMailXssTesterLibrary: renderMailXssTesterLibrary,
       renderMailXssTesterTool: renderMailXssTesterTool,
       renderMailXssTesterResults: renderMailXssTesterResults,
+      renderHttpsAuditorTool: renderHttpsAuditorTool,
       renderGoogleDorkLibrary: renderGoogleDorkLibrary,
       renderGoogleDorkTool: renderGoogleDorkTool,
       renderGoogleDorkTemplates: renderGoogleDorkTemplates,

@@ -16,6 +16,7 @@
     var renderMailXssTesterLibrary = typeof deps.renderMailXssTesterLibrary === "function" ? deps.renderMailXssTesterLibrary : null;
     var renderMailXssTesterTool = typeof deps.renderMailXssTesterTool === "function" ? deps.renderMailXssTesterTool : null;
     var renderMailXssTesterResults = typeof deps.renderMailXssTesterResults === "function" ? deps.renderMailXssTesterResults : null;
+    var renderHttpsAuditorTool = typeof deps.renderHttpsAuditorTool === "function" ? deps.renderHttpsAuditorTool : null;
     var renderGoogleDorkLibrary = typeof deps.renderGoogleDorkLibrary === "function" ? deps.renderGoogleDorkLibrary : null;
     var renderGoogleDorkTool = typeof deps.renderGoogleDorkTool === "function" ? deps.renderGoogleDorkTool : null;
     var renderGoogleDorkTemplates = typeof deps.renderGoogleDorkTemplates === "function" ? deps.renderGoogleDorkTemplates : null;
@@ -77,6 +78,8 @@
     var mailXssTesterToolTeardown = null;
     // Same reasoning as mailXssTesterToolTeardown above.
     var googleDorkToolTeardown = null;
+    // Same reasoning as mailXssTesterToolTeardown above.
+    var httpsAuditorToolTeardown = null;
     // Same reasoning as googleDorkToolTeardown above.
     var wifiToolTeardown = null;
     var communityChatToolTeardown = null;
@@ -2572,6 +2575,60 @@
       };
     }
 
+    // CS: same teardown-before-rewire + stable-shell-element staleness
+    // guard as wireMailXssTesterTool above - single URL input + button,
+    // rebuilt wholesale on every newui:https-auditor-changed event.
+    function wireHttpsAuditorTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function" ? rootEl : document.getElementById("v1ToolDetail");
+      if (!root || !renderHttpsAuditorTool) return;
+
+      var shellEl = root.querySelector(".v1-https-auditor-shell");
+      if (!shellEl) return;
+
+      if (httpsAuditorToolTeardown) {
+        httpsAuditorToolTeardown();
+        httpsAuditorToolTeardown = null;
+      }
+
+      function onChanged() {
+        if (!document.body.contains(shellEl)) return;
+        shellEl.outerHTML = renderHttpsAuditorTool();
+        shellEl = root.querySelector(".v1-https-auditor-shell");
+      }
+      document.addEventListener("newui:https-auditor-changed", onChanged);
+
+      function runFromInput() {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.httpsAuditor;
+        var input = root.querySelector("[data-https-auditor-url-input]");
+        if (!api || !input || !input.value.trim()) return;
+        api.runAudit(input.value);
+      }
+
+      // Delegated on `root`, NOT `shellEl` - onChanged() above replaces
+      // shellEl wholesale via outerHTML on every state change (loading ->
+      // result), which would silently drop listeners bound directly to it.
+      // `root` is the stable ancestor that survives that replacement.
+      function onClick(event) {
+        if (event.target && event.target.closest && event.target.closest("[data-https-auditor-run-btn]")) {
+          runFromInput();
+        }
+      }
+      function onKeydown(event) {
+        if (event.key === "Enter" && event.target && event.target.hasAttribute && event.target.hasAttribute("data-https-auditor-url-input")) {
+          event.preventDefault();
+          runFromInput();
+        }
+      }
+      root.addEventListener("click", onClick);
+      root.addEventListener("keydown", onKeydown);
+
+      httpsAuditorToolTeardown = function () {
+        document.removeEventListener("newui:https-auditor-changed", onChanged);
+        root.removeEventListener("click", onClick);
+        root.removeEventListener("keydown", onKeydown);
+      };
+    }
+
     // LS: the 9 builder-field inputs - rebuilt wholesale on every
     // newui:google-dork-changed event, same simple always-rebuild
     // approach as wireMailXssTesterLibrary (no persistent DOM node here
@@ -4404,6 +4461,7 @@
       wireMailXssTesterLibrary: wireMailXssTesterLibrary,
       wireMailXssTesterResults: wireMailXssTesterResults,
       wireMailXssTesterTool: wireMailXssTesterTool,
+      wireHttpsAuditorTool: wireHttpsAuditorTool,
       wireGoogleDorkLibrary: wireGoogleDorkLibrary,
       wireGoogleDorkTemplates: wireGoogleDorkTemplates,
       wireGoogleDorkTool: wireGoogleDorkTool,

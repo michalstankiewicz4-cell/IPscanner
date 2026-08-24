@@ -195,6 +195,20 @@
       labelKey: "tabLabel_mail_xss_tester",
       ui: { showAsTab: true, order: 121 }
     },
+    // Checks a target URL for MITM-relevant weaknesses (missing HSTS/preload,
+    // missing security headers, plain-HTTP not upgrading, mixed content) via
+    // a real HTTP request from Rust (src-tauri/src/main.rs's https_audit
+    // command) - a browser fetch() can't read another domain's response
+    // headers cross-origin, so like Mail XSS Tester above this is
+    // desktop-only, gated via platform.isDesktop() in the renderer.
+    "https-auditor": {
+      titleKey: "toolTitle_https_auditor",
+      textKey: "toolText_https_auditor",
+      points: ["HSTS presence + browser preload-list status", "Security headers: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy", "Redirect chain + mixed-content scan", "Desktop app only - reads response headers from Rust, not the webview (CORS)"],
+      icon: "🔒",
+      labelKey: "tabLabel_https_auditor",
+      ui: { showAsTab: true, order: 124 }
+    },
     "mail-xss-tester-library": {
       icon: null,
       labelKey: "tabLabel_mail_xss_tester_library",
