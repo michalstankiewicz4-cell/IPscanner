@@ -129,6 +129,13 @@
       return el;
     }
 
+    function renderInstallCountLabel(count) {
+      var el = document.createElement("span");
+      el.className = "v1-catalog-install-count";
+      el.textContent = tr("communityCatalogInstallCount").replace("{count}", String(count || 0));
+      return el;
+    }
+
     // ---------- left panel list ----------
 
     function wireCommunityCatalogLibrary() {
@@ -228,6 +235,7 @@
           nameEl.textContent = manifest.name || manifest.id || "";
           nameRow.appendChild(nameEl);
           nameRow.appendChild(renderRatingLabel(entry.ratingSummary));
+          nameRow.appendChild(renderInstallCountLabel(entry.installCount));
           if (entry.moderation && entry.moderation.verified) nameRow.appendChild(renderVerifiedBadge());
           if (installedIds.indexOf(manifest.id) !== -1) nameRow.appendChild(renderInstalledBadge());
           infoEl.appendChild(nameRow);
@@ -559,6 +567,7 @@
       var nameEl = document.createElement("strong");
       nameEl.textContent = manifest.name || manifest.id || "";
       nameRow.appendChild(nameEl);
+      nameRow.appendChild(renderInstallCountLabel(entry.installCount));
       if (entry.moderation && entry.moderation.verified) nameRow.appendChild(renderVerifiedBadge());
       header.appendChild(nameRow);
 
@@ -597,7 +606,14 @@
         if (isInstalled) {
           addonCatalogRuntime.performUninstall(manifest.id, { afterUninstall: ctx.onChanged });
         } else {
-          addonCatalogRuntime.installManifestObject(manifest, entry.iconUrl, entry.programSource, { afterInstall: ctx.onChanged });
+          addonCatalogRuntime.installManifestObject(manifest, entry.iconUrl, entry.programSource, {
+            afterInstall: function () {
+              addonCatalogRuntime.recordInstall(entry.ratingKey).then(function () {
+                addonCatalogRuntime.invalidateCommunityCatalogCache();
+                ctx.onChanged();
+              });
+            }
+          });
         }
       });
       header.appendChild(installBtn);

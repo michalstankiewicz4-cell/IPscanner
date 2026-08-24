@@ -148,6 +148,68 @@
       });
     }
 
+    // shell: install counts (Supabase `addon_installs`) - one row per
+    // (repo_full_name, device_id), primary-keyed on that pair so the same
+    // device recording the same addon twice (uninstall/reinstall, or just
+    // clicking Install again) can never add a second row. DEVICE_ID is a
+    // random id generated once and kept in localStorage - it's the same
+    // anti-abuse idea community-chat's nickname-per-day-limit already uses
+    // elsewhere in this app: not cryptographically strong, but it means
+    // inflating the count costs an attacker a fresh device id (i.e. wiping
+    // local storage) per fake install, not just repeated clicking. Install
+    // itself never required a GitHub login, so this doesn't either -
+    // tying it to login would just make the number map to "how many
+    // logged-in users installed this", not "how many installs happened".
+    var DEVICE_ID_KEY = "netrecon_device_id";
+    function getDeviceId() {
+      try {
+        var id = window.localStorage ? window.localStorage.getItem(DEVICE_ID_KEY) : null;
+        if (id) return id;
+        id = (window.crypto && typeof window.crypto.randomUUID === "function")
+          ? window.crypto.randomUUID()
+          : (String(Date.now()) + "-" + Math.random().toString(16).slice(2));
+        if (window.localStorage) window.localStorage.setItem(DEVICE_ID_KEY, id);
+        return id;
+      } catch (_) {
+        return "";
+      }
+    }
+
+    function fetchInstallCount(ratingKey) {
+      var url = RATINGS_SUPABASE_URL + "/rest/v1/addon_installs?select=device_id&repo_full_name=eq." + encodeURIComponent(ratingKey);
+      return fetch(url, {
+        headers: { apikey: RATINGS_SUPABASE_ANON_KEY, Authorization: "Bearer " + RATINGS_SUPABASE_ANON_KEY }
+      }).then(function (res) {
+        return res.ok ? res.json() : [];
+      }).then(function (rows) {
+        return (rows || []).length;
+      }).catch(function () {
+        return 0;
+      });
+    }
+
+    // Returns a promise that always resolves (never rejects) - a failed or
+    // ignored insert (network error, or the device already has a row for
+    // this repo) should never block or surface an error on the install
+    // flow itself. Callers that don't care about timing (most won't) can
+    // ignore the returned promise same as a fire-and-forget call.
+    function recordInstall(ratingKey) {
+      if (!ratingKey) return Promise.resolve();
+      var deviceId = getDeviceId();
+      if (!deviceId) return Promise.resolve();
+      var url = RATINGS_SUPABASE_URL + "/rest/v1/addon_installs";
+      return fetch(url, {
+        method: "POST",
+        headers: {
+          apikey: RATINGS_SUPABASE_ANON_KEY,
+          Authorization: "Bearer " + RATINGS_SUPABASE_ANON_KEY,
+          "Content-Type": "application/json",
+          Prefer: "resolution=ignore-duplicates"
+        },
+        body: JSON.stringify({ repo_full_name: ratingKey, device_id: deviceId })
+      }).catch(function () {});
+    }
+
     // Community Catalog's own cache - different source and lifecycle from
     // anything else in this file.
     var communityEntriesCache = null;
@@ -272,10 +334,12 @@
         return Promise.all(entries.map(function (entry) {
           return Promise.all([
             fetchRatingSummary(entry.ratingKey),
-            fetchModerationFlags(entry.ratingKey)
+            fetchModerationFlags(entry.ratingKey),
+            fetchInstallCount(entry.ratingKey)
           ]).then(function (r) {
             entry.ratingSummary = r[0];
             entry.moderation = r[1];
+            entry.installCount = r[2];
             entry.authorBlocked = !!(entry.repoFullName && blockedUsers[entry.repoFullName.split("/")[0].toLowerCase()]);
             return entry;
           });
@@ -419,7 +483,8 @@
       fetchRatingSummary: fetchRatingSummary,
       fetchModerationFlags: fetchModerationFlags,
       installManifestObject: installManifestObject,
-      performUninstall: performUninstall
+      performUninstall: performUninstall,
+      recordInstall: recordInstall
     };
   }
 

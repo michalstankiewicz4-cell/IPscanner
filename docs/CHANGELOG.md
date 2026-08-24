@@ -8,6 +8,15 @@ of prior context — for full history use `git log`.
 
 ## 2026-08-24
 
+- Added a per-addon install count to the Community Catalog (list rows and
+  detail header, next to the rating). Backed by a new Supabase
+  `addon_installs` table, one row per (repo, device) pair so repeatedly
+  installing/uninstalling the same addon on the same device never inflates
+  the count - a device id is generated once and kept in localStorage, the
+  same anti-abuse idea community-chat's per-day nickname-change limit
+  already uses elsewhere in this app. Doesn't require a GitHub login,
+  matching that installing itself never has either.
+
 - Added an "Installed" badge to Community Catalog list rows (mirrors the
   existing "Verified" badge, checks the row's addon id against
   `extensionHost.listExtensions()`).

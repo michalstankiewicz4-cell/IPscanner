@@ -1130,6 +1130,13 @@
   white-space: nowrap;
 }
 
+.v1-catalog-install-count {
+  color: var(--txt-dim);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  white-space: nowrap;
+}
+
 .v1-catalog-verified-badge {
   border: 0;
   padding: 2px 6px;
