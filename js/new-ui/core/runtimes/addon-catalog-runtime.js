@@ -84,6 +84,7 @@
     var COMMUNITY_MANIFEST_NAME = "manifest.json";
     var COMMUNITY_PROGRAM_NAME = "main.js";
     var COMMUNITY_ICON_NAME = "icon.png";
+    var COMMUNITY_DOCS_NAME = "DOCUMENTATION.md";
 
     // Oceny (Supabase) - klucz "anon"/"publishable", bezpieczny w kodzie
     // klienckim, ograniczenia daje RLS (select jest publiczne z zalozenia).
@@ -176,6 +177,21 @@
         .catch(function () { return ""; });
     }
 
+    // shell: unlike README, this is a fixed filename convention (like
+    // manifest.json/icon.png/main.js above), not GitHub's smart README
+    // detection - a repo either has DOCUMENTATION.md at its root or it
+    // doesn't. Returns a github.com blob URL (matching readmeUrl/license's
+    // htmlUrl shape) so the community-catalog-detail-runtime.js links row
+    // treats it the same way, and clicking it opens in the in-app Markdown
+    // viewer (markdown-viewer-runtime.js's isMarkdownLink()) rather than the
+    // system browser.
+    function fetchCommunityDocumentationUrl(repo) {
+      var rawBase = "https://raw.githubusercontent.com/" + repo.full_name + "/" + repo.default_branch + "/";
+      return fetch(rawBase + COMMUNITY_DOCS_NAME).then(function (res) {
+        return res.ok ? "https://github.com/" + repo.full_name + "/blob/" + repo.default_branch + "/" + COMMUNITY_DOCS_NAME : "";
+      }).catch(function () { return ""; });
+    }
+
     // shell: fetches one Community Catalog entry from a search-result repo.
     // Manifest is validated with the SAME core.extensions.validateManifest
     // used by installManifestObject below - a repo with a missing/broken
@@ -195,7 +211,8 @@
           fetch(rawBase + COMMUNITY_ICON_NAME).then(function (r) { return r.ok ? rawBase + COMMUNITY_ICON_NAME : ""; }).catch(function () { return ""; }),
           fetch(rawBase + COMMUNITY_PROGRAM_NAME).then(function (r) { return r.ok ? r.text() : ""; }).catch(function () { return ""; }),
           fetchCommunityLicense(repo),
-          fetchCommunityReadmeUrl(repo)
+          fetchCommunityReadmeUrl(repo),
+          fetchCommunityDocumentationUrl(repo)
         ]).then(function (results) {
           return {
             manifest: validated.manifest,
@@ -206,7 +223,8 @@
             repoHtmlUrl: repo.html_url,
             repoDescription: repo.description || "",
             license: results[2],
-            readmeUrl: results[3]
+            readmeUrl: results[3],
+            documentationUrl: results[4]
           };
         });
       }).catch(function () { return null; });

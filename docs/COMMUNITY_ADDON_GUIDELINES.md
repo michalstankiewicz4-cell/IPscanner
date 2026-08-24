@@ -20,6 +20,11 @@ Verified.
 - A `LICENSE` file and `README` are detected via the GitHub API and linked
   automatically on the addon's page — include a `LICENSE` file so this
   works.
+- An optional `DOCUMENTATION.md` at the repo root (exact filename) is
+  linked the same way. The addon's page always shows `[README]`
+  `[LICENSE]` `[DOCUMENTATION]` — any of the three your repo doesn't have
+  shows a ⚠️ next to it instead of disappearing, so it's obvious which
+  ones are missing.
 
 ## Requirements to be listed
 

@@ -32,6 +32,13 @@ of prior context — for full history use `git log`.
   run may only register functionality — no network requests, data
   collection, or PowerShell execution at startup without the user first
   taking an action that invokes the addon.
+- Community Catalog detail header now always shows `[README]` `[LICENSE]`
+  `[DOCUMENTATION]` as fixed links, instead of only showing README/LICENSE
+  when GitHub's API found one. A file the repo doesn't have renders as
+  dimmed text with a ⚠️ next to it rather than disappearing. Added
+  `DOCUMENTATION.md` as a new fixed-filename convention (like
+  `manifest.json`/`icon.png`/`main.js`) - it opens in the in-app Markdown
+  viewer like any other `.md` link.
 
 ## 2026-08-23
 

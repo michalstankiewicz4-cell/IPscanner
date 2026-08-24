@@ -93,6 +93,33 @@
       return badge;
     }
 
+    // README/LICENSE/DOCUMENTATION are always shown as fixed [LABEL] links
+    // in the detail header, even when the repo doesn't have that file - a
+    // missing one renders as dimmed, non-clickable text plus a warning
+    // triangle instead of just disappearing, so a viewer can tell at a
+    // glance which of the three the addon is missing.
+    function appendCatalogLink(linksRow, label, url, titleText) {
+      if (url) {
+        var link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "[" + label + "]";
+        if (titleText) link.title = titleText;
+        linksRow.appendChild(link);
+        return;
+      }
+      var missing = document.createElement("span");
+      missing.className = "v1-catalog-link-missing";
+      missing.textContent = "[" + label + "]";
+      linksRow.appendChild(missing);
+      var warning = document.createElement("span");
+      warning.className = "v1-catalog-link-warning";
+      warning.textContent = "⚠️";
+      warning.title = tr("catalogLinkMissing");
+      linksRow.appendChild(warning);
+    }
+
     function renderRatingLabel(summary) {
       var el = document.createElement("span");
       el.className = "v1-catalog-rating";
@@ -550,27 +577,12 @@
       descEl.textContent = entry.repoDescription || manifest.description || "";
       header.appendChild(descEl);
 
-      if ((entry.license && entry.license.htmlUrl) || entry.readmeUrl) {
-        var linksRow = document.createElement("div");
-        linksRow.className = "v1-catalog-links-row";
-        if (entry.readmeUrl) {
-          var readmeLink = document.createElement("a");
-          readmeLink.href = entry.readmeUrl;
-          readmeLink.target = "_blank";
-          readmeLink.rel = "noopener noreferrer";
-          readmeLink.textContent = "README";
-          linksRow.appendChild(readmeLink);
-        }
-        if (entry.license && entry.license.htmlUrl) {
-          var licenseLink = document.createElement("a");
-          licenseLink.href = entry.license.htmlUrl;
-          licenseLink.target = "_blank";
-          licenseLink.rel = "noopener noreferrer";
-          licenseLink.textContent = entry.license.spdxId || entry.license.name || "LICENSE";
-          linksRow.appendChild(licenseLink);
-        }
-        header.appendChild(linksRow);
-      }
+      var linksRow = document.createElement("div");
+      linksRow.className = "v1-catalog-links-row";
+      appendCatalogLink(linksRow, "README", entry.readmeUrl);
+      appendCatalogLink(linksRow, "LICENSE", entry.license && entry.license.htmlUrl, entry.license && (entry.license.spdxId || entry.license.name));
+      appendCatalogLink(linksRow, "DOCUMENTATION", entry.documentationUrl);
+      header.appendChild(linksRow);
 
       var installedIds = extensionHost && extensionHost.listExtensions
         ? extensionHost.listExtensions().map(function (item) { return item.id; })
