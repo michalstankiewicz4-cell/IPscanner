@@ -136,10 +136,19 @@
       return el;
     }
 
+    // Strips a leading "v"/"V" an author may or may not have included in
+    // their own manifest value (e.g. "v2.8.4" vs "2.8.4") - both render
+    // labels always prepend their own "v", so without this a value that
+    // already has one renders as a doubled "vv2.8.4" (which visually
+    // merges into what reads as a "w" at small font sizes).
+    function stripLeadingV(value) {
+      return String(value || "").replace(/^v/i, "");
+    }
+
     function renderAddonVersionLabel(version) {
       var el = document.createElement("span");
       el.className = "v1-catalog-version";
-      el.textContent = "v" + (version || "0.0.0");
+      el.textContent = "v" + (stripLeadingV(version) || "0.0.0");
       return el;
     }
 
@@ -150,7 +159,7 @@
       if (!targetAppVersion) return null;
       var el = document.createElement("div");
       el.className = "v1-catalog-built-for";
-      el.textContent = tr("communityCatalogBuiltForVersion").replace("{version}", targetAppVersion);
+      el.textContent = tr("communityCatalogBuiltForVersion").replace("{version}", stripLeadingV(targetAppVersion));
       return el;
     }
 
@@ -587,6 +596,11 @@
       var ownerLogin = entry.repoFullName ? entry.repoFullName.split("/")[0] : "";
       var isAuthor = !!(session && session.login && ownerLogin && session.login.toLowerCase() === ownerLogin.toLowerCase());
 
+      var installedIds = extensionHost && extensionHost.listExtensions
+        ? extensionHost.listExtensions().map(function (item) { return item.id; })
+        : [];
+      var isInstalled = installedIds.indexOf(manifest.id) !== -1;
+
       var header = document.createElement("div");
       header.className = "v1-community-detail-header";
 
@@ -595,8 +609,10 @@
       var nameEl = document.createElement("strong");
       nameEl.textContent = manifest.name || manifest.id || "";
       nameRow.appendChild(nameEl);
+      nameRow.appendChild(renderAddonVersionLabel(manifest.version));
       nameRow.appendChild(renderInstallCountLabel(entry.installCount));
       if (entry.moderation && entry.moderation.verified) nameRow.appendChild(renderVerifiedBadge());
+      if (isInstalled) nameRow.appendChild(renderInstalledBadge());
       header.appendChild(nameRow);
 
       if (entry.repoFullName) {
@@ -620,11 +636,6 @@
       appendCatalogLink(linksRow, "LICENSE", entry.license && entry.license.htmlUrl, entry.license && (entry.license.spdxId || entry.license.name));
       appendCatalogLink(linksRow, "DOCUMENTATION", entry.documentationUrl);
       header.appendChild(linksRow);
-
-      var installedIds = extensionHost && extensionHost.listExtensions
-        ? extensionHost.listExtensions().map(function (item) { return item.id; })
-        : [];
-      var isInstalled = installedIds.indexOf(manifest.id) !== -1;
 
       var installBtn = document.createElement("button");
       installBtn.type = "button";

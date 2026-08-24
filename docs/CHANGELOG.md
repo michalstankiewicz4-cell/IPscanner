@@ -22,6 +22,13 @@ of prior context — for full history use `git log`.
   `targetAppVersion` manifest field (e.g. `"2.8.4"`) - purely
   informational, shown as a third "Built for app vX.X.X" line only when
   an addon's manifest declares it.
+- Community Catalog detail header (center section) now also shows the
+  addon's version next to its name, plus an "Installed" tag when it's
+  currently installed - same version/Installed-badge treatment the
+  left-panel list already had. Also fixed both version labels doubling a
+  leading "v" when a manifest's own `version`/`targetAppVersion` value
+  already included one (e.g. `"v2.8.4"` rendered as "vv2.8.4", which
+  visually merges into what reads as a "w" at small font sizes).
 
 - Added an "Installed" badge to Community Catalog list rows (mirrors the
   existing "Verified" badge, checks the row's addon id against
