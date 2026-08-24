@@ -202,11 +202,42 @@
         });
       }
 
+      // Only fetches languages/ from GitHub the first time it's actually
+      // asked for - see the "browse-catalog" button below, and the wire
+      // function's own tail (skips this call entirely if already cached
+      // from earlier this session, no network request either way).
+      function loadAndRenderCatalog() {
+        if (catalogEl) {
+          catalogEl.innerHTML = "";
+          var loadingEl = document.createElement("div");
+          loadingEl.className = "v1-import-empty";
+          loadingEl.textContent = tr("langCatalogEmpty");
+          catalogEl.appendChild(loadingEl);
+        }
+        loadLanguageCatalogCached().then(function (entries) {
+          langCatalogEntries = entries;
+          renderCatalog();
+        }).catch(function () {
+          if (catalogEl) {
+            catalogEl.innerHTML = "";
+            var errEl = document.createElement("div");
+            errEl.className = "v1-import-empty";
+            errEl.textContent = tr("langCatalogError");
+            catalogEl.appendChild(errEl);
+          }
+        });
+      }
+
       root.querySelectorAll("[data-lang-action]").forEach(function (button) {
         if (button.dataset.bound === "1") return;
         button.dataset.bound = "1";
         button.addEventListener("click", function () {
-          if (button.getAttribute("data-lang-action") !== "import") return;
+          var action = button.getAttribute("data-lang-action");
+          if (action === "browse-catalog") {
+            loadAndRenderCatalog();
+            return;
+          }
+          if (action !== "import") return;
 
           pickLanguageFileText().then(function (picked) {
             var parsed;
@@ -265,20 +296,19 @@
       }
 
       renderInstalledList();
-      renderCatalog();
 
-      loadLanguageCatalogCached().then(function (entries) {
-        langCatalogEntries = entries;
+      // Only render the catalog list here if it's already cached from
+      // earlier this session (no GitHub request either way, just a
+      // Promise.resolve of the same cache) - otherwise leave the
+      // "browse-catalog" prompt panel-content-runtime.js rendered in
+      // place, and wait for that button's click (loadAndRenderCatalog()
+      // above) instead of fetching languages/ automatically on every
+      // tab open even when the user only came here to switch their
+      // already-installed active language.
+      if (langCatalogEntriesCache) {
+        langCatalogEntries = langCatalogEntriesCache;
         renderCatalog();
-      }).catch(function () {
-        if (catalogEl) {
-          catalogEl.innerHTML = "";
-          var errEl = document.createElement("div");
-          errEl.className = "v1-import-empty";
-          errEl.textContent = tr("langCatalogError");
-          catalogEl.appendChild(errEl);
-        }
-      });
+      }
     }
 
     return {
