@@ -202,10 +202,10 @@
         });
       }
 
-      // Only fetches languages/ from GitHub the first time it's actually
-      // asked for - see the "browse-catalog" button below, and the wire
-      // function's own tail (skips this call entirely if already cached
-      // from earlier this session, no network request either way).
+      // Fetches languages/ from GitHub the first time the Language Manager
+      // tab is opened this session (memoized by loadLanguageCatalogCached()
+      // itself, so a second wire() call - e.g. switching tabs and back -
+      // doesn't re-fetch, just re-renders the same cached data).
       function loadAndRenderCatalog() {
         if (catalogEl) {
           catalogEl.innerHTML = "";
@@ -232,12 +232,7 @@
         if (button.dataset.bound === "1") return;
         button.dataset.bound = "1";
         button.addEventListener("click", function () {
-          var action = button.getAttribute("data-lang-action");
-          if (action === "browse-catalog") {
-            loadAndRenderCatalog();
-            return;
-          }
-          if (action !== "import") return;
+          if (button.getAttribute("data-lang-action") !== "import") return;
 
           pickLanguageFileText().then(function (picked) {
             var parsed;
@@ -296,19 +291,8 @@
       }
 
       renderInstalledList();
-
-      // Only render the catalog list here if it's already cached from
-      // earlier this session (no GitHub request either way, just a
-      // Promise.resolve of the same cache) - otherwise leave the
-      // "browse-catalog" prompt panel-content-runtime.js rendered in
-      // place, and wait for that button's click (loadAndRenderCatalog()
-      // above) instead of fetching languages/ automatically on every
-      // tab open even when the user only came here to switch their
-      // already-installed active language.
-      if (langCatalogEntriesCache) {
-        langCatalogEntries = langCatalogEntriesCache;
-        renderCatalog();
-      }
+      renderCatalog();
+      loadAndRenderCatalog();
     }
 
     return {

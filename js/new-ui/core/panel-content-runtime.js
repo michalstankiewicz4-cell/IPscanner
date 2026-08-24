@@ -496,21 +496,16 @@
 
       return [
         "<div class=\"v1-import-manager\">",
-        "<div class=\"v1-import-manager-head\">",
-        "<h4 style=\"margin:0 0 4px;\">" + tr("langManagerTitle") + "</h4>",
-        "</div>",
+        // No in-content "Language Manager" heading here - the CS tab's own
+        // header (v1ToolTitle, fed by toolTitle_language_manager) already
+        // shows that same text right above this content.
         "<h4 style=\"margin:12px 0 4px;\">" + tr("langInstalledHeading") + "</h4>",
         "<div id=\"v1LangInstalledList\" data-lang-role=\"installed-list\">" + installedHtml + "</div>",
         "<div class=\"v1-import-manager-actions\">",
         "<button type=\"button\" data-lang-action=\"import\">" + tr("langImportBtn") + "</button>",
-        "<button type=\"button\" data-lang-action=\"browse-catalog\">" + tr("langBrowseCatalogBtn") + "</button>",
         "</div>",
         "<h4 style=\"margin:12px 0 4px;\">" + tr("langCatalogHeading") + "</h4>",
-        // Prompt only - the wire function skips this and renders the real
-        // list straight away if it's already cached from earlier this
-        // session (no new request either way), see language-catalog-
-        // runtime.js's wireLanguageManagerButtons().
-        "<div id=\"v1LangCatalog\" data-lang-role=\"catalog\" class=\"v1-import-output v1-catalog-list\">" + escapeHtml(tr("langCatalogPrompt")) + "</div>",
+        "<div id=\"v1LangCatalog\" data-lang-role=\"catalog\" class=\"v1-import-output v1-catalog-list\">" + escapeHtml(tr("langCatalogEmpty")) + "</div>",
         "</div>"
       ].join("");
     }

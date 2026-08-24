@@ -8,11 +8,15 @@ of prior context — for full history use `git log`.
 
 ## 2026-08-24
 
-- Language Manager no longer fetches the `languages/` catalog from GitHub
-  just from opening the tab - only when its new "Browse available
-  languages" button is actually clicked (already-cached-this-session data
-  still renders immediately with no new request). Switching your active
-  language from the Installed list now costs zero network requests.
+- Language Manager: tried gating its `languages/` GitHub fetch behind a
+  new "Browse available languages" button (only fetch when asked, not
+  automatically on every tab open), then reverted that per feedback -
+  back to fetching automatically when the tab opens (still memoized for
+  the rest of the session either way, so this was never the actual API
+  cost leak - see the Community Catalog entry below for that one). Also
+  removed a duplicate "Language Manager" heading that showed twice in a
+  row - once as the tab's own title, once again as an identical in-content
+  `<h4>`.
 
 - Added a per-addon install count to the Community Catalog (list rows and
   detail header, next to the rating). Backed by a new Supabase
