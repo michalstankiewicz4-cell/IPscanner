@@ -1506,6 +1506,9 @@
           } else if (tool === "community-catalog") {
             ensureSidebarTabOpen("community-catalog-library");
             setLeftActiveTab("community-catalog-library");
+          } else if (tool === "https-auditor") {
+            ensureSidebarTabOpen("https-auditor-library");
+            setLeftActiveTab("https-auditor-library");
           } else if (tool === "mail-xss-tester") {
             ensureSidebarTabOpen("mail-xss-tester-library");
             setLeftActiveTab("mail-xss-tester-library");
@@ -1573,6 +1576,11 @@
         } else if (tool === "community-catalog") {
           ensureSidebarTabOpen("community-catalog-library");
           setLeftActiveTab("community-catalog-library");
+        } else if (tool === "https-auditor") {
+          // Same idea as "agent-profiles" above - CS + its own audit-
+          // history LS list, no RS.
+          ensureSidebarTabOpen("https-auditor-library");
+          setLeftActiveTab("https-auditor-library");
         } else if (tool === "mail-xss-tester") {
           // 3 independent surfaces (CS's own "mail-xss-tester" via
           // switchTool() below, plus its own

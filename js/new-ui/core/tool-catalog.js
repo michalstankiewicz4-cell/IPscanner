@@ -214,6 +214,14 @@
       labelKey: "tabLabel_mail_xss_tester_library",
       ui: { showInLeftPanel: true, leftOrder: 46 }
     },
+    // Past HTTPS Auditor runs (timestamp + URL + grade), LS list driving
+    // the "https-auditor" CS tab's detail view - same master-detail shape
+    // as agent-profiles-library above.
+    "https-auditor-library": {
+      icon: null,
+      labelKey: "tabLabel_https_auditor_library",
+      ui: { showInLeftPanel: true, leftOrder: 49 }
+    },
     "mail-xss-tester-results": {
       icon: null,
       labelKey: "tabLabel_mail_xss_tester_results",

@@ -770,6 +770,125 @@ struct HttpsAuditResult {
     server: Option<String>,
     mixed_content_count: u32,
     mixed_content_examples: Vec<String>,
+    cert: Option<CertInfo>,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct CertInfo {
+    subject: String,
+    issuer: String,
+    not_before: String,
+    not_after: String,
+    days_until_expiry: i64,
+    expired: bool,
+}
+
+// Accepts any certificate presented, valid or not - this is inspecting
+// what the server hands over, not making a trust decision (that's what
+// the rest of the audit's HSTS/header checks already do). Without this, a
+// self-signed or expired cert would abort the handshake before we ever
+// got to read it, which is exactly the case most worth surfacing.
+#[derive(Debug)]
+struct AcceptAnyCert;
+
+impl rustls::client::danger::ServerCertVerifier for AcceptAnyCert {
+    fn verify_server_cert(
+        &self,
+        _end_entity: &rustls_pki_types::CertificateDer<'_>,
+        _intermediates: &[rustls_pki_types::CertificateDer<'_>],
+        _server_name: &rustls_pki_types::ServerName<'_>,
+        _ocsp_response: &[u8],
+        _now: rustls_pki_types::UnixTime,
+    ) -> Result<rustls::client::danger::ServerCertVerified, rustls::Error> {
+        Ok(rustls::client::danger::ServerCertVerified::assertion())
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        _message: &[u8],
+        _cert: &rustls_pki_types::CertificateDer<'_>,
+        _dss: &rustls::DigitallySignedStruct,
+    ) -> Result<rustls::client::danger::HandshakeSignatureValid, rustls::Error> {
+        Ok(rustls::client::danger::HandshakeSignatureValid::assertion())
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        _message: &[u8],
+        _cert: &rustls_pki_types::CertificateDer<'_>,
+        _dss: &rustls::DigitallySignedStruct,
+    ) -> Result<rustls::client::danger::HandshakeSignatureValid, rustls::Error> {
+        Ok(rustls::client::danger::HandshakeSignatureValid::assertion())
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<rustls::SignatureScheme> {
+        // Never actually rejects based on scheme (both signature-verify
+        // methods above accept unconditionally) - this just needs to list
+        // enough schemes for the handshake to pick one and proceed.
+        vec![
+            rustls::SignatureScheme::RSA_PKCS1_SHA256,
+            rustls::SignatureScheme::RSA_PKCS1_SHA384,
+            rustls::SignatureScheme::RSA_PKCS1_SHA512,
+            rustls::SignatureScheme::ECDSA_NISTP256_SHA256,
+            rustls::SignatureScheme::ECDSA_NISTP384_SHA384,
+            rustls::SignatureScheme::ECDSA_NISTP521_SHA512,
+            rustls::SignatureScheme::RSA_PSS_SHA256,
+            rustls::SignatureScheme::RSA_PSS_SHA384,
+            rustls::SignatureScheme::RSA_PSS_SHA512,
+            rustls::SignatureScheme::ED25519,
+        ]
+    }
+}
+
+// A separate, raw TLS handshake purely to read what certificate the
+// server presents - reqwest has no API to hand back the peer certificate
+// from a request it already made. Best-effort: any failure (DNS, connect,
+// handshake, parse) just means no cert panel, not a failed audit - the
+// header-based checks in https_audit above already succeeded independently
+// by this point.
+async fn fetch_certificate_info(host: &str, port: u16) -> Option<CertInfo> {
+    let provider = std::sync::Arc::new(rustls::crypto::ring::default_provider());
+    let config = rustls::ClientConfig::builder_with_provider(provider)
+        .with_safe_default_protocol_versions()
+        .ok()?
+        .dangerous()
+        .with_custom_certificate_verifier(std::sync::Arc::new(AcceptAnyCert))
+        .with_no_client_auth();
+
+    let connector = tokio_rustls::TlsConnector::from(std::sync::Arc::new(config));
+    let server_name = rustls_pki_types::ServerName::try_from(host.to_string()).ok()?;
+
+    let addr = format!("{}:{}", host, port);
+    let tcp = tokio::time::timeout(Duration::from_secs(8), tokio::net::TcpStream::connect(&addr))
+        .await
+        .ok()?
+        .ok()?;
+    let tls = tokio::time::timeout(Duration::from_secs(8), connector.connect(server_name, tcp))
+        .await
+        .ok()?
+        .ok()?;
+
+    let (_, session) = tls.get_ref();
+    let certs = session.peer_certificates()?;
+    let leaf = certs.first()?;
+
+    let (_, parsed) = x509_parser::parse_x509_certificate(leaf.as_ref()).ok()?;
+    let validity = parsed.validity();
+    let not_after_ts = validity.not_after.timestamp();
+    let now_ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()?
+        .as_secs() as i64;
+
+    Some(CertInfo {
+        subject: parsed.subject().to_string(),
+        issuer: parsed.issuer().to_string(),
+        not_before: validity.not_before.to_string(),
+        not_after: validity.not_after.to_string(),
+        days_until_expiry: (not_after_ts - now_ts) / 86400,
+        expired: not_after_ts < now_ts,
+    })
 }
 
 async fn fetch_no_redirect(client: &reqwest::Client, url: &str) -> Result<reqwest::Response, String> {
@@ -905,6 +1024,15 @@ async fn https_audit(url: String) -> Result<HttpsAuditResult, String> {
         None => false,
     };
 
+    let cert = if current.scheme() == "https" {
+        match current.host_str() {
+            Some(host) => fetch_certificate_info(host, current.port_or_known_default().unwrap_or(443)).await,
+            None => None,
+        }
+    } else {
+        None
+    };
+
     Ok(HttpsAuditResult {
         requested_url: normalized,
         final_url,
@@ -920,6 +1048,7 @@ async fn https_audit(url: String) -> Result<HttpsAuditResult, String> {
         server,
         mixed_content_count,
         mixed_content_examples,
+        cert,
     })
 }
 
@@ -2222,6 +2351,22 @@ struct SessionExtensionRow {
     manifest_json: String,
 }
 
+// One row per completed HTTPS Auditor run. result_json is the FULL
+// HttpsAuditResult (redirect chain, cert, mixed content etc.) exactly as
+// https_audit returned it, serialized - re-parsed JS-side when a history
+// entry is opened, so this table doesn't need its own columns for every
+// nested field, only the ones the left-panel list itself displays.
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct HttpsAuditHistoryRow {
+    id: String,
+    audited_at: String,
+    requested_url: String,
+    final_url: String,
+    grade: String,
+    result_json: String,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SessionData {
@@ -2237,6 +2382,8 @@ struct SessionData {
     meta: SessionMetaData,
     #[serde(default)]
     extensions: Vec<SessionExtensionRow>,
+    #[serde(default)]
+    https_audit_history: Vec<HttpsAuditHistoryRow>,
 }
 
 const SESSION_SCHEMA_SQL: &str = "
@@ -2339,6 +2486,14 @@ const SESSION_SCHEMA_SQL: &str = "
       name TEXT NOT NULL,
       version TEXT NOT NULL,
       manifest_json TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS https_audit_history (
+      id TEXT PRIMARY KEY,
+      audited_at TEXT NOT NULL,
+      requested_url TEXT NOT NULL,
+      final_url TEXT NOT NULL,
+      grade TEXT NOT NULL DEFAULT '',
+      result_json TEXT NOT NULL
     );
 ";
 
@@ -2583,6 +2738,19 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             insert_ext
                 .execute(params![ext.id, ext.name, ext.version, ext.manifest_json])
                 .map_err(|e| format!("Failed to insert session_extensions row: {e}"))?;
+        }
+    }
+
+    tx.execute("DELETE FROM https_audit_history", [])
+        .map_err(|e| format!("Failed to clear https_audit_history: {e}"))?;
+    {
+        let mut insert_audit = tx
+            .prepare_cached("INSERT INTO https_audit_history (id, audited_at, requested_url, final_url, grade, result_json) VALUES (?1,?2,?3,?4,?5,?6)")
+            .map_err(|e| format!("Failed to prepare https_audit_history insert: {e}"))?;
+        for row in &data.https_audit_history {
+            insert_audit
+                .execute(params![row.id, row.audited_at, row.requested_url, row.final_url, row.grade, row.result_json])
+                .map_err(|e| format!("Failed to insert https_audit_history row: {e}"))?;
         }
     }
 
@@ -2969,6 +3137,23 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         rows
     })().unwrap_or_default();
 
+    // Same "brand new table, older session files don't have it" fallback
+    // as session_extensions above.
+    let https_audit_history: Vec<HttpsAuditHistoryRow> = (|| -> Result<Vec<HttpsAuditHistoryRow>, rusqlite::Error> {
+        let mut stmt = conn.prepare("SELECT id, audited_at, requested_url, final_url, grade, result_json FROM https_audit_history ORDER BY audited_at DESC")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(HttpsAuditHistoryRow {
+                id: row.get(0)?,
+                audited_at: row.get(1)?,
+                requested_url: row.get(2)?,
+                final_url: row.get(3)?,
+                grade: row.get(4)?,
+                result_json: row.get(5)?,
+            })
+        })?.collect();
+        rows
+    })().unwrap_or_default();
+
     Ok(SessionData {
         scan_results,
         scan_progress,
@@ -2984,6 +3169,7 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         layout,
         meta,
         extensions,
+        https_audit_history,
     })
 }
 
@@ -3016,6 +3202,30 @@ fn save_session_dialog(default_dir: String, default_filename: String, data: Sess
 
     let path = dialog.save_file().ok_or_else(|| "cancelled".to_string())?;
     write_session_data(&path, &data)?;
+    Ok(path.to_string_lossy().to_string())
+}
+
+// Generic plain-text file save via a native dialog - HTTPS Auditor's CSV
+// export uses this. A browser's own <a download> click (the www build's
+// fallback, see https-auditor-runtime.js's isDesktop() branch) is a
+// silent no-op in Tauri's WebView2 - session save/load already worked
+// around the same gap with save_session_dialog above, this just
+// generalizes that to arbitrary text content instead of one binary
+// SessionData shape.
+#[tauri::command]
+fn save_text_file_dialog(
+    default_filename: String,
+    content: String,
+    filter_name: String,
+    filter_ext: String,
+) -> Result<String, String> {
+    let dialog = rfd::FileDialog::new()
+        .set_title("Save")
+        .set_file_name(&default_filename)
+        .add_filter(&filter_name, &[filter_ext.as_str()]);
+
+    let path = dialog.save_file().ok_or_else(|| "cancelled".to_string())?;
+    std::fs::write(&path, content).map_err(|e| e.to_string())?;
     Ok(path.to_string_lossy().to_string())
 }
 
@@ -3830,6 +4040,7 @@ fn main() {
             list_connections,
             list_arp_entries,
             https_audit,
+            save_text_file_dialog,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

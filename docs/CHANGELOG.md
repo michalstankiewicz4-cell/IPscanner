@@ -20,6 +20,30 @@ of prior context — for full history use `git log`.
   not the web build. Verified live against ipscanner.pl, which confirmed
   the missing-HSTS finding from earlier manual `curl` checks.
 
+- HTTPS Auditor: added a certificate panel (subject/issuer/expiry/days-left,
+  via a raw `rustls`/`tokio-rustls` handshake + `x509-parser` since `reqwest`
+  itself exposes no API for the peer certificate) and a letter grade (A-F)
+  summarizing the pass/fail count across all checks. Added CSV export and a
+  "Copy as CSV" button - export uses a native Save dialog on desktop
+  (`save_text_file_dialog`, a new generic Rust command) since a plain
+  `<a download>` click is a silent no-op in Tauri's WebView2, the same gap
+  session save/load already worked around.
+
+- HTTPS Auditor: every completed audit is now saved with its timestamp as a
+  history entry, shown as a left-panel list ("Audit history") - clicking a
+  past entry re-shows its full result in the tool tab, same
+  list-drives-detail pattern Agent Profiles uses. History is saved into the
+  session file too (`https_audit_history` table, both the desktop/rusqlite
+  and www/sql.js codecs), so it round-trips through session save/load like
+  the rest of the app's state, plus a plain localStorage copy so it also
+  survives a normal app restart without an explicit session save. Fixed a
+  bug where the "Audit history" list never appeared on the left if the
+  HTTPS Auditor tab was already open (e.g. restored on app launch) rather
+  than freshly opened via the Tools menu - opening the left-panel list was
+  only ever paired with that menu click, so a tab that opened any other way
+  (layout restore calling `switchTool()` directly, a detached window) never
+  triggered it. Now the tool tab's own render/wire step opens it too.
+
 - Community Chat: the nickname/login prompt no longer replaces the whole
   message list while you don't have an identity picked yet - it now
   floats as a dimmed overlay card on top, with the channel's existing

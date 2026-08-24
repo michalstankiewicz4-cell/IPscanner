@@ -32,6 +32,34 @@ rfd = "0.14"
 # cross the Tauri IPC boundary as base64 (serde_json has no native binary
 # encoding).
 base64 = "0.22"
+# HTTPS Auditor's certificate panel: reqwest has no API to hand back the
+# peer certificate from a request it already made, so this does its own
+# separate raw TLS handshake purely to inspect what cert the server
+# presents (see fetch_certificate_info in main.rs). tokio-rustls and
+# rustls-pki-types are already resolved transitively at these exact
+# versions (via reqwest's rustls-tls feature) - promoted to direct
+# dependencies rather than duplicating a second TLS stack. x509-parser is
+# the one genuinely new dependency, for reading subject/issuer/validity
+# out of the DER bytes rustls hands back (hand-rolling ASN.1 DER parsing
+# for this, unlike md5_hex's textbook algorithm above, is real attack
+# surface for parsing untrusted certs - not worth owning).
+rustls = { version = "=0.23.40", default-features = false, features = ["ring", "std", "tls12"] }
+tokio-rustls = "=0.26.4"
+rustls-pki-types = "=1.14.1"
+# NOTE: tauri-plugin-updater's own (separate, unrelated) reqwest
+# dependency pulls in aws-lc-rs as a resolvable candidate regardless of
+# the pins above - Cargo features are additive/unioned, never
+# subtractive, so nothing declared here can turn it back off once any
+# dependent's default features request it. It happens not to need
+# compiling in a build that reuses this machine's current incremental
+# cache, but aws-lc-sys's build script does NOT compile cleanly here (no
+# NASM, plus an MSVC cl.exe /O2 vs /Od flag conflict even with NASM
+# present) - a fully clean `cargo clean` + rebuild, or a build on a
+# different machine/CI, may hit that failure again. Not solved as of
+# 2026-08-24 - if it resurfaces, look at overriding tauri-plugin-
+# updater's reqwest/hyper-rustls resolution via [patch.crates-io], not at
+# these lines (already tried, doesn't work - see git blame).
+x509-parser = "0.16"
 rusqlite = { version = "0.31", features = ["bundled"] }
 windows = { version = "0.62.2", features = ["Win32_NetworkManagement_IpHelper", "Win32_Foundation", "Win32_Networking_WinSock", "Win32_NetworkManagement_Ndis", "Win32_System_Threading"] }
 # Mail XSS Tester: sends the self-test email via the user's own Gmail

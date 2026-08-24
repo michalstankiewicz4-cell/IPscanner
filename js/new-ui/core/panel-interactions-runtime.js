@@ -17,6 +17,8 @@
     var renderMailXssTesterTool = typeof deps.renderMailXssTesterTool === "function" ? deps.renderMailXssTesterTool : null;
     var renderMailXssTesterResults = typeof deps.renderMailXssTesterResults === "function" ? deps.renderMailXssTesterResults : null;
     var renderHttpsAuditorTool = typeof deps.renderHttpsAuditorTool === "function" ? deps.renderHttpsAuditorTool : null;
+    var renderHttpsAuditorLibrary = typeof deps.renderHttpsAuditorLibrary === "function" ? deps.renderHttpsAuditorLibrary : null;
+    var httpsAuditorResultToCsv = typeof deps.httpsAuditorResultToCsv === "function" ? deps.httpsAuditorResultToCsv : null;
     var renderGoogleDorkLibrary = typeof deps.renderGoogleDorkLibrary === "function" ? deps.renderGoogleDorkLibrary : null;
     var renderGoogleDorkTool = typeof deps.renderGoogleDorkTool === "function" ? deps.renderGoogleDorkTool : null;
     var renderGoogleDorkTemplates = typeof deps.renderGoogleDorkTemplates === "function" ? deps.renderGoogleDorkTemplates : null;
@@ -2585,6 +2587,24 @@
       var shellEl = root.querySelector(".v1-https-auditor-shell");
       if (!shellEl) return;
 
+      // Belt-and-suspenders alongside navigation-runtime.js's Tools-menu/
+      // center-tab click handler (which only pairs LS-open with a CLICK on
+      // "https-auditor") - this fires every time the CS pane actually
+      // mounts, including paths that skip that click handler entirely
+      // (layout restore reopening a previously-active center tab via
+      // switchTool() directly, e.g. on app startup). Without this, a user
+      // whose HTTPS Auditor tab restores itself on launch would never see
+      // "Audit history" open on the left, even after running audits.
+      // session-runtime.js's applyLayout() already uses this same
+      // newui:sidebar-tab-intent-open event for the identical reason.
+      try {
+        document.dispatchEvent(new CustomEvent("newui:sidebar-tab-intent-open", {
+          detail: { tool: "https-auditor-library", activate: true }
+        }));
+      } catch (_) {
+        // ignore event dispatch failures
+      }
+
       if (httpsAuditorToolTeardown) {
         httpsAuditorToolTeardown();
         httpsAuditorToolTeardown = null;
@@ -2604,6 +2624,80 @@
         api.runAudit(input.value);
       }
 
+      // Same "selected history entry wins" precedence as
+      // panel-content-runtime.js's renderHttpsAuditorTool - export/copy
+      // should act on whatever's actually shown, not always the latest run.
+      function currentHttpsAuditorResult(api) {
+        var selectedEntry = api.getSelectedEntry ? api.getSelectedEntry() : null;
+        return selectedEntry ? selectedEntry.result : api.getResult();
+      }
+
+      // CSV filename derived from the audited host - falls back to a
+      // fixed name if the URL can't be parsed for any reason (still a
+      // valid, just less specific, download).
+      function httpsAuditorCsvFilename(result) {
+        try {
+          return "https-audit-" + new URL(result.finalUrl).hostname + ".csv";
+        } catch (_) {
+          return "https-audit.csv";
+        }
+      }
+
+      // Desktop uses a native Save dialog (save_text_file_dialog) - a
+      // browser-style <a download> click is a silent no-op in Tauri's
+      // WebView2 (same gap session save/load already worked around via
+      // save_session_dialog, see session-runtime.js's isWww() branch).
+      // www has no backend to ask, so it keeps the Blob+anchor download.
+      function exportHttpsAuditorCsv() {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.httpsAuditor;
+        var result = api ? currentHttpsAuditorResult(api) : null;
+        if (!result || !httpsAuditorResultToCsv) return;
+        var csv = httpsAuditorResultToCsv(result);
+        var filename = httpsAuditorCsvFilename(result);
+        var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+
+        if (platform && typeof platform.isDesktop === "function" && platform.isDesktop()) {
+          Promise.resolve(platform.invoke("save_text_file_dialog", {
+            defaultFilename: filename,
+            content: csv,
+            filterName: "CSV",
+            filterExt: "csv",
+          })).then(function (path) {
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("httpsAuditorExportedStatus") + " - " + path);
+          }).catch(function (err) {
+            if (err === "cancelled") return;
+            if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("httpsAuditorExportFailedStatus") + " - " + ((err && err.message) || err));
+          });
+          return;
+        }
+
+        try {
+          var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("httpsAuditorExportedStatus") + " - " + filename);
+        } catch (err) {
+          if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("httpsAuditorExportFailedStatus") + " - " + ((err && err.message) || err));
+        }
+      }
+
+      function copyHttpsAuditorCsv() {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.httpsAuditor;
+        var result = api ? currentHttpsAuditorResult(api) : null;
+        if (!result || !httpsAuditorResultToCsv || !navigator.clipboard || !navigator.clipboard.writeText) return;
+        navigator.clipboard.writeText(httpsAuditorResultToCsv(result)).then(function () {
+          if (setStatusLine) setStatusLine(tr("httpsAuditorCopiedStatus"));
+        }).catch(function () {
+          // ignore clipboard permission/failure
+        });
+      }
+
       // Delegated on `root`, NOT `shellEl` - onChanged() above replaces
       // shellEl wholesale via outerHTML on every state change (loading ->
       // result), which would silently drop listeners bound directly to it.
@@ -2611,6 +2705,15 @@
       function onClick(event) {
         if (event.target && event.target.closest && event.target.closest("[data-https-auditor-run-btn]")) {
           runFromInput();
+          return;
+        }
+        if (event.target && event.target.closest && event.target.closest("[data-https-auditor-export-csv-btn]")) {
+          exportHttpsAuditorCsv();
+          return;
+        }
+        if (event.target && event.target.closest && event.target.closest("[data-https-auditor-copy-btn]")) {
+          copyHttpsAuditorCsv();
+          return;
         }
       }
       function onKeydown(event) {
@@ -2627,6 +2730,44 @@
         root.removeEventListener("click", onClick);
         root.removeEventListener("keydown", onKeydown);
       };
+    }
+
+    // LS: every past audit, newest first - selection lives inside
+    // https-auditor-runtime.js itself (selectHistoryEntry/getSelectedId),
+    // not a local module var, since the CS detail tab (wireHttpsAuditorTool
+    // above) needs to react to the exact same selection and both already
+    // share the one newui:https-auditor-changed event for it.
+    function wireHttpsAuditorLibrary(rootEl) {
+      var mount = (rootEl && typeof rootEl.querySelector === "function" ? rootEl.querySelector("#v1HttpsAuditorLibrary") : null) || document.getElementById("v1HttpsAuditorLibrary");
+      if (!mount || !renderHttpsAuditorLibrary) return;
+
+      function render() {
+        mount.innerHTML = renderHttpsAuditorLibrary();
+      }
+      render();
+
+      if (mount.dataset.httpsAuditorLibBound === "1") return;
+      mount.dataset.httpsAuditorLibBound = "1";
+
+      document.addEventListener("newui:https-auditor-changed", function () {
+        if (!document.body.contains(mount)) return;
+        render();
+      });
+
+      mount.addEventListener("click", function (event) {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.httpsAuditor;
+        if (!api) return;
+
+        var removeBtn = event.target && event.target.closest ? event.target.closest("[data-https-audit-remove]") : null;
+        if (removeBtn) {
+          api.deleteHistoryEntry(removeBtn.getAttribute("data-https-audit-remove"));
+          return;
+        }
+
+        var row = event.target && event.target.closest ? event.target.closest("[data-https-audit-id]") : null;
+        if (!row) return;
+        api.selectHistoryEntry(row.getAttribute("data-https-audit-id"));
+      });
     }
 
     // LS: the 9 builder-field inputs - rebuilt wholesale on every
@@ -4462,6 +4603,7 @@
       wireMailXssTesterResults: wireMailXssTesterResults,
       wireMailXssTesterTool: wireMailXssTesterTool,
       wireHttpsAuditorTool: wireHttpsAuditorTool,
+      wireHttpsAuditorLibrary: wireHttpsAuditorLibrary,
       wireGoogleDorkLibrary: wireGoogleDorkLibrary,
       wireGoogleDorkTemplates: wireGoogleDorkTemplates,
       wireGoogleDorkTool: wireGoogleDorkTool,

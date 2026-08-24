@@ -1527,6 +1527,8 @@
         renderMailXssTesterTool: panelContentRuntime && panelContentRuntime.renderMailXssTesterTool,
         renderMailXssTesterResults: panelContentRuntime && panelContentRuntime.renderMailXssTesterResults,
         renderHttpsAuditorTool: panelContentRuntime && panelContentRuntime.renderHttpsAuditorTool,
+        renderHttpsAuditorLibrary: panelContentRuntime && panelContentRuntime.renderHttpsAuditorLibrary,
+        httpsAuditorResultToCsv: panelContentRuntime && panelContentRuntime.httpsAuditorResultToCsv,
         renderGoogleDorkLibrary: panelContentRuntime && panelContentRuntime.renderGoogleDorkLibrary,
         renderGoogleDorkTool: panelContentRuntime && panelContentRuntime.renderGoogleDorkTool,
         renderGoogleDorkTemplates: panelContentRuntime && panelContentRuntime.renderGoogleDorkTemplates,
@@ -2428,6 +2430,15 @@
       }
     }
 
+    // Exposed for LS's generic-content-slot mechanism (tool-content-
+    // runtime.js's "https-auditor-library" entry) - same idea as
+    // wireGoogleDorkLibrary above.
+    function wireHttpsAuditorLibrary(rootEl) {
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireHttpsAuditorLibrary) {
+        panelInteractionsRuntime.wireHttpsAuditorLibrary(rootEl);
+      }
+    }
+
     return {
       setTooltips: setTooltips,
       refreshActiveUI: refreshActiveUI,
@@ -2454,6 +2465,7 @@
       wireWifiLibrary: wireWifiLibrary,
       wireWifiAdapter: wireWifiAdapter,
       wireWifiCurrent: wireWifiCurrent,
+      wireHttpsAuditorLibrary: wireHttpsAuditorLibrary,
       refreshDetachedTool: refreshDetachedTool,
       applyEmailReconResult: function (email, result) {
         if (panelInteractionsRuntime && panelInteractionsRuntime.applyEmailReconResult) {

@@ -254,6 +254,13 @@
             return { id: String(m.id || ""), name: String(m.name || ""), version: String(m.version || ""), manifestJson: JSON.stringify(m) };
           });
         })(),
+        // HTTPS Auditor: {id/auditedAt/requestedUrl/finalUrl/grade/
+        // resultJson} wire shape both write paths expect - see
+        // https-auditor-runtime.js's getHistoryForSession().
+        httpsAuditHistory: (function () {
+          var api = window.NetReconNewUICore && window.NetReconNewUICore.httpsAuditor;
+          return api && api.getHistoryForSession ? api.getHistoryForSession() : [];
+        })(),
       };
     }
 
@@ -752,6 +759,15 @@
         // shell
         s.setItem(PENDING_LAYOUT_KEY, JSON.stringify(data.layout || {}));
       }
+      // HTTPS Auditor history: the wire shape (resultJson as a string) needs
+      // converting back to the runtime's in-memory shape (result as a parsed
+      // object) before it lands in localStorage - the already-instantiated
+      // runtime on this same page does that conversion itself and persists
+      // it, so the reload below picks it up already in the right shape.
+      (function () {
+        var httpsApi = window.NetReconNewUICore && window.NetReconNewUICore.httpsAuditor;
+        if (httpsApi && httpsApi.restoreHistoryFromSession) httpsApi.restoreHistoryFromSession(data.httpsAuditHistory || []);
+      })();
       // Attachment blobs are written to IndexedDB asynchronously - the
       // reload below must wait for that to finish, otherwise a reload
       // firing mid-write would leave attachment metadata pointing at blobs

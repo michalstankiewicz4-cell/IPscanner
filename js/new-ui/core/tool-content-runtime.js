@@ -152,6 +152,17 @@
     },
   };
 
+  toolContentRuntime["https-auditor-library"] = {
+    render: function () {
+      return '<div id="v1HttpsAuditorLibrary" class="v1-https-auditor-lib"></div>';
+    },
+    wire: function () {
+      if (window.NetReconNewUI && window.NetReconNewUI.wireHttpsAuditorLibrary) {
+        window.NetReconNewUI.wireHttpsAuditorLibrary();
+      }
+    },
+  };
+
   toolContentRuntime["agent-profiles-library"] = {
     render: function () {
       return '<div id="v1AgentProfileLibrary" class="v1-agentprofile-library"></div>';

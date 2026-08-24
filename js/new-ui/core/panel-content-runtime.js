@@ -1342,6 +1342,80 @@
       return "<div class=\"" + cls + "\"><span>" + escapeHtml(label) + "</span><strong>" + escapeHtml(value) + "</strong></div>";
     }
 
+    function httpsAuditorCsvEscape(value) {
+      var s = value === null || value === undefined ? "" : String(value);
+      return /["\n,]/.test(s) ? "\"" + s.replace(/"/g, "\"\"") + "\"" : s;
+    }
+
+    // Same fields/order as the on-screen rows above - used by both the
+    // "Export CSV" (file download) and "Copy" (clipboard) buttons, so the
+    // two always agree on content down to the row order.
+    function httpsAuditorResultToCsv(result) {
+      if (!result) return "";
+      var rows = [
+        ["Field", "Value"],
+        ["Requested URL", result.requestedUrl],
+        ["Final URL", result.finalUrl],
+        ["Final status", result.finalStatus],
+        ["HTTP upgrades to HTTPS", result.httpUpgradesToHttps ? "Yes" : "No"],
+        ["HSTS", result.hsts || "Missing"],
+        ["HSTS preloaded", result.hstsPreloaded ? "Yes" : "No"],
+        ["Content-Security-Policy", result.csp || "Missing"],
+        ["X-Frame-Options", result.xFrameOptions || "Missing"],
+        ["X-Content-Type-Options", result.xContentTypeOptions || "Missing"],
+        ["Referrer-Policy", result.referrerPolicy || "Missing"],
+        ["Server", result.server || "Missing"],
+        ["Mixed content count", result.mixedContentCount],
+        ["Mixed content examples", (result.mixedContentExamples || []).join(" | ")],
+      ];
+      if (result.cert) {
+        rows.push(["Certificate subject", result.cert.subject]);
+        rows.push(["Certificate issuer", result.cert.issuer]);
+        rows.push(["Certificate expires", result.cert.notAfter]);
+        rows.push(["Certificate days until expiry", result.cert.daysUntilExpiry]);
+        rows.push(["Certificate expired", result.cert.expired ? "Yes" : "No"]);
+      }
+      var grade = computeHttpsAuditorGrade(result);
+      rows.push(["Grade", grade.letter + " (" + grade.passed + "/" + grade.total + ")"]);
+      (result.redirectChain || []).forEach(function (hop, idx) {
+        rows.push(["Redirect " + (idx + 1), hop.status + " -> " + hop.url]);
+      });
+      return rows.map(function (row) {
+        return row.map(httpsAuditorCsvEscape).join(",");
+      }).join("\r\n");
+    }
+
+    // Simple pass/fail score across the checks that have a clear right
+    // answer (cert validity only counts if a cert was actually readable -
+    // a failed/unreachable cert probe shouldn't silently drag the grade
+    // down when it's really "we don't know", not "this failed"). Mirrors
+    // the letter-grade style tools like Mozilla Observatory/securityheaders.com
+    // use - one glance, not nine rows to read individually.
+    function computeHttpsAuditorGrade(result) {
+      var checks = [
+        !!result.hsts,
+        result.hstsPreloaded,
+        !!result.csp,
+        !!result.xFrameOptions,
+        !!result.xContentTypeOptions,
+        !!result.referrerPolicy,
+        result.httpUpgradesToHttps,
+        result.mixedContentCount === 0,
+      ];
+      if (result.cert) checks.push(!result.cert.expired);
+
+      var passed = checks.filter(Boolean).length;
+      var total = checks.length;
+      var pct = total ? passed / total : 0;
+      var letter = pct >= 0.9 ? "A" : pct >= 0.75 ? "B" : pct >= 0.6 ? "C" : pct >= 0.4 ? "D" : "F";
+      return { letter: letter, passed: passed, total: total };
+    }
+
+    function renderHttpsAuditorGrade(grade) {
+      var cls = "v1-https-auditor-grade v1-https-auditor-grade-" + grade.letter.toLowerCase();
+      return "<div class=\"" + cls + "\"><span class=\"v1-https-auditor-grade-letter\">" + escapeHtml(grade.letter) + "</span><span>" + grade.passed + "/" + grade.total + "</span></div>";
+    }
+
     function renderHttpsAuditorResult(result) {
       if (!result) return "";
       var redirectHtml = result.redirectChain && result.redirectChain.length
@@ -1359,8 +1433,27 @@
           ].join("")
         : httpsAuditorRow(tr("httpsAuditorMixedContentLabel"), "0", true);
 
+      var certHtml = result.cert
+        ? [
+            "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("httpsAuditorCertHeading")) + "</strong></div>",
+            httpsAuditorRow(tr("httpsAuditorCertSubjectLabel"), result.cert.subject, null),
+            httpsAuditorRow(tr("httpsAuditorCertIssuerLabel"), result.cert.issuer, null),
+            httpsAuditorRow(tr("httpsAuditorCertExpiresLabel"), result.cert.notAfter, !result.cert.expired),
+            httpsAuditorRow(
+              tr("httpsAuditorCertDaysLeftLabel"),
+              String(result.cert.daysUntilExpiry),
+              result.cert.expired ? false : result.cert.daysUntilExpiry > 14
+            ),
+          ].join("")
+        : "";
+
       return [
         "<div class=\"v1-https-auditor-result\">",
+        renderHttpsAuditorGrade(computeHttpsAuditorGrade(result)),
+        "<div class=\"v1-import-manager-actions\">",
+        "<button type=\"button\" data-https-auditor-export-csv-btn>" + escapeHtml(tr("httpsAuditorExportCsvBtn")) + "</button>",
+        "<button type=\"button\" data-https-auditor-copy-btn>" + escapeHtml(tr("httpsAuditorCopyBtn")) + "</button>",
+        "</div>",
         httpsAuditorRow(tr("httpsAuditorFinalUrlLabel"), result.finalUrl, null),
         httpsAuditorRow(tr("httpsAuditorStatusLabel"), String(result.finalStatus), result.finalStatus >= 200 && result.finalStatus < 400),
         httpsAuditorRow(tr("httpsAuditorHttpUpgradeLabel"), tr(result.httpUpgradesToHttps ? "httpsAuditorYes" : "httpsAuditorNo"), result.httpUpgradesToHttps),
@@ -1372,6 +1465,7 @@
         httpsAuditorRow(tr("httpsAuditorReferrerPolicyLabel"), result.referrerPolicy || tr("httpsAuditorMissing"), !!result.referrerPolicy),
         httpsAuditorRow(tr("httpsAuditorServerLabel"), result.server || tr("httpsAuditorMissing"), null),
         mixedHtml,
+        certHtml,
         "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("httpsAuditorRedirectChainLabel")) + "</strong></div>",
         redirectHtml,
         "</div>"
@@ -1383,8 +1477,17 @@
       var api = window.NetReconNewUICore && window.NetReconNewUICore.httpsAuditor;
       var loading = api ? api.getLoading() : false;
       var error = api ? api.getError() : "";
-      var result = api ? api.getResult() : null;
-      var lastUrl = api ? api.getLastUrl() : "";
+      // A selected LS history entry (including the one a just-finished run
+      // lands on automatically - see https-auditor-runtime.js's
+      // addHistoryEntry()) takes priority over the bare "last run" result,
+      // so clicking an older entry in the left panel actually replaces
+      // what's shown here rather than always showing the latest run.
+      var selectedEntry = api ? api.getSelectedEntry() : null;
+      var result = selectedEntry ? selectedEntry.result : (api ? api.getResult() : null);
+      // Same precedence as `result` above - clicking a history entry
+      // should refill the URL bar with what was actually audited, not
+      // leave it showing whatever was last typed/run.
+      var lastUrl = selectedEntry ? (selectedEntry.requestedUrl || selectedEntry.finalUrl) : (api ? api.getLastUrl() : "");
 
       var bodyHtml;
       if (!isDesktop) {
@@ -1410,6 +1513,48 @@
         ].join("") : "",
         bodyHtml,
         "</div>"
+      ].join("");
+    }
+
+    function httpsAuditorFormatTimestamp(iso) {
+      var d = new Date(iso);
+      return isNaN(d.getTime()) ? String(iso || "") : d.toLocaleString();
+    }
+
+    // LS: every past audit (timestamp + URL + grade badge), newest first -
+    // clicking a row calls api.selectHistoryEntry(), which the CS detail
+    // tab (renderHttpsAuditorTool above) and this list both re-render from
+    // on the shared newui:https-auditor-changed event. No add button here -
+    // rows are only created by running an audit from the CS tab.
+    function renderHttpsAuditorLibrary() {
+      var api = window.NetReconNewUICore && window.NetReconNewUICore.httpsAuditor;
+      var history = api ? api.getHistory() : [];
+      var selectedId = api ? api.getSelectedId() : "";
+
+      var rowsHtml = history.length ? history.map(function (entry) {
+        var isSelected = entry.id === selectedId;
+        var gradeCls = "v1-https-auditor-lib-grade v1-https-auditor-grade-" + (entry.grade || "f").toLowerCase();
+        return [
+          "<div class=\"v1-https-auditor-lib-row" + (isSelected ? " is-selected" : "") + "\" data-https-audit-id=\"" + escapeHtml(entry.id) + "\">",
+          "<span class=\"" + gradeCls + "\">" + escapeHtml(entry.grade || "?") + "</span>",
+          "<span class=\"v1-https-auditor-lib-info\">",
+          "<span class=\"v1-https-auditor-lib-url\">" + escapeHtml(entry.finalUrl || entry.requestedUrl) + "</span>",
+          "<span class=\"v1-https-auditor-lib-time\">" + escapeHtml(httpsAuditorFormatTimestamp(entry.auditedAt)) + "</span>",
+          "</span>",
+          "<button type=\"button\" class=\"v1-https-auditor-lib-remove\" data-https-audit-remove=\"" + escapeHtml(entry.id) + "\" aria-label=\"" + escapeHtml(tr("httpsAuditorDeleteEntryBtn")) + "\" title=\"" + escapeHtml(tr("httpsAuditorDeleteEntryBtn")) + "\">&times;</button>",
+          "</div>"
+        ].join("");
+      }).join("") : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("httpsAuditorHistoryEmptyNote")) + "</div>";
+
+      return [
+        "<ul class=\"v1-tool-list\">",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("httpsAuditorHistoryHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">",
+        "<div class=\"v1-https-auditor-lib-list\">" + rowsHtml + "</div>",
+        "</div>",
+        "</li>",
+        "</ul>"
       ].join("");
     }
 
@@ -3365,6 +3510,8 @@
       renderMailXssTesterTool: renderMailXssTesterTool,
       renderMailXssTesterResults: renderMailXssTesterResults,
       renderHttpsAuditorTool: renderHttpsAuditorTool,
+      renderHttpsAuditorLibrary: renderHttpsAuditorLibrary,
+      httpsAuditorResultToCsv: httpsAuditorResultToCsv,
       renderGoogleDorkLibrary: renderGoogleDorkLibrary,
       renderGoogleDorkTool: renderGoogleDorkTool,
       renderGoogleDorkTemplates: renderGoogleDorkTemplates,

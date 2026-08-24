@@ -76,6 +76,10 @@
     "CREATE TABLE IF NOT EXISTS session_extensions (",
     "  id TEXT PRIMARY KEY, name TEXT NOT NULL, version TEXT NOT NULL, manifest_json TEXT NOT NULL",
     ");",
+    "CREATE TABLE IF NOT EXISTS https_audit_history (",
+    "  id TEXT PRIMARY KEY, audited_at TEXT NOT NULL, requested_url TEXT NOT NULL,",
+    "  final_url TEXT NOT NULL, grade TEXT NOT NULL DEFAULT '', result_json TEXT NOT NULL",
+    ");",
   ].join("\n");
 
   // Agent profile attachment bytes cross as base64 in the JS shape (same as
@@ -306,6 +310,21 @@
 
         var appVersion = (window.NetReconNewUICore && window.NetReconNewUICore.APP_VERSION) || "";
         db.run("INSERT INTO session_meta (id, saved_at, version, app_version) VALUES (1, strftime('%Y-%m-%dT%H:%M:%fZ','now'), 1, ?)", [appVersion]);
+
+        var httpsAuditHistory = Array.isArray(data.httpsAuditHistory) ? data.httpsAuditHistory : [];
+        var insertAudit = db.prepare("INSERT INTO https_audit_history (id, audited_at, requested_url, final_url, grade, result_json) VALUES (?,?,?,?,?,?)");
+        httpsAuditHistory.forEach(function (entry) {
+          entry = entry || {};
+          insertAudit.run([
+            String(entry.id || ""),
+            String(entry.auditedAt || ""),
+            String(entry.requestedUrl || ""),
+            String(entry.finalUrl || ""),
+            String(entry.grade || ""),
+            String(entry.resultJson || ""),
+          ]);
+        });
+        insertAudit.free();
 
         return db.export();
       } finally {
@@ -573,6 +592,24 @@
           }
         } catch (_) {}
 
+        // Same "brand new table" fallback as session_extensions above.
+        var httpsAuditHistory = [];
+        try {
+          var httpsAuditRows = db.exec("SELECT id, audited_at, requested_url, final_url, grade, result_json FROM https_audit_history ORDER BY audited_at DESC");
+          if (httpsAuditRows.length) {
+            httpsAuditRows[0].values.forEach(function (row) {
+              httpsAuditHistory.push({
+                id: String(row[0] || ""),
+                auditedAt: String(row[1] || ""),
+                requestedUrl: String(row[2] || ""),
+                finalUrl: String(row[3] || ""),
+                grade: String(row[4] || ""),
+                resultJson: String(row[5] || ""),
+              });
+            });
+          }
+        } catch (_) {}
+
         return {
           scanResults: scanResults,
           scanProgress: scanProgress,
@@ -583,6 +620,7 @@
           layout: layout,
           meta: meta,
           extensions: extensions,
+          httpsAuditHistory: httpsAuditHistory,
         };
       } finally {
         db.close();
