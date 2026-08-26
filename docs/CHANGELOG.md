@@ -8,6 +8,18 @@ of prior context — for full history use `git log`.
 
 ## 2026-08-24
 
+- Mail XSS Tester: fixed the send-email form (gmail address/app password/
+  recipient/subject) losing whatever you'd typed every time the tunnel's
+  status changed - clicking "Start tunnel" rebuilt the whole left-panel
+  section (payload picker + tunnel + send form) via one `innerHTML`
+  replace on every state change, even though the send form has nothing to
+  do with the tunnel. Now the field values are snapshotted and restored
+  across that rebuild. Also added a note above the "Download cloudflared"
+  button pointing at the specific installer to grab
+  (`cloudflared-windows-amd64.msi`) from GitHub's release asset list,
+  since picking the right one out of two dozen platform/arch variants
+  wasn't obvious.
+
 - Added a new tool: **HTTPS Auditor** (Tools menu, desktop only). Checks a
   target URL for MITM-relevant weaknesses - HSTS header + browser
   preload-list status, security headers (CSP, X-Frame-Options,
