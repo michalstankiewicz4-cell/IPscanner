@@ -2434,8 +2434,27 @@
       var mount = document.getElementById("v1MailXssTesterLibrary");
       if (!mount || !renderMailXssTesterLibrary) return;
 
+      // The send-email form's fields (gmailAddress/appPassword/to/subject)
+      // are uncontrolled inputs - nothing in JS state backs their live
+      // value (see mail-xss-tester-runtime.js's "read directly from the
+      // form at submit time, never persisted" comment) - so a plain
+      // innerHTML rebuild loses whatever the user already typed. That
+      // rebuild fires on every newui:mail-xss-tester-changed event,
+      // including every tunnel status transition (idle -> starting ->
+      // running/error) that "Start tunnel" triggers, even though the
+      // tunnel and the send form are unrelated sections of the same
+      // rendered block. Snapshot + restore keeps the two decoupled
+      // without having to split them into separate render() calls.
       function render() {
+        var preserved = {};
+        mount.querySelectorAll("[data-mail-xss-field]").forEach(function (el) {
+          preserved[el.getAttribute("data-mail-xss-field")] = el.value;
+        });
         mount.innerHTML = renderMailXssTesterLibrary();
+        Object.keys(preserved).forEach(function (name) {
+          var el = mount.querySelector('[data-mail-xss-field="' + name + '"]');
+          if (el && preserved[name] !== undefined) el.value = preserved[name];
+        });
       }
 
       render();

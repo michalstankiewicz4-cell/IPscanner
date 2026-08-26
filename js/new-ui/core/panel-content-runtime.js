@@ -1145,6 +1145,7 @@
       } else if (status === "error") {
         tunnelStatusHtml = [
           "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssTunnelErrorPrefix")) + " " + escapeHtml(error) + "</p>",
+          "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssCloudflaredWhichFileNote")) + "</p>",
           "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-mail-xss-cloudflared-download>" + escapeHtml(tr("mailXssDownloadCloudflaredBtn")) + "</button>"
         ].join("");
       }
