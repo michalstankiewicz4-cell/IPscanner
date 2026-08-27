@@ -6,6 +6,20 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-08-27
+
+- Added a new tool: **Reverse IP Lookup** (Tools menu). Type an IP address
+  to get its reverse-DNS (PTR) hostname, who owns the IP block
+  (organization/network name/CIDR range, via RDAP - the modern successor
+  to WHOIS), and every other domain historically seen resolving to that
+  address (via HackerTarget's free passive-DNS API) - useful for finding
+  what else is hosted on a shared IP, since a PTR record alone is usually
+  just the hosting provider's own name. Works on both desktop and the web
+  build - all three lookups (Cloudflare DNS-over-HTTPS, RDAP, HackerTarget)
+  go straight to public APIs that already send CORS headers permitting
+  direct browser requests, so unlike HTTPS Auditor this needed no Rust
+  backend at all.
+
 ## 2026-08-24
 
 - Mail XSS Tester: fixed the send-email form (gmail address/app password/

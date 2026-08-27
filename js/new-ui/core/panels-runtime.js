@@ -1529,6 +1529,7 @@
         renderHttpsAuditorTool: panelContentRuntime && panelContentRuntime.renderHttpsAuditorTool,
         renderHttpsAuditorLibrary: panelContentRuntime && panelContentRuntime.renderHttpsAuditorLibrary,
         httpsAuditorResultToCsv: panelContentRuntime && panelContentRuntime.httpsAuditorResultToCsv,
+        renderReverseIpTool: panelContentRuntime && panelContentRuntime.renderReverseIpTool,
         renderGoogleDorkLibrary: panelContentRuntime && panelContentRuntime.renderGoogleDorkLibrary,
         renderGoogleDorkTool: panelContentRuntime && panelContentRuntime.renderGoogleDorkTool,
         renderGoogleDorkTemplates: panelContentRuntime && panelContentRuntime.renderGoogleDorkTemplates,
@@ -1913,6 +1914,13 @@
       if (tool === "https-auditor") { // shell
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireHttpsAuditorTool) {
           panelInteractionsRuntime.wireHttpsAuditorTool(scope);
+        }
+        return;
+      }
+
+      if (tool === "reverse-ip") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireReverseIpTool) {
+          panelInteractionsRuntime.wireReverseIpTool(scope);
         }
         return;
       }

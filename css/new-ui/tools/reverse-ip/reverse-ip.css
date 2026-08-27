@@ -1,0 +1,71 @@
+/* shell: Reverse IP Lookup - single CS view (no LS/RS), see
+   reverse-ip-runtime.js. Reuses generic classes already loaded
+   (.v1-pulpit-remote-hint, .v1-import-manager-note, .v1-import-manager-
+   actions, .v1-section-header) for everything except the result rows
+   below, same treatment HTTPS Auditor's own CSS file uses. */
+
+.v1-reverse-ip-shell {
+  padding: 12px;
+  overflow-y: auto;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* .v1-import-manager-actions (reused for the input+button row) only
+   styles its buttons - see https-auditor.css's identical note - so the
+   bare <input> fell back to the browser's default light control. */
+.v1-reverse-ip-shell input[data-reverse-ip-input] {
+  flex: 1 1 240px;
+  min-width: 180px;
+  border: 1px solid #3d424d;
+  background: #22242a;
+  color: var(--txt);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+}
+
+.v1-reverse-ip-shell input[data-reverse-ip-input]:focus {
+  border-color: var(--brand);
+  outline: none;
+  background: #262932;
+}
+
+.v1-reverse-ip-shell input[data-reverse-ip-input]::placeholder {
+  color: var(--txt-dim);
+}
+
+.v1-reverse-ip-ptr {
+  padding: 8px;
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--txt);
+  border-bottom: 1px solid #2a2b2f;
+}
+
+.v1-reverse-ip-ptr.is-empty {
+  color: var(--txt-dim);
+  font-family: var(--font-ui);
+  font-style: italic;
+}
+
+.v1-reverse-ip-domains-list {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #2a2b2f;
+}
+
+.v1-reverse-ip-domain-row {
+  padding: 5px 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--txt);
+  border-bottom: 1px solid #2a2b2f;
+  word-break: break-all;
+}
+
+.v1-reverse-ip-domain-row:last-child {
+  border-bottom: none;
+}

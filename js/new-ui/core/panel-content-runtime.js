@@ -21,6 +21,7 @@
     var wifiApi = core.wifi || null;
     var communityChatApi = core.communityChat || null;
     var agentProfilesApi = core.agentProfiles || null;
+    var reverseIpApi = core.reverseIp || null;
     var generalSettingsApi = core.generalSettings || null;
 
     function trOr(key, fallback) {
@@ -1512,6 +1513,92 @@
           "<button type=\"button\" data-https-auditor-run-btn" + (loading ? " disabled" : "") + ">" + escapeHtml(tr("httpsAuditorRunBtn")) + "</button>",
           "</div>"
         ].join("") : "",
+        bodyHtml,
+        "</div>"
+      ].join("");
+    }
+
+    // CS: single tab, no LS/RS - IP input + PTR result + reverse-lookup
+    // domain list, all client-side (see reverse-ip-runtime.js), so unlike
+    // HTTPS Auditor/Mail XSS Tester this has no isDesktop() gating at all.
+    function renderReverseIpTool() {
+      var api = reverseIpApi;
+      var lastIp = api ? api.getLastIp() : "";
+      var loading = api ? api.getLoading() : false;
+      var error = api ? api.getError() : "";
+      var ptrHostname = api ? api.getPtrHostname() : null;
+      var domains = api ? api.getDomains() : null;
+      var domainsNote = api ? api.getDomainsNote() : "";
+      var ownership = api ? api.getOwnership() : null;
+      var ownershipNote = api ? api.getOwnershipNote() : "";
+
+      var bodyHtml;
+      if (loading) {
+        bodyHtml = "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("reverseIpRunningNote")) + "</div>";
+      } else if (error === "invalid-ip") {
+        bodyHtml = "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("reverseIpInvalidIpNote")) + "</p>";
+      } else if (lastIp) {
+        var ptrHtml = [
+          "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("reverseIpPtrHeading")) + "</strong></div>",
+          "<div class=\"v1-reverse-ip-ptr" + (ptrHostname ? "" : " is-empty") + "\">" + escapeHtml(ptrHostname || tr("reverseIpPtrNoneNote")) + "</div>"
+        ].join("");
+
+        var domainsListHtml;
+        if (domains === null) {
+          domainsListHtml = "";
+        } else if (domains.length) {
+          domainsListHtml = "<div class=\"v1-reverse-ip-domains-list\">" + domains.map(function (d) {
+            return "<div class=\"v1-reverse-ip-domain-row\">" + escapeHtml(d) + "</div>";
+          }).join("") + "</div>";
+        } else if (domainsNote) {
+          domainsListHtml = "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("reverseIpDomainsNotePrefix")) + " " + escapeHtml(domainsNote) + "</p>";
+        } else {
+          domainsListHtml = "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("reverseIpDomainsNoneNote")) + "</div>";
+        }
+
+        var domainsHeading = domains && domains.length
+          ? tr("reverseIpDomainsHeading") + " (" + domains.length + ")"
+          : tr("reverseIpDomainsHeading");
+
+        var domainsHtml = [
+          "<div class=\"v1-section-header\"><strong>" + escapeHtml(domainsHeading) + "</strong></div>",
+          domainsListHtml
+        ].join("");
+
+        // Reuses httpsAuditorRow()'s label/value row (and its
+        // .v1-https-auditor-row CSS class, loaded globally regardless of
+        // which tool is active) rather than a second near-identical
+        // helper just for this tool.
+        var ownershipBodyHtml;
+        if (ownership) {
+          ownershipBodyHtml = [
+            ownership.orgName ? httpsAuditorRow(tr("reverseIpOwnershipOrgLabel"), ownership.orgName, null) : "",
+            ownership.name ? httpsAuditorRow(tr("reverseIpOwnershipNameLabel"), ownership.name, null) : "",
+            ownership.range ? httpsAuditorRow(tr("reverseIpOwnershipRangeLabel"), ownership.range, null) : "",
+            ownership.country ? httpsAuditorRow(tr("reverseIpOwnershipCountryLabel"), ownership.country, null) : ""
+          ].join("");
+        } else if (ownershipNote) {
+          ownershipBodyHtml = "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(ownershipNote) + "</p>";
+        } else {
+          ownershipBodyHtml = "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("reverseIpOwnershipNoneNote")) + "</div>";
+        }
+        var ownershipHtml = [
+          "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("reverseIpOwnershipHeading")) + "</strong></div>",
+          ownershipBodyHtml
+        ].join("");
+
+        bodyHtml = ptrHtml + ownershipHtml + domainsHtml;
+      } else {
+        bodyHtml = "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("reverseIpEmptyNote")) + "</div>";
+      }
+
+      return [
+        "<div class=\"v1-reverse-ip-shell\">",
+        "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("reverseIpIntroNote")) + "</p>",
+        "<div class=\"v1-import-manager-actions\">",
+        "<input type=\"text\" id=\"v1ReverseIpInput\" data-reverse-ip-input name=\"reverseIp\" autocomplete=\"off\" placeholder=\"" + escapeHtml(tr("reverseIpPlaceholder")) + "\"" + (lastIp ? " value=\"" + escapeHtml(lastIp) + "\"" : "") + " />",
+        "<button type=\"button\" data-reverse-ip-run-btn" + (loading ? " disabled" : "") + ">" + escapeHtml(tr("reverseIpRunBtn")) + "</button>",
+        "</div>",
         bodyHtml,
         "</div>"
       ].join("");
@@ -3474,6 +3561,7 @@
       "pulpit-preview": renderPulpitPreviewTool,
       "mail-xss-tester": renderMailXssTesterTool,
       "https-auditor": renderHttpsAuditorTool,
+      "reverse-ip": renderReverseIpTool,
       "google-dork": renderGoogleDorkTool,
       wifi: renderWifiTool,
       "community-chat": renderCommunityChatTool,
@@ -3511,6 +3599,7 @@
       renderMailXssTesterTool: renderMailXssTesterTool,
       renderMailXssTesterResults: renderMailXssTesterResults,
       renderHttpsAuditorTool: renderHttpsAuditorTool,
+      renderReverseIpTool: renderReverseIpTool,
       renderHttpsAuditorLibrary: renderHttpsAuditorLibrary,
       httpsAuditorResultToCsv: httpsAuditorResultToCsv,
       renderGoogleDorkLibrary: renderGoogleDorkLibrary,

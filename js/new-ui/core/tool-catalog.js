@@ -209,6 +209,22 @@
       labelKey: "tabLabel_https_auditor",
       ui: { showAsTab: true, order: 124 }
     },
+    // Reverse of the app's usual domain->IP direction: type an IP, get
+    // back (a) its PTR/reverse-DNS hostname via Cloudflare's DNS-over-
+    // HTTPS JSON API, and (b) every OTHER domain historically seen
+    // resolving to that IP via HackerTarget's free reverse-IP-lookup API
+    // - the PTR alone is usually just the hosting provider's own name,
+    // not the actual site(s) hosted there. Both APIs send
+    // Access-Control-Allow-Origin: * themselves, so - unlike HTTPS
+    // Auditor - this needs no Rust backend and works on www too.
+    "reverse-ip": {
+      titleKey: "toolTitle_reverse_ip",
+      textKey: "toolText_reverse_ip",
+      points: ["Reverse DNS (PTR) via Cloudflare DNS-over-HTTPS", "Every other domain seen resolving to that IP, via HackerTarget's free API", "Works on desktop and www - both APIs allow direct browser requests"],
+      icon: "🧭",
+      labelKey: "tabLabel_reverse_ip",
+      ui: { showAsTab: true, order: 125 }
+    },
     "mail-xss-tester-library": {
       icon: null,
       labelKey: "tabLabel_mail_xss_tester_library",

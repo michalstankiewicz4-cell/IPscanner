@@ -10,6 +10,12 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.8.5",
+      notes: [
+        "Added a new tool: Reverse IP Lookup (Tools menu). Type an IP address to get its reverse-DNS (PTR) hostname, who owns the IP block (organization/network name/CIDR range, via RDAP - the modern successor to WHOIS), and every other domain historically seen resolving to that address (via a free passive-DNS lookup) - useful for finding what else is hosted on a shared IP. Works on both desktop and the web build, since all three lookups go straight to public APIs that already allow direct browser requests, no backend needed."
+      ]
+    },
+    {
       version: "v2.8.4",
       notes: [
         "Added Community Catalog (Options -> Community Catalog, and a new left-panel section): browse addons published in ANY GitHub repo tagged \"osintnetauditor-addon\" (not just this project's own tools/ folder), with a rating/review system - GitHub login (real OAuth via Supabase, opens your system browser), 1-5 star ratings with optional comments, a reply from the addon's own author under each review, and (for the project owner) a moderation panel to mark an addon Verified, block an addon, or block an author's account entirely. Self-rating your own addon is blocked. Selecting an addon in the left-panel list opens a detail tab with its description (from the GitHub repo itself), README/LICENSE links, and the Install button - the same install path (permission confirmation, etc.) already used for locally-added tools.",

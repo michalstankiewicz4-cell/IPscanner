@@ -19,6 +19,7 @@
     var renderHttpsAuditorTool = typeof deps.renderHttpsAuditorTool === "function" ? deps.renderHttpsAuditorTool : null;
     var renderHttpsAuditorLibrary = typeof deps.renderHttpsAuditorLibrary === "function" ? deps.renderHttpsAuditorLibrary : null;
     var httpsAuditorResultToCsv = typeof deps.httpsAuditorResultToCsv === "function" ? deps.httpsAuditorResultToCsv : null;
+    var renderReverseIpTool = typeof deps.renderReverseIpTool === "function" ? deps.renderReverseIpTool : null;
     var renderGoogleDorkLibrary = typeof deps.renderGoogleDorkLibrary === "function" ? deps.renderGoogleDorkLibrary : null;
     var renderGoogleDorkTool = typeof deps.renderGoogleDorkTool === "function" ? deps.renderGoogleDorkTool : null;
     var renderGoogleDorkTemplates = typeof deps.renderGoogleDorkTemplates === "function" ? deps.renderGoogleDorkTemplates : null;
@@ -84,6 +85,8 @@
     var httpsAuditorToolTeardown = null;
     // Same reasoning as googleDorkToolTeardown above.
     var wifiToolTeardown = null;
+    // Same reasoning as httpsAuditorToolTeardown above.
+    var reverseIpToolTeardown = null;
     var communityChatToolTeardown = null;
     // LS/RS generic-content-slot mounts (v1GoogleDorkLibrary, v1WifiLibrary,
     // v1WifiCurrent, v1WifiAdapter) get a brand-new DOM node every time
@@ -2789,6 +2792,60 @@
       });
     }
 
+    // CS: IP input + PTR/reverse-lookup results, rebuilt wholesale on
+    // every newui:reverse-ip-changed event - same teardown-before-rewire +
+    // stable-shell-element pattern as wireHttpsAuditorTool above, minus
+    // any isDesktop gating (this tool has none - both lookups are plain
+    // client-side fetch() calls, see reverse-ip-runtime.js).
+    function wireReverseIpTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function" ? rootEl : document.getElementById("v1ToolDetail");
+      if (!root || !renderReverseIpTool) return;
+
+      var shellEl = root.querySelector(".v1-reverse-ip-shell");
+      if (!shellEl) return;
+
+      if (reverseIpToolTeardown) {
+        reverseIpToolTeardown();
+        reverseIpToolTeardown = null;
+      }
+
+      function onChanged() {
+        if (!document.body.contains(shellEl)) return;
+        shellEl.outerHTML = renderReverseIpTool();
+        shellEl = root.querySelector(".v1-reverse-ip-shell");
+      }
+      document.addEventListener("newui:reverse-ip-changed", onChanged);
+
+      function runFromInput() {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.reverseIp;
+        var input = root.querySelector("[data-reverse-ip-input]");
+        if (!api || !input || !input.value.trim()) return;
+        api.runLookup(input.value);
+      }
+
+      // Delegated on `root`, not `shellEl` - see wireHttpsAuditorTool's
+      // identical comment above (onChanged() replaces shellEl wholesale).
+      function onClick(event) {
+        if (event.target && event.target.closest && event.target.closest("[data-reverse-ip-run-btn]")) {
+          runFromInput();
+        }
+      }
+      function onKeydown(event) {
+        if (event.key === "Enter" && event.target && event.target.hasAttribute && event.target.hasAttribute("data-reverse-ip-input")) {
+          event.preventDefault();
+          runFromInput();
+        }
+      }
+      root.addEventListener("click", onClick);
+      root.addEventListener("keydown", onKeydown);
+
+      reverseIpToolTeardown = function () {
+        document.removeEventListener("newui:reverse-ip-changed", onChanged);
+        root.removeEventListener("click", onClick);
+        root.removeEventListener("keydown", onKeydown);
+      };
+    }
+
     // LS: the 9 builder-field inputs - rebuilt wholesale on every
     // newui:google-dork-changed event, same simple always-rebuild
     // approach as wireMailXssTesterLibrary (no persistent DOM node here
@@ -4622,6 +4679,7 @@
       wireMailXssTesterResults: wireMailXssTesterResults,
       wireMailXssTesterTool: wireMailXssTesterTool,
       wireHttpsAuditorTool: wireHttpsAuditorTool,
+      wireReverseIpTool: wireReverseIpTool,
       wireHttpsAuditorLibrary: wireHttpsAuditorLibrary,
       wireGoogleDorkLibrary: wireGoogleDorkLibrary,
       wireGoogleDorkTemplates: wireGoogleDorkTemplates,
