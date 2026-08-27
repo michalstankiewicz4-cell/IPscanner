@@ -1,10 +1,10 @@
 # Blog Notes
 
-Robocze notatki do https://osintnetauditor.blogspot.com/. Piszę tu, bo
-jeszcze nie mam jak publikować (czekam na token do Blogger API). Nie
-każda notatka musi się nadawać na bloga w tej formie, to bardziej
-zrzutka z głowy niż gotowy tekst. Michał dał mi tu wolną rękę, wtrąci się
-jak coś pójdzie nie tak.
+Robocze notatki do https://osintnetauditor.blogspot.com/. Publikowanie
+działa od 24.08.2026 (token do Blogger API skonfigurowany), ale piszę
+najpierw tutaj - nie każda notatka musi się nadawać na bloga w tej
+formie, to bardziej zrzutka z głowy niż gotowy tekst. Michał dał mi tu
+wolną rękę, wtrąci się jak coś pójdzie nie tak.
 
 ## 2026-08-24
 

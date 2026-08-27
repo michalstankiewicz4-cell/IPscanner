@@ -38,6 +38,16 @@ Jeden wiersz = jeden zeskanowany adres IP (wynik skanu).
   isp                    - nazwa dostawcy internetu (ISP) dla tego IP (albo "-")
   as_info                - numer/opis systemu autonomicznego (AS) dla tego IP
   device_identification  - rozpoznany typ urzadzenia, np. "Proxy / Hosting" (moze byc puste)
+  city                   - rozpoznane miasto powiazane z tym IP (geolokalizacja
+                           hosta, wlaczana w Config -> Host Enrichment), puste
+                           jesli nieznane albo enrichment byl wylaczony
+  country_code           - kod kraju z geolokalizacji hosta (np. "PL", "US"),
+                           osobna kolumna od "flag" wyzej (ten sam wynik
+                           lookupu, ale surowy kod ISO zamiast gotowej flagi
+                           do UI); puste jesli nieznane
+  lat                    - szerokosc geograficzna hosta (liczba zmiennoprzecinkowa),
+                           NULL jesli nieznana - uzywane m.in. przez widok Globe
+  lon                    - dlugosc geograficzna hosta, NULL jesli nieznana
   status                 - status hosta, np. "active"
   status_class           - klasa stylu statusu uzywana w interfejsie, np. "is-up"
 
@@ -162,9 +172,106 @@ TABELA: session_meta
 ----------------------
 Pojedynczy wiersz (zawsze id=1) z metadanymi samego zapisu sesji.
 
-  id         - zawsze 1
-  saved_at   - znacznik czasu ostatniego zapisu tego pliku sesji
-  version    - numer wersji formatu pliku sesji (obecnie zawsze 1)
+  id           - zawsze 1
+  saved_at     - znacznik czasu ostatniego zapisu tego pliku sesji
+  version      - numer wersji formatu pliku sesji (obecnie zawsze 1)
+  app_version  - wersja aplikacji (np. "2.8.5"), ktora zapisala ten plik;
+                 uzywana przy wczytywaniu do ostrzezenia, jesli plik
+                 pochodzi z innej wersji aplikacji niz ta aktualnie
+                 uruchomiona. Puste w plikach zapisanych przed dodaniem tej
+                 kolumny
+
+
+TABELA: agent_profiles
+------------------------
+Jeden wiersz = jedna zapisana tozsamosc OSINT (funkcja Agent Identity,
+Options -> Agent Identity) - dane uzywane do zakladania kont/rejestracji
+na potrzeby researchu, nie dane samego uzytkownika aplikacji.
+
+  id        - identyfikator profilu (tekstowy, generowany w JS)
+  name      - imie/nazwa wyswietlana profilu
+  nickname  - pseudonim/nick powiazany z tozsamoscia
+  email     - adres e-mail tozsamosci
+  login     - login/nazwa uzytkownika
+  password  - haslo tozsamosci - UWAGA: zapisywane w postaci JAWNEGO TEKSTU,
+              bez szyfrowania (ten sam poziom ochrony co reszta pliku sesji -
+              plik sesji nie jest w zaden sposob szyfrowany, wiec nie
+              przechowuj tu hasel do prawdziwych/waznych kont)
+  note      - dowolna notatka tekstowa do profilu
+
+
+TABELA: agent_profile_attachments
+------------------------------------
+Jeden wiersz = jeden zalacznik (zdjecie albo plik) powiazany z profilem.
+Relacja 1-do-wielu wzgledem agent_profiles (ON DELETE CASCADE).
+
+  id            - identyfikator zalacznika (tekstowy)
+  profile_id    - wskazuje na agent_profiles.id
+  filename      - oryginalna nazwa pliku
+  mime_type     - typ MIME pliku (np. "image/png")
+  role          - rola zalacznika, np. "photo" (zdjecie profilowe) albo
+                  "file" (zwykly zalacznik) - domyslnie "file"
+  data          - zawartosc pliku jako surowe bajty (BLOB)
+
+
+TABELA: agent_profile_services
+---------------------------------
+Jeden wiersz = jeden serwis/konto powiazane z profilem (np. "Facebook",
+"Instagram" - dowolna, wpisywana recznie nazwa). Relacja 1-do-wielu
+wzgledem agent_profiles (ON DELETE CASCADE).
+
+  id          - identyfikator serwisu (tekstowy)
+  profile_id  - wskazuje na agent_profiles.id
+  name        - nazwa serwisu wpisana przez uzytkownika
+
+
+TABELA: agent_profile_service_fields
+---------------------------------------
+Jeden wiersz = jedno dowolne pole danych w ramach serwisu (np. "PIN",
+"Data urodzenia uzyta przy rejestracji"). Relacja 1-do-wielu wzgledem
+agent_profile_services (ON DELETE CASCADE).
+
+  id          - identyfikator pola (tekstowy)
+  service_id  - wskazuje na agent_profile_services.id
+  label       - etykieta pola wpisana przez uzytkownika (dowolny tekst)
+  type        - typ pola do celow wyswietlania w UI, np. "text" albo
+                "password" (steruje np. przyciskiem pokaz/ukryj) - domyslnie "text"
+  value       - wartosc pola (jawny tekst, ta sama uwaga co przy
+                agent_profiles.password)
+
+
+TABELA: session_extensions
+-----------------------------
+Jeden wiersz = jeden zainstalowany dodatek (addon) w chwili zapisu sesji.
+Uzywana przy wczytywaniu do wykrycia brakujacych dodatkow (jesli plik
+sesji zapisano na innym komputerze/profilu) i zaproponowania ich
+ponownej instalacji jednym klikniem, bez potrzeby laczenia sie z
+internetem od razu (pelny manifest jest zapisany w pliku).
+
+  id             - identyfikator dodatku (ten sam co jego "id" w manifescie)
+  name           - nazwa dodatku w chwili zapisu
+  version        - wersja dodatku w chwili zapisu
+  manifest_json  - pelna tresc manifestu dodatku (JSON, jako tekst) - dzieki
+                   temu ponowna instalacja z pliku sesji nie wymaga
+                   pobierania niczego z GitHuba
+
+
+TABELA: https_audit_history
+------------------------------
+Jeden wiersz = jeden zapisany wynik narzedzia HTTPS Auditor (Tools ->
+HTTPS Auditor). Lista tych wpisow jest widoczna w lewym panelu jako
+"Audit history" po otwarciu narzedzia.
+
+  id             - identyfikator wpisu (tekstowy, generowany w JS)
+  audited_at     - znacznik czasu (ISO 8601) kiedy wykonano ten audyt
+  requested_url  - adres URL wpisany przez uzytkownika do sprawdzenia
+  final_url      - adres URL po ewentualnych przekierowaniach
+  grade          - ocena literowa A-F wyliczona dla tego wyniku (moze byc
+                   puste dla bardzo starych wpisow sprzed dodania oceny)
+  result_json    - pelny wynik audytu (naglowki, certyfikat, lancuch
+                   przekierowan, mixed content) jako JSON zapisany w
+                   postaci tekstu - UI odtwarza z tego caly widok wyniku
+                   bez ponownego wykonywania zadania sieciowego
 
 
 TABELE, KTORYCH APLIKACJA NIE TWORZY SAMA W BIEZACEJ WERSJI

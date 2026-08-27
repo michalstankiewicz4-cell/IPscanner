@@ -25,7 +25,7 @@ systemem dodatkow, poprawki/dokonczanie skanera schodza na dalszy plan.
 Niezmienna zasada mimo odwrocenia priorytetu: **nic z dzisiejszych funkcji
 skanera nie znika/nie chowa sie, dopoki nie ma czym tego zastapic.** Pelny
 podzial shell/tool w calym `js/new-ui/core/**` (11 inkrementow, patrz
-`SHELL_PROGRESS.md` i CONTRIBUTING §12) zostal **ukonczony** - same
+`PROGRESS.md` i CONTRIBUTING §12) zostal **ukonczony** - same
 niskoryzykowne, bezbehawioralne kroki, jeden plik na raz, z dzialajacym
 buildem i smoke-testem po kazdym. Ten sam rygor (male, weryfikowalne kroki)
 obowiazuje przy dalszej rozbudowie systemu dodatkow opisanej nizej.

@@ -193,7 +193,7 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
 - **WEB Scanner as the first real installable addon** — a small, honestly-scoped
   www-side scanner (reachability checks on common HTTP(S) ports for public
   hosts only; real TCP port scanning and local/private-network targets are a
-  hard browser limitation, not a missing feature — see `SHELL_PROGRESS.md`).
+  hard browser limitation, not a missing feature — see `PROGRESS.md`).
   Chosen deliberately as an addon rather than a built-in shell feature, but
   today's addon system can't support it yet — it only renders a static
   title/text/points card and only supports `"powershell"`-type commands. Needs,
@@ -303,7 +303,7 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
 A pass over every menu/tool, numbered for easy reference in discussion:
 
 1. File → "Import another session data": today a mock (see the File menu
-   entry in `SHELL_PROGRESS.md`). Should actually import/merge data from
+   entry in `PROGRESS.md`). Should actually import/merge data from
    another saved session file into the current one, instead of replacing it.
 2. File → Exit on www: does closing the browser tab/window, or the top-right
    `[x]`, after a save prompt (or after choosing not to save) actually work

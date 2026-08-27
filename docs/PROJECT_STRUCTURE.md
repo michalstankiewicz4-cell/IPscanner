@@ -22,10 +22,15 @@ IPscanner/
 │   ├── CHANGELOG.md
 │   ├── ROADMAP.md
 │   ├── FUTURE_PLUGIN_SHELL.md
-│   ├── SHELL_PROGRESS.md
+│   ├── PROGRESS.md
 │   ├── SESSION_DATABASE_SCHEMA.md
 │   ├── MEMORY_SESSION.md
 │   ├── TROUBLESHOOTING.md
+│   ├── RELEASING.md
+│   ├── COMMUNITY_ADDON_GUIDELINES.md
+│   ├── COMMUNITY_CHAT_SETUP.md
+│   ├── SHELLCRAFT_SCAN_MACRO.md
+│   ├── BLOG_NOTES.md
 │   └── STYLELIST.md
 │
 ├── css/new-ui/
@@ -138,12 +143,21 @@ Dokumentacja pomocnicza, nie ladowana przez aplikacje:
 - `FUTURE_PLUGIN_SHELL.md` - docelowa wizja: IP Scanner jako
   instalowalny/odinstalowywalny dodatek na neutralnej powloce; opisuje tez
   odrzucona sciezke sandboxingu przez WASM.
-- `SHELL_PROGRESS.md` - postep rozdzielania kodu na warstwe shell (generyczna)
+- `PROGRESS.md` - postep rozdzielania kodu na warstwe shell (generyczna)
   i tool (specyficzna dla IP Scannera).
 - `SESSION_DATABASE_SCHEMA.md` - schemat bazy SQLite uzywanej do zapisu/
   odczytu sesji (zakladki, layout, historia).
 - `MEMORY_SESSION.md` - notatki miedzy-sesyjne (kontekst dla dalszej pracy).
 - `TROUBLESHOOTING.md` - znane problemy i ich rozwiazania.
+- `RELEASING.md` - checklist procesu wydania nowej wersji (build, podpis,
+  publikacja, kazdy kanal dystrybucji).
+- `COMMUNITY_ADDON_GUIDELINES.md` - zasady dla repo zgloszonych do
+  wbudowanego Community Catalog.
+- `COMMUNITY_CHAT_SETUP.md` - konfiguracja backendu czatu spolecznosciowego
+  (Discord + proxy).
+- `SHELLCRAFT_SCAN_MACRO.md` - notatki projektowe jednego z makr ShellCraft.
+- `BLOG_NOTES.md` - roboczy dziennik zasilajacy bloga projektu, pisany
+  pierwszoosobowo przez asystenta AI.
 - `STYLELIST.md` - notatki z powolnego, przyrostowego eksperymentu z
   alternatywnym UI (zakladka "Style" w CS).
 - `PROJECT_STRUCTURE.md` - ten plik.

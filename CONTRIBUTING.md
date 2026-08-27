@@ -294,22 +294,28 @@ Przykladowy manifest (skrocona wersja `tools/ipscanner.json`, demo z LS + CS + R
 }
 ```
 
-Instalacja i katalog dodatkow (Options -> Import Tool):
+Instalacja i katalog dodatkow (Options -> Community Catalog):
 
-- Zakladka "Www addons" automatycznie wczytuje liste dodatkow z folderu
-  `tools/` w tym repo na GitHubie (`fetchCatalog()` w `runtimes/addon-catalog-runtime.js`) -
-  dla kazdego `<nazwa>.json` paruje plik ikony o tej samej nazwie
-  (`<nazwa>.png`/`.svg`/...), jesli istnieje. Wynik jest cache'owany w
-  ramach sesji aplikacji (nie odpytuje GitHuba przy kazdym otwarciu
-  zakladki), zeby nie wyczerpac limitu nieautoryzowanego API GitHuba
-  (60 zapytan/h na adres IP).
-- Klikniecie "Install" na wpisie katalogu instaluje bezposrednio (po
-  potwierdzeniu uprawnien, jesli manifest je deklaruje); przycisk zmienia
-  sie na "Uninstall", gdy dodatek jest juz zainstalowany.
-- "Load from file..." pozwala zainstalowac manifest z lokalnego pliku
-  `.json` (natywne okno wyboru pliku, Tauri `open_extension_manifest_dialog`).
-- Lista "Installed extensions" pokazuje wszystko, co jest zainstalowane
-  (niezaleznie od zrodla) z przyciskiem Uninstall przy kazdej pozycji.
+- Od 2026-08-23 jedynym miejscem przegladania/instalowania dodatkow jest
+  **Community Catalog** - stary panel "Import Tool" (zakladka "Www addons",
+  przycisk "Load from file...", osobna lista "Installed extensions") zostal
+  usuniety w calosci, nie istnieje juz w kodzie.
+- Community Catalog wyszukuje na GitHubie publiczne repo oznaczone topikiem
+  `osintnetauditor-addon` (nie tylko wlasny folder `tools/` tego repo) -
+  kazde musi miec `manifest.json` w korzeniu domyslnej galezi; opcjonalnie
+  `icon.png` i `main.js` (wlasny program dodatku). Zasady dla autorow
+  dodatkow: [docs/COMMUNITY_ADDON_GUIDELINES.md](docs/COMMUNITY_ADDON_GUIDELINES.md).
+  Wynik wyszukiwania jest cache'owany (5 minut, przetrwa restart apki), zeby
+  nie wyczerpac limitu nieautoryzowanego API GitHuba (60 zapytan/h na adres IP).
+- Wybranie dodatku z listy w lewym panelu otwiera zakladke ze szczegolami
+  (opis z repo, linki README/LICENSE/DOCUMENTATION, przycisk Install/Uninstall
+  z tym samym potwierdzeniem uprawnien co dawniej) oraz systemem ocen -
+  logowanie GitHub (prawdziwe OAuth przez Supabase, otwiera przegladarke
+  systemowa na desktopie), oceny 1-5 gwiazdek z opcjonalnym komentarzem,
+  jedna odpowiedz autora dodatku pod kazda recenzja, i panel moderacji
+  (Verified / zablokuj dodatek / zablokuj autora) dla wlasciciela projektu.
+  Kod: `runtimes/addon-catalog-runtime.js`,
+  `runtimes/community-catalog-detail-runtime.js`, `runtimes/community-data-runtime.js`.
 
 ## 5. Dodawanie nowego jezyka
 

@@ -103,9 +103,11 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for what's done, in progress, and planned
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Non-obvious problems hit in this repo and their causes (written in Polish). |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Project direction and rules for contributing code (written in Polish). |
 | [docs/FUTURE_PLUGIN_SHELL.md](docs/FUTURE_PLUGIN_SHELL.md) | Design notes for the addon/plugin shell architecture (written in Polish). |
-| [docs/SHELL_PROGRESS.md](docs/SHELL_PROGRESS.md) | Map of the shell layout (menu/panels/status bar) and where each tool opens (written in Polish). |
+| [docs/PROGRESS.md](docs/PROGRESS.md) | Map of the shell layout (menu/panels/status bar) and where each tool opens (written in Polish). |
 | [docs/MEMORY_SESSION.md](docs/MEMORY_SESSION.md) | Every localStorage key the app uses, split into app settings vs. session data (written in Polish). |
 | [docs/SESSION_DATABASE_SCHEMA.md](docs/SESSION_DATABASE_SCHEMA.md) | Structure of the session `.sqlite3` file, table by table (written in Polish). |
+| [docs/RELEASING.md](docs/RELEASING.md) | Release process checklist: build, sign, publish, and every distribution channel (written in Polish). |
+| [docs/COMMUNITY_ADDON_GUIDELINES.md](docs/COMMUNITY_ADDON_GUIDELINES.md) | Rules for having a GitHub repo listed in the in-app Community Catalog. |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community code of conduct. |
 | [SECURITY.md](SECURITY.md) | How to report a security vulnerability. |
 | [LICENSE.md](LICENSE.md) | MIT License. |

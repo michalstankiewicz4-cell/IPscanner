@@ -3,7 +3,7 @@
     // --- shell keys ---
     // Options: Language + Import Tools stay in the base shell per
     // FUTURE_PLUGIN_SHELL.md; Help menu items (versions/about/license) also
-    // stay in the base shell per SHELL_PROGRESS.md. Judgment call, not settled
+    // stay in the base shell per PROGRESS.md. Judgment call, not settled
     // fact — flag if a future split disagrees.
     //
     // icon/labelKey/ui are read by tab-registry.js (LS/CS/RS tab-strip
@@ -79,7 +79,7 @@
       ui: { showAsTab: true, order: 110 }
     },
     // ShellCraft stays in the base shell (confirmed by the user, not a
-    // judgment call like the ones above) - see SHELL_PROGRESS.md.
+    // judgment call like the ones above) - see PROGRESS.md.
     shellcraft: {
       titleKey: "toolTitle_shellcraft",
       textKey: "toolText_shellcraft",
