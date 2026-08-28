@@ -4,9 +4,13 @@
 
 - [1. Shell](#shell)
   - [1.1. Top bar menu](#11-top-bar-menu)
-    - [1.1.1. File](#111-file)
-    - [1.1.2. Options](#112-options)
-    - [1.1.3. Tools](#113-tools)
+    - [1.1.1. Logo](#111-logo)
+    - [1.1.2. File](#112-file)
+    - [1.1.3. Options](#113-options)
+    - [1.1.4. Tools](#114-tools)
+    - [1.1.5. Last saved session name](#115-last-saved-session-name)
+    - [1.1.6. Button panel](#116-button-panel)
+    - [1.1.7. Window button manager](#117-window-button-manager)
   - [1.2. Left shortcut menu](#12-left-shortcut-menu)
     - [1.2.1. Community](#121-community)
     - [1.2.2. Result data list](#122-result-data-list)
@@ -69,18 +73,34 @@
 
 *(to be written)*
 
-#### 1.1.1. File
+#### 1.1.1. Logo
+
+*(to be written)*
+
+#### 1.1.2. File
 <img width="224" height="200" alt="image" src="https://github.com/user-attachments/assets/7b29af44-cddd-4188-a683-63dabb86c43f" />
 
 *(to be written)*
 
-#### 1.1.2. Options
+#### 1.1.3. Options
 <img width="221" height="158" alt="image" src="https://github.com/user-attachments/assets/bf9fa1ef-d793-4c07-95e7-8d4e0caaee8b" />
 
 *(to be written)*
 
-#### 1.1.3. Tools
+#### 1.1.4. Tools
 <img width="224" height="298" alt="image" src="https://github.com/user-attachments/assets/ca3083fb-5701-4711-9196-4f9e35779edf" />
+
+*(to be written)*
+
+#### 1.1.5. Last saved session name
+
+*(to be written)*
+
+#### 1.1.6. Button panel
+
+*(to be written)*
+
+#### 1.1.7. Window button manager
 
 *(to be written)*
 
