@@ -65,6 +65,7 @@
 *(to be written)*
 
 ### 1.1. Top bar menu
+<img width="958" height="20" alt="image" src="https://github.com/user-attachments/assets/6b679898-9a90-4f26-80b4-b6e9dea44d21" />
 
 *(to be written)*
 
