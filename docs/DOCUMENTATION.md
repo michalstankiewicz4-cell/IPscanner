@@ -74,6 +74,7 @@
 *(to be written)*
 
 #### 1.1.1. Logo
+<img width="131" height="36" alt="image" src="https://github.com/user-attachments/assets/b9df151f-40e4-4579-b777-ff099fe74085" />
 
 *(to be written)*
 
@@ -93,14 +94,17 @@
 *(to be written)*
 
 #### 1.1.5. Last saved session name
+<img width="155" height="31" alt="image" src="https://github.com/user-attachments/assets/c22cecd9-eef7-4784-b349-d9cd095a59ce" />
 
 *(to be written)*
 
 #### 1.1.6. Button panel
+<img width="114" height="29" alt="image" src="https://github.com/user-attachments/assets/5dbf5bb9-28d0-4803-be16-bd44d52cd47d" />
 
 *(to be written)*
 
 #### 1.1.7. Window button manager
+<img width="136" height="26" alt="image" src="https://github.com/user-attachments/assets/ec6cf3a5-6ac2-4b06-8d38-8dd3eb58c93f" />
 
 *(to be written)*
 
