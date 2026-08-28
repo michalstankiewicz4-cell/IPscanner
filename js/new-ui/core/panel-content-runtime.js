@@ -1271,7 +1271,7 @@
         "</div>",
         "<div class=\"v1-pulpit-inspector-field\">",
         "<label for=\"v1MailXssSubject\">" + escapeHtml(tr("mailXssSubjectLabel")) + "</label>",
-        "<input id=\"v1MailXssSubject\" name=\"mailXssSubject\" type=\"text\" autocomplete=\"off\" data-mail-xss-field=\"subject\" value=\"" + escapeHtml(tr("mailXssDefaultSubject")) + "\" />",
+        "<input id=\"v1MailXssSubject\" name=\"mailXssSubject\" type=\"text\" autocomplete=\"off\" data-mail-xss-field=\"subject\" value=\"" + escapeHtml(tr("mailXssDefaultSubject")) + "\" disabled />",
         "</div>",
         "<button type=\"submit\" class=\"v1-pulpit-remote-run-submit\" data-mail-xss-send-submit" + (sendDisabled ? " disabled" : "") + ">" + escapeHtml(tr("mailXssSendBtn")) + "</button>",
         "</form>",

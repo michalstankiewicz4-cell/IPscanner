@@ -293,6 +293,13 @@
   width: 100%;
 }
 
+.v1-pulpit-inspector-field textarea:disabled,
+.v1-pulpit-inspector-field input:disabled {
+  color: var(--txt-dim);
+  background: #1a1b1e;
+  cursor: not-allowed;
+}
+
 /* Right-click "Uruchom" menu - a single static element (rendered as a
    sibling of the canvas, see renderPulpitCanvasTool) toggled via [hidden],
    position:fixed + JS viewport coords like the columns/filter menus
