@@ -4,10 +4,20 @@
 
 - [1. Shell](#shell)
   - [1.1. Top bar menu](#11-top-bar-menu)
+    - [1.1.1. File](#111-file)
+    - [1.1.2. Options](#112-options)
+    - [1.1.3. Tools](#113-tools)
   - [1.2. Left shortcut menu](#12-left-shortcut-menu)
+    - [1.2.1. Community](#121-community)
+    - [1.2.2. Result data list](#122-result-data-list)
   - [1.3. Down information bar](#13-down-information-bar)
-  - [1.4. left section](#14-left-section)
-  - [1.5. right section](#15-right-section)
+    - [1.3.1. Loader](#131-loader)
+    - [1.3.2. Processes](#132-processes)
+    - [1.3.3. Loading progress bar](#133-loading-progress-bar)
+    - [1.3.4. Domain verification status](#134-domain-verification-status)
+    - [1.3.5. Active tab](#135-active-tab)
+  - [1.4. Left section](#14-left-section)
+  - [1.5. Right section](#15-right-section)
   - [1.6. Central section](#16-central-section)
   - [1.7. Down section](#17-down-section)
     - [1.7.1. Terminal](#171-terminal)
@@ -29,11 +39,51 @@
 
 *(to be written)*
 
+#### 1.1.1. File
+
+*(to be written)*
+
+#### 1.1.2. Options
+
+*(to be written)*
+
+#### 1.1.3. Tools
+
+*(to be written)*
+
 ### 1.2. Left shortcut menu
 
 *(to be written)*
 
+#### 1.2.1. Community
+
+*(to be written)*
+
+#### 1.2.2. Result data list
+
+*(to be written)*
+
 ### 1.3. Down information bar
+
+*(to be written)*
+
+#### 1.3.1. Loader
+
+*(to be written)*
+
+#### 1.3.2. Processes
+
+*(to be written)*
+
+#### 1.3.3. Loading progress bar
+
+*(to be written)*
+
+#### 1.3.4. Domain verification status
+
+*(to be written)*
+
+#### 1.3.5. Active tab
 
 *(to be written)*
 
