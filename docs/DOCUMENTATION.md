@@ -74,6 +74,7 @@ menus, the current session's name, a small utility button panel, and the
 window controls.
 
 #### 1.1.1. Logo
+<img width="131" height="36" alt="image" src="https://github.com/user-attachments/assets/b9df151f-40e4-4579-b777-ff099fe74085" />
 
 The app icon in the top-left corner. Purely decorative - not clickable.
 
@@ -95,12 +96,14 @@ Agent Identity - see [3. Options](#options).
 Opens any of the app's tools - see [4. Tools](#tools) for the full list.
 
 #### 1.1.5. Last saved session name
+<img width="155" height="31" alt="image" src="https://github.com/user-attachments/assets/c22cecd9-eef7-4784-b349-d9cd095a59ce" />
 
 Shows the current session's filename once one is saved or loaded (hover
 for the full path), or "No active session" otherwise. Read-only, not
 clickable.
 
 #### 1.1.6. Button panel
+<img width="114" height="29" alt="image" src="https://github.com/user-attachments/assets/5dbf5bb9-28d0-4803-be16-bd44d52cd47d" />
 
 Three small controls: **⟲** resets local app settings/cache and reloads
 (not your saved session files); **👁** blurs IP/hostname text everywhere,
@@ -108,6 +111,7 @@ handy for screen-sharing; the auto-arrange checkbox plus **▦** button
 tidies up any detached floating tool windows into a grid.
 
 #### 1.1.7. Window button manager
+<img width="136" height="26" alt="image" src="https://github.com/user-attachments/assets/ec6cf3a5-6ac2-4b06-8d38-8dd3eb58c93f" />
 
 Minimize, maximize, fullscreen, and close - desktop-only. Close snapshots
 your currently open tabs first if "Remember open tabs" is enabled in
@@ -228,6 +232,7 @@ A read-only log of what the app itself is doing in the background - rate
 limit waits and similar.
 
 ## Sessions
+<img width="443" height="253" alt="image" src="https://github.com/user-attachments/assets/38f2777e-c956-4ccb-9b71-a1f2b36e2854" />
 
 A session is a single SQLite file (`OSINT-session.sqlite3` by default)
 holding everything: scan results, the IP library, presets, agent
@@ -242,25 +247,30 @@ profiles, layout, and more.
 - **Import** is a placeholder - not implemented yet.
 
 ## Options
+<img width="247" height="197" alt="image" src="https://github.com/user-attachments/assets/f1672ea6-11a9-4f57-9d59-1370d544feae" />
 
 Reachable from the top menu's Options entry.
 
 ### 3.1. Country IP Library
+<img width="689" height="280" alt="image" src="https://github.com/user-attachments/assets/2d552bed-81c4-4620-82ef-ffac654eb577" />
 
 A per-country table of IP ranges, refreshed on demand (needs PowerShell,
 desktop only).
 
 ### 3.2. Port presets
+<img width="442" height="311" alt="image" src="https://github.com/user-attachments/assets/c3c24dbb-362c-4daa-862f-99beee9c36fd" />
 
 Editable list of named port groups - an emoji, a name, and a
 comma-separated port list - used throughout the scanner.
 
 ### 3.3. Language
+<img width="344" height="440" alt="image" src="https://github.com/user-attachments/assets/daa24404-d226-484e-969b-90a50ea610ea" />
 
 Switch the UI language, or install one from the community language
 catalog (fetched from GitHub) or a local file.
 
 ### 3.4. General
+<img width="450" height="440" alt="image" src="https://github.com/user-attachments/assets/ccb7abe0-4c9c-4ead-baf2-67e9afc67945" />
 
 Per-setting checkboxes for what should be remembered across restarts,
 plus:
@@ -279,6 +289,7 @@ plus:
 Not implemented yet.
 
 ### 3.6. Community Catalog
+<img width="463" height="263" alt="image" src="https://github.com/user-attachments/assets/a93e77db-f5f6-4e2f-b184-a1f51cbdb4eb" />
 
 Browse addons published by anyone as a public GitHub repo tagged
 `osintnetauditor-addon` - see [5. Creating addons](#creating-addons).
@@ -286,12 +297,14 @@ Browsing and installing needs no login; rating or commenting on an addon
 does (real GitHub sign-in).
 
 ### 3.7. Agent identity
+<img width="687" height="423" alt="image" src="https://github.com/user-attachments/assets/ca978a2b-d8c9-4456-ba5f-405b255605e2" />
 
 Save reusable OSINT identities - name, email, login, password, notes,
 photo/file attachments, and freeform per-service fields - as part of the
 session.
 
 ## Tools
+<img width="251" height="353" alt="image" src="https://github.com/user-attachments/assets/82c4ffbb-d2c3-4255-8153-e4ba6c692e52" />
 
 Reachable from the top menu's Tools entry.
 
