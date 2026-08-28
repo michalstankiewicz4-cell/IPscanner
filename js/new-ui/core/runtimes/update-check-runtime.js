@@ -144,15 +144,34 @@
       });
     }
 
+    // Passive status-bar reminder (the ⓘ next to "active: X",
+    // statusbar-loader-runtime.js owns its actual rendering/CSS state) -
+    // the modal below only ever shows ONCE per version (alreadyNotifiedFor
+    // gates it), so clicking "Later" means it never comes back on its own.
+    // The marker is intentionally NOT gated by that same check - it goes
+    // amber/blinking on every launch for as long as a genuinely newer
+    // version exists, regardless of whether the one-time modal already
+    // ran for that tag, and green again once a check confirms there's
+    // nothing newer.
+    function markerApi() {
+      return window.NetReconNewUICore && window.NetReconNewUICore.updateAvailableStatusBar;
+    }
+
     function checkForUpdateDesktop() {
       var updater = getUpdaterApi();
       if (!updater) return Promise.resolve(false);
 
       return updater.check()
         .then(function (update) {
-          if (!update) return false;
+          if (!update) {
+            var api1 = markerApi();
+            if (api1) api1.setCurrent(window.NetReconNewUICore.APP_VERSION);
+            return false;
+          }
 
           var tag = "v" + String(update.version || "").replace(/^v/i, "");
+          var api2 = markerApi();
+          if (api2) api2.setOutdated(tag);
           if (alreadyNotifiedFor(tag)) return false;
           markNotified(tag);
 
@@ -164,7 +183,8 @@
         })
         .catch(function () {
           // No latest.json yet, network error, bad signature, etc. - stay
-          // silent, matching the web path's catch-all below.
+          // silent, matching the web path's catch-all below. Leaves the
+          // marker in its default green state, same as "not checked yet".
           return false;
         });
     }
@@ -174,7 +194,13 @@
 
       return fetchLatestTag()
         .then(function (remoteTag) {
-          if (!remoteTag || !isNewer(remoteTag, localVersion)) return false;
+          if (!remoteTag || !isNewer(remoteTag, localVersion)) {
+            var api1 = markerApi();
+            if (api1) api1.setCurrent(localVersion);
+            return false;
+          }
+          var api2 = markerApi();
+          if (api2) api2.setOutdated(remoteTag);
           if (alreadyNotifiedFor(remoteTag)) return false;
 
           markNotified(remoteTag);

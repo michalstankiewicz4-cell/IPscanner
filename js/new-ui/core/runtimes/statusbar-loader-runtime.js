@@ -152,6 +152,27 @@
       }
     }
 
+    // Update-available marker (the ⓘ next to "active: X") - always visible,
+    // unlike the domain-auth one above. Green/steady by default (matches
+    // the markup's own .is-current class, so it reads right even before
+    // this runs or if update checking is off); update-check-runtime.js
+    // calls setOutdated() the moment its async check actually finds a
+    // newer release, and setCurrent() again to confirm/refresh the
+    // tooltip once a check completes without finding one.
+    function setUpdateMarkerCurrent(versionLabel) {
+      var marker = document.getElementById("v1StatusUpdateAvailable");
+      if (!marker) return;
+      marker.className = "v1-status-update-marker is-current";
+      marker.title = tr("statusUpToDateTooltip").replace("{version}", versionLabel || "");
+    }
+
+    function setUpdateMarkerOutdated(tag) {
+      var marker = document.getElementById("v1StatusUpdateAvailable");
+      if (!marker) return;
+      marker.className = "v1-status-update-marker is-outdated";
+      marker.title = tr("statusUpdateAvailableTooltip").replace("{tag}", tag || "");
+    }
+
     function init() {
       window.NetReconNewUICore = window.NetReconNewUICore || {};
       window.NetReconNewUICore.domainAuthStatusBar = { update: updateDomainAuthMarker };
@@ -159,6 +180,9 @@
       document.addEventListener("newui:domain-verification-changed", function () {
         updateDomainAuthMarker("");
       });
+
+      window.NetReconNewUICore.updateAvailableStatusBar = { setCurrent: setUpdateMarkerCurrent, setOutdated: setUpdateMarkerOutdated };
+      setUpdateMarkerCurrent(window.NetReconNewUICore.APP_VERSION);
 
       var loader = document.getElementById("v1StatusLoader");
       if (!loader) return;
