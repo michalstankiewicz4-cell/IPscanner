@@ -4038,6 +4038,50 @@ const BROWSER_PROXY_SHIM_JS: &str = r#"<script>(function(){
   }).observe(document.documentElement || document, { childList: true, subtree: true });
 })();</script>"#;
 
+// Strips any <meta http-equiv="Content-Security-Policy" ...> tag from the
+// target page's own HTML. Not forwarding the target's HTTP response
+// headers (see the comment further down) isn't enough on its own -
+// GitHub Pages (and other static hosts) can't set custom response
+// headers at all, so a page that wants a CSP has to ship it as a <meta>
+// tag INSIDE the HTML instead (this app's own ipscanner.pl build does
+// exactly that). Left in place, that meta CSP's `script-src 'self' ...`
+// would still apply once served - except "self" now means our local
+// proxy origin, not the page's real one, while every script tag on the
+// page (resolved through the injected <base>) still points at the REAL
+// domain - a mismatch CSP has no way to bridge, so EVERY one of the
+// page's own scripts gets silently blocked and it never finishes
+// booting. Scanning/rebuilding case-insensitively on a lowercased copy
+// while slicing the ORIGINAL string keeps every kept byte exactly as
+// received.
+fn strip_meta_csp(html: &str) -> String {
+    let lower = html.to_lowercase();
+    let mut result = String::with_capacity(html.len());
+    let mut pos = 0usize;
+    loop {
+        match lower[pos..].find("<meta") {
+            None => {
+                result.push_str(&html[pos..]);
+                break;
+            }
+            Some(rel_start) => {
+                let tag_start = pos + rel_start;
+                let tag_end = match html[tag_start..].find('>') {
+                    Some(i) => tag_start + i + 1,
+                    None => html.len(),
+                };
+                let tag_text = &lower[tag_start..tag_end];
+                if tag_text.contains("http-equiv") && tag_text.contains("content-security-policy") {
+                    result.push_str(&html[pos..tag_start]); // keep everything up to the tag, drop the tag itself
+                } else {
+                    result.push_str(&html[pos..tag_end]);
+                }
+                pos = tag_end;
+            }
+        }
+    }
+    result
+}
+
 async fn handle_browser_proxy_connection(
     mut stream: TcpStream,
     app: AppHandle,
@@ -4137,7 +4181,7 @@ async fn handle_browser_proxy_connection(
     // a different origin; a fetch failure just becomes an in-page message
     // instead of a broken frame.
     let body = match client.get(&target_url).send().await {
-        Ok(resp) => resp.text().await.unwrap_or_default(),
+        Ok(resp) => strip_meta_csp(&resp.text().await.unwrap_or_default()),
         Err(e) => format!("<html><body><p>Could not load the page: {}</p></body></html>", e),
     };
 
