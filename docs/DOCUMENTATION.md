@@ -48,6 +48,9 @@
   - [4.8. Globe](#48-globe)
   - [4.9. Browser](#49-browser)
   - [4.10. Mail XSS Tester](#410-mail-xss-tester)
+    - [4.10.1. Payloads](#4101-payloads)
+    - [4.10.2. Tunnel](#4102-tunnel)
+    - [4.10.3. Test mail](#4103-test-mail)
   - [4.11. HTTPS Auditor](#411-https-auditor)
   - [4.12. Reverse IP Lookup](#412-reverse-ip-lookup)
   - [4.13. Google Dork Finder](#413-google-dork-finder)
@@ -237,27 +240,92 @@
 
 ### 4.10. Mail XSS Tester
 
-Mail XSS Tester crafts a test HTML email containing one or more tracking
-payloads, each tagged with a random token unique to that session so hits
-can't be confused with an unrelated run.
+Mail XSS Tester checks whether a webmail client sanitizes HTML email
+properly, by sending yourself a test email containing several different
+HTML injection techniques and watching which ones actually get through
+and execute. Each payload is tagged with a random token unique to that
+session, so a hit can never be confused with an unrelated run, and every
+payload's only effect is a single network request to a local beacon - no
+exfiltration, no persistence, nothing to clean up afterwards either way.
 
-Clicking "Start tunnel" does two things: it starts a small local HTTP
-server (the "beacon") that just logs whatever hits it, and exposes that
-server to the internet through a temporary Cloudflare Quick Tunnel - a
-real public `https://*.trycloudflare.com` URL, no account needed. The
-generated email's payloads point at that public URL.
+The overall flow: start the tunnel (4.10.2), fill in your own mailbox's
+credentials and send yourself the test email (4.10.3), then open that
+email in the webmail client you actually want to test - whichever
+payloads fired show up live in the app's results list, tagged with
+method, timestamp, User-Agent, and the requesting IP.
 
-Send the email to a webmail account you own and open it there. If the
-mail client fetches a remote image, runs a script, or otherwise reaches
-out to one of the embedded payload URLs without you clicking anything,
-the beacon receives a hit (method, timestamp, User-Agent, requester IP)
-and it shows up live in the app's results list - a practical way to see
-whether a given webmail client executes or auto-loads content from an
-email body that it probably shouldn't.
+#### 4.10.1. Payloads
 
-Stopping the tunnel (or closing the app) tears down both the tunnel and
-the local beacon server, so nothing is left listening once the test is
-done.
+Six variants are included, each demonstrating a different HTML/CSS/SVG
+injection vector - a sanitizer that strips the right tag or attribute
+simply prevents that one payload from ever calling out, which is itself
+the useful signal:
+
+- **img-onerror** - `<img src="invalid" onerror="...">`. A broken image
+  reference whose `onerror` handler fires the moment the browser gives up
+  loading it.
+- **svg-onload** - `<svg onload="...">`. Fires via the `onload` event
+  attribute directly on an inline SVG element.
+- **svg-script** - `<svg><script>...</script></svg>`. A plain
+  `<script>` tag, nested inside an SVG rather than the HTML body -
+  many sanitizers strip `<script>` at the top level but miss it inside
+  other elements.
+- **css-import** - `<style>@import "...";</style>`. A CSS `@import`
+  pointing at the beacon URL - CSS rules alone can trigger a network
+  request, no JavaScript execution needed at all.
+- **iframe-src** - `<iframe src="...">`. The simplest variant - just an
+  embedded frame pointing straight at the beacon, loaded the moment the
+  email renders.
+- **foreignobject** - `<svg><foreignObject><body onload="...">`. Smuggles
+  a regular HTML `<body>` with an `onload` handler inside an SVG
+  `foreignObject` - a known technique for sneaking past sanitizers that
+  only look at top-level HTML tags.
+
+#### 4.10.2. Tunnel
+
+Detection needs a beacon endpoint that's reachable from the public
+internet - most webmail providers (Gmail included) fetch/proxy embedded
+content through their own infrastructure rather than the recipient's
+machine, so a plain `localhost` listener would never see a hit. The
+tunnel bridges that gap.
+
+Requires [cloudflared](https://github.com/cloudflare/cloudflared/releases/latest)
+(Cloudflare's free, account-free tunnel client) to be installed first -
+on that releases page, download **cloudflared-windows-amd64.msi**
+specifically (the installer - it adds itself to `PATH` automatically, no
+manual setup needed). If it's missing, the app's own "Download
+cloudflared" button opens that exact page for you.
+
+Clicking "Start tunnel" in the app starts a small local HTTP server (the
+beacon, which just logs whatever hits it) and exposes it through a
+temporary Cloudflare Quick Tunnel - a real public
+`https://*.trycloudflare.com` URL, generated fresh each time, no
+Cloudflare account required. The test email's payloads all point at that
+URL. Stopping the tunnel (or closing the app) tears both the tunnel and
+the local beacon server back down, so nothing is left listening once the
+test is done.
+
+#### 4.10.3. Test mail
+
+Sending the test email uses your own Gmail account over SMTP, so it
+needs real credentials - not your normal Gmail password, but a
+[Google App Password](https://myaccount.google.com/apppasswords)
+generated specifically for this. App Passwords require 2-Step
+Verification to already be turned on for the Google account; once that's
+on, generating one is a single click on that page.
+
+Fill in, in the app:
+
+- **Gmail address** - the account the test email will be sent *from*.
+- **Gmail app password** - the generated App Password, not the account's
+  real login password.
+- **To** - the mailbox to actually test (can be the same address, or a
+  different one you also own).
+- **Subject** - whatever's convenient for telling test runs apart later.
+
+With the tunnel running and these fields filled in, "Send" delivers the
+email. Open it in the target webmail client afterwards - the app's
+results list updates live as payloads fire.
 
 ### 4.11. HTTPS Auditor
 
