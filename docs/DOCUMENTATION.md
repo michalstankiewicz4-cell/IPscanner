@@ -70,22 +70,27 @@
 *(to be written)*
 
 #### 1.1.1. File
+<img width="224" height="200" alt="image" src="https://github.com/user-attachments/assets/7b29af44-cddd-4188-a683-63dabb86c43f" />
 
 *(to be written)*
 
 #### 1.1.2. Options
+<img width="221" height="158" alt="image" src="https://github.com/user-attachments/assets/bf9fa1ef-d793-4c07-95e7-8d4e0caaee8b" />
 
 *(to be written)*
 
 #### 1.1.3. Tools
+<img width="224" height="298" alt="image" src="https://github.com/user-attachments/assets/ca3083fb-5701-4711-9196-4f9e35779edf" />
 
 *(to be written)*
 
 ### 1.2. Left shortcut menu
+<img width="38" height="64" alt="image" src="https://github.com/user-attachments/assets/a6e9fa7c-6e46-4c9f-8808-4ede7522506e" />
 
 *(to be written)*
 
 #### 1.2.1. Community
+<img width="509" height="309" alt="image" src="https://github.com/user-attachments/assets/4b7c3107-580e-44a7-9591-187c26ba305f" />
 
 *(to be written)*
 
