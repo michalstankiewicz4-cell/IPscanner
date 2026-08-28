@@ -361,6 +361,22 @@
         return;
       }
 
+      // Help > Documentation: opens docs/DOCUMENTATION.md through the
+      // existing in-app Markdown viewer (see markdown-viewer-runtime.js) -
+      // same window.NetReconNewUI.openMarkdownDoc() bridge a plain .md
+      // link click already uses, just triggered from a menu item instead.
+      // Fetched from GitHub's raw content host rather than bundled into
+      // app/ (prepare:app only copies index.html/css/js, not docs/), same
+      // approach already used for addon READMEs.
+      if (behavior === "open-documentation") {
+        var docsApi = window.NetReconNewUI;
+        if (docsApi && typeof docsApi.openMarkdownDoc === "function") {
+          docsApi.openMarkdownDoc("https://raw.githubusercontent.com/michalstankiewicz4-cell/IPscanner/main/docs/DOCUMENTATION.md");
+        }
+        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
+        return;
+      }
+
       if (behavior === "toggle-clippy") {
         if (onToggleClippy) onToggleClippy();
         if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);

@@ -275,6 +275,7 @@
         const optionsImportToolLabel = document.querySelector('[data-menu-action="customization"] span:first-child');
         const toolsAiAssistantLabel = document.querySelector('[data-menu-action="assistant-right"] span:first-child');
         const helpVersionsLabel = document.querySelector('[data-menu-action="versions"] span:first-child');
+        const helpDocumentationLabel = document.querySelector('[data-menu-action="documentation"] span:first-child');
         const windowMinBtn = document.querySelector('[data-menu-action="window-min"]');
         const windowMaxBtn = document.querySelector('[data-menu-action="window-max"]');
         const windowFullscreenBtn = document.querySelector('[data-menu-action="window-fullscreen"]');
@@ -366,6 +367,7 @@
         if (optionsImportToolLabel) optionsImportToolLabel.textContent = tr("menuOptionsImportTool");
         if (toolsAiAssistantLabel) toolsAiAssistantLabel.textContent = "🤖 " + tr("menuToolsAiAssistant");
         if (helpVersionsLabel) helpVersionsLabel.textContent = tr("menuHelpVersions");
+        if (helpDocumentationLabel) helpDocumentationLabel.textContent = tr("menuHelpDocumentation");
         if (windowMinBtn) {
           windowMinBtn.setAttribute("title", tr("windowMinimizeTitle"));
           windowMinBtn.setAttribute("aria-label", tr("windowMinimizeTitle"));

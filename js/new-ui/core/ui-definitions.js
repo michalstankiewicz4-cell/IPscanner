@@ -84,6 +84,12 @@
       purpose: "Informacje o wersjach aplikacji.",
       behavior: "open-tab:center:versions",
     },
+    documentation: {
+      label: "Documentation",
+      purposeKey: "tipActionDocumentation",
+      purpose: "Otwiera wewnetrzna dokumentacje projektu w przegladarce Markdown.",
+      behavior: "open-documentation",
+    },
     about: {
       label: "About",
       purposeKey: "tipActionAbout",

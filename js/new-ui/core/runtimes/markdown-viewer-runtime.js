@@ -28,6 +28,47 @@
     });
   }
 
+  // GitHub-style heading slugs (lowercase, spaces -> hyphens, punctuation
+  // dropped) so a table-of-contents link like [Tools](#41-mail-xss-tester)
+  // actually has something to jump to. This vendored marked (v5+) dropped
+  // automatic heading ids from core entirely - confirmed by hand, a plain
+  // `## Heading` renders as `<h2>Heading</h2>` with no id attribute at all,
+  // so #fragment links silently did nothing. slugCounts is reset at the
+  // start of every render() call (see below) - duplicate heading text
+  // within one document gets -1/-2/... suffixes, same as GitHub.
+  var slugCounts = null;
+
+  function slugify(rawText) {
+    var base = String(rawText || "").toLowerCase().trim()
+      .replace(/[^a-z0-9_\- ]/g, "")
+      .replace(/\s+/g, "-");
+    if (!slugCounts) return base;
+    var count = slugCounts[base] || 0;
+    slugCounts[base] = count + 1;
+    return count === 0 ? base : base + "-" + count;
+  }
+
+  // Registered once (marked.use() mutates its module-level default
+  // renderer, not a per-call option) rather than on every render. The
+  // heading override intentionally uses the legacy 3-arg signature
+  // (text, level, raw) instead of the token-object one the DEFAULT
+  // renderer uses internally - tried the token/parser.parseInline() form
+  // first and it threw deep inside marked's parser for every call; this
+  // vendored build accepts the old positional-args shape fine (marked's
+  // own backward-compat path for renderer overrides), and `raw` conveniently
+  // comes back as the heading's plain text with markdown syntax already
+  // stripped, exactly what a slug needs.
+  function installHeadingIds(markedInstance) {
+    markedInstance.use({
+      renderer: {
+        heading: function (text, level, raw) {
+          var id = slugify(raw);
+          return "<h" + level + ' id="' + id + '">' + text + "</h" + level + ">\n";
+        }
+      }
+    });
+  }
+
   function loadEngine() {
     if (enginePromise) return enginePromise;
     enginePromise = Promise.all([
@@ -37,6 +78,7 @@
       if (typeof window.marked === "undefined" || typeof window.DOMPurify === "undefined") {
         throw new Error("markdown engine not available after loading vendor scripts");
       }
+      installHeadingIds(window.marked);
       return { marked: window.marked, DOMPurify: window.DOMPurify };
     }).catch(function (err) {
       enginePromise = null;
@@ -151,6 +193,7 @@
         if (selectedUrl !== url) return; // a newer doc was opened meanwhile
         var engine = results[0];
         var text = results[1];
+        slugCounts = {};
         var html = engine.DOMPurify.sanitize(engine.marked.parse(text));
         body.innerHTML = html;
         rewriteRelativeUrls(body, blob);
