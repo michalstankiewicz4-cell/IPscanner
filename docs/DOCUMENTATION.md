@@ -223,7 +223,6 @@
 *(to be written)*
 
 ### 4.6. Topology
-<img width="106" height="26" alt="image" src="https://github.com/user-attachments/assets/397fbc4f-665e-40a5-9706-74df6a89cdf7" />
 
 *(to be written)*
 
