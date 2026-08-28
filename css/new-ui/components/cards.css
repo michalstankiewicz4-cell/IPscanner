@@ -315,6 +315,67 @@
   cursor: pointer;
 }
 
+/* "Inspect" toggle button - same base look as every other toolbar button
+   (.v1-embedded-browser-toolbar button above), just an accent color while
+   active - the log itself lives in the RS "Network traffic" tab
+   (browser-network), not inline here, so this button is the only visual
+   cue in the Browser tool's own toolbar that inspection is on. */
+.v1-embedded-browser-toolbar button.is-active {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+.v1-browser-network-panel {
+  padding: 4px;
+}
+
+.v1-browser-network-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.v1-browser-network-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 4px 8px;
+  align-items: baseline;
+  padding: 5px 8px;
+  border-bottom: 1px solid #2a2b2f;
+  font-size: 11px;
+}
+
+.v1-browser-network-kind {
+  font-family: var(--font-mono);
+  color: var(--txt-dim);
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.v1-browser-network-kind-document { color: #4a90e2; }
+.v1-browser-network-kind-fetch,
+.v1-browser-network-kind-xhr { color: #2dcc71; }
+.v1-browser-network-kind-beacon { color: #e0c052; }
+
+.v1-browser-network-method {
+  font-family: var(--font-mono);
+  color: var(--txt);
+}
+
+.v1-browser-network-url {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  color: var(--txt-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v1-browser-network-time {
+  grid-column: 1 / -1;
+  color: var(--txt-dim);
+  font-size: 10px;
+}
+
 .v1-version-track-wrap {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;

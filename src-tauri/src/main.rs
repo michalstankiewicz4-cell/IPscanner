@@ -3935,6 +3935,302 @@ async fn send_test_email(
     Ok(())
 }
 
+// Browser tool "inspect network traffic" mode: the Browser tool normally
+// points its iframe straight at the target site, so - same-origin policy -
+// nothing about that page's own network activity is observable from our
+// JS. This local proxy fetches the ONE target page ourselves, injects a
+// small JS shim into it (BROWSER_PROXY_SHIM_JS below), and serves that
+// instead - the iframe ends up same-origin with OUR server, and the shim
+// can freely report every fetch()/XHR/sendBeacon call plus every
+// <img>/<script>/<link>/<iframe> src it sees back to us. This only shows
+// that a request was INITIATED (method/URL/kind) - actual response bodies
+// are never seen, that would need a real TLS-intercepting proxy (a much
+// bigger, cert-trust-store-touching feature, deliberately not attempted
+// here). One proxy instance always serves exactly one fixed target URL
+// (captured at start_browser_proxy time) - simpler than a general-purpose
+// forwarding proxy, and all this tool needs: the Browser tool only ever
+// has one address loaded at a time.
+#[derive(Serialize, Clone)]
+struct NetworkHit {
+    method: String,
+    url: String,
+    kind: String,
+    timestamp_ms: u64,
+}
+
+struct BrowserProxyState {
+    hits: Mutex<Vec<NetworkHit>>,
+    server_task: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
+}
+
+// Runs in the framed page's own context (same origin as this proxy, once
+// served) - overrides the 3 ways JS can start a network request, plus a
+// one-time scan + MutationObserver for passively-loaded resource tags.
+// Each observation is POSTed to /log, same-origin so no CORS needed;
+// keepalive so a report started right before navigation/unload still
+// lands. No target-page interpolation needed - this is a static shim.
+const BROWSER_PROXY_SHIM_JS: &str = r#"<script>(function(){
+  // location.origin, NOT a relative "/__proxy_log" string - the <base
+  // href> tag injected right before this script makes every RELATIVE
+  // fetch()/XHR/link resolve against the real target page's origin (that
+  // is the whole point of it, for the page's own resources), so a plain
+  // relative path here would silently ship these reports to the target
+  // site instead of back to us. window.location itself is untouched by
+  // <base> regardless - it always reflects where the browser actually
+  // navigated to (this proxy), which is what we want here.
+  var LOG_URL = location.origin + "/__proxy_log";
+  // Captured BEFORE window.fetch gets wrapped below, and report() always
+  // calls THIS reference, never the (soon-to-be-wrapped) global - without
+  // this, report()'s own outgoing POST would trigger the wrapped fetch,
+  // which calls report() again for that POST, which fetches again... a
+  // synchronous, self-referential loop that only stops when it exhausts
+  // the call stack (silently killing the rest of this script, and with it
+  // ever seeing the actual page content render).
+  var realFetch = window.fetch ? window.fetch.bind(window) : null;
+  function report(method, url, kind) {
+    try {
+      if (!url || !realFetch) return;
+      realFetch(LOG_URL, { method: "POST", body: JSON.stringify({ method: String(method || "GET"), url: String(url), kind: String(kind) }), keepalive: true }).catch(function () {});
+    } catch (e) {}
+  }
+  var origFetch = window.fetch;
+  if (origFetch) {
+    window.fetch = function (input, init) {
+      var url = typeof input === "string" ? input : (input && input.url) || "";
+      var method = (init && init.method) || (input && input.method) || "GET";
+      report(method, url, "fetch");
+      return origFetch.apply(this, arguments);
+    };
+  }
+  var origOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (method, url) {
+    report(method, url, "xhr");
+    return origOpen.apply(this, arguments);
+  };
+  if (navigator.sendBeacon) {
+    var origBeacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function (url, data) {
+      report("BEACON", url, "beacon");
+      return origBeacon(url, data);
+    };
+  }
+  function kindOf(el) {
+    var tag = el.tagName;
+    return tag === "IMG" ? "img" : tag === "SCRIPT" ? "script" : tag === "LINK" ? "link" : "iframe";
+  }
+  function scan(root) {
+    if (!root.querySelectorAll) return;
+    root.querySelectorAll("img[src],script[src],link[href],iframe[src]").forEach(function (el) {
+      report("GET", el.src || el.href, kindOf(el));
+    });
+  }
+  document.addEventListener("DOMContentLoaded", function () { scan(document); });
+  new MutationObserver(function (muts) {
+    muts.forEach(function (m) {
+      (m.addedNodes || []).forEach(function (n) {
+        if (n.nodeType !== 1) return;
+        if (n.matches && n.matches("img[src],script[src],link[href],iframe[src]")) {
+          report("GET", n.src || n.href, kindOf(n));
+        }
+        scan(n);
+      });
+    });
+  }).observe(document.documentElement || document, { childList: true, subtree: true });
+})();</script>"#;
+
+async fn handle_browser_proxy_connection(
+    mut stream: TcpStream,
+    app: AppHandle,
+    state: Arc<BrowserProxyState>,
+    target_url: String,
+    client: reqwest::Client,
+) {
+    let mut buf = vec![0u8; 8192];
+    let mut total = 0usize;
+    loop {
+        if total >= buf.len() {
+            break;
+        }
+        let n = match stream.read(&mut buf[total..]).await {
+            Ok(0) => break,
+            Ok(n) => n,
+            Err(_) => return,
+        };
+        total += n;
+        if buf[..total].windows(4).any(|w| w == b"\r\n\r\n") {
+            break;
+        }
+    }
+
+    let head_end = buf[..total]
+        .windows(4)
+        .position(|w| w == b"\r\n\r\n")
+        .map(|i| i + 4)
+        .unwrap_or(total);
+    let request = String::from_utf8_lossy(&buf[..head_end]).to_string();
+    let mut lines = request.lines();
+    let request_line = lines.next().unwrap_or("").to_string();
+    let mut parts = request_line.split_whitespace();
+    let method = parts.next().unwrap_or("").to_string();
+    let path = parts.next().unwrap_or("").to_string();
+
+    let mut content_length: usize = 0;
+    for line in lines {
+        if let Some(idx) = line.find(':') {
+            let (name, value) = line.split_at(idx);
+            if name.eq_ignore_ascii_case("content-length") {
+                content_length = value[1..].trim().parse().unwrap_or(0);
+            }
+        }
+    }
+
+    // Read any remaining body bytes (only /__proxy_log POSTs have one).
+    let mut body_bytes = buf[head_end..total].to_vec();
+    while body_bytes.len() < content_length {
+        let mut chunk = vec![0u8; content_length - body_bytes.len()];
+        match stream.read(&mut chunk).await {
+            Ok(0) => break,
+            Ok(n) => body_bytes.extend_from_slice(&chunk[..n]),
+            Err(_) => break,
+        }
+    }
+
+    if method == "POST" && path.starts_with("/__proxy_log") {
+        if let Ok(payload) = serde_json::from_slice::<serde_json::Value>(&body_bytes) {
+            let hit = NetworkHit {
+                method: payload.get("method").and_then(|v| v.as_str()).unwrap_or("GET").to_string(),
+                url: payload.get("url").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                kind: payload.get("kind").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                timestamp_ms: SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_millis() as u64)
+                    .unwrap_or(0),
+            };
+            if !hit.url.is_empty() {
+                state.hits.lock().unwrap().push(hit.clone());
+                let _ = app.emit("browser-network-hit", &hit);
+            }
+        }
+        let resp = "HTTP/1.1 204 No Content\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n";
+        let _ = stream.write_all(resp.as_bytes()).await;
+        return;
+    }
+
+    // Anything else (the iframe's one and only navigation) - fetch the
+    // real target page and hand back a modified copy. The document load
+    // itself is logged too, same as every other observed request.
+    let timestamp_ms = SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0);
+    let doc_hit = NetworkHit {
+        method: "GET".to_string(),
+        url: target_url.clone(),
+        kind: "document".to_string(),
+        timestamp_ms,
+    };
+    state.hits.lock().unwrap().push(doc_hit.clone());
+    let _ = app.emit("browser-network-hit", &doc_hit);
+
+    // Always answer our own iframe with 200 - the real upstream status
+    // isn't meaningful once the body's been rewritten and re-served from
+    // a different origin; a fetch failure just becomes an in-page message
+    // instead of a broken frame.
+    let body = match client.get(&target_url).send().await {
+        Ok(resp) => resp.text().await.unwrap_or_default(),
+        Err(e) => format!("<html><body><p>Could not load the page: {}</p></body></html>", e),
+    };
+
+    // Inject <base> (so relative links/resources keep resolving against
+    // the REAL page URL, not our localhost one) + the shim, right after
+    // the opening <head> tag; prepend as a fallback if there's no <head>
+    // at all (rare, but some tiny/malformed pages omit it).
+    let lower = body.to_lowercase();
+    let injected = if let Some(head_pos) = lower.find("<head") {
+        let close_pos = body[head_pos..].find('>').map(|i| head_pos + i + 1);
+        if let Some(insert_at) = close_pos {
+            let base_tag = format!("<base href=\"{}\">", target_url.replace('"', "&quot;"));
+            format!("{}{}{}{}", &body[..insert_at], base_tag, BROWSER_PROXY_SHIM_JS, &body[insert_at..])
+        } else {
+            format!("{}{}", BROWSER_PROXY_SHIM_JS, body)
+        }
+    } else {
+        format!("{}{}", BROWSER_PROXY_SHIM_JS, body)
+    };
+
+    // Deliberately NOT forwarding the target's own response headers - that
+    // drops any Content-Security-Policy/X-Frame-Options it sent, which is
+    // exactly what lets this mode embed sites that otherwise refuse to be
+    // framed at all.
+    let header = format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+        injected.as_bytes().len()
+    );
+    let _ = stream.write_all(header.as_bytes()).await;
+    let _ = stream.write_all(injected.as_bytes()).await;
+}
+
+#[tauri::command]
+async fn start_browser_proxy(app: AppHandle, target_url: String) -> Result<String, String> {
+    let normalized = if target_url.starts_with("http://") || target_url.starts_with("https://") {
+        target_url.clone()
+    } else {
+        format!("https://{}", target_url)
+    };
+
+    let state = app.state::<Arc<BrowserProxyState>>().inner().clone();
+    state.hits.lock().unwrap().clear();
+    if let Some(handle) = state.server_task.lock().unwrap().take() {
+        handle.abort();
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(15))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let listener = TcpListener::bind(("127.0.0.1", 0)).await.map_err(|e| e.to_string())?;
+    let port = listener.local_addr().map_err(|e| e.to_string())?.port();
+
+    let app2 = app.clone();
+    let state2 = state.clone();
+    let target2 = normalized.clone();
+    let handle = tauri::async_runtime::spawn(async move {
+        loop {
+            let stream = match listener.accept().await {
+                Ok((s, _)) => s,
+                Err(_) => continue,
+            };
+            tauri::async_runtime::spawn(handle_browser_proxy_connection(
+                stream,
+                app2.clone(),
+                state2.clone(),
+                target2.clone(),
+                client.clone(),
+            ));
+        }
+    });
+    *state.server_task.lock().unwrap() = Some(handle);
+
+    Ok(format!("http://127.0.0.1:{}/", port))
+}
+
+#[tauri::command]
+fn stop_browser_proxy(app: AppHandle) {
+    let state = app.state::<Arc<BrowserProxyState>>().inner().clone();
+    let handle = state.server_task.lock().unwrap().take();
+    if let Some(handle) = handle {
+        handle.abort();
+    }
+}
+
+#[tauri::command]
+fn get_browser_network_hits(app: AppHandle) -> Vec<NetworkHit> {
+    let state = app.state::<Arc<BrowserProxyState>>().inner().clone();
+    let hits = state.hits.lock().unwrap().clone();
+    hits
+}
+
 fn main() {
     use std::io::Write;
     
@@ -3975,6 +4271,10 @@ fn main() {
             hits: Mutex::new(Vec::new()),
             beacon_task: Mutex::new(None),
             tunnel_child: Mutex::new(None),
+        }))
+        .manage(Arc::new(BrowserProxyState {
+            hits: Mutex::new(Vec::new()),
+            server_task: Mutex::new(None),
         }))
         .setup(|app| {
             // Community Catalog GitHub login: NSIS/MSI do NOT register the
@@ -4020,6 +4320,9 @@ fn main() {
             start_tunnel,
             stop_tunnel,
             send_test_email,
+            start_browser_proxy,
+            stop_browser_proxy,
+            get_browser_network_hits,
             window_minimize,
             window_toggle_maximize,
             window_toggle_fullscreen,

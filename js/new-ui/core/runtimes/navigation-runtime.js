@@ -1509,6 +1509,9 @@
           } else if (tool === "https-auditor") {
             ensureSidebarTabOpen("https-auditor-library");
             setLeftActiveTab("https-auditor-library");
+          } else if (tool === "browser") {
+            ensureRightTabOpen("browser-network");
+            setRightTabActive("browser-network");
           } else if (tool === "mail-xss-tester") {
             ensureSidebarTabOpen("mail-xss-tester-library");
             setLeftActiveTab("mail-xss-tester-library");
@@ -1581,6 +1584,10 @@
           // history LS list, no RS.
           ensureSidebarTabOpen("https-auditor-library");
           setLeftActiveTab("https-auditor-library");
+        } else if (tool === "browser") {
+          // CS + its own RS network-traffic log, no LS.
+          ensureRightTabOpen("browser-network");
+          setRightTabActive("browser-network");
         } else if (tool === "mail-xss-tester") {
           // 3 independent surfaces (CS's own "mail-xss-tester" via
           // switchTool() below, plus its own

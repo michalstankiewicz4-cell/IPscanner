@@ -508,6 +508,11 @@
           panelsRuntime.wireMailXssTesterResults(rootEl);
         }
       };
+      window.NetReconNewUI.wireBrowserNetworkPanel = function (rootEl) {
+        if (panelsRuntime && panelsRuntime.wireBrowserNetworkPanel) {
+          panelsRuntime.wireBrowserNetworkPanel(rootEl);
+        }
+      };
       window.NetReconNewUI.wireGoogleDorkLibrary = function (rootEl) {
         if (panelsRuntime && panelsRuntime.wireGoogleDorkLibrary) {
           panelsRuntime.wireGoogleDorkLibrary(rootEl);

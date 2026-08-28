@@ -3518,13 +3518,49 @@
     // shell: address bar + a plain <iframe>. Wiring (navigation, the
     // blocked-embedding fallback) is panel-interactions-runtime.js's
     // wireBrowserTool().
+    function browserNetworkHitRow(hit) {
+      var time = hit.timestamp_ms ? new Date(hit.timestamp_ms).toLocaleTimeString() : "";
+      return [
+        "<div class=\"v1-browser-network-row\">",
+        "<span class=\"v1-browser-network-kind v1-browser-network-kind-" + escapeHtml(hit.kind || "") + "\">" + escapeHtml(hit.kind || "") + "</span>",
+        "<span class=\"v1-browser-network-method\">" + escapeHtml(hit.method || "") + "</span>",
+        "<span class=\"v1-browser-network-url\" title=\"" + escapeHtml(hit.url || "") + "\">" + escapeHtml(hit.url || "") + "</span>",
+        "<span class=\"v1-browser-network-time\">" + escapeHtml(time) + "</span>",
+        "</div>"
+      ].join("");
+    }
+
+    // RS: live "what did this page actually talk to" log, on while the
+    // Browser tool's Inspect toggle is on - same RS-panel pattern as Mail
+    // XSS Tester's own hit log (wireBrowserNetworkPanel in
+    // panel-interactions-runtime.js re-renders this whole thing on every
+    // newui:browser-network-changed event).
+    function renderBrowserNetworkLog() {
+      var api = window.NetReconNewUICore && window.NetReconNewUICore.browserNetwork;
+      var active = api ? api.getActive() : false;
+      if (!active) {
+        return "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("browserNetworkInactiveNote", "Not inspecting - click Inspect on the Browser tab.")) + "</div>";
+      }
+      var hits = api ? api.getHits() : [];
+      var rowsHtml = hits.length
+        ? hits.slice().reverse().map(browserNetworkHitRow).join("")
+        : "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("browserNetworkEmptyNote", "No requests observed yet.")) + "</div>";
+      return [
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(trOr("browserNetworkHeading", "Network traffic")) + " (" + hits.length + ")</strong></div>",
+        "<div class=\"v1-browser-network-rows\">" + rowsHtml + "</div>"
+      ].join("");
+    }
+
     function renderBrowserTool() {
+      var networkApi = window.NetReconNewUICore && window.NetReconNewUICore.browserNetwork;
+      var inspecting = networkApi ? networkApi.getActive() : false;
       return [
         "<div class=\"v1-embedded-browser\">",
         "<div class=\"v1-embedded-browser-toolbar\">",
         "<button type=\"button\" data-browser-action=\"reload\" title=\"" + escapeHtml(trOr("browserReloadTitle", "Reload")) + "\">⟳</button>",
         "<input type=\"text\" id=\"v1BrowserAddress\" class=\"v1-embedded-browser-address\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"https://...\" />",
         "<button type=\"button\" data-browser-action=\"go\">" + escapeHtml(trOr("browserGoBtn", "Go")) + "</button>",
+        "<button type=\"button\" data-browser-action=\"toggle-inspect\" class=\"" + (inspecting ? "is-active" : "") + "\" title=\"" + escapeHtml(trOr("browserInspectTitle", "Inspect this page's network traffic")) + "\">" + escapeHtml(trOr(inspecting ? "browserInspectOnBtn" : "browserInspectOffBtn", inspecting ? "Inspecting" : "Inspect")) + "</button>",
         "<button type=\"button\" data-browser-action=\"open-native\" class=\"v1-embedded-browser-native-btn\" title=\"" + escapeHtml(trOr("browserOpenNativeTitle", "Open in a real browser window (bypasses embedding restrictions)")) + "\">⧉</button>",
         "</div>",
         "<div class=\"v1-embedded-browser-frame-wrap\">",
@@ -3533,10 +3569,14 @@
         // window's own input the way the abandoned docked-child-webview
         // approach did (see main.rs's Browser tool comment). Cross-origin
         // by construction (any real target site), so its content/network
-        // traffic is opaque to us - the [⧉] button above and the banner
-        // below both hand off to a real, independent browser window
-        // (open_browser_window) for sites that need it, rather than
-        // pretending this can see into the framed page.
+        // traffic is normally opaque to us - the [⧉] button above and the
+        // banner below both hand off to a real, independent browser window
+        // (open_browser_window) for sites that need it. The [Inspect]
+        // toggle is the one exception: it re-points this iframe at a local
+        // Rust proxy (start_browser_proxy) that fetches the page itself and
+        // injects a small reporting shim, trading a same-origin proxied
+        // copy for actual visibility into what the page's own JS/resources
+        // talk to - see the RS "Network traffic" tab (browser-network).
         "<iframe class=\"v1-embedded-browser-frame\" title=\"" + escapeHtml(trOr("toolTitle_browser", "Browser")) + "\"></iframe>",
         "<div class=\"v1-embedded-browser-blocked\" data-browser-blocked hidden>",
         "<span>" + escapeHtml(trOr("browserBlockedText", "This site may be blocking embedding.")) + "</span>",
@@ -3600,6 +3640,7 @@
       renderMailXssTesterResults: renderMailXssTesterResults,
       renderHttpsAuditorTool: renderHttpsAuditorTool,
       renderReverseIpTool: renderReverseIpTool,
+      renderBrowserNetworkLog: renderBrowserNetworkLog,
       renderHttpsAuditorLibrary: renderHttpsAuditorLibrary,
       httpsAuditorResultToCsv: httpsAuditorResultToCsv,
       renderGoogleDorkLibrary: renderGoogleDorkLibrary,

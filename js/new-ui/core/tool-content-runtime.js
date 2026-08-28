@@ -86,6 +86,17 @@
     },
   };
 
+  toolContentRuntime["browser-network"] = {
+    render: function () {
+      return '<div id="v1BrowserNetwork" class="v1-browser-network-panel"></div>';
+    },
+    wire: function (rootEl) {
+      if (window.NetReconNewUI && window.NetReconNewUI.wireBrowserNetworkPanel) {
+        window.NetReconNewUI.wireBrowserNetworkPanel(rootEl);
+      }
+    },
+  };
+
   toolContentRuntime["mail-xss-tester-results"] = {
     render: function () {
       return '<div id="v1MailXssTesterResults" class="v1-mail-xss-tester-results"></div>';

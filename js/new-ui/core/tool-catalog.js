@@ -78,6 +78,14 @@
       labelKey: "toolTitle_browser",
       ui: { showAsTab: true, order: 110 }
     },
+    // Live "what did this page actually talk to" log while the Browser
+    // tool's Inspect toggle is on (see browser-network-runtime.js) - RS
+    // tab, same pattern as Mail XSS Tester's own hit log.
+    "browser-network": {
+      icon: null,
+      labelKey: "tabLabel_browser_network",
+      ui: { showInRightPanel: true, rightOrder: 31 }
+    },
     // ShellCraft stays in the base shell (confirmed by the user, not a
     // judgment call like the ones above) - see PROGRESS.md.
     shellcraft: {

@@ -20,6 +20,7 @@
     var renderHttpsAuditorLibrary = typeof deps.renderHttpsAuditorLibrary === "function" ? deps.renderHttpsAuditorLibrary : null;
     var httpsAuditorResultToCsv = typeof deps.httpsAuditorResultToCsv === "function" ? deps.httpsAuditorResultToCsv : null;
     var renderReverseIpTool = typeof deps.renderReverseIpTool === "function" ? deps.renderReverseIpTool : null;
+    var renderBrowserNetworkLog = typeof deps.renderBrowserNetworkLog === "function" ? deps.renderBrowserNetworkLog : null;
     var renderGoogleDorkLibrary = typeof deps.renderGoogleDorkLibrary === "function" ? deps.renderGoogleDorkLibrary : null;
     var renderGoogleDorkTool = typeof deps.renderGoogleDorkTool === "function" ? deps.renderGoogleDorkTool : null;
     var renderGoogleDorkTemplates = typeof deps.renderGoogleDorkTemplates === "function" ? deps.renderGoogleDorkTemplates : null;
@@ -87,6 +88,11 @@
     var wifiToolTeardown = null;
     // Same reasoning as httpsAuditorToolTeardown above.
     var reverseIpToolTeardown = null;
+    // Same reasoning as reverseIpToolTeardown above - wireBrowserTool's
+    // newui:browser-network-changed listener is bound to `document` (a
+    // stable target that outlives every re-render), so without this it
+    // would pile up one stale listener per tab switch to the Browser tool.
+    var browserToolTeardown = null;
     var communityChatToolTeardown = null;
     // LS/RS generic-content-slot mounts (v1GoogleDorkLibrary, v1WifiLibrary,
     // v1WifiCurrent, v1WifiAdapter) get a brand-new DOM node every time
@@ -2010,6 +2016,12 @@
       if (!frame) return;
 
       var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+      var networkApi = window.NetReconNewUICore && window.NetReconNewUICore.browserNetwork;
+
+      if (browserToolTeardown) {
+        browserToolTeardown();
+        browserToolTeardown = null;
+      }
 
       function normalizedUrl() {
         var value = (addressInput && addressInput.value || "").trim();
@@ -2037,16 +2049,26 @@
         if (blockedBanner) blockedBanner.hidden = false;
       }
 
-      function loadUrl(url) {
+      // `displayUrl` defaults to `url` - only differs when inspection mode
+      // points the iframe at our local proxy (http://127.0.0.1:.../) while
+      // the address bar should keep showing the real target address, not
+      // the local one.
+      function loadUrl(url, displayUrl) {
         hideBlocked();
-        embeddedBrowserLastUrl = url;
-        if (addressInput) addressInput.value = url;
+        embeddedBrowserLastUrl = displayUrl || url;
+        if (addressInput) addressInput.value = displayUrl || url;
         frame.src = url;
         blockTimer = setTimeout(showBlocked, 8000);
       }
 
       frame.addEventListener("load", function () {
         if (blockTimer) { clearTimeout(blockTimer); blockTimer = null; }
+        // The blocked-detection heuristic below only makes sense for a
+        // genuinely cross-origin direct load - once inspection mode is on,
+        // the frame is intentionally same-origin with us (our own proxy),
+        // so contentWindow access never throws and would otherwise read as
+        // a false "blocked".
+        if (networkApi && networkApi.getActive()) { hideBlocked(); return; }
         try {
           // Throws for a genuinely cross-origin-loaded frame (success) -
           // only reachable without throwing if the frame is still
@@ -2059,13 +2081,60 @@
         }
       });
 
+      // Idempotent - safe to call even when inspection was never on.
+      function stopInspecting() {
+        if (networkApi && networkApi.getActive()) networkApi.stop();
+      }
+
+      // Toggling inspection swaps which URL the iframe actually loads (the
+      // real address directly, or our local proxy's) without touching the
+      // address bar's displayed value either way - see loadUrl()'s
+      // displayUrl param.
+      function toggleInspect() {
+        if (!networkApi) return;
+        if (networkApi.getActive()) {
+          stopInspecting();
+          loadUrl(normalizedUrl());
+          return;
+        }
+        var target = normalizedUrl();
+        networkApi.start(target).then(function (localUrl) {
+          if (localUrl) loadUrl(localUrl, target);
+        });
+      }
+
+      // The log itself now lives in the RS "Network traffic" tab
+      // (wireBrowserNetworkPanel below, its own listener on this same
+      // event) - this tool only needs to keep its toggle button in sync.
+      function updateToggleButton() {
+        var active = networkApi ? networkApi.getActive() : false;
+        var toggleBtn = root.querySelector("[data-browser-action=\"toggle-inspect\"]");
+        if (toggleBtn) {
+          toggleBtn.classList.toggle("is-active", active);
+          toggleBtn.textContent = tr(active ? "browserInspectOnBtn" : "browserInspectOffBtn");
+        }
+      }
+
+      function onNetworkChanged() {
+        if (!document.body.contains(root)) return;
+        updateToggleButton();
+      }
+      document.addEventListener("newui:browser-network-changed", onNetworkChanged);
+      browserToolTeardown = function () {
+        document.removeEventListener("newui:browser-network-changed", onNetworkChanged);
+      };
+
       root.addEventListener("click", function (event) {
         var btn = event.target && event.target.closest ? event.target.closest("[data-browser-action]") : null;
         if (btn) {
           var action = btn.getAttribute("data-browser-action");
-          if (action === "go") loadUrl(normalizedUrl());
+          if (action === "go") {
+            stopInspecting(); // address changed - drop out of inspect mode rather than re-proxy silently
+            loadUrl(normalizedUrl());
+          }
           else if (action === "reload") frame.src = frame.src;
           else if (action === "open-native") openInRealBrowser(normalizedUrl());
+          else if (action === "toggle-inspect") toggleInspect();
           return;
         }
         if (event.target && event.target.closest && event.target.closest("[data-browser-blocked-open]")) {
@@ -2075,11 +2144,51 @@
 
       if (addressInput) {
         addressInput.addEventListener("keydown", function (event) {
-          if (event.key === "Enter") loadUrl(normalizedUrl());
+          if (event.key === "Enter") {
+            stopInspecting();
+            loadUrl(normalizedUrl());
+          }
         });
       }
 
-      loadUrl(embeddedBrowserLastUrl);
+      // If inspection was on before this tool got re-rendered (a tab
+      // switch away and back, or detach/re-dock - both wipe and rebuild
+      // this iframe from scratch, see EMBEDDED_BROWSER_HOME_URL's comment),
+      // the Rust-side proxy is still running but its previous local URL
+      // was never persisted anywhere on the JS side - simplest correct fix
+      // is to just re-start it against the same target, which also starts
+      // the hit log fresh rather than trying to reconcile with whatever
+      // the backend already logged.
+      if (networkApi && networkApi.getActive()) {
+        var resumeTarget = embeddedBrowserLastUrl;
+        networkApi.start(resumeTarget).then(function (localUrl) {
+          if (localUrl) loadUrl(localUrl, resumeTarget);
+          else loadUrl(resumeTarget);
+        });
+      } else {
+        loadUrl(embeddedBrowserLastUrl);
+      }
+    }
+
+    // RS: live hit log, rebuilt the same way as Mail XSS Tester's own RS
+    // results panel above.
+    function wireBrowserNetworkPanel() {
+      var mount = document.getElementById("v1BrowserNetwork");
+      if (!mount || !renderBrowserNetworkLog) return;
+
+      function render() {
+        mount.innerHTML = renderBrowserNetworkLog();
+      }
+
+      render();
+
+      if (mount.dataset.browserNetworkBound === "1") return;
+      mount.dataset.browserNetworkBound = "1";
+
+      document.addEventListener("newui:browser-network-changed", function () {
+        if (!document.body.contains(mount)) return;
+        render();
+      });
     }
 
     function wirePulpitInspector() {
@@ -4691,6 +4800,7 @@
       wireCommunityChatTool: wireCommunityChatTool,
       wireGlobeTool: wireGlobeTool,
       wireBrowserTool: wireBrowserTool,
+      wireBrowserNetworkPanel: wireBrowserNetworkPanel,
       wireAgentProfileLibrary: wireAgentProfileLibrary,
       wireAgentProfileDetail: wireAgentProfileDetail,
       // ip-scanner tool

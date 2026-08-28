@@ -1530,6 +1530,7 @@
         renderHttpsAuditorLibrary: panelContentRuntime && panelContentRuntime.renderHttpsAuditorLibrary,
         httpsAuditorResultToCsv: panelContentRuntime && panelContentRuntime.httpsAuditorResultToCsv,
         renderReverseIpTool: panelContentRuntime && panelContentRuntime.renderReverseIpTool,
+        renderBrowserNetworkLog: panelContentRuntime && panelContentRuntime.renderBrowserNetworkLog,
         renderGoogleDorkLibrary: panelContentRuntime && panelContentRuntime.renderGoogleDorkLibrary,
         renderGoogleDorkTool: panelContentRuntime && panelContentRuntime.renderGoogleDorkTool,
         renderGoogleDorkTemplates: panelContentRuntime && panelContentRuntime.renderGoogleDorkTemplates,
@@ -2402,6 +2403,12 @@
       }
     }
 
+    function wireBrowserNetworkPanel(rootEl) {
+      if (panelInteractionsRuntime && panelInteractionsRuntime.wireBrowserNetworkPanel) {
+        panelInteractionsRuntime.wireBrowserNetworkPanel(rootEl);
+      }
+    }
+
     // Exposed for LS/RS's generic-content-slot mechanism (tool-content-
     // runtime.js's "google-dork-library"/"-templates" entries) - same
     // idea as wireMailXssTesterLibrary/-Results above.
@@ -2468,6 +2475,7 @@
       wireNetworkMonitorLeftPanel: wireNetworkMonitorLeftPanel,
       wireMailXssTesterLibrary: wireMailXssTesterLibrary,
       wireMailXssTesterResults: wireMailXssTesterResults,
+      wireBrowserNetworkPanel: wireBrowserNetworkPanel,
       wireGoogleDorkLibrary: wireGoogleDorkLibrary,
       wireGoogleDorkTemplates: wireGoogleDorkTemplates,
       wireWifiLibrary: wireWifiLibrary,
