@@ -120,66 +120,82 @@
 *(to be written)*
 
 ### 1.3. Down information bar
+<img width="959" height="14" alt="image" src="https://github.com/user-attachments/assets/40ef2f02-a16a-4b7d-902a-0d7088b79680" />
 
 *(to be written)*
 
 #### 1.3.1. Loader
+<img width="26" height="19" alt="image" src="https://github.com/user-attachments/assets/67bb063b-ce08-4888-8e73-0af68ee6bd3a" />
 
 *(to be written)*
 
 #### 1.3.2. Processes
+<img width="17" height="20" alt="image" src="https://github.com/user-attachments/assets/1eb37308-3fa7-478d-a9c6-e7a644fa700b" />
 
 *(to be written)*
 
 #### 1.3.3. Loading progress bar
+<img width="92" height="21" alt="image" src="https://github.com/user-attachments/assets/995651dc-fe54-4d69-8ee2-ffb0565f2c73" />
 
 *(to be written)*
 
 #### 1.3.4. Domain verification status
+<img width="16" height="21" alt="image" src="https://github.com/user-attachments/assets/c1a44602-a04b-4021-b0d8-030225efebc5" />
 
 *(to be written)*
 
 #### 1.3.5. Version information
+<img width="18" height="20" alt="image" src="https://github.com/user-attachments/assets/1933203a-31c6-4591-b48f-4d1c121a02a2" />
 
 *(to be written)*
 
 #### 1.3.6. Active tab
+<img width="83" height="23" alt="image" src="https://github.com/user-attachments/assets/4aee3504-4c4c-4439-b34e-59d28ef859ce" />
 
 *(to be written)*
 
 ### 1.4. left section
+<img width="239" height="449" alt="image" src="https://github.com/user-attachments/assets/3d9baa83-82f2-4e3a-a00b-6925e226c1d2" />
 
 *(to be written)*
 
 ### 1.5. right section
+<img width="209" height="448" alt="image" src="https://github.com/user-attachments/assets/c76124ec-5ee9-45a1-9b7d-f52015531e25" />
 
 *(to be written)*
 
 ### 1.6. Central section
+<img width="520" height="322" alt="image" src="https://github.com/user-attachments/assets/c3963ae1-c5a4-4427-968a-bf114ec0af37" />
 
 *(to be written)*
 
 #### 1.6.1. Tab
+<img width="507" height="38" alt="image" src="https://github.com/user-attachments/assets/726ef941-bcbc-4949-9ce9-3c7f14c07168" />
 
 *(to be written)*
 
 #### 1.6.2. Window
+<img width="515" height="380" alt="image" src="https://github.com/user-attachments/assets/68a54299-3c56-4184-95d8-97f5ac3286e6" />
 
 *(to be written)*
 
 ### 1.7. Down section
+<img width="512" height="149" alt="image" src="https://github.com/user-attachments/assets/1621cd94-653d-456e-a262-b878a77b829e" />
 
 *(to be written)*
 
 #### 1.7.1. Terminal
+<img width="512" height="149" alt="image" src="https://github.com/user-attachments/assets/92805ec4-2f38-4dd9-b6e1-884b1e3627cd" />
 
 *(to be written)*
 
 #### 1.7.2. Macro
+<img width="513" height="146" alt="image" src="https://github.com/user-attachments/assets/673c3753-ede0-44fd-986d-8611da181d11" />
 
 *(to be written)*
 
 #### 1.7.3. Console
+<img width="509" height="147" alt="image" src="https://github.com/user-attachments/assets/8c460b1d-d646-48b1-abb4-4a2f2094e923" />
 
 *(to be written)*
 
