@@ -32,10 +32,13 @@
   - [3.2. Port presets](#32-port-presets)
   - [3.3. Language](#33-language)
   - [3.4. General](#34-general)
-  - [3.5. Community Catalog](#35-community-catalog)
-  - [3.6. Agent identity](#36-agent-identity)
+  - [3.5. Keyboard shortcuts](#35-keyboard-shortcuts)
+  - [3.6. Community Catalog](#36-community-catalog)
+  - [3.7. Agent identity](#37-agent-identity)
 - [4. Tools](#tools)
   - [4.1. AI Assistant](#41-ai-assistant)
+    - [4.1.1. Setup](#411-setup)
+    - [4.1.2. Permissions](#412-permissions)
   - [4.2. ShellCraft](#42-shellcraft)
   - [4.3. IP Scanner](#43-ip-scanner)
   - [4.4. Network Monitor](#44-network-monitor)
@@ -174,17 +177,29 @@
 
 *(to be written)*
 
-### 3.5. Community Catalog
+### 3.5. Keyboard shortcuts
 
 *(to be written)*
 
-### 3.6. Agent identity
+### 3.6. Community Catalog
+
+*(to be written)*
+
+### 3.7. Agent identity
 
 *(to be written)*
 
 ## Tools
 
 ### 4.1. AI Assistant
+
+*(to be written)*
+
+#### 4.1.1. Setup
+
+*(to be written)*
+
+#### 4.1.2. Permissions
 
 *(to be written)*
 
