@@ -3952,6 +3952,23 @@
         }
       });
 
+      // Inspect mode identity - a 3-way mutually-exclusive radio backed by
+      // two plain booleans in the same all-boolean generalSettings store
+      // (browserInvisibility/browserIdentifyAsApp), rather than a new
+      // string-valued store just for this. Picking one radio always writes
+      // BOTH keys together so exactly one (or neither, for "default") is
+      // ever true - the two can't independently drift out of sync the way
+      // two unrelated checkboxes could.
+      root.addEventListener("change", function (event) {
+        var identityRadio = event.target && event.target.closest ? event.target.closest('input[name="v1BrowserIdentityMode"]') : null;
+        if (!identityRadio || !identityRadio.checked) return;
+        var next = generalSettingsApi.getState();
+        next.browserInvisibility = identityRadio.value === "blend";
+        next.browserIdentifyAsApp = identityRadio.value === "identify";
+        generalSettingsApi.replaceState(next);
+        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("tipActionGeneral"));
+      });
+
       // AI Assistant settings - UI/persistence only, no real Claude/Google
       // call wired up yet. Each provider block (Anthropic/Google) is fully
       // independent - its own model, key, and storage mode - so switching

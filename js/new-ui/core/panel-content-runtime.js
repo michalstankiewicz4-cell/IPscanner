@@ -534,6 +534,22 @@
         return "<h4 class=\"v1-general-settings-group\">" + escapeHtml(trOr(key, fallback)) + "</h4>";
       }
 
+      // Mutually-exclusive radio, unlike checkboxRow above - used for
+      // Inspect mode's identity (default / blend in as a normal browser /
+      // openly identify as this app), where at most one can ever be active
+      // at once. currentValue/optionValue comparison decides "checked",
+      // same shape as the AI Assistant provider radio further down.
+      function radioRow(name, optionValue, currentValue, icon, labelKey, labelFallback) {
+        var checked = optionValue === currentValue;
+        return [
+          "<label class=\"v1-results-columns-item v1-general-settings-item\">",
+          "<input type=\"radio\" name=\"" + escapeHtml(name) + "\" value=\"" + escapeHtml(optionValue) + "\"" + (checked ? " checked" : "") + " />",
+          "<span class=\"v1-results-columns-icon\" aria-hidden=\"true\">" + escapeHtml(icon) + "</span>",
+          "<span>" + escapeHtml(trOr(labelKey, labelFallback)) + "</span>",
+          "</label>"
+        ].join("");
+      }
+
       // AI Assistant: one self-contained, colon-aligned block per provider
       // (Anthropic/Google) - each with its own model dropdown, API key
       // field, and RAM-vs-localStorage choice, so both can be configured
@@ -682,6 +698,15 @@
         checkboxRow("rememberPanelSizes", "↔️", "generalRememberPanelSizes", "Remember panel sizes and collapsed state"),
 
         groupHeading("generalGroupPrivacyTools", "Privacy & tools"),
+        (function () {
+          var browserIdentityMode = settings.browserIdentifyAsApp ? "identify" : (settings.browserInvisibility ? "blend" : "default");
+          return [
+            radioRow("v1BrowserIdentityMode", "default", browserIdentityMode, "🌐", "generalBrowserIdentityDefault", "Default (real WebView2 signature)"),
+            radioRow("v1BrowserIdentityMode", "blend", browserIdentityMode, "🕶️", "generalBrowserInvisibility", "Blend in as a normal browser"),
+            radioRow("v1BrowserIdentityMode", "identify", browserIdentityMode, "🏷️", "generalBrowserIdentifyAsApp", "Identify as \"OSINT NET Auditor\""),
+          ].join("");
+        })(),
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("generalBrowserIdentityNote", "Controls what a site sees during the Browser tool's Inspect mode: its own real WebView2 signature, a spoofed ordinary-browser fingerprint (User-Agent, navigator.webdriver, WebView2 markers), or an open \"OSINTNETAuditor\" User-Agent identifying this as an automated tool. Applies the next time you start Inspect.")) + "</div>",
         checkboxRow("rememberBlurIp", "👁", "generalRememberBlurIp", "Remember \"Blur IP addresses\" state"),
 
         groupHeading("generalGroupWindows", "Windows"),

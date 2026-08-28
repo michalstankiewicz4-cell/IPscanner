@@ -47,7 +47,12 @@
 
       hits = [];
       ensureListener();
-      return Promise.resolve(platform.invoke("start_browser_proxy", { targetUrl: targetUrl })).then(function (localUrl) {
+      var generalSettings = window.NetReconNewUICore && window.NetReconNewUICore.generalSettings;
+      var settingsState = generalSettings ? generalSettings.getState() : {};
+      // Mutually exclusive by construction (see wireGeneralSettingsTool's
+      // radio handling) - identify wins if somehow both ended up true.
+      var identityMode = settingsState.browserIdentifyAsApp ? "identify" : (settingsState.browserInvisibility ? "blend" : "default");
+      return Promise.resolve(platform.invoke("start_browser_proxy", { targetUrl: targetUrl, identityMode: identityMode })).then(function (localUrl) {
         active = true;
         emitChanged();
         return localUrl;

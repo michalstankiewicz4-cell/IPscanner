@@ -3890,6 +3890,17 @@ async fn start_tunnel(app: AppHandle, method: String, local_port: u16) -> Result
     // for the generated https://*.trycloudflare.com URL is the standard,
     // documented way other tools integrate with it, not a workaround.
     let stderr = child.stderr.take().ok_or("cloudflared gave no stderr handle")?;
+
+    // Stored in state RIGHT AWAY, not only after the URL shows up below -
+    // this wait can take up to 20s (the timeout further down), and until
+    // this line ran, cleanup_background_processes() had no way to find
+    // this child at all if the app closed mid-wait, leaking exactly the
+    // orphaned tunnel this whole mechanism exists to prevent. From here on
+    // every path (success below, and all 3 error arms) reaches back into
+    // state for the child instead of using the now-moved-out local.
+    let state = app.state::<Arc<MailXssTesterState>>();
+    *state.tunnel_child.lock().unwrap() = Some(child);
+
     let url_future = tokio::task::spawn_blocking(move || {
         let reader = BufReader::new(stderr);
         for line in reader.lines() {
@@ -3911,21 +3922,18 @@ async fn start_tunnel(app: AppHandle, method: String, local_port: u16) -> Result
     let url = match timeout(Duration::from_secs(20), url_future).await {
         Ok(Ok(Some(url))) => url,
         Ok(Ok(None)) => {
-            let _ = child.kill();
+            if let Some(mut c) = state.tunnel_child.lock().unwrap().take() { let _ = c.kill(); }
             return Err("cloudflared exited without printing a tunnel URL".into());
         }
         Ok(Err(e)) => {
-            let _ = child.kill();
+            if let Some(mut c) = state.tunnel_child.lock().unwrap().take() { let _ = c.kill(); }
             return Err(e.to_string());
         }
         Err(_) => {
-            let _ = child.kill();
+            if let Some(mut c) = state.tunnel_child.lock().unwrap().take() { let _ = c.kill(); }
             return Err("Timed out waiting for cloudflared to report its tunnel URL".into());
         }
     };
-
-    let state = app.state::<Arc<MailXssTesterState>>();
-    *state.tunnel_child.lock().unwrap() = Some(child);
 
     Ok(url)
 }
@@ -4069,6 +4077,67 @@ const BROWSER_PROXY_SHIM_JS: &str = r#"<script>(function(){
   }).observe(document.documentElement || document, { childList: true, subtree: true });
 })();</script>"#;
 
+// Inspect mode's "identity" (Options > General > Privacy & tools, one of
+// three mutually-exclusive radio choices, "default" unless the user picks
+// otherwise): controls what the framed page's own JS - and, for the
+// initial document fetch we do in Rust, the real HTTP User-Agent header -
+// see the page as making the request.
+//   - "default": no spoofing at all, real WebView2 signature both ways.
+//   - "blend": look like an ordinary desktop browser - navigator.
+//     userAgent/appVersion, navigator.webdriver, and window.chrome.webview
+//     (WebView2's own native-messaging bridge object, injected on every
+//     page it loads - a dead giveaway if anything checks for it) are all
+//     patched to match a stock Chrome instance.
+//   - "identify": the opposite - openly announce this as an automated tool
+//     (the ORIGINAL ask that kicked this whole feature off, before "blend"
+//     got built instead per an explicit choice at the time) rather than
+//     hiding it.
+// Neither mode can touch the real User-Agent HTTP header on requests fired
+// LATER by the page's own fetch()/XHR/sendBeacon (browsers refuse to let
+// JS set that header at all) - only the reqwest client's own .user_agent()
+// in start_browser_proxy, used for the initial document fetch, controls
+// that side. Kept as separate scripts (only one injected, matching the
+// active mode) rather than folded into BROWSER_PROXY_SHIM_JS above, which
+// always runs regardless of this setting.
+const BROWSER_PROXY_UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
+const BROWSER_PROXY_IDENTIFY_UA: &str = concat!("OSINTNETAuditor/", env!("CARGO_PKG_VERSION"), " (+https://ipscanner.pl; automated inspection tool)");
+const BROWSER_PROXY_INVISIBILITY_JS: &str = r#"<script>(function(){
+  try {
+    // Patched on Navigator.prototype, NOT the navigator instance.
+    // Object.defineProperty(navigator, "webdriver", ...) creates an OWN
+    // property on the instance - even with a getter that returns
+    // undefined, that makes navigator.hasOwnProperty("webdriver") true,
+    // and detectors that check exactly that (bot.sannysoft.com's
+    // "WebDriver(New)" row does) flag it as PRESENT/failed. A real,
+    // un-instrumented WebView2 has no own "webdriver" property at all
+    // (only Navigator.prototype's, which already returns undefined here -
+    // confirmed passing with this setting off) - patching the prototype
+    // keeps that same shape instead of regressing it.
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: function () { return undefined; }, configurable: true, enumerable: true });
+    Object.defineProperty(Navigator.prototype, "userAgent", { get: function () { return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"; }, configurable: true, enumerable: true });
+    Object.defineProperty(Navigator.prototype, "appVersion", { get: function () { return "5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"; }, configurable: true, enumerable: true });
+    if (window.chrome && window.chrome.webview) { delete window.chrome.webview; }
+  } catch (e) {}
+})();</script>"#;
+
+// "identify" mode's shim - the opposite of the one above: openly announces
+// this as OSINTNETAuditor rather than hiding what it is. No webdriver/
+// window.chrome.webview patching here - honesty is the whole point, so
+// those stay exactly as WebView2 naturally reports them. A function
+// (not a const, unlike BROWSER_PROXY_INVISIBILITY_JS) since it needs to
+// interpolate BROWSER_PROXY_IDENTIFY_UA - concat!() only accepts literals,
+// not another const, so this can't be built at compile time the same way.
+fn browser_proxy_identify_js() -> String {
+    format!(
+        r#"<script>(function(){{
+  try {{
+    Object.defineProperty(Navigator.prototype, "userAgent", {{ get: function () {{ return {:?}; }}, configurable: true, enumerable: true }});
+  }} catch (e) {{}}
+}})();</script>"#,
+        BROWSER_PROXY_IDENTIFY_UA
+    )
+}
+
 // Strips any <meta http-equiv="Content-Security-Policy" ...> tag from the
 // target page's own HTML. Not forwarding the target's HTTP response
 // headers (see the comment further down) isn't enough on its own -
@@ -4119,6 +4188,7 @@ async fn handle_browser_proxy_connection(
     state: Arc<BrowserProxyState>,
     target_url: String,
     client: reqwest::Client,
+    identity_mode: String,
 ) {
     let mut buf = vec![0u8; 8192];
     let mut total = 0usize;
@@ -4220,17 +4290,22 @@ async fn handle_browser_proxy_connection(
     // the REAL page URL, not our localhost one) + the shim, right after
     // the opening <head> tag; prepend as a fallback if there's no <head>
     // at all (rare, but some tiny/malformed pages omit it).
+    let shim = match identity_mode.as_str() {
+        "blend" => format!("{}{}", BROWSER_PROXY_INVISIBILITY_JS, BROWSER_PROXY_SHIM_JS),
+        "identify" => format!("{}{}", browser_proxy_identify_js(), BROWSER_PROXY_SHIM_JS),
+        _ => BROWSER_PROXY_SHIM_JS.to_string(),
+    };
     let lower = body.to_lowercase();
     let injected = if let Some(head_pos) = lower.find("<head") {
         let close_pos = body[head_pos..].find('>').map(|i| head_pos + i + 1);
         if let Some(insert_at) = close_pos {
             let base_tag = format!("<base href=\"{}\">", target_url.replace('"', "&quot;"));
-            format!("{}{}{}{}", &body[..insert_at], base_tag, BROWSER_PROXY_SHIM_JS, &body[insert_at..])
+            format!("{}{}{}{}", &body[..insert_at], base_tag, shim, &body[insert_at..])
         } else {
-            format!("{}{}", BROWSER_PROXY_SHIM_JS, body)
+            format!("{}{}", shim, body)
         }
     } else {
-        format!("{}{}", BROWSER_PROXY_SHIM_JS, body)
+        format!("{}{}", shim, body)
     };
 
     // Deliberately NOT forwarding the target's own response headers - that
@@ -4246,7 +4321,7 @@ async fn handle_browser_proxy_connection(
 }
 
 #[tauri::command]
-async fn start_browser_proxy(app: AppHandle, target_url: String) -> Result<String, String> {
+async fn start_browser_proxy(app: AppHandle, target_url: String, identity_mode: String) -> Result<String, String> {
     let normalized = if target_url.starts_with("http://") || target_url.starts_with("https://") {
         target_url.clone()
     } else {
@@ -4259,10 +4334,18 @@ async fn start_browser_proxy(app: AppHandle, target_url: String) -> Result<Strin
         handle.abort();
     }
 
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(15))
-        .build()
-        .map_err(|e| e.to_string())?;
+    // Swaps reqwest's default `reqwest/x.y.z` UA (an instant giveaway in
+    // server access logs either way) for whichever real header the active
+    // identity mode calls for on the initial document fetch - see the
+    // comment above BROWSER_PROXY_UA for what each mode does and doesn't
+    // cover.
+    let mut client_builder = reqwest::Client::builder().timeout(Duration::from_secs(15));
+    client_builder = match identity_mode.as_str() {
+        "blend" => client_builder.user_agent(BROWSER_PROXY_UA),
+        "identify" => client_builder.user_agent(BROWSER_PROXY_IDENTIFY_UA),
+        _ => client_builder,
+    };
+    let client = client_builder.build().map_err(|e| e.to_string())?;
 
     let listener = TcpListener::bind(("127.0.0.1", 0)).await.map_err(|e| e.to_string())?;
     let port = listener.local_addr().map_err(|e| e.to_string())?.port();
@@ -4282,6 +4365,7 @@ async fn start_browser_proxy(app: AppHandle, target_url: String) -> Result<Strin
                 state2.clone(),
                 target2.clone(),
                 client.clone(),
+                identity_mode.clone(),
             ));
         }
     });

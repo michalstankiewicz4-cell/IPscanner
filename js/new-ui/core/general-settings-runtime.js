@@ -10,6 +10,8 @@
       rememberLanguage: true,
       rememberSkin: true,
       rememberPanelSizes: true,
+      browserInvisibility: false,
+      browserIdentifyAsApp: false,
       rememberBlurIp: true,
       rememberDetachedWindows: true,
       rememberWindowState: true,
