@@ -61,225 +61,309 @@
   - [4.14. WiFi](#414-wifi)
 - [5. Creating addons](#creating-addons)
 
-
-
-
 ## Shell
 
-*(to be written)*
+The main window's layout: a menu bar and status bar framing four regions -
+Left, Right, Central, and a collapsible bottom panel.
 
 ### 1.1. Top bar menu
 <img width="958" height="20" alt="image" src="https://github.com/user-attachments/assets/6b679898-9a90-4f26-80b4-b6e9dea44d21" />
 
-*(to be written)*
+The bar across the top of the window: the app logo, the File/Options/Tools
+menus, the current session's name, a small utility button panel, and the
+window controls.
 
 #### 1.1.1. Logo
 
-*(to be written)*
+The app icon in the top-left corner. Purely decorative - not clickable.
 
 #### 1.1.2. File
 <img width="224" height="200" alt="image" src="https://github.com/user-attachments/assets/7b29af44-cddd-4188-a683-63dabb86c43f" />
 
-*(to be written)*
+New, Open, Open Recent, Import, Save, Save As, Close, Exit - see
+[2. Sessions](#sessions). Import is a placeholder, not implemented yet.
 
 #### 1.1.3. Options
 <img width="221" height="158" alt="image" src="https://github.com/user-attachments/assets/bf9fa1ef-d793-4c07-95e7-8d4e0caaee8b" />
 
-*(to be written)*
+Country IP Library, Port Presets, Language, General, Community Catalog,
+Agent Identity - see [3. Options](#options).
 
 #### 1.1.4. Tools
 <img width="224" height="298" alt="image" src="https://github.com/user-attachments/assets/ca3083fb-5701-4711-9196-4f9e35779edf" />
 
-*(to be written)*
+Opens any of the app's tools - see [4. Tools](#tools) for the full list.
 
 #### 1.1.5. Last saved session name
 
-*(to be written)*
+Shows the current session's filename once one is saved or loaded (hover
+for the full path), or "No active session" otherwise. Read-only, not
+clickable.
 
 #### 1.1.6. Button panel
 
-*(to be written)*
+Three small controls: **⟲** resets local app settings/cache and reloads
+(not your saved session files); **👁** blurs IP/hostname text everywhere,
+handy for screen-sharing; the auto-arrange checkbox plus **▦** button
+tidies up any detached floating tool windows into a grid.
 
 #### 1.1.7. Window button manager
 
-*(to be written)*
+Minimize, maximize, fullscreen, and close - desktop-only. Close snapshots
+your currently open tabs first if "Remember open tabs" is enabled in
+[3.4. General](#34-general).
 
 ### 1.2. Left shortcut menu
 <img width="38" height="64" alt="image" src="https://github.com/user-attachments/assets/a6e9fa7c-6e46-4c9f-8808-4ede7522506e" />
 
-*(to be written)*
+A narrow icon bar for jumping straight to a few key panels: 💬 Community,
+📊 Result Data List, 📡 IP Scanner, 🖧 Network Monitor, 📧 Email Recon.
 
 #### 1.2.1. Community
 <img width="509" height="309" alt="image" src="https://github.com/user-attachments/assets/4b7c3107-580e-44a7-9591-187c26ba305f" />
 
-*(to be written)*
+Opens the Community Chat panel.
 
 #### 1.2.2. Result data list
 <img width="221" height="131" alt="image" src="https://github.com/user-attachments/assets/8b16784d-f487-4ec4-b187-a643eefbedba" />
 
-*(to be written)*
+Opens the IP Scanner's results table.
 
 ### 1.3. Down information bar
 <img width="959" height="14" alt="image" src="https://github.com/user-attachments/assets/40ef2f02-a16a-4b7d-902a-0d7088b79680" />
 
-*(to be written)*
+A thin status strip along the bottom of the window with six live
+indicators, left to right.
 
 #### 1.3.1. Loader
 <img width="26" height="19" alt="image" src="https://github.com/user-attachments/assets/67bb063b-ce08-4888-8e73-0af68ee6bd3a" />
 
-*(to be written)*
+Animates while something is running in the background - a scan, an API
+call, etc.
 
 #### 1.3.2. Processes
 <img width="17" height="20" alt="image" src="https://github.com/user-attachments/assets/1eb37308-3fa7-478d-a9c6-e7a644fa700b" />
 
-*(to be written)*
+Count of active background operations; hover for a breakdown of what's
+running. Green at 0-1, amber once more than one stacks up.
 
 #### 1.3.3. Loading progress bar
 <img width="92" height="21" alt="image" src="https://github.com/user-attachments/assets/995651dc-fe54-4d69-8ee2-ffb0565f2c73" />
 
-*(to be written)*
+Fills in during an IP scan, showing how many addresses have been
+processed.
 
 #### 1.3.4. Domain verification status
 <img width="16" height="21" alt="image" src="https://github.com/user-attachments/assets/c1a44602-a04b-4021-b0d8-030225efebc5" />
 
-*(to be written)*
+Reflects whatever's typed into [3.4. General](#34-general)'s domain
+verification field: white if empty, green if verified, red if not. With
+the field empty, stays green as long as at least one domain has ever been
+verified this session.
 
 #### 1.3.5. Version information
 <img width="18" height="20" alt="image" src="https://github.com/user-attachments/assets/1933203a-31c6-4591-b48f-4d1c121a02a2" />
 
-*(to be written)*
+Green when you're on the latest release; blinks amber with the new
+version number in its tooltip when an update is available.
 
 #### 1.3.6. Active tab
 <img width="83" height="23" alt="image" src="https://github.com/user-attachments/assets/4aee3504-4c4c-4439-b34e-59d28ef859ce" />
 
-*(to be written)*
+Names whichever tab is currently focused in the central panel.
 
 ### 1.4. left section
 <img width="239" height="449" alt="image" src="https://github.com/user-attachments/assets/3d9baa83-82f2-4e3a-a00b-6925e226c1d2" />
 
-*(to be written)*
+Hosts each tool's own supporting panel - result tables, libraries, history
+lists, and similar - depending on what's open.
 
 ### 1.5. right section
 <img width="209" height="448" alt="image" src="https://github.com/user-attachments/assets/c76124ec-5ee9-45a1-9b7d-f52015531e25" />
 
-*(to be written)*
+Hosts each tool's own configuration or output panel - scan settings, the
+AI Assistant chat, live logs, and similar - depending on what's open.
 
 ### 1.6. Central section
 <img width="520" height="322" alt="image" src="https://github.com/user-attachments/assets/c3963ae1-c5a4-4427-968a-bf114ec0af37" />
 
-*(to be written)*
+Where every tool's main view lives, one per tab.
 
 #### 1.6.1. Tab
 <img width="507" height="38" alt="image" src="https://github.com/user-attachments/assets/726ef941-bcbc-4949-9ce9-3c7f14c07168" />
 
-*(to be written)*
+The tab strip. Tabs can be closed (×) or popped out (↗), and scroll when
+there are more than fit - they can't be reordered.
 
 #### 1.6.2. Window
 <img width="515" height="380" alt="image" src="https://github.com/user-attachments/assets/68a54299-3c56-4184-95d8-97f5ac3286e6" />
 
-*(to be written)*
+Popping out (↗) a tab turns it into a draggable, resizable floating card
+confined to the app's own window - not a real separate OS window.
+Position and size are remembered per tool. The only feature that opens a
+genuine standalone OS window is the Browser tool's own "open in real
+window" button - see [4.9. Browser](#49-browser).
 
 ### 1.7. Down section
 <img width="512" height="149" alt="image" src="https://github.com/user-attachments/assets/1621cd94-653d-456e-a262-b878a77b829e" />
 
-*(to be written)*
+A collapsible bottom panel with three tabs.
 
 #### 1.7.1. Terminal
 <img width="512" height="149" alt="image" src="https://github.com/user-attachments/assets/92805ec4-2f38-4dd9-b6e1-884b1e3627cd" />
 
-*(to be written)*
+A real PowerShell console running inside the app.
 
 #### 1.7.2. Macro
 <img width="513" height="146" alt="image" src="https://github.com/user-attachments/assets/673c3753-ede0-44fd-986d-8611da181d11" />
 
-*(to be written)*
+A tiny command runner for exactly three built-in shortcuts: `ext-ip`,
+`local-ip`, `subnets` (type `help` to list them) - not a general
+scripting console.
 
 #### 1.7.3. Console
 <img width="509" height="147" alt="image" src="https://github.com/user-attachments/assets/8c460b1d-d646-48b1-abb4-4a2f2094e923" />
 
-*(to be written)*
+A read-only log of what the app itself is doing in the background - rate
+limit waits and similar.
 
 ## Sessions
 
-*(to be written)*
+A session is a single SQLite file (`OSINT-session.sqlite3` by default)
+holding everything: scan results, the IP library, presets, agent
+profiles, layout, and more.
+
+- **New** and **Close** both clear the current session back to a blank
+  state.
+- **Open**, **Save**, and **Save As** use native file dialogs. Save
+  writes to the current file if one's already loaded, otherwise falls
+  back to Save As.
+- **Exit** asks whether to save first.
+- **Import** is a placeholder - not implemented yet.
 
 ## Options
 
-*(to be written)*
+Reachable from the top menu's Options entry.
 
 ### 3.1. Country IP Library
 
-*(to be written)*
+A per-country table of IP ranges, refreshed on demand (needs PowerShell,
+desktop only).
 
 ### 3.2. Port presets
 
-*(to be written)*
+Editable list of named port groups - an emoji, a name, and a
+comma-separated port list - used throughout the scanner.
 
 ### 3.3. Language
 
-*(to be written)*
+Switch the UI language, or install one from the community language
+catalog (fetched from GitHub) or a local file.
 
 ### 3.4. General
 
-*(to be written)*
+Per-setting checkboxes for what should be remembered across restarts,
+plus:
+
+- AI Assistant provider setup - see [4.1.1. Setup](#411-setup).
+- Domain verification: generate a verification file/key, upload it to a
+  site's root, then verify individual domains against it - proves
+  control over a domain before features that act on someone else's site
+  (like Browser Inspect) are allowed to target it. Reflected live in
+  [1.3.4. Domain verification status](#134-domain-verification-status).
+- A Google Dork API key field - saved for a future feature, not used
+  yet.
 
 ### 3.5. Keyboard shortcuts
 
-*(to be written)*
+Not implemented yet.
 
 ### 3.6. Community Catalog
 
-*(to be written)*
+Browse addons published by anyone as a public GitHub repo tagged
+`osintnetauditor-addon` - see [5. Creating addons](#creating-addons).
+Browsing and installing needs no login; rating or commenting on an addon
+does (real GitHub sign-in).
 
 ### 3.7. Agent identity
 
-*(to be written)*
+Save reusable OSINT identities - name, email, login, password, notes,
+photo/file attachments, and freeform per-service fields - as part of the
+session.
 
 ## Tools
 
+Reachable from the top menu's Tools entry.
+
 ### 4.1. AI Assistant
 
-*(to be written)*
+A chat panel wired directly to Anthropic's or Google's API using your own
+key - no backend involved. Can call the app's own tools on your behalf,
+gated by [4.1.2. Permissions](#412-permissions).
 
 #### 4.1.1. Setup
 
-*(to be written)*
+[3.4. General](#34-general) -> AI Assistant: pick a provider (Anthropic
+or Google), a model, and paste an API key
+([get an Anthropic key](https://platform.claude.com/settings/workspaces/default/keys) /
+[get a Google key](https://aistudio.google.com/api-keys)) - stored
+locally or RAM-only, your choice.
 
 #### 4.1.2. Permissions
 
-*(to be written)*
+A profile (Read-only / Assisted / Autonomous / Custom) plus a per-tool
+auto/ask/off list controlling what the AI Assistant is allowed to do on
+its own, with an audit log of everything it's actually done.
 
 ### 4.2. ShellCraft
 
-*(to be written)*
+A drag-and-drop automation canvas. Only the three macro blocks (External
+IP / Local IP / Subnets) actually run today - If, Repeat Until,
+PowerShell, and Time Trigger blocks can be placed but aren't runnable
+yet.
 
 ### 4.3. IP Scanner
 
-*(to be written)*
+Scan an IP range or CIDR block for open ports. TCP Connect, UDP, and
+ICMP are available; TCP SYN and OS Detection are shown but permanently
+disabled.
 
 ### 4.4. Network Monitor
 
-*(to be written)*
+Live tables of local TCP/UDP connections and LAN devices (with vendor
+lookup via MAC OUI), sortable and groupable.
 
 ### 4.5. Email Recon
 
-*(to be written)*
+Look up an email address across emailrep.io, Gravatar, GitHub,
+HaveIBeenPwned (breaches and pastes), XposedOrNot, and LeakCheck - pick
+which sources to check, with an optional HIBP API key for higher limits.
 
 ### 4.6. Topology
 
-*(to be written)*
+A visual network diagram - auto-build it from your last scan, or add
+devices (server/switch/printer/router) and tools (scanner/sniffer) by
+hand and connect them.
 
 ### 4.7. Desktop Preview
 
-*(to be written)*
+Live thumbnails of any Topology node running a reachable VNC server
+(desktop only).
 
 ### 4.8. Globe
 
-*(to be written)*
+Plots scanned hosts on a 3D globe by geolocation.
 
 ### 4.9. Browser
 
-*(to be written)*
+An embedded browser tab with its own address bar, Reload, and Go. If a
+site refuses to be framed - or any time, via the **⧉** button - it opens
+in a genuine separate browser window instead.
+
+The **Inspect** toggle routes the page through a local proxy so every
+request it makes is logged live in the right panel, and lets you choose
+whether it blends in as a normal browser or openly identifies as this
+app (see [3.4. General](#34-general)).
 
 ### 4.10. Mail XSS Tester
 
@@ -372,20 +456,40 @@ results list updates live as payloads fire.
 
 ### 4.11. HTTPS Auditor
 
-*(to be written)*
+Checks a URL for HSTS, security headers, the redirect chain, and mixed
+content, with a certificate panel and an overall grade (desktop only).
+Keeps a history of past runs, exportable as CSV.
 
 ### 4.12. Reverse IP Lookup
 
-*(to be written)*
+Type an IP address to get its reverse-DNS (PTR) hostname, who owns the
+block (via RDAP), and any other domains historically seen resolving to
+that address. Works on both desktop and the web build, no backend
+needed.
 
 ### 4.13. Google Dork Finder
 
-*(to be written)*
+Builds a Google search query (`site:`/`filetype:`/`inurl:`/`intitle:`/
+`intext:`) from templates or your own picks, and opens it in your real
+browser - never scrapes Google directly. Keeps a reusable history of
+past queries.
 
 ### 4.14. WiFi
 
-*(to be written)*
+Scan nearby networks, or view and reveal saved WiFi profiles and their
+passwords (desktop only, via `netsh wlan`).
 
 ## Creating addons
 
-*(to be written)*
+Addons are plain JSON manifests (`manifest.json`) that add tools, menu
+entries, or PowerShell-backed commands - no build step, and no
+sandboxing beyond a single `"powershell"` permission the user has to
+approve on install.
+
+To publish one: create a public GitHub repo tagged with the topic
+`osintnetauditor-addon`, with `manifest.json` at the root (optionally an
+`icon.png` and a `main.js` for real custom logic beyond PowerShell).
+It'll show up automatically in
+[3.6. Community Catalog](#36-community-catalog) - full format and rules
+in [`CONTRIBUTING.md`](https://github.com/michalstankiewicz4-cell/IPscanner/blob/main/CONTRIBUTING.md)
+and [`docs/COMMUNITY_ADDON_GUIDELINES.md`](https://github.com/michalstankiewicz4-cell/IPscanner/blob/main/docs/COMMUNITY_ADDON_GUIDELINES.md).
