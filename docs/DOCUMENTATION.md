@@ -95,6 +95,7 @@
 *(to be written)*
 
 #### 1.2.2. Result data list
+<img width="221" height="131" alt="image" src="https://github.com/user-attachments/assets/8b16784d-f487-4ec4-b187-a643eefbedba" />
 
 *(to be written)*
 
