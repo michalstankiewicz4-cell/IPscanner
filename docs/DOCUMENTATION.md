@@ -204,26 +204,32 @@
 *(to be written)*
 
 ## Sessions
+<img width="443" height="253" alt="image" src="https://github.com/user-attachments/assets/38f2777e-c956-4ccb-9b71-a1f2b36e2854" />
 
 *(to be written)*
 
 ## Options
+<img width="247" height="197" alt="image" src="https://github.com/user-attachments/assets/f1672ea6-11a9-4f57-9d59-1370d544feae" />
 
 *(to be written)*
 
 ### 3.1. Country IP Library
+<img width="689" height="280" alt="image" src="https://github.com/user-attachments/assets/2d552bed-81c4-4620-82ef-ffac654eb577" />
 
 *(to be written)*
 
 ### 3.2. Port presets
+<img width="442" height="311" alt="image" src="https://github.com/user-attachments/assets/c3c24dbb-362c-4daa-862f-99beee9c36fd" />
 
 *(to be written)*
 
 ### 3.3. Language
+<img width="344" height="440" alt="image" src="https://github.com/user-attachments/assets/daa24404-d226-484e-969b-90a50ea610ea" />
 
 *(to be written)*
 
 ### 3.4. General
+<img width="450" height="440" alt="image" src="https://github.com/user-attachments/assets/ccb7abe0-4c9c-4ead-baf2-67e9afc67945" />
 
 *(to be written)*
 
@@ -232,14 +238,17 @@
 *(to be written)*
 
 ### 3.6. Community Catalog
+<img width="463" height="263" alt="image" src="https://github.com/user-attachments/assets/a93e77db-f5f6-4e2f-b184-a1f51cbdb4eb" />
 
 *(to be written)*
 
 ### 3.7. Agent identity
+<img width="687" height="423" alt="image" src="https://github.com/user-attachments/assets/ca978a2b-d8c9-4456-ba5f-405b255605e2" />
 
 *(to be written)*
 
 ## Tools
+<img width="251" height="353" alt="image" src="https://github.com/user-attachments/assets/82c4ffbb-d2c3-4255-8153-e4ba6c692e52" />
 
 ### 4.1. AI Assistant
 
