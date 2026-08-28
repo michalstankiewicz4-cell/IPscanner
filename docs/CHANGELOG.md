@@ -6,6 +6,66 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-08-28
+
+- **Browser tool**: added a network traffic inspector. Toggling "Inspect"
+  on the current page routes it through a local proxy instead of loading
+  it directly, so every fetch/XHR/beacon call plus every image/script/
+  link/iframe the page loads is logged with method, URL, and kind - shown
+  live in a new "Network traffic" right-panel tab (desktop only). Fixed a
+  page that ships its own Content-Security-Policy via a `<meta>` tag
+  (rather than an HTTP header, as GitHub Pages-hosted sites like
+  ipscanner.pl itself have to) failing to render under Inspect - that meta
+  CSP is now stripped along with the rest.
+- Added an Inspect-mode identity setting (Options -> General -> Privacy &
+  tools): **Default** (the app's real WebView2 signature, unchanged),
+  **Blend in as a normal browser** (spoofs a common desktop Chrome
+  fingerprint - User-Agent, navigator.webdriver, WebView2-specific
+  markers - so the inspected site can't easily tell it's not a regular
+  visitor), or **Identify as "OSINT NET Auditor"** (the opposite - openly
+  announces this as an automated inspection tool via a custom User-Agent
+  instead of hiding it). Fixed a bug in "Blend in" that made bot detection
+  WORSE instead of better: hiding `navigator.webdriver` by defining it
+  directly on the `navigator` instance still leaves it as an OWN property
+  (just one that returns `undefined`), which detectors checking
+  `hasOwnProperty()` flag as suspicious - patched onto `Navigator.prototype`
+  instead, confirmed passing against bot.sannysoft.com.
+- Fixed a real bug where closing the app while Mail XSS Tester's tunnel
+  (or the Browser tool's network proxy) was running left the underlying
+  `cloudflared` process orphaned and still publicly reachable - both are
+  now stopped whenever the app closes, through any close path. Also fixed
+  a narrower version of the same leak: the tunnel process was only
+  recorded in app state once its public URL was ready (up to 20s after
+  spawning), so closing the app during that window still left it orphaned
+  even with the fix above in place.
+- Added **domain ownership verification** (Options -> General -> Domain
+  verification): generate a random verification file/key once (prompts a
+  native Save dialog, defaulting to the Desktop), upload it to a site's
+  root, then verify individual domains against it - proves control over a
+  domain before features that act on someone else's site are allowed to
+  target it (not wired up to gate anything yet, this lays the groundwork
+  for later). Verified domains persist to both localStorage and the
+  session file (new SQLite tables, both the desktop and www/sql.js session
+  paths). The status bar's new marker (an exclamation-mark triangle, next
+  to the loading progress bar) shows the live status of whatever domain is
+  currently typed into that field - white when empty, green when
+  verified, red when not - and shows a green summary whenever at least
+  one domain has ever been verified, even with the field empty.
+- Added an always-visible update-available indicator to the status bar
+  (the ⓘ next to "active: X"): green when you're on the latest version,
+  blinking amber with a tooltip naming the new version when a newer
+  release is found - independent of the existing one-time "new version"
+  popup, so dismissing that with "Later" no longer makes the reminder
+  disappear for the rest of the session.
+- Added **Help -> Documentation**, opening a new `docs/DOCUMENTATION.md`
+  through the in-app Markdown viewer. Also fixed a real bug in that
+  viewer: the vendored marked.js (v5+) stopped generating `id` attributes
+  on headings, so any `#fragment` link inside a viewed .md file (a table
+  of contents, for example) silently went nowhere - headings get
+  GitHub-style slug ids again now.
+- **Mail XSS Tester**: the email Subject field is now fixed instead of
+  freely editable.
+
 ## 2026-08-27
 
 - Added a new tool: **Reverse IP Lookup** (Tools menu). Type an IP address
