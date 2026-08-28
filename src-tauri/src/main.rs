@@ -3329,8 +3329,39 @@ fn window_start_dragging(window: WebviewWindow) -> Result<(), String> {
     window.start_dragging().map_err(|e| e.to_string())
 }
 
+// Kills anything this app spawned that the OS won't clean up on its own
+// just because our own process exits - a running cloudflared tunnel
+// (std::process::Child, a genuinely separate OS process, no "die with
+// parent" behavior on Windows unless something explicitly kills it) and
+// the browser-network proxy's accept-loop task. Called from BOTH
+// window_close() below (the custom "X" button's own command - this is
+// the path almost every real close goes through, and it calls
+// app.exit(0) directly, which does NOT fire WindowEvent::CloseRequested)
+// and the on_window_event hook further down (Alt+F4, the taskbar's
+// "Close window" - anything that goes through the OS's normal close
+// flow instead of this command). Left running, a forgotten tunnel keeps
+// a real public *.trycloudflare.com URL forwarding into this machine
+// indefinitely. Can't do anything about a hard kill (Task Manager "End
+// Task", a crash) - no app-level hook runs at all for those, on any OS.
+fn cleanup_background_processes(app: &AppHandle) {
+    if let Some(state) = app.try_state::<Arc<MailXssTesterState>>() {
+        if let Some(mut child) = state.tunnel_child.lock().unwrap().take() {
+            let _ = child.kill();
+        }
+        if let Some(handle) = state.beacon_task.lock().unwrap().take() {
+            handle.abort();
+        }
+    }
+    if let Some(state) = app.try_state::<Arc<BrowserProxyState>>() {
+        if let Some(handle) = state.server_task.lock().unwrap().take() {
+            handle.abort();
+        }
+    }
+}
+
 #[tauri::command]
 fn window_close(app: AppHandle) -> Result<(), String> {
+    cleanup_background_processes(&app);
     // Was window.close() on the main WebviewWindow, but that left the
     // embedded Browser's child webview (Window::add_child) as an orphaned
     // ghost frame - Windows' own "app not responding" ghost-window overlay
@@ -4320,6 +4351,14 @@ fn main() {
             hits: Mutex::new(Vec::new()),
             server_task: Mutex::new(None),
         }))
+        // Autostop safety net for close paths that DON'T go through
+        // window_close() (Alt+F4, the taskbar's own "Close window") - see
+        // cleanup_background_processes()'s comment for the full picture.
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                cleanup_background_processes(&window.app_handle());
+            }
+        })
         .setup(|app| {
             // Community Catalog GitHub login: NSIS/MSI do NOT register the
             // custom URL scheme at install time (confirmed against the
