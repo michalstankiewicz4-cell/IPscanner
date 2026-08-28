@@ -80,6 +80,13 @@
     "  id TEXT PRIMARY KEY, audited_at TEXT NOT NULL, requested_url TEXT NOT NULL,",
     "  final_url TEXT NOT NULL, grade TEXT NOT NULL DEFAULT '', result_json TEXT NOT NULL",
     ");",
+    "CREATE TABLE IF NOT EXISTS domain_verification_key (",
+    "  id INTEGER PRIMARY KEY CHECK (id = 1), file_name TEXT NOT NULL DEFAULT '',",
+    "  key TEXT NOT NULL DEFAULT '', generated_at INTEGER NOT NULL DEFAULT 0",
+    ");",
+    "CREATE TABLE IF NOT EXISTS domain_verification_domains (",
+    "  domain TEXT PRIMARY KEY, verified_at INTEGER NOT NULL DEFAULT 0",
+    ");",
   ].join("\n");
 
   // Agent profile attachment bytes cross as base64 in the JS shape (same as
@@ -325,6 +332,23 @@
           ]);
         });
         insertAudit.free();
+
+        var domainVerification = data.domainVerification || {};
+        var domainVerificationFileName = String(domainVerification.fileName || "");
+        if (domainVerificationFileName) {
+          db.run("INSERT INTO domain_verification_key (id, file_name, key, generated_at) VALUES (1, ?, ?, ?)", [
+            domainVerificationFileName,
+            String(domainVerification.key || ""),
+            Number(domainVerification.generatedAt) || 0,
+          ]);
+        }
+        var verifiedDomains = Array.isArray(domainVerification.verifiedDomains) ? domainVerification.verifiedDomains : [];
+        var insertDomain = db.prepare("INSERT INTO domain_verification_domains (domain, verified_at) VALUES (?,?)");
+        verifiedDomains.forEach(function (d) {
+          d = d || {};
+          insertDomain.run([String(d.domain || ""), Number(d.verifiedAt) || 0]);
+        });
+        insertDomain.free();
 
         return db.export();
       } finally {
@@ -610,6 +634,24 @@
           }
         } catch (_) {}
 
+        // Same "brand new table" fallback as session_extensions above.
+        var domainVerification = { fileName: "", key: "", generatedAt: 0, verifiedDomains: [] };
+        try {
+          var domainKeyRows = db.exec("SELECT file_name, key, generated_at FROM domain_verification_key WHERE id = 1");
+          if (domainKeyRows.length && domainKeyRows[0].values.length) {
+            var dv = domainKeyRows[0].values[0];
+            domainVerification.fileName = String(dv[0] || "");
+            domainVerification.key = String(dv[1] || "");
+            domainVerification.generatedAt = Number(dv[2]) || 0;
+          }
+          var domainRows = db.exec("SELECT domain, verified_at FROM domain_verification_domains ORDER BY verified_at ASC");
+          if (domainRows.length) {
+            domainRows[0].values.forEach(function (row) {
+              domainVerification.verifiedDomains.push({ domain: String(row[0] || ""), verifiedAt: Number(row[1]) || 0 });
+            });
+          }
+        } catch (_) {}
+
         return {
           scanResults: scanResults,
           scanProgress: scanProgress,
@@ -621,6 +663,7 @@
           meta: meta,
           extensions: extensions,
           httpsAuditHistory: httpsAuditHistory,
+          domainVerification: domainVerification,
         };
       } finally {
         db.close();

@@ -793,6 +793,71 @@
   margin-top: 0;
 }
 
+/* shell: Domain verification section (General settings screen) - the
+   generated file name/key display, and the list of already-verified
+   domains. .v1-import-manager-actions (reused for the input+button row)
+   only styles its buttons, same gap https-auditor.css/reverse-ip.css
+   each had to fill for their own bare <input>. */
+.v1-domain-verify-shell input[data-domain-verify-input] {
+  flex: 1 1 240px;
+  min-width: 180px;
+  border: 1px solid #3d424d;
+  background: #22242a;
+  color: var(--txt);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+}
+
+.v1-domain-verify-shell input[data-domain-verify-input]:focus {
+  border-color: var(--brand);
+  outline: none;
+  background: #262932;
+}
+
+.v1-domain-verify-shell input[data-domain-verify-input]::placeholder {
+  color: var(--txt-dim);
+}
+
+.v1-domain-verify-file {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  margin: 4px 0 8px;
+  border: 1px solid #2a2b2f;
+  background: #1c1d21;
+}
+
+.v1-domain-verify-file code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--txt);
+  word-break: break-all;
+}
+
+.v1-domain-verify-list {
+  border: 1px solid #2a2b2f;
+  margin-top: 4px;
+}
+
+.v1-domain-verify-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--txt);
+  border-bottom: 1px solid #2a2b2f;
+}
+
+.v1-domain-verify-row:last-child {
+  border-bottom: none;
+}
+
 /* shell: radio-row markup, currently used by AI Permissions' Profile picker
    (--stacked variant below) - deliberately not part of the
    .v1-results-columns-item checkbox grid above, since it's a radio group. */

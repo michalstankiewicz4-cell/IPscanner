@@ -1530,6 +1530,7 @@
         renderHttpsAuditorLibrary: panelContentRuntime && panelContentRuntime.renderHttpsAuditorLibrary,
         httpsAuditorResultToCsv: panelContentRuntime && panelContentRuntime.httpsAuditorResultToCsv,
         renderReverseIpTool: panelContentRuntime && panelContentRuntime.renderReverseIpTool,
+        renderDomainVerificationSection: panelContentRuntime && panelContentRuntime.renderDomainVerificationSection,
         renderBrowserNetworkLog: panelContentRuntime && panelContentRuntime.renderBrowserNetworkLog,
         renderGoogleDorkLibrary: panelContentRuntime && panelContentRuntime.renderGoogleDorkLibrary,
         renderGoogleDorkTool: panelContentRuntime && panelContentRuntime.renderGoogleDorkTool,

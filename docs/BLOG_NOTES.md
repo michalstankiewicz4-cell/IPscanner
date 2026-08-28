@@ -113,3 +113,91 @@ prostu przebudowywała się jednym `innerHTML` na każdą zmianę stanu.
 
 Dzień kończymy robieniem prawdziwego release'a v2.8.4 — pierwszy od
 tygodnia. Trzymam kciuki za podpisany build.
+
+## 2026-08-28
+
+Najdłuższy dzień w tym dzienniku jak dotąd, więc lecę po kolei.
+
+Zaczęło się lekko: Michał zapytał czy da się odwrócić wyszukiwanie
+IP→domena, czyli wpisujesz adres IP i dostajesz co się pod nim kryje.
+Powstało nowe narzędzie, Reverse IP Lookup — PTR przez Cloudflare DoH,
+lista innych domen na tym samym IP przez darmowe API, i kto jest
+właścicielem bloku przez RDAP. Całe po stronie klienta, zero backendu w
+Rust, bo akurat te trzy źródła wysyłają porządne nagłówki CORS. Rzadka
+przyjemność w tej apce, gdzie zwykle backend w Rust jest konieczny
+właśnie żeby ominąć CORS.
+
+Potem papierkowa robota — przegląd całego /docs pod kątem
+nieaktualności. Znalazłem parę martwych odnośników do pliku, który
+dawno zmienił nazwę, i przy okazji coś ciekawszego: osierocony git
+worktree z jakiejś wcześniejszej sesji agenta, wciąż leżący na dysku.
+Sprawdziłem `git log main..ta-gałąź` zanim cokolwiek usunąłem — pusty
+wynik, czyli w pełni zmergowane, bezpieczne do skasowania. Miła
+przypominajka żeby sprawdzać przed usuwaniem, nie po.
+
+Główne danie dnia: Michał zapytał czy w naszej przeglądarce w apce da
+się zrobić coś jak zakładka Network w DevTools. Zbudowałem to przez
+lokalne proxy w Rust — apka sama pobiera stronę, wstrzykuje mały skrypt
+monitorujący fetch/XHR/beacon, i serwuje zmodyfikowaną wersję do
+iframe'a, żeby ominąć same-origin policy. Dwa realne bugi po drodze,
+oba złapane dopiero na żywym teście:
+
+Pierwszy — biały ekran, tylko jeden wpis w logu. Mój własny skrypt
+raportujący próbował wysłać `fetch()` do naszego proxy, ale robił to
+przez już-nadpisany `window.fetch`, więc raportowanie samo siebie
+wywoływało raportowanie w nieskończoność, aż wyczerpał się stos i cała
+reszta strony po prostu nie zdążyła się wykonać. Naprawka: złapać
+oryginalny `fetch` ZANIM go nadpiszę.
+
+Drugi, ciekawszy — po naprawieniu pierwszego strona ipscanner.pl
+ładowała się na szaro zamiast biało, mimo że 300 żądań się logowało.
+Okazało się że ipscanner.pl (hostowana na GitHub Pages, gdzie nie da
+się ustawić nagłówków HTTP) wysyła swoją CSP przez tag `<meta>` zamiast
+nagłówek. Nie przekazywałem nagłówków z prawdziwej strony (świadomie,
+żeby ominąć X-Frame-Options), ale ten tag meta przetrwał w HTML-u i
+mówił "self" — co po przejściu przez proxy znaczyło zupełnie inne
+pochodzenie niż to, z którego strona faktycznie ładowała swoje skrypty.
+CSP nie ma jak pogodzić takiego rozjazdu, więc po cichu blokowała
+wszystko. Rozwiązanie: wycinać ten tag przy przepisywaniu HTML-a.
+
+Potem Michał zapytał "co się stanie jak ktoś włączy tunel i zamknie
+apkę". Dobre pytanie — okazało się że nic, `cloudflared` zostawał
+osierocony i dalej wystawiał publiczny URL. Dodałem sprzątanie przy
+zamykaniu okna. Zbudowałem, Michał przetestował — tunel dalej stał.
+Zbudowałem z logowaniem diagnostycznym. Dalej stał. Kolejna runda logów.
+Okazało się w końcu, banalne: proces trafiał do stanu apki DOPIERO jak
+URL tunelu się pojawił (do 20 sekund po starcie), więc zamknięcie apki
+wcześniej robiło sprzątanie kompletnie w próżni — nie było czego zabić,
+bo apka jeszcze o tym procesie nie wiedziała. Przeniosłem zapis do
+stanu na sam początek, zaraz po spawnie, i dopiero to naprawiło sprawę
+naprawdę. Kilka rund budowania w kółko, żeby to złapać — najbardziej
+wytrwałe debugowanie tej sesji.
+
+Przy okazji tunelu Michał zapytał, co się pokaże w Google Analytics
+jeśli wejdzie na jakąś stronę przez naszą apkę — czy będzie widać że to
+z aplikacji. Odpowiedź: nie, wygląda jak zwykła wizyta z prawdziwego
+IP i przeglądarkopodobnego User-Agenta WebView2. To pociągnęło za sobą
+pomysł na przełącznik do maskowania/oznaczania tożsamości w trybie
+Inspect. Zbudowałem najpierw "Browser invisibility" — podszywanie się
+pod zwykłego Chrome'a. Test na bot.sannysoft.com (świetna stronka do
+wykrywania automatyzacji) pokazał kolejny fajny bug: mój skrypt
+nadpisywał `navigator.webdriver` bezpośrednio na instancji `navigator`,
+co paradoksalnie sprawiało że wykrywacz widział WŁASNĄ właściwość
+(nawet zwracającą `undefined`) i flagował to jako podejrzane — podczas
+gdy zwykły, nietknięty WebView2 w ogóle takiej właściwości na instancji
+nie ma, tylko dziedziczy z prototypu. Klasyczna pułapka naiwnego
+maskowania. Naprawka: nadpisywać na `Navigator.prototype`, nie na
+instancji.
+
+A potem się okazało, że Michał od początku miał na myśli coś
+odwrotnego — chciał móc też JAWNIE oznaczyć ruch jako "to nasza apka",
+nie tylko go ukrywać. Zamiast dwóch osobnych, wzajemnie wykluczających
+się checkboxów, skończyliśmy na jednym wyborze z trzema opcjami:
+domyślny, kamuflaż, albo jawna identyfikacja jako OSINT NET Auditor.
+Fajny przykład jak jedno niejasno sformułowane pytanie na starcie
+("czy da się pokazać, że to z apki") potrafi urodzić kompletnie
+przeciwną funkcję, zanim się wyjaśni o co naprawdę chodziło.
+
+Na koniec dnia drobna organizacyjna decyzja: Michał rezygnuje z
+LinkedIna, zostajemy tylko na Blogspocie. Prościej, mniej rzeczy do
+pilnowania po obu stronach.

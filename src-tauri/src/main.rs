@@ -944,6 +944,52 @@ async fn check_hsts_preload(client: &reqwest::Client, host: &str) -> bool {
     }
 }
 
+// Domain ownership verification (Options > General > Domain verification):
+// proves the user controls a domain, Google-Search-Console/ACME-HTTP-01
+// style, before features that act on someone else's site (Browser Inspect,
+// eventually) are allowed to target it. The JS side generates a random
+// file_name/expected_key pair once and shows it to the user to upload to
+// a site's root; this just fetches that one file over HTTPS and reports
+// whether the content matches - never a JS-level fetch(), since a plain
+// cross-origin browser fetch would hit CORS on almost every real site.
+// Returns Ok() for every REACHABLE-but-not-matching case too (wrong
+// content, 404, ...) so the UI can show why it failed - Err is reserved
+// for URL parsing failures, not verification failures.
+#[derive(Serialize)]
+struct DomainVerifyResult {
+    matched: bool,
+    http_status: Option<u16>,
+    error: Option<String>,
+}
+
+#[tauri::command]
+async fn verify_domain_file(domain: String, file_name: String, expected_key: String) -> Result<DomainVerifyResult, String> {
+    let clean_domain = domain
+        .trim()
+        .trim_start_matches("https://")
+        .trim_start_matches("http://")
+        .trim_end_matches('/');
+    let url = format!("https://{}/{}", clean_domain, file_name);
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    match client.get(&url).send().await {
+        Ok(resp) => {
+            let status = resp.status().as_u16();
+            if !resp.status().is_success() {
+                return Ok(DomainVerifyResult { matched: false, http_status: Some(status), error: Some(format!("HTTP {}", status)) });
+            }
+            let body = resp.text().await.unwrap_or_default();
+            let matched = body.trim() == expected_key.trim();
+            Ok(DomainVerifyResult { matched, http_status: Some(status), error: None })
+        }
+        Err(e) => Ok(DomainVerifyResult { matched: false, http_status: None, error: Some(e.to_string()) }),
+    }
+}
+
 #[tauri::command]
 async fn https_audit(url: String) -> Result<HttpsAuditResult, String> {
     let normalized = if url.starts_with("http://") || url.starts_with("https://") {
@@ -2367,6 +2413,28 @@ struct HttpsAuditHistoryRow {
     result_json: String,
 }
 
+// Domain ownership verification (Options > General > Domain verification,
+// see domain-verification-runtime.js) - one generated file_name/key pair
+// plus every domain that's passed a check against it. Bundled into the
+// session file per an explicit request so a saved session carries which
+// domains were already proven on this machine, same treatment as
+// https_audit_history below.
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct VerifiedDomainRow {
+    domain: String,
+    verified_at: i64,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct DomainVerificationData {
+    file_name: String,
+    key: String,
+    generated_at: i64,
+    verified_domains: Vec<VerifiedDomainRow>,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SessionData {
@@ -2384,6 +2452,8 @@ struct SessionData {
     extensions: Vec<SessionExtensionRow>,
     #[serde(default)]
     https_audit_history: Vec<HttpsAuditHistoryRow>,
+    #[serde(default)]
+    domain_verification: DomainVerificationData,
 }
 
 const SESSION_SCHEMA_SQL: &str = "
@@ -2494,6 +2564,16 @@ const SESSION_SCHEMA_SQL: &str = "
       final_url TEXT NOT NULL,
       grade TEXT NOT NULL DEFAULT '',
       result_json TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS domain_verification_key (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      file_name TEXT NOT NULL DEFAULT '',
+      key TEXT NOT NULL DEFAULT '',
+      generated_at INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS domain_verification_domains (
+      domain TEXT PRIMARY KEY,
+      verified_at INTEGER NOT NULL DEFAULT 0
     );
 ";
 
@@ -2751,6 +2831,27 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             insert_audit
                 .execute(params![row.id, row.audited_at, row.requested_url, row.final_url, row.grade, row.result_json])
                 .map_err(|e| format!("Failed to insert https_audit_history row: {e}"))?;
+        }
+    }
+
+    tx.execute("DELETE FROM domain_verification_key", [])
+        .map_err(|e| format!("Failed to clear domain_verification_key: {e}"))?;
+    if !data.domain_verification.file_name.is_empty() {
+        tx.execute(
+            "INSERT INTO domain_verification_key (id, file_name, key, generated_at) VALUES (1, ?1, ?2, ?3)",
+            params![data.domain_verification.file_name, data.domain_verification.key, data.domain_verification.generated_at],
+        ).map_err(|e| format!("Failed to write domain_verification_key: {e}"))?;
+    }
+    tx.execute("DELETE FROM domain_verification_domains", [])
+        .map_err(|e| format!("Failed to clear domain_verification_domains: {e}"))?;
+    {
+        let mut insert_domain = tx
+            .prepare_cached("INSERT INTO domain_verification_domains (domain, verified_at) VALUES (?1,?2)")
+            .map_err(|e| format!("Failed to prepare domain_verification_domains insert: {e}"))?;
+        for row in &data.domain_verification.verified_domains {
+            insert_domain
+                .execute(params![row.domain, row.verified_at])
+                .map_err(|e| format!("Failed to insert domain_verification_domains row: {e}"))?;
         }
     }
 
@@ -3154,6 +3255,20 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         rows
     })().unwrap_or_default();
 
+    // Same "brand new table, older session files don't have it" fallback
+    // as session_extensions/https_audit_history above.
+    let (domain_verification_file_name, domain_verification_key, domain_verification_generated_at): (String, String, i64) =
+        conn.query_row("SELECT file_name, key, generated_at FROM domain_verification_key WHERE id = 1", [], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        }).unwrap_or_default();
+    let domain_verification_domains: Vec<VerifiedDomainRow> = (|| -> Result<Vec<VerifiedDomainRow>, rusqlite::Error> {
+        let mut stmt = conn.prepare("SELECT domain, verified_at FROM domain_verification_domains ORDER BY verified_at ASC")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(VerifiedDomainRow { domain: row.get(0)?, verified_at: row.get(1)? })
+        })?.collect();
+        rows
+    })().unwrap_or_default();
+
     Ok(SessionData {
         scan_results,
         scan_progress,
@@ -3170,6 +3285,12 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         meta,
         extensions,
         https_audit_history,
+        domain_verification: DomainVerificationData {
+            file_name: domain_verification_file_name,
+            key: domain_verification_key,
+            generated_at: domain_verification_generated_at,
+            verified_domains: domain_verification_domains,
+        },
     })
 }
 
@@ -3214,15 +3335,30 @@ fn save_session_dialog(default_dir: String, default_filename: String, data: Sess
 // SessionData shape.
 #[tauri::command]
 fn save_text_file_dialog(
+    app: AppHandle,
     default_filename: String,
     content: String,
     filter_name: String,
     filter_ext: String,
+    default_dir: Option<String>,
 ) -> Result<String, String> {
-    let dialog = rfd::FileDialog::new()
+    let mut dialog = rfd::FileDialog::new()
         .set_title("Save")
         .set_file_name(&default_filename)
         .add_filter(&filter_name, &[filter_ext.as_str()]);
+
+    // Explicit default_dir wins (domain verification always passes the
+    // Desktop path so the file lands somewhere the user will actually
+    // notice it, ready to upload); falls back to the OS's real Desktop
+    // folder when the caller doesn't care (CSV export today) rather than
+    // rfd's own undefined default, which otherwise tends to reopen
+    // wherever the last unrelated file dialog left off.
+    let resolved_dir = default_dir
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| app.path().desktop_dir().ok().map(|p| p.to_string_lossy().to_string()));
+    if let Some(dir) = resolved_dir {
+        dialog = dialog.set_directory(dir);
+    }
 
     let path = dialog.save_file().ok_or_else(|| "cancelled".to_string())?;
     std::fs::write(&path, content).map_err(|e| e.to_string())?;
@@ -4510,6 +4646,7 @@ fn main() {
             list_connections,
             list_arp_entries,
             https_audit,
+            verify_domain_file,
             save_text_file_dialog,
         ])
         .run(tauri::generate_context!())

@@ -20,6 +20,7 @@
     var renderHttpsAuditorLibrary = typeof deps.renderHttpsAuditorLibrary === "function" ? deps.renderHttpsAuditorLibrary : null;
     var httpsAuditorResultToCsv = typeof deps.httpsAuditorResultToCsv === "function" ? deps.httpsAuditorResultToCsv : null;
     var renderReverseIpTool = typeof deps.renderReverseIpTool === "function" ? deps.renderReverseIpTool : null;
+    var renderDomainVerificationSection = typeof deps.renderDomainVerificationSection === "function" ? deps.renderDomainVerificationSection : null;
     var renderBrowserNetworkLog = typeof deps.renderBrowserNetworkLog === "function" ? deps.renderBrowserNetworkLog : null;
     var renderGoogleDorkLibrary = typeof deps.renderGoogleDorkLibrary === "function" ? deps.renderGoogleDorkLibrary : null;
     var renderGoogleDorkTool = typeof deps.renderGoogleDorkTool === "function" ? deps.renderGoogleDorkTool : null;
@@ -3968,6 +3969,114 @@
         generalSettingsApi.replaceState(next);
         if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + tr("tipActionGeneral"));
       });
+
+      // Domain verification (Options > General > Domain verification):
+      // generate/verify/remove all just call into domain-verification-
+      // runtime.js and let its own newui:domain-verification-changed
+      // event (fired by every state-changing call there) drive the
+      // re-render - same shellEl outerHTML-swap pattern as
+      // wireReverseIpTool further down. The live status-bar marker
+      // (authorised/not authorised) reflects whatever's currently typed
+      // in the domain field, not any fixed "current tool" concept - it
+      // updates on every keystroke and hides itself when the field is
+      // empty.
+      var domainVerifyApi = core.domainVerification;
+      if (domainVerifyApi) {
+        var domainVerifyShellEl = root.querySelector(".v1-domain-verify-shell");
+
+        function getDomainVerifyInputValue() {
+          var input = root.querySelector("[data-domain-verify-input]");
+          return input ? input.value : "";
+        }
+
+        // Shared with statusbar-loader-runtime.js's own startup call and
+        // its newui:domain-verification-changed listener - one copy of
+        // the idle/authorised/unauthorised logic instead of two that
+        // could drift apart.
+        function updateDomainAuthStatusBar(value) {
+          var shared = window.NetReconNewUICore && window.NetReconNewUICore.domainAuthStatusBar;
+          if (shared && shared.update) shared.update(value);
+        }
+
+        document.addEventListener("newui:domain-verification-changed", function () {
+          if (!domainVerifyShellEl || !document.body.contains(domainVerifyShellEl) || !renderDomainVerificationSection) return;
+          domainVerifyShellEl.outerHTML = renderDomainVerificationSection();
+          domainVerifyShellEl = root.querySelector(".v1-domain-verify-shell");
+          updateDomainAuthStatusBar(getDomainVerifyInputValue());
+        });
+
+        root.addEventListener("input", function (event) {
+          var input = event.target && event.target.closest ? event.target.closest("[data-domain-verify-input]") : null;
+          if (!input) return;
+          updateDomainAuthStatusBar(input.value);
+        });
+
+        root.addEventListener("click", function (event) {
+          var target = event.target;
+          if (!target || !target.closest) return;
+
+          var genBtn = target.closest('[data-domain-verify-action="generate"]');
+          if (genBtn) {
+            var existing = domainVerifyApi.getState();
+            if (existing.verifiedDomains.length && !window.confirm(tr("domainVerifyRegenerateWarning"))) return;
+            var generated = domainVerifyApi.generateKey();
+            // Prompts a native Save dialog (defaults to the Desktop - see
+            // save_text_file_dialog's own default_dir fallback in Rust)
+            // so the file that actually needs uploading exists on disk
+            // right away, instead of leaving the user to copy the
+            // filename/key shown below into a text editor by hand.
+            // www has no backend dialog to call - the file/key are still
+            // shown in the section below either way, just not saved for
+            // them automatically there.
+            var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+            if (platform && typeof platform.isDesktop === "function" && platform.isDesktop()) {
+              Promise.resolve(platform.invoke("save_text_file_dialog", {
+                defaultFilename: generated.fileName,
+                content: generated.key,
+                filterName: "Text",
+                filterExt: "txt",
+              })).then(function (path) {
+                if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + path);
+              }).catch(function () {
+                // cancelled - not an error, the key/file are still shown
+                // below for a manual copy/save later.
+              });
+            }
+            return;
+          }
+
+          var verifyBtn = target.closest('[data-domain-verify-action="verify"]');
+          if (verifyBtn) {
+            var domainValue = getDomainVerifyInputValue();
+            domainVerifyApi.verifyDomain(domainValue).then(function (result) {
+              var resultEl = root.querySelector("[data-domain-verify-result]");
+              if (resultEl) {
+                if (result.matched) {
+                  resultEl.textContent = tr("domainVerifyResultOk").replace("{domain}", domainVerifyApi.normalizeDomain(domainValue));
+                } else if (result.error === "empty") {
+                  resultEl.textContent = tr("domainVerifyResultEmpty");
+                } else if (result.error === "no-key") {
+                  resultEl.textContent = tr("domainVerifyResultNoKey");
+                } else if (result.httpStatus) {
+                  resultEl.textContent = tr("domainVerifyResultHttp").replace("{status}", String(result.httpStatus));
+                } else if (result.error) {
+                  resultEl.textContent = tr("domainVerifyResultError").replace("{error}", result.error);
+                } else {
+                  resultEl.textContent = tr("domainVerifyResultMismatch");
+                }
+              }
+              updateDomainAuthStatusBar(getDomainVerifyInputValue());
+            });
+            return;
+          }
+
+          var removeBtn = target.closest("[data-domain-verify-remove]");
+          if (removeBtn) {
+            domainVerifyApi.removeDomain(removeBtn.getAttribute("data-domain-verify-remove"));
+            updateDomainAuthStatusBar(getDomainVerifyInputValue());
+          }
+        });
+      }
 
       // AI Assistant settings - UI/persistence only, no real Claude/Google
       // call wired up yet. Each provider block (Anthropic/Google) is fully

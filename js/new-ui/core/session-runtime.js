@@ -261,6 +261,15 @@
           var api = window.NetReconNewUICore && window.NetReconNewUICore.httpsAuditor;
           return api && api.getHistoryForSession ? api.getHistoryForSession() : [];
         })(),
+        // Domain verification (Options > General): {fileName/key/
+        // generatedAt/verifiedDomains}, see domain-verification-runtime.js.
+        // localStorage-only otherwise - bundled into the session file too
+        // per an explicit request, so a saved session carries which
+        // domains were already proven on this machine.
+        domainVerification: (function () {
+          var api = window.NetReconNewUICore && window.NetReconNewUICore.domainVerification;
+          return api && api.getStateForSession ? api.getStateForSession() : { fileName: "", key: "", generatedAt: 0, verifiedDomains: [] };
+        })(),
       };
     }
 
@@ -767,6 +776,10 @@
       (function () {
         var httpsApi = window.NetReconNewUICore && window.NetReconNewUICore.httpsAuditor;
         if (httpsApi && httpsApi.restoreHistoryFromSession) httpsApi.restoreHistoryFromSession(data.httpsAuditHistory || []);
+      })();
+      (function () {
+        var domainVerifyApi = window.NetReconNewUICore && window.NetReconNewUICore.domainVerification;
+        if (domainVerifyApi && domainVerifyApi.restoreFromSession) domainVerifyApi.restoreFromSession(data.domainVerification || {});
       })();
       // Attachment blobs are written to IndexedDB asynchronously - the
       // reload below must wait for that to finish, otherwise a reload

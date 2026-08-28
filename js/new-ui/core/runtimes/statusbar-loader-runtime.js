@@ -114,7 +114,52 @@
       }
     }
 
+    // Domain verification marker (4th item in the status bar's left group,
+    // next to the loader/proc-count/progress bar - see cards.css's Domain
+    // verification section and domain-verification-runtime.js). Shared
+    // between this module's own startup call below and
+    // panel-interactions-runtime.js's live keystroke handler on the
+    // domain input field (Options > General), via
+    // window.NetReconNewUICore.domainAuthStatusBar - one function, not two
+    // copies of the same idle/authorised/unauthorised logic. With no
+    // specific domain typed ("idle"), it now shows a SUMMARY (green if
+    // any domain has ever been verified, white if none) rather than
+    // always going blank white - that used to make the marker look wrong
+    // immediately on launch even with domains already verified from a
+    // previous session, since nothing gets typed into that field just by
+    // opening the app.
+    function updateDomainAuthMarker(domainInputValue) {
+      var marker = document.getElementById("v1StatusDomainAuth");
+      var api = window.NetReconNewUICore && window.NetReconNewUICore.domainVerification;
+      if (!marker || !api) return;
+
+      var typed = String(domainInputValue || "").trim();
+      if (typed) {
+        var authorised = api.isDomainVerified(typed);
+        marker.className = "v1-status-domain-auth " + (authorised ? "is-authorised" : "is-unauthorised");
+        marker.title = typed + ": " + tr(authorised ? "domainVerifyStatusAuthorised" : "domainVerifyStatusUnauthorised");
+        return;
+      }
+
+      var state = api.getState();
+      if (state.verifiedDomains && state.verifiedDomains.length > 0) {
+        var names = state.verifiedDomains.map(function (d) { return d.domain; }).join(", ");
+        marker.className = "v1-status-domain-auth is-authorised";
+        marker.title = tr("domainVerifyStatusIdleVerified").replace("{domains}", names);
+      } else {
+        marker.className = "v1-status-domain-auth is-idle";
+        marker.title = tr("domainVerifyStatusIdle");
+      }
+    }
+
     function init() {
+      window.NetReconNewUICore = window.NetReconNewUICore || {};
+      window.NetReconNewUICore.domainAuthStatusBar = { update: updateDomainAuthMarker };
+      updateDomainAuthMarker("");
+      document.addEventListener("newui:domain-verification-changed", function () {
+        updateDomainAuthMarker("");
+      });
+
       var loader = document.getElementById("v1StatusLoader");
       if (!loader) return;
       var countEl = document.getElementById("v1StatusProcCount");

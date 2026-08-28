@@ -23,6 +23,7 @@
     var agentProfilesApi = core.agentProfiles || null;
     var reverseIpApi = core.reverseIp || null;
     var generalSettingsApi = core.generalSettings || null;
+    var domainVerificationApi = core.domainVerification || null;
 
     function trOr(key, fallback) {
       var value = tr(key);
@@ -511,6 +512,60 @@
       ].join("");
     }
 
+    // Domain verification: renders whatever's currently in
+    // domainVerificationApi's own localStorage-backed state (key/file,
+    // list of already-verified domains). A top-level sibling (not nested
+    // inside renderGeneralSettingsTool, unlike that function's other
+    // small helpers) specifically so it can be exported and called again
+    // on its own, standalone, from panel-interactions-runtime.js - the
+    // generate/verify/remove actions there patch the DOM by swapping this
+    // section's own ".v1-domain-verify-shell" wrapper's outerHTML in
+    // place (same pattern as wireReverseIpTool's shellEl swap) rather
+    // than re-rendering the whole General settings tool, which has no
+    // such re-render hook today.
+    function domainVerificationSection() {
+      var dv = domainVerificationApi ? domainVerificationApi.getState() : { fileName: "", key: "", verifiedDomains: [] };
+      var hasKey = !!(dv.fileName && dv.key);
+
+      var keyBlock = !hasKey ? "" : [
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("domainVerifyFileHint", "Upload a file with this exact name and content to the root of each site you want to verify:")) + "</div>",
+        "<div class=\"v1-domain-verify-file\">",
+        "<code data-domain-verify-filename>" + escapeHtml(dv.fileName) + "</code>",
+        "<code data-domain-verify-key>" + escapeHtml(dv.key) + "</code>",
+        "</div>"
+      ].join("");
+
+      var domainRows = dv.verifiedDomains.length ? [
+        "<div class=\"v1-domain-verify-list\" data-domain-verify-list>",
+        dv.verifiedDomains.map(function (d) {
+          return [
+            "<div class=\"v1-domain-verify-row\">",
+            "<span>" + escapeHtml(d.domain) + "</span>",
+            "<button type=\"button\" data-domain-verify-remove=\"" + escapeHtml(d.domain) + "\">" + escapeHtml(trOr("domainVerifyRemoveBtn", "Remove")) + "</button>",
+            "</div>"
+          ].join("");
+        }).join(""),
+        "</div>"
+      ].join("") : "<div class=\"v1-import-manager-note\" data-domain-verify-list>" + escapeHtml(trOr("domainVerifyNoneYet", "No verified domains yet.")) + "</div>";
+
+      return [
+        "<div class=\"v1-domain-verify-shell\">",
+        "<h4 class=\"v1-general-settings-group\">" + escapeHtml(trOr("generalGroupDomainVerification", "Domain verification")) + "</h4>",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("domainVerifyIntro", "Prove you control a domain before features that act on someone else's site (like Browser Inspect) are allowed to target it. Generate a verification file once, upload it to a site's root, then verify each domain you want to use those features on.")) + "</div>",
+        "<div class=\"v1-scanner-actions v1-scanner-actions--spaced\">",
+        "<button type=\"button\" data-domain-verify-action=\"generate\">🔑 " + escapeHtml(trOr(hasKey ? "domainVerifyRegenerateBtn" : "domainVerifyGenerateBtn", hasKey ? "Regenerate key" : "Generate verification key")) + "</button>",
+        "</div>",
+        keyBlock,
+        "<div class=\"v1-import-manager-actions\">",
+        "<input type=\"text\" data-domain-verify-input autocomplete=\"off\" placeholder=\"" + escapeHtml(trOr("domainVerifyDomainPlaceholder", "example.com")) + "\" />",
+        "<button type=\"button\" data-domain-verify-action=\"verify\">" + escapeHtml(trOr("domainVerifyVerifyBtn", "Verify")) + "</button>",
+        "</div>",
+        "<div class=\"v1-import-manager-note\" data-domain-verify-result></div>",
+        domainRows,
+        "</div>"
+      ].join("");
+    }
+
     // shell: settings screen letting the user pick, per shell-level setting,
     // whether it should be remembered across app restarts (TBM Options ->
     // General). Actual "remember" enforcement lives in bootstrap-runtime.js's
@@ -708,6 +763,8 @@
         })(),
         "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("generalBrowserIdentityNote", "Controls what a site sees during the Browser tool's Inspect mode: its own real WebView2 signature, a spoofed ordinary-browser fingerprint (User-Agent, navigator.webdriver, WebView2 markers), or an open \"OSINTNETAuditor\" User-Agent identifying this as an automated tool. Applies the next time you start Inspect.")) + "</div>",
         checkboxRow("rememberBlurIp", "👁", "generalRememberBlurIp", "Remember \"Blur IP addresses\" state"),
+
+        domainVerificationSection(),
 
         groupHeading("generalGroupWindows", "Windows"),
         checkboxRow("rememberWindowState", "🖥️", "generalRememberWindowState", "Remember window state (windowed / maximized / fullscreen)"),
@@ -3689,6 +3746,7 @@
       renderEmailReconSummary: renderEmailReconSummary,
       renderAiPermissionsTool: renderAiPermissionsTool,
       renderAiPermLogHtml: renderAiPermLogHtml,
+      renderDomainVerificationSection: domainVerificationSection,
     };
   }
 
