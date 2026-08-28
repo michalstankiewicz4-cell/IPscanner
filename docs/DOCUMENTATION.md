@@ -3,6 +3,16 @@
 ## Table of Contents
 
 - [1. Shell](#shell)
+  - [1.1. Top bar menu](#11-top-bar-menu)
+  - [1.2. Left shortcut menu](#12-left-shortcut-menu)
+  - [1.3. Down information bar](#13-down-information-bar)
+  - [1.4. left section](#14-left-section)
+  - [1.5. right section](#15-right-section)
+  - [1.6. Central section](#16-central-section)
+  - [1.7. Down section](#17-down-section)
+    - [1.7.1. Terminal](#171-terminal)
+    - [1.7.2. Macro](#172-macro)
+    - [1.7.3. Console](#173-console)
 - [2. Sessions](#sessions)
 - [3. Options](#options)
 - [4. Tools](#41-mail-xss-tester)
@@ -12,6 +22,46 @@
 
 
 ## Shell
+
+*(to be written)*
+
+### 1.1. Top bar menu
+
+*(to be written)*
+
+### 1.2. Left shortcut menu
+
+*(to be written)*
+
+### 1.3. Down information bar
+
+*(to be written)*
+
+### 1.4. left section
+
+*(to be written)*
+
+### 1.5. right section
+
+*(to be written)*
+
+### 1.6. Central section
+
+*(to be written)*
+
+### 1.7. Down section
+
+*(to be written)*
+
+#### 1.7.1. Terminal
+
+*(to be written)*
+
+#### 1.7.2. Macro
+
+*(to be written)*
+
+#### 1.7.3. Console
 
 *(to be written)*
 
