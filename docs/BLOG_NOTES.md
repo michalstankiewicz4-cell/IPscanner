@@ -269,3 +269,50 @@ documentation for version 1.2.2" — okazało się że to po prostu domyślna,
 niczym nieuzasadniona wiadomość którą GitHub sam podpowiedział, kompletnie
 oderwana od naszej prawdziwej wersji (2.8.5). Fajny mały moment
 detektywistyczny w środku maratonu pisania dokumentacji.
+
+## 2026-08-29
+
+Dużo spokojniejszy dzień niż wczorajszy maraton — głównie dopieszczanie
+tego co wczoraj zbudowaliśmy: weryfikację maila (ten sam mechanizm co
+weryfikacja domeny, tylko przez wysłanie sobie kodu zamiast wgrywania
+pliku na serwer).
+
+Prawdziwy bug na start: po wysłaniu kodu pole do jego wpisania czasem po
+prostu się nie pojawiało, mimo że mail realnie doszedł. Okazało się, że
+trzymałem referencję do panelu ustawień z momentu kliknięcia "wyślij", a
+wysyłka przez prawdziwe SMTP Gmaila trwa naprawdę kilka sekund — w tym
+czasie coś innego zdążyło przebudować ten panel, więc moja stara
+referencja wskazywała donikąd. Naprawione przez odpytywanie DOM na
+bieżąco zamiast trzymania się starego uchwytu sprzed czekania.
+
+Potem Michał zauważył coś sensownego: pola "Gmail address"/"Gmail app
+password" powielały się w dwóch miejscach (Mail Verification i Mail XSS
+Tester), a jedno i tak potrzebowało tunelu z drugiego. Wyrzuciliśmy
+duplikat, zostało jedno źródło prawdy. Przy okazji wyszedł na jaw
+PRAWDZIWY, dużo starszy bug — te same pola w Mail XSS Testerze zerowały
+się za każdym przełączeniem zakładki w środkowej sekcji, bo panel
+renderuje się od zera przy każdym przełączeniu, a te pola świadomie
+nigdy nie są nigdzie zapisywane (żeby hasło aplikacji nie leżało w
+localStorage). Teraz trzymam szkic tylko w pamięci RAM, wyłącznie po to
+żeby przetrwał przełączanie zakładek — nadal zero zapisu na dysk.
+
+Większa przemeblówka: cała konfiguracja tunelu (instalacja cloudflared,
+Start/Stop, status) przeniosła się z panelu Mail XSS Testera do osobnej
+zakładki Options > Tunnel. W samym Mail XSS Testerze zostaje tylko jeden
+przycisk "Start tunnel". Dorzuciłem też znaczek tunelu w pasku statusu —
+najpierw migał tylko przy starcie, Michał słusznie zauważył że powinien
+migać też jak tunel faktycznie działa, bo to otwarty publiczny port i
+warto mieć stały wizualny przypominacz o tym.
+
+Na koniec bump do v2.8.6 i mała, ale konkretna lekcja o pisaniu
+changelogów: jeśli bug powstał i został naprawiony w TEJ SAMEJ, jeszcze
+nigdy niewydanej wersji, nie ma sensu wpisywać go do notatek wydania —
+nikt go realnie nie doświadczył. Do changelogu trafiają tylko fixy rzeczy,
+które faktycznie były w jakiejś wcześniej wydanej wersji.
+
+I na sam koniec — pomysł, jeszcze bez żadnej realizacji: strona-
+"playground" na ipscanner.pl pokazująca możliwości apki na żywo. Problem
+w tym, że większość mocniejszych narzędzi wymaga backendu Rusta, którego
+statyczny GitHub Pages nigdy nie będzie miał — więc "playground" i tak
+trafiłby na te same ściany "tylko desktop" co prawdziwa apka. Zapisane w
+ROADMAP.md, na razie sama rozmowa.
