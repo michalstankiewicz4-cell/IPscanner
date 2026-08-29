@@ -171,6 +171,27 @@ project direction and rules, see [CONTRIBUTING.md](../CONTRIBUTING.md) (Polish).
 
 ## Planned
 
+- **Public "playground" page on ipscanner.pl** — a subpage to fully
+  showcase the app's capabilities, somewhere people can click around and
+  learn what it does. Real constraint: most of the marquee tools (Mail XSS
+  Tester, HTTPS Auditor, Browser Inspect, real port scanning) need the
+  Rust backend / raw sockets / spawned processes, which a static GitHub
+  Pages site can never provide — any playground hits that same "desktop
+  app only" wall the real UI already shows honestly. Two options
+  discussed:
+  1. **Publish the actual www build live** as the playground - not a
+     mockup, the real UI (already produced by `npm run prepare:app`, used
+     internally for local testing this session). Tools that already work
+     in www (Reverse IP Lookup, Google Dork Finder, etc.) function for
+     real; desktop-only ones show their existing graceful "desktop app
+     only" hint instead of faking it. Self-maintaining - stays in sync
+     with the app automatically, no separate content to update.
+  2. **A curated tour** (screenshots/GIFs/video per tool, written
+     walkthrough) - looks more polished/controlled, no "not available"
+     walls, but is a separate artifact that needs manual upkeep every time
+     a tool changes.
+  Leaning toward option 1 (less work, more honest, self-updating) but not
+  decided - purely a discussion so far, nothing built.
 - **Real self-update (VS Code-style: background download, restart to
   apply)** — today's "Update check on launch" (see "Done" above) only shows
   a dialog with a manual download link. The official `tauri-plugin-updater`

@@ -180,6 +180,7 @@ html[dir="rtl"] .v1-status-progress-bar {
 
 .v1-status-tunnel.is-running {
   color: #3bd16f;
+  animation: v1-status-update-blink 1.4s ease-in-out infinite;
 }
 
 .v1-status-tunnel.is-error {
@@ -187,7 +188,8 @@ html[dir="rtl"] .v1-status-progress-bar {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .v1-status-tunnel.is-starting {
+  .v1-status-tunnel.is-starting,
+  .v1-status-tunnel.is-running {
     animation: none;
   }
 }
