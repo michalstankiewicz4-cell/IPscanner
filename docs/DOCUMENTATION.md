@@ -1,4 +1,4 @@
-# OSINT NET Auditor - Documentation
+# OSINT NET Auditor v2.8.4 - Documentation
 
 ## Table of Contents
 
