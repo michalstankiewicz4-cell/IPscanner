@@ -69,6 +69,18 @@
     // short-lived public tunnel URL during the test window.
     var sessionToken = "";
 
+    // Draft copies of the Gmail address/app password fields, kept ONLY in
+    // memory (never localStorage/session, same "read at use time, never
+    // persisted" discipline as sendTestEmail() below) - purely so the LS
+    // panel's fields survive switching to a different center tab and back.
+    // That panel's markup is fully torn down and regenerated on every such
+    // switch (see wireMailXssTesterLibrary in panel-interactions-runtime.js,
+    // a plain uncontrolled-input render), which used to silently reset both
+    // fields to empty; re-populating them from here on each fresh render
+    // fixes that without persisting the app password anywhere durable.
+    var draftGmailAddress = "";
+    var draftAppPassword = "";
+
     function emitChanged() {
       try {
         document.dispatchEvent(new CustomEvent("newui:mail-xss-tester-changed", {
@@ -98,6 +110,15 @@
     function getTunnelUrl() { return tunnelUrl; }
     function getTunnelError() { return tunnelError; }
     function getHits() { return hits.slice(); }
+
+    // Deliberately no emitChanged() here - these fire on every keystroke,
+    // and re-rendering the whole panel per keystroke would fight the
+    // caret/selection in the very field being typed into. The draft only
+    // needs to be picked up on the panel's own next natural re-render.
+    function getDraftGmailAddress() { return draftGmailAddress; }
+    function setDraftGmailAddress(value) { draftGmailAddress = String(value || ""); }
+    function getDraftAppPassword() { return draftAppPassword; }
+    function setDraftAppPassword(value) { draftAppPassword = String(value || ""); }
 
     // Strips the per-session random prefix back off a hit's payload_id
     // (see the sessionToken comment above) so callers only ever deal in
@@ -199,6 +220,10 @@
       getTunnelStatus: getTunnelStatus,
       getTunnelUrl: getTunnelUrl,
       getTunnelError: getTunnelError,
+      getDraftGmailAddress: getDraftGmailAddress,
+      setDraftGmailAddress: setDraftGmailAddress,
+      getDraftAppPassword: getDraftAppPassword,
+      setDraftAppPassword: setDraftAppPassword,
       startTunnel: startTunnel,
       stopTunnel: stopTunnel,
       getHits: getHits,

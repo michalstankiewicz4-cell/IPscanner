@@ -282,7 +282,8 @@
 }
 
 .v1-pulpit-inspector-field textarea,
-.v1-pulpit-inspector-field input {
+.v1-pulpit-inspector-field input,
+.v1-pulpit-inspector-field select {
   border: 1px solid #31333a;
   background: #1f2024;
   color: var(--txt);
@@ -294,10 +295,16 @@
 }
 
 .v1-pulpit-inspector-field textarea:disabled,
-.v1-pulpit-inspector-field input:disabled {
+.v1-pulpit-inspector-field input:disabled,
+.v1-pulpit-inspector-field select:disabled {
   color: var(--txt-dim);
   background: #1a1b1e;
   cursor: not-allowed;
+}
+
+.v1-pulpit-inspector-field select:focus {
+  border-color: var(--brand);
+  outline: none;
 }
 
 /* Right-click "Uruchom" menu - a single static element (rendered as a

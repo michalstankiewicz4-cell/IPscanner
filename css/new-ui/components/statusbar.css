@@ -139,6 +139,59 @@ html[dir="rtl"] .v1-status-progress-bar {
   color: #ff5b4d;
 }
 
+.v1-status-mail-auth {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+  cursor: default;
+}
+
+.v1-status-mail-auth.is-idle {
+  color: #ffffff;
+}
+
+.v1-status-mail-auth.is-authorised {
+  color: #3bd16f;
+}
+
+.v1-status-mail-auth.is-unauthorised {
+  color: #ff5b4d;
+}
+
+.v1-status-tunnel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+  cursor: default;
+}
+
+.v1-status-tunnel.is-idle {
+  color: #ffffff;
+}
+
+.v1-status-tunnel.is-starting {
+  color: #f5c518;
+  animation: v1-status-update-blink 1.4s ease-in-out infinite;
+}
+
+.v1-status-tunnel.is-running {
+  color: #3bd16f;
+}
+
+.v1-status-tunnel.is-error {
+  color: #ff5b4d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v1-status-tunnel.is-starting {
+    animation: none;
+  }
+}
+
 .v1-status-right-group {
   display: inline-flex;
   align-items: center;

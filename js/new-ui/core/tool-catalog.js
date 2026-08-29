@@ -31,6 +31,20 @@
       labelKey: "tabLabel_language_manager",
       ui: { showAsTab: true, order: 60 }
     },
+    // Public beacon tunnel setup (cloudflared install/download, Start/Stop,
+    // live status) - moved here from Mail XSS Tester's own LS panel so it's
+    // a single Options-level tab shared by anything that needs the tunnel,
+    // rather than baked into one tool's sidebar. Mail XSS Tester's LS panel
+    // keeps just a single "Start tunnel" button - see mailXssTunnelToggle's
+    // click handler in panel-interactions-runtime.js.
+    "tunnel-settings": {
+      titleKey: "toolTitle_tunnel_settings",
+      textKey: "toolText_tunnel_settings",
+      points: ["Install cloudflared", "Start/stop the public beacon tunnel", "Desktop app only - needs a raw TCP listener and a spawned process"],
+      icon: "🚇",
+      labelKey: "tabLabel_tunnel_settings",
+      ui: { showAsTab: true, order: 45 }
+    },
     versions: {
       titleKey: "toolTitle_versions",
       textKey: "toolText_versions",

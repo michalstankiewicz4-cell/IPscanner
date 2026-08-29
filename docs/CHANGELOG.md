@@ -6,6 +6,34 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-08-29
+
+- Added mailbox ownership verification (**Options -> General -> Mail
+  verification**): prove you control a mailbox by sending yourself a
+  one-time code - reusing Mail XSS Tester's own Gmail address/app password
+  and tunnel, no separate credentials to fill in - then typing that code
+  back in. Once verified, that mailbox can be picked as Mail XSS Tester's
+  "Send to" address; free-text entry there is gone, it's now a dropdown
+  limited to mailboxes you've actually proven you own. A new status bar
+  marker (`@`, next to the domain-verification one) shows the live status
+  the same way domain verification's does.
+- Added a tunnel status marker to the status bar (🚇, right before the
+  update-available icon): white when off, blinking amber while starting,
+  green when running, red on error.
+- Moved all of Mail XSS Tester's tunnel setup - cloudflared install/
+  download, Start/Stop, and live status - out of its own sidebar into a
+  new **Options -> Tunnel** tab (Options menu, right after Port Presets),
+  so it's one shared place instead of buried in one tool's panel. Mail XSS
+  Tester's sidebar now just has a single "Start tunnel" button: starts the
+  tunnel directly when it's idle, opens the new tab instead for anything
+  else (already running, still starting, or needing cloudflared installed).
+- Fixed a real bug where Mail XSS Tester's Gmail address/app password
+  fields silently reset to empty every time you switched to a different
+  center tab and back - that panel's markup is fully rebuilt on every such
+  switch, and those fields (deliberately never saved to disk, so an app
+  password never sits in local storage) had nothing to restore their
+  values from.
+
 ## 2026-08-28
 
 - **Browser tool**: added a network traffic inspector. Toggling "Inspect"

@@ -1525,12 +1525,14 @@
         renderPulpitPreviewTool: panelContentRuntime && panelContentRuntime.renderPulpitPreviewTool,
         renderMailXssTesterLibrary: panelContentRuntime && panelContentRuntime.renderMailXssTesterLibrary,
         renderMailXssTesterTool: panelContentRuntime && panelContentRuntime.renderMailXssTesterTool,
+        renderTunnelSettingsTool: panelContentRuntime && panelContentRuntime.renderTunnelSettingsTool,
         renderMailXssTesterResults: panelContentRuntime && panelContentRuntime.renderMailXssTesterResults,
         renderHttpsAuditorTool: panelContentRuntime && panelContentRuntime.renderHttpsAuditorTool,
         renderHttpsAuditorLibrary: panelContentRuntime && panelContentRuntime.renderHttpsAuditorLibrary,
         httpsAuditorResultToCsv: panelContentRuntime && panelContentRuntime.httpsAuditorResultToCsv,
         renderReverseIpTool: panelContentRuntime && panelContentRuntime.renderReverseIpTool,
         renderDomainVerificationSection: panelContentRuntime && panelContentRuntime.renderDomainVerificationSection,
+        renderMailVerificationSection: panelContentRuntime && panelContentRuntime.renderMailVerificationSection,
         renderBrowserNetworkLog: panelContentRuntime && panelContentRuntime.renderBrowserNetworkLog,
         renderGoogleDorkLibrary: panelContentRuntime && panelContentRuntime.renderGoogleDorkLibrary,
         renderGoogleDorkTool: panelContentRuntime && panelContentRuntime.renderGoogleDorkTool,
@@ -1909,6 +1911,13 @@
       if (tool === "mail-xss-tester") { // shell
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireMailXssTesterTool) {
           panelInteractionsRuntime.wireMailXssTesterTool(scope);
+        }
+        return;
+      }
+
+      if (tool === "tunnel-settings") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireTunnelSettingsTool) {
+          panelInteractionsRuntime.wireTunnelSettingsTool(scope);
         }
         return;
       }

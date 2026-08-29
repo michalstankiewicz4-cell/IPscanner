@@ -274,6 +274,34 @@
       }).catch(function () { return ""; });
     }
 
+    // shell: follower count + display name for the repo's owner - shown
+    // next to the owner/repo link in the detail view as a lightweight
+    // trust signal. One request covers both fields (GitHub's own /users/
+    // {login} response has both), no need for two separate fetches. Same
+    // rate-limit-vs-real-404 distinction as license/README above (returns
+    // null either way, but only a real "no such user" should ever happen
+    // here in practice). Cached as part of the whole entry by
+    // loadCommunityCatalogCached() below, no separate cache needed.
+    function fetchOwnerInfo(ownerLogin, rateLimitState) {
+      if (!ownerLogin) return Promise.resolve(null);
+      return fetch("https://api.github.com/users/" + encodeURIComponent(ownerLogin), { headers: { Accept: "application/vnd.github+json" } })
+        .then(function (res) {
+          if (!res.ok) {
+            if (rateLimitState) rateLimitState.message = rateLimitState.message || rateLimitWaitMessage(res);
+            return null;
+          }
+          return res.json();
+        })
+        .then(function (data) {
+          if (!data) return null;
+          return {
+            followers: typeof data.followers === "number" ? data.followers : null,
+            name: data.name || ""
+          };
+        })
+        .catch(function () { return null; });
+    }
+
     // shell: fetches one Community Catalog entry from a search-result repo.
     // Manifest is validated with the SAME core.extensions.validateManifest
     // used by installManifestObject below - a repo with a missing/broken
@@ -294,7 +322,8 @@
           fetch(rawBase + COMMUNITY_PROGRAM_NAME).then(function (r) { return r.ok ? r.text() : ""; }).catch(function () { return ""; }),
           fetchCommunityLicense(repo, rateLimitState),
           fetchCommunityReadmeUrl(repo, rateLimitState),
-          fetchCommunityDocumentationUrl(repo)
+          fetchCommunityDocumentationUrl(repo),
+          fetchOwnerInfo(repo.owner && repo.owner.login, rateLimitState)
         ]).then(function (results) {
           return {
             manifest: validated.manifest,
@@ -306,7 +335,14 @@
             repoDescription: repo.description || "",
             license: results[2],
             readmeUrl: results[3],
-            documentationUrl: results[4]
+            documentationUrl: results[4],
+            ownerFollowers: results[5] && results[5].followers,
+            ownerName: results[5] && results[5].name,
+            // Already part of the search-result repo object GitHub gave
+            // us back in fetchCommunityCatalog() above - no extra request
+            // needed, unlike followers/name which need their own /users/
+            // {login} call.
+            repoStars: typeof repo.stargazers_count === "number" ? repo.stargazers_count : null
           };
         });
       }).catch(function () { return null; });

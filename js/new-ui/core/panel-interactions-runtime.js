@@ -15,12 +15,14 @@
     var renderPulpitPreviewTool = typeof deps.renderPulpitPreviewTool === "function" ? deps.renderPulpitPreviewTool : null;
     var renderMailXssTesterLibrary = typeof deps.renderMailXssTesterLibrary === "function" ? deps.renderMailXssTesterLibrary : null;
     var renderMailXssTesterTool = typeof deps.renderMailXssTesterTool === "function" ? deps.renderMailXssTesterTool : null;
+    var renderTunnelSettingsTool = typeof deps.renderTunnelSettingsTool === "function" ? deps.renderTunnelSettingsTool : null;
     var renderMailXssTesterResults = typeof deps.renderMailXssTesterResults === "function" ? deps.renderMailXssTesterResults : null;
     var renderHttpsAuditorTool = typeof deps.renderHttpsAuditorTool === "function" ? deps.renderHttpsAuditorTool : null;
     var renderHttpsAuditorLibrary = typeof deps.renderHttpsAuditorLibrary === "function" ? deps.renderHttpsAuditorLibrary : null;
     var httpsAuditorResultToCsv = typeof deps.httpsAuditorResultToCsv === "function" ? deps.httpsAuditorResultToCsv : null;
     var renderReverseIpTool = typeof deps.renderReverseIpTool === "function" ? deps.renderReverseIpTool : null;
     var renderDomainVerificationSection = typeof deps.renderDomainVerificationSection === "function" ? deps.renderDomainVerificationSection : null;
+    var renderMailVerificationSection = typeof deps.renderMailVerificationSection === "function" ? deps.renderMailVerificationSection : null;
     var renderBrowserNetworkLog = typeof deps.renderBrowserNetworkLog === "function" ? deps.renderBrowserNetworkLog : null;
     var renderGoogleDorkLibrary = typeof deps.renderGoogleDorkLibrary === "function" ? deps.renderGoogleDorkLibrary : null;
     var renderGoogleDorkTool = typeof deps.renderGoogleDorkTool === "function" ? deps.renderGoogleDorkTool : null;
@@ -81,6 +83,8 @@
     var pulpitPreviewToolTeardown = null;
     // Same reasoning as pulpitPreviewToolTeardown above.
     var mailXssTesterToolTeardown = null;
+    // Same reasoning as mailXssTesterToolTeardown above.
+    var tunnelSettingsToolTeardown = null;
     // Same reasoning as mailXssTesterToolTeardown above.
     var googleDorkToolTeardown = null;
     // Same reasoning as mailXssTesterToolTeardown above.
@@ -2580,25 +2584,34 @@
         render();
       });
 
+      // The "Send to" select's own options come from
+      // mailVerificationApi.getState().verifiedEmails (see toFieldHtml in
+      // renderMailXssTesterLibrary) - re-render whenever that list changes
+      // too, not just on mail-xss-tester's own state, so a mailbox
+      // verified in Options > General shows up here without switching
+      // tabs and back.
+      document.addEventListener("newui:mail-verification-changed", function () {
+        if (!document.body.contains(mount)) return;
+        render();
+      });
+
       mount.addEventListener("click", function (event) {
         var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
         if (!api) return;
 
-        var tunnelBtn = event.target && event.target.closest ? event.target.closest("[data-mail-xss-tunnel-toggle]") : null;
-        if (tunnelBtn) {
-          if (api.getTunnelStatus() === "running") api.stopTunnel();
-          else api.startTunnel();
-          return;
-        }
-
-        var downloadBtn = event.target && event.target.closest ? event.target.closest("[data-mail-xss-cloudflared-download]") : null;
-        if (downloadBtn) {
-          var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
-          if (platform) {
-            Promise.resolve(platform.invoke("open_browser", { url: "https://github.com/cloudflare/cloudflared/releases/latest" })).catch(function () {
-              // ignore - www build has no open_browser command
-            });
+        // Starts the tunnel directly from idle; any other state (starting/
+        // running/error) has nothing useful left for a single fixed-label
+        // button to do here, so it just opens Options > Tunnel instead,
+        // where the real status/Stop/cloudflared-download controls live
+        // (renderTunnelSettingsTool/wireTunnelSettingsTool).
+        var startBtn = event.target && event.target.closest ? event.target.closest("[data-mail-xss-tunnel-start]") : null;
+        if (startBtn) {
+          if (api.getTunnelStatus() === "idle") {
+            api.startTunnel();
+          } else if (window.NetReconNewUI && typeof window.NetReconNewUI.switchTool === "function") {
+            window.NetReconNewUI.switchTool("tunnel-settings");
           }
+          return;
         }
       });
 
@@ -2613,9 +2626,29 @@
         api.setPayloadSelected(checkbox.getAttribute("data-mail-xss-payload-checkbox"), checkbox.checked);
       });
 
+      // Mirror gmailAddress/appPassword into mail-xss-tester-runtime.js's
+      // in-memory draft on every keystroke, purely so render() above can
+      // restore them - this panel gets fully torn down and rebuilt (a new
+      // mount, these listeners included) every time you switch to a
+      // different center tab and back, which otherwise silently reset both
+      // fields to empty since they're plain uncontrolled inputs backed by
+      // no persisted state at all.
+      mount.addEventListener("input", function (event) {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
+        if (!api) return;
+        var field = event.target && event.target.closest ? event.target.closest("[data-mail-xss-field]") : null;
+        if (!field) return;
+        var name = field.getAttribute("data-mail-xss-field");
+        if (name === "gmailAddress") api.setDraftGmailAddress(field.value);
+        else if (name === "appPassword") api.setDraftAppPassword(field.value);
+      });
+
       // Same credential discipline as the remote-install password field -
       // read directly from the form at submit time, forwarded straight to
-      // the Rust command, never persisted anywhere in between.
+      // the Rust command, never persisted to localStorage/session (the
+      // in-memory draft above is a RAM-only convenience, cleared the moment
+      // the app process ends, same as the uncontrolled input value it
+      // mirrors would be anyway).
       mount.addEventListener("submit", function (event) {
         var form = event.target && event.target.closest ? event.target.closest("[data-mail-xss-send-form]") : null;
         if (!form) return;
@@ -2706,6 +2739,59 @@
 
       mailXssTesterToolTeardown = function () {
         document.removeEventListener("newui:mail-xss-tester-changed", onChanged);
+      };
+    }
+
+    // CS: Options > Tunnel - same teardown-before-rewire shape as
+    // wireMailXssTesterTool just above, plus the actual Start/Stop and
+    // cloudflared-download buttons that used to live in Mail XSS Tester's
+    // own LS panel (moved here per explicit request, so there's one place
+    // for tunnel setup instead of it being buried in one tool's sidebar).
+    function wireTunnelSettingsTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function" ? rootEl : document.getElementById("v1ToolDetail");
+      if (!root || !renderTunnelSettingsTool) return;
+
+      var shellEl = root.querySelector(".v1-tunnel-settings-shell");
+      if (!shellEl) return;
+
+      if (tunnelSettingsToolTeardown) {
+        tunnelSettingsToolTeardown();
+        tunnelSettingsToolTeardown = null;
+      }
+
+      function onChanged() {
+        if (!document.body.contains(shellEl)) return;
+        shellEl.outerHTML = renderTunnelSettingsTool();
+        shellEl = root.querySelector(".v1-tunnel-settings-shell");
+      }
+      document.addEventListener("newui:mail-xss-tester-changed", onChanged);
+
+      function onClick(event) {
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
+        if (!api) return;
+
+        var tunnelBtn = event.target && event.target.closest ? event.target.closest("[data-mail-xss-tunnel-toggle]") : null;
+        if (tunnelBtn) {
+          if (api.getTunnelStatus() === "running") api.stopTunnel();
+          else api.startTunnel();
+          return;
+        }
+
+        var downloadBtn = event.target && event.target.closest ? event.target.closest("[data-mail-xss-cloudflared-download]") : null;
+        if (downloadBtn) {
+          var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+          if (platform) {
+            Promise.resolve(platform.invoke("open_browser", { url: "https://github.com/cloudflare/cloudflared/releases/latest" })).catch(function () {
+              // ignore - www build has no open_browser command
+            });
+          }
+        }
+      }
+      root.addEventListener("click", onClick);
+
+      tunnelSettingsToolTeardown = function () {
+        document.removeEventListener("newui:mail-xss-tester-changed", onChanged);
+        root.removeEventListener("click", onClick);
       };
     }
 
@@ -4078,6 +4164,131 @@
         });
       }
 
+      // Mail verification - same live-status-bar-on-keystroke shape as
+      // Domain verification just above, but "prove ownership" is a
+      // send-code/type-it-back exchange (mail-verification-runtime.js)
+      // instead of an uploaded file, and sending reuses Mail XSS Tester's
+      // own tunnel (window.NetReconNewUICore.mailXssTester).
+      var mailVerifyApi = core.mailVerification;
+      if (mailVerifyApi) {
+        function getMailVerifyInputValue() {
+          var input = root.querySelector("[data-mail-verify-input]");
+          return input ? input.value : "";
+        }
+
+        function updateMailAuthStatusBar(value) {
+          var shared = window.NetReconNewUICore && window.NetReconNewUICore.mailAuthStatusBar;
+          if (shared && shared.update) shared.update(value);
+        }
+
+        // Always re-query the shell fresh from the stable `root` rather than
+        // holding a single captured element reference across time - sendCode
+        // (mail-verification-runtime.js) is a real SMTP round trip that can
+        // take several seconds, plenty of time for something else to have
+        // replaced this tab's content in between and left a captured
+        // reference silently pointing at a detached node (the code input
+        // never appearing after a code was actually sent was exactly that).
+        function refreshMailVerifyShell() {
+          if (!document.body.contains(root) || !renderMailVerificationSection) return;
+          var shellEl = root.querySelector(".v1-mail-verify-shell");
+          if (!shellEl) return;
+          shellEl.outerHTML = renderMailVerificationSection();
+        }
+
+        document.addEventListener("newui:mail-verification-changed", function () {
+          refreshMailVerifyShell();
+          updateMailAuthStatusBar(getMailVerifyInputValue());
+        });
+
+        root.addEventListener("input", function (event) {
+          var input = event.target && event.target.closest ? event.target.closest("[data-mail-verify-input]") : null;
+          if (!input) return;
+          updateMailAuthStatusBar(input.value);
+        });
+
+        root.addEventListener("click", function (event) {
+          var target = event.target;
+          if (!target || !target.closest) return;
+
+          // Mail XSS Tester's own credential fields, read straight off its
+          // document-wide ids rather than duplicating a second Gmail
+          // address/app password pair here - one place to type them in.
+          // Those ids only exist while that tool's LS panel is mounted
+          // (it has to be, to start the tunnel this send also needs), so
+          // an empty read here just means "not filled in yet", same as
+          // sendCode()'s own missing-credentials check already handles.
+          function mailXssFieldValue(id) {
+            var el = document.getElementById(id);
+            return el ? el.value : "";
+          }
+
+          var sendBtn = target.closest('[data-mail-verify-action="send"]');
+          if (sendBtn) {
+            var emailValue = getMailVerifyInputValue();
+            var resultEl = root.querySelector("[data-mail-verify-result]");
+            function showResult(text) {
+              if (resultEl) resultEl.textContent = text;
+            }
+
+            var normalized = mailVerifyApi.normalizeEmail(emailValue);
+            if (!normalized) {
+              showResult(tr("mailVerifyResultEmpty"));
+              return;
+            }
+
+            var gmailAddress = mailXssFieldValue("v1MailXssGmailAddress").trim();
+            var gmailAppPassword = mailXssFieldValue("v1MailXssAppPassword");
+
+            sendBtn.disabled = true;
+            mailVerifyApi.sendCode(emailValue, gmailAddress, gmailAppPassword).then(function (result) {
+              if (result.ok) {
+                // sendCode() already fired newui:mail-verification-changed
+                // on success, which just re-rendered the whole shell (fresh
+                // markup, button naturally enabled again) - nothing left to
+                // do with this now possibly-detached sendBtn reference.
+                return;
+              }
+              var freshSendBtn = root.querySelector('[data-mail-verify-action="send"]');
+              if (freshSendBtn) freshSendBtn.disabled = false;
+              if (result.error === "tunnel-not-running") showResult(tr("mailVerifyResultTunnelNotRunning"));
+              else if (result.error === "missing-credentials") showResult(tr("mailVerifyResultMissingCredentials"));
+              else if (result.error === "empty") showResult(tr("mailVerifyResultEmpty"));
+              else showResult(tr("mailVerifyResultError").replace("{error}", result.error || ""));
+            });
+            return;
+          }
+
+          var verifyBtn = target.closest('[data-mail-verify-action="verify"]');
+          if (verifyBtn) {
+            var codeInput = root.querySelector("[data-mail-verify-code]");
+            var result = mailVerifyApi.verifyCode(codeInput ? codeInput.value : "");
+            // verifyCode() fires newui:mail-verification-changed
+            // synchronously on a match, which (via the listener above)
+            // already replaced the whole shell by the time this line runs -
+            // querying data-mail-verify-result only now, not before, is what
+            // makes this land on the fresh node instead of one that just got
+            // detached out from under it.
+            var codeResultEl = root.querySelector("[data-mail-verify-result]");
+            if (result.matched) {
+              if (codeResultEl) codeResultEl.textContent = tr("mailVerifyResultOk").replace("{email}", result.email);
+              updateMailAuthStatusBar(getMailVerifyInputValue());
+              return;
+            }
+            if (codeResultEl) {
+              if (result.error === "no-pending") codeResultEl.textContent = tr("mailVerifyResultNoPending");
+              else codeResultEl.textContent = tr("mailVerifyResultMismatch");
+            }
+            return;
+          }
+
+          var removeMailBtn = target.closest("[data-mail-verify-remove]");
+          if (removeMailBtn) {
+            mailVerifyApi.removeEmail(removeMailBtn.getAttribute("data-mail-verify-remove"));
+            updateMailAuthStatusBar(getMailVerifyInputValue());
+          }
+        });
+      }
+
       // AI Assistant settings - UI/persistence only, no real Claude/Google
       // call wired up yet. Each provider block (Anthropic/Google) is fully
       // independent - its own model, key, and storage mode - so switching
@@ -4913,6 +5124,7 @@
       wireMailXssTesterLibrary: wireMailXssTesterLibrary,
       wireMailXssTesterResults: wireMailXssTesterResults,
       wireMailXssTesterTool: wireMailXssTesterTool,
+      wireTunnelSettingsTool: wireTunnelSettingsTool,
       wireHttpsAuditorTool: wireHttpsAuditorTool,
       wireReverseIpTool: wireReverseIpTool,
       wireHttpsAuditorLibrary: wireHttpsAuditorLibrary,

@@ -270,6 +270,13 @@
           var api = window.NetReconNewUICore && window.NetReconNewUICore.domainVerification;
           return api && api.getStateForSession ? api.getStateForSession() : { fileName: "", key: "", generatedAt: 0, verifiedDomains: [] };
         })(),
+        // Mail verification (Options > General): {verifiedEmails}, see
+        // mail-verification-runtime.js - same "bundle it into the session
+        // too" treatment as domainVerification just above.
+        mailVerification: (function () {
+          var api = window.NetReconNewUICore && window.NetReconNewUICore.mailVerification;
+          return api && api.getStateForSession ? api.getStateForSession() : { verifiedEmails: [] };
+        })(),
       };
     }
 
@@ -780,6 +787,10 @@
       (function () {
         var domainVerifyApi = window.NetReconNewUICore && window.NetReconNewUICore.domainVerification;
         if (domainVerifyApi && domainVerifyApi.restoreFromSession) domainVerifyApi.restoreFromSession(data.domainVerification || {});
+      })();
+      (function () {
+        var mailVerifyApi = window.NetReconNewUICore && window.NetReconNewUICore.mailVerification;
+        if (mailVerifyApi && mailVerifyApi.restoreFromSession) mailVerifyApi.restoreFromSession(data.mailVerification || {});
       })();
       // Attachment blobs are written to IndexedDB asynchronously - the
       // reload below must wait for that to finish, otherwise a reload

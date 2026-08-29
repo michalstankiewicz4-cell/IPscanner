@@ -10,6 +10,15 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.8.6",
+      notes: [
+        "Added mailbox ownership verification (Options -> General -> Mail verification): prove you control a mailbox by sending yourself a one-time code - reusing Mail XSS Tester's own Gmail address/app password and tunnel, no separate credentials to fill in - then typing that code back in. Once verified, that mailbox can be picked as Mail XSS Tester's \"Send to\" address; free-text entry there is gone, it's now a dropdown limited to mailboxes you've actually proven you own. A new status bar marker (@, next to the domain-verification one) shows the live status the same way domain verification's does.",
+        "Added a tunnel status marker to the status bar (🚇, right before the update-available icon): white when off, blinking amber while starting, green when running, red on error.",
+        "Moved all of Mail XSS Tester's tunnel setup - cloudflared install/download, Start/Stop, and live status - out of its own sidebar into a new Options -> Tunnel tab (Options menu, right after Port Presets), so it's one shared place instead of buried in one tool's panel. Mail XSS Tester's sidebar now just has a single \"Start tunnel\" button: starts the tunnel directly when it's idle, opens the new tab instead for anything else (already running, still starting, or needing cloudflared installed).",
+        "Fixed a real bug where Mail XSS Tester's Gmail address/app password fields silently reset to empty every time you switched to a different center tab and back - that panel's markup is fully rebuilt on every such switch, and those fields (deliberately never saved to disk, so an app password never sits in local storage) had nothing to restore their values from."
+      ]
+    },
+    {
       version: "v2.8.5",
       notes: [
         "Added a new tool: Reverse IP Lookup (Tools menu). Type an IP address to get its reverse-DNS (PTR) hostname, who owns the IP block (organization/network name/CIDR range, via RDAP - the modern successor to WHOIS), and every other domain historically seen resolving to that address (via a free passive-DNS lookup) - useful for finding what else is hosted on a shared IP. Works on both desktop and the web build, since all three lookups go straight to public APIs that already allow direct browser requests, no backend needed.",

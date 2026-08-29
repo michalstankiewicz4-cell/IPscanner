@@ -858,6 +858,57 @@
   border-bottom: none;
 }
 
+/* shell: Mail verification section (General settings screen) - same shape
+   as the Domain verification block above: a mailbox-to-verify input, and a
+   code input that only appears once a code has actually been sent (the
+   Gmail address/app password themselves live in Mail XSS Tester's own Test
+   mail fields, reused directly rather than duplicated here). */
+.v1-mail-verify-shell input[data-mail-verify-input],
+.v1-mail-verify-shell input[data-mail-verify-code] {
+  flex: 1 1 240px;
+  min-width: 180px;
+  border: 1px solid #3d424d;
+  background: #22242a;
+  color: var(--txt);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+}
+
+.v1-mail-verify-shell input[data-mail-verify-input]:focus,
+.v1-mail-verify-shell input[data-mail-verify-code]:focus {
+  border-color: var(--brand);
+  outline: none;
+  background: #262932;
+}
+
+.v1-mail-verify-shell input[data-mail-verify-input]::placeholder,
+.v1-mail-verify-shell input[data-mail-verify-code]::placeholder {
+  color: var(--txt-dim);
+}
+
+.v1-mail-verify-list {
+  border: 1px solid #2a2b2f;
+  margin-top: 4px;
+}
+
+.v1-mail-verify-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--txt);
+  border-bottom: 1px solid #2a2b2f;
+}
+
+.v1-mail-verify-row:last-child {
+  border-bottom: none;
+}
+
 /* shell: radio-row markup, currently used by AI Permissions' Profile picker
    (--stacked variant below) - deliberately not part of the
    .v1-results-columns-item checkbox grid above, since it's a radio group. */
@@ -1285,8 +1336,13 @@
   white-space: nowrap;
 }
 
+.v1-catalog-repo-link-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .v1-catalog-repo-link {
-  display: block;
   color: var(--txt-dim);
   font-size: 11px;
   text-decoration: none;
@@ -1294,6 +1350,12 @@
 
 .v1-catalog-repo-link:hover {
   text-decoration: underline;
+}
+
+.v1-catalog-owner-followers,
+.v1-catalog-owner-name {
+  color: var(--txt-dim);
+  font-size: 11px;
 }
 
 .v1-catalog-links-row {

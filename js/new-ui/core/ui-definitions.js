@@ -78,6 +78,12 @@
       purpose: "Wybor, ktore ustawienia powloki maja byc pamietane przy nastepnym uruchomieniu.",
       behavior: "open-tab:center:general",
     },
+    "tunnel-settings": {
+      label: "Tunnel",
+      purposeKey: "tipActionTunnelSettings",
+      purpose: "Instalacja cloudflared i publiczny tunel uzywany przez Mail XSS Tester.",
+      behavior: "open-tab:center:tunnel-settings",
+    },
     versions: {
       label: "Versions",
       purposeKey: "tipActionVersions",

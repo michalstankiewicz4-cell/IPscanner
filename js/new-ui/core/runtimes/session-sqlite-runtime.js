@@ -87,6 +87,9 @@
     "CREATE TABLE IF NOT EXISTS domain_verification_domains (",
     "  domain TEXT PRIMARY KEY, verified_at INTEGER NOT NULL DEFAULT 0",
     ");",
+    "CREATE TABLE IF NOT EXISTS mail_verification_emails (",
+    "  email TEXT PRIMARY KEY, verified_at INTEGER NOT NULL DEFAULT 0",
+    ");",
   ].join("\n");
 
   // Agent profile attachment bytes cross as base64 in the JS shape (same as
@@ -349,6 +352,15 @@
           insertDomain.run([String(d.domain || ""), Number(d.verifiedAt) || 0]);
         });
         insertDomain.free();
+
+        var mailVerification = data.mailVerification || {};
+        var verifiedEmails = Array.isArray(mailVerification.verifiedEmails) ? mailVerification.verifiedEmails : [];
+        var insertEmail = db.prepare("INSERT INTO mail_verification_emails (email, verified_at) VALUES (?,?)");
+        verifiedEmails.forEach(function (e) {
+          e = e || {};
+          insertEmail.run([String(e.email || ""), Number(e.verifiedAt) || 0]);
+        });
+        insertEmail.free();
 
         return db.export();
       } finally {
@@ -652,6 +664,16 @@
           }
         } catch (_) {}
 
+        var mailVerification = { verifiedEmails: [] };
+        try {
+          var mailRows = db.exec("SELECT email, verified_at FROM mail_verification_emails ORDER BY verified_at ASC");
+          if (mailRows.length) {
+            mailRows[0].values.forEach(function (row) {
+              mailVerification.verifiedEmails.push({ email: String(row[0] || ""), verifiedAt: Number(row[1]) || 0 });
+            });
+          }
+        } catch (_) {}
+
         return {
           scanResults: scanResults,
           scanProgress: scanProgress,
@@ -664,6 +686,7 @@
           extensions: extensions,
           httpsAuditHistory: httpsAuditHistory,
           domainVerification: domainVerification,
+          mailVerification: mailVerification,
         };
       } finally {
         db.close();

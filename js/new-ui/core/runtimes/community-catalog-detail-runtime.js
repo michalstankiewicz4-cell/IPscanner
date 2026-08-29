@@ -620,13 +620,68 @@
       header.appendChild(nameRow);
 
       if (entry.repoFullName) {
+        var repoLinkRow = document.createElement("div");
+        repoLinkRow.className = "v1-catalog-repo-link-row";
+
+        // Owner login and repo name are two SEPARATE links now (owner ->
+        // their GitHub profile, repo name -> the repo itself) rather than
+        // one combined "owner/repo" link - lets the owner's display name
+        // sit right next to their login without being inside a link.
+        var repoNameOnly = entry.repoFullName.indexOf("/") !== -1
+          ? entry.repoFullName.slice(entry.repoFullName.indexOf("/") + 1)
+          : entry.repoFullName;
+
+        if (ownerLogin) {
+          var ownerProfileLink = document.createElement("a");
+          ownerProfileLink.className = "v1-catalog-repo-link";
+          ownerProfileLink.href = "https://github.com/" + ownerLogin;
+          ownerProfileLink.target = "_blank";
+          ownerProfileLink.rel = "noopener noreferrer";
+          ownerProfileLink.textContent = ownerLogin;
+          repoLinkRow.appendChild(ownerProfileLink);
+
+          if (entry.ownerName) {
+            var ownerNameEl = document.createElement("span");
+            ownerNameEl.className = "v1-catalog-owner-name";
+            ownerNameEl.textContent = "(" + entry.ownerName + ")";
+            repoLinkRow.appendChild(ownerNameEl);
+          }
+
+          // Owner's GitHub follower count - a lightweight trust signal,
+          // not shown at all when it couldn't be fetched (rate limit / no
+          // such user) rather than printing a misleading "(0)".
+          if (typeof entry.ownerFollowers === "number") {
+            var followersEl = document.createElement("span");
+            followersEl.className = "v1-catalog-owner-followers";
+            followersEl.textContent = "(" + tr("communityCatalogFollowersLabel").replace("{count}", String(entry.ownerFollowers)) + ")";
+            repoLinkRow.appendChild(followersEl);
+          }
+
+          var sepEl = document.createElement("span");
+          sepEl.className = "v1-catalog-owner-followers";
+          sepEl.textContent = "/";
+          repoLinkRow.appendChild(sepEl);
+        }
+
         var repoLink = document.createElement("a");
         repoLink.className = "v1-catalog-repo-link";
         repoLink.href = entry.repoHtmlUrl || ("https://github.com/" + entry.repoFullName);
         repoLink.target = "_blank";
         repoLink.rel = "noopener noreferrer";
-        repoLink.textContent = entry.repoFullName;
-        header.appendChild(repoLink);
+        repoLink.textContent = repoNameOnly;
+        repoLinkRow.appendChild(repoLink);
+
+        // Repo's own star count - already part of the search-result data,
+        // no extra fetch needed. Same "don't show a misleading (0)" rule
+        // as followers above.
+        if (typeof entry.repoStars === "number") {
+          var starsEl = document.createElement("span");
+          starsEl.className = "v1-catalog-owner-followers";
+          starsEl.textContent = "(" + tr("communityCatalogStarsLabel").replace("{count}", String(entry.repoStars)) + ")";
+          repoLinkRow.appendChild(starsEl);
+        }
+
+        header.appendChild(repoLinkRow);
       }
 
       var descEl = document.createElement("p");

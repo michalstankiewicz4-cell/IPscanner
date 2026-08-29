@@ -152,6 +152,53 @@
       }
     }
 
+    // Mail verification marker (same idle/authorised/unauthorised shape as
+    // updateDomainAuthMarker above, right next to it in the status bar) -
+    // reflects whatever's currently typed into Options > General > Mail
+    // verification's email field, or a summary (green if any mailbox has
+    // ever been verified this session) when that field is empty. Shared via
+    // window.NetReconNewUICore.mailAuthStatusBar the same way, between this
+    // module's startup call and panel-interactions-runtime.js's keystroke
+    // handler.
+    function updateMailAuthMarker(emailInputValue) {
+      var marker = document.getElementById("v1StatusMailAuth");
+      var api = window.NetReconNewUICore && window.NetReconNewUICore.mailVerification;
+      if (!marker || !api) return;
+
+      var typed = String(emailInputValue || "").trim();
+      if (typed) {
+        var authorised = api.isEmailVerified(typed);
+        marker.className = "v1-status-mail-auth " + (authorised ? "is-authorised" : "is-unauthorised");
+        marker.title = typed + ": " + tr(authorised ? "mailVerifyStatusAuthorised" : "mailVerifyStatusUnauthorised");
+        return;
+      }
+
+      var state = api.getState();
+      if (state.verifiedEmails && state.verifiedEmails.length > 0) {
+        var names = state.verifiedEmails.map(function (e) { return e.email; }).join(", ");
+        marker.className = "v1-status-mail-auth is-authorised";
+        marker.title = tr("mailVerifyStatusIdleVerified").replace("{emails}", names);
+      } else {
+        marker.className = "v1-status-mail-auth is-idle";
+        marker.title = tr("mailVerifyStatusIdle");
+      }
+    }
+
+    // Tunnel marker (right side, before the update marker) - reflects Mail
+    // XSS Tester's own tunnel state (idle/starting/running/error), which is
+    // also what Mail verification's "Send code" depends on (see
+    // mail-verification-runtime.js) - a glance at the status bar tells you
+    // whether that's ready without having to open the Mail XSS Tester tab.
+    function updateTunnelMarker() {
+      var marker = document.getElementById("v1StatusTunnel");
+      var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
+      if (!marker || !api) return;
+
+      var status = api.getTunnelStatus();
+      marker.className = "v1-status-tunnel is-" + status;
+      marker.title = tr("statusTunnel_" + status);
+    }
+
     // Update-available marker (the ⓘ next to "active: X") - always visible,
     // unlike the domain-auth one above. Green/steady by default (matches
     // the markup's own .is-current class, so it reads right even before
@@ -180,6 +227,15 @@
       document.addEventListener("newui:domain-verification-changed", function () {
         updateDomainAuthMarker("");
       });
+
+      window.NetReconNewUICore.mailAuthStatusBar = { update: updateMailAuthMarker };
+      updateMailAuthMarker("");
+      document.addEventListener("newui:mail-verification-changed", function () {
+        updateMailAuthMarker("");
+      });
+
+      updateTunnelMarker();
+      document.addEventListener("newui:mail-xss-tester-changed", updateTunnelMarker);
 
       window.NetReconNewUICore.updateAvailableStatusBar = { setCurrent: setUpdateMarkerCurrent, setOutdated: setUpdateMarkerOutdated };
       setUpdateMarkerCurrent(window.NetReconNewUICore.APP_VERSION);

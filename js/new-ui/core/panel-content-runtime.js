@@ -24,6 +24,7 @@
     var reverseIpApi = core.reverseIp || null;
     var generalSettingsApi = core.generalSettings || null;
     var domainVerificationApi = core.domainVerification || null;
+    var mailVerificationApi = core.mailVerification || null;
 
     function trOr(key, fallback) {
       var value = tr(key);
@@ -566,6 +567,58 @@
       ].join("");
     }
 
+    // Mail verification: same shape as domainVerificationSection() above
+    // (own top-level sibling, exported so panel-interactions-runtime.js can
+    // re-render just its own ".v1-mail-verify-shell" wrapper), but the
+    // "prove ownership" step is a send-code/type-it-back exchange instead
+    // of an uploaded file - see mail-verification-runtime.js. Sending
+    // reuses Mail XSS Tester's own tunnel AND its own Gmail address/app
+    // password fields directly (read from #v1MailXssGmailAddress/
+    // #v1MailXssAppPassword in panel-interactions-runtime.js's click
+    // handler) rather than duplicating a second pair of credential inputs
+    // here - one place to type them in, per explicit request.
+    function mailVerificationSection() {
+      var mv = mailVerificationApi ? mailVerificationApi.getState() : { verifiedEmails: [] };
+      var pendingEmail = mailVerificationApi ? mailVerificationApi.getPendingEmail() : "";
+      var tunnelRunning = !!(mailXssTesterApi && mailXssTesterApi.getTunnelStatus() === "running");
+
+      var codeRow = !pendingEmail ? "" : [
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("mailVerifyCodeSentNote", "Code sent to {email} - check the inbox and enter it above.").replace("{email}", pendingEmail)) + "</div>",
+        "<div class=\"v1-import-manager-actions\">",
+        "<input type=\"text\" data-mail-verify-code autocomplete=\"off\" placeholder=\"" + escapeHtml(trOr("mailVerifyCodePlaceholder", "code from the email")) + "\" />",
+        "<button type=\"button\" data-mail-verify-action=\"verify\">" + escapeHtml(trOr("mailVerifyVerifyBtn", "Verify")) + "</button>",
+        "</div>"
+      ].join("");
+
+      var emailRows = mv.verifiedEmails.length ? [
+        "<div class=\"v1-mail-verify-list\" data-mail-verify-list>",
+        mv.verifiedEmails.map(function (e) {
+          return [
+            "<div class=\"v1-mail-verify-row\">",
+            "<span>" + escapeHtml(e.email) + "</span>",
+            "<button type=\"button\" data-mail-verify-remove=\"" + escapeHtml(e.email) + "\">" + escapeHtml(trOr("mailVerifyRemoveBtn", "Remove")) + "</button>",
+            "</div>"
+          ].join("");
+        }).join(""),
+        "</div>"
+      ].join("") : "<div class=\"v1-import-manager-note\" data-mail-verify-list>" + escapeHtml(trOr("mailVerifyNoneYet", "No verified mailboxes yet.")) + "</div>";
+
+      return [
+        "<div class=\"v1-mail-verify-shell\">",
+        "<h4 class=\"v1-general-settings-group\">" + escapeHtml(trOr("generalGroupMailVerification", "Mail verification")) + "</h4>",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("mailVerifyIntro", "Prove you control a mailbox before it can be picked as Mail XSS Tester's \"Send to\" address. Sending the code reuses Mail XSS Tester's own Gmail address/app password and tunnel - fill those in and start the tunnel over in Tools > Mail XSS Tester first.")) + "</div>",
+        !tunnelRunning ? "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("mailVerifyResultTunnelNotRunning", "Start the tunnel in Tools > Mail XSS Tester first.")) + "</div>" : "",
+        "<div class=\"v1-import-manager-actions\">",
+        "<input type=\"email\" data-mail-verify-input autocomplete=\"off\" placeholder=\"" + escapeHtml(trOr("mailVerifyEmailPlaceholder", "mailbox to verify")) + "\" />",
+        "<button type=\"button\" data-mail-verify-action=\"send\">" + escapeHtml(trOr("mailVerifySendCodeBtn", "Send code")) + "</button>",
+        "</div>",
+        "<div class=\"v1-import-manager-note\" data-mail-verify-result></div>",
+        codeRow,
+        emailRows,
+        "</div>"
+      ].join("");
+    }
+
     // shell: settings screen letting the user pick, per shell-level setting,
     // whether it should be remembered across app restarts (TBM Options ->
     // General). Actual "remember" enforcement lives in bootstrap-runtime.js's
@@ -765,6 +818,7 @@
         checkboxRow("rememberBlurIp", "👁", "generalRememberBlurIp", "Remember \"Blur IP addresses\" state"),
 
         domainVerificationSection(),
+        mailVerificationSection(),
 
         groupHeading("generalGroupWindows", "Windows"),
         checkboxRow("rememberWindowState", "🖥️", "generalRememberWindowState", "Remember window state (windowed / maximized / fullscreen)"),
@@ -1206,8 +1260,22 @@
       var payloads = mailXssTesterApi ? mailXssTesterApi.getPayloads() : [];
       var selected = mailXssTesterApi ? mailXssTesterApi.getSelectedPayloadIds() : [];
       var status = mailXssTesterApi ? mailXssTesterApi.getTunnelStatus() : "idle";
-      var url = mailXssTesterApi ? mailXssTesterApi.getTunnelUrl() : "";
-      var error = mailXssTesterApi ? mailXssTesterApi.getTunnelError() : "";
+
+      // "Send to" is locked to a mailbox already proven via Options >
+      // General > Mail verification (mail-verification-runtime.js) -
+      // most-recently-verified first, same reasoning as HTTPS Auditor's
+      // history dropdowns. With none verified yet it's a disabled, empty
+      // input (blocks submit the same way the missing-fields check already
+      // does for gmailAddress/appPassword), rather than letting it silently
+      // fall back to free-text.
+      var verifiedEmails = mailVerificationApi ? mailVerificationApi.getState().verifiedEmails : [];
+      var toFieldHtml = verifiedEmails.length
+        ? "<select id=\"v1MailXssTo\" name=\"mailXssTo\" data-mail-xss-field=\"to\">" +
+            verifiedEmails.slice().sort(function (a, b) { return b.verifiedAt - a.verifiedAt; }).map(function (e) {
+              return "<option value=\"" + escapeHtml(e.email) + "\">" + escapeHtml(e.email) + "</option>";
+            }).join("") +
+          "</select>"
+        : "<input id=\"v1MailXssTo\" name=\"mailXssTo\" type=\"email\" autocomplete=\"off\" data-mail-xss-field=\"to\" placeholder=\"" + escapeHtml(trOr("mailXssToLockedPlaceholder", "verify a mailbox in Options > General first")) + "\" disabled />";
 
       var payloadsHtml = payloads.map(function (p) {
         var checked = selected.indexOf(p.id) !== -1;
@@ -1220,22 +1288,15 @@
         ].join("");
       }).join("");
 
-      var tunnelStatusHtml = "";
-      if (status === "running") {
-        tunnelStatusHtml = "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssTunnelRunningNote")) + " " + escapeHtml(url) + "</p>";
-      } else if (status === "starting") {
-        tunnelStatusHtml = "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssTunnelStartingNote")) + "</p>";
-      } else if (status === "error") {
-        tunnelStatusHtml = [
-          "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssTunnelErrorPrefix")) + " " + escapeHtml(error) + "</p>",
-          "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssCloudflaredWhichFileNote")) + "</p>",
-          "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-mail-xss-cloudflared-download>" + escapeHtml(tr("mailXssDownloadCloudflaredBtn")) + "</button>"
-        ].join("");
-      }
-
       var sendDisabled = status !== "running" || !isDesktopMode;
-      var tunnelBtnDisabled = status === "starting" || !isDesktopMode;
-      var desktopOnlyHintHtml = isDesktopMode ? "" : "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssDesktopOnlyNote")) + "</p>";
+      // Everything about the tunnel itself (cloudflared install, live
+      // status, Stop) now lives in Options > Tunnel (renderTunnelSettingsTool
+      // above) - this panel keeps a single "Start tunnel" button whose click
+      // handler (wireMailXssTesterLibrary in panel-interactions-runtime.js)
+      // starts it directly from idle, or opens that tab instead for any
+      // other state (starting/running/error - nothing a single fixed-label
+      // button here can usefully do beyond pointing at the real controls).
+      var startTunnelBtnDisabled = !isDesktopMode;
 
       return [
         "<ul class=\"v1-tool-list\">",
@@ -1246,11 +1307,8 @@
         "</div>",
         "</li>",
         "<li>",
-        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("mailXssTunnelHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
         "<div class=\"v1-section-body\">",
-        desktopOnlyHintHtml,
-        "<button type=\"button\" class=\"v1-pulpit-connect-btn" + (status === "running" ? " is-active" : "") + "\" data-mail-xss-tunnel-toggle" + (tunnelBtnDisabled ? " disabled" : "") + ">" + escapeHtml(tr(status === "running" ? "mailXssStopTunnelBtn" : "mailXssStartTunnelBtn")) + "</button>",
-        tunnelStatusHtml,
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-mail-xss-tunnel-start" + (startTunnelBtnDisabled ? " disabled" : "") + ">" + escapeHtml(tr("mailXssStartTunnelBtn")) + "</button>",
         "</div>",
         "</li>",
         "<li>",
@@ -1259,15 +1317,16 @@
         "<form data-mail-xss-send-form>",
         "<div class=\"v1-pulpit-inspector-field\">",
         "<label for=\"v1MailXssGmailAddress\">" + escapeHtml(tr("mailXssGmailAddressLabel")) + "</label>",
-        "<input id=\"v1MailXssGmailAddress\" name=\"mailXssGmailAddress\" type=\"email\" autocomplete=\"off\" data-mail-xss-field=\"gmailAddress\" />",
+        "<input id=\"v1MailXssGmailAddress\" name=\"mailXssGmailAddress\" type=\"email\" autocomplete=\"off\" data-mail-xss-field=\"gmailAddress\" value=\"" + escapeHtml(mailXssTesterApi ? mailXssTesterApi.getDraftGmailAddress() : "") + "\" />",
         "</div>",
         "<div class=\"v1-pulpit-inspector-field\">",
         "<label for=\"v1MailXssAppPassword\">" + escapeHtml(tr("mailXssAppPasswordLabel")) + "</label>",
-        "<input id=\"v1MailXssAppPassword\" name=\"mailXssAppPassword\" type=\"password\" autocomplete=\"off\" data-mail-xss-field=\"appPassword\" />",
+        "<input id=\"v1MailXssAppPassword\" name=\"mailXssAppPassword\" type=\"password\" autocomplete=\"off\" data-mail-xss-field=\"appPassword\" value=\"" + escapeHtml(mailXssTesterApi ? mailXssTesterApi.getDraftAppPassword() : "") + "\" />",
         "</div>",
         "<div class=\"v1-pulpit-inspector-field\">",
         "<label for=\"v1MailXssTo\">" + escapeHtml(tr("mailXssToLabel")) + "</label>",
-        "<input id=\"v1MailXssTo\" name=\"mailXssTo\" type=\"email\" autocomplete=\"off\" data-mail-xss-field=\"to\" />",
+        toFieldHtml,
+        "<div class=\"v1-pulpit-remote-hint\">" + escapeHtml(trOr("mailXssToLockedHint", "Locked to a verified mailbox - see Options > General > Mail verification.")) + "</div>",
         "</div>",
         "<div class=\"v1-pulpit-inspector-field\">",
         "<label for=\"v1MailXssSubject\">" + escapeHtml(tr("mailXssSubjectLabel")) + "</label>",
@@ -1314,6 +1373,49 @@
           : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("mailXssNoPayloadsSelectedNote")) + "</div>"
       ].join("");
       return "<div class=\"v1-mail-xss-tester-shell\">" + inner + "</div>";
+    }
+
+    // Options > Tunnel: cloudflared install/download + Start/Stop tunnel +
+    // live status - moved here from Mail XSS Tester's own LS panel (see
+    // renderMailXssTesterLibrary above, which now just has a single "Start
+    // tunnel" button that either starts it directly or, if this tab's own
+    // controls are what's actually needed first - e.g. cloudflared missing -
+    // opens this tab instead). Own top-level sibling (not nested), exported
+    // so wireTunnelSettingsTool (panel-interactions-runtime.js) can rebuild
+    // just its own ".v1-tunnel-settings-shell" wrapper on every
+    // newui:mail-xss-tester-changed event, same pattern as
+    // wireMailXssTesterTool just above.
+    function renderTunnelSettingsTool() {
+      var isDesktopMode = mailXssTesterIsDesktop();
+      var status = mailXssTesterApi ? mailXssTesterApi.getTunnelStatus() : "idle";
+      var url = mailXssTesterApi ? mailXssTesterApi.getTunnelUrl() : "";
+      var error = mailXssTesterApi ? mailXssTesterApi.getTunnelError() : "";
+
+      var tunnelStatusHtml = "";
+      if (status === "running") {
+        tunnelStatusHtml = "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssTunnelRunningNote")) + " " + escapeHtml(url) + "</p>";
+      } else if (status === "starting") {
+        tunnelStatusHtml = "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssTunnelStartingNote")) + "</p>";
+      } else if (status === "error") {
+        tunnelStatusHtml = [
+          "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssTunnelErrorPrefix")) + " " + escapeHtml(error) + "</p>",
+          "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssCloudflaredWhichFileNote")) + "</p>",
+          "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-mail-xss-cloudflared-download>" + escapeHtml(tr("mailXssDownloadCloudflaredBtn")) + "</button>"
+        ].join("");
+      }
+
+      var tunnelBtnDisabled = status === "starting" || !isDesktopMode;
+
+      return [
+        "<div class=\"v1-import-manager v1-tunnel-settings-shell\">",
+        "<div class=\"v1-import-manager-head\">",
+        "<h4 style=\"margin:0 0 4px;\">" + escapeHtml(tr("mailXssTunnelHeading")) + "</h4>",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("mailXssDesktopOnlyNote")) + "</div>",
+        "</div>",
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn" + (status === "running" ? " is-active" : "") + "\" data-mail-xss-tunnel-toggle" + (tunnelBtnDisabled ? " disabled" : "") + ">" + escapeHtml(tr(status === "running" ? "mailXssStopTunnelBtn" : "mailXssStartTunnelBtn")) + "</button>",
+        tunnelStatusHtml,
+        "</div>"
+      ].join("");
     }
 
     // RS: raw hit log, newest first - the User-Agent header is useful for
@@ -3682,6 +3784,7 @@
       pulpit: renderPulpitCanvasTool,
       "pulpit-preview": renderPulpitPreviewTool,
       "mail-xss-tester": renderMailXssTesterTool,
+      "tunnel-settings": renderTunnelSettingsTool,
       "https-auditor": renderHttpsAuditorTool,
       "reverse-ip": renderReverseIpTool,
       "google-dork": renderGoogleDorkTool,
@@ -3719,6 +3822,7 @@
       renderPulpitPreviewTool: renderPulpitPreviewTool,
       renderMailXssTesterLibrary: renderMailXssTesterLibrary,
       renderMailXssTesterTool: renderMailXssTesterTool,
+      renderTunnelSettingsTool: renderTunnelSettingsTool,
       renderMailXssTesterResults: renderMailXssTesterResults,
       renderHttpsAuditorTool: renderHttpsAuditorTool,
       renderReverseIpTool: renderReverseIpTool,
@@ -3747,6 +3851,7 @@
       renderAiPermissionsTool: renderAiPermissionsTool,
       renderAiPermLogHtml: renderAiPermLogHtml,
       renderDomainVerificationSection: domainVerificationSection,
+      renderMailVerificationSection: mailVerificationSection,
     };
   }
 

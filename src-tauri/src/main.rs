@@ -2435,6 +2435,23 @@ struct DomainVerificationData {
     verified_domains: Vec<VerifiedDomainRow>,
 }
 
+// Mail verification (Options > General): a mailbox proven by sending a
+// one-time code to it - see DomainVerificationData just above, same
+// "bundled into the session file" treatment, minus the key/file pair
+// since there's nothing generated up front here.
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct VerifiedEmailRow {
+    email: String,
+    verified_at: i64,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct MailVerificationData {
+    verified_emails: Vec<VerifiedEmailRow>,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SessionData {
@@ -2454,6 +2471,8 @@ struct SessionData {
     https_audit_history: Vec<HttpsAuditHistoryRow>,
     #[serde(default)]
     domain_verification: DomainVerificationData,
+    #[serde(default)]
+    mail_verification: MailVerificationData,
 }
 
 const SESSION_SCHEMA_SQL: &str = "
@@ -2573,6 +2592,10 @@ const SESSION_SCHEMA_SQL: &str = "
     );
     CREATE TABLE IF NOT EXISTS domain_verification_domains (
       domain TEXT PRIMARY KEY,
+      verified_at INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS mail_verification_emails (
+      email TEXT PRIMARY KEY,
       verified_at INTEGER NOT NULL DEFAULT 0
     );
 ";
@@ -2852,6 +2875,19 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             insert_domain
                 .execute(params![row.domain, row.verified_at])
                 .map_err(|e| format!("Failed to insert domain_verification_domains row: {e}"))?;
+        }
+    }
+
+    tx.execute("DELETE FROM mail_verification_emails", [])
+        .map_err(|e| format!("Failed to clear mail_verification_emails: {e}"))?;
+    {
+        let mut insert_email = tx
+            .prepare_cached("INSERT INTO mail_verification_emails (email, verified_at) VALUES (?1,?2)")
+            .map_err(|e| format!("Failed to prepare mail_verification_emails insert: {e}"))?;
+        for row in &data.mail_verification.verified_emails {
+            insert_email
+                .execute(params![row.email, row.verified_at])
+                .map_err(|e| format!("Failed to insert mail_verification_emails row: {e}"))?;
         }
     }
 
@@ -3269,6 +3305,14 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         rows
     })().unwrap_or_default();
 
+    let mail_verification_emails: Vec<VerifiedEmailRow> = (|| -> Result<Vec<VerifiedEmailRow>, rusqlite::Error> {
+        let mut stmt = conn.prepare("SELECT email, verified_at FROM mail_verification_emails ORDER BY verified_at ASC")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(VerifiedEmailRow { email: row.get(0)?, verified_at: row.get(1)? })
+        })?.collect();
+        rows
+    })().unwrap_or_default();
+
     Ok(SessionData {
         scan_results,
         scan_progress,
@@ -3290,6 +3334,9 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
             key: domain_verification_key,
             generated_at: domain_verification_generated_at,
             verified_domains: domain_verification_domains,
+        },
+        mail_verification: MailVerificationData {
+            verified_emails: mail_verification_emails,
         },
     })
 }
