@@ -1407,6 +1407,7 @@
             setStatusLine,
             setRangeInputs,
             applyCidrValue,
+            switchTool,
           })
         : null;
 

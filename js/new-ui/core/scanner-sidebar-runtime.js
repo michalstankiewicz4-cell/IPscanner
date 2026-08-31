@@ -4,8 +4,10 @@
     var setStatusLine = deps.setStatusLine;
     var setRangeInputs = deps.setRangeInputs;
     var applyCidrValue = deps.applyCidrValue;
+    var switchTool = deps.switchTool;
 
     var RANGE_HISTORY_KEY = "netrecon_range_history";
+    var MEMORY_LIST_KEY = "netrecon_memory_list_v1";
     var presetsListenerBound = false;
     var portPresetListenerBound = false;
     var profileSelectListenerBound = false;
@@ -572,6 +574,8 @@
 
     function renderExtractorOutput() {
       var output = document.getElementById("v1IpExtractorOutput");
+      var copyBtn = document.getElementById("v1IpExtractCopyToMemoryBtn");
+      if (copyBtn) copyBtn.disabled = !extractedIps.length;
       if (!output) return;
       if (!extractedIps.length) {
         output.innerHTML = '<div class="v1-ip-extractor-empty">' + t("scannerExtractedPlaceholder") + "</div>";
@@ -588,13 +592,64 @@
       }).join("");
     }
 
+    // Appends every extracted IP not already in the Memory notepad (see
+    // panel-content-runtime.js's renderMemoryTool / panel-interactions-
+    // runtime.js's wireMemoryTool - same "netrecon_memory_list_v1" key) to
+    // the end of its text, skipping duplicates. Keeps an already-open
+    // Memory tab (docked or detached copy, hence querySelectorAll not
+    // getElementById) in sync immediately, plus the sidebar's own live count
+    // via the same newui:memory-list-changed event ip-inputs-runtime.js
+    // already listens for.
+    function copyExtractedToMemory() {
+      if (!extractedIps.length) return;
+      var raw = "";
+      try {
+        raw = window.localStorage ? (window.localStorage.getItem(MEMORY_LIST_KEY) || "") : "";
+      } catch (_) {}
+
+      var existing = sharedNet && typeof sharedNet.parseIpv4List === "function" ? sharedNet.parseIpv4List(raw) : [];
+      var existingSet = new Set(existing);
+      var toAdd = extractedIps.filter(function (ip) { return !existingSet.has(ip); });
+
+      if (!toAdd.length) {
+        if (typeof setStatusLine === "function") setStatusLine(t("statusMemoryCopyNoneNew"));
+        if (typeof switchTool === "function") switchTool("memory");
+        return;
+      }
+
+      var nextText = raw && raw.trim() ? (raw.replace(/\s+$/, "") + "\n" + toAdd.join("\n")) : toAdd.join("\n");
+      try {
+        if (window.localStorage) window.localStorage.setItem(MEMORY_LIST_KEY, nextText);
+      } catch (_) {}
+
+      document.querySelectorAll(".v1-memory-textarea").forEach(function (el) {
+        el.value = nextText;
+      });
+      document.querySelectorAll("[data-memory-count]").forEach(function (el) {
+        el.textContent = t("memoryValidCount").replace("{count}", String(existing.length + toAdd.length));
+      });
+      try {
+        window.dispatchEvent(new CustomEvent("newui:memory-list-changed", { detail: { count: existing.length + toAdd.length } }));
+      } catch (_) {}
+
+      if (typeof setStatusLine === "function") {
+        setStatusLine(t("statusMemoryCopyAdded") + " " + toAdd.length);
+      }
+      if (typeof switchTool === "function") switchTool("memory");
+    }
+
     function initIpExtractor() {
       var input = document.getElementById("v1IpExtractorInput");
       var output = document.getElementById("v1IpExtractorOutput");
       var trigger = document.getElementById("v1IpExtractBtn");
+      var copyToMemoryBtn = document.getElementById("v1IpExtractCopyToMemoryBtn");
       if (!input || !output || !trigger) return;
 
       renderExtractorOutput();
+
+      if (copyToMemoryBtn) {
+        copyToMemoryBtn.addEventListener("click", copyExtractedToMemory);
+      }
 
       trigger.addEventListener("click", async function () {
         var raw = String(input.value || "").trim();
@@ -857,6 +912,12 @@
       if (extractorBtn) {
         extractorBtn.setAttribute("title", t("scannerTipAddExtract"));
         extractorBtn.setAttribute("aria-label", t("scannerTipAddExtract"));
+      }
+      var copyToMemoryBtnLabel = document.getElementById("v1IpExtractCopyToMemoryBtn");
+      if (copyToMemoryBtnLabel) {
+        copyToMemoryBtnLabel.textContent = "🧠 " + t("scannerCopyToMemory");
+        copyToMemoryBtnLabel.setAttribute("title", t("scannerTipCopyToMemory"));
+        copyToMemoryBtnLabel.setAttribute("aria-label", t("scannerTipCopyToMemory"));
       }
       if (extractorOutput) renderExtractorOutput();
       if (historyTitle) historyTitle.textContent = t("scannerRangeHistory");

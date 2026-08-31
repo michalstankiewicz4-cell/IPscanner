@@ -48,3 +48,7 @@
 .v1-scanner-actions--spaced {
   margin-top: 6px;
 }
+
+.v1-ip-extractor-copy-memory-btn {
+  margin-left: auto;
+}
