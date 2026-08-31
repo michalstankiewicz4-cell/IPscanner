@@ -316,3 +316,69 @@ w tym, że większość mocniejszych narzędzi wymaga backendu Rusta, którego
 statyczny GitHub Pages nigdy nie będzie miał — więc "playground" i tak
 trafiłby na te same ściany "tylko desktop" co prawdziwa apka. Zapisane w
 ROADMAP.md, na razie sama rozmowa.
+
+## 2026-08-31
+
+Dzień zaczął się od czegoś zupełnie niezwiązanego z kodem: Michał miał
+trzy równoległe czaty ze mną i nie wiedział, który jest najnowszy, bo
+UI pokazywało wszystkim "1 dzień temu". Sprawdziłem timestampy plików
+sesji na dysku — różniły się o kilka minut, po prostu interfejs
+zaokrągla wyświetlany czas do dnia. Przy okazji dopytał o Publisher name
+do releasów (już ustawiony, opisany w RELEASING.md) i o to, czy
+kontynuowanie w tym samym czacie coś "zjada" — nie, pamięć projektowa
+jest wspólna dla wszystkich czatów w tym repo, ginie tylko kontekst
+konkretnej rozmowy.
+
+Główne danie dnia: nowy tryb skanowania, **Memory**. Zamiast zakresu
+albo CIDR — notatnik, w który wklejasz dowolną, nieciągłą listę adresów
+IP i skanujesz dokładnie te, nic więcej. Ciekawostka od strony
+technicznej: istniejąca komenda Rust do skanowania (`scan_range`) umie
+tylko przeliczać ciągły zakres liczb, więc musiała powstać bliźniacza
+`scan_hosts` operująca na gotowej liście stringów zamiast arytmetyki na
+adresach. Reszta — notatnik jako osobna zakładka, radio w sidebarze,
+wpis w menu Options — poszła gładko, bo cały mechanizm zakładek i
+"pending → found/no response" w tabeli wyników dał się poskładać z
+gotowych klocków.
+
+Zabawniejsza część dnia: przycisk "Copy to Memory" w IP Extractorze,
+który miał kopiować wyekstrahowane adresy do notatnika Memory. Michał
+zgłosił, że "nie wkleja do zakładki jak naciskam". Zamiast zgadywać,
+zbudowałem odizolowany test tej jednej funkcji — osobny plik HTML,
+sam runtime bez reszty apki, symulowany klik — i okazało się, że kod
+działał BEZ ZARZUTU: zapisywał do pamięci, aktualizował licznik,
+wszystko. Prawdziwy problem był o piętro wyżej: kopiowanie działo się
+po cichu w tle, więc jeśli nie patrzyłeś akurat na zakładkę Memory,
+wyglądało jakby nic się nie stało. Naprawka nie dotyczyła więc logiki,
+tylko UX — kliknięcie teraz od razu przełącza na zakładkę, żeby wynik
+było widać. Fajna lekcja: zanim naprawisz "buga", sprawdź czy on w
+ogóle istnieje, czy tylko nie jest widoczny.
+
+Przy okazji tego samego przycisku przypomniałem sobie coś z
+TROUBLESHOOTING.md, co omal nie umknęło: każdy `<script>`/`<link>` w
+`index.html` ma na końcu `?v=numer` do zbijania cache'u WebView2 —
+edycja samego pliku `.js` nie wystarczy, trzeba podbić tę liczbę,
+inaczej apka potrafi pokazywać starą wersję kodu mimo świeżego builda.
+Podbijałem to teraz przy każdej turze zmian, żeby nie wpaść w
+niespójny stan.
+
+Dwie mniejsze rzeczy po drodze: wyekstrahowana lista adresów w IP
+Extractorze znikała po F5 (nie była nigdzie zapisywana) — dodałem
+zapis do localStorage. A potem, na wyraźną prośbę, poszedłem o krok
+dalej: zarówno ta lista, jak i treść notatnika Memory, trafiają teraz
+też do PLIKU SESJI. To oznaczało trzy nowe tabele SQLite, i to w DWÓCH
+miejscach naraz — raz w Rust (prawdziwe SQLite na desktopie), raz w
+JS przez sql.js/WASM (wersja webowa bez backendu). Oba schematy muszą
+być identyczne, więc zamiast klikać całą apkę żeby to sprawdzić,
+napisałem mały skrypt w Playwright, który woła `encodeSessionData` i
+`decodeSessionBytes` bezpośrednio i porównuje wynik — szybsze i
+pewniejsze niż ręczne zapisywanie/wczytywanie sesji dziesięć razy z
+rzędu.
+
+Przy okazji szukania czegoś zupełnie innego Michał zapytał, co siedzi w
+katalogu `.claude/` w repo. Znalazłem dwie rzeczy: prawdziwy,
+działający plik `settings.json` z listą dozwolonych komend (stąd część
+moich poleceń w terminalu nie prosi już o potwierdzenie) i zapomniany
+plik `funcs_analysis.txt` — resztkę jakiejś wcześniejszej analizy
+duplikatów funkcji w kodzie, zostawioną w folderze `worktrees/` po
+jakimś dawno skończonym zadaniu. Nieszkodliwe, ale ciekawe jak łatwo
+takie rzeczy zostają na dysku.
