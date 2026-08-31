@@ -8,6 +8,7 @@
 
     var RANGE_HISTORY_KEY = "netrecon_range_history";
     var MEMORY_LIST_KEY = "netrecon_memory_list_v1";
+    var EXTRACTOR_INPUT_KEY = "netrecon_ip_extractor_input_v1";
     var presetsListenerBound = false;
     var portPresetListenerBound = false;
     var profileSelectListenerBound = false;
@@ -570,7 +571,27 @@
       concurrencyInput.addEventListener("change", persist);
     }
 
+    var EXTRACTOR_LIST_KEY = "netrecon_ip_extractor_list_v1";
     var extractedIps = [];
+
+    function loadExtractorList() {
+      try {
+        var raw = window.localStorage ? window.localStorage.getItem(EXTRACTOR_LIST_KEY) : "";
+        var parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed.filter(isValidIpv4) : [];
+      } catch (err) {
+        console.error("[ip-extractor] load failed:", err);
+        return [];
+      }
+    }
+
+    function saveExtractorList() {
+      try {
+        if (window.localStorage) window.localStorage.setItem(EXTRACTOR_LIST_KEY, JSON.stringify(extractedIps));
+      } catch (err) {
+        console.error("[ip-extractor] save failed:", err);
+      }
+    }
 
     function renderExtractorOutput() {
       var output = document.getElementById("v1IpExtractorOutput");
@@ -645,7 +666,17 @@
       var copyToMemoryBtn = document.getElementById("v1IpExtractCopyToMemoryBtn");
       if (!input || !output || !trigger) return;
 
+      extractedIps = loadExtractorList();
       renderExtractorOutput();
+
+      try {
+        input.value = window.localStorage ? (window.localStorage.getItem(EXTRACTOR_INPUT_KEY) || "") : "";
+      } catch (_) {}
+      input.addEventListener("input", function () {
+        try {
+          if (window.localStorage) window.localStorage.setItem(EXTRACTOR_INPUT_KEY, input.value || "");
+        } catch (_) {}
+      });
 
       if (copyToMemoryBtn) {
         copyToMemoryBtn.addEventListener("click", copyExtractedToMemory);
@@ -691,6 +722,7 @@
         });
 
         extractedIps = Array.from(dedupe);
+        saveExtractorList();
         renderExtractorOutput();
         if (typeof setStatusLine === "function") {
           setStatusLine(t("statusExtractorAdded") + " " + added + (unresolved ? ", " + t("statusExtractorUnresolved") + " " + unresolved : ""));
@@ -716,6 +748,7 @@
 
         if (action === "delete") {
           extractedIps.splice(idx, 1);
+          saveExtractorList();
           renderExtractorOutput();
           if (typeof setStatusLine === "function") {
             setStatusLine(t("statusExtractorDeleted") + " " + ip);

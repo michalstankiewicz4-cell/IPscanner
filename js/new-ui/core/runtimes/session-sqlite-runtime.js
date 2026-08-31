@@ -90,6 +90,15 @@
     "CREATE TABLE IF NOT EXISTS mail_verification_emails (",
     "  email TEXT PRIMARY KEY, verified_at INTEGER NOT NULL DEFAULT 0",
     ");",
+    "CREATE TABLE IF NOT EXISTS memory_notepad (",
+    "  id INTEGER PRIMARY KEY CHECK (id = 1), content TEXT NOT NULL DEFAULT ''",
+    ");",
+    "CREATE TABLE IF NOT EXISTS ip_extractor_state (",
+    "  id INTEGER PRIMARY KEY CHECK (id = 1), input_text TEXT NOT NULL DEFAULT ''",
+    ");",
+    "CREATE TABLE IF NOT EXISTS ip_extractor_entries (",
+    "  id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT NOT NULL",
+    ");",
   ].join("\n");
 
   // Agent profile attachment bytes cross as base64 in the JS shape (same as
@@ -361,6 +370,22 @@
           insertEmail.run([String(e.email || ""), Number(e.verifiedAt) || 0]);
         });
         insertEmail.free();
+
+        var memoryNotepad = data.memoryNotepad || {};
+        db.run("INSERT INTO memory_notepad (id, content) VALUES (1, ?)", [
+          String(memoryNotepad.content || ""),
+        ]);
+
+        var ipExtractor = data.ipExtractor || {};
+        db.run("INSERT INTO ip_extractor_state (id, input_text) VALUES (1, ?)", [
+          String(ipExtractor.inputText || ""),
+        ]);
+        var extractorEntries = Array.isArray(ipExtractor.entries) ? ipExtractor.entries : [];
+        var insertExtractorEntry = db.prepare("INSERT INTO ip_extractor_entries (ip) VALUES (?)");
+        extractorEntries.forEach(function (ip) {
+          insertExtractorEntry.run([String(ip || "")]);
+        });
+        insertExtractorEntry.free();
 
         return db.export();
       } finally {
@@ -674,6 +699,28 @@
           }
         } catch (_) {}
 
+        var memoryNotepad = { content: "" };
+        try {
+          var memoryRows = db.exec("SELECT content FROM memory_notepad WHERE id = 1");
+          if (memoryRows.length && memoryRows[0].values.length) {
+            memoryNotepad.content = String(memoryRows[0].values[0][0] || "");
+          }
+        } catch (_) {}
+
+        var ipExtractor = { inputText: "", entries: [] };
+        try {
+          var extractorInputRows = db.exec("SELECT input_text FROM ip_extractor_state WHERE id = 1");
+          if (extractorInputRows.length && extractorInputRows[0].values.length) {
+            ipExtractor.inputText = String(extractorInputRows[0].values[0][0] || "");
+          }
+          var extractorEntryRows = db.exec("SELECT ip FROM ip_extractor_entries ORDER BY id ASC");
+          if (extractorEntryRows.length) {
+            extractorEntryRows[0].values.forEach(function (row) {
+              ipExtractor.entries.push(String(row[0] || ""));
+            });
+          }
+        } catch (_) {}
+
         return {
           scanResults: scanResults,
           scanProgress: scanProgress,
@@ -687,6 +734,8 @@
           httpsAuditHistory: httpsAuditHistory,
           domainVerification: domainVerification,
           mailVerification: mailVerification,
+          memoryNotepad: memoryNotepad,
+          ipExtractor: ipExtractor,
         };
       } finally {
         db.close();

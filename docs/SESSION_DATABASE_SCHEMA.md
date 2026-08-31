@@ -274,6 +274,35 @@ HTTPS Auditor). Lista tych wpisow jest widoczna w lewym panelu jako
                    bez ponownego wykonywania zadania sieciowego
 
 
+TABELA: memory_notepad
+------------------------
+Pojedynczy wiersz (zawsze id=1) z zawartoscia notatnika zakladki "Memory"
+(tryb skanowania Memory obok Range/CIDR - patrz sidebar, sekcja IP Range).
+
+  id       - zawsze 1
+  content  - pelna, surowa tresc notatnika (jeden adres IP na linie,
+             albo oddzielone spacjami/przecinkami) jako zwykly tekst
+
+
+TABELA: ip_extractor_state
+-----------------------------
+Pojedynczy wiersz (zawsze id=1) z ostatnio wpisanym tekstem w polu
+wejsciowym narzedzia IP Extractor (sidebar skanera).
+
+  id          - zawsze 1
+  input_text  - surowy tekst ostatnio wpisany/wklejony w pole wejsciowe
+                IP Extractora (przed ekstrakcja)
+
+
+TABELA: ip_extractor_entries
+-------------------------------
+Jeden wiersz = jeden adres IP na liscie wyekstrahowanych przez IP Extractor
+(wynik klikniecia "Add / Extract", widoczny ponizej pola wejsciowego).
+
+  id  - numer wiersza (klucz glowny, nadawany automatycznie)
+  ip  - wyekstrahowany adres IP
+
+
 TABELE, KTORYCH APLIKACJA NIE TWORZY SAMA W BIEZACEJ WERSJI
 ==============================================================
 

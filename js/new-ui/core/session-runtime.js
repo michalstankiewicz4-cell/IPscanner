@@ -21,6 +21,9 @@
   var IP_LIBRARY_UPDATED_KEY = "netrecon_country_ip_library_updated_at";
   var PRESETS_KEY = "netrecon_scan_presets_v1";
   var DEFAULTS_KEY = "netrecon_scan_defaults_v1";
+  var MEMORY_LIST_KEY = "netrecon_memory_list_v1";
+  var EXTRACTOR_INPUT_KEY = "netrecon_ip_extractor_input_v1";
+  var EXTRACTOR_LIST_KEY = "netrecon_ip_extractor_list_v1";
 
   // --- agent profiles keys ---
   // Metadata mirrors agent-profiles-runtime.js's own two localStorage keys
@@ -165,6 +168,9 @@
       var ipLibraryUpdatedAt = s ? (s.getItem(IP_LIBRARY_UPDATED_KEY) || "") : "";
       var presetsRaw = s ? s.getJson(PRESETS_KEY, {}) : {};
       var defaultsRaw = s ? s.getJson(DEFAULTS_KEY, {}) : {};
+      var memoryNotepadRaw = s ? (s.getItem(MEMORY_LIST_KEY) || "") : "";
+      var extractorInputRaw = s ? (s.getItem(EXTRACTOR_INPUT_KEY) || "") : "";
+      var extractorEntriesRaw = s ? s.getJson(EXTRACTOR_LIST_KEY, []) : [];
 
       var scanResults = (Array.isArray(scanResultsRaw) ? scanResultsRaw : []).map(function (row) {
         row = row || {};
@@ -277,6 +283,21 @@
           var api = window.NetReconNewUICore && window.NetReconNewUICore.mailVerification;
           return api && api.getStateForSession ? api.getStateForSession() : { verifiedEmails: [] };
         })(),
+        // Memory scan mode's notepad (freeform text, see scanner-sidebar-
+        // runtime.js/panel-content-runtime.js's renderMemoryTool) and the IP
+        // Extractor's last-typed input plus its extracted list (scanner-
+        // sidebar-runtime.js) - localStorage-only otherwise, bundled into the
+        // session file too per an explicit request, same treatment as
+        // domainVerification/mailVerification above.
+        memoryNotepad: {
+          content: String(memoryNotepadRaw || ""),
+        },
+        ipExtractor: {
+          inputText: String(extractorInputRaw || ""),
+          entries: (Array.isArray(extractorEntriesRaw) ? extractorEntriesRaw : []).map(function (ip) {
+            return String(ip || "");
+          }),
+        },
       };
     }
 
@@ -772,6 +793,9 @@
         s.setItem(IP_LIBRARY_UPDATED_KEY, (data.ipLibrary && data.ipLibrary.updatedAt) || "");
         s.setItem(PRESETS_KEY, JSON.stringify(data.presets || {}));
         s.setItem(DEFAULTS_KEY, JSON.stringify(data.scanDefaults || {}));
+        s.setItem(MEMORY_LIST_KEY, (data.memoryNotepad && data.memoryNotepad.content) || "");
+        s.setItem(EXTRACTOR_INPUT_KEY, (data.ipExtractor && data.ipExtractor.inputText) || "");
+        s.setItem(EXTRACTOR_LIST_KEY, JSON.stringify((data.ipExtractor && data.ipExtractor.entries) || []));
         // shell
         s.setItem(PENDING_LAYOUT_KEY, JSON.stringify(data.layout || {}));
       }
@@ -853,6 +877,9 @@
         s.removeItem(IP_LIBRARY_UPDATED_KEY);
         s.removeItem(PRESETS_KEY);
         s.removeItem(DEFAULTS_KEY);
+        s.removeItem(MEMORY_LIST_KEY);
+        s.removeItem(EXTRACTOR_INPUT_KEY);
+        s.removeItem(EXTRACTOR_LIST_KEY);
         // agent profiles
         s.removeItem(AGENT_PROFILES_KEY);
         s.removeItem(AGENT_PROFILE_ATTACHMENTS_KEY);

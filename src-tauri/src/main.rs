@@ -2563,6 +2563,28 @@ struct MailVerificationData {
     verified_emails: Vec<VerifiedEmailRow>,
 }
 
+// Sidebar's "Memory" scan mode notepad (see index.html's Memory CS tab,
+// panel-content-runtime.js's renderMemoryTool) - a single freeform text
+// blob, same "bundled into the session file" treatment as domain/mail
+// verification above.
+#[derive(Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct MemoryNotepadData {
+    content: String,
+}
+
+// IP Extractor (scanner-sidebar-runtime.js) - the raw text last typed into
+// its input box, plus the list of addresses it extracted from it. Two
+// tables (ip_extractor_state for input_text, ip_extractor_entries for the
+// list) bundled under one JS-facing field, same pattern as ip_library
+// spanning ip_library_entries + ip_library_meta above.
+#[derive(Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct IpExtractorData {
+    input_text: String,
+    entries: Vec<String>,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SessionData {
@@ -2584,6 +2606,10 @@ struct SessionData {
     domain_verification: DomainVerificationData,
     #[serde(default)]
     mail_verification: MailVerificationData,
+    #[serde(default)]
+    memory_notepad: MemoryNotepadData,
+    #[serde(default)]
+    ip_extractor: IpExtractorData,
 }
 
 const SESSION_SCHEMA_SQL: &str = "
@@ -2708,6 +2734,18 @@ const SESSION_SCHEMA_SQL: &str = "
     CREATE TABLE IF NOT EXISTS mail_verification_emails (
       email TEXT PRIMARY KEY,
       verified_at INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS memory_notepad (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      content TEXT NOT NULL DEFAULT ''
+    );
+    CREATE TABLE IF NOT EXISTS ip_extractor_state (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      input_text TEXT NOT NULL DEFAULT ''
+    );
+    CREATE TABLE IF NOT EXISTS ip_extractor_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ip TEXT NOT NULL
     );
 ";
 
@@ -2999,6 +3037,33 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             insert_email
                 .execute(params![row.email, row.verified_at])
                 .map_err(|e| format!("Failed to insert mail_verification_emails row: {e}"))?;
+        }
+    }
+
+    tx.execute("DELETE FROM memory_notepad", [])
+        .map_err(|e| format!("Failed to clear memory_notepad: {e}"))?;
+    tx.execute(
+        "INSERT INTO memory_notepad (id, content) VALUES (1, ?1)",
+        params![data.memory_notepad.content],
+    ).map_err(|e| format!("Failed to write memory_notepad: {e}"))?;
+
+    tx.execute("DELETE FROM ip_extractor_state", [])
+        .map_err(|e| format!("Failed to clear ip_extractor_state: {e}"))?;
+    tx.execute(
+        "INSERT INTO ip_extractor_state (id, input_text) VALUES (1, ?1)",
+        params![data.ip_extractor.input_text],
+    ).map_err(|e| format!("Failed to write ip_extractor_state: {e}"))?;
+
+    tx.execute("DELETE FROM ip_extractor_entries", [])
+        .map_err(|e| format!("Failed to clear ip_extractor_entries: {e}"))?;
+    {
+        let mut insert_entry = tx
+            .prepare_cached("INSERT INTO ip_extractor_entries (ip) VALUES (?1)")
+            .map_err(|e| format!("Failed to prepare ip_extractor_entries insert: {e}"))?;
+        for ip in &data.ip_extractor.entries {
+            insert_entry
+                .execute(params![ip])
+                .map_err(|e| format!("Failed to insert ip_extractor_entries row: {e}"))?;
         }
     }
 
@@ -3424,6 +3489,20 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         rows
     })().unwrap_or_default();
 
+    // Same "brand new table, older session files don't have it" fallback
+    // as domain_verification/mail_verification above.
+    let memory_notepad_content: String = conn
+        .query_row("SELECT content FROM memory_notepad WHERE id = 1", [], |row| row.get(0))
+        .unwrap_or_default();
+    let ip_extractor_input_text: String = conn
+        .query_row("SELECT input_text FROM ip_extractor_state WHERE id = 1", [], |row| row.get(0))
+        .unwrap_or_default();
+    let ip_extractor_entries: Vec<String> = (|| -> Result<Vec<String>, rusqlite::Error> {
+        let mut stmt = conn.prepare("SELECT ip FROM ip_extractor_entries ORDER BY id ASC")?;
+        let rows = stmt.query_map([], |row| row.get(0))?.collect();
+        rows
+    })().unwrap_or_default();
+
     Ok(SessionData {
         scan_results,
         scan_progress,
@@ -3449,6 +3528,8 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         mail_verification: MailVerificationData {
             verified_emails: mail_verification_emails,
         },
+        memory_notepad: MemoryNotepadData { content: memory_notepad_content },
+        ip_extractor: IpExtractorData { input_text: ip_extractor_input_text, entries: ip_extractor_entries },
     })
 }
 
