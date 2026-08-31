@@ -28,6 +28,7 @@
     var CONFIG_FORM_STATE_KEY = "netrecon_scanner_config_form_v1";
     var SCAN_RESULTS_KEY = "netrecon_scan_results_v1";
     var SCAN_PROGRESS_KEY = "netrecon_scan_progress_v1";
+    var MEMORY_LIST_KEY = "netrecon_memory_list_v1";
     var hostFoundUnlisten = null;
     var scanProgressUnlisten = null;
     var scanInProgress = false;
@@ -622,6 +623,45 @@
       queueHostEnrichment(ip);
     }
 
+    // Memory-mode-only: unlike Range/CIDR (which only ever add a row once a
+    // host actually responds via "host-found"), Memory scans a hand-picked
+    // list the user explicitly typed - seeding every one of them as a
+    // "pending" row upfront lets the table double as a checklist while the
+    // scan runs, with upsertHostResult's existing find-or-append-by-ip
+    // overwriting each row in place once/if that host actually responds.
+    function seedPendingHostRows(ips) {
+      var rows = (ips || []).map(function (ip) {
+        return {
+          ip: ip, ping: "-", hostname: "-", flag: "-", isp: "-", as: "", deviceIdentification: "",
+          status: "pending", statusClass: "is-pending", ports: [],
+        };
+      });
+      rows.sort(function (a, b) {
+        return String(a.ip || "").localeCompare(String(b.ip || ""), undefined, { numeric: true, sensitivity: "base" });
+      });
+      writeScanResults(rows);
+      scheduleResultsRefresh();
+    }
+
+    // Called once a Memory scan reports done - any row still "pending" never
+    // got a "host-found" event, so it's finalized as "no response" rather
+    // than left looking stuck. No-op for Range/CIDR scans (they never write
+    // pending rows in the first place).
+    function finalizePendingHostRows() {
+      var rows = readScanResults();
+      var changed = false;
+      rows.forEach(function (row, idx) {
+        if (row && row.status === "pending") {
+          rows[idx] = Object.assign({}, row, { status: "no-response", statusClass: "is-down" });
+          changed = true;
+        }
+      });
+      if (changed) {
+        writeScanResults(rows);
+        scheduleResultsRefresh();
+      }
+    }
+
     function getEventListen() {
       var tauri = window.__TAURI__ || {};
       if (tauri.event && typeof tauri.event.listen === "function") return tauri.event.listen;
@@ -725,13 +765,35 @@
         return;
       }
 
+      // "Memory" mode scans an explicit, hand-picked (possibly non-
+      // contiguous) IP list instead of a Range/CIDR sweep - see the sidebar's
+      // v1RangeMode radios (index.html) and the Memory CS tab (tool-catalog.js
+      // + panel-content-runtime.js's renderMemoryTool).
+      var activeRangeMode = (document.querySelector('input[name="v1RangeMode"]:checked') || {}).value || "range";
+      var isMemoryMode = activeRangeMode === "memory";
+      var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils ? window.NetReconNewUICore.utils.net : null;
+
       var runtime = scannerRuntime();
-      var range = runtime && runtime.addCurrentRangeFromInputs
-        ? runtime.addCurrentRangeFromInputs()
-        : {
-            from: (document.getElementById("v1ScanFrom") || {}).value || "0.0.0.0",
-            to: (document.getElementById("v1ScanTo") || {}).value || "0.0.0.0",
-          };
+      var range = { from: "0.0.0.0", to: "0.0.0.0" };
+      var rawMemoryText = "";
+      var memoryIps = [];
+
+      if (isMemoryMode) {
+        try {
+          rawMemoryText = window.localStorage ? (window.localStorage.getItem(MEMORY_LIST_KEY) || "") : "";
+        } catch (_) {}
+        memoryIps = sharedNet && typeof sharedNet.parseIpv4List === "function"
+          ? sharedNet.parseIpv4List(rawMemoryText).slice(0, 2000)
+          : [];
+      } else {
+        range = runtime && runtime.addCurrentRangeFromInputs
+          ? runtime.addCurrentRangeFromInputs()
+          : {
+              from: (document.getElementById("v1ScanFrom") || {}).value || "0.0.0.0",
+              to: (document.getElementById("v1ScanTo") || {}).value || "0.0.0.0",
+            };
+      }
+
       var selectedPreset = runtime && runtime.getSelectedPreset
         ? runtime.getSelectedPreset()
         : null;
@@ -739,10 +801,15 @@
       var selectedPresetLabel = selectedPreset ? String(selectedPreset.name || selectedPreset.id || "").trim() : "";
       var ports = parsePortsCsv(selectedPorts);
       var defaults = readScanDefaults();
-      var estimatedTotal = estimateRangeTotal(range.from, range.to);
+      var estimatedTotal = isMemoryMode ? memoryIps.length : estimateRangeTotal(range.from, range.to);
 
       if ((configSnapshot.tcpEnabled || configSnapshot.udpChecked) && !ports.length) {
         if (setStatusLine) setStatusLine(tr("statusExtractorNoInput"));
+        return;
+      }
+
+      if (isMemoryMode && !memoryIps.length) {
+        if (setStatusLine) setStatusLine(tr(rawMemoryText.trim() ? "statusMemoryNoValidIps" : "statusMemoryEmpty"));
         return;
       }
 
@@ -757,6 +824,8 @@
           var found = Number(payload && payload.found);
           var done = !!(payload && payload.done);
           var stopped = !!(payload && payload.stopped);
+
+          if (done) finalizePendingHostRows();
 
           emitScanProgress({
             state: done ? (stopped ? "cancelled" : "done") : "update",
@@ -787,14 +856,20 @@
         found: 0,
       });
 
-      clearScanResults();
+      if (isMemoryMode) {
+        seedPendingHostRows(memoryIps);
+      } else {
+        clearScanResults();
+      }
 
       scanInProgress = true;
       emitBusyDelta(1, "scan-range", "Scan IP range", "statusProcScanRange");
       setScanButtonsState(true);
 
       if (setStatusLine) {
-        var status = tr("statusScanStart") + " " + range.from + " - " + range.to;
+        var status = isMemoryMode
+          ? tr("statusScanStart") + " " + tr("scannerRangeModeMemory") + " (" + memoryIps.length + ")"
+          : tr("statusScanStart") + " " + range.from + " - " + range.to;
         status += " | timeout=" + defaults.timeoutMs + "ms";
         status += " | c=" + defaults.concurrency;
         if ((configSnapshot.tcpEnabled || configSnapshot.udpChecked) && selectedPresetLabel) {
@@ -819,21 +894,36 @@
 
       var promise;
       try {
-        promise = invokeCommand("scan_range", {
-          fromIp: String(range.from || "").trim(),
-          toIp: String(range.to || "").trim(),
-          ports: ports,
-          concurrency: defaults.concurrency,
-          timeoutMs: defaults.timeoutMs,
-          retries: configSnapshot.retries,
-          scanDelayMs: configSnapshot.scanDelayMs,
-          maxConcurrentPorts: configSnapshot.maxConcurrentPorts,
-          randomizePorts: configSnapshot.randomizePorts,
-          randomizeHosts: configSnapshot.randomizeHosts,
-          tcpChecked: configSnapshot.tcpEnabled,
-          udpChecked: configSnapshot.udpChecked,
-          icmpChecked: configSnapshot.icmpChecked,
-        });
+        promise = isMemoryMode
+          ? invokeCommand("scan_hosts", {
+              ips: memoryIps,
+              ports: ports,
+              concurrency: defaults.concurrency,
+              timeoutMs: defaults.timeoutMs,
+              retries: configSnapshot.retries,
+              scanDelayMs: configSnapshot.scanDelayMs,
+              maxConcurrentPorts: configSnapshot.maxConcurrentPorts,
+              randomizePorts: configSnapshot.randomizePorts,
+              randomizeHosts: configSnapshot.randomizeHosts,
+              tcpChecked: configSnapshot.tcpEnabled,
+              udpChecked: configSnapshot.udpChecked,
+              icmpChecked: configSnapshot.icmpChecked,
+            })
+          : invokeCommand("scan_range", {
+              fromIp: String(range.from || "").trim(),
+              toIp: String(range.to || "").trim(),
+              ports: ports,
+              concurrency: defaults.concurrency,
+              timeoutMs: defaults.timeoutMs,
+              retries: configSnapshot.retries,
+              scanDelayMs: configSnapshot.scanDelayMs,
+              maxConcurrentPorts: configSnapshot.maxConcurrentPorts,
+              randomizePorts: configSnapshot.randomizePorts,
+              randomizeHosts: configSnapshot.randomizeHosts,
+              tcpChecked: configSnapshot.tcpEnabled,
+              udpChecked: configSnapshot.udpChecked,
+              icmpChecked: configSnapshot.icmpChecked,
+            });
       } catch (err) {
         promise = Promise.reject(err);
       }

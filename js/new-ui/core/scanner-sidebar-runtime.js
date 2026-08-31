@@ -770,6 +770,7 @@
       var ipRangeTitle = document.getElementById("v1IpRangeTitle");
       var rangeModeRangeLabel = document.getElementById("v1RangeModeRangeLabel");
       var rangeModeCidrLabel = document.getElementById("v1RangeModeCidrLabel");
+      var rangeModeMemoryLabel = document.getElementById("v1RangeModeMemoryLabel");
       var fromLabel = document.getElementById("v1IpLabelFrom");
       var toLabel = document.getElementById("v1IpLabelTo");
       var cidrLabel = document.getElementById("v1IpLabelCidr");
@@ -820,6 +821,12 @@
       if (ipRangeTitle) ipRangeTitle.textContent = t("scannerIpRange");
       if (rangeModeRangeLabel) rangeModeRangeLabel.textContent = t("scannerRangeModeRange");
       if (rangeModeCidrLabel) rangeModeCidrLabel.textContent = t("scannerRangeModeCidr");
+      if (rangeModeMemoryLabel) rangeModeMemoryLabel.textContent = t("scannerRangeModeMemory");
+      var memoryOpenBtn = document.getElementById("v1MemoryModeOpenBtn");
+      if (memoryOpenBtn) {
+        memoryOpenBtn.setAttribute("title", t("memoryGoToTabAria"));
+        memoryOpenBtn.setAttribute("aria-label", t("memoryGoToTabAria"));
+      }
       if (fromLabel) fromLabel.textContent = t("scannerFrom");
       if (toLabel) toLabel.textContent = t("scannerTo");
       if (cidrLabel) cidrLabel.textContent = t("scannerRangeModeCidr");

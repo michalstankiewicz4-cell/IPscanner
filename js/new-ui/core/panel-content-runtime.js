@@ -2731,6 +2731,7 @@
         if (explicit === "active" || explicit === "up" || explicit === "alive") return "active";
         if (explicit === "dead" || explicit === "down") return "dead";
         if (explicit === "unknown") return "unknown";
+        if (explicit === "pending") return "pending";
 
         var cls = String((row && row.statusClass) || "").toLowerCase();
         if (cls.indexOf("is-up") >= 0 || cls.indexOf("active") >= 0) return "active";
@@ -3735,6 +3736,32 @@
       ].join("");
     }
 
+    // CS: freeform notepad of IP addresses for the sidebar's "Memory" scan
+    // mode (see js/new-ui/core/runtimes/ip-inputs-runtime.js's applyMode and
+    // navigation-runtime.js's startScanWithCurrentSettings). Wiring
+    // (autosave, live valid-IP count) is panel-interactions-runtime.js's
+    // wireMemoryTool(). Reads the same localStorage key that function writes
+    // to - "netrecon_memory_list_v1" - so a re-render (tab switch away and
+    // back) still shows the last-typed text.
+    function renderMemoryTool() {
+      var raw = "";
+      try {
+        raw = window.localStorage ? (window.localStorage.getItem("netrecon_memory_list_v1") || "") : "";
+      } catch (_) {}
+
+      var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils ? window.NetReconNewUICore.utils.net : null;
+      var count = sharedNet && typeof sharedNet.parseIpv4List === "function" ? sharedNet.parseIpv4List(raw).length : 0;
+
+      return [
+        "<div class=\"v1-memory-tool\">",
+        "<div class=\"v1-memory-tool-header\">",
+        "<span class=\"v1-memory-tool-count\" data-memory-count>" + escapeHtml(trOr("memoryValidCount", "{count} valid IP(s) ready to scan").replace("{count}", String(count))) + "</span>",
+        "</div>",
+        "<textarea id=\"v1MemoryNotepad\" class=\"v1-memory-textarea\" spellcheck=\"false\" placeholder=\"" + escapeHtml(trOr("memoryNotepadPlaceholder", "Paste or type IP addresses...")) + "\">" + escapeHtml(raw) + "</textarea>",
+        "</div>"
+      ].join("");
+    }
+
     function renderBrowserTool() {
       var networkApi = window.NetReconNewUICore && window.NetReconNewUICore.browserNetwork;
       var inspecting = networkApi ? networkApi.getActive() : false;
@@ -3777,6 +3804,7 @@
       about: renderAboutTool,
       license: renderLicenseTool,
       "lorem-ipsum": renderLoremIpsumTool,
+      memory: renderMemoryTool,
       browser: renderBrowserTool,
       general: renderGeneralSettingsTool,
       "language-manager": renderLanguageManagerTool,

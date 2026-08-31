@@ -602,6 +602,117 @@ async fn scan_range(
     Ok(found)
 }
 
+/// Scan an explicit, possibly non-contiguous list of IP addresses (the
+/// sidebar's "Memory" mode - a hand-typed/pasted notepad instead of a
+/// Range/CIDR sweep). Shares scan_range's probing/progress/stop machinery;
+/// the only real difference is how the host list is produced.
+#[tauri::command]
+async fn scan_hosts(
+    app: AppHandle,
+    ips: Vec<String>,
+    ports: Vec<u16>,
+    concurrency: usize,
+    timeout_ms: u64,
+    retries: u32,
+    scan_delay_ms: u64,
+    max_concurrent_ports: usize,
+    randomize_ports: bool,
+    randomize_hosts: bool,
+    tcp_checked: bool,
+    udp_checked: bool,
+    icmp_checked: bool,
+) -> Result<u32, String> {
+    // Defense in depth - the frontend already filters to valid IPv4 before
+    // sending, but this list comes from free-typed text, so don't trust it
+    // blindly.
+    let mut hosts: Vec<String> = ips.into_iter()
+        .filter(|ip| matches!(IpAddr::from_str(ip), Ok(IpAddr::V4(_))))
+        .collect();
+    if randomize_hosts {
+        shuffle_vec(&mut hosts);
+    }
+
+    // Reset stop flag
+    app.state::<Arc<ScanState>>().stop.store(false, Ordering::Relaxed);
+
+    let sem  = Arc::new(tokio::sync::Semaphore::new(concurrency.max(1).min(256)));
+    let stop = app.state::<Arc<ScanState>>().inner().clone();
+    let total = hosts.len() as u32;
+    let mut set: tokio::task::JoinSet<bool> = tokio::task::JoinSet::new();
+
+    let _ = app.emit("scan-progress", ScanProgress {
+        total,
+        processed: 0,
+        found: 0,
+        done: false,
+        stopped: false,
+    });
+
+    for ip in hosts {
+        if stop.stop.load(Ordering::Relaxed) { break; }
+        let ports_c = ports.clone();
+        let app_c   = app.clone();
+        let permit  = sem.clone().acquire_owned().await.unwrap();
+        let stop_c  = stop.clone();
+
+        set.spawn(async move {
+            let _permit = permit;
+            if stop_c.stop.load(Ordering::Relaxed) {
+                return false;
+            }
+            let (open_ports, ping_ms, icmp_replied) = probe_host_multi(
+                ip.clone(),
+                ports_c,
+                timeout_ms,
+                retries,
+                scan_delay_ms,
+                max_concurrent_ports,
+                randomize_ports,
+                tcp_checked,
+                udp_checked,
+                icmp_checked,
+            ).await;
+            // Same confirmed-signal rule as scan_range - see its comment.
+            let found = open_ports.iter().any(|p| p.status == "open") || icmp_replied;
+            if found {
+                let _ = app_c.emit("host-found", HostFound { ip, open_ports, ping_ms });
+                true
+            } else {
+                false
+            }
+        });
+    }
+
+    let mut found = 0u32;
+    let mut processed = 0u32;
+    let mut last_progress_emit = std::time::Instant::now();
+    while let Some(res) = set.join_next().await {
+        processed += 1;
+        if matches!(res, Ok(true)) { found += 1; }
+        if last_progress_emit.elapsed() >= std::time::Duration::from_millis(100) {
+            last_progress_emit = std::time::Instant::now();
+            let _ = app.emit("scan-progress", ScanProgress {
+                total,
+                processed,
+                found,
+                done: false,
+                stopped: false,
+            });
+        }
+    }
+
+    let stopped = stop.stop.load(Ordering::Relaxed);
+    let _ = app.emit("scan-progress", ScanProgress {
+        total,
+        processed,
+        found,
+        done: true,
+        stopped,
+    });
+
+    Ok(found)
+}
+
 /// Stop a running scan_range.
 #[tauri::command]
 fn stop_scan(app: AppHandle) {
@@ -4657,6 +4768,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             scan_range,
+            scan_hosts,
             stop_scan,
             geo_lookup,
             hostname_lookup,

@@ -2175,6 +2175,62 @@
       }
     }
 
+    var MEMORY_LIST_KEY = "netrecon_memory_list_v1";
+    var memoryAutosaveTimer = 0;
+
+    function writeMemoryListText(text) {
+      try {
+        if (window.localStorage) window.localStorage.setItem(MEMORY_LIST_KEY, String(text || ""));
+      } catch (_) {}
+    }
+
+    // CS: the Memory notepad textarea - debounced autosave to localStorage
+    // (netrecon_memory_list_v1, read back by renderMemoryTool on re-render
+    // and by navigation-runtime.js's startScanWithCurrentSettings at scan
+    // time) plus a live valid-IP count, both in this tab and the sidebar's
+    // "memory" mode panel (via the newui:memory-list-changed event, mirroring
+    // the existing newui:blur-ip-changed pattern in ip-inputs-runtime.js).
+    function wireMemoryTool(rootEl) {
+      var root = rootEl && typeof rootEl.querySelector === "function"
+        ? rootEl
+        : document.getElementById("v1ToolDetail");
+      if (!root) return;
+
+      // Query by class, not id - a detached/floating copy of this tab
+      // (createDetachedCard's stripIds()) removes every id="..." from the
+      // mounted HTML to avoid duplicate-id collisions with the docked
+      // original, which would silently break an #id-based lookup here (see
+      // docs/TROUBLESHOOTING.md's "Zakladka odczepiona nie reaguje").
+      var textarea = root.querySelector(".v1-memory-textarea");
+      var countEl = root.querySelector("[data-memory-count]");
+      if (!textarea) return;
+
+      var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils
+        ? window.NetReconNewUICore.utils.net
+        : null;
+
+      function updateCount() {
+        var count = sharedNet && typeof sharedNet.parseIpv4List === "function"
+          ? sharedNet.parseIpv4List(textarea.value).length
+          : 0;
+        if (countEl) countEl.textContent = tr("memoryValidCount").replace("{count}", String(count));
+        try {
+          window.dispatchEvent(new CustomEvent("newui:memory-list-changed", { detail: { count: count } }));
+        } catch (_) {}
+      }
+
+      textarea.addEventListener("input", function () {
+        if (memoryAutosaveTimer) clearTimeout(memoryAutosaveTimer);
+        memoryAutosaveTimer = window.setTimeout(function () {
+          memoryAutosaveTimer = 0;
+          writeMemoryListText(textarea.value);
+          updateCount();
+        }, 200);
+      });
+
+      updateCount();
+    }
+
     // RS: live hit log, rebuilt the same way as Mail XSS Tester's own RS
     // results panel above.
     function wireBrowserNetworkPanel() {
@@ -5139,6 +5195,7 @@
       wireGlobeTool: wireGlobeTool,
       wireBrowserTool: wireBrowserTool,
       wireBrowserNetworkPanel: wireBrowserNetworkPanel,
+      wireMemoryTool: wireMemoryTool,
       wireAgentProfileLibrary: wireAgentProfileLibrary,
       wireAgentProfileDetail: wireAgentProfileDetail,
       // ip-scanner tool

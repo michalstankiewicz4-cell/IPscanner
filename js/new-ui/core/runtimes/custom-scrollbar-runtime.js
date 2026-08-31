@@ -23,6 +23,7 @@
     ".v1-ip-extractor-input",
     ".v1-ip-extractor-output",
     ".v1-results-table-scroll--ip",
+    ".v1-memory-textarea",
   ];
 
   function createCustomScrollbarRuntime() {

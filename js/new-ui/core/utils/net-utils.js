@@ -64,6 +64,26 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
   }
 
+  // Shared freeform-text -> clean IPv4 list parser (one per line, or
+  // separated by spaces/commas/semicolons). Used by both the IP Extractor
+  // (scanner-sidebar-runtime.js) and the Memory notepad (panel-interactions-
+  // runtime.js's wireMemoryTool + navigation-runtime.js's scan-start path) -
+  // a single definition here keeps their dedup/validation behavior in sync.
+  // Invalid tokens are silently dropped, matching the Extractor's existing UX.
+  function parseIpv4List(raw) {
+    var tokens = String(raw || "").split(/[\s,;]+/).map(function (part) {
+      return part.trim();
+    }).filter(Boolean);
+    var seen = new Set();
+    var result = [];
+    tokens.forEach(function (token) {
+      if (!isValidIpv4(token) || seen.has(token)) return;
+      seen.add(token);
+      result.push(token);
+    });
+    return result;
+  }
+
   window.NetReconNewUICore = window.NetReconNewUICore || {};
   window.NetReconNewUICore.utils = window.NetReconNewUICore.utils || {};
   window.NetReconNewUICore.utils.net = {
@@ -71,5 +91,6 @@
     isValidEmail: isValidEmail,
     lookupPortService: lookupPortService,
     cidrToRange: cidrToRange,
+    parseIpv4List: parseIpv4List,
   };
 })();

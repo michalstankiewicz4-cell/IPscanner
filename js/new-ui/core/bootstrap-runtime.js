@@ -1277,7 +1277,7 @@
         : null;
 
       const ipInputsRuntimeFactory = runtimeFactory.createIpInputsRuntime
-        ? runtimeFactory.createIpInputsRuntime()
+        ? runtimeFactory.createIpInputsRuntime({ tr })
         : null;
 
       if (ipInputsRuntimeFactory && ipInputsRuntimeFactory.init) {

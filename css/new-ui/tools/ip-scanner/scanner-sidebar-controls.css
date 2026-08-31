@@ -347,6 +347,34 @@ html[dir="rtl"] .v1-range-history-actions {
   gap: 8px;
 }
 
+.v1-memory-mode-panel {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.v1-memory-mode-count {
+  color: var(--txt-dim);
+  font-size: 12px;
+}
+
+.v1-memory-mode-open-btn {
+  border: 1px solid #3f3f46;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--txt);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.v1-memory-mode-open-btn:hover {
+  border-color: var(--brand);
+}
+
 .v1-ip-label {
   width: 32px;
   color: var(--txt-dim);

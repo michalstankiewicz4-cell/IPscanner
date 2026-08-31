@@ -1104,6 +1104,8 @@
       cardB.classList.toggle("is-globe-view", toolA === "globe");
       cardA.classList.toggle("is-browser-view", toolB === "browser");
       cardB.classList.toggle("is-browser-view", toolA === "browser");
+      cardA.classList.toggle("is-memory-view", toolB === "memory");
+      cardB.classList.toggle("is-memory-view", toolA === "memory");
       detachedCards[toolA] = cardB;
       detachedCards[toolB] = cardA;
     }
@@ -1126,6 +1128,7 @@
       card.classList.toggle("is-pulpit-preview-view", tool === "pulpit-preview");
       card.classList.toggle("is-globe-view", tool === "globe");
       card.classList.toggle("is-browser-view", tool === "browser");
+      card.classList.toggle("is-memory-view", tool === "memory");
 
       var header = document.createElement("div");
       header.className = "v1-detached-tool-head";
@@ -1971,6 +1974,13 @@
         return;
       }
 
+      if (tool === "memory") { // shell
+        if (panelInteractionsRuntime && panelInteractionsRuntime.wireMemoryTool) {
+          panelInteractionsRuntime.wireMemoryTool(scope);
+        }
+        return;
+      }
+
       if (tool === "agent-profiles") { // shell
         if (panelInteractionsRuntime && panelInteractionsRuntime.wireAgentProfileDetail) {
           panelInteractionsRuntime.wireAgentProfileDetail(scope);
@@ -2242,6 +2252,7 @@
           v1MainCard.classList.remove("is-pulpit-preview-view");
           v1MainCard.classList.remove("is-globe-view");
           v1MainCard.classList.remove("is-browser-view");
+          v1MainCard.classList.remove("is-memory-view");
         }
         if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + tr("noActiveTab"));
         if (v1StatusRight) v1StatusRight.textContent = tr("active") + ": " + tr("noActiveTab");
@@ -2260,6 +2271,7 @@
         v1MainCard.classList.toggle("is-pulpit-preview-view", activeTool === "pulpit-preview");
         v1MainCard.classList.toggle("is-globe-view", activeTool === "globe");
         v1MainCard.classList.toggle("is-browser-view", activeTool === "browser");
+        v1MainCard.classList.toggle("is-memory-view", activeTool === "memory");
       }
       applyDetachedCardState();
       if (typeof setStatusLine === "function") setStatusLine(tr("toolRoute") + ": " + activeTool);

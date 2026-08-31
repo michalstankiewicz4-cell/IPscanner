@@ -224,6 +224,58 @@
   overflow: hidden;
 }
 
+/* ip-scanner tool: Memory notepad - same "fill the whole CS pane" height-
+   chain treatment as Browser above, so the textarea actually grows with the
+   panel instead of sitting at its default rows-based height. */
+#v1MainCard.is-memory-view #v1ToolDetail {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.v1-detached-tool-card.is-memory-view .tool-detail {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.v1-memory-tool {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.v1-memory-tool-header {
+  flex: none;
+  padding-bottom: 8px;
+}
+
+.v1-memory-tool-count {
+  color: var(--txt-dim);
+  font-size: 12px;
+}
+
+.v1-memory-textarea {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+  resize: none;
+  background: #1f1f23;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  color: var(--txt);
+  font-size: 13px;
+  font-family: var(--font-mono, monospace);
+  padding: 10px 12px;
+  outline: none;
+}
+
+.v1-memory-textarea:focus {
+  border-color: var(--brand);
+}
+
 .v1-embedded-browser {
   display: flex;
   flex-direction: column;

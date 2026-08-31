@@ -1,5 +1,6 @@
 (function () {
-  function createIpInputsRuntime() {
+  function createIpInputsRuntime(deps) {
+    var tr = deps && typeof deps.tr === "function" ? deps.tr : function (key) { return key; };
     var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils
       ? window.NetReconNewUICore.utils.net
       : null;
@@ -67,6 +68,22 @@
       if (cidrInput) cidrInput.setAttribute("autocomplete", blurred ? "off" : "on");
     }
 
+    // Sidebar's "memory" mode panel just shows a live valid-IP count (the
+    // notepad itself lives in the Memory CS tab, see panel-content-runtime.js's
+    // renderMemoryTool / panel-interactions-runtime.js's wireMemoryTool,
+    // which dispatches this same event on every autosave) - reads the same
+    // "netrecon_memory_list_v1" localStorage key wireMemoryTool writes to.
+    function updateMemoryModeCount() {
+      var countEl = document.getElementById("v1MemoryModeCount");
+      if (!countEl) return;
+      var raw = "";
+      try {
+        raw = window.localStorage ? (window.localStorage.getItem("netrecon_memory_list_v1") || "") : "";
+      } catch (_) {}
+      var count = sharedNet && typeof sharedNet.parseIpv4List === "function" ? sharedNet.parseIpv4List(raw).length : 0;
+      countEl.textContent = tr("memoryValidCount").replace("{count}", String(count));
+    }
+
     function initRangeModeToggle() {
       var radios = Array.from(document.querySelectorAll('input[name="v1RangeMode"]'));
       if (!radios.length) return;
@@ -78,6 +95,8 @@
         if (mode === "cidr") {
           var cidrInput = document.getElementById("v1ScanCidr");
           if (cidrInput) applyCidrValue(cidrInput.value);
+        } else if (mode === "memory") {
+          updateMemoryModeCount();
         }
       }
 
@@ -86,6 +105,9 @@
           if (radio.checked) applyMode(radio.value);
         });
       });
+
+      window.addEventListener("newui:memory-list-changed", updateMemoryModeCount);
+      updateMemoryModeCount();
 
       var checked = radios.find(function (radio) { return radio.checked; });
       applyMode(checked ? checked.value : "range");

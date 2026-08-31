@@ -80,6 +80,18 @@
       labelKey: "toolTitle_lorem_ipsum",
       ui: { showAsTab: true, order: 100 }
     },
+    // Memory (CS-only) - freeform notepad of IP addresses; the "Memory" scan
+    // mode radio (index.html's IP Range section) scans exactly this list
+    // instead of a range/CIDR sweep. See panel-content-runtime.js's
+    // renderMemoryTool() and panel-interactions-runtime.js's wireMemoryTool().
+    memory: {
+      titleKey: "toolTitle_memory",
+      textKey: "toolText_memory",
+      points: [],
+      icon: "🧠",
+      labelKey: "toolTitle_memory",
+      ui: { showAsTab: true, order: 105 }
+    },
     // Browser (CS-only) - a docked child webview (Tauri multi-webview,
     // Window::add_child), not an iframe, so it isn't subject to
     // X-Frame-Options/frame-ancestors blocking. See panel-content-runtime.js's
