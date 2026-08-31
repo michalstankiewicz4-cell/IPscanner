@@ -568,11 +568,33 @@
       concurrencyInput.addEventListener("change", persist);
     }
 
+    var extractedIps = [];
+
+    function renderExtractorOutput() {
+      var output = document.getElementById("v1IpExtractorOutput");
+      if (!output) return;
+      if (!extractedIps.length) {
+        output.innerHTML = '<div class="v1-ip-extractor-empty">' + t("scannerExtractedPlaceholder") + "</div>";
+        return;
+      }
+      output.innerHTML = extractedIps.map(function (ip, idx) {
+        return '<div class="v1-ip-extractor-item">'
+          + '<span class="v1-ip-extractor-text" title="' + escapeHtml(ip) + '">' + escapeHtml(ip) + "</span>"
+          + '<span class="v1-ip-extractor-actions">'
+          + '<button type="button" class="v1-ip-extractor-btn" data-extract-action="use" data-extract-index="' + idx + '" title="' + escapeHtml(t("scannerExtractUseAria")) + '" aria-label="' + escapeHtml(t("scannerExtractUseAria")) + '">&gt;</button>'
+          + '<button type="button" class="v1-ip-extractor-btn" data-extract-action="delete" data-extract-index="' + idx + '" title="' + escapeHtml(t("scannerExtractDeleteAria")) + '" aria-label="' + escapeHtml(t("scannerExtractDeleteAria")) + '">x</button>'
+          + "</span>"
+          + "</div>";
+      }).join("");
+    }
+
     function initIpExtractor() {
       var input = document.getElementById("v1IpExtractorInput");
       var output = document.getElementById("v1IpExtractorOutput");
       var trigger = document.getElementById("v1IpExtractBtn");
       if (!input || !output || !trigger) return;
+
+      renderExtractorOutput();
 
       trigger.addEventListener("click", async function () {
         var raw = String(input.value || "").trim();
@@ -582,8 +604,7 @@
         }
 
         var tokens = raw.split(/[\s,;]+/).map(function (x) { return x.trim(); }).filter(Boolean);
-        var existing = String(output.value || "").split(/\r?\n/).map(function (x) { return x.trim(); }).filter(isValidIpv4);
-        var dedupe = new Set(existing);
+        var dedupe = new Set(extractedIps);
         var added = 0;
         var unresolved = 0;
 
@@ -614,9 +635,36 @@
           }
         });
 
-        output.value = Array.from(dedupe).join("\n");
+        extractedIps = Array.from(dedupe);
+        renderExtractorOutput();
         if (typeof setStatusLine === "function") {
           setStatusLine(t("statusExtractorAdded") + " " + added + (unresolved ? ", " + t("statusExtractorUnresolved") + " " + unresolved : ""));
+        }
+      });
+
+      output.addEventListener("click", function (event) {
+        var btn = event.target.closest("[data-extract-action]");
+        if (!btn) return;
+        var action = btn.getAttribute("data-extract-action");
+        var idx = Number(btn.getAttribute("data-extract-index"));
+        var ip = extractedIps[idx];
+        if (!ip) return;
+
+        if (action === "use") {
+          if (typeof setRangeInputs === "function" && setRangeInputs(ip, ip)) {
+            if (typeof setStatusLine === "function") {
+              setStatusLine(t("statusRangeSet") + " " + ip);
+            }
+          }
+          return;
+        }
+
+        if (action === "delete") {
+          extractedIps.splice(idx, 1);
+          renderExtractorOutput();
+          if (typeof setStatusLine === "function") {
+            setStatusLine(t("statusExtractorDeleted") + " " + ip);
+          }
         }
       });
     }
@@ -803,7 +851,7 @@
         extractorBtn.setAttribute("title", t("scannerTipAddExtract"));
         extractorBtn.setAttribute("aria-label", t("scannerTipAddExtract"));
       }
-      if (extractorOutput) extractorOutput.setAttribute("placeholder", t("scannerExtractedPlaceholder"));
+      if (extractorOutput) renderExtractorOutput();
       if (historyTitle) historyTitle.textContent = t("scannerRangeHistory");
       if (profilesTitle) profilesTitle.textContent = t("scannerProfilesTitle");
       if (profileNameInput) profileNameInput.setAttribute("placeholder", t("scannerProfileNamePlaceholder"));
