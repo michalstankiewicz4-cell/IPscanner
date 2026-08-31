@@ -6,6 +6,25 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-08-31
+
+- Added a third scan mode, **Memory** (next to Range/CIDR in the IP Scanner
+  sidebar): type or paste a hand-picked list of IP addresses into a
+  notepad-style tab (reachable from the sidebar radio, the tab strip, or
+  **Options -> Memory**) and scan exactly that list instead of sweeping a
+  range. Every address shows up in the results table as pending the moment
+  you hit Start, and any that never respond flip to "no response" once the
+  scan finishes.
+- Added a "Copy to Memory" button to the IP Extractor (next to Add/Extract,
+  greyed out when the extracted list is empty): copies every extracted
+  address into the Memory notepad, skipping ones already there, and
+  switches straight to the Memory tab so the result is visible right away
+  instead of only showing up in the status line.
+- The IP Extractor's input box and its extracted-address list now survive a
+  reload/restart (previously reset to empty every time) and, together with
+  the Memory notepad's content, are now included in saved session files,
+  the same way scan results and port presets already are.
+
 ## 2026-08-29
 
 - Added mailbox ownership verification (**Options -> General -> Mail
