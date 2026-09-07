@@ -6,6 +6,23 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-09-07 (v2.9.0)
+
+- Clicking the status bar's update-available marker (ⓘ) while it's showing a
+  newer version now re-opens the Install/What's New/Later prompt on demand,
+  instead of only ever showing it once automatically per version. If a fresh
+  check finds nothing newer after all, the marker reverts to its normal
+  "up to date" state.
+- The update-available dialog now has a "Don't check for updates
+  automatically" checkbox, wired to the same **Options -> General ->
+  "Check for updates on startup"** setting - checking it there takes effect
+  immediately, no need to go find the setting separately.
+- When "Check for updates on startup" is turned off, the status bar's
+  update marker now turns yellow with an "update checking is disabled"
+  tooltip and stops being clickable, instead of misleadingly sitting on
+  whatever state (usually the default "up to date" look) it last happened
+  to show.
+
 ## 2026-09-07
 
 - **CIDR mode**: typing a bare address with no "/n" (e.g. "10.1.2.3") now

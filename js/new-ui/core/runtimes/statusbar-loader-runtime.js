@@ -220,6 +220,19 @@
       marker.title = tr("statusUpdateAvailableTooltip").replace("{tag}", tag || "");
     }
 
+    // "Check for updates on startup" is off (General settings) - checkForUpdate()
+    // in update-check-runtime.js skips its check entirely in that case, so
+    // without this the marker would just sit on whatever state it last had
+    // (usually the default .is-current from the markup), falsely implying a
+    // check actually happened and found nothing. Yellow + no blink + not
+    // clickable tells the truth: nothing was checked.
+    function setUpdateMarkerDisabled() {
+      var marker = document.getElementById("v1StatusUpdateAvailable");
+      if (!marker) return;
+      marker.className = "v1-status-update-marker is-disabled";
+      marker.title = tr("statusUpdateCheckDisabledTooltip");
+    }
+
     function init() {
       window.NetReconNewUICore = window.NetReconNewUICore || {};
       window.NetReconNewUICore.domainAuthStatusBar = { update: updateDomainAuthMarker };
@@ -237,8 +250,23 @@
       updateTunnelMarker();
       document.addEventListener("newui:mail-xss-tester-changed", updateTunnelMarker);
 
-      window.NetReconNewUICore.updateAvailableStatusBar = { setCurrent: setUpdateMarkerCurrent, setOutdated: setUpdateMarkerOutdated };
+      window.NetReconNewUICore.updateAvailableStatusBar = { setCurrent: setUpdateMarkerCurrent, setOutdated: setUpdateMarkerOutdated, setDisabled: setUpdateMarkerDisabled };
       setUpdateMarkerCurrent(window.NetReconNewUICore.APP_VERSION);
+
+      // Clicking the marker while it's showing "outdated" re-triggers the
+      // install/open-page prompt on demand - update-check-runtime.js's
+      // automatic on-launch check only ever shows that prompt once per
+      // version (deliberately, so it doesn't nag on every launch), but the
+      // marker itself stays outdated until you actually update, so this is
+      // the way back to that prompt without waiting for the next release.
+      var updateMarkerEl = document.getElementById("v1StatusUpdateAvailable");
+      if (updateMarkerEl) {
+        updateMarkerEl.addEventListener("click", function () {
+          if (!updateMarkerEl.classList.contains("is-outdated")) return;
+          var runtime = window.NetReconNewUICore && window.NetReconNewUICore.updateCheckRuntime;
+          if (runtime && runtime.promptUpdateNow) runtime.promptUpdateNow();
+        });
+      }
 
       var loader = document.getElementById("v1StatusLoader");
       if (!loader) return;

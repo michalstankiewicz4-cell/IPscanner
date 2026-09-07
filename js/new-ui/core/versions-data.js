@@ -10,6 +10,14 @@
   // attempted in this pass.
   var versions = [
     {
+      version: "v2.9.0",
+      notes: [
+        "Clicking the status bar's update-available marker (ⓘ) while it's showing a newer version now re-opens the Install/What's New/Later prompt on demand, instead of only ever showing it once automatically per version. If a fresh check finds nothing newer after all, the marker reverts to its normal \"up to date\" state.",
+        "The update-available dialog now has a \"Don't check for updates automatically\" checkbox, wired to the same Options -> General -> \"Check for updates on startup\" setting - checking it there takes effect immediately, no need to go find the setting separately.",
+        "When \"Check for updates on startup\" is turned off, the status bar's update marker now turns yellow with a \"update checking is disabled\" tooltip and stops being clickable, instead of misleadingly sitting on whatever state (usually the default \"up to date\" look) it last happened to show."
+      ]
+    },
+    {
       version: "v2.8.6",
       notes: [
         "Added mailbox ownership verification (Options -> General -> Mail verification): prove you control a mailbox by sending yourself a one-time code - reusing Mail XSS Tester's own Gmail address/app password and tunnel, no separate credentials to fill in - then typing that code back in. Once verified, that mailbox can be picked as Mail XSS Tester's \"Send to\" address; free-text entry there is gone, it's now a dropdown limited to mailboxes you've actually proven you own. A new status bar marker (@, next to the domain-verification one) shows the live status the same way domain verification's does.",

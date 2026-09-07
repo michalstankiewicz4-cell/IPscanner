@@ -226,7 +226,16 @@ html[dir="rtl"] .v1-status-progress-bar {
 
 .v1-status-update-marker.is-outdated {
   color: #f5c518;
+  cursor: pointer;
   animation: v1-status-update-blink 1.4s ease-in-out infinite;
+}
+
+/* Update checking turned off in General settings - yellow like .is-outdated
+   so it doesn't read as a false "you're up to date" green, but steady (no
+   blink) and not clickable, since there's nothing to re-check on demand. */
+.v1-status-update-marker.is-disabled {
+  color: #f5c518;
+  cursor: default;
 }
 
 @media (prefers-reduced-motion: reduce) {

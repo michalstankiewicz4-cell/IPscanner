@@ -130,8 +130,27 @@
         message,
         tr("updateAvailableInstallRestart"),
         tr("updateAvailableWhatsNew"),
-        tr("updateAvailableLater")
-      ).then(function (choice) {
+        tr("updateAvailableLater"),
+        tr("updateAvailableStopChecking")
+      ).then(function (result) {
+        var choice = result && result.choice;
+        // Checking this box turns off Options -> General's own "Check for
+        // updates on startup" - same setting, same effect either way -
+        // applied regardless of which button was also clicked, same as the
+        // startup disclaimer's own "don't show again" checkbox.
+        if (result && result.checkboxChecked && generalSettings && typeof generalSettings.replaceState === "function") {
+          var next = generalSettings.getState();
+          next.checkForUpdates = false;
+          generalSettings.replaceState(next);
+          // Reflect it on the marker right away rather than leaving it
+          // stuck on "outdated" until the next launch's check runs and
+          // finds checking turned off - matches the install branch's own
+          // relaunch making this moot for that one case.
+          if (choice !== "install") {
+            var disabledApi = markerApi();
+            if (disabledApi && disabledApi.setDisabled) disabledApi.setDisabled();
+          }
+        }
         if (choice === "install") return installAndRelaunch(update).then(function () { return true; });
         if (choice === "whatsnew") {
           if (platform && platform.openExternalUrl) platform.openExternalUrl(RELEASES_PAGE_URL);
@@ -157,6 +176,18 @@
       return window.NetReconNewUICore && window.NetReconNewUICore.updateAvailableStatusBar;
     }
 
+    // Shared by the automatic on-launch check and the manual "click the
+    // status bar marker" path below - given an Update the updater plugin
+    // already confirmed exists, decide native-install-vs-open-releases-page
+    // (same is_installer_install branch either way) and show it.
+    function offerDesktopUpdate(update, tag) {
+      return platform.invoke("is_installer_install")
+        .catch(function () { return false; })
+        .then(function (isInstaller) {
+          return isInstaller ? promptNativeInstall(update, tag) : promptOpenReleasesPage(tag);
+        });
+    }
+
     function checkForUpdateDesktop() {
       var updater = getUpdaterApi();
       if (!updater) return Promise.resolve(false);
@@ -175,11 +206,7 @@
           if (alreadyNotifiedFor(tag)) return false;
           markNotified(tag);
 
-          return platform.invoke("is_installer_install")
-            .catch(function () { return false; })
-            .then(function (isInstaller) {
-              return isInstaller ? promptNativeInstall(update, tag) : promptOpenReleasesPage(tag);
-            });
+          return offerDesktopUpdate(update, tag);
         })
         .catch(function () {
           // No latest.json yet, network error, bad signature, etc. - stay
@@ -187,6 +214,45 @@
           // marker in its default green state, same as "not checked yet".
           return false;
         });
+    }
+
+    // Manually triggered by clicking the status bar's update marker
+    // (statusbar-loader-runtime.js, only wired while it's in its "outdated"
+    // state) - re-checks fresh rather than reusing a possibly-stale Update
+    // object from the last automatic check, and always offers the prompt
+    // regardless of the "Check for updates on startup" setting or whether
+    // the one-time automatic notification already fired for this version:
+    // an explicit click is always allowed to ask again, that's the whole
+    // point of making the marker clickable.
+    function promptUpdateNow() {
+      if (platform && platform.isDesktop && platform.isDesktop()) {
+        var updater = getUpdaterApi();
+        if (!updater) return Promise.resolve(false);
+        return updater.check().then(function (update) {
+          if (!update) {
+            // The re-check came back clean (e.g. it was somehow installed
+            // moments ago through another path) - flip the marker back to
+            // "current" exactly like the automatic on-launch check would,
+            // rather than leaving it stuck showing "outdated" with nothing
+            // left for another click to do.
+            var api = markerApi();
+            if (api) api.setCurrent(window.NetReconNewUICore.APP_VERSION);
+            return false;
+          }
+          var tag = "v" + String(update.version || "").replace(/^v/i, "");
+          return offerDesktopUpdate(update, tag);
+        }).catch(function () { return false; });
+      }
+
+      var localVersion = (window.NetReconNewUICore && window.NetReconNewUICore.APP_VERSION) || "";
+      return fetchLatestTag().then(function (remoteTag) {
+        if (!remoteTag || !isNewer(remoteTag, localVersion)) {
+          var api = markerApi();
+          if (api) api.setCurrent(localVersion);
+          return false;
+        }
+        return promptOpenReleasesPage(remoteTag);
+      }).catch(function () { return false; });
     }
 
     function checkForUpdateWeb() {
@@ -213,7 +279,11 @@
 
     function checkForUpdate() {
       var settings = generalSettings && generalSettings.getState ? generalSettings.getState() : {};
-      if (!settings.checkForUpdates) return Promise.resolve(false);
+      if (!settings.checkForUpdates) {
+        var disabledApi = markerApi();
+        if (disabledApi && disabledApi.setDisabled) disabledApi.setDisabled();
+        return Promise.resolve(false);
+      }
 
       return platform && platform.isDesktop && platform.isDesktop()
         ? checkForUpdateDesktop()
@@ -222,6 +292,7 @@
 
     return {
       checkForUpdate: checkForUpdate,
+      promptUpdateNow: promptUpdateNow,
       isNewer: isNewer,
       parseVersion: parseVersion,
     };

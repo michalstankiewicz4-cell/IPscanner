@@ -1550,6 +1550,10 @@
       if (updateCheckRuntime && updateCheckRuntime.checkForUpdate) {
         updateCheckRuntime.checkForUpdate();
       }
+      // Exposed so statusbar-loader-runtime.js's click handler on the
+      // update marker (only while it's showing "outdated") can trigger a
+      // manual re-check + prompt, bypassing the once-per-version throttle.
+      window.NetReconNewUICore.updateCheckRuntime = updateCheckRuntime;
 
       // General settings -> "Show amateur-project disclaimer on startup":
       // fire-and-forget like the update check above, shown after UI reveal -

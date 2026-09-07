@@ -210,7 +210,11 @@
     // arg) since buildButtonDialog's button set is fixed per instance -
     // used by the update-available prompt so "What's new" can sit between
     // Install and Cancel instead of only having a binary choice.
-    var updateDialog = buildButtonDialog("v1UpdateModal", ["install", "whatsnew", "cancel"]);
+    // checkboxKey ("stopChecking") lets the update-available prompt double
+    // as a shortcut for Options -> General's "Check for updates on
+    // startup" checkbox - same reasoning/mechanism as the disclaimer
+    // dialog below, see openUpdateDialog's own comment.
+    var updateDialog = buildButtonDialog("v1UpdateModal", ["install", "whatsnew", "cancel"], "stopChecking");
     // Single-button dialog with a "don't show again" checkbox baked in
     // (the checkboxKey arg) - used for the startup amateur-project
     // disclaimer (Options -> General's "showStartupDisclaimer" setting).
@@ -238,13 +242,18 @@
       }).then(function (choice) { return choice === "ok"; });
     }
 
-    // Resolves with the raw choice string ("install" | "whatsnew" |
-    // "cancel"), unlike openConfirmDialog's boolean - the caller needs to
-    // tell three outcomes apart, not just yes/no.
-    function openUpdateDialog(titleText, messageText, installLabel, whatsnewLabel, cancelLabel) {
+    // Resolves with { choice, checkboxChecked } (see buildButtonDialog's
+    // checkboxKey doc comment) - choice is "install" | "whatsnew" |
+    // "cancel", unlike openConfirmDialog's plain boolean, since the caller
+    // needs to tell three outcomes apart. checkboxChecked lets the caller
+    // (update-check-runtime.js's promptNativeInstall) turn off Options ->
+    // General's "Check for updates on startup" right from this dialog,
+    // regardless of which button was also clicked.
+    function openUpdateDialog(titleText, messageText, installLabel, whatsnewLabel, cancelLabel, checkboxLabelText) {
       return updateDialog.open({
         title: titleText,
         message: messageText,
+        checkboxLabel: checkboxLabelText,
         labels: { install: installLabel, whatsnew: whatsnewLabel, cancel: cancelLabel },
         focusKey: "install",
       });

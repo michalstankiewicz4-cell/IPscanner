@@ -4078,6 +4078,19 @@
         next[key] = !!checkbox.checked;
         generalSettingsApi.replaceState(next);
 
+        // Reflect the toggle on the status bar marker right away rather
+        // than leaving it showing whatever it last happened to be until
+        // the next launch's automatic check runs.
+        if (key === "checkForUpdates") {
+          var markerApi = core.updateAvailableStatusBar;
+          if (!next.checkForUpdates && markerApi && markerApi.setDisabled) {
+            markerApi.setDisabled();
+          } else if (next.checkForUpdates) {
+            var updateRuntime = core.updateCheckRuntime;
+            if (updateRuntime && updateRuntime.checkForUpdate) updateRuntime.checkForUpdate();
+          }
+        }
+
         if (setStatusLine) {
           setStatusLine(tr("menuPrefix") + ": " + tr("tipActionGeneral"));
         }
