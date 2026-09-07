@@ -6,6 +6,22 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-09-07
+
+- **CIDR mode**: typing a bare address with no "/n" (e.g. "10.1.2.3") now
+  scans just that one host instead of being rejected - treated the same as
+  an explicit "/32".
+- **Memory notepad**'s list can now also contain IPv6 addresses - bare, or
+  with a Windows zone id like "fe80::1%9" for link-local addresses - freely
+  mixed with IPv4 entries and CIDR blocks on the same list. CIDR blocks are
+  still IPv4-only and get expanded into every address in the range; IPv6
+  entries are always scanned exactly as typed, never as a range (an IPv6
+  subnet is far too large to brute-force the way IPv4 CIDR does).
+- Added a confirm dialog (OK/Cancel) before starting any scan - Range,
+  CIDR, or Memory - that covers more than 256 addresses, so a mistyped wide
+  CIDR prefix or a large pasted list doesn't silently kick off a huge scan
+  with no chance to back out.
+
 ## 2026-08-31
 
 - Added a third scan mode, **Memory** (next to Range/CIDR in the IP Scanner

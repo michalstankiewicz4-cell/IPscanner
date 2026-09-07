@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -243,6 +243,44 @@ fn shuffle_vec<T>(v: &mut Vec<T>) {
     }
 }
 
+/// A bare IPv4 literal never contains ':' (that's reserved for IPv6's own
+/// group separator) - cheap enough to call per-probe without a real parse.
+fn is_ipv6_literal(ip: &str) -> bool {
+    ip.contains(':')
+}
+
+/// Parses "ip" or "ip%zone" into an IpAddr plus a numeric scope id (0 for
+/// anything without a zone, or for IPv4). Windows link-local IPv6
+/// addresses (fe80::/10) are only meaningful per network interface, and
+/// Windows always writes/expects them with a "%<interface-index>" zone
+/// suffix (see ipconfig's own output, or what a user copy-pastes off their
+/// own machine) - std's IpAddr/SocketAddr FromStr has no support at all
+/// for this syntax, so a scoped address would otherwise fail to parse
+/// silently and just never get scanned. The zone is always numeric here
+/// (Windows' own convention for this address family), so a plain u32
+/// parse is enough - no textual adapter names (Unix's "%eth0" form) to
+/// handle on this platform.
+fn resolve_ip_addr(ip: &str) -> Option<(IpAddr, u32)> {
+    match ip.split_once('%') {
+        Some((base, zone)) => {
+            let v6: Ipv6Addr = base.parse().ok()?;
+            let scope: u32 = zone.parse().ok()?;
+            Some((IpAddr::V6(v6), scope))
+        }
+        None => Some((ip.parse().ok()?, 0)),
+    }
+}
+
+/// Builds a real SocketAddr directly (never through string parsing, which
+/// has no way to carry a scope id at all) - see resolve_ip_addr above.
+fn resolve_socket_addr(ip: &str, port: u16) -> Option<SocketAddr> {
+    let (addr, scope) = resolve_ip_addr(ip)?;
+    Some(match addr {
+        IpAddr::V4(v4) => SocketAddr::V4(std::net::SocketAddrV4::new(v4, port)),
+        IpAddr::V6(v6) => SocketAddr::V6(std::net::SocketAddrV6::new(v6, port, 0, scope)),
+    })
+}
+
 /// Probes one UDP port via a *connected* socket - on Windows, an incoming
 /// ICMP "port unreachable" surfaces as a ConnectionReset error on recv, so
 /// this needs no raw socket / admin rights, unlike a classic UDP scanner.
@@ -252,9 +290,10 @@ fn shuffle_vec<T>(v: &mut Vec<T>) {
 /// something this can resolve further. None means a ConnectionReset came
 /// back - the port is definitely closed, not reported at all (same as TCP).
 async fn probe_port_udp(ip: &str, port: u16, timeout_ms: u64) -> Option<(u64, bool)> {
-    let addr = format!("{}:{}", ip, port);
-    let socket = tokio::net::UdpSocket::bind("0.0.0.0:0").await.ok()?;
-    socket.connect(&addr).await.ok()?;
+    let addr = resolve_socket_addr(ip, port)?;
+    let bind_addr = if is_ipv6_literal(ip) { "[::]:0" } else { "0.0.0.0:0" };
+    let socket = tokio::net::UdpSocket::bind(bind_addr).await.ok()?;
+    socket.connect(addr).await.ok()?;
     let _ = socket.send(&[]).await;
 
     let t0 = Instant::now();
@@ -290,10 +329,9 @@ async fn probe_host(
             let permit = port_sem.clone().acquire_owned().await.unwrap();
             set.spawn(async move {
                 let _permit = permit;
-                let addr_str = format!("{}:{}", ip_c, port);
-                let addr: SocketAddr = match addr_str.parse() {
-                    Ok(a) => a,
-                    Err(_) => return None,
+                let addr: SocketAddr = match resolve_socket_addr(&ip_c, port) {
+                    Some(a) => a,
+                    None => return None,
                 };
                 if scan_delay_ms > 0 {
                     tokio::time::sleep(Duration::from_millis(scan_delay_ms)).await;
@@ -604,8 +642,13 @@ async fn scan_range(
 
 /// Scan an explicit, possibly non-contiguous list of IP addresses (the
 /// sidebar's "Memory" mode - a hand-typed/pasted notepad instead of a
-/// Range/CIDR sweep). Shares scan_range's probing/progress/stop machinery;
-/// the only real difference is how the host list is produced.
+/// Range/CIDR sweep - and "IPv6" mode, a hand-picked IPv6 address list for
+/// the same reason: an IPv6 subnet is far too large to brute-force the way
+/// IPv4 CIDR mode does). Shares scan_range's probing/progress/stop
+/// machinery; the only real difference is how the host list is produced.
+/// ICMP is silently skipped per-host for any IPv6 address, not an error -
+/// icmp_ping_blocking only implements ICMPv4 (IcmpSendEcho); ICMPv6 needs a
+/// genuinely different WinAPI call (Icmp6SendEcho2), not yet implemented.
 #[tauri::command]
 async fn scan_hosts(
     app: AppHandle,
@@ -622,11 +665,15 @@ async fn scan_hosts(
     udp_checked: bool,
     icmp_checked: bool,
 ) -> Result<u32, String> {
-    // Defense in depth - the frontend already filters to valid IPv4 before
-    // sending, but this list comes from free-typed text, so don't trust it
-    // blindly.
+    // Defense in depth - the frontend already filters to valid IPv4/IPv6
+    // before sending, but this list comes from free-typed text, so don't
+    // trust it blindly. resolve_ip_addr (not a plain IpAddr::from_str)
+    // because it also accepts a Windows IPv6 zone id ("fe80::1%9") - a
+    // link-local address without one would still parse as a bare
+    // Ipv6Addr, but connecting to it would go out whichever interface the
+    // OS guesses instead of the one actually intended.
     let mut hosts: Vec<String> = ips.into_iter()
-        .filter(|ip| matches!(IpAddr::from_str(ip), Ok(IpAddr::V4(_))))
+        .filter(|ip| resolve_ip_addr(ip).is_some())
         .collect();
     if randomize_hosts {
         shuffle_vec(&mut hosts);
@@ -1308,6 +1355,60 @@ mod md5_tests {
             md5_hex("The quick brown fox jumps over the lazy dog"),
             "9e107d9d372bb6826bd81d3542a419d6"
         );
+    }
+}
+
+#[cfg(test)]
+mod resolve_ip_addr_tests {
+    use super::{resolve_ip_addr, resolve_socket_addr};
+    use std::net::IpAddr;
+
+    #[test]
+    fn ipv4_has_no_scope() {
+        let (addr, scope) = resolve_ip_addr("192.168.1.1").unwrap();
+        assert_eq!(addr, "192.168.1.1".parse::<IpAddr>().unwrap());
+        assert_eq!(scope, 0);
+    }
+
+    #[test]
+    fn bare_ipv6_has_no_scope() {
+        let (addr, scope) = resolve_ip_addr("2001:db8::1").unwrap();
+        assert_eq!(addr, "2001:db8::1".parse::<IpAddr>().unwrap());
+        assert_eq!(scope, 0);
+    }
+
+    // The exact link-local address shapes Windows reports (ipconfig) and
+    // that a user copy-pasted straight off their own machine - the bug
+    // this whole helper exists to fix ("scanning does nothing" with no
+    // error, because IpAddr::from_str has no support at all for the "%9"
+    // zone suffix and previously just failed to parse silently).
+    #[test]
+    fn windows_link_local_zone_id() {
+        let (addr, scope) = resolve_ip_addr("fe80::f117:790b:c818:e0e7%9").unwrap();
+        assert_eq!(addr, "fe80::f117:790b:c818:e0e7".parse::<IpAddr>().unwrap());
+        assert_eq!(scope, 9);
+
+        let (addr2, scope2) = resolve_ip_addr("fe80::2bd3:a474:4f77:713d%13").unwrap();
+        assert_eq!(addr2, "fe80::2bd3:a474:4f77:713d".parse::<IpAddr>().unwrap());
+        assert_eq!(scope2, 13);
+    }
+
+    #[test]
+    fn garbage_is_rejected() {
+        assert!(resolve_ip_addr("not an ip").is_none());
+        assert!(resolve_ip_addr("fe80::1%not-a-number").is_none());
+    }
+
+    #[test]
+    fn socket_addr_carries_the_scope_id() {
+        let addr = resolve_socket_addr("fe80::1%9", 80).unwrap();
+        match addr {
+            std::net::SocketAddr::V6(v6) => {
+                assert_eq!(v6.scope_id(), 9);
+                assert_eq!(v6.port(), 80);
+            }
+            _ => panic!("expected a V6 SocketAddr"),
+        }
     }
 }
 

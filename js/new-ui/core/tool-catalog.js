@@ -82,7 +82,10 @@
     },
     // Memory (CS-only) - freeform notepad of IP addresses; the "Memory" scan
     // mode radio (index.html's IP Range section) scans exactly this list
-    // instead of a range/CIDR sweep. See panel-content-runtime.js's
+    // instead of a range/CIDR sweep. Accepts a mix of IPv4 (bare or
+    // "a.b.c.d/n" CIDR, expanded) and IPv6 (bare, or with a Windows zone id
+    // like "fe80::1%9" for link-local addresses) on the same list - see
+    // net-utils.js's parseMemoryIpList(). See panel-content-runtime.js's
     // renderMemoryTool() and panel-interactions-runtime.js's wireMemoryTool().
     memory: {
       titleKey: "toolTitle_memory",

@@ -3738,8 +3738,11 @@
 
     // CS: freeform notepad of IP addresses for the sidebar's "Memory" scan
     // mode (see js/new-ui/core/runtimes/ip-inputs-runtime.js's applyMode and
-    // navigation-runtime.js's startScanWithCurrentSettings). Wiring
-    // (autosave, live valid-IP count) is panel-interactions-runtime.js's
+    // navigation-runtime.js's startScanWithCurrentSettings). Accepts a mix
+    // of IPv4 (bare or "a.b.c.d/n" CIDR, expanded), and IPv6 (bare, or with
+    // a Windows zone id like "fe80::1%9" for link-local addresses) on the
+    // same list - see net-utils.js's parseMemoryIpList(). Wiring (autosave,
+    // live valid-IP count) is panel-interactions-runtime.js's
     // wireMemoryTool(). Reads the same localStorage key that function writes
     // to - "netrecon_memory_list_v1" - so a re-render (tab switch away and
     // back) still shows the last-typed text.
@@ -3750,7 +3753,7 @@
       } catch (_) {}
 
       var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils ? window.NetReconNewUICore.utils.net : null;
-      var count = sharedNet && typeof sharedNet.parseIpv4ListWithCidr === "function" ? sharedNet.parseIpv4ListWithCidr(raw).length : 0;
+      var count = sharedNet && typeof sharedNet.parseMemoryIpList === "function" ? sharedNet.parseMemoryIpList(raw).length : 0;
 
       return [
         "<div class=\"v1-memory-tool\">",

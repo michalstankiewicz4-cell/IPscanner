@@ -67,10 +67,28 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
   }
 
+  // Covers every real-world IPv6 form (full 8-group, "::" compression
+  // anywhere, IPv4-embedded like "::ffff:192.168.1.1"), plus an optional
+  // Windows zone/scope id suffix ("%9", "%13", ...) - link-local addresses
+  // (fe80::/10) are only meaningful per network interface, and Windows
+  // always reports/requires them in that "%<interface-index>" form (see
+  // ipconfig's own output) - without this, a real link-local address
+  // copy-pasted straight off a user's own machine would silently fail
+  // validation. Same "good enough for a form input" philosophy as
+  // isValidEmail above, not a full RFC 4291 parser.
+  var IPV6_RE = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|::(ffff(:0{1,4})?:)?((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9]))$/;
+
+  function isValidIpv6(value) {
+    var v = String(value || "").trim();
+    var zoneIdx = v.indexOf("%");
+    if (zoneIdx === -1) return IPV6_RE.test(v);
+    return IPV6_RE.test(v.slice(0, zoneIdx)) && /^[0-9a-zA-Z]{1,16}$/.test(v.slice(zoneIdx + 1));
+  }
+
   // Shared freeform-text -> clean IPv4 list parser (one per line, or
   // separated by spaces/commas/semicolons). Used by the IP Extractor
-  // (scanner-sidebar-runtime.js) - the Memory notepad uses
-  // parseIpv4ListWithCidr below instead, so a CIDR block typed there also
+  // (scanner-sidebar-runtime.js) - the Memory notepad uses parseMemoryIpList
+  // below instead, so a CIDR block or an IPv6 address typed there also
   // gets recognized. Invalid tokens are silently dropped, matching the
   // Extractor's existing UX.
   function parseIpv4List(raw) {
@@ -87,21 +105,25 @@
     return result;
   }
 
-  // Same tokenizing as parseIpv4List above, but each token can ALSO be an
-  // "a.b.c.d/n" CIDR block (or a bare "a.b.c.d", which cidrToRange treats
-  // as /32) - expanded into every address in that range, deduped and
-  // merged with any plain addresses in the same list. Used by the Memory
-  // notepad (panel-interactions-runtime.js's wireMemoryTool,
-  // panel-content-runtime.js's renderMemoryTool, ip-inputs-runtime.js's
-  // sidebar mirror, and navigation-runtime.js's scan-start path) so typing
-  // a subnet alongside hand-picked addresses just works. `maxTotal` caps
-  // the returned list (default 2000, matching Memory mode's own existing
-  // scan-size limit) - checked on every address added, INSIDE the
-  // expansion loop, so a mistyped wide range (e.g. "10.0.0.0/8") can't
-  // hang the UI on every keystroke; the resulting list is simply
-  // truncated, same as parseIpv4List's callers already silently capped it
-  // before this function existed.
-  function parseIpv4ListWithCidr(raw, maxTotal) {
+  // Same tokenizing as parseIpv4List above, but a token can be an IPv6
+  // address (bare, or with a Windows zone id like "fe80::1%9" for
+  // link-local addresses) OR an IPv4 "a.b.c.d/n" CIDR block (a bare
+  // "a.b.c.d" is treated as /32) - CIDR blocks get expanded into every
+  // address in the range; IPv6 entries are kept exactly as typed, never
+  // expanded as a range - an IPv6 /64 alone is 2^64 addresses, so
+  // brute-forcing a subnet the way IPv4 CIDR does isn't remotely feasible,
+  // only an explicit hand-picked IPv6 address makes sense here. Everything
+  // dedupes into one merged list. Used by the Memory notepad
+  // (panel-interactions-runtime.js's wireMemoryTool, panel-content-
+  // runtime.js's renderMemoryTool, ip-inputs-runtime.js's sidebar mirror,
+  // and navigation-runtime.js's scan-start path) so a mixed list of plain
+  // IPs, a CIDR block, and IPv6 addresses all just work together.
+  // `maxTotal` caps the returned list (default 2000, matching Memory
+  // mode's own existing scan-size limit) - checked on every address added,
+  // INSIDE the IPv4 expansion loop, so a mistyped wide range (e.g.
+  // "10.0.0.0/8") can't hang the UI on every keystroke; the resulting list
+  // is simply truncated.
+  function parseMemoryIpList(raw, maxTotal) {
     var cap = Number.isFinite(maxTotal) && maxTotal > 0 ? maxTotal : 2000;
     var tokens = String(raw || "").split(/[\s,;]+/).map(function (part) {
       return part.trim();
@@ -109,7 +131,15 @@
     var seen = new Set();
     var result = [];
     for (var i = 0; i < tokens.length && result.length < cap; i++) {
-      var range = cidrToRange(tokens[i]);
+      var token = tokens[i];
+      if (isValidIpv6(token)) {
+        if (!seen.has(token)) {
+          seen.add(token);
+          result.push(token);
+        }
+        continue;
+      }
+      var range = cidrToRange(token);
       if (!range) continue;
       var fromInt = ipToInt(range.from.split(".").map(Number));
       var toInt = ipToInt(range.to.split(".").map(Number));
@@ -131,6 +161,7 @@
     lookupPortService: lookupPortService,
     cidrToRange: cidrToRange,
     parseIpv4List: parseIpv4List,
-    parseIpv4ListWithCidr: parseIpv4ListWithCidr,
+    isValidIpv6: isValidIpv6,
+    parseMemoryIpList: parseMemoryIpList,
   };
 })();

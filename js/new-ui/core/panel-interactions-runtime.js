@@ -2210,8 +2210,8 @@
         : null;
 
       function updateCount() {
-        var count = sharedNet && typeof sharedNet.parseIpv4ListWithCidr === "function"
-          ? sharedNet.parseIpv4ListWithCidr(textarea.value).length
+        var count = sharedNet && typeof sharedNet.parseMemoryIpList === "function"
+          ? sharedNet.parseMemoryIpList(textarea.value).length
           : 0;
         if (countEl) countEl.textContent = tr("memoryValidCount").replace("{count}", String(count));
         try {

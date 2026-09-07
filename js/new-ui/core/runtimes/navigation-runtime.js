@@ -768,7 +768,12 @@
       // "Memory" mode scans an explicit, hand-picked (possibly non-
       // contiguous) IP list instead of a Range/CIDR sweep - see the sidebar's
       // v1RangeMode radios (index.html) and the Memory CS tab (tool-catalog.js
-      // + panel-content-runtime.js's renderMemoryTool).
+      // + panel-content-runtime.js's renderMemoryTool). The list can mix
+      // IPv4 (bare or CIDR, expanded) and IPv6 (bare, or with a Windows zone
+      // id like "fe80::1%9" for link-local addresses) - see net-utils.js's
+      // parseMemoryIpList(). No IPv6 range/CIDR sweep exists or is planned -
+      // a /64 alone is 2^64 addresses, brute-forcing that the way IPv4 CIDR
+      // mode does isn't remotely feasible.
       var activeRangeMode = (document.querySelector('input[name="v1RangeMode"]:checked') || {}).value || "range";
       var isMemoryMode = activeRangeMode === "memory";
       var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils ? window.NetReconNewUICore.utils.net : null;
@@ -782,8 +787,8 @@
         try {
           rawMemoryText = window.localStorage ? (window.localStorage.getItem(MEMORY_LIST_KEY) || "") : "";
         } catch (_) {}
-        memoryIps = sharedNet && typeof sharedNet.parseIpv4ListWithCidr === "function"
-          ? sharedNet.parseIpv4ListWithCidr(rawMemoryText, 2000)
+        memoryIps = sharedNet && typeof sharedNet.parseMemoryIpList === "function"
+          ? sharedNet.parseMemoryIpList(rawMemoryText, 2000)
           : [];
       } else {
         range = runtime && runtime.addCurrentRangeFromInputs
@@ -892,6 +897,15 @@
           if (!configSnapshot.tcpEnabled && !configSnapshot.icmpChecked) {
             status += " | " + tr("statusUdpAloneNote");
           }
+        }
+        // ICMP for IPv6 needs a different WinAPI call (Icmp6SendEcho2, not
+        // the IcmpSendEcho this app's icmp_ping_blocking uses) - not
+        // implemented yet, so an ICMPv6 ping is honestly just never
+        // attempted for these hosts rather than silently reporting nothing.
+        // A bare IPv4 literal never contains ':', so this is a cheap enough
+        // "any IPv6-looking entry in the list" check without a real parse.
+        if (isMemoryMode && configSnapshot.icmpChecked && memoryIps.some(function (ip) { return ip.indexOf(":") !== -1; })) {
+          status += " | " + tr("statusIpv6IcmpUnsupported");
         }
         setStatusLine(status);
       }
