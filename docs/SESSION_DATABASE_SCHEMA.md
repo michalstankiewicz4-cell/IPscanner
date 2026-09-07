@@ -303,6 +303,16 @@ Jeden wiersz = jeden adres IP na liscie wyekstrahowanych przez IP Extractor
   ip  - wyekstrahowany adres IP
 
 
+TABELA: terminal_command_history
+-----------------------------------
+Jeden wiersz = jedna komenda wpisana w dolnym Terminalu (zakladka
+"Terminal" w dolnej sekcji), w kolejnosci wykonania - obsluguje nawigacje
+strzalkami gora/dol w polu wpisywania (powershell-console-runtime.js).
+
+  id       - numer wiersza (klucz glowny, nadawany automatycznie)
+  command  - tresc wpisanej komendy
+
+
 TABELE, KTORYCH APLIKACJA NIE TWORZY SAMA W BIEZACEJ WERSJI
 ==============================================================
 

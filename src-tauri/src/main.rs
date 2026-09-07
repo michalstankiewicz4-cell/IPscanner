@@ -4,7 +4,7 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::str::FromStr;
 use std::collections::HashMap;
 use std::sync::{
@@ -23,7 +23,7 @@ use base64::Engine as _;
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::time::timeout;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use futures_util::{SinkExt, StreamExt};
 use tokio_tungstenite::tungstenite::Message;
 use lettre::AsyncTransport;
@@ -2292,6 +2292,131 @@ async fn run_powershell_with_args(
     })
 }
 
+#[derive(Serialize, Clone)]
+struct ConsoleCommandOutput {
+    pid: u32,
+    stream: String,
+    line: String,
+}
+
+#[derive(Serialize, Clone)]
+struct ConsoleCommandDone {
+    pid: u32,
+    exit_code: i32,
+}
+
+// Backs the interactive Terminal tab (powershell-console-runtime.js) - unlike
+// run_powershell above, this needs to hand back control (and the OS pid)
+// BEFORE the process finishes, so a still-running command (netstat -an 5,
+// ping -t, ...) can be interrupted from the UI (Ctrl+C) instead of blocking
+// the whole call until it exits on its own. Output streams line-by-line as
+// "console-command-output" events instead of being buffered until the end,
+// so a long-running command's output actually appears as it happens.
+#[tauri::command]
+async fn start_console_command(app: AppHandle, command: String) -> Result<u32, String> {
+    let cmd = command.trim().to_string();
+    if cmd.is_empty() {
+        return Err("Command is empty".into());
+    }
+
+    let mut std_command = {
+        #[cfg(target_os = "windows")]
+        {
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            let mut c = Command::new("powershell");
+            c.creation_flags(CREATE_NO_WINDOW).args([
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                cmd.as_str(),
+            ]);
+            c
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            let mut c = Command::new("sh");
+            c.args(["-lc", cmd.as_str()]);
+            c
+        }
+    };
+    std_command.stdout(Stdio::piped()).stderr(Stdio::piped());
+
+    let mut child = tokio::process::Command::from(std_command)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+
+    let pid = child.id().ok_or_else(|| "Failed to read process id".to_string())?;
+
+    if let Some(stdout) = child.stdout.take() {
+        let app_out = app.clone();
+        tauri::async_runtime::spawn(async move {
+            let mut lines = BufReader::new(stdout).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                let _ = app_out.emit("console-command-output", ConsoleCommandOutput {
+                    pid,
+                    stream: "stdout".into(),
+                    line,
+                });
+            }
+        });
+    }
+
+    if let Some(stderr) = child.stderr.take() {
+        let app_err = app.clone();
+        tauri::async_runtime::spawn(async move {
+            let mut lines = BufReader::new(stderr).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                let _ = app_err.emit("console-command-output", ConsoleCommandOutput {
+                    pid,
+                    stream: "stderr".into(),
+                    line,
+                });
+            }
+        });
+    }
+
+    tauri::async_runtime::spawn(async move {
+        let exit_code = match child.wait().await {
+            Ok(status) => status.code().unwrap_or(-1),
+            Err(_) => -1,
+        };
+        let _ = app.emit("console-command-done", ConsoleCommandDone { pid, exit_code });
+    });
+
+    Ok(pid)
+}
+
+// Kills the whole process tree, not just the immediate powershell.exe -
+// otherwise a command it spawned in turn (netstat.exe, ping.exe, ...) would
+// be left running detached, still writing to a pipe nothing reads from
+// anymore. Silently succeeds if the pid is already gone (process finished on
+// its own between the UI's "Stop" click and this call landing).
+#[tauri::command]
+async fn cancel_console_command(pid: u32) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || {
+        #[cfg(target_os = "windows")]
+        {
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            let _ = Command::new("taskkill")
+                .creation_flags(CREATE_NO_WINDOW)
+                .args(["/PID", &pid.to_string(), "/T", "/F"])
+                .output();
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ExtensionFolderPick {
@@ -2686,6 +2811,15 @@ struct IpExtractorData {
     entries: Vec<String>,
 }
 
+// Terminal's Up/Down command history (powershell-console-runtime.js) - one
+// row per command, oldest first, same shape/ordering as ip_extractor_entries
+// above.
+#[derive(Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct TerminalHistoryData {
+    entries: Vec<String>,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SessionData {
@@ -2711,6 +2845,8 @@ struct SessionData {
     memory_notepad: MemoryNotepadData,
     #[serde(default)]
     ip_extractor: IpExtractorData,
+    #[serde(default)]
+    terminal_history: TerminalHistoryData,
 }
 
 const SESSION_SCHEMA_SQL: &str = "
@@ -2847,6 +2983,10 @@ const SESSION_SCHEMA_SQL: &str = "
     CREATE TABLE IF NOT EXISTS ip_extractor_entries (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       ip TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS terminal_command_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      command TEXT NOT NULL
     );
 ";
 
@@ -3165,6 +3305,19 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             insert_entry
                 .execute(params![ip])
                 .map_err(|e| format!("Failed to insert ip_extractor_entries row: {e}"))?;
+        }
+    }
+
+    tx.execute("DELETE FROM terminal_command_history", [])
+        .map_err(|e| format!("Failed to clear terminal_command_history: {e}"))?;
+    {
+        let mut insert_cmd = tx
+            .prepare_cached("INSERT INTO terminal_command_history (command) VALUES (?1)")
+            .map_err(|e| format!("Failed to prepare terminal_command_history insert: {e}"))?;
+        for command in &data.terminal_history.entries {
+            insert_cmd
+                .execute(params![command])
+                .map_err(|e| format!("Failed to insert terminal_command_history row: {e}"))?;
         }
     }
 
@@ -3603,6 +3756,11 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         let rows = stmt.query_map([], |row| row.get(0))?.collect();
         rows
     })().unwrap_or_default();
+    let terminal_history_entries: Vec<String> = (|| -> Result<Vec<String>, rusqlite::Error> {
+        let mut stmt = conn.prepare("SELECT command FROM terminal_command_history ORDER BY id ASC")?;
+        let rows = stmt.query_map([], |row| row.get(0))?.collect();
+        rows
+    })().unwrap_or_default();
 
     Ok(SessionData {
         scan_results,
@@ -3631,6 +3789,7 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
         },
         memory_notepad: MemoryNotepadData { content: memory_notepad_content },
         ip_extractor: IpExtractorData { input_text: ip_extractor_input_text, entries: ip_extractor_entries },
+        terminal_history: TerminalHistoryData { entries: terminal_history_entries },
     })
 }
 
@@ -4983,6 +5142,8 @@ fn main() {
             read_session_file,
             run_powershell,
             run_powershell_with_args,
+            start_console_command,
+            cancel_console_command,
             open_browser_window,
             list_connections,
             list_arp_entries,

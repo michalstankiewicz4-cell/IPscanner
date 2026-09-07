@@ -206,7 +206,13 @@
       points: ["IP range + presets", "Concurrency control", "Export/import results"],
       icon: null,
       labelKey: "ipScanner",
-      ui: { showInLeftPanel: true, leftOrder: 10 }
+      ui: { showInLeftPanel: true, leftOrder: 10 },
+      // Floating quick-command buttons shown over the bottom Terminal's
+      // history pane while this tool is active (powershell-console-runtime.js)
+      // - left click runs the bare command right away, right click just
+      // types it into the input so the user can add their own arguments
+      // first (e.g. "ping 8.8.8.8", "netstat -an").
+      quickTerminalCommands: ["netstat", "ipconfig", "ping"]
     },
     globe: {
       titleKey: "toolTitle_globe",

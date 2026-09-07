@@ -99,6 +99,9 @@
     "CREATE TABLE IF NOT EXISTS ip_extractor_entries (",
     "  id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT NOT NULL",
     ");",
+    "CREATE TABLE IF NOT EXISTS terminal_command_history (",
+    "  id INTEGER PRIMARY KEY AUTOINCREMENT, command TEXT NOT NULL",
+    ");",
   ].join("\n");
 
   // Agent profile attachment bytes cross as base64 in the JS shape (same as
@@ -386,6 +389,14 @@
           insertExtractorEntry.run([String(ip || "")]);
         });
         insertExtractorEntry.free();
+
+        var terminalHistory = data.terminalHistory || {};
+        var terminalHistoryEntries = Array.isArray(terminalHistory.entries) ? terminalHistory.entries : [];
+        var insertHistoryEntry = db.prepare("INSERT INTO terminal_command_history (command) VALUES (?)");
+        terminalHistoryEntries.forEach(function (command) {
+          insertHistoryEntry.run([String(command || "")]);
+        });
+        insertHistoryEntry.free();
 
         return db.export();
       } finally {
@@ -721,6 +732,16 @@
           }
         } catch (_) {}
 
+        var terminalHistory = { entries: [] };
+        try {
+          var historyRows = db.exec("SELECT command FROM terminal_command_history ORDER BY id ASC");
+          if (historyRows.length) {
+            historyRows[0].values.forEach(function (row) {
+              terminalHistory.entries.push(String(row[0] || ""));
+            });
+          }
+        } catch (_) {}
+
         return {
           scanResults: scanResults,
           scanProgress: scanProgress,
@@ -736,6 +757,7 @@
           mailVerification: mailVerification,
           memoryNotepad: memoryNotepad,
           ipExtractor: ipExtractor,
+          terminalHistory: terminalHistory,
         };
       } finally {
         db.close();

@@ -1227,6 +1227,7 @@
       psConsoleRunning: "Running PowerShell command...",
       psConsoleDesktopOnly: "PowerShell execution is available only in desktop (Tauri) mode.",
       psConsoleExecFailed: "PowerShell execution failed:",
+      psConsoleQuickCmdHint: "Left click: run \"{cmd}\" now. Right click: type \"{cmd}\" into the input so you can add your own arguments first.",
     },
     pl: {
       menuFile: "Plik",
@@ -2399,6 +2400,7 @@
       psConsoleRunning: "Uruchamianie komendy PowerShell...",
       psConsoleDesktopOnly: "Wykonywanie PowerShell jest dostepne tylko w trybie desktop (Tauri).",
       psConsoleExecFailed: "Blad wykonania PowerShell:",
+      psConsoleQuickCmdHint: "Lewy przycisk: uruchom \"{cmd}\" od razu. Prawy przycisk: wpisz \"{cmd}\" w wiersz polecen, zeby dopisac wlasne argumenty.",
     },
   };
 

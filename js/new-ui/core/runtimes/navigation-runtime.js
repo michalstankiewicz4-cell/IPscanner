@@ -1229,6 +1229,13 @@
               btn.classList.toggle("active", !!nextTool && btnTool === nextTool);
             });
 
+            // Lets other parts of the shell react to "which LS tool is
+            // selected" without depending on tab-registry directly -
+            // powershell-console-runtime.js uses this to swap the bottom
+            // Terminal's floating quick-command buttons (tool-catalog.js's
+            // quickTerminalCommands) to match whichever tool is open.
+            document.dispatchEvent(new CustomEvent("newui:left-tool-changed", { detail: { tool: nextTool || "" } }));
+
             activateGenericContent(nextTool, "left", "v1SidebarGenericContent");
 
             var activity = activityForSidebarTool(nextTool);
@@ -1868,6 +1875,16 @@
             pane.classList.toggle("active", pane.getAttribute("data-v1-console-pane") === next);
           });
           clearPaneUnread(next);
+
+          // Same reasoning as clicking the (disabled, while busy) command
+          // row in powershell-console-runtime.js - switching to the
+          // Terminal tab while a command is running there should count as
+          // "focus the terminal" too, so Ctrl+C works right away instead of
+          // needing an extra click into the output pane first.
+          if (next === "console") {
+            var psApi = window.NetReconNewUICore && window.NetReconNewUICore.powerShellConsole;
+            if (psApi && psApi.focusOutputIfBusy) psApi.focusOutputIfBusy();
+          }
         });
       });
 

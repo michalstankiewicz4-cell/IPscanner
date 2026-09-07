@@ -298,6 +298,13 @@
             return String(ip || "");
           }),
         },
+        // Terminal's Up/Down command history (Options bottom section), see
+        // powershell-console-runtime.js - same "bundle it into the session
+        // too" treatment as domainVerification/mailVerification above.
+        terminalHistory: (function () {
+          var api = window.NetReconNewUICore && window.NetReconNewUICore.terminalHistory;
+          return api && api.getStateForSession ? api.getStateForSession() : { entries: [] };
+        })(),
       };
     }
 
@@ -815,6 +822,10 @@
       (function () {
         var mailVerifyApi = window.NetReconNewUICore && window.NetReconNewUICore.mailVerification;
         if (mailVerifyApi && mailVerifyApi.restoreFromSession) mailVerifyApi.restoreFromSession(data.mailVerification || {});
+      })();
+      (function () {
+        var terminalHistoryApi = window.NetReconNewUICore && window.NetReconNewUICore.terminalHistory;
+        if (terminalHistoryApi && terminalHistoryApi.restoreFromSession) terminalHistoryApi.restoreFromSession(data.terminalHistory || {});
       })();
       // Attachment blobs are written to IndexedDB asynchronously - the
       // reload below must wait for that to finish, otherwise a reload

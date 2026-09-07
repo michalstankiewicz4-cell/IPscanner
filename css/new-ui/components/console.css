@@ -142,6 +142,7 @@ html[dir="rtl"] .v1-console-tabs .v1-panel-toggle {
 }
 
 .v1-ps-shell {
+  position: relative;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   gap: 0;
@@ -152,6 +153,46 @@ html[dir="rtl"] .v1-console-tabs .v1-panel-toggle {
   border: 1px solid #2f3338;
   border-radius: 6px;
   overflow: hidden;
+}
+
+/* Contextual quick-command buttons, floating over the top-right corner of
+   the terminal's history pane - which ones show up depends on the active
+   center tool (tool-catalog.js's quickTerminalCommands, wired in
+   powershell-console-runtime.js). Pinned ltr regardless of app RTL setting:
+   this is a fixed-order row of command names (netstat, ipconfig, ping),
+   not translatable prose, so it shouldn't visually reverse with the UI
+   language. */
+.v1-ps-quick-commands {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  flex-direction: row;
+  direction: ltr;
+  gap: 6px;
+}
+
+.v1-ps-quick-commands[hidden] {
+  display: none;
+}
+
+.v1-ps-quick-cmd-btn {
+  border: 1px solid #2f3338;
+  background: rgba(21, 21, 23, 0.85);
+  color: #c8c9ce;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  padding: 4px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.v1-ps-quick-cmd-btn:hover {
+  background: #2f3338;
+  color: #ffffff;
+  border-color: #4a4f57;
 }
 
 .v1-ps-output {
