@@ -782,8 +782,8 @@
         try {
           rawMemoryText = window.localStorage ? (window.localStorage.getItem(MEMORY_LIST_KEY) || "") : "";
         } catch (_) {}
-        memoryIps = sharedNet && typeof sharedNet.parseIpv4List === "function"
-          ? sharedNet.parseIpv4List(rawMemoryText).slice(0, 2000)
+        memoryIps = sharedNet && typeof sharedNet.parseIpv4ListWithCidr === "function"
+          ? sharedNet.parseIpv4ListWithCidr(rawMemoryText, 2000)
           : [];
       } else {
         range = runtime && runtime.addCurrentRangeFromInputs
@@ -813,6 +813,12 @@
         return;
       }
 
+      // Split the rest of this function into its own step so a large scan
+      // (see the LARGE_SCAN_CONFIRM_THRESHOLD check below) can be gated
+      // behind an async confirm dialog before actually starting - a typo'd
+      // CIDR prefix (e.g. /8 instead of /28) would otherwise silently kick
+      // off a scan of millions of hosts with no chance to back out.
+      function beginScan() {
       var eventListen = getEventListen();
       detachHostFoundListener();
       detachScanProgressListener();
@@ -949,6 +955,27 @@
         });
         refreshResultsViewIfVisible();
       });
+      }
+
+      // Anything above this many hosts gets a confirm dialog first - big
+      // enough to not nag for a normal /24-or-smaller scan, small enough to
+      // catch an accidental /16-or-wider range before it runs unattended.
+      var LARGE_SCAN_CONFIRM_THRESHOLD = 256;
+      if (estimatedTotal > LARGE_SCAN_CONFIRM_THRESHOLD) {
+        var ui = window.NetReconNewUI || {};
+        if (ui.openConfirmDialog) {
+          ui.openConfirmDialog(
+            tr("scanLargeRangeConfirmTitle"),
+            tr("scanLargeRangeConfirmMessage").replace("{count}", String(estimatedTotal)),
+            tr("scanLargeRangeConfirmOk"),
+            tr("exitPromptCancel")
+          ).then(function (confirmed) {
+            if (confirmed) beginScan();
+          });
+          return;
+        }
+      }
+      beginScan();
     }
 
     function setSidebarTabOpen(tool, isOpen) {

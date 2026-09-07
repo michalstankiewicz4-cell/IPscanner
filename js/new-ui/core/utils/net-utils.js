@@ -16,15 +16,18 @@
   }
 
   // Parses "a.b.c.d/n" and returns the network's first/last address as
-  // { from, to } - or null if the CIDR string is malformed. Used to let the
+  // { from, to } - or null if the CIDR string is malformed. The "/n" part
+  // is optional - a bare "a.b.c.d" is treated as "/32" (that one address
+  // only), so typing a single IP into CIDR mode just scans that host
+  // instead of being rejected for missing a prefix. Used to let the
   // "IP Range" section's CIDR mode feed the same #v1ScanFrom/#v1ScanTo
   // hidden inputs the From/To octet boxes already write to.
   function cidrToRange(cidrStr) {
-    var match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/.exec(String(cidrStr || "").trim());
+    var match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?:\/(\d{1,2}))?$/.exec(String(cidrStr || "").trim());
     if (!match) return null;
     var octets = [Number(match[1]), Number(match[2]), Number(match[3]), Number(match[4])];
     if (octets.some(function (o) { return o < 0 || o > 255; })) return null;
-    var prefix = Number(match[5]);
+    var prefix = match[5] === undefined ? 32 : Number(match[5]);
     if (prefix < 0 || prefix > 32) return null;
 
     var ipInt = ipToInt(octets);
@@ -65,11 +68,11 @@
   }
 
   // Shared freeform-text -> clean IPv4 list parser (one per line, or
-  // separated by spaces/commas/semicolons). Used by both the IP Extractor
-  // (scanner-sidebar-runtime.js) and the Memory notepad (panel-interactions-
-  // runtime.js's wireMemoryTool + navigation-runtime.js's scan-start path) -
-  // a single definition here keeps their dedup/validation behavior in sync.
-  // Invalid tokens are silently dropped, matching the Extractor's existing UX.
+  // separated by spaces/commas/semicolons). Used by the IP Extractor
+  // (scanner-sidebar-runtime.js) - the Memory notepad uses
+  // parseIpv4ListWithCidr below instead, so a CIDR block typed there also
+  // gets recognized. Invalid tokens are silently dropped, matching the
+  // Extractor's existing UX.
   function parseIpv4List(raw) {
     var tokens = String(raw || "").split(/[\s,;]+/).map(function (part) {
       return part.trim();
@@ -84,6 +87,42 @@
     return result;
   }
 
+  // Same tokenizing as parseIpv4List above, but each token can ALSO be an
+  // "a.b.c.d/n" CIDR block (or a bare "a.b.c.d", which cidrToRange treats
+  // as /32) - expanded into every address in that range, deduped and
+  // merged with any plain addresses in the same list. Used by the Memory
+  // notepad (panel-interactions-runtime.js's wireMemoryTool,
+  // panel-content-runtime.js's renderMemoryTool, ip-inputs-runtime.js's
+  // sidebar mirror, and navigation-runtime.js's scan-start path) so typing
+  // a subnet alongside hand-picked addresses just works. `maxTotal` caps
+  // the returned list (default 2000, matching Memory mode's own existing
+  // scan-size limit) - checked on every address added, INSIDE the
+  // expansion loop, so a mistyped wide range (e.g. "10.0.0.0/8") can't
+  // hang the UI on every keystroke; the resulting list is simply
+  // truncated, same as parseIpv4List's callers already silently capped it
+  // before this function existed.
+  function parseIpv4ListWithCidr(raw, maxTotal) {
+    var cap = Number.isFinite(maxTotal) && maxTotal > 0 ? maxTotal : 2000;
+    var tokens = String(raw || "").split(/[\s,;]+/).map(function (part) {
+      return part.trim();
+    }).filter(Boolean);
+    var seen = new Set();
+    var result = [];
+    for (var i = 0; i < tokens.length && result.length < cap; i++) {
+      var range = cidrToRange(tokens[i]);
+      if (!range) continue;
+      var fromInt = ipToInt(range.from.split(".").map(Number));
+      var toInt = ipToInt(range.to.split(".").map(Number));
+      for (var n = fromInt; n <= toInt && result.length < cap; n++) {
+        var ip = intToIp(n);
+        if (seen.has(ip)) continue;
+        seen.add(ip);
+        result.push(ip);
+      }
+    }
+    return result;
+  }
+
   window.NetReconNewUICore = window.NetReconNewUICore || {};
   window.NetReconNewUICore.utils = window.NetReconNewUICore.utils || {};
   window.NetReconNewUICore.utils.net = {
@@ -92,5 +131,6 @@
     lookupPortService: lookupPortService,
     cidrToRange: cidrToRange,
     parseIpv4List: parseIpv4List,
+    parseIpv4ListWithCidr: parseIpv4ListWithCidr,
   };
 })();

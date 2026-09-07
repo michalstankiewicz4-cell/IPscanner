@@ -3750,7 +3750,7 @@
       } catch (_) {}
 
       var sharedNet = window.NetReconNewUICore && window.NetReconNewUICore.utils ? window.NetReconNewUICore.utils.net : null;
-      var count = sharedNet && typeof sharedNet.parseIpv4List === "function" ? sharedNet.parseIpv4List(raw).length : 0;
+      var count = sharedNet && typeof sharedNet.parseIpv4ListWithCidr === "function" ? sharedNet.parseIpv4ListWithCidr(raw).length : 0;
 
       return [
         "<div class=\"v1-memory-tool\">",

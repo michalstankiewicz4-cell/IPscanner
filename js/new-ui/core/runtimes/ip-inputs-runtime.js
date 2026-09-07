@@ -80,7 +80,7 @@
       try {
         raw = window.localStorage ? (window.localStorage.getItem("netrecon_memory_list_v1") || "") : "";
       } catch (_) {}
-      var count = sharedNet && typeof sharedNet.parseIpv4List === "function" ? sharedNet.parseIpv4List(raw).length : 0;
+      var count = sharedNet && typeof sharedNet.parseIpv4ListWithCidr === "function" ? sharedNet.parseIpv4ListWithCidr(raw).length : 0;
       countEl.textContent = tr("memoryValidCount").replace("{count}", String(count));
     }
 
