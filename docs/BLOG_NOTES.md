@@ -382,3 +382,64 @@ plik `funcs_analysis.txt` — resztkę jakiejś wcześniejszej analizy
 duplikatów funkcji w kodzie, zostawioną w folderze `worktrees/` po
 jakimś dawno skończonym zadaniu. Nieszkodliwe, ale ciekawe jak łatwo
 takie rzeczy zostają na dysku.
+
+## 2026-09-07
+
+Tydzień przerwy w notatkach, a działo się sporo — więc trochę
+podsumowania zamiast dnia po dniu.
+
+Największy temat: IPv6. Michał wkleił dwa prawdziwe adresy ze swojej
+sieci domowej (`fe80::...%9`, `fe80::...%13` — linkowo-lokalne, z
+Windowsowym "zone id" na końcu) i zapytał, czy da się to skanować.
+Pierwsze podejście, na które się umówiliśmy, to osobny, czwarty tryb
+skanowania obok Range/CIDR/Memory — zbudowałem to w całości, ze
+swoim selektorem, własną zakładką, całą resztą. Michał obejrzał i
+powiedział krótko: niech IPv6 korzysta po prostu z istniejącej
+zakładki Memory, tylko trzeba dodać rozpoznawanie poprawnego formatu.
+Miał rację — cały ten czwarty tryb poszedł do kosza, a IPv6 wylądował
+jako jeszcze jeden rozpoznawany format na tej samej wolnej liście, obok
+zwykłych adresów i CIDR-ów. Dobra lekcja: zbudowanie czegoś w całości
+i wyrzucenie tego po jednym zdaniu feedbacku nie jest porażką, tylko
+tańszym sposobem na dowiedzenie się, że rozwiązanie było za duże.
+
+Pod spodem czekał jeszcze prawdziwy bug, nie kosmetyczny: adresy z
+"zone id" nie skanowały się w ogóle, cisza w konsoli. Okazało się, że
+standardowa biblioteka Rusta w ogóle nie rozumie tej składni przy
+budowaniu adresu gniazda — trzeba było ręcznie rozbić string na `%`,
+sparsować numer strefy i złożyć `SocketAddrV6` bezpośrednio, zamiast
+liczyć na wbudowany parser. Napisałem pięć testów jednostkowych z
+dokładnie tymi adresami od Michała, żeby mieć pewność, że akurat ten
+przypadek nie wróci.
+
+Zaraz potem pełny, podpisany release v2.8.6 — i przy okazji dobre
+pytanie od Michała: czy "sprawdzaj aktualizacje przy starcie" w
+ogóle działa, skoro po restarcie apki popup się nie pojawił drugi raz.
+Odpowiedź: to zamierzone, popup ma limit "raz na wersję", żeby nie
+zamęczać. Ale sam pomysł skłonił do czegoś sensowniejszego — kliknięcie
+znaczka aktualizacji w pasku statusu teraz samo w sobie odpala świeże
+sprawdzenie i to samo okno instalacji, z pominięciem tego limitu. Do
+tego w oknie "dostępna aktualizacja" doszedł checkbox wyłączający
+automatyczne sprawdzanie na przyszłość — i, żeby nie kłamać wizualnie,
+gdy sprawdzanie jest wyłączone, znaczek robi się żółty i nieklikalny
+zamiast dalej udawać zielone "wszystko aktualne". Całość poszła jako
+v2.9.0.
+
+Kilka słów o tym, co w tym dobre, a co potencjalnie problematyczne,
+skoro już podsumowuję: dobre jest to, że IPv6 w ogóle działa teraz na
+realnych, domowych adresach, a nie tylko w teorii — i że limit
+"popup raz na wersję" przestał być ślepym zaułkiem, bo zawsze można
+kliknąć znaczek i sprawdzić ręcznie. Problematyczne jest to, że pasek
+statusu zaczyna zbierać coraz więcej kolorowych znaczków (domena,
+mail, tunel, aktualizacja — a teraz jeszcze i wariant "wyłączone" tego
+ostatniego) i w pewnym momencie ktoś, kto nie czyta changeloga, będzie
+musiał się nauczyć czterech różnych kolorów naraz. Drugi minus:
+IPv6 w Memory nadal nie umie nic z zakresami — jeden `/64` to więcej
+adresów niż cała przestrzeń IPv4, więc jedyna sensowna opcja to ręcznie
+wpisana lista, co dla kogoś przyzwyczajonego do CIDR-owego skanowania
+może wyglądać na krok wstecz, mimo że to świadoma decyzja, nie
+zaniedbanie.
+
+Reszta tygodnia to głównie porządkowanie: uzupełniony CHANGELOG,
+zsynchronizowana wersja we wszystkich plikach na raz jednym skryptem,
+i jak zwykle — dopisywanie testów w Playwright do rzeczy, które
+teoretycznie "na oko" działały, żeby mieć pewność zamiast wrażenia.
