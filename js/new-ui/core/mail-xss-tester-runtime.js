@@ -15,12 +15,46 @@
   // free, account-free Quick Tunnel bridges that - see startTunnel().
 
   var PAYLOADS = [
-    { id: "img-onerror", labelKey: "mailXssPayloadImgOnerror" },
-    { id: "svg-onload", labelKey: "mailXssPayloadSvgOnload" },
-    { id: "svg-script", labelKey: "mailXssPayloadSvgScript" },
-    { id: "css-import", labelKey: "mailXssPayloadCssImport" },
-    { id: "iframe-src", labelKey: "mailXssPayloadIframeSrc" },
-    { id: "foreignobject", labelKey: "mailXssPayloadForeignObject" },
+    { id: "img-onerror", labelKey: "mailXssPayloadImgOnerror", category: "event-handlers" },
+    { id: "svg-onload", labelKey: "mailXssPayloadSvgOnload", category: "svg" },
+    { id: "svg-script", labelKey: "mailXssPayloadSvgScript", category: "svg" },
+    { id: "css-import", labelKey: "mailXssPayloadCssImport", category: "css" },
+    { id: "iframe-src", labelKey: "mailXssPayloadIframeSrc", category: "embed" },
+    { id: "foreignobject", labelKey: "mailXssPayloadForeignObject", category: "svg" },
+  ];
+
+  // Grouping/UI metadata only - getPayloads() below stays exactly what it
+  // was (flat, real payloads only, unchanged shape) since that's what
+  // actually gets sent/selected. Category order here is the display order
+  // in the LS panel (panel-content-runtime.js's renderMailXssTesterLibrary).
+  var PAYLOAD_CATEGORIES = [
+    { id: "event-handlers", labelKey: "mailXssCategoryEventHandlers" },
+    { id: "svg", labelKey: "mailXssCategorySvg" },
+    { id: "css", labelKey: "mailXssCategoryCss" },
+    { id: "embed", labelKey: "mailXssCategoryEmbed" },
+    { id: "mxss", labelKey: "mailXssCategoryMxss" },
+    { id: "encoding", labelKey: "mailXssCategoryEncoding" },
+    { id: "mime", labelKey: "mailXssCategoryMime" },
+    { id: "amp", labelKey: "mailXssCategoryAmp" },
+    { id: "smtp-headers", labelKey: "mailXssCategorySmtpHeaders" },
+  ];
+
+  // Not implemented yet - shown as disabled/grayed-out checkboxes in their
+  // category so the planned coverage is visible, but nothing here is a real
+  // payload: no id, never sent, never selectable. Each one is its own
+  // future addition (see the "styk Gmail + SMTP" conversation that prompted
+  // this list - mutation XSS, encoding/charset confusion, MIME/multipart
+  // confusion, AMP4Email, and SMTP header injection are all real,
+  // historically-documented webmail XSS bug classes, just not built here
+  // yet).
+  var PLACEHOLDER_PAYLOADS = [
+    { category: "event-handlers", labelKey: "mailXssPlaceholderRareEventHandlers" },
+    { category: "embed", labelKey: "mailXssPlaceholderIframeSrcdoc" },
+    { category: "mxss", labelKey: "mailXssPlaceholderMxss" },
+    { category: "encoding", labelKey: "mailXssPlaceholderEncoding" },
+    { category: "mime", labelKey: "mailXssPlaceholderMime" },
+    { category: "amp", labelKey: "mailXssPlaceholderAmp" },
+    { category: "smtp-headers", labelKey: "mailXssPlaceholderSmtpHeaders" },
   ];
 
   // Every variant's payload is "fire a request to beaconUrl" via whichever
@@ -93,6 +127,14 @@
 
     function getPayloads() {
       return PAYLOADS.slice();
+    }
+
+    function getPayloadCategories() {
+      return PAYLOAD_CATEGORIES.slice();
+    }
+
+    function getPlaceholderPayloads() {
+      return PLACEHOLDER_PAYLOADS.slice();
     }
 
     function getSelectedPayloadIds() {
@@ -215,6 +257,8 @@
 
     return {
       getPayloads: getPayloads,
+      getPayloadCategories: getPayloadCategories,
+      getPlaceholderPayloads: getPlaceholderPayloads,
       getSelectedPayloadIds: getSelectedPayloadIds,
       setPayloadSelected: setPayloadSelected,
       getTunnelStatus: getTunnelStatus,

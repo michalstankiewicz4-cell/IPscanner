@@ -41,9 +41,30 @@
   color: var(--txt-dim);
 }
 
-.v1-mail-xss-tester-library,
 .v1-mail-xss-tester-results {
   padding: 4px;
+}
+
+/* LS "Test setup" panel - render() returns a <ul class="v1-tool-list">
+   root, and .v1-tool-list already has its own overflow:auto/height:100%
+   (main.css) that every other sidebar tool list relies on for scrolling.
+   That percentage height needs THIS wrapper (its direct parent) to have a
+   definite, non-auto height to resolve against - without it, "100%" is
+   indeterminate, the list just grows to fit its content instead of
+   scrolling, and #v1SidebarGenericContent's own overflow:hidden silently
+   clips whatever doesn't fit with no way to reach the rest (exactly what
+   happened once the payload picker grew to 9 categories). No overflow of
+   its own needed here - .v1-tool-list is still the one actual scroll
+   container, same as everywhere else in the sidebar. Zero padding of its
+   own (unlike before) - .v1-tool-list already has its own 8px, and any
+   padding here insets ITS rect too, which the custom scrollbar
+   (custom-scrollbar-runtime.js's resolveVisibleBounds) reads directly -
+   scan-runner's equivalent wrapper ([data-sidebar-tool-panel]) has none
+   either, which is why its scrollbar runs flush to the panel's true edges
+   while this one used to sit visibly inset from them. */
+.v1-mail-xss-tester-library {
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .v1-mail-xss-hit-log {
@@ -77,4 +98,40 @@
 
 .v1-mail-xss-hit-addr {
   color: var(--txt-dim);
+}
+
+/* Payload picker, grouped by category (panel-content-runtime.js's
+   renderMailXssTesterLibrary) - nested one level inside the outer
+   "Payloads to include" section, reusing the exact same collapsible
+   header/body pattern (bootstrap-runtime.js's delegated .v1-section-header
+   click handler works on any nesting depth, closest('li') finds the right
+   one either way). Sub-headers are dimmer/smaller than the outer one so the
+   two nesting levels read differently at a glance. */
+.v1-mail-xss-payload-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.v1-mail-xss-payload-category-header {
+  font-size: 11px;
+  color: var(--txt-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.v1-mail-xss-payload-category-header strong {
+  font-weight: 600;
+}
+
+/* Planned-but-not-built payload classes (getPlaceholderPayloads()) - shown
+   so the full intended coverage is visible, but never selectable: real
+   `disabled` on the checkbox (not just a CSS look), so nothing here can be
+   checked or accidentally sent. */
+.v1-mail-xss-payload-placeholder {
+  opacity: 0.45;
+}
+
+.v1-mail-xss-payload-placeholder label {
+  cursor: not-allowed;
 }

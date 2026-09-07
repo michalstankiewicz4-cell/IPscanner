@@ -1277,14 +1277,64 @@
           "</select>"
         : "<input id=\"v1MailXssTo\" name=\"mailXssTo\" type=\"email\" autocomplete=\"off\" data-mail-xss-field=\"to\" placeholder=\"" + escapeHtml(trOr("mailXssToLockedPlaceholder", "verify a mailbox in Options > General first")) + "\" disabled />";
 
-      var payloadsHtml = payloads.map(function (p) {
-        var checked = selected.indexOf(p.id) !== -1;
-        var fieldId = "v1MailXssPayload_" + p.id;
+      // Grouped by category (one collapsible sub-section per category,
+      // reusing the same generic .v1-section-header/.v1-collapse-arrow
+      // delegated click handler bootstrap-runtime.js already binds for
+      // every such header - no new JS needed for the nesting itself).
+      // Placeholder entries (getPlaceholderPayloads()) have no real id and
+      // render as disabled checkboxes - they document planned-but-not-built
+      // payload classes without being selectable or ever sent.
+      var categories = mailXssTesterApi ? mailXssTesterApi.getPayloadCategories() : [];
+      var placeholders = mailXssTesterApi ? mailXssTesterApi.getPlaceholderPayloads() : [];
+      var payloadsByCategory = {};
+      var placeholdersByCategory = {};
+      payloads.forEach(function (p) {
+        (payloadsByCategory[p.category] = payloadsByCategory[p.category] || []).push(p);
+      });
+      placeholders.forEach(function (p) {
+        (placeholdersByCategory[p.category] = placeholdersByCategory[p.category] || []).push(p);
+      });
+
+      var payloadCategoriesHtml = categories.map(function (cat) {
+        var realItemsHtml = (payloadsByCategory[cat.id] || []).map(function (p) {
+          var checked = selected.indexOf(p.id) !== -1;
+          var fieldId = "v1MailXssPayload_" + p.id;
+          return [
+            "<span class=\"v1-pulpit-checkbox-item\">",
+            "<input id=\"" + fieldId + "\" type=\"checkbox\" data-mail-xss-payload-checkbox=\"" + escapeHtml(p.id) + "\"" + (checked ? " checked" : "") + " />",
+            "<label for=\"" + fieldId + "\">" + escapeHtml(tr(p.labelKey)) + "</label>",
+            "</span>"
+          ].join("");
+        }).join("");
+
+        var placeholderItemsHtml = (placeholdersByCategory[cat.id] || []).map(function (p, idx) {
+          var fieldId = "v1MailXssPlaceholder_" + cat.id + "_" + idx;
+          return [
+            "<span class=\"v1-pulpit-checkbox-item v1-mail-xss-payload-placeholder\" title=\"" + escapeHtml(tr("mailXssPlaceholderTooltip")) + "\">",
+            "<input id=\"" + fieldId + "\" type=\"checkbox\" disabled />",
+            "<label for=\"" + fieldId + "\">" + escapeHtml(tr(p.labelKey)) + "</label>",
+            "</span>"
+          ].join("");
+        }).join("");
+
+        // Categories with no real (selectable) payload yet start collapsed -
+        // nothing to act on there today, no reason to spend vertical space
+        // by default - while categories that already have real payloads
+        // start open. Collapsing is still just the same generic .v1-
+        // section-header click toggle either way, so a collapsed
+        // placeholder-only category is still freely reopened - grayed-out
+        // content isn't the same thing as an unclickable header.
+        var hasRealItems = !!(payloadsByCategory[cat.id] || []).length;
+        var liClass = hasRealItems ? "" : " class=\"v1-collapsed\"";
+
         return [
-          "<span class=\"v1-pulpit-checkbox-item\">",
-          "<input id=\"" + fieldId + "\" type=\"checkbox\" data-mail-xss-payload-checkbox=\"" + escapeHtml(p.id) + "\"" + (checked ? " checked" : "") + " />",
-          "<label for=\"" + fieldId + "\">" + escapeHtml(tr(p.labelKey)) + "</label>",
-          "</span>"
+          "<li" + liClass + ">",
+          "<div class=\"v1-section-header v1-mail-xss-payload-category-header\"><strong>" + escapeHtml(tr(cat.labelKey)) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+          "<div class=\"v1-section-body v1-pulpit-checkbox-row\">",
+          realItemsHtml,
+          placeholderItemsHtml,
+          "</div>",
+          "</li>"
         ].join("");
       }).join("");
 
@@ -1302,8 +1352,10 @@
         "<ul class=\"v1-tool-list\">",
         "<li>",
         "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("mailXssPayloadsHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
-        "<div class=\"v1-section-body v1-pulpit-checkbox-row\">",
-        payloadsHtml,
+        "<div class=\"v1-section-body\">",
+        "<ul class=\"v1-tool-list v1-mail-xss-payload-categories\">",
+        payloadCategoriesHtml,
+        "</ul>",
         "</div>",
         "</li>",
         "<li>",
