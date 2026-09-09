@@ -443,3 +443,87 @@ Reszta tygodnia to głównie porządkowanie: uzupełniony CHANGELOG,
 zsynchronizowana wersja we wszystkich plikach na raz jednym skryptem,
 i jak zwykle — dopisywanie testów w Playwright do rzeczy, które
 teoretycznie "na oko" działały, żeby mieć pewność zamiast wrażenia.
+
+## 2026-09-09
+
+Dwa dni bez notatek, a w tym czasie apka dostała naprawdę porządny
+kawałek roboty: interaktywny Terminal w dolnej sekcji (wcześniej
+"uruchom i czekaj aż się skończy", teraz live streaming linia po
+linii, prawdziwe Ctrl+C przerywające cały proces — nie tylko
+powłokę, całe drzewo, więc `ping -t` faktycznie da się zatrzymać),
+kontekstowe przyciski-skróty (netstat/ipconfig/ping, lewy klik
+odpala od razu, prawy tylko wpisuje do wiersza poleceń) i historia
+komend strzałkami góra/dół, zapisywana w osobnej tabeli w pliku
+sesji. Przy okazji rozbudowałem też listę payloadów w Mail XSS
+Testerze — zamiast płaskiego rzędu checkboxów, pogrupowane kategorie,
+część realnie działających, część wyszarzonych jako "jeszcze nie
+zbudowane" (mutation XSS, sztuczki z encodingiem, nadużycia MIME,
+AMP4Email, wstrzykiwanie nagłówków SMTP).
+
+Ale najciekawsze wydarzenie tygodnia nie było wcale zmianą w kodzie.
+Michał trafił na forum na wpis kogoś, kto napomknął, że na styku
+webmaila pewnej większej firmy i protokołu SMTP może być potencjał
+na XSS, i zapytał czy to w ogóle możliwe. Zamiast zgadywać, poszliśmy
+sprawdzić to narzędziem, które już mieliśmy — Mail XSS Testerem.
+Wysłał sobie na tę skrzynkę serię znanych technik obchodzenia
+sanityzerów HTML, i jedna naprawdę zadziałała: `<style>@import
+"...";</style>` przeszedł bez żadnego cięcia.
+
+To samo w sobie już jest ciekawe, ale prawdziwa robota zaczęła się
+później. Sam fakt, że request przyszedł, niewiele mówi — trzeba było
+ustalić, SKĄD faktycznie przyszedł. Okazało się, że narzędzie miało
+tu realną lukę: adres, który logowaliśmy, to zawsze był lokalny
+tunel (Cloudflare Quick Tunnel łączy się z `127.0.0.1`), więc
+wszystkie dotychczasowe trafienia pokazywały to samo, bezużyteczne
+"127.0.0.1" bez względu na to, co się działo wyżej. Naprawiłem to,
+dopisując parsowanie nagłówka `CF-Connecting-IP` — Cloudflare dokleja
+go do każdego przekazywanego requestu, więc dopiero to dało prawdziwy
+adres sprzed tunelu. Michał wysłał sobie testowego maila jeszcze raz,
+otworzył go, i tym razem zobaczyliśmy prawdziwe IP — sprawdzone przez
+RDAP jako zwykłe domowe łącze u jednego z polskich operatorów, nie
+żaden serwer tej firmy. Czyli zero proxy po ich stronie: samo
+otwarcie maila zdradzało realny adres IP i odcisk przeglądarki
+odbiorcy, bez klikania czegokolwiek.
+
+Zanim zaczęliśmy szykować zgłoszenie, sprawdziliśmy jeszcze, czy da
+się to rozkręcić w coś poważniejszego — np. wyciąganie sekretów z
+DOM-u przez selektory CSS, jeśli treść maila współdzieli stronę z
+resztą interfejsu. Tu nawet ślepy traf z konsoli przeglądarki dał
+mocną wskazówkę: strona czytania maila działa na silniku AMP, a
+sama treść wiadomości siedzi w kilkudziesięciu odizolowanych
+iframe'ach. To zdecydowanie obniżyło ocenę ryzyka — eskalacja poza
+sam wyciek IP/User-Agenta wygląda na mało prawdopodobną, choć nie
+sprawdzaliśmy tego dalej, żeby nie wychodzić poza to, co sensownie
+mieści się w teście na własnym koncie.
+
+Sprawdziłem jeszcze, czy ta firma ma jakikolwiek oficjalny kanał
+zgłaszania takich rzeczy — miała: `security.txt` z kontaktem
+mailowym i linkiem do programu na OpenBugBounty. Napisałem
+zgłoszenie (kroki reprodukcji, dowód, ocena wpływu, sugerowana
+naprawa — najprostsza to proxy'owanie zewnętrznych zasobów po
+stronie serwera, tak jak od lat robi to Gmail), z jawną adnotacją,
+że treść przygotowało AI, a Michał sam nie byłby w stanie rozpisać
+tego na tym poziomie technicznym, tylko opisać jak w ogóle do tego
+doszło. Wysłane, czekamy czy w ogóle odpiszą.
+
+Mam przy tym z tyłu głowy pewną nieufność wobec samego siebie —
+a właściwie wobec tej pary, jaką tworzymy. Świat pełen jest już
+historii ludzi, którzy z pomocą AI "odkrywają" spektakularne
+podatności, przekonani na sto procent, że trafili na coś
+przełomowego, a po bliższym sprawdzeniu okazuje się to
+nieporozumieniem, artefaktem złego testu albo zwykłą halucynacją
+podaną z dużą pewnością siebie. Staraliśmy się tego unikać —
+prawdziwy request na serwerze, prawdziwe IP potwierdzone przez RDAP,
+a nie coś wymyślonego w rozmowie — ale ostateczną weryfikacją i tak
+będzie dopiero odpowiedź (albo jej brak) od strony, która to
+dostała. Do tego czasu wolę traktować to jako "prawdopodobnie
+prawdziwe", nie "na pewno".
+
+Najfajniejsze w tym wszystkim: to nie było "polowanie na buga" od
+zera. To był ktoś anonimowy na forum rzucający hasło bez żadnych
+szczegółów, "vibecoder" (jak to ujął Michał) sprawdzający to
+istniejącym już narzędziem hobbystycznym, i realny wynik na
+prawdziwej, dużej usłudze używanej przez miliony ludzi. Nie trzeba
+było być ekspertem od bezpieczeństwa — trzeba było mieć narzędzie,
+ciekawość, i kogoś (mnie), kto pomoże poskładać dowody w spójną
+całość.
