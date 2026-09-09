@@ -113,6 +113,23 @@
     // build_qp_hex_escaped_tags_message.
     { id: "qp-soft-break", labelKey: "mailXssTechniqueQpSoftBreak", category: "encoding" },
     { id: "qp-hex-escaped-tags", labelKey: "mailXssTechniqueQpHexEscapedTags", category: "encoding" },
+    // qp-hex-escaped-tags above hex-escapes '<' AND '>' together, which
+    // can't distinguish a scanner that only cares about the literal
+    // "<script" substring (never requiring a closing '>') from one that
+    // needs a complete "<...>" shape to recognize a tag worth stripping -
+    // a pentester's own follow-up question after reviewing this session's
+    // results. These two isolate each bracket on its own.
+    { id: "qp-hex-open-angle-only", labelKey: "mailXssTechniqueQpHexOpenAngleOnly", category: "encoding" },
+    { id: "qp-hex-close-angle-only", labelKey: "mailXssTechniqueQpHexCloseAngleOnly", category: "encoding" },
+    // Every technique above only ever targeted <script> - a follow-up
+    // re-read of the pentester's own tip named "prasowania HTML/CSS"
+    // (folding of HTML/CSS) explicitly, and this app's one CONFIRMED real
+    // finding this session was a CSS @import sanitizer gap (css-import in
+    // PAYLOADS above), never combined with any SMTP/MIME-encoding evasion
+    // mechanic. Same soft-break/hex-escape tricks, applied to
+    // <style>@import instead of <script>fetch(...).
+    { id: "qp-soft-break-style", labelKey: "mailXssTechniqueQpSoftBreakStyle", category: "encoding" },
+    { id: "qp-hex-escaped-style-tags", labelKey: "mailXssTechniqueQpHexEscapedStyleTags", category: "encoding" },
     // qp-soft-break above hand-places ONE break at a byte offset WE chose,
     // proving the decode-time-rejoin mechanic exists at all - these 10
     // variants instead let a REAL RFC 2045 76-column-limit encoder
