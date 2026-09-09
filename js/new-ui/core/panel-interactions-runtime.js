@@ -2607,23 +2607,50 @@
       var mount = document.getElementById("v1MailXssTesterLibrary");
       if (!mount || !renderMailXssTesterLibrary) return;
 
-      // Whether a send is currently in flight, and the send-result note's
-      // last content - NOT backed by mail-xss-tester-runtime.js state, so a
-      // full innerHTML rebuild (any newui:mail-xss-tester-changed event -
-      // most realistically a beacon hit arriving from an email the
-      // recipient already opened WHILE the rest of a multi-technique batch
-      // is still sending) used to silently re-enable the submit button
-      // mid-send (the fresh render only ever disables it based on tunnel
-      // status, having no idea a send is in progress) and hide the
-      // "Sending..." note (freshly rendered hidden by default) - looking
-      // exactly like the form "reset". Clicking the now-enabled button
-      // again genuinely re-sent every selected technique a second time.
-      // render() below re-applies both after every rebuild, same
-      // snapshot+restore idiom already used for fields/collapse/scroll.
-      var isSending = false;
+      // Whether a send is in flight and its last outcome now live in
+      // mail-xss-tester-runtime.js itself (api.getIsSending()/
+      // getLastSendResult()/sendAll()), NOT as closure variables here -
+      // this whole function re-runs with a completely FRESH closure every
+      // time Mail XSS Tester's LS panel is torn down and rebuilt (switching
+      // to a different LS tool and back always creates a brand new mount,
+      // see activateGenericContent() in navigation-runtime.js), which used
+      // to reset a closure-local isSending back to false even while a batch
+      // was still genuinely sending in the background - confirmed via a
+      // real reproduction where switching away and back mid-send, then
+      // clicking "Send" again in the fresh instance, actually re-sent every
+      // selected technique a second time. Reading the runtime's own state
+      // instead means every render(), from any mount instance, sees the
+      // same true state. resultMessageFor() below turns a structured
+      // {ok, techniqueResult|error} result into the same text/isError shape
+      // the old inline code used to build directly.
+      // lastResultText/IsError/Shown below stay LOCAL - they only ever hold
+      // pre-flight validation messages ("missing fields"/"nothing
+      // selected"), which happen before any real send starts, so there's
+      // nothing to lose by not surviving a mount rebuild.
       var lastResultText = "";
       var lastResultIsError = false;
       var lastResultShown = false;
+
+      function resultMessageFor(result) {
+        if (!result) return null;
+        if (result.ok) {
+          var techniqueResult = result.techniqueResult;
+          if (!techniqueResult) return { text: tr("mailXssSendSuccessNote"), isError: false };
+          if (techniqueResult.failed.length === 0) {
+            return {
+              text: tr("mailXssSendSuccessNote") + " " + tr("mailXssTechniquesSentSuffix").replace("{count}", String(techniqueResult.sent.length)),
+              isError: false,
+            };
+          }
+          return {
+            text: tr("mailXssSendPartialFailureNote")
+              .replace("{sent}", String(techniqueResult.sent.length))
+              .replace("{failed}", String(techniqueResult.failed.length)),
+            isError: true,
+          };
+        }
+        return { text: tr("mailXssSendErrorPrefix") + " " + (result.error || ""), isError: true };
+      }
 
       // The send-email form's fields (gmailAddress/appPassword/to/subject)
       // are uncontrolled inputs - nothing in JS state backs their live
@@ -2670,13 +2697,33 @@
         var newScrollEl = mount.querySelector(".v1-tool-list");
         if (newScrollEl) newScrollEl.scrollTop = preservedScrollTop;
 
+        var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
+        var sending = !!(api && api.getIsSending());
         var freshSubmitBtn = mount.querySelector("[data-mail-xss-send-submit]");
-        if (freshSubmitBtn && isSending) freshSubmitBtn.disabled = true;
+        if (freshSubmitBtn && sending) freshSubmitBtn.disabled = true;
+
         var freshResultEl = mount.querySelector("[data-mail-xss-send-result]");
-        if (freshResultEl && lastResultShown) {
-          freshResultEl.textContent = lastResultText;
-          freshResultEl.classList.toggle("is-error", lastResultIsError);
-          freshResultEl.removeAttribute("hidden");
+        if (freshResultEl) {
+          if (sending) {
+            // Overrides any stale local validation message below - a real
+            // send is what's actually happening right now, regardless of
+            // what this particular mount instance last showed.
+            freshResultEl.textContent = tr("mailXssSendPendingNote");
+            freshResultEl.classList.remove("is-error");
+            freshResultEl.removeAttribute("hidden");
+          } else {
+            var lastResult = api ? api.getLastSendResult() : null;
+            var msg = lastResult ? resultMessageFor(lastResult) : null;
+            if (msg) {
+              freshResultEl.textContent = msg.text;
+              freshResultEl.classList.toggle("is-error", msg.isError);
+              freshResultEl.removeAttribute("hidden");
+            } else if (lastResultShown) {
+              freshResultEl.textContent = lastResultText;
+              freshResultEl.classList.toggle("is-error", lastResultIsError);
+              freshResultEl.removeAttribute("hidden");
+            }
+          }
         }
       }
 
@@ -2804,15 +2851,15 @@
         if (!form) return;
         event.preventDefault();
 
-        // Belt-and-braces re-entrancy guard, in addition to render()'s own
-        // disabled-attribute restore above - a submit somehow slipping
-        // through while a batch is already in flight (a stale button
-        // reference from before a mid-send re-render, say) must still not
-        // trigger a real second round of sends.
-        if (isSending) return;
-
         var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
         if (!api) return;
+
+        // Belt-and-braces re-entrancy guard, in addition to render()'s own
+        // disabled-attribute restore above (and sendAll()'s own internal
+        // check) - a submit somehow slipping through while a batch is
+        // already in flight, from THIS mount or any earlier one, must
+        // still not trigger a real second round of sends.
+        if (api.getIsSending()) return;
 
         function fieldValue(name) {
           var el = form.querySelector('[data-mail-xss-field="' + name + '"]');
@@ -2841,60 +2888,28 @@
           return;
         }
 
-        // Raw-MIME techniques (getSelectedTechniqueIds()) each need their
-        // own separate email - sendEncodingTestEmails handles that as a
-        // second, sequential send after the normal combined-payload email,
-        // rather than trying to cram both into one message. sendTestEmail
-        // itself doesn't skip an empty selection on its own (buildEmailHtml
-        // happily returns "" and it sends that anyway), so this has to be
-        // the thing deciding whether it's worth calling at all - otherwise
-        // testing ONLY a technique (every normal payload unchecked) sent a
-        // pointless second, empty-body email every time.
-        var hasPayloads = api.getSelectedPayloadIds().length > 0;
-        var hasTechniques = api.getSelectedTechniqueIds().length > 0;
-
-        if (!hasPayloads && !hasTechniques) {
-          showResult(tr("mailXssNoPayloadsSelectedNote"), true);
-          return;
-        }
-
-        isSending = true;
-        var submitBtn = form.querySelector("[data-mail-xss-send-submit]");
-        if (submitBtn) submitBtn.disabled = true;
+        // sendAll() (mail-xss-tester-runtime.js) owns the hasPayloads/
+        // hasTechniques branching, the actual sendTestEmail/
+        // sendEncodingTestEmails sequencing, and the isSending flag itself
+        // now - moved there so that flag survives this mount being torn
+        // down and rebuilt mid-send (see isSending's own comment above).
+        // Setting the pending message here, before the call, is purely
+        // cosmetic - sendAll() firing newui:mail-xss-tester-changed
+        // synchronously (isSending flips true before anything async
+        // starts) triggers render() immediately anyway, which re-shows the
+        // SAME pending note independently based on api.getIsSending().
         showResult(tr("mailXssSendPendingNote"), false);
 
-        var normalSendPromise = hasPayloads
-          ? api.sendTestEmail({ gmailAddress: gmailAddress, appPassword: appPassword, to: to, subject: subject, provider: provider })
-          : Promise.resolve();
-
-        normalSendPromise.then(function () {
-          if (!hasTechniques) return null;
-          return api.sendEncodingTestEmails({ gmailAddress: gmailAddress, appPassword: appPassword, to: to, subject: subject, provider: provider });
-        }).then(function (techniqueResult) {
-          isSending = false;
-          if (!techniqueResult) {
-            showResult(tr("mailXssSendSuccessNote"), false);
-          } else if (techniqueResult.failed.length === 0) {
-            showResult(tr("mailXssSendSuccessNote") + " " + tr("mailXssTechniquesSentSuffix").replace("{count}", String(techniqueResult.sent.length)), false);
-          } else {
-            showResult(
-              tr("mailXssSendPartialFailureNote")
-                .replace("{sent}", String(techniqueResult.sent.length))
-                .replace("{failed}", String(techniqueResult.failed.length)),
-              true
-            );
+        api.sendAll({ gmailAddress: gmailAddress, appPassword: appPassword, to: to, subject: subject, provider: provider }).then(function (result) {
+          if (!result.started) {
+            if (result.reason === "nothing-selected") showResult(tr("mailXssNoPayloadsSelectedNote"), true);
+            // "already-sending": a batch is genuinely still running
+            // (started elsewhere, or a race with this same click) -
+            // render() already reflects that; nothing new to show.
+            return;
           }
-          // Re-render rather than poking a possibly-stale submitBtn
-          // reference directly - a mid-send hit could already have
-          // replaced it with a fresh element (see isSending's own
-          // comment), and only a real render() correctly recomputes
-          // "enabled" from the current tunnel status too, not just "not
-          // sending anymore" (the tunnel could have dropped mid-send).
-          render();
-        }).catch(function (err) {
-          isSending = false;
-          showResult(tr("mailXssSendErrorPrefix") + " " + ((err && err.message) ? err.message : String(err)), true);
-          render();
+          var msg = resultMessageFor(result);
+          if (msg) showResult(msg.text, msg.isError);
         });
       });
     }

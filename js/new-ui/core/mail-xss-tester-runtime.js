@@ -478,6 +478,69 @@
       });
     }
 
+    // Whether a send is currently in flight, and the last completed send's
+    // outcome - kept HERE (the one singleton runtime instance,
+    // window.NetReconNewUICore.mailXssTester, created once at script load)
+    // rather than as a closure variable inside panel-interactions-runtime.js's
+    // wireMailXssTesterLibrary(), because that function re-runs with a
+    // completely FRESH closure every time Mail XSS Tester's LS panel gets
+    // torn down and rebuilt - which happens on every switch away to a
+    // different LS tool and back (activateGenericContent() in
+    // navigation-runtime.js always creates a brand new mount element for
+    // non-"move" tools). A closure-local isSending flag reset itself to
+    // false on such a switch even while a batch send was still genuinely
+    // running in the background, silently re-enabling "Send" in the fresh
+    // instance and letting a second click actually re-send every selected
+    // technique a second time - confirmed via a real reproduction (2
+    // techniques sent, tab switched away and back mid-send, "Send" clicked
+    // again -> 4 real send_encoding_test_email calls). Tracking it here
+    // instead means EVERY render, from ANY mount instance, reads the same
+    // true state.
+    var isSending = false;
+    var lastSendResult = null; // null | {ok:true, techniqueResult} | {ok:false, error}
+
+    function getIsSending() { return isSending; }
+    function getLastSendResult() { return lastSendResult; }
+
+    // Owns the hasPayloads/hasTechniques branching and sequencing
+    // (sendTestEmail then sendEncodingTestEmails) that used to live
+    // directly in panel-interactions-runtime.js's submit handler - moved
+    // here so isSending/lastSendResult can be updated atomically around
+    // the whole batch regardless of which UI instance triggered it.
+    // Resolves, never rejects: {started:false, reason:"already-sending"}
+    // if a batch is already running (re-entrancy guard, now correct
+    // regardless of DOM churn), {started:false, reason:"nothing-selected"}
+    // if neither a payload nor a technique is checked, or
+    // {started:true, ok, techniqueResult|error} once the batch completes.
+    function sendAll(opts) {
+      if (isSending) return Promise.resolve({ started: false, reason: "already-sending" });
+
+      var hasPayloads = getSelectedPayloadIds().length > 0;
+      var hasTechniques = getSelectedTechniqueIds().length > 0;
+      if (!hasPayloads && !hasTechniques) {
+        return Promise.resolve({ started: false, reason: "nothing-selected" });
+      }
+
+      isSending = true;
+      emitChanged();
+
+      var normalSendPromise = hasPayloads ? sendTestEmail(opts) : Promise.resolve();
+      return normalSendPromise.then(function () {
+        return hasTechniques ? sendEncodingTestEmails(opts) : null;
+      }).then(function (techniqueResult) {
+        lastSendResult = { ok: true, techniqueResult: techniqueResult };
+        return { started: true, ok: true, techniqueResult: techniqueResult };
+      }).catch(function (err) {
+        var message = (err && err.message) ? err.message : String(err);
+        lastSendResult = { ok: false, error: message };
+        return { started: true, ok: false, error: message };
+      }).then(function (result) {
+        isSending = false;
+        emitChanged();
+        return result;
+      });
+    }
+
     return {
       getPayloads: getPayloads,
       getPayloadCategories: getPayloadCategories,
@@ -506,6 +569,9 @@
       getTriggeredPayloadIds: getTriggeredPayloadIds,
       sendTestEmail: sendTestEmail,
       sendEncodingTestEmails: sendEncodingTestEmails,
+      getIsSending: getIsSending,
+      getLastSendResult: getLastSendResult,
+      sendAll: sendAll,
       // localStorage-only otherwise (persistSelection above), bundled into
       // the session file too per the same "carry it to another machine/
       // profile" treatment as domainVerification/mailVerification.
