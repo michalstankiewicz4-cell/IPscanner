@@ -1444,6 +1444,32 @@
       var draftCustomFillerLength = mailXssTesterApi ? mailXssTesterApi.getDraftCustomFillerLength() : 50;
       var draftCustomFillerText = mailXssTesterApi ? mailXssTesterApi.getDraftCustomFillerText() : "";
 
+      var customMechanismLabelKeys = {
+        "soft-break": "mailXssCustomMechanismSoftBreak",
+        "hex-open": "mailXssCustomMechanismHexOpen",
+        "hex-close": "mailXssCustomMechanismHexClose",
+        "hex-both": "mailXssCustomMechanismHexBoth",
+        "natural-wrap": "mailXssCustomMechanismNaturalWrap",
+      };
+      var customVectorLabelKeys = { script: "mailXssCustomVectorScript", style: "mailXssCustomVectorStyle" };
+      var customQueue = mailXssTesterApi ? mailXssTesterApi.getCustomQueue() : [];
+      var customQueueSendDisabled = customSendDisabled || customQueue.length === 0;
+      var customQueueRowsHtml = customQueue.map(function (entry) {
+        var preview = entry.fillerText ? (entry.fillerText.length > 30 ? entry.fillerText.slice(0, 30) + "…" : entry.fillerText) : "";
+        var summary = tr(customVectorLabelKeys[entry.vector] || "mailXssCustomVectorScript") +
+          " / " + tr(customMechanismLabelKeys[entry.mechanism] || "mailXssCustomMechanismSoftBreak") +
+          (preview ? " — " + preview : "");
+        return [
+          "<div class=\"v1-mail-verify-row\">",
+          "<span>" + escapeHtml(summary) + "</span>",
+          "<button type=\"button\" data-mail-xss-custom-queue-remove=\"" + escapeHtml(entry.id) + "\">" + escapeHtml(tr("mailVerifyRemoveBtn")) + "</button>",
+          "</div>"
+        ].join("");
+      }).join("");
+      var customQueueListHtml = customQueue.length
+        ? "<div class=\"v1-mail-verify-list\">" + customQueueRowsHtml + "</div>"
+        : "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("mailXssCustomQueueEmptyNote")) + "</div>";
+
       return [
         "<ul class=\"v1-tool-list\">",
         "<li>",
@@ -1485,8 +1511,20 @@
         "<label for=\"v1MailXssCustomFillerText\">" + escapeHtml(tr("mailXssCustomFillerTextLabel")) + "</label>",
         "<textarea id=\"v1MailXssCustomFillerText\" name=\"mailXssCustomFillerText\" rows=\"3\" data-mail-xss-field=\"customFillerText\">" + escapeHtml(draftCustomFillerText) + "</textarea>",
         "</div>",
+        "<div class=\"v1-import-manager-actions\">",
         "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-mail-xss-custom-send" + (customSendDisabled ? " disabled" : "") + ">" + escapeHtml(tr("mailXssCustomSendBtn")) + "</button>",
+        "<button type=\"button\" data-mail-xss-custom-queue-add title=\"" + escapeHtml(tr("mailXssCustomQueueAddBtnTitle")) + "\">+</button>",
+        "</div>",
         "<div class=\"v1-pulpit-remote-run-result\" data-mail-xss-custom-result hidden></div>",
+        // Queue of hand-built combos, an alternative to needing a new
+        // hardcoded checkbox for every variant someone might want to try
+        // together (e.g. a whole sweep of natural-wrap filler texts of
+        // your own choosing) - "+" above appends the CURRENT vector/
+        // mechanism/filler text here without sending it yet; this list is
+        // sent together, separately, via the button below.
+        "<h4 class=\"v1-general-settings-group\">" + escapeHtml(tr("mailXssCustomQueueHeading")) + "</h4>",
+        customQueueListHtml,
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-mail-xss-custom-queue-send" + (customQueueSendDisabled ? " disabled" : "") + ">" + escapeHtml(tr("mailXssCustomQueueSendBtn").replace("{count}", String(customQueue.length))) + "</button>",
         "</div>",
         "</li>",
         "<li>",

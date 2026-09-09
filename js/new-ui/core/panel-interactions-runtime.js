@@ -2718,6 +2718,8 @@
         if (freshSubmitBtn && sending) freshSubmitBtn.disabled = true;
         var freshCustomSendBtn = mount.querySelector("[data-mail-xss-custom-send]");
         if (freshCustomSendBtn && sending) freshCustomSendBtn.disabled = true;
+        var freshCustomQueueSendBtn = mount.querySelector("[data-mail-xss-custom-queue-send]");
+        if (freshCustomQueueSendBtn && sending) freshCustomQueueSendBtn.disabled = true;
 
         var freshResultEl = mount.querySelector("[data-mail-xss-send-result]");
         if (freshResultEl) {
@@ -2801,6 +2803,27 @@
         var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
         if (!api) return;
 
+        // Shared by the custom-technique send/queue-add/queue-send
+        // handlers below - reads the same sender fields (gmailAddress/
+        // appPassword/to/subject/provider) the main send form uses, plus
+        // whichever vector/mechanism/fillerText fields the builder itself
+        // owns.
+        function customFieldValue(name) {
+          var el = mount.querySelector('[data-mail-xss-field="' + name + '"]');
+          return el ? el.value : "";
+        }
+
+        function showCustomResult(text, isError) {
+          lastCustomResultText = text;
+          lastCustomResultIsError = !!isError;
+          lastCustomResultShown = true;
+          var el = mount.querySelector("[data-mail-xss-custom-result]");
+          if (!el) return;
+          el.textContent = text;
+          el.classList.toggle("is-error", !!isError);
+          el.removeAttribute("hidden");
+        }
+
         // Starts the tunnel directly from idle; any other state (starting/
         // running/error) has nothing useful left for a single fixed-label
         // button to do here, so it just opens Options > Tunnel instead,
@@ -2842,22 +2865,6 @@
         if (customSendBtn) {
           if (api.getIsSending()) return;
 
-          function customFieldValue(name) {
-            var el = mount.querySelector('[data-mail-xss-field="' + name + '"]');
-            return el ? el.value : "";
-          }
-
-          function showCustomResult(text, isError) {
-            lastCustomResultText = text;
-            lastCustomResultIsError = !!isError;
-            lastCustomResultShown = true;
-            var el = mount.querySelector("[data-mail-xss-custom-result]");
-            if (!el) return;
-            el.textContent = text;
-            el.classList.toggle("is-error", !!isError);
-            el.removeAttribute("hidden");
-          }
-
           var gmailAddress = customFieldValue("gmailAddress").trim();
           var appPassword = customFieldValue("appPassword");
           var to = customFieldValue("to").trim();
@@ -2889,6 +2896,63 @@
             }
             var msg = resultMessageFor(result);
             if (msg) showCustomResult(msg.text, msg.isError);
+          });
+          return;
+        }
+
+        // "+" - appends the CURRENT vector/mechanism/fillerText combo to
+        // the queue instead of sending it, so several hand-built
+        // combinations (e.g. a sweep of natural-wrap filler texts of your
+        // own choosing) can be reviewed and sent together. No credential/
+        // tunnel checks here - queueing is a pure client-side list
+        // operation, independent of whether a send could succeed right
+        // now.
+        var queueAddBtn = event.target && event.target.closest ? event.target.closest("[data-mail-xss-custom-queue-add]") : null;
+        if (queueAddBtn) {
+          api.addToCustomQueue({
+            vector: customFieldValue("customVector") || "script",
+            mechanism: customFieldValue("customMechanism") || "soft-break",
+            fillerText: customFieldValue("customFillerText"),
+          });
+          return;
+        }
+
+        var queueRemoveBtn = event.target && event.target.closest ? event.target.closest("[data-mail-xss-custom-queue-remove]") : null;
+        if (queueRemoveBtn) {
+          api.removeFromCustomQueue(queueRemoveBtn.getAttribute("data-mail-xss-custom-queue-remove"));
+          return;
+        }
+
+        var queueSendBtn = event.target && event.target.closest ? event.target.closest("[data-mail-xss-custom-queue-send]") : null;
+        if (queueSendBtn) {
+          if (api.getIsSending()) return;
+
+          var qGmailAddress = customFieldValue("gmailAddress").trim();
+          var qAppPassword = customFieldValue("appPassword");
+          var qTo = customFieldValue("to").trim();
+          var qSubject = customFieldValue("subject").trim();
+          var qProvider = customFieldValue("provider").trim() || "gmail";
+
+          if (!qGmailAddress || !qAppPassword || !qTo || !qSubject) {
+            showCustomResult(tr("mailXssSendMissingFieldsNote"), true);
+            return;
+          }
+
+          showCustomResult(tr("mailXssSendPendingNote"), false);
+          api.sendCustomQueue({
+            gmailAddress: qGmailAddress,
+            appPassword: qAppPassword,
+            to: qTo,
+            subject: qSubject,
+            provider: qProvider,
+          }).then(function (result) {
+            if (!result.started) {
+              if (result.reason === "queue-empty") showCustomResult(tr("mailXssCustomQueueEmptyNote"), true);
+              else if (result.reason !== "already-sending") showCustomResult(tr("mailXssCustomTunnelNotRunningNote"), true);
+              return;
+            }
+            var qMsg = resultMessageFor(result);
+            if (qMsg) showCustomResult(qMsg.text, qMsg.isError);
           });
           return;
         }

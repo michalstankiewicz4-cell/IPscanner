@@ -103,56 +103,15 @@
   var RAW_TECHNIQUES = [
     { id: "utf7-charset", labelKey: "mailXssTechniqueUtf7Charset", category: "encoding" },
     { id: "overlong-utf8", labelKey: "mailXssTechniqueOverlongUtf8", category: "encoding" },
-    // A second pentester tip after the MIME-boundary dead end: look at how
-    // Gmail's preview handles Polish characters and long-line wrapping -
-    // quoted-printable (the MIME transfer encoding that carries non-ASCII
-    // text like Polish diacritics) has its own "soft line break" mechanic
-    // (a trailing '=' + CRLF that's REMOVED on decode, rejoining split
-    // content) worth exactly the same parser-differential treatment the
-    // MIME boundary got. See main.rs's build_qp_soft_break_message/
-    // build_qp_hex_escaped_tags_message.
-    { id: "qp-soft-break", labelKey: "mailXssTechniqueQpSoftBreak", category: "encoding" },
-    { id: "qp-hex-escaped-tags", labelKey: "mailXssTechniqueQpHexEscapedTags", category: "encoding" },
-    // qp-hex-escaped-tags above hex-escapes '<' AND '>' together, which
-    // can't distinguish a scanner that only cares about the literal
-    // "<script" substring (never requiring a closing '>') from one that
-    // needs a complete "<...>" shape to recognize a tag worth stripping -
-    // a pentester's own follow-up question after reviewing this session's
-    // results. These two isolate each bracket on its own.
-    { id: "qp-hex-open-angle-only", labelKey: "mailXssTechniqueQpHexOpenAngleOnly", category: "encoding" },
-    { id: "qp-hex-close-angle-only", labelKey: "mailXssTechniqueQpHexCloseAngleOnly", category: "encoding" },
-    // Every technique above only ever targeted <script> - a follow-up
-    // re-read of the pentester's own tip named "prasowania HTML/CSS"
-    // (folding of HTML/CSS) explicitly, and this app's one CONFIRMED real
-    // finding this session was a CSS @import sanitizer gap (css-import in
-    // PAYLOADS above), never combined with any SMTP/MIME-encoding evasion
-    // mechanic. Same soft-break/hex-escape tricks, applied to
-    // <style>@import instead of <script>fetch(...).
-    { id: "qp-soft-break-style", labelKey: "mailXssTechniqueQpSoftBreakStyle", category: "encoding" },
-    { id: "qp-hex-escaped-style-tags", labelKey: "mailXssTechniqueQpHexEscapedStyleTags", category: "encoding" },
-    // qp-soft-break above hand-places ONE break at a byte offset WE chose,
-    // proving the decode-time-rejoin mechanic exists at all - these 10
-    // variants instead let a REAL RFC 2045 76-column-limit encoder
-    // (main.rs's quoted_printable_encode_folded, not the hand-placed one)
-    // decide where its own soft break falls, by varying how much Polish
-    // filler text precedes <script> across variants (main.rs's
-    // qp_natural_wrap_variant_text) - sweeping the phase of that boundary
-    // relative to the word "script" without us ever choosing the split
-    // point ourselves. Each is its own separate technique id/checkbox
-    // (not one combined "send 10 emails" button) so a hit's beacon path
-    // ("<sessionToken>-qp-natural-wrap-N") pinpoints exactly which offset,
-    // if any, actually landed a break inside the tag - same diagnostic
-    // granularity as every other technique here.
-    { id: "qp-natural-wrap-1", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#1)", category: "encoding" },
-    { id: "qp-natural-wrap-2", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#2)", category: "encoding" },
-    { id: "qp-natural-wrap-3", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#3)", category: "encoding" },
-    { id: "qp-natural-wrap-4", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#4)", category: "encoding" },
-    { id: "qp-natural-wrap-5", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#5)", category: "encoding" },
-    { id: "qp-natural-wrap-6", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#6)", category: "encoding" },
-    { id: "qp-natural-wrap-7", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#7)", category: "encoding" },
-    { id: "qp-natural-wrap-8", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#8)", category: "encoding" },
-    { id: "qp-natural-wrap-9", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#9)", category: "encoding" },
-    { id: "qp-natural-wrap-10", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#10)", category: "encoding" },
+    // The 6 fixed script/style x soft-break/hex-open/hex-close/hex-both
+    // presets and the 10 fixed qp-natural-wrap-N length variants that
+    // used to live here were removed once the LS panel's "Custom
+    // technique builder" (vector/mechanism/filler-text fields, plus a
+    // queue for sending several combos together) could reconstruct every
+    // one of them and more - keeping both meant the exact same
+    // combination existed as two different UI elements. See
+    // build_custom_technique_message in main.rs for the still-current,
+    // generic version of what these used to hand-build one at a time.
     { id: "mime-boundary-desync", labelKey: "mailXssTechniqueMimeBoundaryDesync", category: "mime" },
     // Same structural MIME confusion, smuggling <style>@import> instead of
     // <img> - added after the plain <img> variant confirmed real against
@@ -660,6 +619,95 @@
       });
     }
 
+    // Custom technique QUEUE - a "+" button (LS panel) appends the
+    // current vector/mechanism/fillerText combo here instead of sending
+    // it immediately, so several hand-built combinations (e.g. a whole
+    // sweep of natural-wrap filler texts of your own choosing, replacing
+    // what used to need 10 separate hardcoded qp-natural-wrap-N
+    // checkboxes) can be reviewed and sent together in one batch -
+    // sendCustomTechnique above stays for the immediate single-combo
+    // send, unrelated to this list. Kept in the singleton runtime (not a
+    // panel-interactions-runtime.js closure) for the same "survives LS
+    // panel teardown/rebuild" reason as isSending/every draft above.
+    var customQueue = [];
+
+    function getCustomQueue() { return customQueue.slice(); }
+
+    function addToCustomQueue(entry) {
+      // Every mechanism except natural-wrap ignores fillerText entirely
+      // (build_custom_technique_message in main.rs only reads it inside
+      // the "natural-wrap" match arm) - normalized to "" here rather than
+      // storing whatever happened to be left in the textarea, so a queued
+      // soft-break/hex-* entry's own summary line never shows filler text
+      // that has no actual effect on what gets sent.
+      var mechanism = entry.mechanism;
+      customQueue.push({
+        id: randomToken(8),
+        vector: entry.vector === "style" ? "style" : "script",
+        mechanism: mechanism,
+        fillerText: mechanism === "natural-wrap" ? String(entry.fillerText || "") : "",
+      });
+      emitChanged();
+    }
+
+    function removeFromCustomQueue(id) {
+      customQueue = customQueue.filter(function (e) { return e.id !== id; });
+      emitChanged();
+    }
+
+    // Sequential, same reasoning as sendEncodingTestEmails (one bad entry
+    // shouldn't stop the rest) - shares isSending/activeSendKind="custom"
+    // with sendCustomTechnique/sendAll, so this can't overlap with either.
+    // Resolves {sent, failed} into lastCustomSendResult via the SAME
+    // {ok, techniqueResult} shape sendAll already uses, so
+    // panel-interactions-runtime.js's existing resultMessageFor() renders
+    // it identically (success/partial-failure wording) with no new code.
+    function sendCustomQueue(opts) {
+      if (isSending) return Promise.resolve({ started: false, reason: "already-sending" });
+      if (customQueue.length === 0) return Promise.resolve({ started: false, reason: "queue-empty" });
+
+      var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+      if (!platform) return Promise.resolve({ started: false, reason: "platform-unavailable" });
+      if (tunnelStatus !== "running") return Promise.resolve({ started: false, reason: "tunnel-not-running" });
+
+      isSending = true;
+      activeSendKind = "custom";
+      emitChanged();
+
+      var queueSnapshot = customQueue.slice();
+      var sent = [];
+      var failed = [];
+
+      return queueSnapshot.reduce(function (chain, entry) {
+        return chain.then(function () {
+          var techniqueId = "custom-" + entry.vector + "-" + entry.mechanism + "-" + entry.id;
+          var beaconUrl = tunnelUrl + "/hit/" + sessionToken + "-" + techniqueId;
+          return Promise.resolve(platform.invoke("send_custom_technique_email", {
+            gmailAddress: opts.gmailAddress,
+            appPassword: opts.appPassword,
+            to: opts.to,
+            subject: opts.subject,
+            beaconUrl: beaconUrl,
+            vector: entry.vector,
+            mechanism: entry.mechanism,
+            fillerText: entry.fillerText,
+            smtpHost: getProviderHost(opts.provider),
+          })).then(function () {
+            sent.push(entry.id);
+          }).catch(function (err) {
+            failed.push({ id: entry.id, message: (err && err.message) ? err.message : String(err) });
+          });
+        });
+      }, Promise.resolve()).then(function () {
+        var techniqueResult = { sent: sent, failed: failed };
+        lastCustomSendResult = { ok: true, techniqueResult: techniqueResult };
+        isSending = false;
+        activeSendKind = null;
+        emitChanged();
+        return { started: true, ok: true, techniqueResult: techniqueResult };
+      });
+    }
+
     return {
       getPayloads: getPayloads,
       getPayloadCategories: getPayloadCategories,
@@ -703,6 +751,10 @@
       getLastCustomSendResult: getLastCustomSendResult,
       sendAll: sendAll,
       sendCustomTechnique: sendCustomTechnique,
+      getCustomQueue: getCustomQueue,
+      addToCustomQueue: addToCustomQueue,
+      removeFromCustomQueue: removeFromCustomQueue,
+      sendCustomQueue: sendCustomQueue,
       // localStorage-only otherwise (persistSelection above), bundled into
       // the session file too per the same "carry it to another machine/
       // profile" treatment as domainVerification/mailVerification.
