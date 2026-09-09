@@ -4380,6 +4380,19 @@ struct BeaconHit {
     timestamp_ms: u64,
     user_agent: String,
     remote_addr: String,
+    // remote_addr above is the TCP peer of whoever connects to THIS process's
+    // local listener - since the tunnel (startTunnel()) is a Cloudflare Quick
+    // Tunnel pointed at http://127.0.0.1:<port>, that's always the local
+    // cloudflared process itself (127.0.0.1), never the real visitor,
+    // regardless of whether the mail provider proxies the fetch server-side
+    // or the recipient's own browser makes it directly - the very question
+    // this field exists to help answer. Cloudflare's edge adds
+    // CF-Connecting-IP (falling back to the more generic X-Forwarded-For)
+    // to every request it forwards, which IS the real originating IP one hop
+    // before it reached Cloudflare - empty when neither header is present
+    // (e.g. a future non-tunnel delivery method, where remote_addr itself
+    // would already be meaningful).
+    origin_ip: String,
 }
 
 struct MailXssTesterState {
@@ -4425,14 +4438,25 @@ async fn handle_beacon_connection(mut stream: TcpStream, app: AppHandle, state: 
     let payload_id = path.trim_start_matches('/').trim_start_matches("hit/").trim_end_matches('/').to_string();
 
     let mut user_agent = String::new();
+    let mut cf_connecting_ip = String::new();
+    let mut forwarded_for = String::new();
     for line in lines {
         if let Some(idx) = line.find(':') {
             let (name, value) = line.split_at(idx);
+            let value = value[1..].trim().to_string();
             if name.eq_ignore_ascii_case("user-agent") {
-                user_agent = value[1..].trim().to_string();
+                user_agent = value;
+            } else if name.eq_ignore_ascii_case("cf-connecting-ip") {
+                cf_connecting_ip = value;
+            } else if name.eq_ignore_ascii_case("x-forwarded-for") {
+                // Can be a comma-separated chain (client, proxy1, proxy2, ...) -
+                // the first entry is the original client as seen by the first
+                // proxy in the chain.
+                forwarded_for = value.split(',').next().unwrap_or("").trim().to_string();
             }
         }
     }
+    let origin_ip = if !cf_connecting_ip.is_empty() { cf_connecting_ip } else { forwarded_for };
 
     if !payload_id.is_empty() {
         let hit = BeaconHit {
@@ -4443,6 +4467,7 @@ async fn handle_beacon_connection(mut stream: TcpStream, app: AppHandle, state: 
                 .unwrap_or(0),
             user_agent,
             remote_addr: peer,
+            origin_ip,
         };
         state.hits.lock().unwrap().push(hit.clone());
         let _ = app.emit("mail-xss-beacon-hit", &hit);

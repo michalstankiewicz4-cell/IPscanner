@@ -1481,12 +1481,20 @@
 
       var rowsHtml = hits.slice().reverse().map(function (h) {
         var time = h.timestamp_ms ? new Date(h.timestamp_ms).toLocaleTimeString() : "";
+        // remote_addr is always the local cloudflared hop (the tunnel points
+        // at 127.0.0.1) - useless on its own for "did the provider proxy
+        // this fetch server-side, or did the recipient's own browser make
+        // it". origin_ip (Cloudflare's CF-Connecting-IP/X-Forwarded-For,
+        // parsed in handle_beacon_connection) is the actual answer to that:
+        // empty means neither header showed up (shouldn't happen through
+        // the Cloudflare tunnel path, but shown as "-" rather than blank so
+        // it reads as "unknown", not "same as remote_addr").
         return [
           "<div class=\"v1-mail-xss-hit-row\">",
           "<div class=\"v1-mail-xss-hit-time\">" + escapeHtml(time) + "</div>",
           "<div class=\"v1-mail-xss-hit-payload\">" + escapeHtml(h.payload_id || "") + "</div>",
           "<div class=\"v1-mail-xss-hit-ua\">" + escapeHtml(h.user_agent || "") + "</div>",
-          "<div class=\"v1-mail-xss-hit-addr\">" + escapeHtml(h.remote_addr || "") + "</div>",
+          "<div class=\"v1-mail-xss-hit-addr\" title=\"" + escapeHtml(tr("mailXssHitOriginIpTooltip")) + "\">" + escapeHtml(tr("mailXssHitOriginIpLabel")) + " " + escapeHtml(h.origin_ip || "-") + "</div>",
           "</div>"
         ].join("");
       }).join("");
