@@ -276,6 +276,16 @@
   margin-bottom: 10px;
 }
 
+/* [hidden] is a UA-stylesheet default (display:none) - the class's own
+   author-level display:grid above always wins over it regardless of
+   selector specificity (author beats UA), so the mail-xss-tester custom
+   technique builder's char-count/filler-text field stayed visible for
+   every mechanism even though its `hidden` attribute was correctly set.
+   This override restores the expected behavior. */
+.v1-pulpit-inspector-field[hidden] {
+  display: none;
+}
+
 .v1-pulpit-inspector-field label {
   color: var(--txt-dim);
   font-size: 12px;
