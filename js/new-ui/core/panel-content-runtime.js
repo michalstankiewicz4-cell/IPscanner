@@ -580,7 +580,6 @@
     function mailVerificationSection() {
       var mv = mailVerificationApi ? mailVerificationApi.getState() : { verifiedEmails: [] };
       var pendingEmail = mailVerificationApi ? mailVerificationApi.getPendingEmail() : "";
-      var tunnelRunning = !!(mailXssTesterApi && mailXssTesterApi.getTunnelStatus() === "running");
 
       var codeRow = !pendingEmail ? "" : [
         "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("mailVerifyCodeSentNote", "Code sent to {email} - check the inbox and enter it above.").replace("{email}", pendingEmail)) + "</div>",
@@ -603,11 +602,38 @@
         "</div>"
       ].join("") : "<div class=\"v1-import-manager-note\" data-mail-verify-list>" + escapeHtml(trOr("mailVerifyNoneYet", "No verified mailboxes yet.")) + "</div>";
 
+      // Own sender account fields (provider/address/password), independent
+      // of Mail XSS Tester's send form - the two forms serve different
+      // purposes (proving you own a mailbox vs. sending real XSS probes),
+      // so forcing them to always share one provider/credential pair meant
+      // switching Mail XSS Tester's provider for a technique test also
+      // silently broke verification (and vice versa) if the two accounts
+      // differed. data-mail-verify-sender-field is a generic snapshot key,
+      // same shape as Mail XSS Tester's data-mail-xss-field, restored by
+      // refreshMailVerifyShell() in panel-interactions-runtime.js across
+      // this shell's own outerHTML rebuilds.
+      var senderProviders = mailXssTesterApi ? mailXssTesterApi.getMailProviders() : [];
+      var senderProviderOptions = senderProviders.map(function (p) {
+        return "<option value=\"" + escapeHtml(p.id) + "\">" + escapeHtml(tr(p.labelKey)) + "</option>";
+      }).join("");
+
       return [
         "<div class=\"v1-mail-verify-shell\">",
         "<h4 class=\"v1-general-settings-group\">" + escapeHtml(trOr("generalGroupMailVerification", "Mail verification")) + "</h4>",
-        "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("mailVerifyIntro", "Prove you control a mailbox before it can be picked as Mail XSS Tester's \"Send to\" address. Sending the code reuses Mail XSS Tester's own Gmail address/app password and tunnel - fill those in and start the tunnel over in Tools > Mail XSS Tester first.")) + "</div>",
-        !tunnelRunning ? "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("mailVerifyResultTunnelNotRunning", "Start the tunnel in Tools > Mail XSS Tester first.")) + "</div>" : "",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(trOr("mailVerifyIntro", "Prove you control a mailbox before it can be picked as Mail XSS Tester's \"Send to\" address. Fill in a sender account below (its own provider/address/password, separate from Mail XSS Tester's own send form) - no tunnel needed, this just sends a plain code, no beacon URL involved.")) + "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1MailVerifyProvider\">" + escapeHtml(tr("mailXssProviderLabel")) + "</label>",
+        "<select id=\"v1MailVerifyProvider\" name=\"mailVerifyProvider\" data-mail-verify-sender-field=\"provider\">" + senderProviderOptions + "</select>",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1MailVerifySenderAddress\">" + escapeHtml(tr("mailXssGmailAddressLabel")) + "</label>",
+        "<input id=\"v1MailVerifySenderAddress\" name=\"mailVerifySenderAddress\" type=\"email\" autocomplete=\"off\" data-mail-verify-sender-field=\"senderAddress\" />",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1MailVerifySenderPassword\">" + escapeHtml(tr("mailXssAppPasswordLabel")) + "</label>",
+        "<input id=\"v1MailVerifySenderPassword\" name=\"mailVerifySenderPassword\" type=\"password\" autocomplete=\"off\" data-mail-verify-sender-field=\"senderPassword\" />",
+        "<div class=\"v1-pulpit-remote-hint\" data-mail-verify-password-hint>" + escapeHtml(tr("mailXssPasswordHintGmail")) + "</div>",
+        "</div>",
         "<div class=\"v1-import-manager-actions\">",
         "<input type=\"email\" data-mail-verify-input autocomplete=\"off\" placeholder=\"" + escapeHtml(trOr("mailVerifyEmailPlaceholder", "mailbox to verify")) + "\" />",
         "<button type=\"button\" data-mail-verify-action=\"send\">" + escapeHtml(trOr("mailVerifySendCodeBtn", "Send code")) + "</button>",
@@ -1260,6 +1286,8 @@
       var payloads = mailXssTesterApi ? mailXssTesterApi.getPayloads() : [];
       var selected = mailXssTesterApi ? mailXssTesterApi.getSelectedPayloadIds() : [];
       var status = mailXssTesterApi ? mailXssTesterApi.getTunnelStatus() : "idle";
+      var providers = mailXssTesterApi ? mailXssTesterApi.getMailProviders() : [];
+      var draftProvider = mailXssTesterApi ? mailXssTesterApi.getDraftProvider() : "gmail";
 
       // "Send to" is locked to a mailbox already proven via Options >
       // General > Mail verification (mail-verification-runtime.js) -
@@ -1400,12 +1428,21 @@
         "<div class=\"v1-section-body\">",
         "<form data-mail-xss-send-form>",
         "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1MailXssProvider\">" + escapeHtml(tr("mailXssProviderLabel")) + "</label>",
+        "<select id=\"v1MailXssProvider\" name=\"mailXssProvider\" data-mail-xss-field=\"provider\">" +
+          providers.map(function (p) {
+            return "<option value=\"" + escapeHtml(p.id) + "\"" + (p.id === draftProvider ? " selected" : "") + ">" + escapeHtml(tr(p.labelKey)) + "</option>";
+          }).join("") +
+        "</select>",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
         "<label for=\"v1MailXssGmailAddress\">" + escapeHtml(tr("mailXssGmailAddressLabel")) + "</label>",
         "<input id=\"v1MailXssGmailAddress\" name=\"mailXssGmailAddress\" type=\"email\" autocomplete=\"off\" data-mail-xss-field=\"gmailAddress\" value=\"" + escapeHtml(mailXssTesterApi ? mailXssTesterApi.getDraftGmailAddress() : "") + "\" />",
         "</div>",
         "<div class=\"v1-pulpit-inspector-field\">",
         "<label for=\"v1MailXssAppPassword\">" + escapeHtml(tr("mailXssAppPasswordLabel")) + "</label>",
         "<input id=\"v1MailXssAppPassword\" name=\"mailXssAppPassword\" type=\"password\" autocomplete=\"off\" data-mail-xss-field=\"appPassword\" value=\"" + escapeHtml(mailXssTesterApi ? mailXssTesterApi.getDraftAppPassword() : "") + "\" />",
+        "<div class=\"v1-pulpit-remote-hint\" data-mail-xss-password-hint>" + escapeHtml(tr(draftProvider === "onet" ? "mailXssPasswordHintOnet" : "mailXssPasswordHintGmail")) + "</div>",
         "</div>",
         "<div class=\"v1-pulpit-inspector-field\">",
         "<label for=\"v1MailXssTo\">" + escapeHtml(tr("mailXssToLabel")) + "</label>",

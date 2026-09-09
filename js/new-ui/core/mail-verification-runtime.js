@@ -101,15 +101,26 @@
   // shows up even if the caller's own UI reference went stale during the
   // real SMTP round trip (which can take several seconds - long enough for
   // the panel to have re-rendered in between).
-  function sendCode(email, gmailAddress, appPassword) {
+  // smtpHost must match whichever provider gmailAddress/appPassword actually
+  // belong to (this form's own provider dropdown, see
+  // mailVerificationSection() in panel-content-runtime.js) - this used to be
+  // hardcoded to Gmail's relay regardless of what was typed in, so filling
+  // in Onet credentials and picking "Onet" still tried (and failed) to
+  // authenticate them against smtp.gmail.com.
+  //
+  // Deliberately does NOT require Mail XSS Tester's tunnel to be running -
+  // the verification code is a plain email with no beacon URL in it at all,
+  // so unlike an actual XSS probe it never needs a publicly reachable
+  // endpoint. That requirement used to be here purely because this feature
+  // was originally tightly coupled to Mail XSS Tester's credentials/tunnel;
+  // now that it has its own independent sender fields, gating it on an
+  // unrelated tunnel's status was just an artificial blocker.
+  function sendCode(email, gmailAddress, appPassword, smtpHost) {
     var norm = normalizeEmail(email);
     if (!norm) return Promise.resolve({ ok: false, error: "empty" });
 
     var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
     if (!platform || !platform.isDesktop || !platform.isDesktop()) return Promise.resolve({ ok: false, error: "desktop-only" });
-
-    var mailXss = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
-    if (!mailXss || mailXss.getTunnelStatus() !== "running") return Promise.resolve({ ok: false, error: "tunnel-not-running" });
 
     if (!gmailAddress || !appPassword) return Promise.resolve({ ok: false, error: "missing-credentials" });
 
@@ -120,6 +131,7 @@
       to: norm,
       subject: "OSINT NET Auditor - mailbox verification code",
       htmlBody: "<p>Your verification code is: <b>" + code + "</b></p>",
+      smtpHost: smtpHost,
     })).then(function () {
       pendingEmail = norm;
       pendingCode = code;

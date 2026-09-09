@@ -14,6 +14,19 @@
   // plain localhost listener could never receive the hit. Cloudflare's
   // free, account-free Quick Tunnel bridges that - see startTunnel().
 
+  // SMTP relay providers the send form can pick between - Gmail (the
+  // original, only option) and Onet, added so a technique message genuinely
+  // crosses TWO real mail systems (our tool -> real Onet SMTP -> internet ->
+  // Gmail) instead of only ever originating from our own tool, in case a
+  // provider's own relay/rewrite step matters for a technique that a direct
+  // send never exercises. Onet's own published settings use the same
+  // port-465-implicit-TLS scheme already used for Gmail, so no other Rust
+  // change was needed beyond parameterizing the hardcoded host string.
+  var MAIL_PROVIDERS = [
+    { id: "gmail", host: "smtp.gmail.com", labelKey: "mailXssProviderGmail" },
+    { id: "onet", host: "smtp.poczta.onet.pl", labelKey: "mailXssProviderOnet" },
+  ];
+
   var PAYLOADS = [
     { id: "img-onerror", labelKey: "mailXssPayloadImgOnerror", category: "event-handlers" },
     { id: "svg-onload", labelKey: "mailXssPayloadSvgOnload", category: "svg" },
@@ -150,6 +163,7 @@
     // fixes that without persisting the app password anywhere durable.
     var draftGmailAddress = "";
     var draftAppPassword = "";
+    var draftProvider = MAIL_PROVIDERS[0].id;
 
     function emitChanged() {
       try {
@@ -216,6 +230,16 @@
     function setDraftGmailAddress(value) { draftGmailAddress = String(value || ""); }
     function getDraftAppPassword() { return draftAppPassword; }
     function setDraftAppPassword(value) { draftAppPassword = String(value || ""); }
+    function getMailProviders() { return MAIL_PROVIDERS.slice(); }
+    function getDraftProvider() { return draftProvider; }
+    function setDraftProvider(value) {
+      var match = MAIL_PROVIDERS.some(function (p) { return p.id === value; });
+      draftProvider = match ? value : MAIL_PROVIDERS[0].id;
+    }
+    function getProviderHost(providerId) {
+      var found = MAIL_PROVIDERS.filter(function (p) { return p.id === providerId; })[0];
+      return found ? found.host : MAIL_PROVIDERS[0].host;
+    }
 
     // Strips the per-session random prefix back off a hit's payload_id
     // (see the sessionToken comment above) so callers only ever deal in
@@ -307,6 +331,7 @@
         to: opts.to,
         subject: opts.subject,
         htmlBody: buildEmailHtml(),
+        smtpHost: getProviderHost(opts.provider),
       });
     }
 
@@ -336,6 +361,7 @@
             subject: opts.subject + " [" + id + "]",
             beaconUrl: beaconUrl,
             technique: id,
+            smtpHost: getProviderHost(opts.provider),
           }).then(function () {
             sent.push(id);
           }).catch(function (err) {
@@ -363,6 +389,10 @@
       setDraftGmailAddress: setDraftGmailAddress,
       getDraftAppPassword: getDraftAppPassword,
       setDraftAppPassword: setDraftAppPassword,
+      getMailProviders: getMailProviders,
+      getDraftProvider: getDraftProvider,
+      setDraftProvider: setDraftProvider,
+      getProviderHost: getProviderHost,
       startTunnel: startTunnel,
       stopTunnel: stopTunnel,
       getHits: getHits,

@@ -4874,6 +4874,7 @@ async fn send_test_email(
     to: String,
     subject: String,
     html_body: String,
+    smtp_host: Option<String>,
 ) -> Result<(), String> {
     let email = lettre::Message::builder()
         .from(gmail_address.parse().map_err(|e: lettre::address::AddressError| e.to_string())?)
@@ -4885,7 +4886,8 @@ async fn send_test_email(
 
     let creds = lettre::transport::smtp::authentication::Credentials::new(gmail_address, app_password);
 
-    let mailer = lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::relay("smtp.gmail.com")
+    let host = smtp_host.as_deref().unwrap_or("smtp.gmail.com");
+    let mailer = lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::relay(host)
         .map_err(|e| e.to_string())?
         .credentials(creds)
         .build();
@@ -5277,6 +5279,7 @@ async fn send_encoding_test_email(
     subject: String,
     beacon_url: String,
     technique: String,
+    smtp_host: Option<String>,
 ) -> Result<(), String> {
     let raw_message = build_technique_message(&gmail_address, &to, &subject, &beacon_url, &technique)?;
 
@@ -5285,7 +5288,8 @@ async fn send_encoding_test_email(
     let envelope = lettre::address::Envelope::new(Some(from_addr), vec![to_addr]).map_err(|e| e.to_string())?;
 
     let creds = lettre::transport::smtp::authentication::Credentials::new(gmail_address, app_password);
-    let mailer = lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::relay("smtp.gmail.com")
+    let host = smtp_host.as_deref().unwrap_or("smtp.gmail.com");
+    let mailer = lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::relay(host)
         .map_err(|e| e.to_string())?
         .credentials(creds)
         .build();

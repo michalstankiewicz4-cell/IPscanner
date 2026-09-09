@@ -2632,6 +2632,14 @@
         mount.querySelectorAll("[data-mail-xss-category]").forEach(function (li) {
           preservedCollapse[li.getAttribute("data-mail-xss-category")] = li.classList.contains("v1-collapsed");
         });
+        // Same reasoning again, for scroll position - renderMailXssTesterLibrary()
+        // returns a fresh <ul class="v1-tool-list"> (the actual scroll
+        // container, see console.css's scroll fix) every time, and a brand
+        // new element always starts at scrollTop 0 - without this, ticking
+        // a checkbox or starting the tunnel yanked the panel back to the
+        // top mid-scroll.
+        var scrollEl = mount.querySelector(".v1-tool-list");
+        var preservedScrollTop = scrollEl ? scrollEl.scrollTop : 0;
         mount.innerHTML = renderMailXssTesterLibrary();
         Object.keys(preserved).forEach(function (name) {
           var el = mount.querySelector('[data-mail-xss-field="' + name + '"]');
@@ -2641,6 +2649,8 @@
           var li = mount.querySelector('[data-mail-xss-category="' + categoryId + '"]');
           if (li) li.classList.toggle("v1-collapsed", preservedCollapse[categoryId]);
         });
+        var newScrollEl = mount.querySelector(".v1-tool-list");
+        if (newScrollEl) newScrollEl.scrollTop = preservedScrollTop;
       }
 
       render();
@@ -2698,6 +2708,22 @@
         var techniqueCheckbox = event.target && event.target.matches && event.target.matches("[data-mail-xss-technique-checkbox]") ? event.target : null;
         if (techniqueCheckbox) {
           api.setTechniqueSelected(techniqueCheckbox.getAttribute("data-mail-xss-technique-checkbox"), techniqueCheckbox.checked);
+          return;
+        }
+        // Provider select isn't data-mail-xss-field-driven for its draft
+        // persistence (that mechanism mirrors on "input", which <select>
+        // never fires) - handled here on "change" instead, same
+        // in-memory-only discipline as the credential fields. Also swaps
+        // the password field's hint text (Gmail app password vs. Onet's
+        // plain account password) since the two providers' auth model
+        // differs enough that leaving the old hint up would be misleading.
+        var providerSelect = event.target && event.target.matches && event.target.matches('[data-mail-xss-field="provider"]') ? event.target : null;
+        if (providerSelect) {
+          api.setDraftProvider(providerSelect.value);
+          var hintEl = mount.querySelector("[data-mail-xss-password-hint]");
+          if (hintEl) {
+            hintEl.textContent = tr(providerSelect.value === "onet" ? "mailXssPasswordHintOnet" : "mailXssPasswordHintGmail");
+          }
         }
       });
 
@@ -2745,6 +2771,7 @@
           resultEl.removeAttribute("hidden");
         }
 
+        var provider = fieldValue("provider").trim() || "gmail";
         var gmailAddress = fieldValue("gmailAddress").trim();
         var appPassword = fieldValue("appPassword");
         var to = fieldValue("to").trim();
@@ -2777,12 +2804,12 @@
         showResult(tr("mailXssSendPendingNote"), false);
 
         var normalSendPromise = hasPayloads
-          ? api.sendTestEmail({ gmailAddress: gmailAddress, appPassword: appPassword, to: to, subject: subject })
+          ? api.sendTestEmail({ gmailAddress: gmailAddress, appPassword: appPassword, to: to, subject: subject, provider: provider })
           : Promise.resolve();
 
         normalSendPromise.then(function () {
           if (!hasTechniques) return null;
-          return api.sendEncodingTestEmails({ gmailAddress: gmailAddress, appPassword: appPassword, to: to, subject: subject });
+          return api.sendEncodingTestEmails({ gmailAddress: gmailAddress, appPassword: appPassword, to: to, subject: subject, provider: provider });
         }).then(function (techniqueResult) {
           if (submitBtn) submitBtn.disabled = false;
           if (!techniqueResult) {
@@ -4313,11 +4340,34 @@
         // replaced this tab's content in between and left a captured
         // reference silently pointing at a detached node (the code input
         // never appearing after a code was actually sent was exactly that).
+        // Sender fields (provider/address/password) below the "mailbox to
+        // verify" input are this form's OWN, independent of Mail XSS
+        // Tester's send form (see mailVerificationSection()'s comment) -
+        // uncontrolled inputs with no persisted state, so a full outerHTML
+        // rebuild (any newui:mail-verification-changed event: send, verify,
+        // remove) would otherwise silently wipe whatever was just typed in,
+        // same class of bug as Mail XSS Tester's own field-reset fix.
         function refreshMailVerifyShell() {
           if (!document.body.contains(root) || !renderMailVerificationSection) return;
           var shellEl = root.querySelector(".v1-mail-verify-shell");
           if (!shellEl) return;
+          var preserved = {};
+          shellEl.querySelectorAll("[data-mail-verify-sender-field]").forEach(function (el) {
+            preserved[el.getAttribute("data-mail-verify-sender-field")] = el.value;
+          });
           shellEl.outerHTML = renderMailVerificationSection();
+          var freshShell = root.querySelector(".v1-mail-verify-shell");
+          if (freshShell) {
+            Object.keys(preserved).forEach(function (name) {
+              var el = freshShell.querySelector('[data-mail-verify-sender-field="' + name + '"]');
+              if (el && preserved[name] !== undefined) el.value = preserved[name];
+            });
+            var hintEl = freshShell.querySelector("[data-mail-verify-password-hint]");
+            var providerEl = freshShell.querySelector('[data-mail-verify-sender-field="provider"]');
+            if (hintEl && providerEl) {
+              hintEl.textContent = tr(providerEl.value === "onet" ? "mailXssPasswordHintOnet" : "mailXssPasswordHintGmail");
+            }
+          }
         }
 
         document.addEventListener("newui:mail-verification-changed", function () {
@@ -4331,19 +4381,28 @@
           updateMailAuthStatusBar(input.value);
         });
 
+        // Provider select's own hint swap - <select> doesn't fire "input",
+        // so this is handled on "change" here rather than in the "input"
+        // listener above (same split Mail XSS Tester's own provider field
+        // uses).
+        root.addEventListener("change", function (event) {
+          var providerEl = event.target && event.target.matches && event.target.matches('[data-mail-verify-sender-field="provider"]') ? event.target : null;
+          if (!providerEl) return;
+          var hintEl = root.querySelector("[data-mail-verify-password-hint]");
+          if (hintEl) hintEl.textContent = tr(providerEl.value === "onet" ? "mailXssPasswordHintOnet" : "mailXssPasswordHintGmail");
+        });
+
         root.addEventListener("click", function (event) {
           var target = event.target;
           if (!target || !target.closest) return;
 
-          // Mail XSS Tester's own credential fields, read straight off its
-          // document-wide ids rather than duplicating a second Gmail
-          // address/app password pair here - one place to type them in.
-          // Those ids only exist while that tool's LS panel is mounted
-          // (it has to be, to start the tunnel this send also needs), so
-          // an empty read here just means "not filled in yet", same as
-          // sendCode()'s own missing-credentials check already handles.
-          function mailXssFieldValue(id) {
-            var el = document.getElementById(id);
+          // This form's OWN sender fields (provider/address/password) -
+          // read straight off the shell rather than Mail XSS Tester's
+          // fields, so verifying a mailbox with one account (e.g. an Onet
+          // account you already trust) doesn't require also filling that
+          // same account into Mail XSS Tester's send form, and vice versa.
+          function mailVerifySenderField(name) {
+            var el = root.querySelector('[data-mail-verify-sender-field="' + name + '"]');
             return el ? el.value : "";
           }
 
@@ -4361,11 +4420,14 @@
               return;
             }
 
-            var gmailAddress = mailXssFieldValue("v1MailXssGmailAddress").trim();
-            var gmailAppPassword = mailXssFieldValue("v1MailXssAppPassword");
+            var gmailAddress = mailVerifySenderField("senderAddress").trim();
+            var gmailAppPassword = mailVerifySenderField("senderPassword");
+            var mailXssApi = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
+            var selectedProvider = mailVerifySenderField("provider") || "gmail";
+            var smtpHost = mailXssApi ? mailXssApi.getProviderHost(selectedProvider) : "smtp.gmail.com";
 
             sendBtn.disabled = true;
-            mailVerifyApi.sendCode(emailValue, gmailAddress, gmailAppPassword).then(function (result) {
+            mailVerifyApi.sendCode(emailValue, gmailAddress, gmailAppPassword, smtpHost).then(function (result) {
               if (result.ok) {
                 // sendCode() already fired newui:mail-verification-changed
                 // on success, which just re-rendered the whole shell (fresh
@@ -4375,8 +4437,7 @@
               }
               var freshSendBtn = root.querySelector('[data-mail-verify-action="send"]');
               if (freshSendBtn) freshSendBtn.disabled = false;
-              if (result.error === "tunnel-not-running") showResult(tr("mailVerifyResultTunnelNotRunning"));
-              else if (result.error === "missing-credentials") showResult(tr("mailVerifyResultMissingCredentials"));
+              if (result.error === "missing-credentials") showResult(tr("mailVerifyResultMissingCredentials"));
               else if (result.error === "empty") showResult(tr("mailVerifyResultEmpty"));
               else showResult(tr("mailVerifyResultError").replace("{error}", result.error || ""));
             });
