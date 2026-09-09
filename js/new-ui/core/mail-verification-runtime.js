@@ -56,6 +56,19 @@
   var pendingEmail = "";
   var pendingCode = "";
 
+  // Draft copies of this form's own sender fields (provider/address/
+  // password) - same "read at use time, never persisted to disk" RAM-only
+  // discipline as pendingEmail/pendingCode above, and the exact same
+  // reason Mail XSS Tester keeps its own draftGmailAddress/draftAppPassword:
+  // #v1ToolDetail (the whole "General" CS tab, this section included) gets
+  // fully torn down and rebuilt via innerHTML on every center-tab switch
+  // AND every UI language change (refreshActiveUI() in panels-runtime.js) -
+  // without this, typing in Onet/Gmail credentials here and switching to
+  // any other tab and back silently emptied both fields.
+  var draftProvider = "gmail";
+  var draftSenderAddress = "";
+  var draftSenderPassword = "";
+
   function emitChanged() {
     try {
       document.dispatchEvent(new CustomEvent("newui:mail-verification-changed", { detail: getState() }));
@@ -94,6 +107,18 @@
   }
 
   function getPendingEmail() { return pendingEmail; }
+
+  // Deliberately no emitChanged() on any of these three - same reasoning
+  // as Mail XSS Tester's own draft setters: they fire on every keystroke/
+  // selection change, and re-rendering the whole shell each time would
+  // fight the caret in the very field being typed into. The draft is only
+  // ever read back on this section's own NEXT natural re-render.
+  function getDraftProvider() { return draftProvider; }
+  function setDraftProvider(value) { draftProvider = String(value || "gmail"); }
+  function getDraftSenderAddress() { return draftSenderAddress; }
+  function setDraftSenderAddress(value) { draftSenderAddress = String(value || ""); }
+  function getDraftSenderPassword() { return draftSenderPassword; }
+  function setDraftSenderPassword(value) { draftSenderPassword = String(value || ""); }
 
   // Resolves to { ok, error } - never rejects. On success, pendingEmail/
   // pendingCode are armed so a matching verifyCode() call can complete the
@@ -188,5 +213,11 @@
     normalizeEmail: normalizeEmail,
     getStateForSession: getStateForSession,
     restoreFromSession: restoreFromSession,
+    getDraftProvider: getDraftProvider,
+    setDraftProvider: setDraftProvider,
+    getDraftSenderAddress: getDraftSenderAddress,
+    setDraftSenderAddress: setDraftSenderAddress,
+    getDraftSenderPassword: getDraftSenderPassword,
+    setDraftSenderPassword: setDraftSenderPassword,
   };
 })();

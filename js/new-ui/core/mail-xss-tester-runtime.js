@@ -14,6 +14,33 @@
   // plain localhost listener could never receive the hit. Cloudflare's
   // free, account-free Quick Tunnel bridges that - see startTunnel().
 
+  // Which payloads/techniques are checked and which categories are
+  // collapsed - persisted to localStorage (same always-on treatment as
+  // mail-verification-runtime.js's verifiedEmails) so re-opening the app
+  // doesn't silently reset a picker you'd already set up. Credentials
+  // (gmailAddress/appPassword/provider) deliberately stay OUT of this -
+  // those keep the RAM-only, never-persisted discipline described below.
+  var SELECTION_STORAGE_KEY = "netrecon_mail_xss_tester_selection_v1";
+
+  function loadPersistedSelection() {
+    try {
+      var raw = window.localStorage ? window.localStorage.getItem(SELECTION_STORAGE_KEY) : "";
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function savePersistedSelection(data) {
+    try {
+      if (window.localStorage) window.localStorage.setItem(SELECTION_STORAGE_KEY, JSON.stringify(data));
+    } catch (_) {
+      // ignore persistence failures
+    }
+  }
+
   // SMTP relay providers the send form can pick between - Gmail (the
   // original, only option) and Onet, added so a technique message genuinely
   // crosses TWO real mail systems (our tool -> real Onet SMTP -> internet ->
@@ -86,6 +113,29 @@
     // build_qp_hex_escaped_tags_message.
     { id: "qp-soft-break", labelKey: "mailXssTechniqueQpSoftBreak", category: "encoding" },
     { id: "qp-hex-escaped-tags", labelKey: "mailXssTechniqueQpHexEscapedTags", category: "encoding" },
+    // qp-soft-break above hand-places ONE break at a byte offset WE chose,
+    // proving the decode-time-rejoin mechanic exists at all - these 10
+    // variants instead let a REAL RFC 2045 76-column-limit encoder
+    // (main.rs's quoted_printable_encode_folded, not the hand-placed one)
+    // decide where its own soft break falls, by varying how much Polish
+    // filler text precedes <script> across variants (main.rs's
+    // qp_natural_wrap_variant_text) - sweeping the phase of that boundary
+    // relative to the word "script" without us ever choosing the split
+    // point ourselves. Each is its own separate technique id/checkbox
+    // (not one combined "send 10 emails" button) so a hit's beacon path
+    // ("<sessionToken>-qp-natural-wrap-N") pinpoints exactly which offset,
+    // if any, actually landed a break inside the tag - same diagnostic
+    // granularity as every other technique here.
+    { id: "qp-natural-wrap-1", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#1)", category: "encoding" },
+    { id: "qp-natural-wrap-2", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#2)", category: "encoding" },
+    { id: "qp-natural-wrap-3", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#3)", category: "encoding" },
+    { id: "qp-natural-wrap-4", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#4)", category: "encoding" },
+    { id: "qp-natural-wrap-5", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#5)", category: "encoding" },
+    { id: "qp-natural-wrap-6", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#6)", category: "encoding" },
+    { id: "qp-natural-wrap-7", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#7)", category: "encoding" },
+    { id: "qp-natural-wrap-8", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#8)", category: "encoding" },
+    { id: "qp-natural-wrap-9", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#9)", category: "encoding" },
+    { id: "qp-natural-wrap-10", labelKey: "mailXssTechniqueQpNaturalWrap", labelSuffix: " (#10)", category: "encoding" },
     { id: "mime-boundary-desync", labelKey: "mailXssTechniqueMimeBoundaryDesync", category: "mime" },
     // Same structural MIME confusion, smuggling <style>@import> instead of
     // <img> - added after the plain <img> variant confirmed real against
@@ -138,8 +188,38 @@
   }
 
   function createMailXssTesterRuntime() {
-    var selectedIds = PAYLOADS.map(function (p) { return p.id; });
-    var selectedTechniqueIds = [];
+    var persistedSelection = loadPersistedSelection();
+    // Payload ids in persistedSelection are filtered against the CURRENT
+    // PAYLOADS/RAW_TECHNIQUES lists (not blindly trusted) - a stored id
+    // from a previous app version that no longer exists (a removed/renamed
+    // payload) would otherwise silently persist as a phantom "selected"
+    // entry forever, with no checkbox left to ever uncheck it from.
+    var validPayloadIds = PAYLOADS.map(function (p) { return p.id; });
+    var validTechniqueIds = RAW_TECHNIQUES.map(function (t) { return t.id; });
+    var selectedIds = (persistedSelection && Array.isArray(persistedSelection.selectedPayloadIds))
+      ? persistedSelection.selectedPayloadIds.filter(function (id) { return validPayloadIds.indexOf(id) !== -1; })
+      : validPayloadIds.slice();
+    var selectedTechniqueIds = (persistedSelection && Array.isArray(persistedSelection.selectedTechniqueIds))
+      ? persistedSelection.selectedTechniqueIds.filter(function (id) { return validTechniqueIds.indexOf(id) !== -1; })
+      : [];
+    // null = no preference ever recorded (first-ever use) - the renderer
+    // falls back to its own hasRealItems-based default per category in
+    // that case. Once the user touches any category header, this becomes
+    // a complete, explicit snapshot of every category's state (see
+    // setCollapsedCategoryIds's own comment for why it's saved as a whole
+    // array rather than one id at a time).
+    var collapsedCategoryIds = (persistedSelection && Array.isArray(persistedSelection.collapsedCategoryIds))
+      ? persistedSelection.collapsedCategoryIds.slice()
+      : null;
+
+    function persistSelection() {
+      savePersistedSelection({
+        selectedPayloadIds: selectedIds,
+        selectedTechniqueIds: selectedTechniqueIds,
+        collapsedCategoryIds: collapsedCategoryIds,
+      });
+    }
+
     var tunnelStatus = "idle"; // idle | starting | running | error
     var tunnelUrl = "";
     var tunnelError = "";
@@ -195,6 +275,7 @@
       var idx = selectedIds.indexOf(id);
       if (selected && idx === -1) selectedIds.push(id);
       else if (!selected && idx !== -1) selectedIds.splice(idx, 1);
+      persistSelection();
       emitChanged();
     }
 
@@ -214,7 +295,31 @@
       var idx = selectedTechniqueIds.indexOf(id);
       if (selected && idx === -1) selectedTechniqueIds.push(id);
       else if (!selected && idx !== -1) selectedTechniqueIds.splice(idx, 1);
+      persistSelection();
       emitChanged();
+    }
+
+    // null means "no preference recorded yet" (see the module-level
+    // collapsedCategoryIds comment above) - returned as-is (not .slice()'d
+    // to []) so callers can tell "nothing customized" apart from
+    // "customized to nothing collapsed".
+    function getCollapsedCategoryIds() {
+      return collapsedCategoryIds === null ? null : collapsedCategoryIds.slice();
+    }
+
+    // Takes the FULL current set of collapsed category ids, not one id at
+    // a time - called from panel-interactions-runtime.js right after any
+    // category header toggle, reading every [data-mail-xss-category]
+    // element's live class list at that moment. A whole-snapshot write
+    // avoids ever having to represent "explicitly expanded" vs "never
+    // touched, following the default" with the same "absent from the
+    // list" value once any single category has been customized.
+    function setCollapsedCategoryIds(ids) {
+      collapsedCategoryIds = Array.isArray(ids) ? ids.slice() : [];
+      persistSelection();
+      // No emitChanged() - this only records what the generic .v1-section-
+      // header click handler (bootstrap-runtime.js) already did to the
+      // DOM; nothing needs to re-render because of it.
     }
 
     function getTunnelStatus() { return tunnelStatus; }
@@ -382,6 +487,8 @@
       getRawTechniques: getRawTechniques,
       getSelectedTechniqueIds: getSelectedTechniqueIds,
       setTechniqueSelected: setTechniqueSelected,
+      getCollapsedCategoryIds: getCollapsedCategoryIds,
+      setCollapsedCategoryIds: setCollapsedCategoryIds,
       getTunnelStatus: getTunnelStatus,
       getTunnelUrl: getTunnelUrl,
       getTunnelError: getTunnelError,
@@ -399,6 +506,28 @@
       getTriggeredPayloadIds: getTriggeredPayloadIds,
       sendTestEmail: sendTestEmail,
       sendEncodingTestEmails: sendEncodingTestEmails,
+      // localStorage-only otherwise (persistSelection above), bundled into
+      // the session file too per the same "carry it to another machine/
+      // profile" treatment as domainVerification/mailVerification.
+      getStateForSession: function () {
+        return {
+          selectedPayloadIds: selectedIds.slice(),
+          selectedTechniqueIds: selectedTechniqueIds.slice(),
+          collapsedCategoryIds: collapsedCategoryIds === null ? null : collapsedCategoryIds.slice(),
+        };
+      },
+      restoreFromSession: function (data) {
+        data = data || {};
+        selectedIds = Array.isArray(data.selectedPayloadIds)
+          ? data.selectedPayloadIds.filter(function (id) { return validPayloadIds.indexOf(id) !== -1; })
+          : [];
+        selectedTechniqueIds = Array.isArray(data.selectedTechniqueIds)
+          ? data.selectedTechniqueIds.filter(function (id) { return validTechniqueIds.indexOf(id) !== -1; })
+          : [];
+        collapsedCategoryIds = Array.isArray(data.collapsedCategoryIds) ? data.collapsedCategoryIds.slice() : null;
+        persistSelection();
+        emitChanged();
+      },
     };
   }
 

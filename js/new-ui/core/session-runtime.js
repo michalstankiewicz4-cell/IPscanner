@@ -283,6 +283,18 @@
           var api = window.NetReconNewUICore && window.NetReconNewUICore.mailVerification;
           return api && api.getStateForSession ? api.getStateForSession() : { verifiedEmails: [] };
         })(),
+        // Mail XSS Tester's payload/technique checkbox selection and
+        // category collapse state (Tools > Mail XSS Tester) - see
+        // mail-xss-tester-runtime.js's own persistSelection() comment.
+        // localStorage-only otherwise, bundled into the session file too
+        // per the same treatment as domainVerification/mailVerification
+        // above. Credentials are NOT included here - those stay RAM-only.
+        mailXssTesterSelection: (function () {
+          var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
+          return api && api.getStateForSession
+            ? api.getStateForSession()
+            : { selectedPayloadIds: [], selectedTechniqueIds: [], collapsedCategoryIds: null };
+        })(),
         // Memory scan mode's notepad (freeform text, see scanner-sidebar-
         // runtime.js/panel-content-runtime.js's renderMemoryTool) and the IP
         // Extractor's last-typed input plus its extracted list (scanner-
@@ -822,6 +834,10 @@
       (function () {
         var mailVerifyApi = window.NetReconNewUICore && window.NetReconNewUICore.mailVerification;
         if (mailVerifyApi && mailVerifyApi.restoreFromSession) mailVerifyApi.restoreFromSession(data.mailVerification || {});
+      })();
+      (function () {
+        var mailXssApi = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
+        if (mailXssApi && mailXssApi.restoreFromSession) mailXssApi.restoreFromSession(data.mailXssTesterSelection || {});
       })();
       (function () {
         var terminalHistoryApi = window.NetReconNewUICore && window.NetReconNewUICore.terminalHistory;

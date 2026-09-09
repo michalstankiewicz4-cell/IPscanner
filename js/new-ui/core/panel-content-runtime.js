@@ -613,9 +613,12 @@
       // refreshMailVerifyShell() in panel-interactions-runtime.js across
       // this shell's own outerHTML rebuilds.
       var senderProviders = mailXssTesterApi ? mailXssTesterApi.getMailProviders() : [];
+      var draftSenderProvider = mailVerificationApi ? mailVerificationApi.getDraftProvider() : "gmail";
       var senderProviderOptions = senderProviders.map(function (p) {
-        return "<option value=\"" + escapeHtml(p.id) + "\">" + escapeHtml(tr(p.labelKey)) + "</option>";
+        return "<option value=\"" + escapeHtml(p.id) + "\"" + (p.id === draftSenderProvider ? " selected" : "") + ">" + escapeHtml(tr(p.labelKey)) + "</option>";
       }).join("");
+      var draftSenderAddress = mailVerificationApi ? mailVerificationApi.getDraftSenderAddress() : "";
+      var draftSenderPassword = mailVerificationApi ? mailVerificationApi.getDraftSenderPassword() : "";
 
       return [
         "<div class=\"v1-mail-verify-shell\">",
@@ -627,12 +630,12 @@
         "</div>",
         "<div class=\"v1-pulpit-inspector-field\">",
         "<label for=\"v1MailVerifySenderAddress\">" + escapeHtml(tr("mailXssGmailAddressLabel")) + "</label>",
-        "<input id=\"v1MailVerifySenderAddress\" name=\"mailVerifySenderAddress\" type=\"email\" autocomplete=\"off\" data-mail-verify-sender-field=\"senderAddress\" />",
+        "<input id=\"v1MailVerifySenderAddress\" name=\"mailVerifySenderAddress\" type=\"email\" autocomplete=\"off\" data-mail-verify-sender-field=\"senderAddress\" value=\"" + escapeHtml(draftSenderAddress) + "\" />",
         "</div>",
         "<div class=\"v1-pulpit-inspector-field\">",
         "<label for=\"v1MailVerifySenderPassword\">" + escapeHtml(tr("mailXssAppPasswordLabel")) + "</label>",
-        "<input id=\"v1MailVerifySenderPassword\" name=\"mailVerifySenderPassword\" type=\"password\" autocomplete=\"off\" data-mail-verify-sender-field=\"senderPassword\" />",
-        "<div class=\"v1-pulpit-remote-hint\" data-mail-verify-password-hint>" + escapeHtml(tr("mailXssPasswordHintGmail")) + "</div>",
+        "<input id=\"v1MailVerifySenderPassword\" name=\"mailVerifySenderPassword\" type=\"password\" autocomplete=\"off\" data-mail-verify-sender-field=\"senderPassword\" value=\"" + escapeHtml(draftSenderPassword) + "\" />",
+        "<div class=\"v1-pulpit-remote-hint\" data-mail-verify-password-hint>" + escapeHtml(tr(draftSenderProvider === "onet" ? "mailXssPasswordHintOnet" : "mailXssPasswordHintGmail")) + "</div>",
         "</div>",
         "<div class=\"v1-import-manager-actions\">",
         "<input type=\"email\" data-mail-verify-input autocomplete=\"off\" placeholder=\"" + escapeHtml(trOr("mailVerifyEmailPlaceholder", "mailbox to verify")) + "\" />",
@@ -1329,6 +1332,8 @@
         (techniquesByCategory[t.category] = techniquesByCategory[t.category] || []).push(t);
       });
 
+      var persistedCollapse = mailXssTesterApi ? mailXssTesterApi.getCollapsedCategoryIds() : null;
+
       var payloadCategoriesHtml = categories.map(function (cat) {
         var realItemsHtml = (payloadsByCategory[cat.id] || []).map(function (p) {
           var checked = selected.indexOf(p.id) !== -1;
@@ -1353,7 +1358,7 @@
           return [
             "<span class=\"v1-pulpit-checkbox-item\">",
             "<input id=\"" + fieldId + "\" type=\"checkbox\" data-mail-xss-technique-checkbox=\"" + escapeHtml(t.id) + "\"" + (checked ? " checked" : "") + " />",
-            "<label for=\"" + fieldId + "\">" + escapeHtml(tr(t.labelKey)) + "</label>",
+            "<label for=\"" + fieldId + "\">" + escapeHtml(tr(t.labelKey) + (t.labelSuffix || "")) + "</label>",
             "</span>"
           ].join("");
         }).join("");
@@ -1376,7 +1381,14 @@
         // placeholder-only category is still freely reopened - grayed-out
         // content isn't the same thing as an unclickable header.
         var hasRealItems = !!(payloadsByCategory[cat.id] || []).length || !!(techniquesByCategory[cat.id] || []).length;
-        var liClass = hasRealItems ? "" : " class=\"v1-collapsed\"";
+        // Once the user has ever touched any category header, persistedCollapse
+        // (a complete explicit snapshot, see mail-xss-tester-runtime.js's
+        // setCollapsedCategoryIds) takes over as the source of truth for
+        // ALL categories, including this one - only falls back to the
+        // hasRealItems heuristic before that snapshot has ever been taken
+        // (persistedCollapse === null, i.e. first-ever use).
+        var isCollapsed = persistedCollapse !== null ? persistedCollapse.indexOf(cat.id) !== -1 : !hasRealItems;
+        var liClass = isCollapsed ? " class=\"v1-collapsed\"" : "";
 
         // data-mail-xss-category lets wireMailXssTesterLibrary
         // (panel-interactions-runtime.js) snapshot/restore each category's
@@ -1492,7 +1504,7 @@
         var isTriggered = triggered.indexOf(p.id) !== -1;
         return [
           "<tr>",
-          "<td>" + escapeHtml(tr(p.labelKey)) + "</td>",
+          "<td>" + escapeHtml(tr(p.labelKey) + (p.labelSuffix || "")) + "</td>",
           "<td class=\"" + (isTriggered ? "v1-mail-xss-triggered-yes" : "v1-mail-xss-triggered-no") + "\">" + escapeHtml(tr(isTriggered ? "mailXssTriggeredYes" : "mailXssTriggeredNo")) + "</td>",
           "</tr>"
         ].join("");
