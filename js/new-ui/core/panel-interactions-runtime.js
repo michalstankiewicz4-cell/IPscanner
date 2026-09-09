@@ -2630,6 +2630,14 @@
       var lastResultText = "";
       var lastResultIsError = false;
       var lastResultShown = false;
+      // Same local-only treatment for the custom technique builder's own
+      // pre-flight validation messages (missing fields / tunnel not
+      // running) - its actual SEND outcome lives in the runtime
+      // (getLastCustomSendResult()), same reasoning as lastResultShown
+      // above.
+      var lastCustomResultText = "";
+      var lastCustomResultIsError = false;
+      var lastCustomResultShown = false;
 
       function resultMessageFor(result) {
         if (!result) return null;
@@ -2698,13 +2706,22 @@
         if (newScrollEl) newScrollEl.scrollTop = preservedScrollTop;
 
         var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
+        // Both send buttons share one isSending guard - a batch and a
+        // custom-technique send must never run at once (same mailbox,
+        // same tunnel) - but each keeps its OWN result area, so only the
+        // one actually in flight shows "Sending...", and the other keeps
+        // showing whatever it last showed.
         var sending = !!(api && api.getIsSending());
+        var activeSendKind = api ? api.getActiveSendKind() : null;
+
         var freshSubmitBtn = mount.querySelector("[data-mail-xss-send-submit]");
         if (freshSubmitBtn && sending) freshSubmitBtn.disabled = true;
+        var freshCustomSendBtn = mount.querySelector("[data-mail-xss-custom-send]");
+        if (freshCustomSendBtn && sending) freshCustomSendBtn.disabled = true;
 
         var freshResultEl = mount.querySelector("[data-mail-xss-send-result]");
         if (freshResultEl) {
-          if (sending) {
+          if (sending && activeSendKind === "batch") {
             // Overrides any stale local validation message below - a real
             // send is what's actually happening right now, regardless of
             // what this particular mount instance last showed.
@@ -2724,6 +2741,38 @@
               freshResultEl.removeAttribute("hidden");
             }
           }
+        }
+
+        var freshCustomResultEl = mount.querySelector("[data-mail-xss-custom-result]");
+        if (freshCustomResultEl) {
+          if (sending && activeSendKind === "custom") {
+            freshCustomResultEl.textContent = tr("mailXssSendPendingNote");
+            freshCustomResultEl.classList.remove("is-error");
+            freshCustomResultEl.removeAttribute("hidden");
+          } else {
+            var lastCustomResult = api ? api.getLastCustomSendResult() : null;
+            var customMsg = lastCustomResult ? resultMessageFor(lastCustomResult) : null;
+            if (customMsg) {
+              freshCustomResultEl.textContent = customMsg.text;
+              freshCustomResultEl.classList.toggle("is-error", customMsg.isError);
+              freshCustomResultEl.removeAttribute("hidden");
+            } else if (lastCustomResultShown) {
+              freshCustomResultEl.textContent = lastCustomResultText;
+              freshCustomResultEl.classList.toggle("is-error", lastCustomResultIsError);
+              freshCustomResultEl.removeAttribute("hidden");
+            }
+          }
+        }
+
+        // The char-count field's visibility depends on the (just-restored)
+        // customMechanism select value - the freshly rendered markup
+        // always defaults it to hidden (soft-break is the default
+        // mechanism), so this corrects it to match whatever mechanism the
+        // restore above put back.
+        var freshMechanismEl = mount.querySelector('[data-mail-xss-field="customMechanism"]');
+        var freshCharCountField = mount.querySelector("[data-mail-xss-custom-charcount-field]");
+        if (freshMechanismEl && freshCharCountField) {
+          freshCharCountField.hidden = freshMechanismEl.value !== "natural-wrap";
         }
       }
 
@@ -2764,6 +2813,83 @@
           } else if (window.NetReconNewUI && typeof window.NetReconNewUI.switchTool === "function") {
             window.NetReconNewUI.switchTool("tunnel-settings");
           }
+          return;
+        }
+
+        // "Generate" button - seeds/replaces the filler textarea with a
+        // fresh preview of whatever length is currently in the length
+        // input, computed client-side (mail-xss-tester-runtime.js's
+        // generateCustomFillerPreview, a JS mirror of Rust's own
+        // build_filler_text) - the textarea stays freely editable
+        // afterward, this is just a starting point, not the only way to
+        // fill it in.
+        var generateFillerBtn = event.target && event.target.closest ? event.target.closest("[data-mail-xss-custom-generate-filler]") : null;
+        if (generateFillerBtn) {
+          var lengthEl = mount.querySelector('[data-mail-xss-field="customFillerLength"]');
+          var textareaEl = mount.querySelector('[data-mail-xss-field="customFillerText"]');
+          var len = lengthEl ? parseInt(lengthEl.value, 10) : 50;
+          if (!len || len < 1) len = 50;
+          var preview = api.generateCustomFillerPreview(len);
+          if (textareaEl) textareaEl.value = preview;
+          api.setDraftCustomFillerText(preview);
+          return;
+        }
+
+        // Custom technique builder's own send - reads the SAME sender
+        // fields (gmailAddress/appPassword/to/subject/provider) as the
+        // main send form, plus its own vector/mechanism/fillerText fields.
+        var customSendBtn = event.target && event.target.closest ? event.target.closest("[data-mail-xss-custom-send]") : null;
+        if (customSendBtn) {
+          if (api.getIsSending()) return;
+
+          function customFieldValue(name) {
+            var el = mount.querySelector('[data-mail-xss-field="' + name + '"]');
+            return el ? el.value : "";
+          }
+
+          function showCustomResult(text, isError) {
+            lastCustomResultText = text;
+            lastCustomResultIsError = !!isError;
+            lastCustomResultShown = true;
+            var el = mount.querySelector("[data-mail-xss-custom-result]");
+            if (!el) return;
+            el.textContent = text;
+            el.classList.toggle("is-error", !!isError);
+            el.removeAttribute("hidden");
+          }
+
+          var gmailAddress = customFieldValue("gmailAddress").trim();
+          var appPassword = customFieldValue("appPassword");
+          var to = customFieldValue("to").trim();
+          var subject = customFieldValue("subject").trim();
+          var provider = customFieldValue("provider").trim() || "gmail";
+          var vector = customFieldValue("customVector") || "script";
+          var mechanism = customFieldValue("customMechanism") || "soft-break";
+          var fillerText = customFieldValue("customFillerText");
+
+          if (!gmailAddress || !appPassword || !to || !subject) {
+            showCustomResult(tr("mailXssSendMissingFieldsNote"), true);
+            return;
+          }
+
+          showCustomResult(tr("mailXssSendPendingNote"), false);
+          api.sendCustomTechnique({
+            gmailAddress: gmailAddress,
+            appPassword: appPassword,
+            to: to,
+            subject: subject,
+            provider: provider,
+            vector: vector,
+            mechanism: mechanism,
+            fillerText: fillerText,
+          }).then(function (result) {
+            if (!result.started) {
+              if (result.reason !== "already-sending") showCustomResult(tr("mailXssCustomTunnelNotRunningNote"), true);
+              return;
+            }
+            var msg = resultMessageFor(result);
+            if (msg) showCustomResult(msg.text, msg.isError);
+          });
           return;
         }
 
@@ -2820,6 +2946,25 @@
           if (hintEl) {
             hintEl.textContent = tr(providerSelect.value === "onet" ? "mailXssPasswordHintOnet" : "mailXssPasswordHintGmail");
           }
+          return;
+        }
+
+        // Custom technique builder's mechanism select - the character
+        // count field only means anything for "natural-wrap" (every other
+        // mechanism ignores it), so it's hidden otherwise rather than
+        // shown-but-irrelevant. Same drafted-value fix as provider above -
+        // <select> never fires "input", so its draft is persisted here.
+        var mechanismSelect = event.target && event.target.matches && event.target.matches('[data-mail-xss-field="customMechanism"]') ? event.target : null;
+        if (mechanismSelect) {
+          api.setDraftCustomMechanism(mechanismSelect.value);
+          var charCountField = mount.querySelector("[data-mail-xss-custom-charcount-field]");
+          if (charCountField) charCountField.hidden = mechanismSelect.value !== "natural-wrap";
+          return;
+        }
+
+        var vectorSelect = event.target && event.target.matches && event.target.matches('[data-mail-xss-field="customVector"]') ? event.target : null;
+        if (vectorSelect) {
+          api.setDraftCustomVector(vectorSelect.value);
         }
       });
 
@@ -2838,6 +2983,8 @@
         var name = field.getAttribute("data-mail-xss-field");
         if (name === "gmailAddress") api.setDraftGmailAddress(field.value);
         else if (name === "appPassword") api.setDraftAppPassword(field.value);
+        else if (name === "customFillerLength") api.setDraftCustomFillerLength(field.value);
+        else if (name === "customFillerText") api.setDraftCustomFillerText(field.value);
       });
 
       // Same credential discipline as the remote-install password field -

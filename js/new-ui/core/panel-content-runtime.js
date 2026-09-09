@@ -1420,8 +1420,75 @@
       // button here can usefully do beyond pointing at the real controls).
       var startTunnelBtnDisabled = !isDesktopMode;
 
+      // "Custom technique builder" - lets the user freely combine a
+      // vector (<script> vs CSS <style>@import>) with an encoding
+      // mechanism (soft-break/hex-escape one or both angle brackets/real
+      // column-based natural wrap) and, for natural-wrap, an exact filler
+      // character count - instead of needing a brand new hardcoded
+      // technique/checkbox for every combination anyone might want to try
+      // (this session alone grew from 2 to 21 fixed variants that way).
+      // Kept ALONGSIDE the fixed checkboxes below, not replacing them -
+      // those stay as fast, known-shape presets; this is for anything not
+      // already covered. sendCustomTechnique (mail-xss-tester-runtime.js)
+      // shares the same isSending/lastSendResult state as the main batch
+      // send, so the two can't accidentally run at the same time.
+      var customSendDisabled = status !== "running" || !isDesktopMode;
+      // Same fix as gmailAddress/appPassword/provider above, confirmed
+      // needed via a real reproduction: type a char count, switch LS tabs
+      // away and back (a fresh mount, fresh closure) - without reading
+      // these from the runtime's own draft state, both the mechanism
+      // select and the char count field silently reset to their hardcoded
+      // defaults every time.
+      var draftCustomVector = mailXssTesterApi ? mailXssTesterApi.getDraftCustomVector() : "script";
+      var draftCustomMechanism = mailXssTesterApi ? mailXssTesterApi.getDraftCustomMechanism() : "soft-break";
+      var draftCustomFillerLength = mailXssTesterApi ? mailXssTesterApi.getDraftCustomFillerLength() : 50;
+      var draftCustomFillerText = mailXssTesterApi ? mailXssTesterApi.getDraftCustomFillerText() : "";
+
       return [
         "<ul class=\"v1-tool-list\">",
+        "<li>",
+        "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("mailXssCustomBuilderHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
+        "<div class=\"v1-section-body\">",
+        "<div class=\"v1-import-manager-note\">" + escapeHtml(tr("mailXssCustomBuilderIntro")) + "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1MailXssCustomVector\">" + escapeHtml(tr("mailXssCustomVectorLabel")) + "</label>",
+        "<select id=\"v1MailXssCustomVector\" name=\"mailXssCustomVector\" data-mail-xss-field=\"customVector\">",
+        "<option value=\"script\"" + (draftCustomVector === "script" ? " selected" : "") + ">" + escapeHtml(tr("mailXssCustomVectorScript")) + "</option>",
+        "<option value=\"style\"" + (draftCustomVector === "style" ? " selected" : "") + ">" + escapeHtml(tr("mailXssCustomVectorStyle")) + "</option>",
+        "</select>",
+        "</div>",
+        "<div class=\"v1-pulpit-inspector-field\">",
+        "<label for=\"v1MailXssCustomMechanism\">" + escapeHtml(tr("mailXssCustomMechanismLabel")) + "</label>",
+        "<select id=\"v1MailXssCustomMechanism\" name=\"mailXssCustomMechanism\" data-mail-xss-field=\"customMechanism\">",
+        "<option value=\"soft-break\"" + (draftCustomMechanism === "soft-break" ? " selected" : "") + ">" + escapeHtml(tr("mailXssCustomMechanismSoftBreak")) + "</option>",
+        "<option value=\"hex-open\"" + (draftCustomMechanism === "hex-open" ? " selected" : "") + ">" + escapeHtml(tr("mailXssCustomMechanismHexOpen")) + "</option>",
+        "<option value=\"hex-close\"" + (draftCustomMechanism === "hex-close" ? " selected" : "") + ">" + escapeHtml(tr("mailXssCustomMechanismHexClose")) + "</option>",
+        "<option value=\"hex-both\"" + (draftCustomMechanism === "hex-both" ? " selected" : "") + ">" + escapeHtml(tr("mailXssCustomMechanismHexBoth")) + "</option>",
+        "<option value=\"natural-wrap\"" + (draftCustomMechanism === "natural-wrap" ? " selected" : "") + ">" + escapeHtml(tr("mailXssCustomMechanismNaturalWrap")) + "</option>",
+        "</select>",
+        "</div>",
+        // panel-interactions-runtime.js's mechanism-select change handler
+        // toggles this live thereafter, same pattern as the provider/
+        // password-hint swap already used elsewhere in this same panel -
+        // the initial hidden state here matches the restored mechanism
+        // draft instead of always assuming "soft-break".
+        "<div class=\"v1-pulpit-inspector-field\" data-mail-xss-custom-charcount-field" + (draftCustomMechanism === "natural-wrap" ? "" : " hidden") + ">",
+        "<label for=\"v1MailXssCustomFillerLength\">" + escapeHtml(tr("mailXssCustomFillerLengthLabel")) + "</label>",
+        "<div class=\"v1-import-manager-actions\">",
+        "<input id=\"v1MailXssCustomFillerLength\" name=\"mailXssCustomFillerLength\" type=\"number\" min=\"1\" max=\"2000\" autocomplete=\"off\" data-mail-xss-field=\"customFillerLength\" value=\"" + escapeHtml(String(draftCustomFillerLength)) + "\" />",
+        "<button type=\"button\" data-mail-xss-custom-generate-filler>" + escapeHtml(tr("mailXssCustomGenerateFillerBtn")) + "</button>",
+        "</div>",
+        // The actually-sent content - "Generate" above just seeds/replaces
+        // this with a fresh preview of the requested length; the user is
+        // free to keep typing, paste their own text over it, or edit the
+        // generated text by hand before sending.
+        "<label for=\"v1MailXssCustomFillerText\">" + escapeHtml(tr("mailXssCustomFillerTextLabel")) + "</label>",
+        "<textarea id=\"v1MailXssCustomFillerText\" name=\"mailXssCustomFillerText\" rows=\"3\" data-mail-xss-field=\"customFillerText\">" + escapeHtml(draftCustomFillerText) + "</textarea>",
+        "</div>",
+        "<button type=\"button\" class=\"v1-pulpit-connect-btn\" data-mail-xss-custom-send" + (customSendDisabled ? " disabled" : "") + ">" + escapeHtml(tr("mailXssCustomSendBtn")) + "</button>",
+        "<div class=\"v1-pulpit-remote-run-result\" data-mail-xss-custom-result hidden></div>",
+        "</div>",
+        "</li>",
         "<li>",
         "<div class=\"v1-section-header\"><strong>" + escapeHtml(tr("mailXssPayloadsHeading")) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
         "<div class=\"v1-section-body\">",

