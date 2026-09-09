@@ -2623,10 +2623,23 @@
         mount.querySelectorAll("[data-mail-xss-field]").forEach(function (el) {
           preserved[el.getAttribute("data-mail-xss-field")] = el.value;
         });
+        // Same reasoning as the form fields above, for the payload
+        // category sections' collapsed/expanded state - empty on the very
+        // first render (nothing to snapshot yet), so renderMailXssTesterLibrary's
+        // own hasRealItems-based default collapse still applies then; every
+        // later rebuild restores whatever the user actually clicked instead.
+        var preservedCollapse = {};
+        mount.querySelectorAll("[data-mail-xss-category]").forEach(function (li) {
+          preservedCollapse[li.getAttribute("data-mail-xss-category")] = li.classList.contains("v1-collapsed");
+        });
         mount.innerHTML = renderMailXssTesterLibrary();
         Object.keys(preserved).forEach(function (name) {
           var el = mount.querySelector('[data-mail-xss-field="' + name + '"]');
           if (el && preserved[name] !== undefined) el.value = preserved[name];
+        });
+        Object.keys(preservedCollapse).forEach(function (categoryId) {
+          var li = mount.querySelector('[data-mail-xss-category="' + categoryId + '"]');
+          if (li) li.classList.toggle("v1-collapsed", preservedCollapse[categoryId]);
         });
       }
 
@@ -2678,8 +2691,14 @@
         var api = window.NetReconNewUICore && window.NetReconNewUICore.mailXssTester;
         if (!api) return;
         var checkbox = event.target && event.target.matches && event.target.matches("[data-mail-xss-payload-checkbox]") ? event.target : null;
-        if (!checkbox) return;
-        api.setPayloadSelected(checkbox.getAttribute("data-mail-xss-payload-checkbox"), checkbox.checked);
+        if (checkbox) {
+          api.setPayloadSelected(checkbox.getAttribute("data-mail-xss-payload-checkbox"), checkbox.checked);
+          return;
+        }
+        var techniqueCheckbox = event.target && event.target.matches && event.target.matches("[data-mail-xss-technique-checkbox]") ? event.target : null;
+        if (techniqueCheckbox) {
+          api.setTechniqueSelected(techniqueCheckbox.getAttribute("data-mail-xss-technique-checkbox"), techniqueCheckbox.checked);
+        }
       });
 
       // Mirror gmailAddress/appPassword into mail-xss-tester-runtime.js's
@@ -2736,13 +2755,50 @@
           return;
         }
 
+        // Raw-MIME techniques (getSelectedTechniqueIds()) each need their
+        // own separate email - sendEncodingTestEmails handles that as a
+        // second, sequential send after the normal combined-payload email,
+        // rather than trying to cram both into one message. sendTestEmail
+        // itself doesn't skip an empty selection on its own (buildEmailHtml
+        // happily returns "" and it sends that anyway), so this has to be
+        // the thing deciding whether it's worth calling at all - otherwise
+        // testing ONLY a technique (every normal payload unchecked) sent a
+        // pointless second, empty-body email every time.
+        var hasPayloads = api.getSelectedPayloadIds().length > 0;
+        var hasTechniques = api.getSelectedTechniqueIds().length > 0;
+
+        if (!hasPayloads && !hasTechniques) {
+          showResult(tr("mailXssNoPayloadsSelectedNote"), true);
+          return;
+        }
+
         var submitBtn = form.querySelector("[data-mail-xss-send-submit]");
         if (submitBtn) submitBtn.disabled = true;
         showResult(tr("mailXssSendPendingNote"), false);
 
-        api.sendTestEmail({ gmailAddress: gmailAddress, appPassword: appPassword, to: to, subject: subject }).then(function () {
+        var normalSendPromise = hasPayloads
+          ? api.sendTestEmail({ gmailAddress: gmailAddress, appPassword: appPassword, to: to, subject: subject })
+          : Promise.resolve();
+
+        normalSendPromise.then(function () {
+          if (!hasTechniques) return null;
+          return api.sendEncodingTestEmails({ gmailAddress: gmailAddress, appPassword: appPassword, to: to, subject: subject });
+        }).then(function (techniqueResult) {
           if (submitBtn) submitBtn.disabled = false;
-          showResult(tr("mailXssSendSuccessNote"), false);
+          if (!techniqueResult) {
+            showResult(tr("mailXssSendSuccessNote"), false);
+            return;
+          }
+          if (techniqueResult.failed.length === 0) {
+            showResult(tr("mailXssSendSuccessNote") + " " + tr("mailXssTechniquesSentSuffix").replace("{count}", String(techniqueResult.sent.length)), false);
+          } else {
+            showResult(
+              tr("mailXssSendPartialFailureNote")
+                .replace("{sent}", String(techniqueResult.sent.length))
+                .replace("{failed}", String(techniqueResult.failed.length)),
+              true
+            );
+          }
         }).catch(function (err) {
           if (submitBtn) submitBtn.disabled = false;
           showResult(tr("mailXssSendErrorPrefix") + " " + ((err && err.message) ? err.message : String(err)), true);

@@ -1286,13 +1286,19 @@
       // payload classes without being selectable or ever sent.
       var categories = mailXssTesterApi ? mailXssTesterApi.getPayloadCategories() : [];
       var placeholders = mailXssTesterApi ? mailXssTesterApi.getPlaceholderPayloads() : [];
+      var techniques = mailXssTesterApi ? mailXssTesterApi.getRawTechniques() : [];
+      var selectedTechniques = mailXssTesterApi ? mailXssTesterApi.getSelectedTechniqueIds() : [];
       var payloadsByCategory = {};
       var placeholdersByCategory = {};
+      var techniquesByCategory = {};
       payloads.forEach(function (p) {
         (payloadsByCategory[p.category] = payloadsByCategory[p.category] || []).push(p);
       });
       placeholders.forEach(function (p) {
         (placeholdersByCategory[p.category] = placeholdersByCategory[p.category] || []).push(p);
+      });
+      techniques.forEach(function (t) {
+        (techniquesByCategory[t.category] = techniquesByCategory[t.category] || []).push(t);
       });
 
       var payloadCategoriesHtml = categories.map(function (cat) {
@@ -1303,6 +1309,23 @@
             "<span class=\"v1-pulpit-checkbox-item\">",
             "<input id=\"" + fieldId + "\" type=\"checkbox\" data-mail-xss-payload-checkbox=\"" + escapeHtml(p.id) + "\"" + (checked ? " checked" : "") + " />",
             "<label for=\"" + fieldId + "\">" + escapeHtml(tr(p.labelKey)) + "</label>",
+            "</span>"
+          ].join("");
+        }).join("");
+
+        // Raw-MIME techniques (getRawTechniques()) render exactly like
+        // normal payload checkboxes - real, selectable, not disabled - but
+        // use a different data attribute (data-mail-xss-technique-checkbox)
+        // since each one gets sent as its OWN separate email
+        // (sendEncodingTestEmails in mail-xss-tester-runtime.js), not
+        // bundled into the shared combined-payload body.
+        var techniqueItemsHtml = (techniquesByCategory[cat.id] || []).map(function (t) {
+          var checked = selectedTechniques.indexOf(t.id) !== -1;
+          var fieldId = "v1MailXssTechnique_" + t.id;
+          return [
+            "<span class=\"v1-pulpit-checkbox-item\">",
+            "<input id=\"" + fieldId + "\" type=\"checkbox\" data-mail-xss-technique-checkbox=\"" + escapeHtml(t.id) + "\"" + (checked ? " checked" : "") + " />",
+            "<label for=\"" + fieldId + "\">" + escapeHtml(tr(t.labelKey)) + "</label>",
             "</span>"
           ].join("");
         }).join("");
@@ -1324,14 +1347,23 @@
         // section-header click toggle either way, so a collapsed
         // placeholder-only category is still freely reopened - grayed-out
         // content isn't the same thing as an unclickable header.
-        var hasRealItems = !!(payloadsByCategory[cat.id] || []).length;
+        var hasRealItems = !!(payloadsByCategory[cat.id] || []).length || !!(techniquesByCategory[cat.id] || []).length;
         var liClass = hasRealItems ? "" : " class=\"v1-collapsed\"";
 
+        // data-mail-xss-category lets wireMailXssTesterLibrary
+        // (panel-interactions-runtime.js) snapshot/restore each category's
+        // collapsed state across a rebuild - this panel's whole innerHTML
+        // gets rebuilt on every newui:mail-xss-tester-changed event
+        // (tunnel status, a new hit arriving, sending a test email), which
+        // would otherwise silently reset any category the user had
+        // manually expanded/collapsed back to the hasRealItems-based
+        // default above every single time.
         return [
-          "<li" + liClass + ">",
+          "<li" + liClass + " data-mail-xss-category=\"" + escapeHtml(cat.id) + "\">",
           "<div class=\"v1-section-header v1-mail-xss-payload-category-header\"><strong>" + escapeHtml(tr(cat.labelKey)) + "</strong><span class=\"v1-collapse-arrow\">▼</span></div>",
           "<div class=\"v1-section-body v1-pulpit-checkbox-row\">",
           realItemsHtml,
+          techniqueItemsHtml,
           placeholderItemsHtml,
           "</div>",
           "</li>"
@@ -1402,9 +1434,24 @@
       var triggered = mailXssTesterApi ? mailXssTesterApi.getTriggeredPayloadIds() : [];
       var status = mailXssTesterApi ? mailXssTesterApi.getTunnelStatus() : "idle";
 
-      var rowsHtml = payloads.filter(function (p) {
+      // Raw-MIME techniques (getRawTechniques()) are sent through a
+      // completely different path (sendEncodingTestEmails, one email each)
+      // but still beacon in with "<sessionToken>-<techniqueId>" the exact
+      // same way a normal payload does - getTriggeredPayloadIds() already
+      // handles either kind identically, this table just needs to know
+      // about both so a technique that DIDN'T fire shows an explicit "No"
+      // row instead of silently having no row at all (previously the only
+      // way to tell a technique failed was "nothing new in the hit log",
+      // indistinguishable from "still waiting").
+      var techniques = mailXssTesterApi ? mailXssTesterApi.getRawTechniques() : [];
+      var selectedTechniques = mailXssTesterApi ? mailXssTesterApi.getSelectedTechniqueIds() : [];
+      var allSelectedRows = payloads.filter(function (p) {
         return selected.indexOf(p.id) !== -1;
-      }).map(function (p) {
+      }).concat(techniques.filter(function (t) {
+        return selectedTechniques.indexOf(t.id) !== -1;
+      }));
+
+      var rowsHtml = allSelectedRows.map(function (p) {
         var isTriggered = triggered.indexOf(p.id) !== -1;
         return [
           "<tr>",
