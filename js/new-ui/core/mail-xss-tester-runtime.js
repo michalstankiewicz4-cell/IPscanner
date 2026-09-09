@@ -63,6 +63,16 @@
   var RAW_TECHNIQUES = [
     { id: "utf7-charset", labelKey: "mailXssTechniqueUtf7Charset", category: "encoding" },
     { id: "overlong-utf8", labelKey: "mailXssTechniqueOverlongUtf8", category: "encoding" },
+    // A second pentester tip after the MIME-boundary dead end: look at how
+    // Gmail's preview handles Polish characters and long-line wrapping -
+    // quoted-printable (the MIME transfer encoding that carries non-ASCII
+    // text like Polish diacritics) has its own "soft line break" mechanic
+    // (a trailing '=' + CRLF that's REMOVED on decode, rejoining split
+    // content) worth exactly the same parser-differential treatment the
+    // MIME boundary got. See main.rs's build_qp_soft_break_message/
+    // build_qp_hex_escaped_tags_message.
+    { id: "qp-soft-break", labelKey: "mailXssTechniqueQpSoftBreak", category: "encoding" },
+    { id: "qp-hex-escaped-tags", labelKey: "mailXssTechniqueQpHexEscapedTags", category: "encoding" },
     { id: "mime-boundary-desync", labelKey: "mailXssTechniqueMimeBoundaryDesync", category: "mime" },
     // Same structural MIME confusion, smuggling <style>@import> instead of
     // <img> - added after the plain <img> variant confirmed real against
