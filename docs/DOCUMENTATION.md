@@ -53,8 +53,17 @@
   - [4.9. Browser](#49-browser)
   - [4.10. Mail XSS Tester](#410-mail-xss-tester)
     - [4.10.1. Payloads](#4101-payloads)
-    - [4.10.2. Tunnel](#4102-tunnel)
-    - [4.10.3. Test mail](#4103-test-mail)
+    - [4.10.2. Raw-MIME techniques](#4102-raw-mime-techniques)
+      - [4.10.2.1. utf7-charset](#41021-utf7-charset)
+      - [4.10.2.2. overlong-utf8](#41022-overlong-utf8)
+      - [4.10.2.3. mime-boundary-desync](#41023-mime-boundary-desync)
+      - [4.10.2.4. mime-boundary-desync-css](#41024-mime-boundary-desync-css)
+      - [4.10.2.5. mime-alternative-control-img / mime-alternative-control-css](#41025-mime-alternative-control-img--mime-alternative-control-css)
+      - [4.10.2.6. encoded-word-header](#41026-encoded-word-header)
+    - [4.10.3. Custom technique builder](#4103-custom-technique-builder)
+    - [4.10.4. Tunnel](#4104-tunnel)
+    - [4.10.5. Test mail](#4105-test-mail)
+      - [4.10.5.1. Mail verification](#41051-mail-verification)
   - [4.11. HTTPS Auditor](#411-https-auditor)
   - [4.12. Reverse IP Lookup](#412-reverse-ip-lookup)
   - [4.13. Google Dork Finder](#413-google-dork-finder)
@@ -281,6 +290,10 @@ plus:
   control over a domain before features that act on someone else's site
   (like Browser Inspect) are allowed to target it. Reflected live in
   [1.3.4. Domain verification status](#134-domain-verification-status).
+- Mail verification: send yourself a one-time code and type it back to
+  prove control over a mailbox, the same idea as domain verification
+  above but for email - see
+  [4.10.5.1. Mail verification](#41051-mail-verification).
 - A Google Dork API key field - saved for a future feature, not used
   yet.
 
@@ -388,11 +401,17 @@ session, so a hit can never be confused with an unrelated run, and every
 payload's only effect is a single network request to a local beacon - no
 exfiltration, no persistence, nothing to clean up afterwards either way.
 
-The overall flow: start the tunnel (4.10.2), fill in your own mailbox's
-credentials and send yourself the test email (4.10.3), then open that
+The overall flow: start the tunnel (4.10.4), fill in your own mailbox's
+credentials and send yourself the test email (4.10.5), then open that
 email in the webmail client you actually want to test - whichever
 payloads fired show up live in the app's results list, tagged with
 method, timestamp, User-Agent, and the requesting IP.
+
+Three things can be sent in one go, each covering different ground: the
+six fixed payloads (4.10.1) for known HTML/CSS/SVG sanitizer-bypass
+tricks, the fixed raw-MIME techniques (4.10.2) for SMTP/MIME-encoding
+edge cases, and the custom technique builder (4.10.3) for combinations
+that don't have a fixed checkbox of their own.
 
 #### 4.10.1. Payloads
 
@@ -421,7 +440,108 @@ the useful signal:
   `foreignObject` - a known technique for sneaking past sanitizers that
   only look at top-level HTML tags.
 
-#### 4.10.2. Tunnel
+#### 4.10.2. Raw-MIME techniques
+
+Unlike the six payloads above, these don't rely on a sanitizer missing a
+specific HTML tag or attribute - each one instead targets the boundary
+between the SMTP/MIME transport layer and HTML parsing itself, built
+byte-for-byte as a raw message rather than through a normal typed email
+API. Each is its own separate email (they can't share a message with
+each other or with the payloads' combined body), so a hit's beacon path
+identifies exactly which technique fired.
+
+Every one of these has come back negative against Gmail in this app's
+own testing so far - included as diagnostics for other webmail clients,
+not because Gmail is known to be vulnerable to them.
+
+##### 4.10.2.1. utf7-charset
+
+Declares the whole message body's charset as UTF-7 and encodes the
+payload's `<`/`>`/`{`/`}` through UTF-7's own shift-sequence encoding
+(e.g. `<script>` becomes `+ADw-script+AD4-`) - no literal `<script>`
+substring exists anywhere in the raw bytes, only after a UTF-7-aware
+decoder converts it back.
+
+##### 4.10.2.2. overlong-utf8
+
+Encodes `<`/`>` as invalid, "overlong" UTF-8 byte sequences (a
+technically illegal, non-canonical way of encoding a plain ASCII
+character using more bytes than necessary). Tests whether the mail
+client's UTF-8 decoder is strict (rejects the sequence outright, per
+spec) or lenient (silently accepts it and reconstructs the literal
+character anyway).
+
+##### 4.10.2.3. mime-boundary-desync
+
+A well-formed three-part `multipart/alternative` message where the
+second part's own content contains something that *looks* like a
+second MIME boundary line, without actually being a real one - tests
+whether a parser gets confused about where that part ends, letting an
+`<img>` payload leak into a part that gets rendered.
+
+##### 4.10.2.4. mime-boundary-desync-css
+
+The same boundary-confusion trick as 4.10.2.3, but smuggling
+`<style>@import "...";</style>` instead of `<img>` - tests whether
+external CSS reaches the recipient's browser directly, since webmail
+providers that proxy embedded images server-side don't necessarily do
+the same for CSS.
+
+##### 4.10.2.5. mime-alternative-control-img / mime-alternative-control-css
+
+A control pair for 4.10.2.3 and 4.10.2.4: byte-for-byte the same
+three-part shape, but with every boundary line well-formed (no
+malformed junk anywhere). If these ALSO trigger, it proves the
+malformed boundary in the other two wasn't doing anything special - a
+mail client rendering the last part it understands in a
+`multipart/alternative` message is standard, expected behavior
+(RFC 2046 §5.1.4), not a parser bug.
+
+##### 4.10.2.6. encoded-word-header
+
+Encodes the `From:` header itself using RFC 2047 "encoded word" syntax
+(a base64 blob), hiding a payload inside what looks like an ordinary
+display name - tests whether anything scans raw header bytes for
+known-bad substrings before header-decoding happens.
+
+#### 4.10.3. Custom technique builder
+
+Rather than one fixed checkbox per possible combination, this builds a
+raw-MIME technique from parts you pick yourself:
+
+- **Vector** - which tag carries the beacon call: `<script>` (a
+  `fetch()` call) or CSS `<style>@import "...";</style>`.
+- **Mechanism** - how the tag's own delimiters are hidden from a raw
+  byte scan:
+  - **Soft line break** - splits the tag name itself with a
+    quoted-printable soft line break (e.g. `<scri=` + a line break +
+    `pt>`) - decoding removes that break and rejoins the tag, so the
+    intact tag name never appears unbroken in the raw wire bytes.
+  - **Hex-escape '<' only** / **'>' only** / **both** - hex-escapes one
+    or both angle brackets as their quoted-printable `=3C`/`=3E`
+    equivalents. Escaping only one isolates whether a scanner needing
+    to see a complete `<tag>` shape behaves differently from one that
+    only cares about the opening delimiter.
+  - **Natural QP line-wrap** - instead of a hand-placed break, lets a
+    real RFC 2045 76-column-limit encoder decide where its own soft
+    line break falls, based on how much filler text precedes the tag.
+- **Filler text** (natural-wrap only) - a plain, freely editable text
+  field, not just a length: a "Generate" button seeds it with a preview
+  of a given character count (repeating the classic Polish pangram,
+  chosen for its diacritics), but the field can be retyped or pasted
+  over with anything before sending.
+
+"Send custom technique" sends the current combination immediately, as
+its own separate email, using the same sender/recipient fields as
+4.10.5 below. The "+" button next to it instead queues the current
+combination into a list underneath (each entry individually removable)
+without sending it - "Send queued techniques (N)" then sends every
+queued combination together, one email each, sequentially. This is the
+way to test several hand-picked combinations in one run (for example a
+sweep of natural-wrap filler lengths) without needing a fixed checkbox
+for each one.
+
+#### 4.10.4. Tunnel
 
 Detection needs a beacon endpoint that's reachable from the public
 internet - most webmail providers (Gmail included) fetch/proxy embedded
@@ -445,27 +565,55 @@ URL. Stopping the tunnel (or closing the app) tears both the tunnel and
 the local beacon server back down, so nothing is left listening once the
 test is done.
 
-#### 4.10.3. Test mail
+#### 4.10.5. Test mail
 
-Sending the test email uses your own Gmail account over SMTP, so it
-needs real credentials - not your normal Gmail password, but a
-[Google App Password](https://myaccount.google.com/apppasswords)
-generated specifically for this. App Passwords require 2-Step
-Verification to already be turned on for the Google account; once that's
-on, generating one is a single click on that page.
+Sending needs real SMTP credentials for a real mailbox - never your
+account's normal login password, an app-specific one instead.
 
 Fill in, in the app:
 
-- **Gmail address** - the account the test email will be sent *from*.
-- **Gmail app password** - the generated App Password, not the account's
-  real login password.
-- **To** - the mailbox to actually test (can be the same address, or a
-  different one you also own).
+- **Send via** - which SMTP provider actually delivers the mail: Gmail
+  or Onet. Onet exists specifically so a technique message can cross
+  two genuinely different mail systems (this tool's own SMTP client,
+  through Onet's real servers, to the recipient) instead of always
+  originating from the app itself.
+- **Account email** / **Password** - the sending account's credentials.
+  For Gmail this must be a
+  [Google App Password](https://myaccount.google.com/apppasswords)
+  (requires 2-Step Verification to already be on; generating one is a
+  single click on that page) - a normal Gmail login password is
+  rejected. Onet has no separate app-password system, so its own
+  regular account password is used instead. The field under the
+  password updates to say which is expected, based on the provider
+  currently selected.
+- **To** - locked to a dropdown of mailboxes already proven via
+  4.10.5.1 below - never free text, so a test can only ever be aimed at
+  a mailbox you've already demonstrated you control.
 - **Subject** - whatever's convenient for telling test runs apart later.
 
-With the tunnel running and these fields filled in, "Send" delivers the
-email. Open it in the target webmail client afterwards - the app's
-results list updates live as payloads fire.
+With the tunnel running and these fields filled in, "Send" delivers
+every selected payload (4.10.1) and raw-MIME technique (4.10.2) in one
+run - the payloads combined into a single email, each technique as its
+own separate one. Open the result in the target webmail client
+afterwards - the app's results list updates live as payloads/techniques
+fire.
+
+##### 4.10.5.1. Mail verification
+
+Lives in [3.4. General](#34-general), not in Mail XSS Tester's own
+tabs - proves you actually control a mailbox before it can be picked as
+the "To" address above, the same way [3.4](#34-general)'s domain
+verification proves control over a domain before Browser Inspect can
+target it.
+
+The flow: fill in a sender account (its own provider/address/password
+fields, entirely separate from Mail XSS Tester's own send form above -
+switching one doesn't affect the other), type in the mailbox you want
+to verify, and send yourself a one-time code. Typing that code back in
+confirms it and adds the mailbox to the verified list. Unlike sending
+an actual test payload, this doesn't need the tunnel running at all -
+the code is a plain email with no beacon URL in it, nothing for a
+public endpoint to receive.
 
 ### 4.11. HTTPS Auditor
 
