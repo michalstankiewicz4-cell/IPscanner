@@ -135,3 +135,21 @@
 .v1-mail-xss-payload-placeholder label {
   cursor: not-allowed;
 }
+
+/* Custom technique builder's "Send custom technique" + "+" (queue-add)
+   pair sits in the same .v1-import-manager-actions flex row - that class
+   is shared/reused by several other tools' own button rows, and
+   .v1-pulpit-connect-btn (the send button's own class) forces
+   width:100%, which alone left no room for "+" to sit alongside it (it
+   wrapped to its own line below instead). Both overrides are scoped to
+   these two specific buttons rather than their shared classes, so
+   nothing else using either class elsewhere is affected: the send
+   button shrinks to its own content width, freeing room for "+" to sit
+   on the same line, pushed to the row's right edge. */
+[data-mail-xss-custom-send] {
+  width: auto;
+}
+
+[data-mail-xss-custom-queue-add] {
+  margin-left: auto;
+}
