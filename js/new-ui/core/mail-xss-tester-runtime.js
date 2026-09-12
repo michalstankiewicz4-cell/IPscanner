@@ -585,7 +585,6 @@
 
       isSending = true;
       activeSendKind = "custom";
-      emitChanged();
 
       // Identifies the send in the beacon path/hit log without embedding
       // the (potentially long, free-typed) filler text itself - a short
@@ -593,6 +592,8 @@
       var techniqueId = "custom-" + opts.vector + "-" + opts.mechanism +
         (opts.mechanism === "natural-wrap" ? "-" + String((opts.fillerText || "").length) : "");
       var beaconUrl = tunnelUrl + "/hit/" + sessionToken + "-" + techniqueId;
+      recordCustomSent(techniqueId, opts.vector, opts.mechanism, opts.fillerText);
+      emitChanged();
 
       return Promise.resolve(platform.invoke("send_custom_technique_email", {
         gmailAddress: opts.gmailAddress,
@@ -630,6 +631,25 @@
     // panel-interactions-runtime.js closure) for the same "survives LS
     // panel teardown/rebuild" reason as isSending/every draft above.
     var customQueue = [];
+
+    // Which custom-built combinations have actually been SENT this
+    // session - unlike RAW_TECHNIQUES (a fixed, known list the CS
+    // "Triggered" table already iterates), each custom send gets a
+    // dynamic, one-off techniqueId, so the table has no way to know
+    // these exist unless told explicitly. Keyed by techniqueId (not a
+    // plain array) so re-sending the exact same combination updates its
+    // one row instead of piling up duplicates - the beacon path is
+    // deterministic from the same inputs, so a repeat send would report
+    // to the same row either way.
+    var customSentLog = {};
+
+    function recordCustomSent(techniqueId, vector, mechanism, fillerText) {
+      customSentLog[techniqueId] = { techniqueId: techniqueId, vector: vector, mechanism: mechanism, fillerText: fillerText };
+    }
+
+    function getCustomSentLog() {
+      return Object.keys(customSentLog).map(function (id) { return customSentLog[id]; });
+    }
 
     function getCustomQueue() { return customQueue.slice(); }
 
@@ -682,6 +702,7 @@
         return chain.then(function () {
           var techniqueId = "custom-" + entry.vector + "-" + entry.mechanism + "-" + entry.id;
           var beaconUrl = tunnelUrl + "/hit/" + sessionToken + "-" + techniqueId;
+          recordCustomSent(techniqueId, entry.vector, entry.mechanism, entry.fillerText);
           return Promise.resolve(platform.invoke("send_custom_technique_email", {
             gmailAddress: opts.gmailAddress,
             appPassword: opts.appPassword,
@@ -752,6 +773,7 @@
       sendAll: sendAll,
       sendCustomTechnique: sendCustomTechnique,
       getCustomQueue: getCustomQueue,
+      getCustomSentLog: getCustomSentLog,
       addToCustomQueue: addToCustomQueue,
       removeFromCustomQueue: removeFromCustomQueue,
       sendCustomQueue: sendCustomQueue,

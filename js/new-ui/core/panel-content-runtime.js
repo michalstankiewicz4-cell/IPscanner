@@ -1274,6 +1274,24 @@
       return !(platformApi && typeof platformApi.isDesktop === "function" && !platformApi.isDesktop());
     }
 
+    // Shared between the LS queue list (renderMailXssTesterLibrary) and
+    // the CS "Triggered" table (renderMailXssTesterTool) - both need to
+    // turn a custom technique's raw vector/mechanism id into a readable
+    // label, since neither has a labelKey of its own the way fixed
+    // PAYLOADS/RAW_TECHNIQUES entries do.
+    var CUSTOM_VECTOR_LABEL_KEYS = { script: "mailXssCustomVectorScript", style: "mailXssCustomVectorStyle" };
+    var CUSTOM_MECHANISM_LABEL_KEYS = {
+      "soft-break": "mailXssCustomMechanismSoftBreak",
+      "hex-open": "mailXssCustomMechanismHexOpen",
+      "hex-close": "mailXssCustomMechanismHexClose",
+      "hex-both": "mailXssCustomMechanismHexBoth",
+      "natural-wrap": "mailXssCustomMechanismNaturalWrap",
+    };
+    function customTechniqueLabel(vector, mechanism) {
+      return tr(CUSTOM_VECTOR_LABEL_KEYS[vector] || "mailXssCustomVectorScript") +
+        " / " + tr(CUSTOM_MECHANISM_LABEL_KEYS[mechanism] || "mailXssCustomMechanismSoftBreak");
+    }
+
     // LS: payload picker, tunnel start/stop + status, and the send form -
     // password/app-password fields are read directly at submit time by
     // wireMailXssTesterLibrary (panel-interactions-runtime.js), never
@@ -1444,21 +1462,11 @@
       var draftCustomFillerLength = mailXssTesterApi ? mailXssTesterApi.getDraftCustomFillerLength() : 50;
       var draftCustomFillerText = mailXssTesterApi ? mailXssTesterApi.getDraftCustomFillerText() : "";
 
-      var customMechanismLabelKeys = {
-        "soft-break": "mailXssCustomMechanismSoftBreak",
-        "hex-open": "mailXssCustomMechanismHexOpen",
-        "hex-close": "mailXssCustomMechanismHexClose",
-        "hex-both": "mailXssCustomMechanismHexBoth",
-        "natural-wrap": "mailXssCustomMechanismNaturalWrap",
-      };
-      var customVectorLabelKeys = { script: "mailXssCustomVectorScript", style: "mailXssCustomVectorStyle" };
       var customQueue = mailXssTesterApi ? mailXssTesterApi.getCustomQueue() : [];
       var customQueueSendDisabled = customSendDisabled || customQueue.length === 0;
       var customQueueRowsHtml = customQueue.map(function (entry) {
         var preview = entry.fillerText ? (entry.fillerText.length > 30 ? entry.fillerText.slice(0, 30) + "…" : entry.fillerText) : "";
-        var summary = tr(customVectorLabelKeys[entry.vector] || "mailXssCustomVectorScript") +
-          " / " + tr(customMechanismLabelKeys[entry.mechanism] || "mailXssCustomMechanismSoftBreak") +
-          (preview ? " — " + preview : "");
+        var summary = customTechniqueLabel(entry.vector, entry.mechanism) + (preview ? " — " + preview : "");
         return [
           "<div class=\"v1-mail-verify-row\">",
           "<span>" + escapeHtml(summary) + "</span>",
@@ -1614,6 +1622,25 @@
           "</tr>"
         ].join("");
       }).join("");
+
+      // Custom technique builder sends (single "Send custom technique" or
+      // via the queue) each get a dynamic, one-off techniqueId, not a
+      // fixed labelKey from RAW_TECHNIQUES - getCustomSentLog() is the
+      // only record that such a send ever happened at all, so this table
+      // wouldn't otherwise know to show a row for it, even though
+      // getTriggeredPayloadIds() already tracks a hit against it
+      // correctly regardless.
+      var customSentLog = mailXssTesterApi ? mailXssTesterApi.getCustomSentLog() : [];
+      var customRowsHtml = customSentLog.map(function (entry) {
+        var isTriggered = triggered.indexOf(entry.techniqueId) !== -1;
+        return [
+          "<tr>",
+          "<td>" + escapeHtml(customTechniqueLabel(entry.vector, entry.mechanism)) + "</td>",
+          "<td class=\"" + (isTriggered ? "v1-mail-xss-triggered-yes" : "v1-mail-xss-triggered-no") + "\">" + escapeHtml(tr(isTriggered ? "mailXssTriggeredYes" : "mailXssTriggeredNo")) + "</td>",
+          "</tr>"
+        ].join("");
+      }).join("");
+      rowsHtml += customRowsHtml;
 
       var inner = [
         !mailXssTesterIsDesktop() ? "<p class=\"v1-pulpit-remote-hint\">" + escapeHtml(tr("mailXssDesktopOnlyNote")) + "</p>" : "",
