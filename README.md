@@ -11,6 +11,26 @@ save/load (including a browser build with no server/backend), and a
 JSON-manifest addon/extension system for adding new tools and languages at
 runtime.
 
+## What this is (and isn't)
+
+Beyond the IP/port scanner, this app is also an **active security-testing
+toolkit** — this is intentional, not scope creep hiding behind the "IP
+scanner" label:
+
+- **Mail XSS Tester** crafts and sends deliberately malformed HTML/MIME
+  emails to test an email client's own HTML sanitizer.
+- **Browser Inspect** intercepts and shows a page's own network traffic
+  via a local proxy.
+- **WiFi tools** can reveal WiFi passwords already saved on the local
+  machine.
+
+**Only use these against systems, mailboxes, and networks you own or have
+explicit authorization to test.** Sending Mail XSS Tester payloads to a
+mailbox you don't control, or probing a network without permission, can be
+illegal depending on your jurisdiction. This project ships with no
+warranty (see [LICENSE.md](LICENSE.md)) and the author takes no
+responsibility for misuse.
+
 ## Installation
 
 ### Ready-to-use installer (recommended)
