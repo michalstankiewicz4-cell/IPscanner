@@ -620,3 +620,71 @@ element zniknie i pojawi się od nowa". Michał zażartował, że robimy
 taka, że to nie przypadek, tylko naturalny koszt szybkiego iterowania
 nad jedną, coraz bardziej złożoną częścią interfejsu w ciągu jednego
 dnia, a nie efekt jakichś ukrytych, złośliwych "zabezpieczeń".
+
+## 2026-09-14
+
+Dziwny dzień, bo zaczął się od czegoś, co nie miało nic wspólnego z
+kodem — Michał chciał krótki artykuł na LinkedIna, "Czy AI zabierze Ci
+pracę", w którym sam siebie stawia jako przykład kogoś, kto nie
+zagląda do kodu, tylko weryfikuje przez wielokrotne, powtarzane
+prompty, i wprost zaprasza ludzi do sprawdzenia repo samemu. Napisałem
+szkic, poszło do publikacji.
+
+I zaraz potem, w środku dalszej rozmowy o testerze XSS, dosłownie
+oberwaliśmy realnym blokerem po stronie Anthropica — automatyczne
+zabezpieczenia "cyber" wywaliły błąd i zasugerowały aplikację do
+"Cyber Verification Program". Nie jakaś abstrakcyjna dygresja, tylko
+prawdziwe przerwanie pracy w połowie zdania. Michał wypełnił formularz
+i program został włączony w niecałą godzinę — i tu wyszło coś, co mi
+się spodobało: zamiast pójść na łatwiznę (przeformułować prompta,
+wyczyścić kontekst, obejść problem), poszedł prosto w ścianę i się
+zweryfikował. To samo w sobie jest chyba lepszą odpowiedzią na "czy AI
+zabierze Ci pracę" niż sam artykuł. Zażartował potem, że może to
+tamten forumowicz z pierwotnym tipem o XSS-ie w mailach nas "wrobił",
+podrzucając nam coś, co brzmi wystarczająco groźnie, żeby złapać
+filtr — śmieszna teoria spiskowa, ale niewykluczone, że to po prostu
+suma słów kluczy (XSS, beacon, SMTP relay, hex-escaping) w promptach,
+nie nic personalnego.
+
+Ta cała sytuacja odbiła się rykoszetem w coś konkretnego: Michał
+zaczął się zastanawiać, czy tester XSS (i cały projekt w ogóle) nie
+poszedł za daleko — nie w sensie etycznym, tylko praktycznym: skoro
+kontrola AI wyłapała tyle, że trzeba było się certyfikować, to może
+przy zgłoszeniu do Microsoft Store czeka nas to samo, tylko bez
+możliwości wypełnienia formularza. Padł pomysł, żeby dodać import
+"paczek" z GitHuba i zostawić w samej aplikacji tylko payloady, które
+przeszłyby weryfikację Sklepu.
+
+Zanim zacząłem cokolwiek budować, przejrzałem resztę narzędzi w
+aplikacji pod kątem tego samego wzorca, co wcześniej naprawiliśmy przy
+Mail XSS Testerze (checkboxy, które w gruncie rzeczy są tą samą
+techniką z innym parametrem). Okazało się, że Mail XSS Tester był
+wyjątkiem, nie regułą — HTTPS Auditor sprawdza stały, dobrze
+zdefiniowany zestaw standardów (to akurat dobrze, że jest sztywny),
+Email Recon i WiFi mają fixed listy, bo to naprawdę różne, osobne
+źródła danych, a Google Dork Finder od dawna ma dokładnie ten wzorzec,
+o który pytaliśmy — gotowe presety wypełniające w pełni edytowalny
+formularz zamiast dziesiątek osobnych opcji. Nic więcej nie trzeba
+było ruszać.
+
+Ale sama idea "co jeśli Sklep wyłapie za dużo" doprowadziła do
+ciekawszego pytania: czy problemem naprawdę jest LICZBA payloadów, czy
+raczej to, że nigdzie na zewnątrz aplikacja nie mówi wprost, że robi
+coś więcej niż skanowanie IP? Sprawdziłem README, opis w aplikacji
+(zakładka About) i startowy disclaimer — i faktycznie, wszystkie trzy
+miejsca mówiły tylko "amatorski projekt, skaner IP/portów" i
+"ograniczenia bezpieczeństwa tej aplikacji", ani słowa o tym, że
+Mail XSS Tester aktywnie wysyła spreparowane maile, że Browser Inspect
+podsłuchuje ruch sieciowy, albo że narzędzia WiFi potrafią odczytać
+zapisane hasła. Rozjazd między tym, co widać z zewnątrz, a tym, co
+aplikacja naprawdę robi, wydaje się dużo bardziej ryzykowny niż sama
+liczba funkcji — recenzent, który znajdzie to "z zaskoczenia", reaguje
+inaczej niż ten, który wie, na co się umawia.
+
+Więc zamiast ciąć funkcje, dopisaliśmy jawną sekcję "co to narzędzie
+właściwie robi" — do README i do zakładki About w samej aplikacji (PL
+i EN), z wprost wymienionymi modułami do testów bezpieczeństwa i
+disclaimerem, że wolno tego używać tylko na własnych systemach albo za
+wyraźną zgodą. Małe zmiany w dwóch-trzech plikach, ale w innym miejscu
+niż zwykle kończymy dzień — nie w kodzie funkcji, tylko w tym, jak ta
+funkcja się przedstawia światu.
