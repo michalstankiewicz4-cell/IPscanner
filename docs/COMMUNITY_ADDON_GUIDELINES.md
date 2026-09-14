@@ -65,10 +65,15 @@ Verified.
 
 - Rating or commenting requires signing in with GitHub inside the app.
   One rating per GitHub account per repo.
+- You can't rate your own addon — if your GitHub login matches the
+  repo's owner, the app blocks the submission.
 - The addon's author (the repo owner's GitHub login) can post one reply
   to each review.
 - Keep reviews about the addon itself. Abusive, off-topic, or spam
   comments may be removed by moderation.
+- Install counts shown on your addon's page come from anonymous,
+  per-device pings (a random id generated locally, not tied to any
+  account) — not from your rating or GitHub identity.
 
 ## Moderation
 
@@ -81,7 +86,8 @@ The catalog is moderated by the app maintainer (GitHub:
   (who can still see and unblock it); existing ratings are kept.
 - **Block an author account** — hides every addon that account has listed
   in the catalog, not just one repo.
-- Remove individual ratings or comments that violate the rules above.
+- Remove individual ratings, comments, or author replies that violate
+  the rules above.
 
 Blocking is typically triggered by malware/security concerns, a broken or
 misleading manifest, abusive conduct, impersonation, or repeated
