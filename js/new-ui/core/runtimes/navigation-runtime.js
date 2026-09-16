@@ -329,6 +329,7 @@
         tcpSynMode: false,
         udpChecked: false,
         icmpChecked: false,
+        grabBanners: false,
       };
       try {
         var raw = window.localStorage ? window.localStorage.getItem(CONFIG_FORM_STATE_KEY) : "";
@@ -357,6 +358,7 @@
         snapshot.tcpSynMode = !!parsed.v1ConfigProtocolTcpSyn;
         snapshot.udpChecked = !!parsed.v1ConfigProtocolUdp;
         snapshot.icmpChecked = !!parsed.v1ConfigProtocolIcmp;
+        snapshot.grabBanners = !!parsed.v1ConfigBannerGrabbing;
 
         return snapshot;
       } catch (_) {
@@ -574,12 +576,14 @@
             var ms = entry && typeof entry === "object" ? Number(entry.ms) : NaN;
             var protocol = entry && typeof entry === "object" && entry.protocol ? String(entry.protocol) : "TCP";
             var status = entry && typeof entry === "object" && entry.status ? String(entry.status) : "open";
+            var banner = entry && typeof entry === "object" && entry.banner ? String(entry.banner) : "";
             return {
               port: rounded,
               protocol: protocol,
               status: status,
               service: lookupPortService(rounded),
               ping: Number.isFinite(ms) && ms >= 0 ? (String(Math.round(ms)) + " ms") : "-",
+              banner: banner,
             };
           }).filter(Boolean)
         : [];
@@ -928,6 +932,7 @@
               tcpChecked: configSnapshot.tcpEnabled,
               udpChecked: configSnapshot.udpChecked,
               icmpChecked: configSnapshot.icmpChecked,
+              grabBanners: configSnapshot.grabBanners,
             })
           : invokeCommand("scan_range", {
               fromIp: String(range.from || "").trim(),
@@ -943,6 +948,7 @@
               tcpChecked: configSnapshot.tcpEnabled,
               udpChecked: configSnapshot.udpChecked,
               icmpChecked: configSnapshot.icmpChecked,
+              grabBanners: configSnapshot.grabBanners,
             });
       } catch (err) {
         promise = Promise.reject(err);

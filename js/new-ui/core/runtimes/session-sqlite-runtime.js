@@ -24,7 +24,8 @@
     "  protocol TEXT NOT NULL DEFAULT 'TCP',",
     "  status TEXT NOT NULL DEFAULT 'open',",
     "  service TEXT NOT NULL DEFAULT '',",
-    "  ping TEXT NOT NULL DEFAULT '-'",
+    "  ping TEXT NOT NULL DEFAULT '-',",
+    "  banner TEXT NOT NULL DEFAULT ''",
     ");",
     "CREATE TABLE IF NOT EXISTS ip_library_entries (",
     "  id INTEGER PRIMARY KEY AUTOINCREMENT, country_code TEXT NOT NULL, cidr TEXT NOT NULL",
@@ -166,7 +167,7 @@
         var insertResult = db.prepare(
           "INSERT INTO scan_results (id, ip, ping, hostname, flag, isp, as_info, device_identification, city, country_code, lat, lon, status, status_class) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
         );
-        var insertPort = db.prepare("INSERT INTO scan_result_ports (result_id, port, protocol, status, service, ping) VALUES (?, ?, ?, ?, ?, ?)");
+        var insertPort = db.prepare("INSERT INTO scan_result_ports (result_id, port, protocol, status, service, ping, banner) VALUES (?, ?, ?, ?, ?, ?, ?)");
         scanResults.forEach(function (row, index) {
           row = row || {};
           var id = index + 1;
@@ -189,9 +190,9 @@
           var ports = Array.isArray(row.ports) ? row.ports : [];
           ports.forEach(function (port) {
             if (port && typeof port === "object") {
-              insertPort.run([id, Number(port.port) || 0, String(port.protocol || "TCP"), String(port.status || "open"), String(port.service || ""), String(port.ping || "-") || "-"]);
+              insertPort.run([id, Number(port.port) || 0, String(port.protocol || "TCP"), String(port.status || "open"), String(port.service || ""), String(port.ping || "-") || "-", String(port.banner || "")]);
             } else {
-              insertPort.run([id, Number(port) || 0, "TCP", "open", "", "-"]);
+              insertPort.run([id, Number(port) || 0, "TCP", "open", "", "-", ""]);
             }
           });
         });
@@ -474,25 +475,28 @@
           });
         }
 
-        // Older session files may be missing protocol/service/ping (added
-        // incrementally over time) - fall back to defaults for whichever
-        // columns aren't there yet, newest-shape first, rather than failing
-        // to load the file.
-        // Older session files may be missing protocol/status/service/ping
-        // (added incrementally over time) - fall back to defaults for
-        // whichever columns aren't there yet, newest-shape first.
-        var portsRows, portsHasStatus = false;
+        // Older session files may be missing protocol/status/service/ping/
+        // banner (added incrementally over time) - fall back to defaults
+        // for whichever columns aren't there yet, newest-shape first,
+        // rather than failing to load the file.
+        var portsRows, portsHasBanner = false, portsHasStatus = false;
         try {
-          portsRows = db.exec("SELECT result_id, port, protocol, status, service, ping FROM scan_result_ports ORDER BY id");
+          portsRows = db.exec("SELECT result_id, port, protocol, status, service, ping, banner FROM scan_result_ports ORDER BY id");
+          portsHasBanner = true;
           portsHasStatus = true;
         } catch (_) {
           try {
-            portsRows = db.exec("SELECT result_id, port, protocol, service, ping FROM scan_result_ports ORDER BY id");
+            portsRows = db.exec("SELECT result_id, port, protocol, status, service, ping FROM scan_result_ports ORDER BY id");
+            portsHasStatus = true;
           } catch (__) {
             try {
-              portsRows = db.exec("SELECT result_id, port, protocol, service FROM scan_result_ports ORDER BY id");
+              portsRows = db.exec("SELECT result_id, port, protocol, service, ping FROM scan_result_ports ORDER BY id");
             } catch (___) {
-              portsRows = db.exec("SELECT result_id, port FROM scan_result_ports ORDER BY id");
+              try {
+                portsRows = db.exec("SELECT result_id, port, protocol, service FROM scan_result_ports ORDER BY id");
+              } catch (____) {
+                portsRows = db.exec("SELECT result_id, port FROM scan_result_ports ORDER BY id");
+              }
             }
           }
         }
@@ -500,13 +504,23 @@
           portsRows[0].values.forEach(function (row) {
             var idx = indexById[row[0]];
             if (idx === undefined || !scanResults[idx]) return;
-            if (portsHasStatus) {
+            if (portsHasBanner) {
               scanResults[idx].ports.push({
                 port: Number(row[1]) || 0,
                 protocol: String(row[2] || "TCP"),
                 status: String(row[3] || "open"),
                 service: String(row[4] || ""),
                 ping: String(row[5] || "-") || "-",
+                banner: String(row[6] || ""),
+              });
+            } else if (portsHasStatus) {
+              scanResults[idx].ports.push({
+                port: Number(row[1]) || 0,
+                protocol: String(row[2] || "TCP"),
+                status: String(row[3] || "open"),
+                service: String(row[4] || ""),
+                ping: String(row[5] || "-") || "-",
+                banner: "",
               });
             } else {
               scanResults[idx].ports.push({
@@ -515,6 +529,7 @@
                 status: "open",
                 service: row.length > 3 ? String(row[3] || "") : "",
                 ping: row.length > 4 ? (String(row[4] || "-") || "-") : "-",
+                banner: "",
               });
             }
           });

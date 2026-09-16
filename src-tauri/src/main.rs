@@ -73,6 +73,11 @@ struct PortLatency {
     // which for UDP can mean either open or silently firewalled - there's
     // no way to tell those apart, same limitation every UDP scanner has).
     status: String,
+    // Whatever a service sent unprompted right after connect (SSH/FTP/SMTP/
+    // POP3/IMAP-style greetings) - empty when banner grabbing is off, or the
+    // service didn't say anything within timeout_ms (HTTP and friends wait
+    // for a request, which this never sends - see grab_banner()).
+    banner: String,
 }
 
 #[derive(Serialize, Clone)]
@@ -306,6 +311,32 @@ async fn probe_port_udp(ip: &str, port: u16, timeout_ms: u64) -> Option<(u64, bo
     }
 }
 
+/// Strips control characters from a raw banner read (keeping it safe/short
+/// for display), collapsing whitespace and capping length. The frontend
+/// also HTML-escapes this before rendering (panel-content-runtime.js), so
+/// this is defense in depth, not the only safeguard.
+fn sanitize_banner(bytes: &[u8]) -> String {
+    let text = String::from_utf8_lossy(bytes);
+    let cleaned: String = text
+        .chars()
+        .map(|c| if c == '\r' || c == '\n' || c == '\t' { ' ' } else { c })
+        .filter(|c| !c.is_control())
+        .collect();
+    cleaned.split_whitespace().collect::<Vec<_>>().join(" ").chars().take(200).collect()
+}
+
+/// Best-effort passive banner grab: one bounded read on an already-connected
+/// TCP stream, no bytes ever sent. Many services (SSH/FTP/SMTP/POP3/IMAP)
+/// greet unprompted; others (HTTP and friends) wait for a request and this
+/// will just time out with an empty result - that's expected, not an error.
+async fn grab_banner(stream: &mut TcpStream, timeout_ms: u64) -> String {
+    let mut buf = [0u8; 512];
+    match timeout(Duration::from_millis(timeout_ms), stream.read(&mut buf)).await {
+        Ok(Ok(n)) if n > 0 => sanitize_banner(&buf[..n]),
+        _ => String::new(),
+    }
+}
+
 /// Probe a single IP across all given ports; returns open ports + best latency.
 async fn probe_host(
     ip: String,
@@ -317,6 +348,7 @@ async fn probe_host(
     randomize_ports: bool,
     tcp_checked: bool,
     udp_checked: bool,
+    grab_banners: bool,
 ) -> (Vec<PortLatency>, Option<u64>) {
     if randomize_ports {
         shuffle_vec(&mut ports);
@@ -340,12 +372,18 @@ async fn probe_host(
                 let attempts = retries.saturating_add(1);
                 for attempt in 0..attempts {
                     match timeout(Duration::from_millis(timeout_ms), TcpStream::connect(addr)).await {
-                        Ok(Ok(_)) => {
+                        Ok(Ok(mut tcp_stream)) => {
+                            let banner = if grab_banners {
+                                grab_banner(&mut tcp_stream, timeout_ms).await
+                            } else {
+                                String::new()
+                            };
                             return Some(PortLatency {
                                 port,
                                 ms: Some(t0.elapsed().as_millis() as u64),
                                 protocol: "TCP".into(),
                                 status: "open".into(),
+                                banner,
                             })
                         }
                         _ => {
@@ -373,12 +411,14 @@ async fn probe_host(
                         ms: Some(ms),
                         protocol: "UDP".into(),
                         status: "open".into(),
+                        banner: String::new(),
                     }),
                     Some((ms, false)) => Some(PortLatency {
                         port,
                         ms: Some(ms),
                         protocol: "UDP".into(),
                         status: "open_filtered".into(),
+                        banner: String::new(),
                     }),
                     None => None,
                 }
@@ -482,6 +522,7 @@ async fn probe_host_multi(
     tcp_checked: bool,
     udp_checked: bool,
     icmp_checked: bool,
+    grab_banners: bool,
 ) -> (Vec<PortLatency>, Option<u64>, bool) {
     let icmp_fut = async {
         if icmp_checked {
@@ -502,6 +543,7 @@ async fn probe_host_multi(
                 randomize_ports,
                 tcp_checked,
                 udp_checked,
+                grab_banners,
             )
             .await
         } else {
@@ -531,6 +573,7 @@ async fn scan_range(
     tcp_checked: bool,
     udp_checked: bool,
     icmp_checked: bool,
+    grab_banners: bool,
 ) -> Result<u32, String> {
     let start = ip_to_u32(&from_ip).map_err(|e| e.to_string())?;
     let end   = ip_to_u32(&to_ip).map_err(|e| e.to_string())?;
@@ -583,6 +626,7 @@ async fn scan_range(
                 tcp_checked,
                 udp_checked,
                 icmp_checked,
+                grab_banners,
             ).await;
             // A host counts as found only on a CONFIRMED signal - a
             // definitely-open port (TCP, or UDP with a real reply) or a
@@ -664,6 +708,7 @@ async fn scan_hosts(
     tcp_checked: bool,
     udp_checked: bool,
     icmp_checked: bool,
+    grab_banners: bool,
 ) -> Result<u32, String> {
     // Defense in depth - the frontend already filters to valid IPv4/IPv6
     // before sending, but this list comes from free-typed text, so don't
@@ -718,6 +763,7 @@ async fn scan_hosts(
                 tcp_checked,
                 udp_checked,
                 icmp_checked,
+                grab_banners,
             ).await;
             // Same confirmed-signal rule as scan_range - see its comment.
             let found = open_ports.iter().any(|p| p.status == "open") || icmp_replied;
@@ -1409,6 +1455,128 @@ mod resolve_ip_addr_tests {
             }
             _ => panic!("expected a V6 SocketAddr"),
         }
+    }
+}
+
+#[cfg(test)]
+mod banner_grab_tests {
+    use super::{probe_host, sanitize_banner};
+    use tokio::io::AsyncWriteExt;
+    use tokio::net::TcpListener;
+
+    #[test]
+    fn sanitize_banner_strips_control_chars_collapses_whitespace_and_truncates() {
+        let raw = b"SSH-2.0-OpenSSH_8.9p1\r\nUbuntu\t\x07extra\x00bytes";
+        let cleaned = sanitize_banner(raw);
+        assert_eq!(cleaned, "SSH-2.0-OpenSSH_8.9p1 Ubuntu extrabytes");
+
+        let long = "x".repeat(500).into_bytes();
+        assert_eq!(sanitize_banner(&long).chars().count(), 200);
+    }
+
+    #[test]
+    fn sanitize_banner_handles_invalid_utf8_without_panicking() {
+        let invalid = [0xFFu8, 0xFE, b'h', b'i'];
+        let cleaned = sanitize_banner(&invalid);
+        assert!(cleaned.ends_with("hi"));
+    }
+
+    // End-to-end: a real local TCP listener that greets like a plaintext
+    // service (SSH/FTP/SMTP-style) - confirms probe_host actually captures
+    // and returns the banner text, not just that sanitize_banner works in
+    // isolation.
+    #[tokio::test]
+    async fn probe_host_captures_a_real_greeting_when_grab_banners_is_on() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            if let Ok((mut stream, _)) = listener.accept().await {
+                let _ = stream.write_all(b"SSH-2.0-OpenSSH_9.6\r\n").await;
+                // Keep the stream alive briefly so the reader on the other
+                // end has time to read before it's dropped/reset.
+                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            }
+        });
+
+        let (open_ports, _best_ms) = probe_host(
+            "127.0.0.1".to_string(),
+            vec![port],
+            500,   // timeout_ms
+            0,     // retries
+            0,     // scan_delay_ms
+            4,     // max_concurrent_ports
+            false, // randomize_ports
+            true,  // tcp_checked
+            false, // udp_checked
+            true,  // grab_banners
+        )
+        .await;
+
+        assert_eq!(open_ports.len(), 1);
+        assert_eq!(open_ports[0].banner, "SSH-2.0-OpenSSH_9.6");
+    }
+
+    #[tokio::test]
+    async fn probe_host_leaves_banner_empty_when_grab_banners_is_off() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            if let Ok((mut stream, _)) = listener.accept().await {
+                let _ = stream.write_all(b"SSH-2.0-OpenSSH_9.6\r\n").await;
+                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            }
+        });
+
+        let (open_ports, _best_ms) = probe_host(
+            "127.0.0.1".to_string(),
+            vec![port],
+            500,
+            0,
+            0,
+            4,
+            false,
+            true,
+            false,
+            false, // grab_banners off
+        )
+        .await;
+
+        assert_eq!(open_ports.len(), 1);
+        assert_eq!(open_ports[0].banner, "");
+    }
+
+    // A service that never sends anything unprompted (like HTTP) must
+    // still report the port as open, with an empty banner - a timed-out
+    // read must never be mistaken for a closed/failed port.
+    #[tokio::test]
+    async fn probe_host_reports_open_with_empty_banner_when_nothing_is_sent() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            if let Ok((stream, _)) = listener.accept().await {
+                // Accept and hold the connection open, but never write.
+                tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                drop(stream);
+            }
+        });
+
+        let (open_ports, _best_ms) = probe_host(
+            "127.0.0.1".to_string(),
+            vec![port],
+            100, // short timeout so the test stays fast
+            0,
+            0,
+            4,
+            false,
+            true,
+            false,
+            true,
+        )
+        .await;
+
+        assert_eq!(open_ports.len(), 1);
+        assert_eq!(open_ports[0].status, "open");
+        assert_eq!(open_ports[0].banner, "");
     }
 }
 
@@ -2953,6 +3121,8 @@ struct ScanPortEntry {
     status: String,
     service: String,
     ping: String,
+    #[serde(default)]
+    banner: String,
 }
 
 fn default_open_status() -> String {
@@ -3263,7 +3433,8 @@ const SESSION_SCHEMA_SQL: &str = "
       protocol TEXT NOT NULL DEFAULT 'TCP',
       status TEXT NOT NULL DEFAULT 'open',
       service TEXT NOT NULL DEFAULT '',
-      ping TEXT NOT NULL DEFAULT '-'
+      ping TEXT NOT NULL DEFAULT '-',
+      banner TEXT NOT NULL DEFAULT ''
     );
     CREATE TABLE IF NOT EXISTS ip_library_entries (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -3407,11 +3578,12 @@ fn open_session_sqlite_conn(path: &Path) -> Result<Connection, String> {
                 .map_err(|e| format!("Failed to read scan_result_ports column name: {e}"))?;
             names
         };
-        let migrations: [(&str, &str); 4] = [
+        let migrations: [(&str, &str); 5] = [
             ("protocol", "ALTER TABLE scan_result_ports ADD COLUMN protocol TEXT NOT NULL DEFAULT 'TCP'"),
             ("service", "ALTER TABLE scan_result_ports ADD COLUMN service TEXT NOT NULL DEFAULT ''"),
             ("ping", "ALTER TABLE scan_result_ports ADD COLUMN ping TEXT NOT NULL DEFAULT '-'"),
             ("status", "ALTER TABLE scan_result_ports ADD COLUMN status TEXT NOT NULL DEFAULT 'open'"),
+            ("banner", "ALTER TABLE scan_result_ports ADD COLUMN banner TEXT NOT NULL DEFAULT ''"),
         ];
         for (column, ddl) in migrations {
             if !existing.iter().any(|c| c == column) {
@@ -3478,7 +3650,7 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             .prepare_cached("INSERT INTO scan_results (ip, ping, hostname, flag, isp, as_info, device_identification, city, country_code, lat, lon, status, status_class) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)")
             .map_err(|e| format!("Failed to prepare scan_results insert: {e}"))?;
         let mut insert_port = tx
-            .prepare_cached("INSERT INTO scan_result_ports (result_id, port, protocol, status, service, ping) VALUES (?1, ?2, ?3, ?4, ?5, ?6)")
+            .prepare_cached("INSERT INTO scan_result_ports (result_id, port, protocol, status, service, ping, banner) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)")
             .map_err(|e| format!("Failed to prepare scan_result_ports insert: {e}"))?;
 
         for row in &data.scan_results {
@@ -3488,7 +3660,7 @@ fn write_session_data(path: &Path, data: &SessionData) -> Result<(), String> {
             let result_id = tx.last_insert_rowid();
             for port in &row.ports {
                 insert_port
-                    .execute(params![result_id, port.port, port.protocol, port.status, port.service, port.ping])
+                    .execute(params![result_id, port.port, port.protocol, port.status, port.service, port.ping, port.banner])
                     .map_err(|e| format!("Failed to insert scan_result_ports row: {e}"))?;
             }
         }
@@ -3797,55 +3969,66 @@ fn read_session_data(path: &Path) -> Result<SessionData, String> {
     }
 
     {
-        // Older session files may be missing protocol/status/service/ping
-        // (added incrementally over time) - reading must not mutate the
-        // file (only a save/write runs the ALTER TABLE migration), so fall
-        // back to defaults for whichever columns aren't there yet,
+        // Older session files may be missing protocol/status/service/ping/
+        // banner (added incrementally over time) - reading must not mutate
+        // the file (only a save/write runs the ALTER TABLE migration), so
+        // fall back to defaults for whichever columns aren't there yet,
         // newest-shape first.
-        type PortRow = (i64, i64, String, String, String, String);
-        let newest: Result<Vec<PortRow>, rusqlite::Error> = (|| {
-            let mut stmt = conn.prepare("SELECT result_id, port, protocol, status, service, ping FROM scan_result_ports ORDER BY id")?;
-            let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?)))?
+        type PortRow = (i64, i64, String, String, String, String, String);
+        let with_banner: Result<Vec<PortRow>, rusqlite::Error> = (|| {
+            let mut stmt = conn.prepare("SELECT result_id, port, protocol, status, service, ping, banner FROM scan_result_ports ORDER BY id")?;
+            let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?)))?
                 .collect();
             rows
         })();
-        let port_rows: Vec<PortRow> = match newest {
+        let port_rows: Vec<PortRow> = match with_banner {
             Ok(rows) => rows,
             Err(_) => {
-                let full: Result<Vec<PortRow>, rusqlite::Error> = (|| {
-                    let mut stmt = conn.prepare("SELECT result_id, port, protocol, service, ping FROM scan_result_ports ORDER BY id")?;
-                    let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, "open".to_string(), row.get(3)?, row.get(4)?)))?
+                let newest: Result<Vec<PortRow>, rusqlite::Error> = (|| {
+                    let mut stmt = conn.prepare("SELECT result_id, port, protocol, status, service, ping FROM scan_result_ports ORDER BY id")?;
+                    let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, String::new())))?
                         .collect();
                     rows
                 })();
-                match full {
+                match newest {
                     Ok(rows) => rows,
                     Err(_) => {
-                        let mid: Result<Vec<PortRow>, rusqlite::Error> = (|| {
-                            let mut stmt = conn.prepare("SELECT result_id, port, protocol, service FROM scan_result_ports ORDER BY id")?;
-                            let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, "open".to_string(), row.get(3)?, "-".to_string())))?
+                        let full: Result<Vec<PortRow>, rusqlite::Error> = (|| {
+                            let mut stmt = conn.prepare("SELECT result_id, port, protocol, service, ping FROM scan_result_ports ORDER BY id")?;
+                            let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, "open".to_string(), row.get(3)?, row.get(4)?, String::new())))?
                                 .collect();
                             rows
                         })();
-                        match mid {
+                        match full {
                             Ok(rows) => rows,
                             Err(_) => {
-                                let mut stmt = conn.prepare("SELECT result_id, port FROM scan_result_ports ORDER BY id")
-                                    .map_err(|e| format!("Failed to prepare scan_result_ports read (legacy): {e}"))?;
-                                let rows = stmt.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?, "TCP".to_string(), "open".to_string(), String::new(), "-".to_string())))
-                                    .map_err(|e| format!("Failed to query scan_result_ports (legacy): {e}"))?
-                                    .collect::<Result<Vec<_>, _>>()
-                                    .map_err(|e| format!("Failed to read scan_result_ports row (legacy): {e}"))?;
-                                rows
+                                let mid: Result<Vec<PortRow>, rusqlite::Error> = (|| {
+                                    let mut stmt = conn.prepare("SELECT result_id, port, protocol, service FROM scan_result_ports ORDER BY id")?;
+                                    let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, "open".to_string(), row.get(3)?, "-".to_string(), String::new())))?
+                                        .collect();
+                                    rows
+                                })();
+                                match mid {
+                                    Ok(rows) => rows,
+                                    Err(_) => {
+                                        let mut stmt = conn.prepare("SELECT result_id, port FROM scan_result_ports ORDER BY id")
+                                            .map_err(|e| format!("Failed to prepare scan_result_ports read (legacy): {e}"))?;
+                                        let rows = stmt.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?, "TCP".to_string(), "open".to_string(), String::new(), "-".to_string(), String::new())))
+                                            .map_err(|e| format!("Failed to query scan_result_ports (legacy): {e}"))?
+                                            .collect::<Result<Vec<_>, _>>()
+                                            .map_err(|e| format!("Failed to read scan_result_ports row (legacy): {e}"))?;
+                                        rows
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         };
-        for (result_id, port, protocol, status, service, ping) in port_rows {
+        for (result_id, port, protocol, status, service, ping, banner) in port_rows {
             if let Some(&idx) = scan_result_index.get(&result_id) {
-                scan_results[idx].ports.push(ScanPortEntry { port, protocol, status, service, ping });
+                scan_results[idx].ports.push(ScanPortEntry { port, protocol, status, service, ping, banner });
             }
         }
     }
