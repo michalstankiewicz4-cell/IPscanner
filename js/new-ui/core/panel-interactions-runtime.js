@@ -1044,12 +1044,12 @@
         });
       }
 
-      function persistWith(mutator, statusSuffix) {
+      function persistWith(mutator, statusSuffix, skipRender) {
         var current = getState();
         var next = mutator(cloneState(current));
         if (!next) return;
         var saved = presetsApi.replaceState(next);
-        renderFromState(saved);
+        if (!skipRender) renderFromState(saved);
         if (setStatusLine && statusSuffix) {
           setStatusLine(tr("menuPrefix") + ": " + statusSuffix);
         }
@@ -1083,13 +1083,18 @@
         var presetId = fieldEl.getAttribute("data-preset-id") || "";
         if (!presetId || (field !== "emoji" && field !== "name" && field !== "ports")) return;
 
+        // skipRender: true - the input already shows exactly what was typed,
+        // rebuilding the table here would destroy and recreate the focused
+        // element on every keystroke, kicking focus out of the field (the
+        // bug this fixes). Only persist the value; the next real render
+        // (add/delete/move/switch-preset) picks up the saved trimmed value.
         persistWith(function (next) {
           var idx = next.presets.findIndex(function (entry) { return entry.id === presetId; });
           if (idx < 0) return null;
           next.presets[idx][field] = String(fieldEl.value || "").trim();
           selectedPresetId = presetId;
           return next;
-        }, null);
+        }, null, true);
       });
 
       root.querySelectorAll("[data-preset-action]").forEach(function (button) {
