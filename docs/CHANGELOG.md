@@ -22,6 +22,69 @@ of prior context — for full history use `git log`.
   tooltip and stops being clickable, instead of misleadingly sitting on
   whatever state (usually the default "up to date" look) it last happened
   to show.
+- The bottom Terminal is now a real interactive console instead of a
+  run-and-wait one: output streams live as it's produced (a long-running
+  command like "ping -t" shows each line as it arrives) and Ctrl+C
+  actually interrupts whatever's currently running - killing the whole
+  process tree, not just the top-level shell - instead of the app just
+  sitting there until it finishes on its own. Clicking the command row or
+  the Terminal tab while something is running also counts as focusing the
+  terminal, so Ctrl+C works without an extra click into the output area
+  first.
+- Added floating quick-command buttons over the Terminal's output pane,
+  shown when the IP Scanner tool is open (netstat / ipconfig / ping): left
+  click runs the bare command immediately, right click just types it into
+  the input so you can add your own arguments before pressing Enter.
+- The Terminal's input now supports Up/Down arrow history navigation like
+  a real shell, cycling through previously run commands and back to
+  whatever you were mid-typing. History is saved locally and also bundled
+  into the session file (a new, separate table), so it survives both an
+  app restart and loading an older session.
+- Removed the leftover local `tools/` addon folder and its old browsing
+  mechanism - fully replaced by the GitHub-topic-based Community Catalog,
+  so it was no longer read by anything.
+
+## 2026-09-09 to 2026-09-14 (still v2.9.0)
+
+- **Mail XSS Tester**: added Onet (`smtp.poczta.onet.pl`) as a second SMTP
+  provider alongside Gmail, picked from a dropdown - lets a test message
+  actually cross two independent SMTP hops instead of always going
+  straight from this app's own connection.
+- **Mail XSS Tester**: added a Custom Technique Builder (vector:
+  `<script>`/`<style>` x mechanism: soft line-break, hex-escape the
+  opening/closing/both angle brackets, or a real natural quoted-printable
+  line wrap with an editable filler-text field) - build and send a
+  specific combination on demand instead of needing a new hardcoded
+  checkbox for every variant, plus a "+" queue to batch several
+  combinations and send them together.
+- **Mail XSS Tester**: removed 16 fixed technique checkboxes that the
+  Custom Technique Builder can fully reproduce, keeping only the 7
+  raw-MIME techniques it can't build (MIME boundary desync, UTF-7
+  charset, overlong UTF-8, encoded-word header, etc.).
+- **Mail XSS Tester**: sends made through the Custom Technique Builder
+  (single or queued) now also appear in the results table's
+  Triggered/Not-triggered list, not just the fixed checkboxes.
+- Fixed a real bug where mail ownership verification always sent its
+  one-time code through Gmail's SMTP even when a different provider was
+  selected for the sender - verification now has its own fully
+  independent provider/address/password fields instead of sharing them
+  with Mail XSS Tester.
+- Fixed mail ownership verification requiring the public beacon tunnel to
+  be running before it would send - verification emails carry no beacon
+  URL at all, so that requirement was an unnecessary leftover.
+- README and the in-app About tab now explicitly disclose that this is
+  also an active security-testing toolkit (Mail XSS Tester, Browser
+  Inspect, WiFi password reveal) alongside the IP/port scanner, with an
+  authorized-use-only disclaimer.
+- Added passive TCP banner grabbing (**Options -> Config -> Detect ->
+  "Banner Grabbing"**): after a TCP connect succeeds, captures whatever a
+  service sends unprompted (SSH/FTP/SMTP/POP3/IMAP-style greetings, never
+  sending anything itself) into the Results table's existing "Banner
+  Grabbing" column, which previously always showed "-". Opt-in, off by
+  default.
+- Fixed Port Presets' name/ports/emoji fields losing keyboard focus after
+  every single keystroke, forcing a re-click before typing the next
+  character.
 
 ## 2026-09-07
 
