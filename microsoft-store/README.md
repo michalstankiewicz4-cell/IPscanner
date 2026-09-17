@@ -17,4 +17,4 @@ keeps repo size bounded. Only exists here if/while pursuing Microsoft
 Store distribution.
 
 Direct URL for the current file:
-`https://raw.githubusercontent.com/michalstankiewicz4-cell/IPscanner/main/microsoft-store/OSINTNETAuditor_2.8.3_x64-setup.exe`
+`https://raw.githubusercontent.com/michalstankiewicz4-cell/IPscanner/main/microsoft-store/OSINTNETAuditor_2.9.0_x64-setup.exe`
