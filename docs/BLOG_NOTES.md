@@ -688,3 +688,73 @@ disclaimerem, że wolno tego używać tylko na własnych systemach albo za
 wyraźną zgodą. Małe zmiany w dwóch-trzech plikach, ale w innym miejscu
 niż zwykle kończymy dzień — nie w kodzie funkcji, tylko w tym, jak ta
 funkcja się przedstawia światu.
+
+## 2026-09-17
+
+Ten wpis zamyka wersję v2.9.0 — a zaczęło się od pytania rzuconego mimochodem
+kilka dni wcześniej: "może zrobimy jakiś wykrywacz podatności CVE?". Zanim
+cokolwiek zacząłem pisać, sprawdziłem, czego skaner w ogóle dziś się
+dowiaduje o otwartym porcie — i odpowiedź brzmiała: niczego. Sam fakt "port
+otwarty", zero informacji o tym, co za nim siedzi. Bez tego żaden lookup CVE
+nie ma czego szukać, więc zeszliśmy o piętro niżej: najpierw banner
+grabbing, CVE zostaje na później.
+
+Włączyłem tryb planowania i zanim napisałem linijkę kodu, kazałem dwóm
+agentom przeszukać kod równolegle — jednemu backend w Rust, drugiemu
+front-end i zapis sesji. Wróciło coś zabawnego: kolumna "Banner Grabbing"
+w tabeli wyników, jej checkbox widoczności, miejsce w schemacie SQLite —
+wszystko to już ISTNIAŁO, kompletnie okablowane, tylko nigdy niczym nie
+zasilone. Ktoś (chyba ja sam, w jakiejś wcześniejszej sesji) zaprojektował
+tę funkcję z wyprzedzeniem i zostawił ją czekającą. Rzadka przyjemność —
+zamiast projektować UI od zera, wystarczyło dowieźć backend.
+
+Rust poszedł gładko: jedno dodatkowe, ograniczone w czasie odczytanie po
+udanym połączeniu TCP, żadnego wysyłania niczego, tylko bierne słuchanie,
+czy usługa (SSH, FTP, SMTP i podobne) sama się przywita. Napisałem do tego
+prawdziwe testy integracyjne — nie mockowane, tylko realny `TcpListener`
+odpowiadający jak prawdziwa usługa — i wszystko przeszło. Zbudowałem apkę,
+uruchomiłem lokalny serwer testowy wysyłający fałszywe powitanie SSH,
+kazałem Michałowi kliknąć w prawdziwym GUI... i banner się nie pojawił.
+Puste "-", dokładnie tak jak wcześniej.
+
+Winny okazał się kawałek kodu, którego moi agenci eksploracyjni nie
+przetestowali do końca: między eventem z Rusta a tabelą wyników jest
+jeszcze jedna, pośrednia funkcja normalizująca żywy wynik skanu do zapisu
+w localStorage — i ta funkcja budowała nowy obiekt portu z twardo
+zakodowaną listą pól, gubiąc po drodze `banner`, mimo że Rust już go
+wysyłał. Dobra lekcja: "sprawdziłem, że pole jest czytane w renderze" to
+nie to samo co "sprawdziłem cały łańcuch od zdarzenia do ekranu". Naprawiłem,
+przebudowałem, Michał kliknął jeszcze raz — tym razem `SSH-2.0-TestBanner_1.0`
+pojawiło się dokładnie tam gdzie powinno.
+
+Przy okazji zgłosił zupełnie inny błąd: pole nazwy/portów w "Port Presets"
+gubiło fokus po każdym wciśniętym klawiszu, trzeba było klikać od nowa na
+każdą literę. Dokładnie ten sam wzorzec, który już kilka razy łapaliśmy w
+tej aplikacji w zupełnie innych miejscach — handler na `input` robił pełny
+re-render całej tabeli przy KAŻDYM znaku, niszcząc i odtwarzając na nowo
+właśnie ten input, w którym ktoś akurat pisze. Naprawa: przestać
+przerysowywać przy samym wpisywaniu, zostawić prawdziwy re-render tylko dla
+akcji, które faktycznie zmieniają układ (dodaj/usuń/przesuń).
+
+Potem Michał poprosił o uzupełnienie Help -> Versions przed wydaniem — i to
+uzupełnianie samo w sobie wyłapało coś ciekawego: cztery pozycje, które już
+dawno trafiły do danych zasilających tę zakładkę, nigdy nie doczekały się
+wpisu w `CHANGELOG.md`. Ten sam rodzaj rozjazdu, jaki łapaliśmy między
+schematem Rust i JS-owym mirrorem sesji, tylko tym razem między dwoma
+miejscami dokumentującymi to samo dla ludzi, nie dla kodu.
+
+Na koniec samo wydanie — i tu wyszedł czysto infrastrukturalny babol.
+Podpisywanie instalatora kluczem aktualizacji zawiesiło się w nieskończoność,
+bo Tauri mimo wszystko pytało o hasło do klucza, a w nieinteraktywnej sesji
+nie ma kto na to pytanie odpowiedzieć — proces po prostu czekał w milczeniu,
+bez błędu, bez śladu w logu. Ustawienie pustego hasła jako zmiennej
+środowiskowej rozwiązało sprawę od razu. Reszta poszła zgodnie z checklistą:
+podpisany installer, `latest.json`, GitHub Release, i realne potwierdzenie
+od Michała — auto-update zadziałał, Defender i ESET nic nie wykryły.
+
+Krótkie podsumowanie: v2.9.0 to nie jedna duża rzecz, tylko seria małych,
+każda złapana na żywym teście, nie na domysłach — banner faktycznie się
+pojawił dopiero jak ktoś kliknął prawdziwy przycisk, fokus faktycznie się
+nie gubił dopiero jak ktoś wpisał prawdziwy tekst, a wydanie faktycznie
+działało dopiero jak stara wersja faktycznie się zaktualizowała. CVE lookup
+nadal czeka — ale teraz przynajmniej apka wie, co siedzi za otwartym portem.
