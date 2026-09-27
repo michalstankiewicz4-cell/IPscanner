@@ -96,6 +96,12 @@
       purpose: "Otwiera wewnetrzna dokumentacje projektu w przegladarce Markdown.",
       behavior: "open-documentation",
     },
+    "privacy-policy": {
+      label: "Privacy Policy",
+      purposeKey: "tipActionPrivacyPolicy",
+      purpose: "Otwiera polityke prywatnosci projektu w przegladarce Markdown.",
+      behavior: "open-privacy-policy",
+    },
     about: {
       label: "About",
       purposeKey: "tipActionAbout",

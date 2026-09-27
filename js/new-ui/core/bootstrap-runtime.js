@@ -276,6 +276,7 @@
         const toolsAiAssistantLabel = document.querySelector('[data-menu-action="assistant-right"] span:first-child');
         const helpVersionsLabel = document.querySelector('[data-menu-action="versions"] span:first-child');
         const helpDocumentationLabel = document.querySelector('[data-menu-action="documentation"] span:first-child');
+        const helpPrivacyPolicyLabel = document.querySelector('[data-menu-action="privacy-policy"] span:first-child');
         const windowMinBtn = document.querySelector('[data-menu-action="window-min"]');
         const windowMaxBtn = document.querySelector('[data-menu-action="window-max"]');
         const windowFullscreenBtn = document.querySelector('[data-menu-action="window-fullscreen"]');
@@ -368,6 +369,7 @@
         if (toolsAiAssistantLabel) toolsAiAssistantLabel.textContent = "🤖 " + tr("menuToolsAiAssistant");
         if (helpVersionsLabel) helpVersionsLabel.textContent = tr("menuHelpVersions");
         if (helpDocumentationLabel) helpDocumentationLabel.textContent = tr("menuHelpDocumentation");
+        if (helpPrivacyPolicyLabel) helpPrivacyPolicyLabel.textContent = tr("menuHelpPrivacyPolicy");
         if (windowMinBtn) {
           windowMinBtn.setAttribute("title", tr("windowMinimizeTitle"));
           windowMinBtn.setAttribute("aria-label", tr("windowMinimizeTitle"));
@@ -1382,6 +1384,7 @@
         window.NetReconNewUI.openConfirmDialog = menuRuntime.openConfirmDialog;
         window.NetReconNewUI.openUpdateDialog = menuRuntime.openUpdateDialog;
         window.NetReconNewUI.openStartupDisclaimerDialog = menuRuntime.openStartupDisclaimerDialog;
+        window.NetReconNewUI.openPrivacyNoticeDialog = menuRuntime.openPrivacyNoticeDialog;
       }
 
       const navigationRuntimeFactory = runtimeFactory.createNavigationRuntime
@@ -1577,6 +1580,28 @@
           }
         });
       }
+
+      // Privacy notice: shown exactly ONCE, on the very first launch ever -
+      // unlike the disclaimer above, this isn't a re-offerable Options ->
+      // General toggle, so it's a plain localStorage flag rather than
+      // something routed through generalSettings. The full text lives in
+      // docs/PRIVACY_POLICY.md, reachable any time via Help -> Privacy
+      // Policy - this popup is just the one-time heads-up that it exists.
+      try {
+        var PRIVACY_NOTICE_SEEN_KEY = "netrecon_privacy_notice_seen_v1";
+        var hasSeenPrivacyNotice = window.localStorage && window.localStorage.getItem(PRIVACY_NOTICE_SEEN_KEY) === "1";
+        if (!hasSeenPrivacyNotice && window.NetReconNewUI && window.NetReconNewUI.openPrivacyNoticeDialog) {
+          window.NetReconNewUI.openPrivacyNoticeDialog(
+            tr("privacyNoticeTitle"),
+            tr("privacyNoticeMessage"),
+            tr("privacyNoticeOk")
+          ).then(function () {
+            try {
+              if (window.localStorage) window.localStorage.setItem(PRIVACY_NOTICE_SEEN_KEY, "1");
+            } catch (_) {}
+          });
+        }
+      } catch (_) {}
 
       window.NetReconNewUI = window.NetReconNewUI || {};
       window.NetReconNewUI.syncExtensionToolUi = syncExtensionToolUi;

@@ -219,6 +219,12 @@
     // (the checkboxKey arg) - used for the startup amateur-project
     // disclaimer (Options -> General's "showStartupDisclaimer" setting).
     var disclaimerDialog = buildButtonDialog("v1DisclaimerModal", ["ok"], "dontShowAgain");
+    // No checkbox (unlike disclaimerDialog) - the privacy notice is shown
+    // exactly once on first launch (see bootstrap-runtime.js's
+    // netrecon_privacy_notice_seen_v1 flag), never re-offered as a
+    // startup toggle, so there's nothing for a "don't show again" box to
+    // opt out of.
+    var privacyNoticeDialog = buildButtonDialog("v1PrivacyNoticeModal", ["ok"]);
 
     function openExitConfirmDialog() {
       return exitDialog.open({
@@ -267,6 +273,18 @@
         title: titleText,
         message: messageText,
         checkboxLabel: checkboxLabelText,
+        labels: { ok: okLabel },
+        focusKey: "ok",
+      });
+    }
+
+    // First-launch-only privacy notice - see bootstrap-runtime.js for the
+    // one-time trigger. Resolves with a plain "ok"/"cancel" choice (no
+    // checkboxChecked shape, since this dialog has no checkboxKey).
+    function openPrivacyNoticeDialog(titleText, messageText, okLabel) {
+      return privacyNoticeDialog.open({
+        title: titleText,
+        message: messageText,
         labels: { ok: okLabel },
         focusKey: "ok",
       });
@@ -381,6 +399,17 @@
         var docsApi = window.NetReconNewUI;
         if (docsApi && typeof docsApi.openMarkdownDoc === "function") {
           docsApi.openMarkdownDoc("https://raw.githubusercontent.com/michalstankiewicz4-cell/IPscanner/main/docs/DOCUMENTATION.md");
+        }
+        if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
+        return;
+      }
+
+      // Help > Privacy Policy: same mechanism as open-documentation above,
+      // just pointed at docs/PRIVACY_POLICY.md.
+      if (behavior === "open-privacy-policy") {
+        var privacyDocsApi = window.NetReconNewUI;
+        if (privacyDocsApi && typeof privacyDocsApi.openMarkdownDoc === "function") {
+          privacyDocsApi.openMarkdownDoc("https://raw.githubusercontent.com/michalstankiewicz4-cell/IPscanner/main/docs/PRIVACY_POLICY.md");
         }
         if (setStatusLine) setStatusLine(tr("menuPrefix") + ": " + label);
         return;
@@ -679,6 +708,7 @@
       openConfirmDialog: openConfirmDialog,
       openUpdateDialog: openUpdateDialog,
       openStartupDisclaimerDialog: openStartupDisclaimerDialog,
+      openPrivacyNoticeDialog: openPrivacyNoticeDialog,
     };
   }
 
