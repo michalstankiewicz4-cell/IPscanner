@@ -6,6 +6,20 @@ high-level "what's done vs. planned" view, see [ROADMAP.md](ROADMAP.md).
 This file was started on 2026-07-11 and is not backfilled beyond a few days
 of prior context — for full history use `git log`.
 
+## 2026-09-27 (v2.9.1)
+
+- Added a **privacy policy** ([docs/PRIVACY_POLICY.md](PRIVACY_POLICY.md))
+  describing exactly what the app sends where, tool by tool - GitHub
+  OAuth/ratings via Supabase for the Community Catalog, third-party
+  lookups only when a specific tool needs them for whatever target you
+  typed (Email Recon, Reverse IP, etc.), and everything else (scans,
+  sessions, mail/app credentials) staying on your device.
+- Added a one-time privacy notice shown on first launch - independent of
+  the existing "show disclaimer at startup" toggle, it's shown exactly
+  once, ever, not re-offered as a startup setting.
+- Added **Help -> Privacy Policy**, opening the full policy through the
+  existing in-app Markdown viewer.
+
 ## 2026-09-07 (v2.9.0)
 
 - Clicking the status bar's update-available marker (ⓘ) while it's showing a
