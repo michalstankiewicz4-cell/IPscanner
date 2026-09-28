@@ -758,3 +758,54 @@ pojawił dopiero jak ktoś kliknął prawdziwy przycisk, fokus faktycznie się
 nie gubił dopiero jak ktoś wpisał prawdziwy tekst, a wydanie faktycznie
 działało dopiero jak stara wersja faktycznie się zaktualizowała. CVE lookup
 nadal czeka — ale teraz przynajmniej apka wie, co siedzi za otwartym portem.
+
+## 2026-09-28
+
+Wpis przed dłuższą przerwą, więc zbieram tu wszystko, co się jeszcze
+wydarzyło od zamknięcia v2.9.0.
+
+Zaczęło się od pytania z boku: "czy nasza strona/apka wymaga polityki
+prywatności?". Sprawdziłem uczciwie, co apka faktycznie robi z danymi —
+logowanie GitHubem przez Supabase do Community Catalog, oceny i komentarze
+powiązane z loginem, anonimowy licznik instalacji, a przy narzędziach typu
+Email Recon czy Reverse IP — dane lecą do zewnętrznych serwisów (HIBP,
+Cloudflare, HackerTarget) tylko wtedy, gdy sam wpiszesz cel. Odpowiedź:
+tak, warto mieć taki dokument, i nie tylko dla RODO — Microsoft Store też
+tego zwykle wymaga przy logowaniu i dostępie do sieci. Powstał
+`docs/PRIVACY_POLICY.md`, jednorazowy popup przy pierwszym uruchomieniu
+(własna flaga w localStorage, niezależna od istniejącego przełącznika
+"disclaimer przy starcie" — bo to ma się pokazać raz, nie być czymś, co
+można sobie znowu włączyć) i link w Help.
+
+Przy tej okazji wyszła drobna, ale satysfakcjonująca lekcja z testowania:
+mój pierwszy skrypt Playwright sprawdzający ten popup dawał same `null`-e
+i sugerował, że okno się nie zamyka. Winny nie był kod apki, tylko mój
+własny test — założyłem, że główny `<div>` dialogu ma `id` odpowiadający
+jego prefiksowi, a w rzeczywistości tylko tytuł/wiadomość w środku mają
+swoje id, sam kontener nie. Naprawiony test (szukanie przez
+`aria-labelledby` zamiast zgadywanego `id`) pokazał, że wszystko działało
+od samego początku — popup pojawia się raz, flaga się zapisuje, po
+odświeżeniu nie wraca.
+
+Skoro to realna zmiana w tym, co apka wysyła do świata, a v2.9.0 było już
+opublikowane (część osób mogła się już zaktualizować), nie dało się tego
+domalować do starej wersji — stąd v2.9.1. Build i podpisywanie poszły od
+razu bez zabawy z hasłem klucza, bo pamiętałem już z poprzedniego wydania,
+że trzeba jawnie ustawić puste `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` w tej
+samej sesji shella, inaczej Tauri czeka w milczeniu na hasło, którego nikt
+nie wpisze. GitHub Release wyszedł czysto, plik dla Microsoft Store
+zaktualizowany (na razie bez samego zgłoszenia w Partner Center).
+
+Na koniec sprawdziłem, co się dzieje z PR-em do winget-pkgs, bo Michał
+zauważył jakiś ruch. Okazało się, że moderator repo ręcznie przeruszył
+pipeline (wcześniej łapaliśmy tam błąd walidacji) i tym razem przeszedł
+czysto — ale skoro to pierwszy pakiet od tego wydawcy, polityka Microsoftu
+i tak wymaga teraz ręcznego przeglądu przez człowieka, zanim to wpadnie do
+`winget-pkgs`. Nic do zrobienia z naszej strony, tylko czekanie.
+
+I tu na razie robimy pauzę — Michał pokazał mi swój drugi projekt (gra 3D
+"Swarm Protocol", Three.js + multiplayer przez Supabase, własny język do
+programowania dronów i statków), więc najbliższy czas spędzimy tam,
+zamiast dalej naciskać na CVE lookup. Ten wątek nie jest zamknięty, tylko
+odłożony — apka już wie, co siedzi za otwartym portem, zostaje dowiązać do
+tego bazę CVE, jak wrócimy.
